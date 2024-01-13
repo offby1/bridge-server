@@ -6,10 +6,11 @@ authors = ["Eric Hanchrow <eric.hanchrow@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.10"
 
 # This is a private repo, for no particularly good reason.
 bridge =  { git = "git@gitlab.com:offby1/bridge.git" }
+django = "^5.0.1"
 
 [build-system]
 requires = ["poetry-core"]
