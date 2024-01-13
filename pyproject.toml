@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "bs"
+name = "bridge_server"
 version = "0.1.0"
 description = "An online bridge game"
 authors = ["Eric Hanchrow <eric.hanchrow@gmail.com>"]
