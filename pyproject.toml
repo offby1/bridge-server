@@ -11,7 +11,12 @@ python = ">=3.10"
 # This is a private repo, for no particularly good reason.
 bridge =  { git = "git@gitlab.com:offby1/bridge.git" }
 django = "^5.0.1"
+pytest-django = "^4.7.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE="bridge_server.settings"
+python_files = ["tests.py", "test_*.py", "*_test.py", "testing/python/*.py"]
