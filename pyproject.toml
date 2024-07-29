@@ -13,6 +13,9 @@ bridge =  { git = "git@gitlab.com:offby1/bridge.git" }
 django = "^5.0.1"
 pytest-django = "^4.7.0"
 
+[tool.poetry.group.dev.dependencies]
+django-extensions = "^3.2.3"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
