@@ -5,3 +5,7 @@ from django.shortcuts import render
 
 def duh(request):
     return render(request, "welcome.html")
+
+
+def profile(request):
+    return render(request, "profile.html")
