@@ -1,0 +1,658 @@
+[
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:29:14.627Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 9,
+      "object_id": "1",
+      "object_repr": "Club object (1)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:30:32.721Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 8,
+      "object_id": "1",
+      "object_repr": "Player object (1)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:30:38.145Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 8,
+      "object_id": "2",
+      "object_repr": "Player object (2)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:30:40.313Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 8,
+      "object_id": "3",
+      "object_repr": "Player object (3)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:30:45.097Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 8,
+      "object_id": "4",
+      "object_repr": "Player object (4)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "action_flag": 1,
+      "action_time": "2024-07-29T19:31:17.569Z",
+      "change_message": "[{\"added\": {}}]",
+      "content_type": 10,
+      "object_id": "1",
+      "object_repr": "Table object (1)",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "action_flag": 2,
+      "action_time": "2024-07-29T19:31:32.783Z",
+      "change_message": "[{\"changed\": {\"fields\": [\"Table\"]}}]",
+      "content_type": 8,
+      "object_id": "4",
+      "object_repr": "Glenn",
+      "user": 3
+    },
+    "model": "admin.logentry",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "codename": "add_logentry",
+      "content_type": 1,
+      "name": "Can add log entry"
+    },
+    "model": "auth.permission",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "codename": "change_logentry",
+      "content_type": 1,
+      "name": "Can change log entry"
+    },
+    "model": "auth.permission",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "codename": "delete_logentry",
+      "content_type": 1,
+      "name": "Can delete log entry"
+    },
+    "model": "auth.permission",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "codename": "view_logentry",
+      "content_type": 1,
+      "name": "Can view log entry"
+    },
+    "model": "auth.permission",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "codename": "add_permission",
+      "content_type": 2,
+      "name": "Can add permission"
+    },
+    "model": "auth.permission",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "codename": "change_permission",
+      "content_type": 2,
+      "name": "Can change permission"
+    },
+    "model": "auth.permission",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "codename": "delete_permission",
+      "content_type": 2,
+      "name": "Can delete permission"
+    },
+    "model": "auth.permission",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "codename": "view_permission",
+      "content_type": 2,
+      "name": "Can view permission"
+    },
+    "model": "auth.permission",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "codename": "add_group",
+      "content_type": 3,
+      "name": "Can add group"
+    },
+    "model": "auth.permission",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "codename": "change_group",
+      "content_type": 3,
+      "name": "Can change group"
+    },
+    "model": "auth.permission",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "codename": "delete_group",
+      "content_type": 3,
+      "name": "Can delete group"
+    },
+    "model": "auth.permission",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "codename": "view_group",
+      "content_type": 3,
+      "name": "Can view group"
+    },
+    "model": "auth.permission",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "codename": "add_user",
+      "content_type": 4,
+      "name": "Can add user"
+    },
+    "model": "auth.permission",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "codename": "change_user",
+      "content_type": 4,
+      "name": "Can change user"
+    },
+    "model": "auth.permission",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "codename": "delete_user",
+      "content_type": 4,
+      "name": "Can delete user"
+    },
+    "model": "auth.permission",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "codename": "view_user",
+      "content_type": 4,
+      "name": "Can view user"
+    },
+    "model": "auth.permission",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "codename": "add_contenttype",
+      "content_type": 5,
+      "name": "Can add content type"
+    },
+    "model": "auth.permission",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "codename": "change_contenttype",
+      "content_type": 5,
+      "name": "Can change content type"
+    },
+    "model": "auth.permission",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "codename": "delete_contenttype",
+      "content_type": 5,
+      "name": "Can delete content type"
+    },
+    "model": "auth.permission",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "codename": "view_contenttype",
+      "content_type": 5,
+      "name": "Can view content type"
+    },
+    "model": "auth.permission",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "codename": "add_session",
+      "content_type": 6,
+      "name": "Can add session"
+    },
+    "model": "auth.permission",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "codename": "change_session",
+      "content_type": 6,
+      "name": "Can change session"
+    },
+    "model": "auth.permission",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "codename": "delete_session",
+      "content_type": 6,
+      "name": "Can delete session"
+    },
+    "model": "auth.permission",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "codename": "view_session",
+      "content_type": 6,
+      "name": "Can view session"
+    },
+    "model": "auth.permission",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "codename": "add_userpasskey",
+      "content_type": 7,
+      "name": "Can add user passkey"
+    },
+    "model": "auth.permission",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "codename": "change_userpasskey",
+      "content_type": 7,
+      "name": "Can change user passkey"
+    },
+    "model": "auth.permission",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "codename": "delete_userpasskey",
+      "content_type": 7,
+      "name": "Can delete user passkey"
+    },
+    "model": "auth.permission",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "codename": "view_userpasskey",
+      "content_type": 7,
+      "name": "Can view user passkey"
+    },
+    "model": "auth.permission",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "codename": "add_player",
+      "content_type": 8,
+      "name": "Can add player"
+    },
+    "model": "auth.permission",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "codename": "change_player",
+      "content_type": 8,
+      "name": "Can change player"
+    },
+    "model": "auth.permission",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "codename": "delete_player",
+      "content_type": 8,
+      "name": "Can delete player"
+    },
+    "model": "auth.permission",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "codename": "view_player",
+      "content_type": 8,
+      "name": "Can view player"
+    },
+    "model": "auth.permission",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "codename": "add_club",
+      "content_type": 9,
+      "name": "Can add club"
+    },
+    "model": "auth.permission",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "codename": "change_club",
+      "content_type": 9,
+      "name": "Can change club"
+    },
+    "model": "auth.permission",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "codename": "delete_club",
+      "content_type": 9,
+      "name": "Can delete club"
+    },
+    "model": "auth.permission",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "codename": "view_club",
+      "content_type": 9,
+      "name": "Can view club"
+    },
+    "model": "auth.permission",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "codename": "add_table",
+      "content_type": 10,
+      "name": "Can add table"
+    },
+    "model": "auth.permission",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "codename": "change_table",
+      "content_type": 10,
+      "name": "Can change table"
+    },
+    "model": "auth.permission",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "codename": "delete_table",
+      "content_type": 10,
+      "name": "Can delete table"
+    },
+    "model": "auth.permission",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "codename": "view_table",
+      "content_type": 10,
+      "name": "Can view table"
+    },
+    "model": "auth.permission",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "codename": "add_hand",
+      "content_type": 11,
+      "name": "Can add hand"
+    },
+    "model": "auth.permission",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "codename": "change_hand",
+      "content_type": 11,
+      "name": "Can change hand"
+    },
+    "model": "auth.permission",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "codename": "delete_hand",
+      "content_type": 11,
+      "name": "Can delete hand"
+    },
+    "model": "auth.permission",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "codename": "view_hand",
+      "content_type": 11,
+      "name": "Can view hand"
+    },
+    "model": "auth.permission",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "date_joined": "2024-07-29T16:20:36.395Z",
+      "email": "eric.hanchrow@gmail.com",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "last_login": "2024-07-29T19:26:33.645Z",
+      "last_name": "",
+      "password": "pbkdf2_sha256$720000$iBObIXytUwJK6fkAFIJu00$fTygN9XAbb+LVsTZKJLHkVlpfaho6Wb99RuaymTaQT0=",
+      "user_permissions": [],
+      "username": "not-workme"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "app_label": "admin",
+      "model": "logentry"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "permission"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "group"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "user"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "app_label": "contenttypes",
+      "model": "contenttype"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "app_label": "sessions",
+      "model": "session"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "app_label": "passkeys",
+      "model": "userpasskey"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "app_label": "bs_app",
+      "model": "player"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "app_label": "bs_app",
+      "model": "club"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "app_label": "bs_app",
+      "model": "table"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "app_label": "bs_app",
+      "model": "hand"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "expire_date": "2024-08-12T19:26:33.648Z",
+      "session_data": ".eJxVj81uwjAQhN_F5yra2CTYucEFqVI5BKSqXKKNf4iDsSFOChXKuzepkCpuuzszn2Yf5IIxnvQPKR7_o0EX9fhGKhz6phqi7iqrSEEYebnVKE_az4Jq0R9DIoPvO1snsyV5qjH5CEq79dP7AmgwNlN6ITljLDXAEHKaYc5FCinWStYCBFBYYC5oVmfAlQBOGQjNTb5cykxTkacT1FgVaBV77PX8iWzQOe2P00LS98vtcN53u-s2C5uD5-2tvLewqmDYf9HPzerO-XpbdrtSTqC_Xt-6s8ZK7G3wpPCDc-P4C4EJYtA:1sYW0v:2NqaFnyx0gi9VIYAgG7jdgS4tz1eltSACjQvOT0gd2o"
+    },
+    "model": "sessions.session",
+    "pk": "lnrib4se9er1p0jz5w2rhqqja5ddfm0s"
+  },
+  {
+    "fields": {
+      "expire_date": "2024-08-12T17:50:13.040Z",
+      "session_data": ".eJxVj8FOwzAMht8lZzalSZomPQ6QdkGa0NCAS-UkDo0aUtS0SDD13emgEtrN_uzvl30mH5Bzh1-kPv-XHmLG-YY0MI1tM2UcmuBITTi5YgZsh-kyWM28XdH28Aceeodxt65duS3kdhGFVZzzwlMOVLISpNIFLcA4azTVlFEBUrPSlFQ5TRXjVKPysqpsiUzLYgn1wfWsySOMeHnCthAjprelIXf7exnsyQhRyR0ofzr2eyrCI3_9Pna377lLm8OwGZqn55cl6PeuTxyCDxbG0CdSpynGef4BZo1gng:1sYUVh:ORHgcRJ6GaBJD8dZGr352YxMAV8m9Kg1e6N-MgI0daY"
+    },
+    "model": "sessions.session",
+    "pk": "sl3blw2puhckn6lqg01xnpjvat7y84b4"
+  },
+  {
+    "fields": {
+      "name": "The One And Only Bridge Club"
+    },
+    "model": "bs_app.club",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "club": 1,
+      "name": "The One Table"
+    },
+    "model": "bs_app.table",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "name": "Bob",
+      "table": null
+    },
+    "model": "bs_app.player",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "name": "Sam",
+      "table": null
+    },
+    "model": "bs_app.player",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "name": "Mary",
+      "table": null
+    },
+    "model": "bs_app.player",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "name": "Glenn",
+      "table": 1
+    },
+    "model": "bs_app.player",
+    "pk": 4
+  }
+]
