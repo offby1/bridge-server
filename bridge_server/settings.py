@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "accounts",
     "django_extensions",
+    "bs_app",
 ]
 
 MIDDLEWARE = [
