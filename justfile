@@ -1,6 +1,6 @@
 set unstable
 
-export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "bridge_server.settings")
+export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.settings")
 export POETRY_VIRTUALENVS_IN_PROJECT := "false"
 
 [private]
@@ -18,7 +18,7 @@ all-but-django-prep: poetry-install
 [group('django')]
 [private]
 manage *options: all-but-django-prep
-    poetry run python manage.py {{ options }}
+    poetry run python project/manage.py {{ options }}
 
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
@@ -35,7 +35,7 @@ loaddata *options: migrate (manage "loaddata " + options)
 [group('django')]
 [private]
 django-superuser: all-but-django-prep migrate
-    if ! DJANGO_SUPERUSER_PASSWORD=admin poetry run python3 manage.py createsuperuser --no-input --username=$USER --email=eric.hanchrow@gmail.com;  then echo "$(tput setaf 2)'That username is already taken' is OK! ctfo$(tput sgr0)"; fi
+    if ! DJANGO_SUPERUSER_PASSWORD=admin poetry run python3 project/manage.py createsuperuser --no-input --username=$USER --email=eric.hanchrow@gmail.com;  then echo "$(tput setaf 2)'That username is already taken' is OK! ctfo$(tput sgr0)"; fi
 
 [group('bs')]
 test *options: makemigrations

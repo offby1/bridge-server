@@ -531,7 +531,7 @@
   },
   {
     "fields": {
-      "app_label": "bs_app",
+      "app_label": "app",
       "model": "club"
     },
     "model": "contenttypes.contenttype",
@@ -539,7 +539,7 @@
   },
   {
     "fields": {
-      "app_label": "bs_app",
+      "app_label": "app",
       "model": "table"
     },
     "model": "contenttypes.contenttype",
@@ -547,7 +547,7 @@
   },
   {
     "fields": {
-      "app_label": "bs_app",
+      "app_label": "app",
       "model": "player"
     },
     "model": "contenttypes.contenttype",
@@ -555,7 +555,7 @@
   },
   {
     "fields": {
-      "app_label": "bs_app",
+      "app_label": "app",
       "model": "hand"
     },
     "model": "contenttypes.contenttype",
@@ -573,7 +573,7 @@
     "fields": {
       "name": "The One And Only Bridge Club"
     },
-    "model": "bs_app.club",
+    "model": "app.club",
     "pk": 1
   },
   {
@@ -581,7 +581,7 @@
       "club": 1,
       "name": "The One Table"
     },
-    "model": "bs_app.table",
+    "model": "app.table",
     "pk": 1
   },
   {
@@ -589,7 +589,7 @@
       "name": "Sam",
       "table": null
     },
-    "model": "bs_app.player",
+    "model": "app.player",
     "pk": 1
   },
   {
@@ -597,7 +597,7 @@
       "name": "Mary",
       "table": null
     },
-    "model": "bs_app.player",
+    "model": "app.player",
     "pk": 2
   },
   {
@@ -605,7 +605,7 @@
       "name": "Bob",
       "table": 1
     },
-    "model": "bs_app.player",
+    "model": "app.player",
     "pk": 3
   },
   {
@@ -613,7 +613,7 @@
       "name": "Clara",
       "table": 1
     },
-    "model": "bs_app.player",
+    "model": "app.player",
     "pk": 4
   }
 ]
