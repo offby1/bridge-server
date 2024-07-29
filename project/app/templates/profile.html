@@ -1,6 +1,7 @@
-<body>
-  I guess {{ user }}'s profile would go here
+{% extends "base.html" %}
+{% block content %}
+  Hi {{ user }}!
 <tt>
   {{ user | pprint }}
-  </tt>
-</body>
+</tt>
+{% endblock content %}

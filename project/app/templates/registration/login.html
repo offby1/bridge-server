@@ -1,4 +1,5 @@
-<body>
+{% extends "base.html" %}
+{% block content %}
 
 {# Scraped from https://docs.djangoproject.com/en/5.0/topics/auth/default/#all-authentication-views #}
 
@@ -16,7 +17,6 @@
 {% endif %}
 
 <div>
-<p>By the way, "next" is {{ next }}.</p>
 <form method="post" action="{% url 'login' %}">
 {% csrf_token %}
 <table>
@@ -35,4 +35,4 @@
 </form>
 </div>
 
-</body>
+{% endblock content %}

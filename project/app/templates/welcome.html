@@ -1,13 +1,12 @@
-<html>
-  <body>
-    <p>
-      Welcome to the bridge club.
-    </p>
+{% extends "base.html" %}
+{% block content %}
+<p>
+  Welcome to the bridge club.
+</p>
 
-    <p>
-      My Samoyed is <em>really</em> hairy.
-    </p>
+<p>
+  My Samoyed is <em>really</em> hairy.
+</p>
 
-    Some day you'll be able to <a href="{% url 'login' %}">login</a>, and sign up.
-  </body>
-</html>
+Some day you'll be able to <a href="{% url 'login' %}">login</a>, and sign up.
+{% endblock content %}
