@@ -2,7 +2,7 @@ It occurs to me ...
 
 ... when I first started working on this, I figured I'd use flask for the web server, since that's what I was used to.
 
-But since then, I've gotten a new job, at which I use Django all day every day.  And it's clear Django give me, for free, lots of stuff I'd need -- specifically a user database and basic auth, plus an ORM.
+But since then, I've gotten a new job, at which I use Django all day every day.  And it's clear Django gives me, for free, lots of stuff I'd need -- specifically a user database and basic auth, plus an ORM.
 
 I'd expect to have these models:
 * a hand of bridge
