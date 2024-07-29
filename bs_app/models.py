@@ -7,7 +7,7 @@ from django.db import models
 
 
 class Club(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(unique=True, max_length=100)
 
     def __str__(self):
         return self.name
@@ -29,12 +29,23 @@ class Table(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "name",
+                    "club",
+                ],
+                name="composite_primary_key",
+            ),
+        ]
+
 
 admin.site.register(Table)
 
 
 class Player(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
     table = models.ForeignKey(
         "Table",
         blank=True,

@@ -27,7 +27,15 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
-runme *options: migrate (manage "runserver " + options)
+runme *options: django-superuser migrate (manage "runserver " + options)
+
+[group('bs')]
+loaddata *options: migrate (manage "loaddata " + options)
+
+[group('django')]
+[private]
+django-superuser: all-but-django-prep migrate
+    if ! DJANGO_SUPERUSER_PASSWORD=admin poetry run python3 manage.py createsuperuser --no-input --username=$USER --email=eric.hanchrow@gmail.com;  then echo "$(tput setaf 2)'That username is already taken' is OK! ctfo$(tput sgr0)"; fi
 
 [group('bs')]
 test *options: makemigrations
