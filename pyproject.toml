@@ -16,6 +16,7 @@ pytest-django = "^4.7.0"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^3.2.3"
+django-debug-toolbar = "^4.4.6"
 
 [build-system]
 requires = ["poetry-core"]
