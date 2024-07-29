@@ -10,6 +10,13 @@
   </head>
 
   <body>
+    <div>
+    {% if user.is_authenticated %}
+    Hello, {{ user }}
+    {% else %}
+    Not logged in
+    {% endif %}
+    </div>
     <div id="content">
       {% block content %}{% endblock %}
     </div>
