@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.db import models
 
 
@@ -7,6 +8,12 @@ from django.db import models
 
 class Club(models.Model):
     name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
+admin.site.register(Club)
 
 
 class Table(models.Model):
@@ -19,15 +26,32 @@ class Table(models.Model):
 
     # TODO -- a constraint that says all the players gotta be different
 
+    def __str__(self):
+        return self.name
+
+
+admin.site.register(Table)
+
 
 class Player(models.Model):
+    name = models.CharField(max_length=50)
     table = models.ForeignKey(
         "Table",
+        blank=True,
         null=True,
         db_comment="If NULL, then I'm in the lobby",
         on_delete=models.CASCADE,
     )
 
+    def __str__(self):
+        return self.name
+
+
+admin.site.register(Player)
+
 
 class Hand(models.Model):
     table_played_at = models.ForeignKey("Table", on_delete=models.CASCADE)
+
+
+admin.site.register(Hand)
