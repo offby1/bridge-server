@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.generic import ListView
 from .models import Club, Player, Table
 
 # Create your views here.
@@ -21,3 +22,7 @@ def club(request):
         "club.html",
         context={"club": the_only_club, "lobby": lobby_players, "tables": tables},
     )
+
+
+class TableListView(ListView):
+    model = Table

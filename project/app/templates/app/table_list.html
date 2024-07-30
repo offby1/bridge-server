@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+
+<ul>
+{% for table in object_list %}
+<li>{{ table }}</li>
+{% endfor %}
+</ul>
+
+{% endblock content %}
