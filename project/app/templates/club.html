@@ -1,5 +1,6 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "table_list.html" %}
+
+{% block before_list_stuff %}
 <p>
   Lobby
 </p>
@@ -13,17 +14,4 @@
 <p>
   Tables
 </p>
-
-{# TODO -- this duplicates stuff in table_list.html #}
-<ul>
-{% for table in tables %}
-<li>{{ table.name }}:</li>
-<ul>
-{% for player in table.player_set.all %}
-<li>{{ player.as_link }}</li>
-{% endfor %}
-</ul>
-{% endfor %}
-</ul>
-
-{% endblock content %}
+{% endblock before_list_stuff %}

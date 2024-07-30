@@ -21,7 +21,7 @@ def club(request):
     return render(
         request,
         "club.html",
-        context={"club": the_only_club, "lobby": lobby_players, "tables": tables},
+        context={"club": the_only_club, "lobby": lobby_players, "table_list": tables},
     )
 
 
@@ -31,3 +31,4 @@ class PlayerDetailView(DetailView):
 
 class TableListView(ListView):
     model = Table
+    template_name = "table_list.html"
