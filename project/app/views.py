@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import ListView
+from django.views.generic.detail import DetailView
 from .models import Club, Player, Table
 
 # Create your views here.
@@ -22,6 +23,10 @@ def club(request):
         "club.html",
         context={"club": the_only_club, "lobby": lobby_players, "tables": tables},
     )
+
+
+class PlayerDetailView(DetailView):
+    model = Player
 
 
 class TableListView(ListView):

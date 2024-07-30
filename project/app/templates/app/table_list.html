@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
+{# TODO -- this duplicates stuff in club.html #}
 <ul>
 {% for table in object_list %}
-<li>{{ table }}</li>
+<li>{{ table.name }}:</li>
+<ul>
+{% for player in table.player_set.all %}
+<li>{{ player.as_link }}</li>
+{% endfor %}
+</ul>
 {% endfor %}
 </ul>
 

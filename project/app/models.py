@@ -1,6 +1,7 @@
 from django.contrib import admin, auth
 from django.db import models
-
+from django.urls import reverse
+from django.utils.html import format_html
 
 # FWIW, https://docs.djangoproject.com/en/4.2/howto/custom-model-fields/#our-example-object demonstrates a Django model
 # for a bridge hand.
@@ -57,8 +58,19 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
-    def __str__(self):
+    @property
+    def name(self):
         return self.user.username
+
+    def as_link(self):
+        return format_html(
+            "<a href='{}'>{}</a>",
+            reverse("app:player", kwargs=dict(pk=self.pk)),
+            self.name,
+        )
+
+    def __str__(self):
+        return self.name
 
 
 admin.site.register(Player)

@@ -6,7 +6,7 @@
 
 <ul>
 {% for player in lobby %}
-<li>{{ player }}</li>
+<li>{{ player.as_link }}</li>
 {% endfor %}
 </ul>
 
@@ -14,9 +14,15 @@
   Tables
 </p>
 
+{# TODO -- this duplicates stuff in table_list.html #}
 <ul>
 {% for table in tables %}
-<li>{{ table }}</li>
+<li>{{ table.name }}:</li>
+<ul>
+{% for player in table.player_set.all %}
+<li>{{ player.as_link }}</li>
+{% endfor %}
+</ul>
 {% endfor %}
 </ul>
 
