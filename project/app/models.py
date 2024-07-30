@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, auth
 from django.db import models
 
 
@@ -45,7 +45,10 @@ admin.site.register(Table)
 
 
 class Player(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    user = models.OneToOneField(
+        auth.models.User,
+        on_delete=models.CASCADE,
+    )
     table = models.ForeignKey(
         "Table",
         blank=True,
@@ -55,7 +58,7 @@ class Player(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.user.username
 
 
 admin.site.register(Player)
