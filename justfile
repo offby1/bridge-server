@@ -21,6 +21,9 @@ manage *options: all-but-django-prep
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
+shell: (manage "shell_plus")
+
+[group('django')]
 makemigrations *options: (manage "makemigrations " + options)
 
 [group('django')]
