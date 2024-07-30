@@ -18,7 +18,7 @@ all-but-django-prep: poetry-install
 [group('django')]
 [private]
 manage *options: all-but-django-prep
-    poetry run python project/manage.py {{ options }}
+    cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
@@ -27,7 +27,7 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
-runme *options: django-superuser migrate (manage "runserver " + options)
+runme *options: test django-superuser migrate (manage "runserver " + options)
 
 [group('bs')]
 loaddata *options: migrate (manage "loaddata " + options)
@@ -39,7 +39,7 @@ django-superuser: all-but-django-prep migrate
 
 [group('bs')]
 test *options: makemigrations
-    poetry run pytest --exitfirst --failed-first --create-db {{ options }}
+    cd project && poetry run pytest --exitfirst --failed-first --create-db {{ options }}
 
 #  Nix the virtualenv and anything not checked in to git.
 clean:
