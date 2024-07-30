@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from .models import Club, Player, Table
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Create your views here.
 
@@ -10,6 +12,7 @@ def home(request):
     return render(request, "home.html")
 
 
+@login_required
 def profile(request):
     return render(request, "profile.html")
 
@@ -27,7 +30,7 @@ def club(request):
     )
 
 
-class PlayerDetailView(DetailView):
+class PlayerDetailView(LoginRequiredMixin, DetailView):
     model = Player
 
 
