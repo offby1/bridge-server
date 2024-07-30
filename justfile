@@ -29,8 +29,9 @@ migrate *options: makemigrations (manage "migrate " + options)
 [group('bs')]
 runme *options: test django-superuser migrate (manage "runserver " + options)
 
+# Create a bunch of users and tables
 [group('bs')]
-loaddata *options: migrate (manage "loaddata " + options)
+pop: migrate (manage "generate_fake_data")
 
 [group('django')]
 [private]
@@ -41,7 +42,12 @@ django-superuser: all-but-django-prep migrate
 test *options: makemigrations
     cd project && poetry run pytest --exitfirst --failed-first --create-db {{ options }}
 
-#  Nix the virtualenv and anything not checked in to git.
+# Delete the sqlite database.
+[group('bs')]
+drop:
+    -rm -fv project/db.sqlite3
+
+#  Nix the virtualenv and anything not checked in to git, but leave the database.
 clean:
     poetry env info --path | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
