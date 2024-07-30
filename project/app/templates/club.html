@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<p>
+  Lobby
+</p>
+
+<ul>
+{% for player in lobby %}
+<li>{{ player }}</li>
+{% endfor %}
+</ul>
+
+<p>
+  Tables
+</p>
+
+<ul>
+{% for table in tables %}
+<li>{{ table }}</li>
+{% endfor %}
+</ul>
+
+{% endblock content %}

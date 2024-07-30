@@ -16,6 +16,7 @@
     {% else %}
     <a href="{% url 'login' %}">Login</a>
     {% endif %}
+    <a href="{% url 'app:club' %}">Club</a>
     </div>
     <div id="content">
       {% block content %}{% endblock %}
