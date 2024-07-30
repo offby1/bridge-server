@@ -6,7 +6,7 @@
 
 <ul>
 {% for table in table_list %}
-<li>{{ table.name }}:</li>
+<li>{{ table.club}}:{{ table.name }}:</li>
 <ul>
 {% for player in table.player_set.all %}
 <li>{{ player.as_link }}</li>
