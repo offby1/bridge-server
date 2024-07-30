@@ -18,7 +18,7 @@ class Table(models.Model):
     # TODO -- a constraint that says all the players gotta be different
 
     def __str__(self):
-        return f"{self.name}: {', '.join([str(p) for p in self.player_set.all()])}"
+        return self.name
 
 
 admin.site.register(Table)
@@ -45,11 +45,15 @@ class Player(models.Model):
         return format_html(
             "<a href='{}'>{}</a>",
             reverse("app:player", kwargs=dict(pk=self.pk)),
-            self.name,
+            str(self),
         )
 
     def __str__(self):
-        return self.name
+        if self.table is None:
+            where = "in the lobby"
+        else:
+            where = f"at table {self.table}"
+        return f"{self.name}, {where}"
 
 
 admin.site.register(Player)

@@ -16,5 +16,5 @@ def test_player_names_are_links_to_detail_page(db):
     p = Player.objects.create(user=u, table=t)
 
     link = p.as_link()
-    assert ">Bob<" in link
+    assert ">Bob," in link
     assert "href='/player/" in link
