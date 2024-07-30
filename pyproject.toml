@@ -13,6 +13,7 @@ python = ">=3.10"
 bridge =  { git = "git@gitlab.com:offby1/bridge.git" }
 django = "^5.0.1"
 pytest-django = "^4.7.0"
+tqdm = "^4.66.4"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^3.2.3"
