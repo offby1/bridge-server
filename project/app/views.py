@@ -6,8 +6,8 @@ from .models import Club, Player, Table
 # Create your views here.
 
 
-def duh(request):
-    return render(request, "welcome.html")
+def home(request):
+    return render(request, "home.html")
 
 
 def profile(request):
@@ -15,6 +15,8 @@ def profile(request):
 
 
 def club(request):
+    # TODO -- either we really are gonna use more than one club, or we aren't; if not, there's no reason to have a Club
+    # model.  If so, this is The Wrong Thing.
     the_only_club = Club.objects.first()
     lobby_players = Player.objects.filter(table__isnull=True)
     tables = Table.objects.filter(club=the_only_club)
