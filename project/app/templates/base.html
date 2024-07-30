@@ -12,9 +12,9 @@
   <body>
     <div>
     {% if user.is_authenticated %}
-    Hello, {{ user }}
+    <a href="{% url 'logout' %}">Hello, {{ user }}</a>
     {% else %}
-    Not logged in
+    <a href="{% url 'login' %}">Login</a>
     {% endif %}
     </div>
     <div id="content">
