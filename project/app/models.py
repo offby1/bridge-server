@@ -27,7 +27,7 @@ class Table(models.Model):
     # TODO -- a constraint that says all the players gotta be different
 
     def __str__(self):
-        return self.name
+        return f"{self.name}: {', '.join([str(p) for p in self.player_set.all()])}"
 
     class Meta:
         constraints = [
