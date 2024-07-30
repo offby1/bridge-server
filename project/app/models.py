@@ -7,19 +7,9 @@ from django.utils.html import format_html
 # for a bridge hand.
 
 
-class Club(models.Model):
-    name = models.CharField(unique=True, max_length=100)
-
-    def __str__(self):
-        return self.name
-
-
-admin.site.register(Club)
-
-
 class Table(models.Model):
-    name = models.CharField(max_length=100)
-    club = models.ForeignKey("Club", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, unique=True)
+
     # north = models.ForeignKey("Player")
     # east = models.ForeignKey("Player")
     # south = models.ForeignKey("Player")
@@ -29,17 +19,6 @@ class Table(models.Model):
 
     def __str__(self):
         return f"{self.name}: {', '.join([str(p) for p in self.player_set.all()])}"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "name",
-                    "club",
-                ],
-                name="composite_primary_key",
-            ),
-        ]
 
 
 admin.site.register(Table)

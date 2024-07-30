@@ -27,7 +27,7 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
-runme *options: test (loaddata "skeleton") django-superuser migrate (manage "runserver " + options)
+runme *options: test django-superuser migrate (manage "runserver " + options)
 
 [group('bs')]
 loaddata *options: migrate (manage "loaddata " + options)
