@@ -28,10 +28,21 @@ def club(request):
     )
 
 
-# TODO -- don't just require that I be logged in, but also require that this is my hand (or the dummy).
+# See https://docs.djangoproject.com/en/5.0/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin for an
+# alternative
 class PlayerDetailView(LoginRequiredMixin, DetailView):
     model = Player
     template_name = "player_detail.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self._bridge_username = request.user.username
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        original_context = super().get_context_data(**kwargs)
+        return (
+            dict(show_cards=(self.object.user.username == self._bridge_username)) | original_context
+        )
 
 
 class TableListView(ListView):
