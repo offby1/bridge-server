@@ -21,6 +21,13 @@ class Table(models.Model):
         for dir in "NESW":
             yield self.my_seats.get(direction=dir)
 
+    def as_link(self):
+        return format_html(
+            "<a href='{}'>{}</a>",
+            reverse("app:table-detail", kwargs=dict(pk=self.pk)),
+            str(self),
+        )
+
     @classmethod
     def non_full_table(kls):
         # This seems dumb

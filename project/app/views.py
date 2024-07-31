@@ -35,3 +35,8 @@ class PlayerDetailView(LoginRequiredMixin, DetailView):
 class TableListView(ListView):
     model = Table
     template_name = "table_list.html"
+
+
+class TableDetailView(DetailView):
+    model = Table
+    template_name = "table_detail.html"

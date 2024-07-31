@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+OK so like here's the complete table, Yo:
+
+<ul>
+{% for seat in table.ordered_seats %}
+<li>{{ seat.player.as_link }}</li>
+{% endfor %}
+</ul>
+
+I suppose there should be a "deal" button here or something.
+
+{% endblock content %}

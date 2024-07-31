@@ -6,7 +6,7 @@
 
 <ul>
 {% for table in table_list %}
-<li>{{ table.name }}:</li>
+<li>{{ table.as_link }}:</li>
 <ul>
 {% for seat in table.ordered_seats %}
 <li>{{ seat.player.as_link }}</li>
