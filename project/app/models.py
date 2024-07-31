@@ -76,6 +76,11 @@ class Seat(models.Model):
         default="",
         db_comment="String of even length; each pair of characters is like ♧2",
     )
+
+    # TODO -- store a list actual bridge.card.Card objects, instead of a string.
+    def card_count(self):
+        return len(self.cards) // 2
+
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
 
     def __str__(self):

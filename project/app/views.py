@@ -28,6 +28,7 @@ def club(request):
     )
 
 
+# TODO -- don't just require that I be logged in, but also require that this is my hand (or the dummy).
 class PlayerDetailView(LoginRequiredMixin, DetailView):
     model = Player
     template_name = "player_detail.html"
