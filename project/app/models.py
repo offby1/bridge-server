@@ -47,6 +47,8 @@ class Table(models.Model):
 admin.site.register(Table)
 
 
+# See https://docs.djangoproject.com/en/5.0/howto/custom-model-fields/#our-example-object for a simple example of a
+# bridge hand
 class Seat(models.Model):
     NORTH = "N"
     EAST = "E"
