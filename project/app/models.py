@@ -61,6 +61,15 @@ class Seat(models.Model):
     def __str__(self):
         return f"Table {self.table} {self.direction}"
 
+    def _check_direction(self):
+        if self.direction not in "NESW":
+            raise Exception(f"{self.direction=} is not in 'NESW'")
+
+    def save(self, *args, **kwargs):
+        # TODO -- shouldn't I be using "clean" or something?
+        self._check_direction()
+        super().save(*args, **kwargs)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(

@@ -23,10 +23,9 @@ def test_player_names_are_links_to_detail_page(db):
     assert "href='/player/" in link
 
 
-@pytest.mark.xfail(reason="Haven't yet figured out how to do this")
 def test_no_bogus_directions(db):
     t = Table.objects.create(name="The Table")
-    with pytest.raises(DatabaseError):
+    with pytest.raises(Exception):
         Seat.objects.create(table=t, direction="X")
 
 
