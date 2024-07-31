@@ -20,10 +20,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        print(f"{args=}")
-        print(f"{options=}")
-
-        # TODO -- take numbers of players and tables from the command line
         fake = Faker()
 
         with tqdm.tqdm(total=options["players"]) as progress_bar:
@@ -56,6 +52,5 @@ class Command(BaseCommand):
             assert s is not None, "OK I guess I'm too dumb for my own good"
             unseated_player.seat = s
             unseated_player.save()
-            self.stdout.write(f"{unseated_player} is now at {s}")
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")

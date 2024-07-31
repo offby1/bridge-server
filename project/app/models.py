@@ -12,17 +12,15 @@ class Table(models.Model):
 
     def empty_seats(self):
         all_seats = Seat.objects
-        print(f"{all_seats.all()=}")
+
         my_seats = all_seats.filter(table=self)
-        print(f"{my_seats.all()=}")
-        print(f"{[p for p in my_seats.all()]=}")
+
         return my_seats.filter(player__isnull=True)
 
     @classmethod
     def non_full_table(kls):
         # This seems dumb
         for t in kls.objects.all():
-            print(f"{t=} {t.empty_seats()=} {t.seat_set.all()=}")
             if t.empty_seats().exists():
                 return t
 
