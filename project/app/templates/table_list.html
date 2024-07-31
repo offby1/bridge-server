@@ -8,7 +8,7 @@
 {% for table in table_list %}
 <li>{{ table.name }}:</li>
 <ul>
-{% for seat in table.seat_set.all %}
+{% for seat in table.ordered_seats %}
 <li>{{ seat.player.as_link }}</li>
 {% endfor %}
 </ul>

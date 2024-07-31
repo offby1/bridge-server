@@ -10,12 +10,16 @@ from django.utils.html import format_html
 class Table(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+    @property
+    def my_seats(self):
+        return Seat.objects.filter(table=self)
+
     def empty_seats(self):
-        all_seats = Seat.objects
+        return self.my_seats.filter(player__isnull=True)
 
-        my_seats = all_seats.filter(table=self)
-
-        return my_seats.filter(player__isnull=True)
+    def ordered_seats(self):
+        for dir in "NESW":
+            yield self.my_seats.get(direction=dir)
 
     @classmethod
     def non_full_table(kls):

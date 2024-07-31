@@ -42,7 +42,6 @@ class Command(BaseCommand):
         while True:
             not_full_table = Table.non_full_table()
             if not_full_table is None:
-                self.stderr.write("All tables are full")
                 break
             unseated_player = Player.objects.filter(seat__isnull=True).first()
             if unseated_player is None:
