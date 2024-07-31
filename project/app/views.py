@@ -30,6 +30,7 @@ def club(request):
 
 class PlayerDetailView(LoginRequiredMixin, DetailView):
     model = Player
+    template_name = "player_detail.html"
 
 
 class TableListView(ListView):
