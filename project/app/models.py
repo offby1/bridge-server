@@ -10,12 +10,21 @@ from django.utils.html import format_html
 class Table(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
-    # north = models.ForeignKey("Player")
-    # east = models.ForeignKey("Player")
-    # south = models.ForeignKey("Player")
-    # west = models.ForeignKey("Player")
+    def empty_seats(self):
+        all_seats = Seat.objects
+        print(f"{all_seats.all()=}")
+        my_seats = all_seats.filter(table=self)
+        print(f"{my_seats.all()=}")
+        print(f"{[p for p in my_seats.all()]=}")
+        return my_seats.filter(player__isnull=True)
 
-    # TODO -- a constraint that says all the players gotta be different
+    @classmethod
+    def non_full_table(kls):
+        # This seems dumb
+        for t in kls.objects.all():
+            print(f"{t=} {t.empty_seats()=} {t.seat_set.all()=}")
+            if t.empty_seats().exists():
+                return t
 
     def __str__(self):
         return self.name
@@ -24,13 +33,53 @@ class Table(models.Model):
 admin.site.register(Table)
 
 
+class Seat(models.Model):
+    NORTH = "N"
+    EAST = "E"
+    SOUTH = "S"
+    WEST = "W"
+
+    DIRECTION_CHOICES = {
+        NORTH: "North",
+        EAST: "East",
+        SOUTH: "South",
+        WEST: "West",
+    }
+
+    direction = models.CharField(
+        max_length=1,
+        choices=DIRECTION_CHOICES,
+    )
+
+    @classmethod
+    def create_for_table(kls, t):
+        for direction in kls.DIRECTION_CHOICES.keys():
+            kls.objects.create(table=t, direction=direction)
+
+    table = models.ForeignKey(Table, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Table {self.table} {self.direction}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "table",
+                    "direction",
+                ],
+                name="composite_primary_key",
+            ),
+        ]
+
+
 class Player(models.Model):
     user = models.OneToOneField(
         auth.models.User,
         on_delete=models.CASCADE,
     )
-    table = models.ForeignKey(
-        "Table",
+    seat = models.OneToOneField(
+        "Seat",
         blank=True,
         null=True,
         db_comment="If NULL, then I'm in the lobby",
@@ -49,10 +98,10 @@ class Player(models.Model):
         )
 
     def __str__(self):
-        if self.table is None:
+        if self.seat is None:
             where = "in the lobby"
         else:
-            where = f"at table {self.table}"
+            where = f"at {self.seat}"
         return f"{self.name}, {where}"
 
 

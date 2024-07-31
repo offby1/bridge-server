@@ -19,7 +19,7 @@ def profile(request):
 
 
 def club(request):
-    lobby_players = Player.objects.filter(table__isnull=True)
+    lobby_players = Player.objects.filter(seat__isnull=True)
     tables = Table.objects.all()
     return render(
         request,
