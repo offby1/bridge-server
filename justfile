@@ -34,7 +34,7 @@ runme *options: test django-superuser migrate (manage "runserver " + options)
 
 # Create a bunch of users and tables
 [group('bs')]
-pop: migrate (manage "generate_fake_data")
+pop *options: migrate (manage "generate_fake_data " + options)
 
 [group('django')]
 [private]

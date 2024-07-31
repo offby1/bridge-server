@@ -7,15 +7,27 @@ from faker import Faker
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--players",
+            default=13,
+            type=int,
+        )
+        parser.add_argument(
+            "--tables",
+            default=3,
+            type=int,
+        )
+
     def handle(self, *args, **options):
+        print(f"{args=}")
+        print(f"{options=}")
+
         # TODO -- take numbers of players and tables from the command line
         fake = Faker()
 
-        NUM_PLAYERS = 13  # deliberately not a multiple of 4
-        NUM_TABLES = 3
-
-        with tqdm.tqdm(total=NUM_PLAYERS) as progress_bar:
-            while Player.objects.count() < NUM_PLAYERS:
+        with tqdm.tqdm(total=options["players"]) as progress_bar:
+            while Player.objects.count() < options["players"]:
                 try:
                     username = fake.first_name().lower()
                     django_user = User.objects.create_user(
@@ -27,7 +39,7 @@ class Command(BaseCommand):
                 Player.objects.create(user=django_user)
                 progress_bar.update()
 
-        for _ in range(NUM_TABLES):
+        for _ in range(options["tables"]):
             t = Table.objects.create(name=f"{Table.objects.count()}")
             Seat.create_for_table(t)
 
