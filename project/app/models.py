@@ -23,7 +23,7 @@ class Player(models.Model):
         )
 
     def __str__(self):
-        return self.name
+        return f"{self.name}, at some location I have yet to determine, TODO:"
 
 
 admin.site.register(Player)
