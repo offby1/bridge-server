@@ -41,6 +41,9 @@ class Table(models.Model):
     south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
     west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
 
+    def players(self):
+        return [self.north, self.east, self.south, self.west]
+
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",

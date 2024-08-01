@@ -5,11 +5,11 @@
 OK so like here's the complete table, Yo:
 
 <ul>
-{% for seat in table.ordered_seats %}
-{% if seat.player.user.username in show_cards_for  %}
-<li>{{ seat.player.as_link }} {{ seat.cards }}</li>
+{% for player in table.players %}
+{% if player.user.username in show_cards_for  %}
+<li>{{ player.as_link }} TODO: No cards yet, sorry</li>
 {% else %}
-<li>{{ seat.player.as_link }} ({{ seat.card_count }} cards)</li>
+<li>{{ player.as_link }} (No count of cards yet, sorry)</li>
 {% endif %}
 {% endfor %}
 </ul>

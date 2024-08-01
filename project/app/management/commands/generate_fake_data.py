@@ -1,8 +1,8 @@
+import more_itertools
 import tqdm
-from app.models import Hand, Player, Seat, Table
+from app.models import Player, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db.models import Count
 from faker import Faker
 
 
@@ -34,30 +34,13 @@ class Command(BaseCommand):
                 progress_bar.update()
 
         with tqdm.tqdm(total=options["tables"]) as progress_bar:
-            while Table.objects.count() < options["tables"]:
-                t = Table.objects.create(name=f"{Table.objects.count()}")
-                Seat.create_for_table(t)
+            for compass_points in more_itertools.chunked(Player.objects.all(), 4):
+                if len(compass_points) < 4:
+                    break
+
+                kwargs = dict(zip(["north", "east", "south", "west"], compass_points))
+                print(f"{kwargs=}")
+                Table.objects.create(**kwargs)
                 progress_bar.update()
-
-        while True:
-            not_full_table = Table.objects.filter(seat__player__isnull=True).first()
-            if not_full_table is None:
-                self.stderr.write("All tables are full.")
-                break
-
-            unseated_player = Player.objects.filter(seat__isnull=True).first()
-
-            if unseated_player is None:
-                self.stderr.write("All players are seated.")
-                break
-
-            unseated_player.seat = not_full_table.empty_seats().first()
-            unseated_player.save()
-
-        for t in tqdm.tqdm(
-            Table.objects.annotate(num_players=Count("seat__player")).filter(num_players=4),
-        ):
-            h = Hand.objects.create(table_played_at=t)
-            h.deal()
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
