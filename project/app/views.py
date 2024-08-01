@@ -17,11 +17,6 @@ def home(request):
     return render(request, "home.html")
 
 
-@login_required
-def profile(request):
-    return render(request, "profile.html")
-
-
 # TODO -- use a class-based view
 def lobby(request):
     # TODO -- have the db do this for us, somehow
@@ -47,6 +42,19 @@ class ShowSomeHandsDetailView(LoginRequiredMixin, DetailView):
 class PlayerDetailView(ShowSomeHandsDetailView):
     model = Player
     template_name = "player_detail.html"
+
+    # Ensure that if we're not invoked with the pk of some user, we fall back to the currently-logged-in user.
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        pk = self.kwargs.get(self.pk_url_kwarg)
+
+        if pk is None:
+            user = self.request.user
+            if user.is_anonymous:
+                # This is dumb, but since this view has LoginRequiredMixin, we won't actually display this.
+                self.kwargs[self.pk_url_kwarg] = self.model.objects.first().id
+            else:
+                self.kwargs[self.pk_url_kwarg] = self.model.objects.get(user=user).id
 
 
 class TableListView(ListView):
