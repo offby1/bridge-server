@@ -31,10 +31,8 @@ colorama = "*"
 tabulate = "*"
 
 [package.source]
-type = "git"
-url = "git@gitlab.com:offby1/bridge.git"
-reference = "HEAD"
-resolved_reference = "f1f5f18c55e691f73db865e6f3601c6761958104"
+type = "directory"
+url = "../library"
 
 [[package]]
 name = "colorama"
@@ -322,4 +320,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10"
-content-hash = "3ca2d222d59a4df6976e02a1864a8db2b4d5ac1a0726bb02731a72e63307ad96"
+content-hash = "a222fa06de5aef13b5d3f09eb8dab0c03166a5a9898b52a47d7d18df07c4575a"

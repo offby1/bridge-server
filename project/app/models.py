@@ -1,29 +1,39 @@
-import random
-
-import bridge.card
-import more_itertools
+from bridge.contract import Bid
 from django.contrib import admin, auth
 from django.db import models
 from django.urls import reverse
 from django.utils.html import format_html
 
-# FWIW, https://docs.djangoproject.com/en/4.2/howto/custom-model-fields/#our-example-object demonstrates a Django model
-# for a bridge hand.
+
+class Player(models.Model):
+    user = models.OneToOneField(
+        auth.models.User,
+        on_delete=models.CASCADE,
+    )
+
+    @property
+    def name(self):
+        return self.user.username
+
+    def as_link(self):
+        return format_html(
+            "<a href='{}'>{}</a>",
+            reverse("app:player", kwargs=dict(pk=self.pk)),
+            str(self),
+        )
+
+    def __str__(self):
+        return self.name
+
+
+admin.site.register(Player)
 
 
 class Table(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    @property
-    def my_seats(self):
-        return Seat.objects.filter(table=self)
-
-    def empty_seats(self):
-        return self.my_seats.filter(player__isnull=True)
-
-    def ordered_seats(self):
-        for dir in "NESW":
-            yield self.my_seats.get(direction=dir)
+    north = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_north")
+    east = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_east")
+    south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
+    west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
 
     def as_link(self):
         return format_html(
@@ -32,16 +42,17 @@ class Table(models.Model):
             str(self),
         )
 
-    def __str__(self):
-        return self.name
+    # TODO -- constrain the four users to be different from each other -- i.e., nobody can take up more than one seat.
+
+    # TODO -- ensure that the same set of four users cannot make a new table, if there already is a table with the four
+    # of them that's still somehow "active"
 
 
 admin.site.register(Table)
 
 
-# See https://docs.djangoproject.com/en/5.0/howto/custom-model-fields/#our-example-object for a simple example of a
-# bridge hand
-class Seat(models.Model):
+class Call(models.Model):
+    # First, the "who"
     NORTH = "N"
     EAST = "E"
     SOUTH = "S"
@@ -58,97 +69,23 @@ class Seat(models.Model):
         max_length=1,
         choices=DIRECTION_CHOICES,
     )
-
-    @classmethod
-    def create_for_table(kls, t):
-        for direction in kls.DIRECTION_CHOICES.keys():
-            kls.objects.create(table=t, direction=direction)
-
-    cards = models.JSONField(
-        blank=True,
-        default=list,
-        db_comment="List of pairs of characters, each like `♧2`.",
-    )
-
-    def card_count(self):
-        return len(self.cards)
-
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"Table {self.table} {self.direction}"
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "table",
-                    "direction",
-                ],
-                name="composite_primary_key",
-            ),
-        ]
-
-
-class Player(models.Model):
-    user = models.OneToOneField(
-        auth.models.User,
-        on_delete=models.CASCADE,
-    )
-    seat = models.OneToOneField(
-        "Seat",
-        blank=True,
-        null=True,
-        db_comment="If NULL, then I'm in the lobby",
-        on_delete=models.CASCADE,
-    )
-
     @property
-    def name(self):
-        return self.user.username
+    def player(self):
+        return getattr(self.table, self.DIRECTION_CHOICES[self.direction].lower())
 
-    def as_link(self):
-        return format_html(
-            "<a href='{}'>{}</a>",
-            reverse("app:player", kwargs=dict(pk=self.pk)),
-            str(self),
-        )
+    # Now, the "what":
+    # pass, bid, double, redouble
+
+    serialized = models.CharField(
+        max_length=10,
+        db_comment="A short string with which we can create a bridge.contract.Call object",
+    )
 
     def __str__(self):
-        if self.seat is None:
-            where = "in the lobby"
-        else:
-            where = f"at {self.seat}"
-        return f"{self.name}, {where}"
+        call = Bid.deserialize(self.serialized)
+        return f"{self.direction} at {self.table} says {self.serialized} which means {call}"
 
 
-admin.site.register(Player)
-
-
-class Hand(models.Model):
-    """A hand as dealt, as opposed to a hand currently being played.  IOW, this hand always has 52 cards distributed among four seats."""
-
-    table_played_at = models.ForeignKey("Table", on_delete=models.CASCADE)
-
-    def deal(self):
-        if self.table_played_at.empty_seats().exists():
-            raise Exception("Cannot deal to a table with empty seats")
-        deck = bridge.card.Card.deck()
-        random.shuffle(deck)
-
-        for seat in self.table_played_at.seat_set.all():
-            seat.cards = []
-
-        for hand, seat in zip(
-            more_itertools.distribute(4, deck),
-            self.table_played_at.seat_set.all(),
-        ):
-            seat.cards.extend([str(c) for c in sorted(hand)])
-            seat.save()
-
-
-admin.site.register(Hand)
+admin.site.register(Call)
