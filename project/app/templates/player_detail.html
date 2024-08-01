@@ -4,7 +4,7 @@
 Player {{ object }}
 <br/>
 {% if object.seat %}
-  {% if show_cards %}
+  {% if object.user.username in show_cards_for  %}
 Yer hand is {{ object.seat.cards }}
   {% else %}
 You're not {{ object.user.username }} so you don't get to see the cards.

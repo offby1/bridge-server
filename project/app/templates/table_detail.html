@@ -6,7 +6,11 @@ OK so like here's the complete table, Yo:
 
 <ul>
 {% for seat in table.ordered_seats %}
+{% if seat.player.user.username in show_cards_for  %}
+<li>{{ seat.player.as_link }} {{ seat.cards }}</li>
+{% else %}
 <li>{{ seat.player.as_link }} ({{ seat.card_count }} cards)</li>
+{% endif %}
 {% endfor %}
 </ul>
 
