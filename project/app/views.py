@@ -34,13 +34,9 @@ def club(request):
 
 
 class ShowSomeHandsDetailView(LoginRequiredMixin, DetailView):
-    def dispatch(self, request, *args, **kwargs):
-        self._request_user_username = request.user.username
-        return super().dispatch(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs):
         original_context = super().get_context_data(**kwargs)
-        return dict(show_cards_for=[self._request_user_username]) | original_context
+        return dict(show_cards_for=[self.request.user.username]) | original_context
 
 
 # See https://docs.djangoproject.com/en/5.0/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin for an
