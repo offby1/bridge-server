@@ -32,7 +32,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get(user__username="Bob")
 
     link = p.as_link()
-    assert ">Bob," in link
+    assert ">Bob<" in link
     assert "href='/player/" in link
 
 

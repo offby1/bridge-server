@@ -29,7 +29,7 @@ class Player(models.Model):
         )
 
     def __str__(self):
-        return f"{self.name}, at some location I have yet to determine, TODO:"
+        return self.name
 
 
 admin.site.register(Player)
@@ -50,6 +50,9 @@ class Table(models.Model):
             reverse("app:table-detail", kwargs=dict(pk=self.pk)),
             str(self),
         )
+
+    def __str__(self):
+        return ", ".join([f"{d}:{getattr(self, d)}" for d in ["north", "east", "west", "south"]])
 
     # TODO -- constrain the four users to be different from each other -- i.e., nobody can take up more than one seat.
 
