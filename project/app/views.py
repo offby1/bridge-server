@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
@@ -24,7 +26,10 @@ def club(request):
     return render(
         request,
         "club.html",
-        context={"lobby": lobby_players, "table_list": tables},
+        context={
+            "lobby": sorted(lobby_players, key=attrgetter("user.username")),
+            "table_list": tables,
+        },
     )
 
 
