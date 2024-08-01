@@ -3,9 +3,11 @@ from operator import attrgetter
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
-from django.views.generic import ListView
+from django.urls import reverse
+from django.views.generic import FormView, ListView
 from django.views.generic.detail import DetailView
 
+from .forms import SignupForm
 from .models import Player, Table
 
 # Create your views here.
@@ -54,3 +56,15 @@ class TableListView(ListView):
 class TableDetailView(ShowSomeHandsDetailView):
     model = Table
     template_name = "table_detail.html"
+
+
+class SignupView(FormView):
+    template_name = "signup.html"
+    form_class = SignupForm
+
+    def get_success_url(self):
+        return reverse("login")
+
+    def form_valid(self, form):
+        form.create_user()
+        return super().form_valid(form)

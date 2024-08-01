@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+{% if form.errors %}
+<p>You screwed up somehow</p>
+{% endif %}
+<div>
+<form method="post" action="{% url 'app:signup' %}">
+{% csrf_token %}
+{{ form }}
+<input type="submit" value="signup">
+<input type="hidden" name="next" value="{{ next }}">
+</form>
+</div>
+
+{% endblock content %}

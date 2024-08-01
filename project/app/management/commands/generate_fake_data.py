@@ -3,7 +3,6 @@ from app.models import Hand, Player, Seat, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db.models import Count
-from django.db.utils import IntegrityError
 from faker import Faker
 
 
