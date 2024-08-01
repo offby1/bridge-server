@@ -3,9 +3,11 @@
 
 Player {{ object }}
 <br/>
-{% if show_cards %}
+{% if object.seat %}
+  {% if show_cards %}
 Yer hand is {{ object.seat.cards }}
-{% else %}
+  {% else %}
 You're not {{ object.user.username }} so you don't get to see the cards.
+  {% endif %}
 {% endif %}
 {% endblock content %}
