@@ -22,17 +22,16 @@ def profile(request):
     return render(request, "profile.html")
 
 
-def club(request):
+# TODO -- use a class-based view
+def lobby(request):
     # TODO -- have the db do this for us, somehow
     lobby_players = [p for p in Player.objects.all() if not p.is_seated]
 
-    tables = Table.objects.all()
     return render(
         request,
-        "club.html",
+        "lobby.html",
         context={
             "lobby": sorted(lobby_players, key=attrgetter("user.username")),
-            "table_list": tables,
         },
     )
 

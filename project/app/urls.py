@@ -6,7 +6,7 @@ app_name = "app"
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("club/", views.club, name="club"),
+    path("lobby/", views.lobby, name="lobby"),
     path("player/<pk>/", views.PlayerDetailView.as_view(), name="player"),
     path("signup/", views.SignupView.as_view(), name="signup"),
     path("table/", views.TableListView.as_view(), name="table"),
