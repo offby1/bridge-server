@@ -25,14 +25,12 @@ class Command(BaseCommand):
 
         with tqdm.tqdm(total=options["players"]) as progress_bar:
             while Player.objects.count() < options["players"]:
-                try:
-                    username = fake.first_name().lower()
-                    django_user = User.objects.create_user(
-                        username=username,
-                        password=username,
-                    )
-                except IntegrityError:
-                    continue
+                username = fake.unique.first_name().lower()
+                django_user = User.objects.create_user(
+                    username=username,
+                    password=username,
+                )
+
                 Player.objects.create(user=django_user)
                 progress_bar.update()
 
