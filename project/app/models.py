@@ -72,17 +72,14 @@ class Seat(models.Model):
         for direction in kls.DIRECTION_CHOICES.keys():
             kls.objects.create(table=t, direction=direction)
 
-    # TODO: Consider https://docs.djangoproject.com/en/5.0/ref/models/fields/#jsonfield, to hold serialized Card instances
-    cards = models.CharField(
-        max_length=26,
+    cards = models.JSONField(
         blank=True,
-        default="",
-        db_comment="String of even length; each pair of characters is like ♧2",
+        default=list,
+        db_comment="List of pairs of characters, each like `♧2`.",
     )
 
-    # TODO -- store a list actual bridge.card.Card objects, instead of a string.
     def card_count(self):
-        return len(self.cards) // 2
+        return len(self.cards)
 
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
 
@@ -152,13 +149,13 @@ class Hand(models.Model):
         random.shuffle(deck)
 
         for seat in self.table_played_at.seat_set.all():
-            seat.cards = ""
+            seat.cards = []
 
         for hand, seat in zip(
             more_itertools.distribute(4, deck),
             self.table_played_at.seat_set.all(),
         ):
-            seat.cards = "".join([str(card) for card in sorted(hand)])
+            seat.cards.extend([str(c) for c in sorted(hand)])
             seat.save()
 
 
