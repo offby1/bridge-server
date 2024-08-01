@@ -23,7 +23,9 @@ def profile(request):
 
 
 def club(request):
-    lobby_players = Player.objects.filter(seat__isnull=True)
+    # TODO -- have the db do this for us, somehow
+    lobby_players = [p for p in Player.objects.all() if not p.is_seated]
+
     tables = Table.objects.all()
     return render(
         request,

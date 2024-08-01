@@ -12,6 +12,12 @@ class Player(models.Model):
     )
 
     @property
+    def is_seated(self):
+        return Table.objects.filter(
+            models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
+        ).exists()
+
+    @property
     def name(self):
         return self.user.username
 
