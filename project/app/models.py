@@ -72,6 +72,7 @@ class Seat(models.Model):
         for direction in kls.DIRECTION_CHOICES.keys():
             kls.objects.create(table=t, direction=direction)
 
+    # TODO: Consider https://docs.djangoproject.com/en/5.0/ref/models/fields/#jsonfield, to hold serialized Card instances
     cards = models.CharField(
         max_length=26,
         blank=True,
@@ -153,8 +154,6 @@ class Hand(models.Model):
         for seat in self.table_played_at.seat_set.all():
             seat.cards = ""
 
-        # TODO -- order the seats?  Only matters if we somehow make the shuffled deck visible before dealing; otherwise
-        # nobody cares how we dealt, as long as it's random
         for hand, seat in zip(
             more_itertools.distribute(4, deck),
             self.table_played_at.seat_set.all(),
