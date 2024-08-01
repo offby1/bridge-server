@@ -1,4 +1,3 @@
-import itertools
 import random
 
 import bridge.card
@@ -32,13 +31,6 @@ class Table(models.Model):
             reverse("app:table-detail", kwargs=dict(pk=self.pk)),
             str(self),
         )
-
-    @classmethod
-    def non_full_table(kls):
-        # This seems dumb
-        for t in kls.objects.all():
-            if t.empty_seats().exists():
-                return t
 
     def __str__(self):
         return self.name

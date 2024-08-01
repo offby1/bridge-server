@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 progress_bar.update()
 
         while True:
-            not_full_table = Table.non_full_table()
+            not_full_table = Table.objects.filter(seat__player__isnull=True).first()
             if not_full_table is None:
                 self.stderr.write("All tables are full.")
                 break
