@@ -13,23 +13,6 @@ def test_we_gots_a_home_page():
     assert b"Welcome" in response.content
 
 
-def test_player_names_are_links_to_detail_page(db):
-    u = auth.models.User.objects.create(username="Bob")
-    t = Table.objects.create(name="The Table")
-    s = Seat.objects.create(table=t, direction="N")
-    p = Player.objects.create(user=u, seat=s)
-
-    link = p.as_link()
-    assert ">Bob," in link
-    assert "href='/player/" in link
-
-
-def test_no_bogus_directions(db):
-    t = Table.objects.create(name="The Table")
-    with pytest.raises(Exception):
-        Seat.objects.create(table=t, direction="X")
-
-
 @pytest.fixture()
 def usual_setup(db):
     t = Table.objects.create(name="The Table")
@@ -39,6 +22,20 @@ def usual_setup(db):
         s = Seat.objects.get(table=t, direction=direction)
         u = auth.models.User.objects.create_user(username=username, password=username)
         Player.objects.create(user=u, seat=s)
+
+
+def test_player_names_are_links_to_detail_page(usual_setup):
+    p = Player.objects.get(user__username="Bob")
+
+    link = p.as_link()
+    assert ">Bob," in link
+    assert "href='/player/" in link
+
+
+def test_no_bogus_directions(usual_setup):
+    t = Table.objects.first()
+    with pytest.raises(Exception):
+        Seat.objects.create(table=t, direction="X")
 
 
 def test_no_more_than_four_players_per_table(usual_setup):
