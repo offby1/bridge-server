@@ -1,5 +1,6 @@
 import pytest
 from django.contrib import auth
+from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from django.test import Client
 from django.urls import reverse
@@ -34,7 +35,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
 
 def test_no_bogus_directions(usual_setup):
     t = Table.objects.first()
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Seat.objects.create(table=t, direction="X")
 
 
