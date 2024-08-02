@@ -78,6 +78,8 @@ class TableDetailView(ShowSomeHandsDetailView):
     template_name = "table_detail.html"
 
 
+# TODO -- investigate https://docs.allauth.org/en/latest/mfa/introduction.html as a better way of signing up and
+# authenticating
 class SignupView(FormView):
     template_name = "signup.html"
     form_class = SignupForm
