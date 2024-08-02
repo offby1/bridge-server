@@ -51,6 +51,7 @@ drop:
     -rm -fv project/db.sqlite3
 
 #  Nix the virtualenv and anything not checked in to git, but leave the database.
+[script('bash')]
 clean:
-    poetry env info --path | xargs --no-run-if-empty rm -rf
+    poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
