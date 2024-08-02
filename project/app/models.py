@@ -12,10 +12,14 @@ class Player(models.Model):
     )
 
     @property
-    def is_seated(self):
+    def my_table(self):
         return Table.objects.filter(
             models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
-        ).exists()
+        ).first()
+
+    @property
+    def is_seated(self):
+        return self.my_table is not None
 
     @property
     def name(self):
@@ -41,6 +45,7 @@ class Table(models.Model):
     south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
     west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
 
+    # TODO -- order by nesw, and maybe annotate with direction
     def players(self):
         return [self.north, self.east, self.south, self.west]
 

@@ -56,6 +56,10 @@ class PlayerDetailView(ShowSomeHandsDetailView):
             else:
                 self.kwargs[self.pk_url_kwarg] = self.model.objects.get(user=user).id
 
+    def get_context_data(self, **kwargs):
+        original_context = super().get_context_data(**kwargs)
+        return dict(my_table=self.object.my_table) | original_context
+
 
 class TableListView(ListView):
     model = Table
