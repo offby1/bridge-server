@@ -45,9 +45,8 @@ class Table(models.Model):
     south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
     west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
 
-    # TODO -- order by nesw, and maybe annotate with direction
     def players(self):
-        return [self.north, self.east, self.south, self.west]
+        return {dir: getattr(self, dir) for dir in ["north", "east", "south", "west"]}
 
     def as_link(self):
         return format_html(

@@ -5,12 +5,17 @@
 OK so like here's the complete table, Yo:
 
 <ul>
-{% for player in table.players %}
+{% for direction, player in table.players.items %}
+
+<li>
+{{ direction }}:
 {% if player.user.username in show_cards_for  %}
-<li>{{ player.as_link }} TODO: No cards yet, sorry</li>
+{{ player.as_link }} TODO: No cards yet, sorry
 {% else %}
-<li>{{ player.as_link }} (No count of cards yet, sorry)</li>
+{{ player.as_link }} (No count of cards yet, sorry)
+</li>
 {% endif %}
+
 {% endfor %}
 </ul>
 
