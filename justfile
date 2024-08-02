@@ -39,7 +39,7 @@ pop *options: migrate (manage "generate_fake_data " + options)
 [group('django')]
 [private]
 django-superuser: all-but-django-prep migrate
-    if ! DJANGO_SUPERUSER_PASSWORD=admin poetry run python3 project/manage.py createsuperuser --no-input --username=$USER --email=eric.hanchrow@gmail.com;  then echo "$(tput setaf 2)'That username is already taken' is OK! ctfo$(tput sgr0)"; fi
+    if ! DJANGO_SUPERUSER_PASSWORD=admin poetry run python3 project/manage.py createsuperuser --no-input --username=admin --email=eric.hanchrow@gmail.com;  then echo "$(tput setaf 2)'That username is already taken' is OK! ctfo$(tput sgr0)"; fi
 
 [group('bs')]
 test *options: makemigrations
