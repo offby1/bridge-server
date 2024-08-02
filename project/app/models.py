@@ -25,6 +25,10 @@ class Player(models.Model):
     def name(self):
         return self.user.username
 
+    @classmethod
+    def get_by_name(kls, name):
+        return kls.objects.get(user__username=name)
+
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",
@@ -57,11 +61,6 @@ class Table(models.Model):
 
     def __str__(self):
         return ", ".join([f"{d}:{getattr(self, d)}" for d in ["north", "east", "west", "south"]])
-
-    # TODO -- constrain the four users to be different from each other -- i.e., nobody can take up more than one seat.
-
-    # TODO -- ensure that the same set of four users cannot make a new table, if there already is a table with the four
-    # of them that's still somehow "active"
 
 
 admin.site.register(Table)

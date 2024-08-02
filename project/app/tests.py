@@ -42,3 +42,42 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     response = c.get(reverse("app:player", kwargs=dict(pk=1)))
 
     assert response.context["show_cards_for"] == ["Bob"]
+
+
+@pytest.mark.xfail(reason="TODO")
+def test_player_cannot_be_at_two_seats(db):
+    for username in (
+        "Bob",
+        "Ted",
+        "Alice",
+    ):
+        u = auth.models.User.objects.create_user(username=username, password=username)
+        Player.objects.create(user=u)
+
+    with pytest.raises(Exception) as e:
+        Table.objects.create(
+            north=Player.get_by_name("Bob"),
+            east=Player.get_by_name("Bob"),
+            south=Player.get_by_name("Ted"),
+            west=Player.get_by_name("Alice"),
+        )
+    assert str(e.value) == "Yo cuz you can't sit in more than one seat at a table"
+
+
+@pytest.mark.xfail(reason="TODO")
+def test_player_cannot_be_in_two_tables(usual_setup):
+    def c():
+        Table.objects.create(
+            north=Player.get_by_name("Bob"),
+            east=Player.get_by_name("Carol"),
+            south=Player.get_by_name("Ted"),
+            west=Player.get_by_name("Alice"),
+        )
+
+    with pytest.raises(Exception) as e:
+        c()
+    assert str(e.value) == "Yo cuz you can't sit at more than one table"
+
+    bobs_table = Player.get_by_name("Bob").my_table
+    bobs_table.somehow_mark_this_hand_as_over()
+    c()
