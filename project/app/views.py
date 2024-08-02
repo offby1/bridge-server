@@ -1,6 +1,5 @@
 from operator import attrgetter
 
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse
@@ -20,6 +19,8 @@ def home(request):
 # TODO -- use a class-based view
 def lobby(request):
     # TODO -- have the db do this for us, somehow
+
+    # TODO -- partition the lobby into two lists: players who are looking for partners, and players who aren't.
     lobby_players = [p for p in Player.objects.all() if not p.is_seated]
 
     return render(
@@ -58,7 +59,13 @@ class PlayerDetailView(ShowSomeHandsDetailView):
 
     def get_context_data(self, **kwargs):
         original_context = super().get_context_data(**kwargs)
-        return dict(my_table=self.object.my_table) | original_context
+        return (
+            dict(
+                my_table=self.object.my_table,
+                looking_for_partner=self.object.looking_for_partner,
+            )
+            | original_context
+        )
 
 
 class TableListView(ListView):

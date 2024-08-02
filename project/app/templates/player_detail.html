@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-Player {{ object }}
+Player {{ object }} {% if looking_for_partner %}is{% else %}is not{% endif %} looking for a partner.
 <br/>
 {% if my_table %}
 {{ my_table.as_link }}

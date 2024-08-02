@@ -11,8 +11,12 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
+    # TODO -- ensure this isn't True if we're seated at a table.
+    looking_for_partner = models.BooleanField(default=False)
+
     @property
     def my_table(self):
+        # TODO: I've probably noted this elsewhere, but we need to ensure that each player is associated with *at most one* table.
         return Table.objects.filter(
             models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
         ).first()
