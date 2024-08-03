@@ -15,7 +15,7 @@ class Player(models.Model):
     looking_for_partner = models.BooleanField(default=False)
 
     @property
-    def my_table(self):
+    def table(self):
         # TODO: I've probably noted this elsewhere, but we need to ensure that each player is associated with *at most one* table.
         return Table.objects.filter(
             models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
@@ -23,7 +23,7 @@ class Player(models.Model):
 
     @property
     def is_seated(self):
-        return self.my_table is not None
+        return self.table is not None
 
     @property
     def name(self):

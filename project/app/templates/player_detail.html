@@ -3,9 +3,9 @@
 
 Player {{ object }} {% if looking_for_partner %}is{% else %}is not{% endif %} looking for a partner.
 <br/>
-{% if my_table %}
-{{ my_table.as_link }}
+{% if table %}
+{{ table.as_link }}
 {% else %}
-You are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+They are in <a href="{% url 'app:lobby' %}">the lobby</a>.
 {% endif %}
 {% endblock content %}

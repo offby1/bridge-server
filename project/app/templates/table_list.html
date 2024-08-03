@@ -4,7 +4,7 @@
 {% endblock before_list_stuff %}
 {% block table_list %}
 
-All the tables.
+All {{ table_list.count }} tables.
 <ul>
 {% for table in table_list %}
 <li>{{ table.as_link }}</li>

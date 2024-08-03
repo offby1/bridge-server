@@ -78,6 +78,6 @@ def test_player_cannot_be_in_two_tables(usual_setup):
         c()
     assert str(e.value) == "Yo cuz you can't sit at more than one table"
 
-    bobs_table = Player.get_by_name("Bob").my_table
+    bobs_table = Player.get_by_name("Bob").table
     bobs_table.somehow_mark_this_hand_as_over()
     c()

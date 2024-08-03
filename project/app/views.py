@@ -61,7 +61,7 @@ class PlayerDetailView(ShowSomeHandsDetailView):
         original_context = super().get_context_data(**kwargs)
         return (
             dict(
-                my_table=self.object.my_table,
+                table=self.object.table,
                 looking_for_partner=self.object.looking_for_partner,
             )
             | original_context
