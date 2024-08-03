@@ -7,11 +7,6 @@ All {{ table_list.count }} tables.
 <ul>
 {% for table in table_list %}
 <li>{{ table.as_link }}</li>
-<ul>
-{% for seat in table.ordered_seats %}
-<li>{{ seat.player.as_link }}</li>
-{% endfor %}
-</ul>
 {% endfor %}
 </ul>
 
