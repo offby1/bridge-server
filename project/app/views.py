@@ -19,8 +19,6 @@ def home(request):
 # TODO -- use a class-based view
 def lobby(request):
     # TODO -- have the db do this for us, somehow
-
-    # TODO -- partition the lobby into two lists: players who are looking for partners, and players who aren't.
     lobby_players = [p for p in Player.objects.all() if not p.is_seated]
 
     return render(

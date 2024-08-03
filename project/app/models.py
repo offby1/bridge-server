@@ -18,12 +18,10 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
-    # TODO -- ensure this isn't True if we're seated at a table.
     looking_for_partner = models.BooleanField(default=False)
 
     @property
     def table(self):
-        # TODO: I've probably noted this elsewhere, but we need to ensure that each player is associated with *at most one* table.
         return Table.objects.filter(
             models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
         ).first()
@@ -65,7 +63,7 @@ class Table(models.Model):
 
     DIRECTIONS = ["north", "east", "south", "west"]
 
-    def players(self):
+    def players_by_direction(self):
         return {dir: getattr(self, dir) for dir in self.DIRECTIONS}
 
     def as_link(self):
@@ -81,14 +79,20 @@ class Table(models.Model):
             raise TableException("Yo cuz you can't sit in more than one seat at a table")
 
     def _check_no_player_is_already_seated(self):
-        for d in self.DIRECTIONS:
-            p = getattr(self, d)
+        for _, p in self.players_by_direction().items():
             if p.is_seated:
                 raise TableException(f"{p} is already seated")
+
+    def _reset_fields(self):
+        for _, p in self.players_by_direction().items():
+            if p.looking_for_partner:
+                p.looking_for_partner = False
+                p.save()
 
     def save(self, *args, **kwargs):
         self._check_seats_all_distinct()
         self._check_no_player_is_already_seated()
+        self._reset_fields()
         super().save(*args, **kwargs)
 
     def __str__(self):

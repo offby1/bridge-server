@@ -92,3 +92,20 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # bobs_table = Player.objects.get_by_name("Bob").table
     # bobs_table.somehow_mark_this_hand_as_over()
     # c()
+
+
+def test_player_ceases_looking_for_partner_once_seated(db):
+    creation_kwargs = {}
+    for username, attr in (
+        ("Bob", "north"),
+        ("Carol", "east"),
+        ("Ted", "south"),
+        ("Alice", "west"),
+    ):
+        u = auth.models.User.objects.create_user(username=username, password=username)
+        p = Player.objects.create(user=u, looking_for_partner=True)
+        creation_kwargs[attr] = p
+
+    Table.objects.create(**creation_kwargs)
+    for p in Player.objects.all():
+        assert not p.looking_for_partner

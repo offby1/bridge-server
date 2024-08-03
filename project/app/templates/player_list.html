@@ -3,6 +3,7 @@
 {% block player_list %}
 
 {# TODO -- use https://github.com/morlandi/django-ajax-datatable?tab=readme-ov-file #}
+{# specifically so that users can see who's looking for a partner, who's in the lobby, &c #}
 
 {% if filter is None %}All {% endif %}{{ player_list.count }} players.
 <ul>
