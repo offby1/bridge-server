@@ -29,7 +29,7 @@ def usual_setup(db):
 
 
 def test_player_names_are_links_to_detail_page(usual_setup):
-    p = Player.objects.get(user__username="Bob")
+    p = Player.objects.get_by_name("Bob")
 
     link = p.as_link()
     assert ">Bob<" in link
@@ -56,10 +56,10 @@ def test_player_cannot_be_at_two_seats(db):
 
     with pytest.raises(Exception) as e:
         Table.objects.create(
-            north=Player.get_by_name("Bob"),
-            east=Player.get_by_name("Bob"),
-            south=Player.get_by_name("Ted"),
-            west=Player.get_by_name("Alice"),
+            north=Player.objects.get_by_name("Bob"),
+            east=Player.objects.get_by_name("Bob"),
+            south=Player.objects.get_by_name("Ted"),
+            west=Player.objects.get_by_name("Alice"),
         )
     assert str(e.value) == "Yo cuz you can't sit in more than one seat at a table"
 
@@ -68,16 +68,16 @@ def test_player_cannot_be_at_two_seats(db):
 def test_player_cannot_be_in_two_tables(usual_setup):
     def c():
         Table.objects.create(
-            north=Player.get_by_name("Bob"),
-            east=Player.get_by_name("Carol"),
-            south=Player.get_by_name("Ted"),
-            west=Player.get_by_name("Alice"),
+            north=Player.objects.get_by_name("Bob"),
+            east=Player.objects.get_by_name("Carol"),
+            south=Player.objects.get_by_name("Ted"),
+            west=Player.objects.get_by_name("Alice"),
         )
 
     with pytest.raises(Exception) as e:
         c()
     assert str(e.value) == "Yo cuz you can't sit at more than one table"
 
-    bobs_table = Player.get_by_name("Bob").table
+    bobs_table = Player.objects.get_by_name("Bob").table
     bobs_table.somehow_mark_this_hand_as_over()
     c()

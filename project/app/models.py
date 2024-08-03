@@ -5,7 +5,14 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 
+class PlayerManager(models.Manager):
+    def get_by_name(self, name):
+        return self.get(user__username=name)
+
+
 class Player(models.Model):
+    objects = PlayerManager()
+
     user = models.OneToOneField(
         auth.models.User,
         on_delete=models.CASCADE,
@@ -28,10 +35,6 @@ class Player(models.Model):
     @property
     def name(self):
         return self.user.username
-
-    @classmethod
-    def get_by_name(kls, name):
-        return kls.objects.get(user__username=name)
 
     def as_link(self):
         return format_html(
