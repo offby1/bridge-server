@@ -51,9 +51,14 @@ pop *options: migrate (manage "generate_fake_data " + options)
 [private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
 
+# Run tests with --exitfirst and --failed-first
+[group('bs')]
+t *options: makemigrations (test "--exitfirst --failed-first " + options)
+
+# Run all the tests
 [group('bs')]
 test *options: makemigrations
-    cd project && poetry run pytest --exitfirst --failed-first --create-db {{ options }}
+    cd project && poetry run pytest --create-db {{ options }}
 
 # Delete the sqlite database.
 [group('bs')]
