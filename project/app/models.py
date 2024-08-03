@@ -53,14 +53,20 @@ class Player(models.Model):
 admin.site.register(Player)
 
 
+class TableException(Exception):
+    pass
+
+
 class Table(models.Model):
     north = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_north")
     east = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_east")
     south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
     west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
 
+    DIRECTIONS = ["north", "east", "south", "west"]
+
     def players(self):
-        return {dir: getattr(self, dir) for dir in ["north", "east", "south", "west"]}
+        return {dir: getattr(self, dir) for dir in self.DIRECTIONS}
 
     def as_link(self):
         return format_html(
@@ -69,8 +75,24 @@ class Table(models.Model):
             str(self),
         )
 
+    # TODO -- can this be done with https://docs.djangoproject.com/en/5.0/ref/models/constraints/?
+    def _check_seats_all_distinct(self):
+        if len(set([self.north, self.east, self.west, self.south])) < 4:
+            raise TableException("Yo cuz you can't sit in more than one seat at a table")
+
+    def _check_no_player_is_already_seated(self):
+        for d in self.DIRECTIONS:
+            p = getattr(self, d)
+            if p.is_seated:
+                raise TableException(f"{p} is already seated")
+
+    def save(self, *args, **kwargs):
+        self._check_seats_all_distinct()
+        self._check_no_player_is_already_seated()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return ", ".join([f"{d}:{getattr(self, d)}" for d in ["north", "east", "west", "south"]])
+        return ", ".join([f"{d}:{getattr(self, d)}" for d in self.DIRECTIONS])
 
 
 admin.site.register(Table)
