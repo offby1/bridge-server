@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+{% block player_list %}
+
+{% if lookin_for_love is None %}All {% endif %}{{ player_list.count }} players.
+<ul>
+{% for player in player_list %}
+<li>{{ player.as_link }}</li>
+{% endfor %}
+</ul>
+
+If I were slick, I'd let you filter by "looking for a partner".
+
+{% endblock player_list %}
+{% endblock content %}

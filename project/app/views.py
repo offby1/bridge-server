@@ -38,6 +38,27 @@ class ShowSomeHandsDetailView(LoginRequiredMixin, DetailView):
         return dict(show_cards_for=[self.request.user.username]) | original_context
 
 
+class PlayerListView(ListView):
+    model = Player
+    template_name = "player_list.html"
+    cute_filter_word = "lookin_for_love"
+
+    def get_queryset(self):
+        filter_val = self.request.GET.get(self.cute_filter_word)
+        qs = self.model.objects.order_by("user__username")
+        if filter_val is not None:
+            qs = qs.filter(looking_for_partner=filter_val)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context[self.cute_filter_word] = self.request.GET.get(
+            self.cute_filter_word,
+            None,
+        )  # I bet this isn't necessary
+        return context
+
+
 # See https://docs.djangoproject.com/en/5.0/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin for an
 # alternative
 class PlayerDetailView(ShowSomeHandsDetailView):
