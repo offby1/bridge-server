@@ -39,8 +39,7 @@ class Command(BaseCommand):
                     break
 
                 kwargs = dict(zip(["north", "east", "south", "west"], compass_points))
-                print(f"{kwargs=}")
-                Table.objects.create(**kwargs)
+                Table.objects.get_or_create(**kwargs)
                 progress_bar.update()
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
