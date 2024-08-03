@@ -73,7 +73,7 @@ class Table(models.Model):
             str(self),
         )
 
-    # TODO -- can this be done with https://docs.djangoproject.com/en/5.0/ref/models/constraints/?
+    # TODO -- can any of these checks be done with https://docs.djangoproject.com/en/5.0/ref/models/constraints/?
     def _check_seats_all_distinct(self):
         if len(set([self.north, self.east, self.west, self.south])) < 4:
             raise TableException("Yo cuz you can't sit in more than one seat at a table")
