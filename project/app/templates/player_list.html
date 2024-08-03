@@ -2,14 +2,22 @@
 {% block content %}
 {% block player_list %}
 
-{% if lookin_for_love is None %}All {% endif %}{{ player_list.count }} players.
+{# TODO -- use https://github.com/morlandi/django-ajax-datatable?tab=readme-ov-file #}
+
+{% if filter is None %}All {% endif %}{{ player_list.count }} players.
 <ul>
 {% for player in player_list %}
 <li>{{ player.as_link }}</li>
 {% endfor %}
 </ul>
 
-If I were slick, I'd let you filter by "looking for a partner".
+<div>
+<form method="get" action="{% url 'app:players' %}">
+{% csrf_token %}
+{{ form }}
+<input type="submit" value="filter">
+</form>
+</div>
 
 {% endblock player_list %}
 {% endblock content %}

@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.generic import FormView, ListView
 from django.views.generic.detail import DetailView
 
-from .forms import SignupForm
+from .forms import LookingForLoveForm, SignupForm
 from .models import Player, Table
 
 # Create your views here.
@@ -38,22 +38,25 @@ class ShowSomeHandsDetailView(LoginRequiredMixin, DetailView):
         return dict(show_cards_for=[self.request.user.username]) | original_context
 
 
-class PlayerListView(ListView):
+class PlayerListView(ListView, FormView):
     model = Player
     template_name = "player_list.html"
-    cute_filter_word = "lookin_for_love"
+    submit_button_label = "filter"
+    form_class = LookingForLoveForm
 
     def get_queryset(self):
-        filter_val = self.request.GET.get(self.cute_filter_word)
+        filter_val = self.request.GET.get("lookin_for_love")
+        print(f"{filter_val=}")
         qs = self.model.objects.order_by("user__username")
-        if filter_val is not None:
-            qs = qs.filter(looking_for_partner=filter_val)
+        if filter_val not in (None, "unknown"):
+            looking_for_partner = {"Yes": True, "No": False}[filter_val]
+            qs = qs.filter(looking_for_partner=looking_for_partner)
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context[self.cute_filter_word] = self.request.GET.get(
-            self.cute_filter_word,
+        context[self.submit_button_label] = self.request.GET.get(
+            self.submit_button_label,
             None,
         )  # I bet this isn't necessary
         return context

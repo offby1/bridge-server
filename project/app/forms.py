@@ -26,3 +26,11 @@ class SignupForm(forms.Form):
             password=self.cleaned_data["password"],
         )
         Player.objects.create(user=u)
+
+
+class LookingForLoveForm(forms.Form):
+    lookin_for_love = forms.BooleanField(
+        required=False,
+        label="Lookin' for love?",
+        widget=forms.NullBooleanSelect,
+    )
