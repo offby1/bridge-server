@@ -7,8 +7,19 @@ export POETRY_VIRTUALENVS_IN_PROJECT := "false"
 default:
     just --list
 
+[private]
+[script('bash')]
+die-if-poetry-active:
+    if [[ -n "${POETRY_ACTIVE:-}" || -n "${VIRTUAL_ENV:-}" ]]
+    then
+      echo Hey man some environment variables suggest that a virtualenv is active
+      env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
+
+      false
+    fi
+
 [group('virtualenv')]
-poetry-install:
+poetry-install: die-if-poetry-active
     poetry install
 
 [group('django')]
@@ -51,6 +62,6 @@ drop:
 
 #  Nix the virtualenv and anything not checked in to git, but leave the database.
 [script('bash')]
-clean:
+clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
