@@ -40,6 +40,9 @@ class Player(models.Model):
             str(self),
         )
 
+    class Meta:
+        ordering = ["user__username"]
+
     def __str__(self):
         return self.name
 
