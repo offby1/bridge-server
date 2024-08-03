@@ -44,7 +44,7 @@ class PlayerListView(ListView, FormView):
 
     def get_queryset(self):
         filter_val = self.request.GET.get("lookin_for_love")
-        print(f"{filter_val=}")
+
         qs = self.model.objects.all()
         if filter_val not in (None, "unknown"):
             looking_for_partner = {"Yes": True, "No": False}[filter_val]
