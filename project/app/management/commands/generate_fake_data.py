@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         fake = Faker()
 
-        with tqdm.tqdm(total=options["players"]) as progress_bar:
+        with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
             while Player.objects.count() < options["players"]:
                 username = fake.unique.first_name().lower()
                 django_user = User.objects.create_user(
@@ -33,13 +33,14 @@ class Command(BaseCommand):
                 Player.objects.create(user=django_user)
                 progress_bar.update()
 
-        with tqdm.tqdm(total=options["tables"]) as progress_bar:
+        with tqdm.tqdm(desc="tables", total=options["tables"], unit="t") as progress_bar:
             for compass_points in more_itertools.chunked(Player.objects.all(), 4):
                 if len(compass_points) < 4:
                     break
 
                 kwargs = dict(zip(["north", "east", "south", "west"], compass_points))
-                Table.objects.get_or_create(**kwargs)
-                progress_bar.update()
+                _, created = Table.objects.get_or_create(**kwargs)
+                if created:
+                    progress_bar.update()
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
