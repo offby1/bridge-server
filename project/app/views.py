@@ -1,6 +1,6 @@
 from operator import attrgetter
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import FormView, ListView
@@ -30,10 +30,15 @@ def lobby(request):
     )
 
 
-class ShowSomeHandsDetailView(LoginRequiredMixin, DetailView):
+class ShowSomeHandsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def get_context_data(self, **kwargs):
         original_context = super().get_context_data(**kwargs)
         return dict(show_cards_for=[self.request.user.username]) | original_context
+
+    def test_func(self):
+        player = Player.objects.filter(user__username=self.request.user.username).first()
+        # This will show a "403 forbidden" to the admin, since I'm too lazy to think of anything better.
+        return player is not None
 
 
 class PlayerListView(ListView, FormView):
@@ -65,19 +70,6 @@ class PlayerListView(ListView, FormView):
 class PlayerDetailView(ShowSomeHandsDetailView):
     model = Player
     template_name = "player_detail.html"
-
-    # Ensure that if we're not invoked with the pk of some user, we fall back to the currently-logged-in user.
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        pk = self.kwargs.get(self.pk_url_kwarg)
-
-        if pk is None:
-            user = self.request.user
-            if user.is_anonymous:
-                # This is dumb, but since this view has LoginRequiredMixin, we won't actually display this.
-                self.kwargs[self.pk_url_kwarg] = self.model.objects.first().id
-            else:
-                self.kwargs[self.pk_url_kwarg] = self.model.objects.get(user=user).id
 
     def get_context_data(self, **kwargs):
         original_context = super().get_context_data(**kwargs)

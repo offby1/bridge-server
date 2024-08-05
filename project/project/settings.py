@@ -58,7 +58,7 @@ INTERNAL_IPS = [
 
 ROOT_URLCONF = "project.urls"
 
-LOGIN_REDIRECT_URL = "app:player"
+LOGIN_REDIRECT_URL = "app:players"
 
 TEMPLATES = [
     {

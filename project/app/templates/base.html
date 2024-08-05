@@ -16,7 +16,7 @@
     </div>
     <div>
     {% if user.is_authenticated %}
-    Hello, <a href="{% url 'app:player' %}">{{ user }}</a>.  <form method="post" action="{% url 'logout' %}">
+    Hello, <a href="{% url 'app:player' user.id %}">{{ user }}</a>.  <form method="post" action="{% url 'logout' %}">
 {% csrf_token %}
 <input type="submit" value="logout">
 <input type="hidden" name="next" value="/">
