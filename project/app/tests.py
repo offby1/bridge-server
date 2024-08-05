@@ -109,3 +109,9 @@ def test_player_ceases_looking_for_partner_once_seated(db):
     Table.objects.create(**creation_kwargs)
     for p in Player.objects.all():
         assert not p.looking_for_partner
+
+
+def test_view_filter(usual_setup):
+    c = Client()
+    response = c.get("/players/?lookin_for_love=true")
+    assert "All 0 players." in response.content.decode()
