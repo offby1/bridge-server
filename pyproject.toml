@@ -20,6 +20,7 @@ bridge = {path = "../library"}
 django-extensions = "^3.2.3"
 django-debug-toolbar = "^4.4.6"
 ipython = "^8.26.0"
+django-coverage-plugin = "^3.1.0"
 
 [build-system]
 requires = ["poetry-core"]

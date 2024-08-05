@@ -57,8 +57,21 @@ t *options: makemigrations (test "--exitfirst --failed-first " + options)
 
 # Run all the tests
 [group('bs')]
+[script('bash')]
 test *options: makemigrations
-    cd project && poetry run pytest --create-db {{ options }}
+    set -euxo pipefail
+    cd project
+    pytest_exe=$(poetry env info --path)/bin/pytest
+    poetry run coverage run --branch ${pytest_exe} --create-db {{ options }}
+
+# Display coverage from a test run
+[group('bs')]
+[script('bash')]
+cover: test
+    set -euxo pipefail
+    cd project
+    poetry run coverage html --show-contexts
+    open htmlcov/index.html
 
 # Delete the sqlite database.
 [group('bs')]
