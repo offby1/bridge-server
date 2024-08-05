@@ -66,6 +66,10 @@ TEMPLATES = [
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
+            # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
+            #   'debug': ... defaults to the value of the DEBUG setting.
+            # but that seems not to be the case, so we set it explicitly.
+            "debug": True,
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",

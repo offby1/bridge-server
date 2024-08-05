@@ -62,7 +62,7 @@ test *options: makemigrations
     set -euxo pipefail
     cd project
     pytest_exe=$(poetry env info --path)/bin/pytest
-    poetry run coverage run --branch ${pytest_exe} --create-db {{ options }}
+    poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
 
 # Display coverage from a test run
 [group('bs')]
@@ -70,7 +70,7 @@ test *options: makemigrations
 cover: test
     set -euxo pipefail
     cd project
-    poetry run coverage html --show-contexts
+    poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
     open htmlcov/index.html
 
 # Delete the sqlite database.

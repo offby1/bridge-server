@@ -22,6 +22,14 @@ django-debug-toolbar = "^4.4.6"
 ipython = "^8.26.0"
 django-coverage-plugin = "^3.1.0"
 
+[tool.coverage.run]
+plugins = [
+    'django_coverage_plugin',
+]
+
+[tool.coverage.django_coverage_plugin]
+dynamic_context = "test_function"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
