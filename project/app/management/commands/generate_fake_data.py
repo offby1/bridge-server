@@ -30,7 +30,9 @@ class Command(BaseCommand):
                     password=username,
                 )
 
-                Player.objects.create(user=django_user)
+                looking_for_partner = Player.objects.count() % 2
+
+                Player.objects.create(user=django_user, looking_for_partner=looking_for_partner)
                 progress_bar.update()
 
         with tqdm.tqdm(desc="tables", total=options["tables"], unit="t") as progress_bar:
