@@ -45,4 +45,14 @@ class Command(BaseCommand):
                         Seat.objects.create(direction=d, player=p, table=t)
                         break
 
+        # Now eject players from any non-full table, only so that we can have some warm bodies in the lobby.
+        # Not sure if this makes any sense.
+        t = Table.objects.get_nonfull().first()
+        if t:
+            for _, p in t.players_by_direction().items():
+                s = p.seat
+                s.player = None
+                s.save()
+            t.delete()
+
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
