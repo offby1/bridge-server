@@ -124,11 +124,12 @@ admin.site.register(Seat)
 
 
 class Call(models.Model):
+    # The "who"
     seat = models.ForeignKey("Seat", on_delete=models.CASCADE)
 
     @property
     def player(self):
-        return getattr(self.table, self.DIRECTION_CHOICES[self.direction].lower())
+        return self.seat.player
 
     # Now, the "what":
     # pass, bid, double, redouble
@@ -140,7 +141,7 @@ class Call(models.Model):
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)
-        return f"{self.direction} at {self.table} says {self.serialized} which means {call}"
+        return f"{self.player} ({self.seat.direction} at {self.seat.table}) says {self.serialized} which means {call}"
 
 
 admin.site.register(Call)
