@@ -82,22 +82,17 @@ class Table(models.Model):
 admin.site.register(Table)
 
 
-class Seat(models.Model):
+class SeatChoices(models.TextChoices):
     NORTH = "N"
     EAST = "E"
     SOUTH = "S"
     WEST = "W"
 
-    DIRECTION_CHOICES = {
-        NORTH: "North",
-        EAST: "East",
-        SOUTH: "South",
-        WEST: "West",
-    }
 
+class Seat(models.Model):
     direction = models.CharField(
         max_length=1,
-        choices=DIRECTION_CHOICES,
+        choices=SeatChoices,
     )
     player = models.OneToOneField(Player, null=True, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
@@ -111,10 +106,21 @@ class Seat(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["direction", "player", "table"],
-                name="why_do_I_gotta_name_these",
+                fields=["player", "table"],
+                name="no_more_than_one_player_per_table",
+            ),
+            models.UniqueConstraint(
+                fields=["direction", "table"],
+                name="no_more_than_four_directions_per_table",
+            ),
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_direction_valid",
+                check=models.Q(direction__in=SeatChoices.values),
             ),
         ]
+
+
+admin.site.register(Seat)
 
 
 class Call(models.Model):

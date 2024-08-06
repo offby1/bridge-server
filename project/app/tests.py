@@ -1,6 +1,5 @@
 import pytest
 from django.contrib import auth
-from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
@@ -12,6 +11,12 @@ def test_we_gots_a_home_page():
     c = Client()
     response = c.get("/")
     assert b"Welcome" in response.content
+
+
+@pytest.fixture()
+def bob(db):
+    u = auth.models.User.objects.create_user(username="Bob", password="Bob")
+    return Player.objects.create(user=u, looking_for_partner=True)
 
 
 @pytest.fixture()
@@ -44,11 +49,7 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     assert response.context["show_cards_for"] == ["Bob"]
 
 
-def test_player_cannot_be_at_two_seats(db):
-    Player.objects.create(
-        user=auth.models.User.objects.create_user(username="Bob", password="Bob"),
-    )
-
+def test_player_cannot_be_at_two_seats(bob):
     t = Table.objects.create()
 
     Seat.objects.create(direction="N", player=Player.objects.get_by_name("Bob"), table=t)
@@ -71,9 +72,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # c()
 
 
-def test_player_ceases_looking_for_partner_once_seated(db):
-    u = auth.models.User.objects.create_user(username="Bob", password="Bob")
-    bob = Player.objects.create(user=u, looking_for_partner=True)
+def test_player_ceases_looking_for_partner_once_seated(bob):
     t = Table.objects.create()
     Seat.objects.create(direction="E", player=bob, table=t)
     bob.refresh_from_db()
@@ -84,3 +83,9 @@ def test_view_filter(usual_setup):
     c = Client()
     response = c.get("/players/?lookin_for_love=true")
     assert "All 0 players." in response.content.decode()
+
+
+def test_cant_just_make_up_directions(bob):
+    t = Table.objects.create()
+    with pytest.raises(IntegrityError):
+        Seat.objects.create(direction="!", player=bob, table=t)
