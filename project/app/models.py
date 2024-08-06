@@ -22,13 +22,14 @@ class Player(models.Model):
 
     @property
     def table(self):
-        return Table.objects.filter(
-            models.Q(north=self) | models.Q(east=self) | models.Q(south=self) | models.Q(west=self),
-        ).first()
+        seat = Seat.objects.filter(player=self).first()
+        if seat is None:
+            return None
+        return seat.table
 
     @property
     def is_seated(self):
-        return self.table is not None
+        return Seat.objects.filter(player=self).exists()
 
     @property
     def name(self):
@@ -55,16 +56,17 @@ class TableException(Exception):
     pass
 
 
-class Table(models.Model):
-    north = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_north")
-    east = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_east")
-    south = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_south")
-    west = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="table_west")
+class TableManager(models.Manager):
+    def get_nonfull(self):
+        return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
-    DIRECTIONS = ["north", "east", "south", "west"]
+
+class Table(models.Model):
+    objects = TableManager()
 
     def players_by_direction(self):
-        return {dir: getattr(self, dir) for dir in self.DIRECTIONS}
+        seats = self.seat_set.all()
+        return {s.direction: s.player for s in seats}
 
     def as_link(self):
         return format_html(
@@ -73,37 +75,14 @@ class Table(models.Model):
             str(self),
         )
 
-    # TODO -- can any of these checks be done with https://docs.djangoproject.com/en/5.0/ref/models/constraints/?
-    def _check_seats_all_distinct(self):
-        if len(set([self.north, self.east, self.west, self.south])) < 4:
-            raise TableException("Yo cuz you can't sit in more than one seat at a table")
-
-    def _check_no_player_is_already_seated(self):
-        for _, p in self.players_by_direction().items():
-            if p.is_seated:
-                raise TableException(f"{p} is already seated")
-
-    def _reset_fields(self):
-        for _, p in self.players_by_direction().items():
-            if p.looking_for_partner:
-                p.looking_for_partner = False
-                p.save()
-
-    def save(self, *args, **kwargs):
-        self._check_seats_all_distinct()
-        self._check_no_player_is_already_seated()
-        self._reset_fields()
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return ", ".join([f"{d}:{getattr(self, d)}" for d in self.DIRECTIONS])
+        return ", ".join([f"{d}: {p}" for d, p in self.players_by_direction().items()])
 
 
 admin.site.register(Table)
 
 
-class Call(models.Model):
-    # First, the "who"
+class Seat(models.Model):
     NORTH = "N"
     EAST = "E"
     SOUTH = "S"
@@ -120,7 +99,26 @@ class Call(models.Model):
         max_length=1,
         choices=DIRECTION_CHOICES,
     )
+    player = models.OneToOneField(Player, null=True, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.player is not None:
+            self.player.looking_for_partner = False
+            self.player.save()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["direction", "player", "table"],
+                name="why_do_I_gotta_name_these",
+            ),
+        ]
+
+
+class Call(models.Model):
+    seat = models.ForeignKey("Seat", on_delete=models.CASCADE)
 
     @property
     def player(self):

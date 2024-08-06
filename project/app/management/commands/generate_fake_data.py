@@ -1,6 +1,5 @@
-import more_itertools
 import tqdm
-from app.models import Player, Table
+from app.models import Player, Seat, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
@@ -32,17 +31,20 @@ class Command(BaseCommand):
 
                 looking_for_partner = Player.objects.count() % 2
 
-                Player.objects.create(user=django_user, looking_for_partner=looking_for_partner)
+                p = Player.objects.create(user=django_user, looking_for_partner=looking_for_partner)
                 progress_bar.update()
 
-        with tqdm.tqdm(desc="tables", total=options["tables"], unit="t") as progress_bar:
-            for compass_points in more_itertools.chunked(Player.objects.all(), 4):
-                if len(compass_points) < 4:
-                    break
+                # if there are no empty tables, create one
+                # find a seat at the first empty table
+                # update the player
+                t = Table.objects.get_nonfull().first()
+                if t is None:
+                    t = Table.objects.create()
 
-                kwargs = dict(zip(["north", "east", "south", "west"], compass_points))
-                _, created = Table.objects.get_or_create(**kwargs)
-                if created:
-                    progress_bar.update()
+                p_by_d = t.players_by_direction()
+                for d in Seat.DIRECTION_CHOICES.keys():
+                    if d not in p_by_d:
+                        Seat.objects.create(direction=d, player=p, table=t)
+                        break
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
