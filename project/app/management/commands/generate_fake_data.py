@@ -1,5 +1,5 @@
 import tqdm
-from app.models import Player, Seat, Table
+from app.models import SEAT_CHOICES, Player, Seat, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
@@ -29,9 +29,7 @@ class Command(BaseCommand):
                     password=username,
                 )
 
-                looking_for_partner = Player.objects.count() % 2
-
-                p = Player.objects.create(user=django_user, looking_for_partner=looking_for_partner)
+                p = Player.objects.create(user=django_user)
                 progress_bar.update()
 
                 # if there are no empty tables, create one
@@ -42,7 +40,7 @@ class Command(BaseCommand):
                     t = Table.objects.create()
 
                 p_by_d = t.players_by_direction()
-                for d in Seat.DIRECTION_CHOICES.keys():
+                for d in SEAT_CHOICES.keys():
                     if d not in p_by_d:
                         Seat.objects.create(direction=d, player=p, table=t)
                         break

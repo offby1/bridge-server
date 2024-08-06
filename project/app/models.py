@@ -1,3 +1,4 @@
+import bridge.seat
 from bridge.contract import Bid
 from django.contrib import admin, auth
 from django.db import models
@@ -18,7 +19,11 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
-    looking_for_partner = models.BooleanField(default=False)
+    partner = models.ForeignKey("Player", null=True, on_delete=models.SET_NULL)
+
+    @property
+    def looking_for_partner(self):
+        return self.partner is None
 
     @property
     def table(self):
@@ -82,26 +87,15 @@ class Table(models.Model):
 admin.site.register(Table)
 
 
-class SeatChoices(models.TextChoices):
-    NORTH = "N"
-    EAST = "E"
-    SOUTH = "S"
-    WEST = "W"
+SEAT_CHOICES = {v.value: k for k, v in bridge.seat.Seat.__members__.items()}
 
 
 class Seat(models.Model):
-    direction = models.CharField(
-        max_length=1,
-        choices=SeatChoices,
+    direction = models.SmallIntegerField(
+        choices=SEAT_CHOICES,
     )
     player = models.OneToOneField(Player, null=True, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.player is not None:
-            self.player.looking_for_partner = False
-            self.player.save()
 
     class Meta:
         constraints = [
@@ -115,7 +109,7 @@ class Seat(models.Model):
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_direction_valid",
-                check=models.Q(direction__in=SeatChoices.values),
+                check=models.Q(direction__in=SEAT_CHOICES),
             ),
         ]
 

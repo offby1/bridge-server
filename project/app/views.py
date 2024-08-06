@@ -60,7 +60,7 @@ class PlayerListView(ListView, FormView):
                 "No": False,
                 "false": False,
             }[filter_val]
-            qs = qs.filter(looking_for_partner=looking_for_partner)
+            qs = qs.filter(partner__isnull=looking_for_partner)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -78,6 +78,7 @@ class PlayerDetailView(ShowSomeHandsDetailView):
     model = Player
     template_name = "player_detail.html"
 
+    # TODO -- see if this is really necessary
     def get_context_data(self, **kwargs):
         original_context = super().get_context_data(**kwargs)
         return (

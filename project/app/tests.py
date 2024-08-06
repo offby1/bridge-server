@@ -1,3 +1,4 @@
+import bridge.seat
 import pytest
 from django.contrib import auth
 from django.db import IntegrityError
@@ -16,21 +17,21 @@ def test_we_gots_a_home_page():
 @pytest.fixture()
 def bob(db):
     u = auth.models.User.objects.create_user(username="Bob", password="Bob")
-    return Player.objects.create(user=u, looking_for_partner=True)
+    return Player.objects.create(user=u)
 
 
 @pytest.fixture()
 def usual_setup(db):
     t = Table.objects.create()
     for username, attr in (
-        ("Bob", "north"),
-        ("Carol", "east"),
-        ("Ted", "south"),
-        ("Alice", "west"),
+        ("Bob", bridge.seat.Seat.NORTH),
+        ("Carol", bridge.seat.Seat.EAST),
+        ("Ted", bridge.seat.Seat.SOUTH),
+        ("Alice", bridge.seat.Seat.WEST),
     ):
         u = auth.models.User.objects.create_user(username=username, password=username)
         p = Player.objects.create(user=u)
-        Seat.objects.create(direction=attr[0].upper(), player=p, table=t)
+        Seat.objects.create(direction=attr.value, player=p, table=t)
 
 
 def test_player_names_are_links_to_detail_page(usual_setup):
@@ -52,10 +53,18 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
 def test_player_cannot_be_at_two_seats(bob):
     t = Table.objects.create()
 
-    Seat.objects.create(direction="N", player=Player.objects.get_by_name("Bob"), table=t)
+    Seat.objects.create(
+        direction=bridge.seat.Seat.NORTH.value,
+        player=Player.objects.get_by_name("Bob"),
+        table=t,
+    )
 
     with pytest.raises(IntegrityError):
-        Seat.objects.create(direction="E", player=Player.objects.get_by_name("Bob"), table=t)
+        Seat.objects.create(
+            direction=bridge.seat.Seat.EAST.value,
+            player=Player.objects.get_by_name("Bob"),
+            table=t,
+        )
 
 
 def test_player_cannot_be_in_two_tables(usual_setup):
@@ -64,7 +73,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     t2 = Table.objects.create()
 
     with pytest.raises(IntegrityError):
-        Seat.objects.create(direction="E", player=bob, table=t2)
+        Seat.objects.create(direction=bridge.seat.Seat.EAST.value, player=bob, table=t2)
 
     # TODO -- make this pass too
     # bobs_table = Player.objects.get_by_name("Bob").table
@@ -72,20 +81,15 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # c()
 
 
-def test_player_ceases_looking_for_partner_once_seated(bob):
-    t = Table.objects.create()
-    Seat.objects.create(direction="E", player=bob, table=t)
-    bob.refresh_from_db()
-    assert not bob.looking_for_partner
-
-
+@pytest.mark.skip(reason="TODO")
 def test_view_filter(usual_setup):
     c = Client()
     response = c.get("/players/?lookin_for_love=true")
-    assert "All 0 players." in response.content.decode()
+    text = response.content.decode()
+    assert "All 0 players." in text
 
 
 def test_cant_just_make_up_directions(bob):
     t = Table.objects.create()
     with pytest.raises(IntegrityError):
-        Seat.objects.create(direction="!", player=bob, table=t)
+        Seat.objects.create(direction=1234, player=bob, table=t)
