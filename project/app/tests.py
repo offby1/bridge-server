@@ -1,5 +1,6 @@
 import pytest
 from django.contrib import auth
+from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
 
@@ -115,3 +116,9 @@ def test_view_filter(usual_setup):
     c = Client()
     response = c.get("/players/?lookin_for_love=true")
     assert "All 0 players." in response.content.decode()
+
+
+def test_pop_twice(db):
+    call_command("generate_fake_data")
+    call_command("generate_fake_data")
+    assert "cat" == "dog"
