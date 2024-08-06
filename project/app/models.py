@@ -90,12 +90,58 @@ admin.site.register(Table)
 SEAT_CHOICES = {v.value: k for k, v in bridge.seat.Seat.__members__.items()}
 
 
+class SeatException(Exception):
+    pass
+
+
 class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES,
     )
     player = models.OneToOneField(Player, null=True, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
+
+    def partner_with(self, other):
+        if self.player is None:
+            raise SeatException(
+                f"Cannot partner {self=} with {other=} because {self.player=} is None",
+            )
+
+        if other.player is None:
+            raise SeatException(
+                f"Cannot partner {self=} with {other=} because {other.player=} is None",
+            )
+
+        if self.player.partner is not None:
+            raise SeatException(
+                f"Cannot partner {self=} with {other=} because {self.player.partner=} is already partnered up",
+            )
+        if other.player.partner is not None:
+            raise SeatException(
+                f"Cannot partner {self=} with {other=} because {other.player.partner=} is already partnered up",
+            )
+
+        self.player.partner = other.player
+        self.player.save()
+        other.player.partner = self.player
+        other.player.save()
+
+    def library_object_thingy(self):
+        return bridge.seat.Seat(self.direction)
+
+    def save(self, *args, **kwargs):
+        lot = self.library_object_thingy()
+
+        partner_direction = lot.partner()
+        partner_seat = Seat.objects.filter(
+            direction=partner_direction.value,
+            table=self.table,
+        ).first()
+
+        if partner_seat is not None:
+            self.partner_with(partner_seat)
+
+        super().save(*args, **kwargs)
 
     class Meta:
         constraints = [

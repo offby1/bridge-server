@@ -81,7 +81,6 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # c()
 
 
-@pytest.mark.skip(reason="TODO")
 def test_view_filter(usual_setup):
     c = Client()
     response = c.get("/players/?lookin_for_love=true")
@@ -91,5 +90,7 @@ def test_view_filter(usual_setup):
 
 def test_cant_just_make_up_directions(bob):
     t = Table.objects.create()
-    with pytest.raises(IntegrityError):
+    with pytest.raises(Exception) as e:
         Seat.objects.create(direction=1234, player=bob, table=t)
+
+    assert "not a valid Seat" in str(e.value)

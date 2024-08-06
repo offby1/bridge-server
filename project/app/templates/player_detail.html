@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 
-Player {{ object }} {% if looking_for_partner %}is{% else %}is not{% endif %} looking for a partner.
+{% if looking_for_partner %}
+Player {{ object }} is looking for a partner.
+{% else %}
+Player {{ object }} is partnered with {{ object.partner.as_link }}.
+{% endif %}
 <br/>
 {% if table %}
 {{ table.as_link }}
