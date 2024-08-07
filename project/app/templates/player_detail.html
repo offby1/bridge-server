@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
 
-{% if looking_for_partner %}
-Player {{ object }} is looking for a partner.
+{% if user.player == object %}
+You are
 {% else %}
-Player {{ object }} is partnered with {{ object.partner.as_link }}.
+Player {{ object }} is
+{% endif %}
+
+{% if looking_for_partner %}
+looking for a partner.
+{% if user.player.looking_for_partner and user.player != object %}
+Oh! I am too!
+TODO: include a "ME ME ME PICK ME" button.
+{% endif %}
+{% else %}
+is partnered with {{ object.partner.as_link }}.
 {% endif %}
 <br/>
 {% if table %}
 {{ table.as_link }}
 {% else %}
-They are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+
+{% if user.player == object %}
+You
+{% else %}
+They
+{% endif %}
+
+are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+
 {% endif %}
 {% endblock content %}
