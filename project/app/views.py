@@ -49,6 +49,7 @@ class PlayerListView(ListView, FormView):
 
     def get_queryset(self):
         qs = self.model.objects.all()
+        total_count = qs.count()
 
         filter_val = self.request.GET.get("lookin_for_love")
 
@@ -61,6 +62,8 @@ class PlayerListView(ListView, FormView):
                 "false": False,
             }[filter_val]
             qs = qs.filter(partner__isnull=looking_for_partner)
+        filtered_count = qs.count()
+        self.extra_crap = dict(total_count=total_count, filtered_count=filtered_count)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -68,7 +71,8 @@ class PlayerListView(ListView, FormView):
         context[self.submit_button_label] = self.request.GET.get(
             self.submit_button_label,
             None,
-        )  # I bet this isn't necessary
+        )
+        context["extra_crap"] = self.extra_crap
         return context
 
 

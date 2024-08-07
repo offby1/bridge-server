@@ -1,3 +1,5 @@
+import re
+
 import bridge.seat
 import pytest
 from django.contrib import auth
@@ -6,6 +8,7 @@ from django.test import Client
 from django.urls import reverse
 
 from .models import Player, Seat, Table
+from .views import player_list_view
 
 
 def test_we_gots_a_home_page():
@@ -81,11 +84,12 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # c()
 
 
-def test_view_filter(usual_setup):
-    c = Client()
-    response = c.get("/players/?lookin_for_love=true")
+def test_view_filter(usual_setup, rf):
+    request = rf.post("/players/", data=dict(lookin_for_love=True))
+    response = player_list_view(request)
     text = response.content.decode()
-    assert "All 0 players." in text
+
+    assert re.search(r"0 / 4\s+players\.", text)
 
 
 def test_cant_just_make_up_directions(bob):

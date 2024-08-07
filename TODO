@@ -1,0 +1,4 @@
+* the "lookin' for love" dropdown is always set to "unknown" when the page loads, even if a filter is in effect.
+  E.g. <http://localhost:8000/players/?&lookin_for_love=true> correctly displays only partner-ess players, but the dropdown shows "Unknown" when it should show "yes".
+
+  I dimly recall that with forms, the thing to do is ensure that, when we render the form, if we're a POST and thus the form on the referring page was populated, we need to pre-populate *this* form with *that* data.
