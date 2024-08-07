@@ -1,5 +1,7 @@
 STILL TODO:
 
+* the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
+
 DONE:
 
 * the "lookin' for love" dropdown is always set to "unknown" when the page loads, even if a filter is in effect.
