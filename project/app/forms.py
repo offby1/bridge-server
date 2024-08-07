@@ -33,4 +33,5 @@ class LookingForLoveForm(forms.Form):
         choices={True: "yes", False: "no", None: "don't care"},
         label="Lookin' for love?",
         required=False,
+        widget=forms.RadioSelect,
     )
