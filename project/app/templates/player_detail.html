@@ -7,7 +7,7 @@ You are
 Player {{ object }} is
 {% endif %}
 
-{% if looking_for_partner %}
+{% if object.looking_for_partner %}
 looking for a partner.
 {% if user.player.looking_for_partner and user.player != object %}
 Oh! I am too!
@@ -17,8 +17,8 @@ TODO: include a "ME ME ME PICK ME" button.
 is partnered with {{ object.partner.as_link }}.
 {% endif %}
 <br/>
-{% if table %}
-{{ table.as_link }}
+{% if object.table %}
+{{ object.table.as_link }}
 {% else %}
 
 {% if user.player == object %}

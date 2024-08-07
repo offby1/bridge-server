@@ -76,16 +76,6 @@ class PlayerDetailView(ShowSomeHandsDetailView):
     model = Player
     template_name = "player_detail.html"
 
-    # TODO -- see if this is really necessary
-    def get_context_data(self, **kwargs):
-        original_context = super().get_context_data(**kwargs)
-        return (
-            dict(
-                table=self.object.table,
-                looking_for_partner=self.object.looking_for_partner,
-            )
-            | original_context
-        )
 
 
 class TableListView(ListView):
