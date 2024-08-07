@@ -1,12 +1,13 @@
 from operator import attrgetter
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.views.generic import FormView, ListView
-from django.views.generic.detail import DetailView
+from django.views.generic import DetailView, FormView, ListView
+from django.views.generic.detail import SingleObjectMixin
 
-from .forms import LookingForLoveForm, SignupForm
+from .forms import LookingForLoveForm, PartnerMeUpForm, SignupForm
 from .models import Player, Table
 
 # Create your views here.
@@ -28,17 +29,6 @@ def lobby(request):
             "lobby": sorted(lobby_players, key=attrgetter("user.username")),
         },
     )
-
-
-class ShowSomeHandsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    def get_context_data(self, **kwargs):
-        original_context = super().get_context_data(**kwargs)
-        return dict(show_cards_for=[self.request.user.username]) | original_context
-
-    def test_func(self):
-        player = Player.objects.filter(user__username=self.request.user.username).first()
-        # This will show a "403 forbidden" to the admin, since I'm too lazy to think of anything better.
-        return player is not None
 
 
 def player_list_view(request):
@@ -70,12 +60,46 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
-# See https://docs.djangoproject.com/en/5.0/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin for an
-# alternative
-class PlayerDetailView(ShowSomeHandsDetailView):
+class ShowSomeHandsMixin(LoginRequiredMixin, UserPassesTestMixin, SingleObjectMixin):
+    def get_context_data(self, **kwargs):
+        self.object = self.get_object()
+        original_context = super().get_context_data(**kwargs)
+        return dict(show_cards_for=[self.request.user.username]) | original_context
+
+    def test_func(self):
+        player = Player.objects.filter(user__username=self.request.user.username).first()
+        # This will show a "403 forbidden" to the admin, since I'm too lazy to think of anything better.
+        return player is not None
+
+
+class PlayerDetailView(ShowSomeHandsMixin, FormView):
     model = Player
     template_name = "player_detail.html"
 
+    def form_valid(self, form):
+        print(f"{form=}")
+        print(f"{form.cleaned_data=}")
+        targets = [form.cleaned_data.get("me"), form.cleaned_data.get("them")]
+        if targets:
+            me = self.model.objects.get(pk=form.cleaned_data.get("me"))
+            them = self.model.objects.get(pk=form.cleaned_data.get("them"))
+            me.partner = them
+            me.save()
+            them.partner = me
+            them.save()
+            print(f"Partner {me=} with {them=}")
+        else:
+            print("uhh?")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("app:player", kwargs=self.kwargs)
+
+    def get_form(self):
+        initial_data = {"me": self.request.user.player.id, "them": self.get_object().id}
+        print(f"{initial_data=}")
+        rv = PartnerMeUpForm(initial_data)
+        return rv
 
 
 class TableListView(ListView):
@@ -83,7 +107,7 @@ class TableListView(ListView):
     template_name = "table_list.html"
 
 
-class TableDetailView(ShowSomeHandsDetailView):
+class TableDetailView(ShowSomeHandsMixin, DetailView):
     model = Table
     template_name = "table_detail.html"
 

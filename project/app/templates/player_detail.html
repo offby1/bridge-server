@@ -11,7 +11,12 @@ Player {{ object }} is
 looking for a partner.
 {% if user.player.looking_for_partner and user.player != object %}
 Oh! I am too!
-TODO: include a "ME ME ME PICK ME" button.
+<form method="post" action="{% url 'app:player' object.id %}">
+{% csrf_token %}
+{{ form }}
+<input type="submit" value="Partner Me Up, Daddy-O">
+</form>
+
 {% endif %}
 {% else %}
 is partnered with {{ object.partner.as_link }}.

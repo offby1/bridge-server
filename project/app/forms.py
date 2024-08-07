@@ -35,3 +35,8 @@ class LookingForLoveForm(forms.Form):
         required=False,
         widget=forms.RadioSelect,
     )
+
+
+class PartnerMeUpForm(forms.Form):
+    me = forms.IntegerField()
+    them = forms.IntegerField()
