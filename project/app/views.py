@@ -41,39 +41,33 @@ class ShowSomeHandsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
         return player is not None
 
 
-class PlayerListView(ListView, FormView):
+def player_list_view(request):
     model = Player
     template_name = "player_list.html"
-    submit_button_label = "filter"
     form_class = LookingForLoveForm
 
-    def get_queryset(self):
-        qs = self.model.objects.all()
-        total_count = qs.count()
+    context = {}
 
-        filter_val = self.request.GET.get("lookin_for_love")
+    qs = model.objects.all()
+    total_count = qs.count()
 
-        # TODO -- there's gotta be a better way
-        if filter_val not in (None, "unknown"):
-            looking_for_partner = {
-                "Yes": True,
-                "true": True,
-                "No": False,
-                "false": False,
-            }[filter_val]
-            qs = qs.filter(partner__isnull=looking_for_partner)
+    if request.method == "POST":
+        form = form_class(request.POST)
+        form.full_clean()
+        filter_val = form.cleaned_data.get("lookin_for_love")
+        filter_val = {"True": True, "False": False}.get(filter_val)
+
+        if filter_val is not None:
+            qs = qs.filter(partner__isnull=filter_val)
         filtered_count = qs.count()
-        self.extra_crap = dict(total_count=total_count, filtered_count=filtered_count)
-        return qs
+        context["extra_crap"] = dict(total_count=total_count, filtered_count=filtered_count)
+    else:
+        form = form_class()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context[self.submit_button_label] = self.request.GET.get(
-            self.submit_button_label,
-            None,
-        )
-        context["extra_crap"] = self.extra_crap
-        return context
+    context["form"] = form
+    context["player_list"] = qs
+
+    return render(request, template_name, context)
 
 
 # See https://docs.djangoproject.com/en/5.0/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin for an

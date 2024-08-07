@@ -29,8 +29,8 @@ class SignupForm(forms.Form):
 
 
 class LookingForLoveForm(forms.Form):
-    lookin_for_love = forms.BooleanField(
-        required=False,
+    lookin_for_love = forms.ChoiceField(
+        choices={True: "yes", False: "no", None: "don't care"},
         label="Lookin' for love?",
-        widget=forms.NullBooleanSelect,
+        required=False,
     )

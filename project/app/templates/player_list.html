@@ -18,7 +18,7 @@ players.
 </ul>
 
 <div>
-<form method="get" action="{% url 'app:players' %}">
+<form method="post" action="{% url 'app:players' %}">
 {% csrf_token %}
 {{ form }}
 <input type="submit" value="filter">
