@@ -37,6 +37,8 @@ class LookingForLoveForm(forms.Form):
     )
 
 
-class PartnerMeUpForm(forms.Form):
-    me = forms.IntegerField()
-    them = forms.IntegerField()
+# Does double-duty -- joins a partner, or breaks up with a partner.
+class PartnerForm(forms.Form):
+    me = forms.IntegerField(widget=forms.HiddenInput)
+    them = forms.IntegerField(widget=forms.HiddenInput)
+    action = forms.CharField(max_length=20, widget=forms.HiddenInput)

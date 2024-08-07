@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
-from .models import Player, Seat, Table
+from .models import Player, PlayerException, Seat, Table
 from .views import player_list_view
 
 
@@ -98,3 +98,24 @@ def test_cant_just_make_up_directions(bob):
         Seat.objects.create(direction=1234, player=bob, table=t)
 
     assert "not a valid Seat" in str(e.value)
+
+
+def test_breaking_up_is_hard_to_do(usual_setup):
+    Bob = Player.objects.get_by_name("Bob")
+    Carol = Player.objects.get_by_name("Carol")
+    Ted = Player.objects.get_by_name("Ted")
+    assert Bob.partner == Ted
+    assert Ted.partner == Bob
+
+    with pytest.raises(PlayerException) as e:
+        Bob.partner_with(Ted)
+    assert "Cannot partner" in str(e.value)
+
+    with pytest.raises(PlayerException):
+        Bob.partner_with(Carol)
+
+    Bob.break_partnership()
+    Bob.refresh_from_db()
+    Ted.refresh_from_db()
+    assert Bob.partner is None
+    assert Ted.partner is None

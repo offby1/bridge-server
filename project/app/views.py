@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.generic import DetailView, FormView, ListView
 from django.views.generic.detail import SingleObjectMixin
 
-from .forms import LookingForLoveForm, PartnerMeUpForm, SignupForm
+from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import Player, Table
 
 # Create your views here.
@@ -77,29 +77,28 @@ class PlayerDetailView(ShowSomeHandsMixin, FormView):
     template_name = "player_detail.html"
 
     def form_valid(self, form):
-        print(f"{form=}")
-        print(f"{form.cleaned_data=}")
-        targets = [form.cleaned_data.get("me"), form.cleaned_data.get("them")]
-        if targets:
-            me = self.model.objects.get(pk=form.cleaned_data.get("me"))
-            them = self.model.objects.get(pk=form.cleaned_data.get("them"))
-            me.partner = them
-            me.save()
-            them.partner = me
-            them.save()
-            print(f"Partner {me=} with {them=}")
+        me = self.model.objects.get(pk=form.cleaned_data.get("me"))
+        them = self.model.objects.get(pk=form.cleaned_data.get("them"))
+        action = form.cleaned_data.get("action")
+        if action == "splitsville":
+            me.break_partnership()
         else:
-            print("uhh?")
+            me.partner_with(them)
+
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("app:player", kwargs=self.kwargs)
 
     def get_form(self):
-        initial_data = {"me": self.request.user.player.id, "them": self.get_object().id}
-        print(f"{initial_data=}")
-        rv = PartnerMeUpForm(initial_data)
-        return rv
+        initial_data = {
+            "me": self.request.user.player.id,
+            "them": self.get_object().id,
+            "action": "splitsville"
+            if self.request.user.player.partner is not None
+            else "partnerup",
+        }
+        return PartnerForm(initial_data)
 
 
 class TableListView(ListView):
