@@ -15,6 +15,10 @@ class PlayerException(Exception):
     pass
 
 
+class PartnerException(PlayerException):
+    pass
+
+
 class Player(models.Model):
     objects = PlayerManager()
 
@@ -32,11 +36,11 @@ class Player(models.Model):
     def partner_with(self, other):
         with transaction.atomic():
             if self.partner is not None:
-                raise PlayerException(
+                raise PartnerException(
                     f"Cannot partner with {other=} cuz I'm already partnered with {self.partner=}",
                 )
             if other.partner is not None:
-                raise PlayerException(
+                raise PartnerException(
                     f"Cannot partner {other=} with {self=} cuz they are already partnered with {other.partner=}",
                 )
 
@@ -48,12 +52,12 @@ class Player(models.Model):
     def break_partnership(self):
         with transaction.atomic():
             if self.partner is None:
-                raise PlayerException(
+                raise PartnerException(
                     "Cannot break up with partner 'cuz we don't *have* a partner",
                 )
 
             if self.partner.partner is None:
-                raise PlayerException(
+                raise PartnerException(
                     "Oh shit -- our partner doesn't have a partner",
                 )
 

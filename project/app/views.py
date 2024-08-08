@@ -1,14 +1,15 @@
 from operator import attrgetter
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import DetailView, FormView, ListView
 from django.views.generic.detail import SingleObjectMixin
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
-from .models import Player, Table
+from .models import PartnerException, Player, Table
 
 # Create your views here.
 
@@ -82,12 +83,13 @@ class PlayerDetailView(ShowSomeHandsMixin, FormView):
         me = self.model.objects.get(pk=form.cleaned_data.get("me"))
         them = self.model.objects.get(pk=form.cleaned_data.get("them"))
         action = form.cleaned_data.get("action")
-        if action == self.split:
-            me.break_partnership()
-        elif action == self.join:
-            me.partner_with(them)
-        else:
-            raise Exception(f"OK, I have no idea what's going on -- wtf is {action=}?")
+        try:
+            if action == self.split:
+                me.break_partnership()
+            elif action == self.join:
+                me.partner_with(them)
+        except PartnerException as e:
+            messages.add_message(self.request, messages.INFO, str(e))
 
         return HttpResponseRedirect(self.get_success_url())
 
