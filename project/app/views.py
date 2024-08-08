@@ -75,15 +75,19 @@ class ShowSomeHandsMixin(LoginRequiredMixin, UserPassesTestMixin, SingleObjectMi
 class PlayerDetailView(ShowSomeHandsMixin, FormView):
     model = Player
     template_name = "player_detail.html"
+    join = "partnerup"
+    split = "splitsville"
 
     def form_valid(self, form):
         me = self.model.objects.get(pk=form.cleaned_data.get("me"))
         them = self.model.objects.get(pk=form.cleaned_data.get("them"))
         action = form.cleaned_data.get("action")
-        if action == "splitsville":
+        if action == self.split:
             me.break_partnership()
-        else:
+        elif action == self.join:
             me.partner_with(them)
+        else:
+            raise Exception(f"OK, I have no idea what's going on -- wtf is {action=}?")
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -94,9 +98,7 @@ class PlayerDetailView(ShowSomeHandsMixin, FormView):
         initial_data = {
             "me": self.request.user.player.id,
             "them": self.get_object().id,
-            "action": "splitsville"
-            if self.request.user.player.partner is not None
-            else "partnerup",
+            "action": self.split if self.request.user.player.partner is not None else self.join,
         }
         return PartnerForm(initial_data)
 

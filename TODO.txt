@@ -2,6 +2,19 @@ STILL TODO:
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
+* investigate partner weirdness.
+
+  - create two unpartnered players -- `just drop pop --tables=0 --players=2` seems to work
+  - log in as player 1
+  - go to /player/2/; you'll see "Partner Me Up, Daddy-O"
+  - duplicate that page.
+  - click the button on one of the pages.  It updates appropriately: the button goes away, and it says "Alice is partnered with Bob" or whatever.
+  - go to the other page.  Click its button.  You *should* see either the same "Alice is partnered with Bob" page, or even some sort of exception; but instead it just stays as is.
+  - reloading the pages sometimes does nothing, sometimes "fixes" them (i.e., shows what I'd expected)
+  - no interesting output in either the Unix console or the JS console
+  - only clue: browser's developer tools show the POST data as
+    `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
+
 DONE:
 
 * the "lookin' for love" dropdown is always set to "unknown" when the page loads, even if a filter is in effect.
