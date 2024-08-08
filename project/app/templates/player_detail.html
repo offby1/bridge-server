@@ -16,18 +16,16 @@ Oh! I am too!
 {% csrf_token %}
 {{ form }}
 <input type="submit" value="Partner Me Up, Daddy-O">
-<input type="hidden" name="action" value="partnerup">
 </form>
 
 {% endif %}
 {% else %}
 partnered with {{ object.partner.as_link }}.
-{% if not user.player.looking_for_partner and user.player == object %}
+{% if not user.player.looking_for_partner and user.player.partner == object %}
 <form method="post" action="{% url 'app:player' object.id %}">
 {% csrf_token %}
 {{ form }}
 <input type="submit" value="Splitsville">
-<input type="hidden" name="action" value="breakup">
 </form>
 {% endif %}
 {% endif %}

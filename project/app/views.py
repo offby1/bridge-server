@@ -95,12 +95,16 @@ class PlayerDetailView(ShowSomeHandsMixin, FormView):
         return reverse("app:player", kwargs=self.kwargs)
 
     def get_form(self):
-        initial_data = {
-            "me": self.request.user.player.id,
-            "them": self.get_object().id,
-            "action": self.split if self.request.user.player.partner is not None else self.join,
-        }
-        return PartnerForm(initial_data)
+        if self.request.method == "GET":
+            return PartnerForm({
+                "me": self.request.user.player.id,
+                "them": self.get_object().id,
+                "action": self.split if self.request.user.player.partner is not None else self.join,
+            })
+        elif self.request.method == "POST":
+            return PartnerForm(self.request.POST)
+        else:
+            raise Exception("wtf")
 
 
 class TableListView(ListView):
