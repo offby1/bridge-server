@@ -107,9 +107,8 @@ def test_breaking_up_is_hard_to_do(usual_setup):
     assert Bob.partner == Ted
     assert Ted.partner == Bob
 
-    with pytest.raises(PlayerException) as e:
-        Bob.partner_with(Ted)
-    assert "Cannot partner" in str(e.value)
+    # No exception because Bob is already partnered with Ted, so an exception would serve no purpose.
+    Bob.partner_with(Ted)
 
     with pytest.raises(PlayerException):
         Bob.partner_with(Carol)

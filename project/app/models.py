@@ -35,11 +35,11 @@ class Player(models.Model):
 
     def partner_with(self, other):
         with transaction.atomic():
-            if self.partner is not None:
+            if self.partner not in (None, other):
                 raise PartnerException(
                     f"Cannot partner with {other=} cuz I'm already partnered with {self.partner=}",
                 )
-            if other.partner is not None:
+            if other.partner not in (None, self):
                 raise PartnerException(
                     f"Cannot partner {other=} with {self=} cuz they are already partnered with {other.partner=}",
                 )
@@ -177,7 +177,7 @@ class Seat(models.Model):
             table=self.table,
         ).first()
 
-        if partner_seat is not None:
+        if self.player is not None and partner_seat is not None and partner_seat.player is not None:
             self.partner_with(partner_seat)
 
         super().save(*args, **kwargs)
