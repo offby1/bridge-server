@@ -5,10 +5,10 @@
 OK so like here's the complete table, Yo:
 
 <ul>
-{% for direction, player in table.players_by_direction.items %}
+{% for direction, player in table.as_tuples %}
 
 <li>
-{{ direction }}:
+{{ direction|title }}:
 {% if player.user.username in show_cards_for  %}
 {{ player.as_link }} TODO: No cards yet, sorry
 {% else %}

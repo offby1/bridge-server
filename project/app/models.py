@@ -119,11 +119,14 @@ class Table(models.Model):
         return format_html(
             "<a href='{}'>{}</a>",
             reverse("app:table-detail", kwargs=dict(pk=self.pk)),
-            str(self),
+            str(self).title(),
         )
 
+    def as_tuples(self):
+        return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction().items()]
+
     def __str__(self):
-        return ", ".join([f"{d}: {p}" for d, p in self.players_by_direction().items()])
+        return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
 
 
 admin.site.register(Table)
