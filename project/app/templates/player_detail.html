@@ -3,11 +3,14 @@
 
 {# "user" is whoever is logged in. "object" is the player whose details we're examining. #}
 {% if user.player == object %}
-You are
+<span style="font-size: xx-large; color:green">
+{{ object|title }}</span> (that's you!)
 {% else %}
-{{ object|title }} is
+<span style="font-size: xx-large">
+{{ object|title }}</span>
 {% endif %}
 
+is
 {% if object.looking_for_partner %}
 looking for a partner.
 {% if user.player.looking_for_partner and user.player != object %}
