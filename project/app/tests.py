@@ -119,3 +119,35 @@ def test_breaking_up_is_hard_to_do(usual_setup):
     Ted.refresh_from_db()
     assert Bob.partner is None
     assert Ted.partner is None
+
+
+def test_multiple_windows_out_of_sync(db):
+    Player.objects.create(
+        user=auth.models.User.objects.create_user(username="bob", password="bob"),
+    )
+    Player.objects.create(
+        user=auth.models.User.objects.create_user(username="kat", password="kat"),
+    )
+
+    client_1 = Client()
+    client_1.login(username="bob", password="bob")
+
+    client_2 = Client()
+    client_2.login(username="bob", password="bob")
+
+    response = client_1.post(
+        "/player/2/",
+        data=dict(me=1, them=2, action="partnerup"),
+        follow=True,
+    )
+
+    form = response.context["form"]
+    assert form.data["action"] == "splitsville"
+
+    response = client_2.post(
+        "/player/2/",
+        data=dict(me=1, them=2, action="partnerup"),
+        follow=True,
+    )
+    form = response.context["form"]
+    assert form.data["action"] == "splitsville"
