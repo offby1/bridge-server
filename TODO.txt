@@ -2,6 +2,10 @@ STILL TODO:
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
+* paginate the player and table lists
+
+* figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
+
 DONE:
 
 * the "lookin' for love" dropdown is always set to "unknown" when the page loads, even if a filter is in effect.
