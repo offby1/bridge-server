@@ -1,5 +1,7 @@
 STILL TODO:
 
+* Write my own `@logged_in_as_player_required` decorator, that is like `@login_required`, but checks that there is a corresponding Player object, and redirects with an error message.
+
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
 * paginate the player and table lists

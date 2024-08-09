@@ -1,26 +1,38 @@
+import functools
 from operator import attrgetter
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.views.generic import FormView
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import PartnerException, Player, Table
 
-# Create your views here.
+
+def logged_in_as_player_required(view_function):
+    @functools.wraps(view_function)
+    def non_players_piss_off(request, *args, **kwargs):
+        player = Player.objects.filter(user__username=request.user.username).first()
+        if player is None:
+            messages.add_message(
+                request,
+                messages.INFO,
+                f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
+            )
+            return HttpResponseRedirect(reverse("app:home"))
+
+        return view_function(request, *args, **kwargs)
+
+    return login_required(non_players_piss_off)
 
 
 def home(request):
     return render(request, "home.html")
 
 
-# TODO -- use a class-based view
-# ... or maybe not :-)
-# https://spookylukey.github.io/django-views-the-right-way/the-pattern.html
 def lobby(request):
     # TODO -- have the db do this for us, somehow
     lobby_players = [p for p in Player.objects.all() if not p.is_seated]
@@ -63,6 +75,7 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
+@logged_in_as_player_required
 def player_detail_view(request, pk):
     JOIN = "partnerup"
     SPLIT = "splitsville"
@@ -74,10 +87,7 @@ def player_detail_view(request, pk):
         "me": me,
     }
 
-    if not logged_in_user_is_a_playa(request):
-        return TemplateResponse(request, "player_detail.html", context=context)
-
-    context["show_cards_for"]: [request.user.username]
+    context["show_cards_for"] = [request.user.username]
 
     if request.method == "GET":
         form = PartnerForm({
@@ -117,19 +127,9 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def logged_in_user_is_a_playa(request):
-    player = Player.objects.filter(user__username=request.user.username).first()
-    return player is not None
-
-
-@login_required
+@logged_in_as_player_required
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
-    if not logged_in_user_is_a_playa(request):
-        return HttpResponseForbidden(
-            # hmm, this text doesn't appear in the page; and the server spews a big ol' stack trace
-            f"Naw, {request.user.username} isn't allowed to see it",
-        )
 
     context = {
         "table": table,
@@ -142,17 +142,29 @@ def table_detail_view(request, pk):
 # TODO -- investigate https://docs.allauth.org/en/latest/mfa/introduction.html as a better way of signing up and
 # authenticating
 def signup_view(request):
+    def start_over_with_message(message):
+        messages.add_message(
+            request,
+            messages.INFO,
+            message,
+        )
+        context["form"] = SignupForm()
+        return TemplateResponse(request, "signup.html", context=context)
+
     context = {}
     if request.method == "GET":
-        context["form"] = SignupForm
+        context["form"] = SignupForm()
         return TemplateResponse(request, "signup.html", context=context)
     elif request.method == "POST":
         form = SignupForm(request.POST)
         if not form.is_valid():
-            # TODO -- use messages
-            return HttpResponse(f"Something's rotten in the state of {form.errors=}")
+            # TODO -- isn't there some fancy way to tart up the form with the errors?
+            return start_over_with_message(f"Something's rotten in the state of {form.errors=}")
 
-        # TODO -- catch UniqueConstraint failure, in case bob signs up again, as bob
-        # Or maybe change the user's password, I guess
-        form.create_user()
+        # TODO: if it's a UNIQUE constraint failure, change the user's password
+        try:
+            form.create_user()
+        except Exception as e:
+            return start_over_with_message(str(e))
+
         return HttpResponseRedirect(reverse("login"))
