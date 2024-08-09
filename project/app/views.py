@@ -141,13 +141,18 @@ def table_detail_view(request, pk):
 
 # TODO -- investigate https://docs.allauth.org/en/latest/mfa/introduction.html as a better way of signing up and
 # authenticating
-class SignupView(FormView):
-    template_name = "signup.html"
-    form_class = SignupForm
+def signup_view(request):
+    context = {}
+    if request.method == "GET":
+        context["form"] = SignupForm
+        return TemplateResponse(request, "signup.html", context=context)
+    elif request.method == "POST":
+        form = SignupForm(request.POST)
+        if not form.is_valid():
+            # TODO -- use messages
+            return HttpResponse(f"Something's rotten in the state of {form.errors=}")
 
-    def get_success_url(self):
-        return reverse("login")
-
-    def form_valid(self, form):
+        # TODO -- catch UniqueConstraint failure, in case bob signs up again, as bob
+        # Or maybe change the user's password, I guess
         form.create_user()
-        return super().form_valid(form)
+        return HttpResponseRedirect(reverse("login"))
