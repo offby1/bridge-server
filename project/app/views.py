@@ -1,12 +1,12 @@
 from operator import attrgetter
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.views.generic import DetailView, FormView, ListView
-from django.views.generic.detail import SingleObjectMixin
+from django.views.generic import FormView
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import PartnerException, Player, Table
@@ -63,62 +63,80 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
-class ShowSomeHandsMixin(LoginRequiredMixin, UserPassesTestMixin, SingleObjectMixin):
-    def get_context_data(self, **kwargs):
-        self.object = self.get_object()
-        original_context = super().get_context_data(**kwargs)
-        return dict(show_cards_for=[self.request.user.username]) | original_context
+def player_detail_view(request, pk):
+    JOIN = "partnerup"
+    SPLIT = "splitsville"
 
-    def test_func(self):
-        player = Player.objects.filter(user__username=self.request.user.username).first()
-        # This will show a "403 forbidden" to the admin, since I'm too lazy to think of anything better.
-        return player is not None
+    player = get_object_or_404(Player, pk=pk)
+    context = {
+        "object": player,
+        "player": player,
+        "user": request.user,
+    }
 
+    if not logged_in_user_is_a_playa(request):
+        return TemplateResponse(request, "player_detail.html", context=context)
 
-class PlayerDetailView(ShowSomeHandsMixin, FormView):
-    model = Player
-    template_name = "player_detail.html"
-    join = "partnerup"
-    split = "splitsville"
+    context["show_cards_for"]: [request.user.username]
 
-    def form_valid(self, form):
-        me = self.model.objects.get(pk=form.cleaned_data.get("me"))
-        them = self.model.objects.get(pk=form.cleaned_data.get("them"))
+    if request.method == "GET":
+        form = PartnerForm({
+            "me": request.user.player.id,
+            "them": pk,
+            "action": SPLIT if request.user.player.partner is not None else JOIN,
+        })
+        context["form"] = form
+    elif request.method == "POST":
+        form = PartnerForm(request.POST)
+
+        if not form.is_valid():
+            return HttpResponse(f"Something's rotten in the state of {form.errors=}")
+        me = Player.objects.get(pk=form.cleaned_data.get("me"))
+        them = Player.objects.get(pk=form.cleaned_data.get("them"))
         action = form.cleaned_data.get("action")
         try:
-            if action == self.split:
+            if action == SPLIT:
                 me.break_partnership()
-            elif action == self.join:
+            elif action == JOIN:
                 me.partner_with(them)
         except PartnerException as e:
-            messages.add_message(self.request, messages.INFO, str(e))
+            messages.add_message(request, messages.INFO, str(e))
 
-        return HttpResponseRedirect(self.get_success_url())
+        return HttpResponseRedirect(reverse("app:player", kwargs=dict(pk=pk)))
+    else:
+        raise Exception("wtf")
 
-    def get_success_url(self):
-        return reverse("app:player", kwargs=self.kwargs)
-
-    def get_form(self):
-        if self.request.method == "GET":
-            return PartnerForm({
-                "me": self.request.user.player.id,
-                "them": self.get_object().id,
-                "action": self.split if self.request.user.player.partner is not None else self.join,
-            })
-        elif self.request.method == "POST":
-            return PartnerForm(self.request.POST)
-        else:
-            raise Exception("wtf")
+    return TemplateResponse(request, "player_detail.html", context=context)
 
 
-class TableListView(ListView):
-    model = Table
-    template_name = "table_list.html"
+def table_list_view(request):
+    context = {
+        "table_list": Table.objects.all(),
+    }
+
+    return TemplateResponse(request, "table_list.html", context=context)
 
 
-class TableDetailView(ShowSomeHandsMixin, DetailView):
-    model = Table
-    template_name = "table_detail.html"
+def logged_in_user_is_a_playa(request):
+    player = Player.objects.filter(user__username=request.user.username).first()
+    return player is not None
+
+
+@login_required
+def table_detail_view(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+    if not logged_in_user_is_a_playa(request):
+        return HttpResponseForbidden(
+            # hmm, this text doesn't appear in the page; and the server spews a big ol' stack trace
+            f"Naw, {request.user.username} isn't allowed to see it",
+        )
+
+    context = {
+        "table": table,
+        "show_cards_for": [request.user.username],
+    }
+
+    return TemplateResponse(request, "table_detail.html", context=context)
 
 
 # TODO -- investigate https://docs.allauth.org/en/latest/mfa/introduction.html as a better way of signing up and
