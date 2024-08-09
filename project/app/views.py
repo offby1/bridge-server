@@ -22,7 +22,7 @@ def logged_in_as_player_required(view_function):
                 messages.INFO,
                 f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
             )
-            return HttpResponseRedirect(reverse("app:home"))
+            return HttpResponseRedirect(reverse("app:players"))
 
         return view_function(request, *args, **kwargs)
 

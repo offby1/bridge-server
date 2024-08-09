@@ -16,7 +16,7 @@
     </div>
     <div>
     {% if user.is_authenticated %}
-    Hello, {{ user.player.as_link }}.  <form method="post" action="{% url 'logout' %}">
+    Hello, {% if user.player %}{{ user.player.as_link }}{% else %}{{ user }}{% endif %}.  <form method="post" action="{% url 'logout' %}">
 {% csrf_token %}
 <input type="submit" value="logout">
 <input type="hidden" name="next" value="/">
