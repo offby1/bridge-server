@@ -68,10 +68,10 @@ def player_detail_view(request, pk):
     SPLIT = "splitsville"
 
     player = get_object_or_404(Player, pk=pk)
+    me = Player.objects.get_by_name(request.user.username)
     context = {
-        "object": player,
         "player": player,
-        "user": request.user,
+        "me": me,
     }
 
     if not logged_in_user_is_a_playa(request):

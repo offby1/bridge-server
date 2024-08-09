@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 
-{# "user" is whoever is logged in. "object" is the player whose details we're examining. #}
-{% if user.player == object %}
+{# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
+{% if me == player %}
 <span style="font-size: xx-large; color:green">
-{{ object|title }}</span> (that's you!)
+{{ player|title }}</span> (that's you!)
 {% else %}
 <span style="font-size: xx-large">
-{{ object|title }}</span>
+{{ player|title }}</span>
 {% endif %}
 
 is
-{% if object.looking_for_partner %}
+{% if player.looking_for_partner %}
 looking for a partner.
-{% if user.player.looking_for_partner and user.player != object %}
+{% if me.looking_for_partner and me != player %}
 Oh! I am too!
-<form method="post" action="{% url 'app:player' object.id %}">
+<form method="post" action="{% url 'app:player' player.id %}">
 {% csrf_token %}
 {{ form }}
 <input type="submit" value="Partner Me Up, Daddy-O">
@@ -23,9 +23,9 @@ Oh! I am too!
 
 {% endif %}
 {% else %}
-partnered with {{ object.partner.as_link }}.
-{% if not user.player.looking_for_partner and user.player.partner == object %}
-<form method="post" action="{% url 'app:player' object.id %}">
+partnered with {{ player.partner.as_link }}.
+{% if not me.looking_for_partner and me.partner == player %}
+<form method="post" action="{% url 'app:player' player.id %}">
 {% csrf_token %}
 {{ form }}
 <input type="submit" value="Splitsville">
@@ -33,11 +33,11 @@ partnered with {{ object.partner.as_link }}.
 {% endif %}
 {% endif %}
 <br/>
-{% if object.table %}
-{{ object.table.as_link }}
+{% if player.table %}
+{{ player.table.as_link }}
 {% else %}
 
-{% if user.player == object %}
+{% if me == player %}
 You
 {% else %}
 They
