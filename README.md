@@ -96,3 +96,5 @@ There's gotta be some django plugin that does this, eh?
 
 - Perhaps a combo of <https://github.com/fanout/django-eventstream> and <https://django-pgtrigger.readthedocs.io/en/4.11.1/>
   Lower-level, but perhaps (for that reason) easier to understand.
+
+- [htmx](https://htmx.org/server-examples/#django) says it does web-socket-y stuff too

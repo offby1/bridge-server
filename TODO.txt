@@ -3,8 +3,11 @@ STILL TODO:
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
 * paginate the player and table lists
+  <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example
 
 * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
+
+* Inspired by https://spookylukey.github.io/django-views-the-right-way/, convert some CBVs into function-based views.
 
 DONE:
 

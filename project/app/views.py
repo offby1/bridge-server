@@ -19,6 +19,8 @@ def home(request):
 
 
 # TODO -- use a class-based view
+# ... or maybe not :-)
+# https://spookylukey.github.io/django-views-the-right-way/the-pattern.html
 def lobby(request):
     # TODO -- have the db do this for us, somehow
     lobby_players = [p for p in Player.objects.all() if not p.is_seated]
