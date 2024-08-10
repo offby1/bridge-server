@@ -88,6 +88,7 @@ Anyhoo, I wish there were a reasonably-generic way for a given web page, whose d
 There's gotta be some django plugin that does this, eh?
 
 - <https://channels.readthedocs.io/en/latest/introduction.html> might be helpful here, although I bet it doesn't automatically handle the "the db just changed" stuff for me.
+  OTOH it seems to easily handle "send a message from server to browser once in a while"
 
 - <https://www.django-unicorn.com/> maybe.
   <https://www.django-unicorn.com/docs/#full-stack-framework-python-packages> lists a bunch of other projects.
@@ -98,3 +99,5 @@ There's gotta be some django plugin that does this, eh?
   Lower-level, but perhaps (for that reason) easier to understand.
 
 - [htmx](https://htmx.org/server-examples/#django) says it does web-socket-y stuff too
+
+- [sockpuppet](https://sockpuppet.argpar.se/) might but it looks awfully complex
