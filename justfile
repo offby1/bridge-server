@@ -83,3 +83,6 @@ drop:
 clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
+
+# Kill it all.  Kill it all, with fire.
+nuke: clean drop
