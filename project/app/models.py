@@ -197,7 +197,7 @@ class Seat(models.Model):
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_direction_valid",
-                check=models.Q(direction__in=SEAT_CHOICES),
+                condition=models.Q(direction__in=SEAT_CHOICES),
             ),
         ]
 
