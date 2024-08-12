@@ -185,6 +185,9 @@ class Seat(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"{SEAT_CHOICES[self.direction]} at {self.table=}"
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
