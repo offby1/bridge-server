@@ -33,7 +33,8 @@ class Table(models.Model):
         return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction().items()]
 
     def __str__(self):
-        return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
+        playaz = ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
+        return f"Table {self.id} ({playaz})"
 
 
 admin.site.register(Table)
