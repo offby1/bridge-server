@@ -27,7 +27,7 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
-    partner = models.ForeignKey("Player", null=True, on_delete=models.SET_NULL)
+    partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
     def looking_for_partner(self):
