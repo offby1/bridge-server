@@ -7,6 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django_eventstream import send_event
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import PartnerException, Player, Table
@@ -124,6 +125,7 @@ def table_list_view(request):
         "table_list": Table.objects.all(),
     }
 
+    send_event("test", "message", {"text": f"{request.user} just loaded the table_list_view"})
     return TemplateResponse(request, "table_list.html", context=context)
 
 
