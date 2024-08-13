@@ -1,15 +1,9 @@
 {% extends "base.html" %}
+{% load player_extras %}
 {% block content %}
 
 {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
-{% if me == player %}
-<span style="font-size: xx-large; color:green">
-{{ player|title }}</span> (that's you!)
-{% else %}
-<span style="font-size: xx-large">
-{{ player|title }}</span>
-{% endif %}
-
+{{ player | styled_link:me }}
 is
 {% if player.looking_for_partner %}
 looking for a partner.

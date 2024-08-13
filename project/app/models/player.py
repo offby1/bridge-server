@@ -82,9 +82,10 @@ class Player(models.Model):
     def name(self):
         return self.user.username
 
-    def as_link(self):
+    def as_link(self, style=""):
         return format_html(
-            "<a href='{}'>{}</a>",
+            "<a style='{}' href='{}'>{}</a>",
+            style,
             reverse("app:player", kwargs=dict(pk=self.pk)),
             str(self),
         )
