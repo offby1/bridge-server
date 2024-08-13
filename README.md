@@ -90,6 +90,8 @@ There's gotta be some django plugin that does this, eh?
 - <https://channels.readthedocs.io/en/latest/introduction.html> might be helpful here, although I bet it doesn't automatically handle the "the db just changed" stuff for me.
   OTOH it seems to easily handle "send a message from server to browser once in a while"
 
+- [another search site](https://djangopackages.org/search/?q=chat)
+
 - <https://www.django-unicorn.com/> maybe.
   <https://www.django-unicorn.com/docs/#full-stack-framework-python-packages> lists a bunch of other projects.
   I poked at this a little, and it seems likely that it'd solve my problem; but I wasn't able to figure out how.
