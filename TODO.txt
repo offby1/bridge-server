@@ -1,6 +1,6 @@
 STILL TODO:
 
-* Write my own `@logged_in_as_player_required` decorator, that is like `@login_required`, but checks that there is a corresponding Player object, and redirects with an error message.
+* when bob logs out, his name should vanish from the "lobby"
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
@@ -9,9 +9,14 @@ STILL TODO:
 
 * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
 
-* Inspired by https://spookylukey.github.io/django-views-the-right-way/, convert some CBVs into function-based views.
+* Provide a view or two that shows what a player has done in the past.
+  In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Inspired by https://spookylukey.github.io/django-views-the-right-way/, convert some CBVs into function-based views.
+
+* Write my own `@logged_in_as_player_required` decorator, that is like `@login_required`, but checks that there is a corresponding Player object, and redirects with an error message.
 
 * the "lookin' for love" dropdown is always set to "unknown" when the page loads, even if a filter is in effect.
   E.g. <http://localhost:8000/players/?&lookin_for_love=true> correctly displays only partner-ess players, but the dropdown shows "Unknown" when it should show "yes".
