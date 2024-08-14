@@ -2,6 +2,7 @@ import re
 
 import bridge.seat
 import pytest
+from asgiref.sync import async_to_sync
 from django.contrib import auth
 from django.db import IntegrityError
 from django.test import Client
@@ -150,3 +151,22 @@ def test_multiple_windows_out_of_sync(db):
     )
     form = response.context["form"]
     assert form.data["action"] == "splitsville"
+
+
+async def collect_async_response_stuff(async_response):
+    response = []
+    async for wat in async_response:
+        response.append(wat)
+        break  # don't loop through "all" of them since there's an infinite number!
+    return response
+
+
+# https://discord.com/channels/856567261900832808/1273356653605027951/1273356653605027951
+def test_SES(db):
+    client = Client()
+    response = client.get("/events/")
+
+    bytestring = async_to_sync(collect_async_response_stuff)(response)[0]
+    wtf = [b.strip() for b in bytestring.split(b":")]
+    wtf = [b for b in wtf if b]
+    assert wtf == [b"event", b"stream-open\ndata"]
