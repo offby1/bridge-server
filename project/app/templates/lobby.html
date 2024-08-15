@@ -17,6 +17,9 @@
 </div>
 
 <div id="lobby-log">
+{% for message in lobbymessages %}
+{{ message.timestamp.isoformat }}: {{ message.player }} said {{ message.message }}<br>
+{% endfor %}
 </div>
 
 {% endblock content %}

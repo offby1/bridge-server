@@ -11,7 +11,7 @@ from django.urls import reverse
 from django_eventstream import send_event
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
-from .models import PartnerException, Player, Table
+from .models import LobbyMessage, PartnerException, Player, Table
 
 
 def logged_in_as_player_required(view_function):
@@ -44,6 +44,7 @@ def lobby(request):
         "lobby.html",
         context={
             "lobby": sorted(lobby_players, key=attrgetter("user.username")),
+            "lobbymessages": LobbyMessage.objects.order_by("timestamp").all()[0:100],
         },
     )
 
@@ -176,6 +177,10 @@ def signup_view(request):
 def send_lobby_message(request):
     if request.method == "POST":
         message = json.loads(request.body)["message"]
+        LobbyMessage.objects.create(
+            player=Player.objects.get_from_user(request.user),
+            message=message,
+        )
         text = f"{request.user} says {message}"
         send_event("lobby", "message", {"text": text})
     return HttpResponse()

@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class PlayerManager(models.Manager):
+    def get_from_user(self, user):
+        return self.get(user=user)
+
     def get_by_name(self, name):
         return self.get(user__username=name)
 
