@@ -173,7 +173,7 @@ def signup_view(request):
 
 
 @logged_in_as_player_required
-def send_test_message(request):
+def send_lobby_message(request):
     if request.method == "POST":
         message = json.loads(request.body)["message"]
         text = f"{request.user} says {message}"

@@ -13,7 +13,10 @@
 
 <div>
 <input type="text" id="outgoing-message"  />
-<button type="button" onclick='postTest(document.querySelector( "#outgoing-message" ).value)'>Send a test event to the lobby</button>
+<button type="button" onclick='postLobbyMessage(document.querySelector( "#outgoing-message" ).value)'>Speak in the lobby</button>
+</div>
+
+<div id="lobby-log">
 </div>
 
 {% endblock content %}
@@ -22,7 +25,8 @@
 var es = new ReconnectingEventSource('/events/lobby/');
 
 es.addEventListener('message', function (e) {
-    console.log("A lobby message: " + JSON.parse(e.data).text);
+    var theMessage = JSON.parse(e.data).text;
+    document.querySelector( "#lobby-log" ).append(theMessage, document.createElement("br"));
 }, false);
 
 // from https://docs.djangoproject.com/en/5.0/howto/csrf/#acquiring-the-token-if-csrf-use-sessions-and-csrf-cookie-httponly-are-false
@@ -44,8 +48,8 @@ function getCookie(name) {
 const csrftoken = getCookie('csrftoken');
 
 
-window.postTest = function(message){
-    fetch("/send_test_message/", {
+window.postLobbyMessage = function(message){
+    fetch("/send_lobby_message/", {
   method: "POST",
   headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
   body: JSON.stringify({message: message})

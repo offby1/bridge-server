@@ -88,7 +88,7 @@ class Player(models.Model):
         return self.user.username
 
     def save(self, *args, **kwargs):
-        msg = f"{self} is about to be saved! Priase Jaysus!"
+        msg = f"{self} is about to be saved! Praise Jaysus!"
         logger.warning(msg)
         send_event("lobby", "message", {"text": msg})
         send_announcement = False
