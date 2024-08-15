@@ -177,10 +177,18 @@ def signup_view(request):
 def send_lobby_message(request):
     if request.method == "POST":
         message = json.loads(request.body)["message"]
-        LobbyMessage.objects.create(
-            player=Player.objects.get_from_user(request.user),
+        player = Player.objects.get_from_user(request.user)
+        obj = LobbyMessage.objects.create(
+            player=player,
             message=message,
         )
-        text = f"{request.user} says {message}"
-        send_event("lobby", "message", {"text": text})
+        send_event(
+            "lobby",
+            "message",
+            {
+                "who": player.user.username,
+                "what": message,
+                "when": obj.timestamp,
+            },
+        )
     return HttpResponse()

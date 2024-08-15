@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.contrib import admin, auth
@@ -91,15 +92,17 @@ class Player(models.Model):
         return self.user.username
 
     def save(self, *args, **kwargs):
-        msg = f"{self} is about to be saved! Praise Jaysus!"
-        logger.warning(msg)
-        send_event("lobby", "message", {"text": msg})
-        send_announcement = False
-        if self._state == "adding":
-            send_announcement = True
         super().save(*args, **kwargs)
-        if send_announcement:
-            send_event("lobby", "message", {"text": f"{self} just entered the lobby"})
+
+        send_event(
+            "lobby",
+            "message",
+            {
+                "who": "admin",  # TODO -- don't hard-code this name
+                "what": f"{self.user.username} just transitioned",
+                "when": datetime.datetime.now(),
+            },
+        )
 
     def as_link(self, style=""):
         return format_html(
