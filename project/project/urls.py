@@ -7,5 +7,5 @@ urlpatterns = [
     path("", include("app.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
-    path("events/", include(django_eventstream.urls), {"channels": ["test"]}),
+    path("events/lobby/", include(django_eventstream.urls), {"channels": ["lobby"]}),
 ] + debug_toolbar_urls()

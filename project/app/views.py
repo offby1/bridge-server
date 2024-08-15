@@ -1,4 +1,5 @@
 import functools
+import json
 from operator import attrgetter
 
 from django.contrib import messages
@@ -125,7 +126,6 @@ def table_list_view(request):
         "table_list": Table.objects.all(),
     }
 
-    send_event("test", "message", {"text": f"{request.user} just loaded the table_list_view"})
     return TemplateResponse(request, "table_list.html", context=context)
 
 
@@ -170,3 +170,10 @@ def signup_view(request):
             return start_over_with_message(str(e))
 
         return HttpResponseRedirect(reverse("login"))
+
+
+def send_test_message(request):
+    if request.method == "POST":
+        message = json.loads(request.body)["message"]
+        send_event("lobby", "message", {"text": message})
+    return HttpResponse()

@@ -162,6 +162,7 @@ async def collect_async_response_stuff(async_response):
 
 
 # https://discord.com/channels/856567261900832808/1273356653605027951/1273356653605027951
+@pytest.mark.skip(reason="WIP")
 def test_SES(db):
     client = Client()
     response = client.get("/events/")

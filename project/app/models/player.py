@@ -1,9 +1,14 @@
+import logging
+
 from django.contrib import admin, auth
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
+from django_eventstream import send_event
 
 from .seat import Seat
+
+logger = logging.getLogger(__name__)
 
 
 class PlayerManager(models.Manager):
@@ -81,6 +86,17 @@ class Player(models.Model):
     @property
     def name(self):
         return self.user.username
+
+    def save(self, *args, **kwargs):
+        msg = f"{self} is about to be saved! Priase Jaysus!"
+        logger.warning(msg)
+        send_event("lobby", "message", {"text": msg})
+        send_announcement = False
+        if self._state == "adding":
+            send_announcement = True
+        super().save(*args, **kwargs)
+        if send_announcement:
+            send_event("lobby", "message", {"text": f"{self} just entered the lobby"})
 
     def as_link(self, style=""):
         return format_html(

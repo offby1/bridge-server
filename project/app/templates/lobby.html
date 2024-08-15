@@ -12,3 +12,12 @@
 </ul>
 
 {% endblock content %}
+{% block scripts %}
+<script>
+var es = new ReconnectingEventSource('/events/lobby/');
+
+es.addEventListener('message', function (e) {
+    console.log("A lobby message: " + e.data);
+}, false);
+</script>
+{% endblock %}
