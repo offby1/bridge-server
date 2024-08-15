@@ -172,8 +172,10 @@ def signup_view(request):
         return HttpResponseRedirect(reverse("login"))
 
 
+@logged_in_as_player_required
 def send_test_message(request):
     if request.method == "POST":
         message = json.loads(request.body)["message"]
-        send_event("lobby", "message", {"text": message})
+        text = f"{request.user} says {message}"
+        send_event("lobby", "message", {"text": text})
     return HttpResponse()
