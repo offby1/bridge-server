@@ -1,43 +1,43 @@
 {% extends "base.html" %}
 {% load player_extras %}
 {% block content %}
-
-{# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
-{{ player | styled_link:me }}
-is
-{% if player.looking_for_partner %}
-looking for a partner.
-{% if me.looking_for_partner and me != player %}
-Oh! I am too!
-<form method="post" action="{% url 'app:player' player.id %}">
-{% csrf_token %}
-{{ form }}
-<input type="submit" value="Partner Me Up, Daddy-O">
-</form>
-
-{% endif %}
-{% else %}
-partnered with {{ player.partner.as_link }}.
-{% if not me.looking_for_partner and me.partner == player %}
-<form method="post" action="{% url 'app:player' player.id %}">
-{% csrf_token %}
-{{ form }}
-<input type="submit" value="Splitsville">
-</form>
-{% endif %}
-{% endif %}
-<br/>
-{% if player.table %}
-{{ player.table.as_link }}
-{% else %}
-
-{% if me == player %}
-You
-{% else %}
-They
-{% endif %}
-
-are in <a href="{% url 'app:lobby' %}">the lobby</a>.
-
-{% endif %}
+    {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
+    {{ player | styled_link:me }}
+    is
+    {% if player.looking_for_partner %}
+        looking for a partner.
+        {% if me.looking_for_partner and me != player %}
+            Oh! I am too!
+            <form method="post" action="{% url 'app:player' player.id %}">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="Partner Me Up, Daddy-O">
+            </form>
+        {% endif %}
+    {% else %}
+        partnered with {{ player.partner | styled_link:me }}.
+        {% if not me.looking_for_partner and me.partner == player %}
+            <div>
+            <form method="post" action="{% url 'app:player' player.id %}">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="Splitsville">
+            </form>
+            </div>
+            <div>
+              Imagine a chat window here where you could talk to {{ player | styled_link:me }}
+            </div>
+        {% endif %}
+    {% endif %}
+    <br />
+    {% if player.table %}
+        {{ player.table.as_link }}
+    {% else %}
+        {% if me == player %}
+            You
+        {% else %}
+            They
+        {% endif %}
+        are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+    {% endif %}
 {% endblock content %}
