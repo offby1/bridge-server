@@ -4,7 +4,7 @@ from operator import attrgetter
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -12,23 +12,35 @@ from django.urls import reverse
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import LobbyMessage, PartnerException, Player, Table
 from .models import send_lobby_message as slm
+from .models import send_player_message as spm
 
 
-def logged_in_as_player_required(view_function):
-    @functools.wraps(view_function)
-    def non_players_piss_off(request, *args, **kwargs):
-        player = Player.objects.filter(user__username=request.user.username).first()
-        if player is None:
-            messages.add_message(
-                request,
-                messages.INFO,
-                f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
-            )
-            return HttpResponseRedirect(reverse("app:players"))
+# Set redirect to False for AJAX endoints.
+def logged_in_as_player_required(redirect=True):
+    def inner_wozzit(view_function):
+        @functools.wraps(view_function)
+        def non_players_piss_off(request, *args, **kwargs):
+            if not redirect:
+                if not request.user.is_authenticated:
+                    return HttpResponseForbidden("Go away, anonymous scoundrel")
 
-        return view_function(request, *args, **kwargs)
+            player = Player.objects.filter(user__username=request.user.username).first()
+            if player is None:
+                messages.add_message(
+                    request,
+                    messages.INFO,
+                    f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
+                )
+                return HttpResponseRedirect(reverse("app:players"))
 
-    return login_required(non_players_piss_off)
+            return view_function(request, *args, **kwargs)
+
+        if redirect:
+            return login_required(non_players_piss_off)
+
+        return non_players_piss_off
+
+    return inner_wozzit
 
 
 def home(request):
@@ -78,7 +90,7 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
-@logged_in_as_player_required
+@logged_in_as_player_required()
 def player_detail_view(request, pk):
     JOIN = "partnerup"
     SPLIT = "splitsville"
@@ -130,7 +142,7 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-@logged_in_as_player_required
+@logged_in_as_player_required()
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
@@ -173,11 +185,29 @@ def signup_view(request):
         return HttpResponseRedirect(reverse("login"))
 
 
-@logged_in_as_player_required
+@logged_in_as_player_required(redirect=False)
 def send_lobby_message(request):
     if request.method == "POST":
+        print(request.body)
         slm(
             from_player=Player.objects.get_from_user(request.user),
             message=json.loads(request.body)["message"],
+        )
+    return HttpResponse()
+
+
+@logged_in_as_player_required(redirect=False)
+def send_player_message(request, recipient_pk):
+    if request.method == "POST":
+        from_player = Player.objects.get_from_user(request.user)
+        recipient = get_object_or_404(Player, pk=recipient_pk)
+
+        if from_player.is_seated or recipient.is_seated:
+            return HttpResponseForbidden(f"Either {from_player} or {recipient} is already seated")
+
+        spm(
+            from_player=from_player,
+            message=json.loads(request.body)["message"],
+            recipient_pk=recipient.pk,
         )
     return HttpResponse()

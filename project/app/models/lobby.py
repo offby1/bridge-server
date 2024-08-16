@@ -18,6 +18,7 @@ def send_lobby_message(*, from_player, message):
     )
 
 
+# TODO -- maybe I can use https://github.com/fanout/django-eventstream?tab=readme-ov-file#event-storage instead
 class LobbyMessage(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     player = models.ForeignKey("Player", on_delete=models.CASCADE)

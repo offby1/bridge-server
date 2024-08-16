@@ -1,15 +1,46 @@
-import datetime
 import logging
 
 from django.contrib import admin, auth
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
+from django_eventstream import send_event
 
 from .lobby import send_lobby_message
 from .seat import Seat
 
 logger = logging.getLogger(__name__)
+
+
+def send_player_message(*, from_player, message, recipient_pk):
+    recipient = Player.objects.get(pk=recipient_pk)
+    obj = PlayerMessage.objects.create(
+        from_player=from_player,
+        message=message,
+        recipient=recipient,
+    )
+
+    channel_name = "player:" + "_".join([str(pk) for pk in sorted([from_player.pk, recipient_pk])])
+    send_event(
+        channel_name,
+        "message",
+        {
+            "who": from_player.user.username,
+            "what": message,
+            "when": obj.timestamp,
+        },
+    )
+
+
+class PlayerMessage(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    from_player = models.ForeignKey("Player", on_delete=models.CASCADE, related_name="sent_message")
+    message = models.TextField(max_length=128)
+    recipient = models.ForeignKey(
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="received_message",
+    )
 
 
 class PlayerManager(models.Manager):
@@ -74,7 +105,8 @@ class Player(models.Model):
 
             if self.partner is not None:
                 send_lobby_message(
-                    from_player=self, message=f"Splitsville with {self.partner.name}"
+                    from_player=self,
+                    message=f"Splitsville with {self.partner.name}",
                 )
 
                 self.partner.partner = None

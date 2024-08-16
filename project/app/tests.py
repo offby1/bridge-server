@@ -1,3 +1,4 @@
+import json
 import re
 
 import bridge.seat
@@ -162,12 +163,89 @@ async def collect_async_response_stuff(async_response):
 
 
 # https://discord.com/channels/856567261900832808/1273356653605027951/1273356653605027951
-@pytest.mark.skip(reason="WIP")
+# @pytest.mark.skip(reason="WIP")
 def test_SES(db):
     client = Client()
-    response = client.get("/events/")
+    client.login(username="Bob", password="Bob")
+    response = client.get("/events/lobby/")
 
+    import pprint
+
+    pprint.pprint(vars(response))
     bytestring = async_to_sync(collect_async_response_stuff)(response)[0]
     wtf = [b.strip() for b in bytestring.split(b":")]
     wtf = [b for b in wtf if b]
     assert wtf == [b"event", b"stream-open\ndata"]
+
+
+def test_sending_lobby_messages(usual_setup):
+    client = Client()
+
+    def say_hey():
+        return client.post(
+            "/send_lobby_message/",
+            content_type="application/json",
+            data=json.dumps(dict(message="hey you")),
+        )
+
+    response = say_hey()
+    assert response.status_code == 403  # client isn't authenticated
+    assert response.content == b"Go away, anonymous scoundrel"
+
+    client.login(username="Bob", password="Bob")
+    response = say_hey()
+    assert response.status_code == 200
+
+
+def test_sending_player_messages(usual_setup):
+    bob = Player.objects.get_by_name("Bob")
+
+    client = Client()
+
+    def hey(target=None):
+        if target is None:
+            target = bob
+
+        return client.post(
+            reverse("app:send_player_message", args=[target.pk]),
+            content_type="application/json",
+            data=json.dumps(dict(message="hey you")),
+        )
+
+    response = hey()
+    assert response.status_code == 403  # client isn't authenticated
+    assert response.content == b"Go away, anonymous scoundrel"
+
+    client.login(username="Ted", password="Ted")
+    response = hey()
+    assert response.status_code == 403  # we're both at a table, so we can't talk
+    assert b"already seated" in response.content
+
+    for n in ("lobbyboy", "lobbygirl"):
+        u = auth.models.User.objects.create_user(username=n, password=n)
+        Player.objects.create(user=u)
+
+    client.login(username="lobbyboy", password="lobbyboy")
+    response = hey()
+    assert response.status_code == 403  # bob is still at a table, so we can't talk
+    assert b"already seated" in response.content
+
+    response = hey(Player.objects.get_by_name("lobbygirl"))
+    assert response.status_code == 200
+
+
+def test_only_recipient_can_read_messages(usual_setup):
+    client = Client()
+    client.login(username="Ted", password="Ted")
+    Ted = Player.objects.get_by_name("Ted")
+    response = client.get(f"/events/player/{Ted.pk}")
+    assert response.status_code == 200
+
+    client.login(username="Carol", password="Carol")
+    response = client.get(f"/events/player/{Ted.pk}")
+    import pprint
+
+    pprint.pprint(vars(response))
+    bytestring = async_to_sync(collect_async_response_stuff)(response)[0]
+    assert response.status_code == 403
+    assert bytestring == b""
