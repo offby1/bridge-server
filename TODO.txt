@@ -1,5 +1,7 @@
 STILL TODO:
 
+* In player_detail, in the partner chat: the older messages vanish when we reload.
+
 * When sending a chat message, make RET submit, so that we don't have to actually click on the button.
 
 * when bob partners with tonya, I see `2024-08-16T16:08:06.412297+00:00` `bob` `Partnered with tonya` in the lobby chat, but no "tonya partnered with bob".  On the one hand, this seems fine; on the other hand, I expected to see both messages.
