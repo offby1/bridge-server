@@ -13,6 +13,7 @@ from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import LobbyMessage, PartnerException, Player, Table
 from .models import send_lobby_message as slm
 from .models import send_player_message as spm
+from .models.player import channel_name_from_player_pks
 
 
 # Set redirect to False for AJAX endoints.
@@ -98,11 +99,11 @@ def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
     me = Player.objects.get_by_name(request.user.username)
     context = {
-        "player": player,
+        "channel_name": channel_name_from_player_pks(me.pk, player.pl),
         "me": me,
+        "player": player,
+        "show_cards_for": [request.user.username],
     }
-
-    context["show_cards_for"] = [request.user.username]
 
     if request.method == "GET":
         form = PartnerForm({
