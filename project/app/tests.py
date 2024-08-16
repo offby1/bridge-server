@@ -10,6 +10,7 @@ from django.test import Client
 from django.urls import reverse
 
 from .models import Player, PlayerException, Seat, Table
+from .models.player import channel_name_from_player_pks, player_pks_from_channel_name
 from .views import player_list_view
 
 
@@ -154,6 +155,11 @@ def test_multiple_windows_out_of_sync(db):
     assert form.data["action"] == "splitsville"
 
 
+def get_first_message(client, url):
+    response = client.get(url, follow=True)
+    return async_to_sync(collect_async_response_stuff)(response)[0]
+
+
 async def collect_async_response_stuff(async_response):
     response = []
     async for wat in async_response:
@@ -162,20 +168,21 @@ async def collect_async_response_stuff(async_response):
     return response
 
 
+def test_player_channnel_encoding():
+    assert channel_name_from_player_pks(1, 2) == "players:1_2"
+    assert channel_name_from_player_pks(20, 10) == "players:10_20"
+
+    assert player_pks_from_channel_name("tewtally bogus") is None
+    assert player_pks_from_channel_name("players:10_20") == {10, 20}
+    assert player_pks_from_channel_name("players:20_10") == {10, 20}
+
+
 # https://discord.com/channels/856567261900832808/1273356653605027951/1273356653605027951
-# @pytest.mark.skip(reason="WIP")
-def test_SES(db):
+def test_SES(usual_setup):
     client = Client()
     client.login(username="Bob", password="Bob")
-    response = client.get("/events/lobby/")
 
-    import pprint
-
-    pprint.pprint(vars(response))
-    bytestring = async_to_sync(collect_async_response_stuff)(response)[0]
-    wtf = [b.strip() for b in bytestring.split(b":")]
-    wtf = [b for b in wtf if b]
-    assert wtf == [b"event", b"stream-open\ndata"]
+    assert b"event: stream-open\ndata:\n" in get_first_message(client, "/events/lobby/")
 
 
 def test_sending_lobby_messages(usual_setup):
@@ -236,16 +243,13 @@ def test_sending_player_messages(usual_setup):
 
 def test_only_recipient_can_read_messages(usual_setup):
     client = Client()
-    client.login(username="Ted", password="Ted")
+    Bob = Player.objects.get_by_name("Bob")
     Ted = Player.objects.get_by_name("Ted")
-    response = client.get(f"/events/player/{Ted.pk}")
-    assert response.status_code == 200
+    channel = channel_name_from_player_pks(Ted.pk, Bob.pk)
+    url = f"/events/player/{channel}"
+
+    client.login(username="Ted", password="Ted")
+    assert b"event: stream-open\ndata:\n" in get_first_message(client, url)
 
     client.login(username="Carol", password="Carol")
-    response = client.get(f"/events/player/{Ted.pk}")
-    import pprint
-
-    pprint.pprint(vars(response))
-    bytestring = async_to_sync(collect_async_response_stuff)(response)[0]
-    assert response.status_code == 403
-    assert bytestring == b""
+    assert b"Permission denied" in get_first_message(client, url)

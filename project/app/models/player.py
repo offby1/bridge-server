@@ -12,6 +12,19 @@ from .seat import Seat
 logger = logging.getLogger(__name__)
 
 
+def channel_name_from_player_pks(pk1: int, pk2: int) -> str:
+    return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
+
+
+def player_pks_from_channel_name(channel_name: str) -> set[int]:
+    try:
+        _, pk_underscore_string = channel_name.split(":")
+        return set([int(p) for p in pk_underscore_string.split("_")])
+    except Exception:
+        logger.exception(channel_name)
+        return None
+
+
 def send_player_message(*, from_player, message, recipient_pk):
     recipient = Player.objects.get(pk=recipient_pk)
     obj = PlayerMessage.objects.create(
@@ -20,7 +33,7 @@ def send_player_message(*, from_player, message, recipient_pk):
         recipient=recipient,
     )
 
-    channel_name = "player:" + "_".join([str(pk) for pk in sorted([from_player.pk, recipient_pk])])
+    channel_name = channel_name_from_player_pks(from_player.pk, recipient_pk)
     send_event(
         channel_name,
         "message",
