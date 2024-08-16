@@ -41,10 +41,12 @@
                             <th scope="col">What</th>
                         </tr>
                         {% for message in playermessages %}
-                            <tr>
-                                <td>{{ message.timestamp.isoformat }}</td>
+                            <tr style="border: 1px dotted">
+                                <td style="font-weight: lighter;
+                                           font-family: monospace;
+                                           border: 1px solid">{{ message.timestamp.isoformat }}</td>
                                 <td>{{ message.from_player }}</td>
-                                <td>{{ message.message }}</td>
+                                <td style="border: 1px solid">{{ message.message }}</td>
                             </tr>
                         {% endfor %}
                     </table>

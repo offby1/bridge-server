@@ -22,7 +22,7 @@
             {% for message in lobbymessages %}
                 <tr>
                     <td>{{ message.timestamp.isoformat }}</td>
-                    <td>{{ message.player }}</td>
+                    <td>{{ message.from_player }}</td>
                     <td>{{ message.message }}</td>
                 </tr>
             {% endfor %}

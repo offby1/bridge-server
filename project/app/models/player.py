@@ -1,59 +1,15 @@
 import logging
 
 from django.contrib import admin, auth
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
-from django_eventstream import send_event
 
-from .lobby import send_lobby_message
+from .message import Message
 from .seat import Seat
 
 logger = logging.getLogger(__name__)
-
-
-def channel_name_from_player_pks(pk1: int, pk2: int) -> str:
-    return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
-
-
-def player_pks_from_channel_name(channel_name: str) -> set[int]:
-    try:
-        _, pk_underscore_string = channel_name.split(":")
-        return set([int(p) for p in pk_underscore_string.split("_")])
-    except Exception:
-        logger.exception(channel_name)
-        return None
-
-
-def send_player_message(*, from_player, message, recipient_pk):
-    recipient = Player.objects.get(pk=recipient_pk)
-    obj = PlayerMessage.objects.create(
-        from_player=from_player,
-        message=message,
-        recipient=recipient,
-    )
-
-    channel_name = channel_name_from_player_pks(from_player.pk, recipient_pk)
-    send_event(
-        channel_name,
-        "message",
-        {
-            "who": from_player.user.username,
-            "what": message,
-            "when": obj.timestamp,
-        },
-    )
-
-
-class PlayerMessage(models.Model):
-    timestamp = models.DateTimeField(auto_now_add=True)
-    from_player = models.ForeignKey("Player", on_delete=models.CASCADE, related_name="sent_message")
-    message = models.TextField(max_length=128)
-    recipient = models.ForeignKey(
-        "Player",
-        on_delete=models.CASCADE,
-        related_name="received_message",
-    )
 
 
 class PlayerManager(models.Manager):
@@ -82,6 +38,13 @@ class Player(models.Model):
 
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
+    messages_for_me = GenericRelation(
+        Message,
+        related_query_name="player_recipient",
+        content_type_field="recipient_content_type",
+        object_id_field="recipient_object_id",
+    )
+
     @property
     def looking_for_partner(self):
         return self.partner is None
@@ -99,7 +62,10 @@ class Player(models.Model):
 
             self.partner = other
             other.partner = self
-            send_lobby_message(from_player=self, message=f"Partnered with {self.partner.name}")
+            Message.send_lobby_message(
+                from_player=self,
+                message=f"Partnered with {self.partner.name}",
+            )
 
             self.save()
             other.save()
@@ -117,7 +83,7 @@ class Player(models.Model):
                 )
 
             if self.partner is not None:
-                send_lobby_message(
+                Message.send_lobby_message(
                     from_player=self,
                     message=f"Splitsville with {self.partner.name}",
                 )
@@ -148,7 +114,7 @@ class Player(models.Model):
             "<a style='{}' href='{}'>{}</a>",
             style,
             reverse("app:player", kwargs=dict(pk=self.pk)),
-            f"{self=}{self.pk=}",
+            str(self),
         )
 
     class Meta:

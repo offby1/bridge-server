@@ -2,7 +2,7 @@ import functools
 import json
 from operator import attrgetter
 
-from django.contrib import messages
+from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -10,10 +10,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
-from .models import LobbyMessage, PartnerException, Player, PlayerMessage, Table
-from .models import send_lobby_message as slm
-from .models import send_player_message as spm
-from .models.player import channel_name_from_player_pks
+from .models import Message, PartnerException, Player, Table
 
 
 # Set redirect to False for AJAX endoints.
@@ -27,9 +24,9 @@ def logged_in_as_player_required(redirect=True):
 
             player = Player.objects.filter(user__username=request.user.username).first()
             if player is None:
-                messages.add_message(
+                django_web_messages.add_message(
                     request,
-                    messages.INFO,
+                    django_web_messages.INFO,
                     f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
                 )
                 return HttpResponseRedirect(reverse("app:players"))
@@ -57,7 +54,7 @@ def lobby(request):
         "lobby.html",
         context={
             "lobby": sorted(lobby_players, key=attrgetter("user.username")),
-            "lobbymessages": LobbyMessage.objects.order_by("timestamp").all()[0:100],
+            "lobbymessages": Message.objects.get_for_lobby().order_by("timestamp").all()[0:100],
         },
     )
 
@@ -99,11 +96,15 @@ def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
     me = Player.objects.get_by_name(request.user.username)
     context = {
-        "channel_name": channel_name_from_player_pks(me.pk, player.pk),
+        "channel_name": Message.channel_name_from_player_pks(me.pk, player.pk),
         "me": me,
         "player": player,
-        "playermessages": PlayerMessage.objects.order_by("timestamp").all()[0:100],
-        "show_cards_for": [request.user.username],
+        "playermessages": (
+            Message.objects.get_for_player_pair(me, player).order_by("timestamp").all()[0:100]
+        ),
+        "show_cards_for": [
+            request.user.username,
+        ],  # TODO -- express this in terms of a Player, not a User
     }
 
     if request.method == "GET":
@@ -127,7 +128,7 @@ def player_detail_view(request, pk):
             elif action == JOIN:
                 me.partner_with(them)
         except PartnerException as e:
-            messages.add_message(request, messages.INFO, str(e))
+            django_web_messages.add_message(request, django_web_messages.INFO, str(e))
 
         return HttpResponseRedirect(reverse("app:player", kwargs=dict(pk=pk)))
     else:
@@ -160,9 +161,9 @@ def table_detail_view(request, pk):
 # authenticating
 def signup_view(request):
     def start_over_with_message(message):
-        messages.add_message(
+        django_web_messages.add_message(
             request,
-            messages.INFO,
+            django_web_messages.INFO,
             message,
         )
         context["form"] = SignupForm()
@@ -190,8 +191,7 @@ def signup_view(request):
 @logged_in_as_player_required(redirect=False)
 def send_lobby_message(request):
     if request.method == "POST":
-        print(request.body)
-        slm(
+        Message.send_lobby_message(
             from_player=Player.objects.get_from_user(request.user),
             message=json.loads(request.body)["message"],
         )
@@ -207,9 +207,9 @@ def send_player_message(request, recipient_pk):
         if from_player.is_seated or recipient.is_seated:
             return HttpResponseForbidden(f"Either {from_player} or {recipient} is already seated")
 
-        spm(
+        Message.send_player_message(
             from_player=from_player,
             message=json.loads(request.body)["message"],
-            recipient_pk=recipient.pk,
+            recipient=recipient,
         )
     return HttpResponse()

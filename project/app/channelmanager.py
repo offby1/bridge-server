@@ -15,7 +15,7 @@ class MyChannelManager(DefaultChannelManager):
             print("True 'cuz lobby")
             return True
 
-        if (player_pks := models.player.player_pks_from_channel_name(channel)) is not None:
+        if (player_pks := models.Message.player_pks_from_channel_name(channel)) is not None:
             rv = player.pk in player_pks
             print(f"{player.pk=} in {player_pks=}? {rv=}")
             return rv

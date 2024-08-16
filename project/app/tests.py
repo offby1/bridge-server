@@ -9,8 +9,7 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
-from .models import Player, PlayerException, Seat, Table
-from .models.player import channel_name_from_player_pks, player_pks_from_channel_name
+from .models import Message, Player, PlayerException, Seat, Table
 from .views import player_list_view
 
 
@@ -169,12 +168,12 @@ async def collect_async_response_stuff(async_response):
 
 
 def test_player_channnel_encoding():
-    assert channel_name_from_player_pks(1, 2) == "players:1_2"
-    assert channel_name_from_player_pks(20, 10) == "players:10_20"
+    assert Message.channel_name_from_player_pks(1, 2) == "players:1_2"
+    assert Message.channel_name_from_player_pks(20, 10) == "players:10_20"
 
-    assert player_pks_from_channel_name("tewtally bogus") is None
-    assert player_pks_from_channel_name("players:10_20") == {10, 20}
-    assert player_pks_from_channel_name("players:20_10") == {10, 20}
+    assert Message.player_pks_from_channel_name("tewtally bogus") is None
+    assert Message.player_pks_from_channel_name("players:10_20") == {10, 20}
+    assert Message.player_pks_from_channel_name("players:20_10") == {10, 20}
 
 
 # https://discord.com/channels/856567261900832808/1273356653605027951/1273356653605027951
@@ -245,7 +244,7 @@ def test_only_recipient_can_read_messages(usual_setup):
     client = Client()
     Bob = Player.objects.get_by_name("Bob")
     Ted = Player.objects.get_by_name("Ted")
-    channel = channel_name_from_player_pks(Ted.pk, Bob.pk)
+    channel = Message.channel_name_from_player_pks(Ted.pk, Bob.pk)
     url = f"/events/player/{channel}"
 
     client.login(username="Ted", password="Ted")
