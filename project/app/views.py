@@ -99,7 +99,7 @@ def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
     me = Player.objects.get_by_name(request.user.username)
     context = {
-        "channel_name": channel_name_from_player_pks(me.pk, player.pl),
+        "channel_name": channel_name_from_player_pks(me.pk, player.pk),
         "me": me,
         "player": player,
         "show_cards_for": [request.user.username],

@@ -11,7 +11,7 @@ def send_lobby_message(*, from_player, message):
         "lobby",
         "message",
         {
-            "who": from_player.user.username,
+            "who": from_player.name,
             "what": message,
             "when": obj.timestamp,
         },

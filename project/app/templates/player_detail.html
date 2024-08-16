@@ -25,21 +25,30 @@
                 </form>
             </div>
             <div>
-                Chat Log
-                <table id="partner-chat-log">
-                    <tr>
-                        <th scope="col">When</th>
-                        <th scope="col">Who</th>
-                        <th scope="col">What</th>
-                    </tr>
-                    {% for message in lobbymessages %}
+                <div>
+                    <input type="text" id="outgoing-message" />
+                    <button type="button"
+                            onclick='postPlayerMessage(document.querySelector( "#outgoing-message" ).value)'>
+                        Speak to {{ player }}
+                    </button>
+                </div>
+                <div>
+                    Chat Log
+                    <table id="partner-chat-log">
                         <tr>
-                            <td>{{ message.timestamp.isoformat }}</td>
-                            <td>{{ message.player }}</td>
-                            <td>{{ message.message }}</td>
+                            <th scope="col">When</th>
+                            <th scope="col">Who</th>
+                            <th scope="col">What</th>
                         </tr>
-                    {% endfor %}
-                </table>
+                        {% for message in lobbymessages %}
+                            <tr>
+                                <td>{{ message.timestamp.isoformat }}</td>
+                                <td>{{ message.player }}</td>
+                                <td>{{ message.message }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         {% endif %}
     {% endif %}
@@ -57,7 +66,7 @@
 {% endblock content %}
 {% block scripts %}
     <script>
-var es = new ReconnectingEventSource('/events/player/' + {{ channel_name }} + "/");
+var es = new ReconnectingEventSource('/events/player/{{ channel_name }}/');
 
 es.addEventListener('message', function (e) {
     var parsed = JSON.parse(e.data)
@@ -80,7 +89,7 @@ es.addEventListener('message', function (e) {
     document.querySelector( "#partner-chat-log" ).append(newRow);
 }, false);
 
-window.postLobbyMessage = function(message){
+window.postPlayerMessage = function(message){
     fetch("/send_player_message/" + {{ player.pk }}, {
   method: "POST",
   headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },

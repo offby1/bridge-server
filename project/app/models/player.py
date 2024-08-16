@@ -148,7 +148,7 @@ class Player(models.Model):
             "<a style='{}' href='{}'>{}</a>",
             style,
             reverse("app:player", kwargs=dict(pk=self.pk)),
-            str(self),
+            f"{self=}{self.pk=}",
         )
 
     class Meta:
