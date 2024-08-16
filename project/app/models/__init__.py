@@ -3,7 +3,7 @@ import bridge.seat
 SEAT_CHOICES = {v.value: k for k, v in bridge.seat.Seat.__members__.items()}
 
 
-from .lobby import LobbyMessage  # noqa
+from .lobby import LobbyMessage, send_lobby_message  # noqa
 from .player import PartnerException, Player, PlayerException  # noqa
 from .seat import Seat  # noqa
 from .table import Table  # noqa

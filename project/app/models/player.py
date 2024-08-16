@@ -5,8 +5,8 @@ from django.contrib import admin, auth
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
-from django_eventstream import send_event
 
+from .lobby import send_lobby_message
 from .seat import Seat
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,8 @@ class Player(models.Model):
 
             self.partner = other
             other.partner = self
+            send_lobby_message(from_player=self, message=f"Partnered with {self.partner.name}")
+
             self.save()
             other.save()
 
@@ -71,9 +73,14 @@ class Player(models.Model):
                 )
 
             if self.partner is not None:
+                send_lobby_message(
+                    from_player=self, message=f"Splitsville with {self.partner.name}"
+                )
+
                 self.partner.partner = None
                 self.partner.save()
                 self.partner = None
+
                 self.save()
 
     @property
@@ -90,19 +97,6 @@ class Player(models.Model):
     @property
     def name(self):
         return self.user.username
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        send_event(
-            "lobby",
-            "message",
-            {
-                "who": "admin",  # TODO -- don't hard-code this name
-                "what": f"{self.user.username} just transitioned",
-                "when": datetime.datetime.now(),
-            },
-        )
 
     def as_link(self, style=""):
         return format_html(

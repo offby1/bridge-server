@@ -8,10 +8,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django_eventstream import send_event
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import LobbyMessage, PartnerException, Player, Table
+from .models import send_lobby_message as slm
 
 
 def logged_in_as_player_required(view_function):
@@ -176,19 +176,8 @@ def signup_view(request):
 @logged_in_as_player_required
 def send_lobby_message(request):
     if request.method == "POST":
-        message = json.loads(request.body)["message"]
-        player = Player.objects.get_from_user(request.user)
-        obj = LobbyMessage.objects.create(
-            player=player,
-            message=message,
-        )
-        send_event(
-            "lobby",
-            "message",
-            {
-                "who": player.user.username,
-                "what": message,
-                "when": obj.timestamp,
-            },
+        slm(
+            from_player=Player.objects.get_from_user(request.user),
+            message=json.loads(request.body)["message"],
         )
     return HttpResponse()
