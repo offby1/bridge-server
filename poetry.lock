@@ -547,20 +547,22 @@ version = "5.3.0"
 description = "Server-Sent Events for Django"
 optional = false
 python-versions = "*"
-files = [
-    {file = "django-eventstream-5.3.0.tar.gz", hash = "sha256:c2fe20b83c78c9622939d6b339d1be68fe2c4db7f21cfb370159370d277ba045"},
-]
+files = []
+develop = true
 
 [package.dependencies]
 Django = ">=5"
 django_grip = ">=3.0,<4"
-djangorestframework = {version = "3.15.1", optional = true, markers = "extra == \"drf\""}
 gripcontrol = ">=4.0,<5"
 PyJWT = ">=1.5,<3"
 six = ">=1.10,<2"
 
 [package.extras]
 drf = ["djangorestframework (==3.15.1)"]
+
+[package.source]
+type = "directory"
+url = "../../../3rd-party/django-eventstream"
 
 [[package]]
 name = "django-extensions"
@@ -592,20 +594,6 @@ gripcontrol = ">=4.0,<5"
 pubcontrol = ">=3.0,<4"
 six = ">=1.10,<2"
 Werkzeug = ">=1.0,<4"
-
-[[package]]
-name = "djangorestframework"
-version = "3.15.1"
-description = "Web APIs for Django, made easy."
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "djangorestframework-3.15.1-py3-none-any.whl", hash = "sha256:3ccc0475bce968608cf30d07fb17d8e52d1d7fc8bfe779c905463200750cbca6"},
-    {file = "djangorestframework-3.15.1.tar.gz", hash = "sha256:f88fad74183dfc7144b2756d0d2ac716ea5b4c7c9840995ac3bfd8ec034333c1"},
-]
-
-[package.dependencies]
-django = ">=3.0"
 
 [[package]]
 name = "exceptiongroup"
@@ -1457,4 +1445,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10"
-content-hash = "cc57dab10149e22a98ba9822a42cba7232694007b994bf95ce60cbe96a7fe7a9"
+content-hash = "45fb584fe78b94fa6facc09dfc00ddef41ac7f8ca97f1fde824e14202077e35d"
