@@ -40,10 +40,10 @@
                             <th scope="col">Who</th>
                             <th scope="col">What</th>
                         </tr>
-                        {% for message in lobbymessages %}
+                        {% for message in playermessages %}
                             <tr>
                                 <td>{{ message.timestamp.isoformat }}</td>
-                                <td>{{ message.player }}</td>
+                                <td>{{ message.from_player }}</td>
                                 <td>{{ message.message }}</td>
                             </tr>
                         {% endfor %}

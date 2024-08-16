@@ -10,7 +10,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
-from .models import LobbyMessage, PartnerException, Player, Table
+from .models import LobbyMessage, PartnerException, Player, PlayerMessage, Table
 from .models import send_lobby_message as slm
 from .models import send_player_message as spm
 from .models.player import channel_name_from_player_pks
@@ -102,6 +102,7 @@ def player_detail_view(request, pk):
         "channel_name": channel_name_from_player_pks(me.pk, player.pk),
         "me": me,
         "player": player,
+        "playermessages": PlayerMessage.objects.order_by("timestamp").all()[0:100],
         "show_cards_for": [request.user.username],
     }
 

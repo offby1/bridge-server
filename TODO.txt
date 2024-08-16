@@ -1,6 +1,6 @@
 STILL TODO:
 
-* In player_detail, in the partner chat: the older messages vanish when we reload.
+* combine PlayerMessage with LobbyMessage.  Maybe if the recipient is NULL that means it's a lobby message?  But then what do I do when I want to have messages directed at a table?  Maybe add a "recipient model" column, so that the target of a message can be NULL (meaning lobby), or anything with a django model.
 
 * When sending a chat message, make RET submit, so that we don't have to actually click on the button.
 
