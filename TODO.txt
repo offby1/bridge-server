@@ -1,5 +1,9 @@
 STILL TODO:
 
+* When sending a chat message, make RET submit, so that we don't have to actually click on the button.
+
+* when bob partners with tonya, I see `2024-08-16T16:08:06.412297+00:00` `bob` `Partnered with tonya` in the lobby chat, but no "tonya partnered with bob".  On the one hand, this seems fine; on the other hand, I expected to see both messages.
+
 * when bob logs out, his name should vanish from the "lobby"
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`

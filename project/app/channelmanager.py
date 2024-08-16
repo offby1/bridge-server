@@ -5,7 +5,6 @@ from .models import player
 
 class MyChannelManager(DefaultChannelManager):
     def can_read_channel(self, user, channel):
-        print(f"can_read_channel: {self=} {user=} {channel=}")
         if user is None:
             return False
 
