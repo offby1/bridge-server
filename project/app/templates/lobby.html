@@ -11,23 +11,7 @@
             Speak in the lobby
         </button>
     </div>
-    <div>
-        Chat Log
-        <table id="lobby-log">
-            <tr>
-                <th scope="col">When</th>
-                <th scope="col">Who</th>
-                <th scope="col">What</th>
-            </tr>
-            {% for message in lobbymessages %}
-                <tr>
-                    <td>{{ message.timestamp.isoformat }}</td>
-                    <td>{{ message.from_player }}</td>
-                    <td>{{ message.message }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+{{ chatlog }}
 {% endblock content %}
 {% block scripts %}
     <script>
@@ -51,7 +35,7 @@ es.addEventListener('message', function (e) {
     newDatum.append(parsed.what);
     newRow.append(newDatum);
 
-    document.querySelector( "#lobby-log" ).append(newRow);
+    document.querySelector( "#chat-log" ).append(newRow);
 }, false);
 
 window.postLobbyMessage = function(message){

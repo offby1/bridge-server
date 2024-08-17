@@ -6,6 +6,7 @@ from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
@@ -54,7 +55,13 @@ def lobby(request):
         "lobby.html",
         context={
             "lobby": sorted(lobby_players, key=attrgetter("user.username")),
-            "lobbymessages": Message.objects.get_for_lobby().order_by("timestamp").all()[0:100],
+            "chatlog": loader.render_to_string(
+                request=request,
+                template_name="chatlog.html",
+                context=dict(
+                    messages=Message.objects.get_for_lobby().order_by("timestamp").all()[0:100],
+                ),
+            ),
         },
     )
 
@@ -96,12 +103,18 @@ def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
     me = Player.objects.get_by_name(request.user.username)
     context = {
-        "channel_name": Message.channel_name_from_player_pks(me.pk, player.pk),
+        "channel_name": Message.channel_name_from_players(me, player),
+        "chatlog": loader.render_to_string(
+            request=request,
+            template_name="chatlog.html",
+            context=dict(
+                messages=Message.objects.get_for_player_pair(me, player)
+                .order_by("timestamp")
+                .all()[0:100],
+            ),
+        ),
         "me": me,
         "player": player,
-        "playermessages": (
-            Message.objects.get_for_player_pair(me, player).order_by("timestamp").all()[0:100]
-        ),
         "show_cards_for": [
             request.user.username,
         ],  # TODO -- express this in terms of a Player, not a User

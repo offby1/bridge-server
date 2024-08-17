@@ -1,10 +1,16 @@
 STILL TODO:
 
+* When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
+  - pop up a dialog with the body of the 403 response; and/or
+  - just don't have the text area and "talk with" button visible in the first place.
+
+* When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
+
+* Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
+
 * When displaying the signup page, put text focus on the first field, so I can start typing without having to hit TAB
 
 * When sending a chat message, make RET submit, so that we don't have to actually click on the button.
-
-* when bob partners with tonya, I see `2024-08-16T16:08:06.412297+00:00` `bob` `Partnered with tonya` in the lobby chat, but no "tonya partnered with bob".  On the one hand, this seems fine; on the other hand, I expected to see both messages.
 
 * when bob logs out, his name should vanish from the "lobby"
 
@@ -19,6 +25,15 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Refactor: I've got two almost-but-not-quite-identical chunks of HTML for rendering a chat log: one in the lobby, one in the player detail.
+  Ideas:
+  ✓ have a separate template that renders just that, and then stick the output of rendering that into the context of both lobby and player_detail
+  ✘ use [django-template-partials](https://github.com/carltongibson/django-template-partials)
+    - of course that will entail me looking again into HTMX 'cuz carlton sez it's the bee's knees
+
+* when bob partners with tonya, I see `2024-08-16T16:08:06.412297+00:00` `bob` `Partnered with tonya` in the lobby chat, but no "tonya partnered with bob".  On the one hand, this seems fine; on the other hand, I expected to see both messages.
+  - Calling this "done" without doing anything; the current behavior seems correct.
 
 * combine PlayerMessage with LobbyMessage.  Maybe if the recipient is NULL that means it's a lobby message?  But then what do I do when I want to have messages directed at a table?  Maybe add a "recipient model" column, so that the target of a message can be NULL (meaning lobby), or anything with a django model.
 

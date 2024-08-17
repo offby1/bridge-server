@@ -65,6 +65,10 @@ class Message(models.Model):
         return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
 
     @staticmethod
+    def channel_name_from_players(p1: int, p2: int) -> str:
+        return Message.channel_name_from_player_pks(p1.pk, p2.pk)
+
+    @staticmethod
     def player_pks_from_channel_name(channel_name: str) -> set[int]:
         try:
             _, pk_underscore_string = channel_name.split(":")
@@ -81,7 +85,7 @@ class Message(models.Model):
             recipient_obj=recipient,
         )
 
-        channel_name = kls.channel_name_from_player_pks(from_player.pk, recipient.pk)
+        channel_name = kls.channel_name_from_players(from_player, recipient)
         send_event(
             channel_name,
             "message",

@@ -244,7 +244,7 @@ def test_only_recipient_can_read_messages(usual_setup):
     client = Client()
     Bob = Player.objects.get_by_name("Bob")
     Ted = Player.objects.get_by_name("Ted")
-    channel = Message.channel_name_from_player_pks(Ted.pk, Bob.pk)
+    channel = Message.channel_name_from_players(Ted, Bob)
     url = f"/events/player/{channel}"
 
     client.login(username="Ted", password="Ted")

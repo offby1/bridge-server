@@ -32,25 +32,7 @@
                         Speak to {{ player }}
                     </button>
                 </div>
-                <div>
-                    Chat Log
-                    <table id="partner-chat-log">
-                        <tr>
-                            <th scope="col">When</th>
-                            <th scope="col">Who</th>
-                            <th scope="col">What</th>
-                        </tr>
-                        {% for message in playermessages %}
-                            <tr style="border: 1px dotted">
-                                <td style="font-weight: lighter;
-                                           font-family: monospace;
-                                           border: 1px solid">{{ message.timestamp.isoformat }}</td>
-                                <td>{{ message.from_player }}</td>
-                                <td style="border: 1px solid">{{ message.message }}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
+                {{ chatlog }}
             </div>
         {% endif %}
     {% endif %}
@@ -88,7 +70,7 @@ es.addEventListener('message', function (e) {
     newDatum.append(parsed.what);
     newRow.append(newDatum);
 
-    document.querySelector( "#partner-chat-log" ).append(newRow);
+    document.querySelector( "#chat-log" ).append(newRow);
 }, false);
 
 window.postPlayerMessage = function(message){
