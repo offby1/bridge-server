@@ -1,5 +1,7 @@
 import json
 
+from app.forms import LookingForLoveForm, PartnerForm
+from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -7,8 +9,6 @@ from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from ..forms import LookingForLoveForm, PartnerForm
-from ..models import Message, PartnerException, Player
 from .misc import logged_in_as_player_required
 
 JOIN = "partnerup"
@@ -54,10 +54,7 @@ def partnership_view(request, pk1, pk2):
     if me not in (one, two):
         return HttpResponseForbidden(f"Only {one} and {two} may see this page")
 
-    if me == one:
-        partner = two
-    else:
-        partner = one
+    partner = two if me == one else one
 
     del one
     del two
@@ -71,11 +68,11 @@ def partnership_view(request, pk1, pk2):
         "chatlog": loader.render_to_string(
             request=request,
             template_name="chatlog.html",
-            context=dict(
-                messages=Message.objects.get_for_player_pair(me, partner)
+            context={
+                "messages": Message.objects.get_for_player_pair(me, partner)
                 .order_by("timestamp")
                 .all()[0:100],
-            ),
+            },
         ),
         "form": PartnerForm({
             "me": me.id,
