@@ -49,7 +49,7 @@ def partnership_view(request, pk1, pk2):
     one = get_object_or_404(Player, pk=pk1)
     two = get_object_or_404(Player, pk=pk2)
 
-    me = Player.objects.get_by_name(request.user.username)
+    me = request.user.player
 
     if me not in (one, two):
         return HttpResponseForbidden(f"Only {one} and {two} may see this page")
@@ -91,7 +91,7 @@ def partnership_view(request, pk1, pk2):
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
-    me = Player.objects.get_by_name(request.user.username)
+    me = request.user.player
     context = {
         "channel_name": Message.channel_name_from_players(me, player),
         "chatlog": loader.render_to_string(
@@ -122,7 +122,7 @@ def player_detail_view(request, pk):
 
         if not form.is_valid():
             return HttpResponse(f"Something's rotten in the state of {form.errors=}")
-        me = Player.objects.get(pk=form.cleaned_data.get("me"))
+        me = request.user.player
         them = Player.objects.get(pk=form.cleaned_data.get("them"))
         action = form.cleaned_data.get("action")
         try:
@@ -146,14 +146,14 @@ def player_detail_view(request, pk):
 @logged_in_as_player_required(redirect=False)
 def send_player_message(request, recipient_pk):
     if request.method == "POST":
-        from_player = Player.objects.get_from_user(request.user)
+        sender = request.user.player
         recipient = get_object_or_404(Player, pk=recipient_pk)
 
-        if from_player.is_seated or recipient.is_seated:
-            return HttpResponseForbidden(f"Either {from_player} or {recipient} is already seated")
+        if sender.is_seated or recipient.is_seated:
+            return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
 
         Message.send_player_message(
-            from_player=from_player,
+            from_player=sender,
             message=json.loads(request.body)["message"],
             recipient=recipient,
         )
