@@ -1,72 +1,18 @@
-import functools
 import json
-from operator import attrgetter
 
 from django.contrib import messages as django_web_messages
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from .forms import LookingForLoveForm, PartnerForm, SignupForm
-from .models import Message, PartnerException, Player, Table
+from ..forms import LookingForLoveForm, PartnerForm
+from ..models import Message, PartnerException, Player
+from .misc import logged_in_as_player_required
 
 JOIN = "partnerup"
 SPLIT = "splitsville"
-
-
-# Set redirect to False for AJAX endoints.
-def logged_in_as_player_required(redirect=True):
-    def inner_wozzit(view_function):
-        @functools.wraps(view_function)
-        def non_players_piss_off(request, *args, **kwargs):
-            if not redirect:
-                if not request.user.is_authenticated:
-                    return HttpResponseForbidden("Go away, anonymous scoundrel")
-
-            player = Player.objects.filter(user__username=request.user.username).first()
-            if player is None:
-                django_web_messages.add_message(
-                    request,
-                    django_web_messages.INFO,
-                    f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
-                )
-                return HttpResponseRedirect(reverse("app:players"))
-
-            return view_function(request, *args, **kwargs)
-
-        if redirect:
-            return login_required(non_players_piss_off)
-
-        return non_players_piss_off
-
-    return inner_wozzit
-
-
-def home(request):
-    return render(request, "home.html")
-
-
-def lobby(request):
-    # TODO -- have the db do this for us, somehow
-    lobby_players = [p for p in Player.objects.all() if not p.is_seated]
-
-    return render(
-        request,
-        "lobby.html",
-        context={
-            "lobby": sorted(lobby_players, key=attrgetter("user.username")),
-            "chatlog": loader.render_to_string(
-                request=request,
-                template_name="chatlog.html",
-                context=dict(
-                    messages=Message.objects.get_for_lobby().order_by("timestamp").all()[0:100],
-                ),
-            ),
-        },
-    )
 
 
 def player_list_view(request):
@@ -198,69 +144,6 @@ def player_detail_view(request, pk):
         raise Exception("wtf")
 
     return TemplateResponse(request, "player_detail.html", context=context)
-
-
-def table_list_view(request):
-    context = {
-        "table_list": Table.objects.all(),
-    }
-
-    return TemplateResponse(request, "table_list.html", context=context)
-
-
-@logged_in_as_player_required()
-def table_detail_view(request, pk):
-    table = get_object_or_404(Table, pk=pk)
-
-    context = {
-        "table": table,
-        "show_cards_for": [request.user.username],
-    }
-
-    return TemplateResponse(request, "table_detail.html", context=context)
-
-
-# TODO -- investigate https://docs.allauth.org/en/latest/mfa/introduction.html as a better way of signing up and
-# authenticating
-def signup_view(request):
-    def start_over_with_message(message):
-        django_web_messages.add_message(
-            request,
-            django_web_messages.INFO,
-            message,
-        )
-        context["form"] = SignupForm()
-        return TemplateResponse(request, "signup.html", context=context)
-
-    context = {}
-
-    if request.method == "GET":
-        context["form"] = SignupForm()
-        return TemplateResponse(request, "signup.html", context=context)
-
-    if request.method == "POST":
-        form = SignupForm(request.POST)
-        if not form.is_valid():
-            # TODO -- isn't there some fancy way to tart up the form with the errors?
-            return start_over_with_message(f"Something's rotten in the state of {form.errors=}")
-
-        # TODO: if it's a UNIQUE constraint failure, change the user's password
-        try:
-            form.create_user()
-        except Exception as e:
-            return start_over_with_message(str(e))
-
-        return HttpResponseRedirect(reverse("login"))
-
-
-@logged_in_as_player_required(redirect=False)
-def send_lobby_message(request):
-    if request.method == "POST":
-        Message.send_lobby_message(
-            from_player=Player.objects.get_from_user(request.user),
-            message=json.loads(request.body)["message"],
-        )
-    return HttpResponse()
 
 
 @logged_in_as_player_required(redirect=False)

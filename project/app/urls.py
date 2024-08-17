@@ -1,22 +1,22 @@
 from django.urls import path
 
-from . import views
+from .views import home_view, lobby, player, signup_view, table
 
 app_name = "app"
 
 urlpatterns = [
-    path("", views.home, name="home"),
-    path("lobby/", views.lobby, name="lobby"),
-    path("partnership/<pk1>/<pk2>", views.partnership_view, name="partnership"),
-    path("player/<pk>/", views.player_detail_view, name="player"),
-    path("players/", views.player_list_view, name="players"),
-    path("send_lobby_message/", views.send_lobby_message, name="send_lobby_message"),
+    path("", home_view, name="home"),
+    path("lobby/", lobby.lobby, name="lobby"),
+    path("partnership/<pk1>/<pk2>", player.partnership_view, name="partnership"),
+    path("player/<pk>/", player.player_detail_view, name="player"),
+    path("players/", player.player_list_view, name="players"),
+    path("send_lobby_message/", lobby.send_lobby_message, name="send_lobby_message"),
     path(
         "send_player_message/<recipient_pk>",
-        views.send_player_message,
+        player.send_player_message,
         name="send_player_message",
     ),
-    path("signup/", views.signup_view, name="signup"),
-    path("table/", views.table_list_view, name="table"),
-    path("table/<pk>", views.table_detail_view, name="table-detail"),
+    path("signup/", signup_view, name="signup"),
+    path("table/", table.table_list_view, name="table"),
+    path("table/<pk>", table.table_detail_view, name="table-detail"),
 ]

@@ -10,7 +10,7 @@ from django.test import Client
 from django.urls import reverse
 
 from .models import Message, Player, PlayerException, Seat, Table
-from .views import player_list_view
+from .views import player
 
 
 def test_we_gots_a_home_page():
@@ -19,13 +19,13 @@ def test_we_gots_a_home_page():
     assert b"Welcome" in response.content
 
 
-@pytest.fixture()
+@pytest.fixture
 def bob(db):
     u = auth.models.User.objects.create_user(username="Bob", password="Bob")
     return Player.objects.create(user=u)
 
 
-@pytest.fixture()
+@pytest.fixture
 def usual_setup(db):
     t = Table.objects.create()
     for username, attr in (
@@ -88,7 +88,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
 
 def test_view_filter(usual_setup, rf):
     request = rf.post("/players/", data=dict(lookin_for_love=True))
-    response = player_list_view(request)
+    response = player.player_list_view(request)
     text = response.content.decode()
 
     assert re.search(r"0 / 4\s+players\.", text)
