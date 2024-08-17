@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load player_extras %}
+{% block content %}
+    <h1>The great {{ me }} | {{ partner }} partnership</h1>
+    <div>
+        <form method="post" action="{% url 'app:player' partner.id %}">
+            {% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Splitsville">
+        </form>
+    </div>
+    <div>
+        <div>
+            <input type="text" id="outgoing-message" />
+            <button type="button"
+                    onclick='postPlayerMessage(document.querySelector( "#outgoing-message" ).value)'>
+                Speak to {{ partner }}
+            </button>
+        </div>
+        {{ chatlog }}
+    </div>
+    <br />
+    {% if partner.table %}
+        {{ partner.table.as_link }}
+    {% else %}
+        {% if me == partner %}
+            You
+        {% else %}
+            They
+        {% endif %}
+        are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+    {% endif %}
+{% endblock content %}
+{% block scripts %}
+    <script>
+var es = new ReconnectingEventSource('/events/player/{{ channel_name }}/');
+
+es.addEventListener('message', function (e) {
+    var parsed = JSON.parse(e.data)
+    var newRow = document.createElement("tr");
+
+    var newDatum;
+
+    newDatum = document.createElement("td");
+    newDatum.append(parsed.when);
+    newRow.append(newDatum);
+
+    newDatum = document.createElement("td");
+    newDatum.append(parsed.who);
+    newRow.append(newDatum);
+
+    newDatum = document.createElement("td");
+    newDatum.append(parsed.what);
+    newRow.append(newDatum);
+
+    document.querySelector( "#chat-log" ).append(newRow);
+}, false);
+
+window.postPlayerMessage = function(message){
+    fetch("/send_player_message/" + {{ partner.pk }}, {
+  method: "POST",
+  headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+  body: JSON.stringify({message: message})
+});
+  }
+    </script>
+{% endblock scripts %}

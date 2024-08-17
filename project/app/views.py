@@ -13,6 +13,9 @@ from django.urls import reverse
 from .forms import LookingForLoveForm, PartnerForm, SignupForm
 from .models import Message, PartnerException, Player, Table
 
+JOIN = "partnerup"
+SPLIT = "splitsville"
+
 
 # Set redirect to False for AJAX endoints.
 def logged_in_as_player_required(redirect=True):
@@ -96,10 +99,54 @@ def player_list_view(request):
 
 
 @logged_in_as_player_required()
-def player_detail_view(request, pk):
-    JOIN = "partnerup"
-    SPLIT = "splitsville"
+def partnership_view(request, pk1, pk2):
+    one = get_object_or_404(Player, pk=pk1)
+    two = get_object_or_404(Player, pk=pk2)
 
+    me = Player.objects.get_by_name(request.user.username)
+
+    if me not in (one, two):
+        return HttpResponseForbidden(f"Only {one} and {two} may see this page")
+
+    if me == one:
+        partner = two
+    else:
+        partner = one
+
+    del one
+    del two
+
+    if me.partner != partner:
+        return HttpResponseForbidden(f"Piss off {me}, {partner} is not your partner!!")
+
+    # Same as player detail for now
+    context = {
+        "channel_name": Message.channel_name_from_players(me, partner),
+        "chatlog": loader.render_to_string(
+            request=request,
+            template_name="chatlog.html",
+            context=dict(
+                messages=Message.objects.get_for_player_pair(me, partner)
+                .order_by("timestamp")
+                .all()[0:100],
+            ),
+        ),
+        "form": PartnerForm({
+            "me": me.id,
+            "them": partner.id,
+            "action": SPLIT,
+        }),
+        "me": me,
+        "partner": partner,
+        "show_cards_for": [
+            me,
+        ],
+    }
+    return TemplateResponse(request, "partnership.html", context=context)
+
+
+@logged_in_as_player_required()
+def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
     me = Player.objects.get_by_name(request.user.username)
     context = {
@@ -140,6 +187,9 @@ def player_detail_view(request, pk):
                 me.break_partnership()
             elif action == JOIN:
                 me.partner_with(them)
+                return HttpResponseRedirect(
+                    reverse("app:partnership", kwargs=dict(pk1=pk, pk2=me.pk)),
+                )
         except PartnerException as e:
             django_web_messages.add_message(request, django_web_messages.INFO, str(e))
 
@@ -183,10 +233,12 @@ def signup_view(request):
         return TemplateResponse(request, "signup.html", context=context)
 
     context = {}
+
     if request.method == "GET":
         context["form"] = SignupForm()
         return TemplateResponse(request, "signup.html", context=context)
-    elif request.method == "POST":
+
+    if request.method == "POST":
         form = SignupForm(request.POST)
         if not form.is_valid():
             # TODO -- isn't there some fancy way to tart up the form with the errors?
