@@ -3,39 +3,29 @@
 {% block content %}
     {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
     {{ player | styled_link:me }}
-    is
     {% if player.looking_for_partner %}
-        looking for a partner.
-        {% if me.looking_for_partner and me != player %}
-            Oh! I am too!
-            <form method="post" action="{% url 'app:player' player.id %}">
-                {% csrf_token %}
-                {{ form }}
-                <input type="submit" value="Partner Me Up, Daddy-O">
-            </form>
-        {% endif %}
+        is looking for a partner.
     {% else %}
-        partnered with {{ player.partner | styled_link:me }}.
-        {% if not me.looking_for_partner and me.partner == player %}
-            <div>
-                <form method="post" action="{% url 'app:player' player.id %}">
-                    {% csrf_token %}
-                    {{ form }}
-                    <input type="submit" value="Splitsville">
-                </form>
-            </div>
-            <div>
-                <div>
-                    <input type="text" id="outgoing-message" />
-                    <button type="button"
-                            onclick='postPlayerMessage(document.querySelector( "#outgoing-message" ).value)'>
-                        Speak to {{ player }}
-                    </button>
-                </div>
-                {{ chatlog }}
-            </div>
-        {% endif %}
+        is partnered up with {{ player.partner }} and now that I think of it, you shouldn't even be seeing this.
     {% endif %}
+    {% if me.looking_for_partner and me != player %}
+        Oh! I am too!
+        <form method="post" action="{% url 'app:player' player.id %}">
+            {% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Partner Me Up, Daddy-O">
+        </form>
+    {% endif %}
+    <div>
+        <div>
+            <input type="text" id="outgoing-message" />
+            <button type="button"
+                    onclick='postPlayerMessage(document.querySelector( "#outgoing-message" ).value)'>
+                Speak to {{ player }}
+            </button>
+        </div>
+        {{ chatlog }}
+    </div>
     <br />
     {% if player.table %}
         {{ player.table.as_link }}

@@ -50,9 +50,9 @@ def test_player_names_are_links_to_detail_page(usual_setup):
 def test_only_bob_can_see_bobs_cards(usual_setup):
     c = Client()
     assert c.login(username="Bob", password="Bob"), "I guess I don't know how to make a test log in"
-    response = c.get(reverse("app:player", kwargs=dict(pk=1)))
+    response = c.get(reverse("app:player", kwargs=dict(pk=1)), follow=True)
 
-    assert response.context["show_cards_for"] == ["Bob"]
+    assert response.context["show_cards_for"] == [Player.objects.get_by_name("Bob")]
 
 
 def test_player_cannot_be_at_two_seats(bob):

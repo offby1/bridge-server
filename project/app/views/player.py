@@ -91,7 +91,15 @@ def partnership_view(request, pk1, pk2):
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
+
+    if request.method == "GET":
+        if player.partner is not None:
+            return HttpResponseRedirect(
+                reverse("app:partnership", kwargs=dict(pk1=player.pk, pk2=player.partner.pk)),
+            )
+
     me = request.user.player
+
     context = {
         "channel_name": Message.channel_name_from_players(me, player),
         "chatlog": loader.render_to_string(
@@ -112,7 +120,7 @@ def player_detail_view(request, pk):
 
     if request.method == "GET":
         form = PartnerForm({
-            "me": request.user.player.id,
+            "me": me.pk,
             "them": pk,
             "action": SPLIT if request.user.player.partner is not None else JOIN,
         })
@@ -122,7 +130,7 @@ def player_detail_view(request, pk):
 
         if not form.is_valid():
             return HttpResponse(f"Something's rotten in the state of {form.errors=}")
-        me = request.user.player
+
         them = Player.objects.get(pk=form.cleaned_data.get("them"))
         action = form.cleaned_data.get("action")
         try:
