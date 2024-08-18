@@ -1,5 +1,7 @@
 STILL TODO:
 
+* when not logged in, we still attempt to listen to server-sent events ... but fail with 400 (cuz that endpoint requires authentication, I guess).
+
 * When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
 
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
