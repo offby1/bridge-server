@@ -32,7 +32,7 @@ manage *options: all-but-django-prep
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
-shell *options: (manage "shell_plus --print-sql " + options)
+shell *options: migrate (manage "shell_plus --print-sql " + options)
 
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
