@@ -1,9 +1,5 @@
 STILL TODO:
 
-* When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
-  - pop up a dialog with the body of the 403 response; and/or
-  - just don't have the text area and "talk with" button visible in the first place.
-
 * When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
 
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
@@ -25,6 +21,10 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
+  - pop up a dialog with the body of the 403 response; and/or
+  - just don't have the text area and "talk with" button visible in the first place.
 
 * Refactor: I've got two almost-but-not-quite-identical chunks of HTML for rendering a chat log: one in the lobby, one in the player detail.
   Ideas:

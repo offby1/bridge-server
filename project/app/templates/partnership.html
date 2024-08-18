@@ -61,7 +61,13 @@ window.postPlayerMessage = function(message){
   method: "POST",
   headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
   body: JSON.stringify({message: message})
-});
+}).then(
+    (response) => {
+        if (!response.ok) {
+            response.text().then((text) => alert(text));
+        }
+    }
+);
   }
     </script>
 {% endblock scripts %}
