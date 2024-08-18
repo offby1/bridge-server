@@ -31,7 +31,7 @@ class Lobby(models.Model):
         db_table_comment = "Serves no purpose other than acting as a target for lobby messages"
 
 
-_THE_LOBBY = None  # once all the models get loaded, we will set this to Lobby.objects.create()
+_THE_LOBBY = None  # singleton instance, assigned later
 
 
 # TODO idea -- rather than have two or more nullable foreign keys, constraining at most one to be non-null, maybe I
@@ -106,10 +106,11 @@ class Message(models.Model):
     def create_lobby_event_args(kls, *, from_player, message):
         global _THE_LOBBY
         if _THE_LOBBY is None:
-            _THE_LOBBY = Lobby.objects.create()
-            logger.warning(
-                f"Created {_THE_LOBBY=} so as to send {message=} from {from_player=} to it",
-            )
+            _THE_LOBBY, created = Lobby.objects.get_or_create()
+            if created:
+                logger.warning(
+                    f"Created {_THE_LOBBY=} so as to send {message=} from {from_player=} to it",
+                )
 
         obj = kls.objects.create(
             from_player=from_player,
