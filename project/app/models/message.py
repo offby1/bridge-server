@@ -4,7 +4,6 @@ from django.contrib import admin
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_eventstream import send_event
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +77,13 @@ class Message(models.Model):
             return None
 
     @classmethod
-    def send_player_message(kls, *, from_player, message, recipient):
+    def create_player_event_args(
+        kls,
+        *,
+        from_player,
+        message,
+        recipient,
+    ):
         obj = kls.objects.create(
             from_player=from_player,
             message=message,
@@ -86,7 +91,8 @@ class Message(models.Model):
         )
 
         channel_name = kls.channel_name_from_players(from_player, recipient)
-        send_event(
+
+        return [
             channel_name,
             "message",
             {
@@ -94,11 +100,10 @@ class Message(models.Model):
                 "what": message,
                 "when": obj.timestamp,
             },
-        )
-        return obj
+        ]
 
     @classmethod
-    def send_lobby_message(kls, *, from_player, message):
+    def create_lobby_event_args(kls, *, from_player, message):
         global _THE_LOBBY
         if _THE_LOBBY is None:
             _THE_LOBBY = Lobby.objects.create()
@@ -112,7 +117,7 @@ class Message(models.Model):
             recipient_obj=_THE_LOBBY,
         )
 
-        send_event(
+        return [
             "lobby",
             "message",
             {
@@ -120,8 +125,7 @@ class Message(models.Model):
                 "what": message,
                 "when": obj.timestamp,
             },
-        )
-        return obj
+        ]
 
     class Meta:
         indexes = [

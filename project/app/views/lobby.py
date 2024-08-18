@@ -4,6 +4,7 @@ from operator import attrgetter
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template import loader
+from django_eventstream import send_event
 
 from ..models import Message, Player
 from .misc import logged_in_as_player_required
@@ -32,8 +33,9 @@ def lobby(request):
 @logged_in_as_player_required(redirect=False)
 def send_lobby_message(request):
     if request.method == "POST":
-        Message.send_lobby_message(
+        event_args = Message.create_lobby_event_args(
             from_player=Player.objects.get_from_user(request.user),
             message=json.loads(request.body)["message"],
         )
+        send_event(*event_args)
     return HttpResponse()

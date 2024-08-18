@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django_eventstream import send_event
 
 from .misc import logged_in_as_player_required
 
@@ -160,9 +161,12 @@ def send_player_message(request, recipient_pk):
         if sender.is_seated or recipient.is_seated:
             return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
 
-        Message.send_player_message(
-            from_player=sender,
-            message=json.loads(request.body)["message"],
-            recipient=recipient,
+        send_event(
+            *Message.create_player_event_args(
+                from_player=sender,
+                message=json.loads(request.body)["message"],
+                recipient=recipient,
+            )
         )
+
     return HttpResponse()

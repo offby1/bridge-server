@@ -5,6 +5,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
+from django_eventstream import send_event
 
 from .message import Message
 from .seat import Seat
@@ -62,9 +63,12 @@ class Player(models.Model):
 
             self.partner = other
             other.partner = self
-            Message.send_lobby_message(
-                from_player=self,
-                message=f"Partnered with {self.partner.name}",
+
+            send_event(
+                *Message.create_lobby_event_args(
+                    from_player=self,
+                    message=f"Partnered with {self.partner.name}",
+                ),
             )
 
             self.save()
@@ -83,9 +87,11 @@ class Player(models.Model):
                 )
 
             if self.partner is not None:
-                Message.send_lobby_message(
-                    from_player=self,
-                    message=f"Splitsville with {self.partner.name}",
+                send_event(
+                    *Message.create_lobby_event_args(
+                        from_player=self,
+                        message=f"Splitsville with {self.partner.name}",
+                    ),
                 )
 
                 self.partner.partner = None
