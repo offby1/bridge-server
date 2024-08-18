@@ -40,6 +40,38 @@ def usual_setup(db):
         Seat.objects.create(direction=attr.value, player=p, table=t)
 
 
+def test_all_seated_players_have_partners(usual_setup):
+    for _, p in Table.objects.first().players_by_direction().items():
+        assert p.partner is not None
+        p.partner = None
+        with pytest.raises(Exception) as e:
+            p.save()
+        assert "but has no partner" in str(e.value)
+        p.seat = None
+        p.save()
+
+
+def test_splitsville_ejects_us_from_table(usual_setup):
+    Bob = Player.objects.get_by_name("Bob")
+    Ted = Player.objects.get_by_name("Ted")
+
+    # duh
+    assert Bob.partner == Ted
+    assert Ted.partner == Bob
+
+    assert Bob.table is not None
+    assert Bob.table == Ted.table
+
+    Bob.break_partnership()
+    Bob.refresh_from_db()
+    Ted.refresh_from_db()
+    assert Bob.partner is None
+    assert Bob.partner == Ted.partner
+
+    assert Bob.table is None
+    assert Bob.table == Bob.table
+
+
 def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get_by_name("Bob")
 
@@ -117,8 +149,9 @@ def test_breaking_up_is_hard_to_do(usual_setup):
     # No exception because Bob is already partnered with Ted, so an exception would serve no purpose.
     Bob.partner_with(Ted)
 
-    with pytest.raises(PlayerException):
+    with pytest.raises(PlayerException) as e:
         Bob.partner_with(Carol)
+    assert "already partnered with" in str(e.value)
 
     Bob.break_partnership()
     Bob.refresh_from_db()
@@ -126,7 +159,7 @@ def test_breaking_up_is_hard_to_do(usual_setup):
     assert Bob.partner is None
     assert Ted.partner is None
 
-    # No exception because Carol is single
+    # No exception because Bob is single
     Alice.break_partnership()
     Carol.refresh_from_db()
     Bob.partner_with(Carol)

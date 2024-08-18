@@ -17,6 +17,9 @@ class Seat(models.Model):
     player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
 
+    def others_at_table(self):
+        return self.table.seat_set.exclude(direction=self.direction)
+
     def partner_with(self, other):
         if self.player is None:
             raise SeatException(
@@ -39,13 +42,8 @@ class Seat(models.Model):
 
         self.player.partner_with(other.player)
 
-    def library_object_thingy(self):
-        return bridge.seat.Seat(self.direction)
-
     def save(self, *args, **kwargs):
-        lot = self.library_object_thingy()
-
-        partner_direction = lot.partner()
+        partner_direction = bridge.seat.Seat(self.direction).partner()
         partner_seat = Seat.objects.filter(
             direction=partner_direction.value,
             table=self.table,

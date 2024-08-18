@@ -86,26 +86,21 @@ class Player(models.Model):
                     "Oh shit -- our partner doesn't have a partner",
                 )
 
-            if self.partner is not None:
-                send_event(
-                    *Message.create_lobby_event_args(
-                        from_player=self,
-                        message=f"Splitsville with {self.partner.name}",
-                    ),
-                )
+            send_event(
+                *Message.create_lobby_event_args(
+                    from_player=self,
+                    message=f"Splitsville with {self.partner.name}",
+                ),
+            )
 
-                self.partner.partner = None
-                self.partner.save()
-                self.partner = None
-
-                self.save()
+            Seat.objects.filter(pk__in={self.seat.pk, self.partner.seat.pk}).update(player=None)
+            Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
 
     @property
     def table(self):
-        seat = Seat.objects.filter(player=self).first()
-        if seat is None:
+        if getattr(self, "seat", None) is None:
             return None
-        return seat.table
+        return self.seat.table
 
     @property
     def is_seated(self):
@@ -122,6 +117,21 @@ class Player(models.Model):
             reverse("app:player", kwargs=dict(pk=self.pk)),
             str(self),
         )
+
+    def _check_partner_table_consistency(self):
+        # if we're seated, we must have a partner.
+        seat = getattr(self, "seat", None)
+
+        if seat is None:
+            return
+
+        if self.partner is None:
+            raise PlayerException(f"{self} is seated at {self.seat} but has no partner!!")
+
+    # TODO -- see if we can do this check in a constraint
+    def save(self, *args, **kwargs):
+        self._check_partner_table_consistency()
+        return super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["user__username"]
