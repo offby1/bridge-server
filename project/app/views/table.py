@@ -19,7 +19,7 @@ def table_detail_view(request, pk):
 
     context = {
         "table": table,
-        "show_cards_for": [request.user.username],
+        "show_cards_for": [request.user.player],
     }
 
     return TemplateResponse(request, "table_detail.html", context=context)

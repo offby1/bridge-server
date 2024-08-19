@@ -46,6 +46,35 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
+def typical_chat_context(*, request, me, whom_i_talkin_to):
+    return {
+        "chat_html": loader.render_to_string(
+            request=request,
+            template_name="chat_html.html",
+            context={
+                "chat_target": whom_i_talkin_to.name,
+                "messages": (
+                    Message.objects.get_for_player_pair(me, whom_i_talkin_to)
+                    .order_by("timestamp")
+                    .all()[0:100]
+                ),
+            },
+        ),
+        "chat_scripts": loader.render_to_string(
+            request=request,
+            template_name="chat_scripts.html",
+            context=dict(
+                # TODO -- figure out how to use "reverse", and a view name, here
+                chat_event_source_endpoint=f"/events/player/{Message.channel_name_from_players(me, whom_i_talkin_to)}",
+                chat_post_endpoint=reverse(
+                    "app:send_player_message",
+                    kwargs={"recipient_pk": whom_i_talkin_to.pk},
+                ),
+            ),
+        ),
+    }
+
+
 @logged_in_as_player_required()
 def partnership_view(request, pk1, pk2):
     one = get_object_or_404(Player, pk=pk1)
@@ -66,16 +95,6 @@ def partnership_view(request, pk1, pk2):
 
     # Same as player detail for now
     context = {
-        "channel_name": Message.channel_name_from_players(me, partner),
-        "chatlog": loader.render_to_string(
-            request=request,
-            template_name="chatlog.html",
-            context={
-                "messages": Message.objects.get_for_player_pair(me, partner)
-                .order_by("timestamp")
-                .all()[0:100],
-            },
-        ),
         "form": PartnerForm({
             "me": me.id,
             "them": partner.id,
@@ -83,10 +102,8 @@ def partnership_view(request, pk1, pk2):
         }),
         "me": me,
         "partner": partner,
-        "show_cards_for": [
-            me,
-        ],
-    }
+        "show_cards_for": [me],
+    } | typical_chat_context(request=request, me=me, whom_i_talkin_to=partner)
     return TemplateResponse(request, "partnership.html", context=context)
 
 
@@ -105,21 +122,10 @@ def player_detail_view(request, pk):
 
     context = {
         "channel_name": Message.channel_name_from_players(me, player),
-        "chatlog": loader.render_to_string(
-            request=request,
-            template_name="chatlog.html",
-            context=dict(
-                messages=Message.objects.get_for_player_pair(me, player)
-                .order_by("timestamp")
-                .all()[0:100],
-            ),
-        ),
         "me": me,
         "player": player,
-        "show_cards_for": [
-            request.user.username,
-        ],  # TODO -- express this in terms of a Player, not a User
-    }
+        "show_cards_for": [me],
+    } | typical_chat_context(request=request, me=me, whom_i_talkin_to=player)
 
     if request.method == "GET":
         form = PartnerForm({

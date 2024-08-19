@@ -9,7 +9,7 @@ OK so like here's the complete table, Yo:
 
 <li>
 {{ direction|title }}:
-{% if player.user.username in show_cards_for  %}
+{% if player in show_cards_for  %}
 {{ player.as_link }} TODO: No cards yet, sorry
 {% else %}
 {{ player.as_link }} (No count of cards yet, sorry)
