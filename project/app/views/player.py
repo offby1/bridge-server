@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event
 
 from .misc import logged_in_as_player_required
@@ -89,6 +90,7 @@ def partnership_view(request, pk1, pk2):
     return TemplateResponse(request, "partnership.html", context=context)
 
 
+@require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
     player = get_object_or_404(Player, pk=pk)
@@ -126,7 +128,7 @@ def player_detail_view(request, pk):
             "action": SPLIT if request.user.player.partner is not None else JOIN,
         })
         context["form"] = form
-    elif request.method == "POST":
+    else:
         form = PartnerForm(request.POST)
 
         if not form.is_valid():
@@ -146,8 +148,6 @@ def player_detail_view(request, pk):
             django_web_messages.add_message(request, django_web_messages.INFO, str(e))
 
         return HttpResponseRedirect(reverse("app:player", kwargs=dict(pk=pk)))
-    else:
-        raise Exception("wtf")
 
     return TemplateResponse(request, "player_detail.html", context=context)
 
@@ -166,7 +166,7 @@ def send_player_message(request, recipient_pk):
                 from_player=sender,
                 message=json.loads(request.body)["message"],
                 recipient=recipient,
-            )
+            ),
         )
 
     return HttpResponse()
