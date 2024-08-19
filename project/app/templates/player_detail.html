@@ -6,7 +6,7 @@
         {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
         {{ player | styled_link:me }}
         {% if player.looking_for_partner %}
-            is looking for a partner.
+            is looking for a partner.  <a href="{% url 'app:players' %}?lookin_for_love=True">Find swinging singles in your area.</a>
         {% else %}
             is partnered up with {{ player.partner }} and now that I think of it, you shouldn't even be seeing this.
         {% endif %}

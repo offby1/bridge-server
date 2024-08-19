@@ -137,7 +137,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
 
 
 def test_view_filter(usual_setup, rf):
-    request = rf.post("/players/", data=dict(lookin_for_love=True))
+    request = rf.post("/players/?lookin_for_love=True")
     response = player.player_list_view(request)
     text = response.content.decode()
 

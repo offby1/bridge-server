@@ -17,27 +17,22 @@ SPLIT = "splitsville"
 
 
 def player_list_view(request):
+    lookin_for_love = request.GET.get("lookin_for_love")
     model = Player
     template_name = "player_list.html"
-    form_class = LookingForLoveForm
+    form = LookingForLoveForm(request.GET)
 
-    context = {}
+    context = {"form": form}
 
     qs = model.objects.all()
     total_count = qs.count()
 
-    if request.method == "POST":
-        form = form_class(request.POST)
-        form.full_clean()
-        filter_val = form.cleaned_data.get("lookin_for_love")
-        filter_val = {"True": True, "False": False}.get(filter_val)
+    filter_val = {"True": True, "False": False}.get(lookin_for_love)
 
-        if filter_val is not None:
-            qs = qs.filter(partner__isnull=filter_val)
-        filtered_count = qs.count()
-        context["extra_crap"] = dict(total_count=total_count, filtered_count=filtered_count)
-    else:
-        form = form_class()
+    if filter_val is not None:
+        qs = qs.filter(partner__isnull=filter_val)
+    filtered_count = qs.count()
+    context["extra_crap"] = dict(total_count=total_count, filtered_count=filtered_count)
 
     context["form"] = form
     context["player_list"] = qs
