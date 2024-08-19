@@ -1,5 +1,8 @@
 STILL TODO:
 
+* Write a player-list partial template.  It should include both the "lookin' for love" filter, and a new "are they in the lobby" filter.
+  Use that on both "/players/" and "/lobby/" (distinguished only by different default settings on those filters)
+
 * when not logged in, we still attempt to listen to server-sent events ... but fail with 400 (cuz that endpoint requires authentication, I guess).
 
 * When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
