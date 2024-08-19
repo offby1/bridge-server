@@ -13,11 +13,19 @@
         <table>
             <tr>
                 <th scope="col">Who</th>
+                <th scope="col">Partner</th>
                 <th scope="col">Where</th>
             </tr>
             {% for player in player_list %}
                 <tr style="border: 1px dotted">
                     <td>{{ player|sedate_link:user.player }}</td>
+                    <td>
+                      {% if player.partner %}
+                      {{ player.partner|sedate_link:user.player }}
+                      {% else %}
+                      😢
+                      {% endif %}
+                    </td>
                     <td>
                         {% if player.table %}
                             {{ player.table.as_link }}
