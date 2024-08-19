@@ -140,14 +140,6 @@ def test_player_cannot_be_in_two_tables(usual_setup):
         Seat.objects.filter(pk=s.pk).update(player=bob)
 
 
-def test_view_filter(usual_setup, rf):
-    request = rf.post("/players/?lookin_for_love=True")
-    response = player.player_list_view(request)
-    text = response.content.decode()
-
-    assert re.search(r"0 / 4\s+players\.", text)
-
-
 def test_cant_just_make_up_directions(bob):
     partner = Player.objects.create(
         user=auth.models.User.objects.create_user(

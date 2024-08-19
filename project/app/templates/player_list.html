@@ -2,15 +2,7 @@
 {% load player_extras %}
 {% block content %}
     {% block player_list %}
-        {# TODO -- use https://github.com/morlandi/django-ajax-datatable?tab=readme-ov-file #}
-        {# specifically so that users can see who's looking for a partner, who's in the lobby, &c #}
-        {% if extra_crap.total_count == extra_crap.filtered_count %}
-            All {{ extra_crap.total_count }}
-        {% else %}
-            {{ extra_crap.filtered_count }} / {{ extra_crap.total_count }}
-        {% endif %}
-        players.
-        <table>
+        <table id="player-list">
             <thead>
                 <tr>
                     <th scope="col">Who</th>
@@ -19,21 +11,6 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td />
-                    <td>
-                        <form method="get" action="{% url 'app:players' %}">
-                            {{ love_form }}
-                            <input type="submit" value="filter">
-                        </form>
-                    </td>
-                    <td>
-                        <form method="get" action="{% url 'app:players' %}">
-                            {{ seated_form }}
-                            <input type="submit" value="filter">
-                        </form>
-                    </td>
-                </tr>
                 {% for player in player_list %}
                     <tr style="border: 1px dotted">
                         <td>{{ player|sedate_link:user }}</td>
@@ -57,3 +34,10 @@
         </table>
     {% endblock player_list %}
 {% endblock content %}
+{% block scripts %}
+<script>
+$(document).ready( function () {
+    $('#player-list').DataTable();
+} );
+</script>
+{% endblock %}
