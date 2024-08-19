@@ -1,3 +1,6 @@
+{% load partials %}
+
+{% partialdef chat-html-partial %}
 <div>
   <div>
     <input type="text" id="outgoing-message" />
@@ -14,7 +17,7 @@
         <th scope="col">Who</th>
         <th scope="col">What</th>
       </tr>
-      {% for message in messages %}
+      {% for message in chat_messages %}
       <tr style="border: 1px dotted">
         <td style="font-weight: lighter;
                    font-family: monospace;
@@ -26,3 +29,4 @@
     </table>
   </div>
 </div>
+{% endpartialdef chat-html-partial %}

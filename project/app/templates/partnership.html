@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load player_extras %}
+{% load partials %}
 {% block content %}
     <h1>The great {{ me }} | {{ partner }} partnership</h1>
     <div>
@@ -9,7 +10,10 @@
             <input type="submit" value="Splitsville">
         </form>
     </div>
-    {{ chat_html }}
+    <div>
+        {% include "chat-html-partial.html#chat-html-partial" %}
+    </div>
+
     <br />
     {% if partner.table %}
         {{ partner.table.as_link }}
@@ -23,6 +27,5 @@
     {% endif %}
 {% endblock content %}
 {% block scripts %}
-    {{ chat_scripts }}
-    </script>
+    {% include "chat-scripts-partial.html#chat-scripts-partial" %}
 {% endblock scripts %}

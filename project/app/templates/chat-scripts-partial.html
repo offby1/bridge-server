@@ -1,3 +1,6 @@
+{% load partials %}
+
+{% partialdef chat-scripts-partial %}
 <script>
   var es = new ReconnectingEventSource('{{ chat_event_source_endpoint }}');
 
@@ -36,3 +39,4 @@
   );
   }
 </script>
+{% endpartialdef chat-scripts-partial %}

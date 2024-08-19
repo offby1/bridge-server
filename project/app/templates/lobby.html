@@ -1,11 +1,16 @@
 {% extends "base.html" %}
+{% load partials %}
+
 {% block content %}
     <p>Lobby</p>
     <ul>
         {% for player in lobby %}<li>{{ player.as_link }}</li>{% endfor %}
     </ul>
-{{ chat_html }}
+    <div>
+        {% include "chat-html-partial.html#chat-html-partial" %}
+    </div>
+
 {% endblock content %}
 {% block scripts %}
-{{ chat_scripts }}
+{% include "chat-scripts-partial.html#chat-scripts-partial" %}
 {% endblock %}

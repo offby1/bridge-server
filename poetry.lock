@@ -594,6 +594,24 @@ six = ">=1.10,<2"
 Werkzeug = ">=1.0,<4"
 
 [[package]]
+name = "django-template-partials"
+version = "24.4"
+description = "django-template-partials"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_template_partials-24.4-py2.py3-none-any.whl", hash = "sha256:ee59d3839385d7f648907c3fa8d5923fcd66cd8090f141fe2a1c338b917984e2"},
+    {file = "django_template_partials-24.4.tar.gz", hash = "sha256:25b67301470fc274ecc419e5e5fd4686a5020b1c038fd241a70eb087809034b6"},
+]
+
+[package.dependencies]
+Django = "*"
+
+[package.extras]
+docs = ["Sphinx"]
+tests = ["coverage", "django_coverage_plugin"]
+
+[[package]]
 name = "djangorestframework"
 version = "3.15.2"
 description = "Web APIs for Django, made easy."
@@ -1457,4 +1475,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10"
-content-hash = "cc57dab10149e22a98ba9822a42cba7232694007b994bf95ce60cbe96a7fe7a9"
+content-hash = "c8624ded91e8ed57f56141885d1b6774523b672a62d29fe9aaa3c8965ed230f5"

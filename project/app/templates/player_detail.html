@@ -1,34 +1,39 @@
 {% extends "base.html" %}
 {% load player_extras %}
+{% load partials %}
 {% block content %}
-    {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
-    {{ player | styled_link:me }}
-    {% if player.looking_for_partner %}
-        is looking for a partner.
-    {% else %}
-        is partnered up with {{ player.partner }} and now that I think of it, you shouldn't even be seeing this.
-    {% endif %}
-    {% if me.looking_for_partner and me != player %}
-        Oh! I am too!
-        <form method="post" action="{% url 'app:player' player.id %}">
-            {% csrf_token %}
-            {{ form }}
-            <input type="submit" value="Partner Me Up, Daddy-O">
-        </form>
-    {% endif %}
-    {{ chat_html }}
-    <br />
-    {% if player.table %}
-        {{ player.table.as_link }}
-    {% else %}
-        {% if me == player %}
-            You
+    <div>
+        {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
+        {{ player | styled_link:me }}
+        {% if player.looking_for_partner %}
+            is looking for a partner.
         {% else %}
-            They
+            is partnered up with {{ player.partner }} and now that I think of it, you shouldn't even be seeing this.
         {% endif %}
-        are in <a href="{% url 'app:lobby' %}">the lobby</a>.
-    {% endif %}
+        {% if me.looking_for_partner and me != player %}
+            Oh! I am too!
+            <form method="post" action="{% url 'app:player' player.id %}">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="Partner Me Up, Daddy-O">
+            </form>
+        {% endif %}
+        <br />
+        {% if player.table %}
+            {{ player.table.as_link }}
+        {% else %}
+            {% if me == player %}
+                You
+            {% else %}
+                They
+            {% endif %}
+            are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+        {% endif %}
+    </div>
+    <div>
+        {% include "chat-html-partial.html#chat-html-partial" %}
+    </div>
 {% endblock content %}
 {% block scripts %}
-{{ chat_scripts }}
+    {% include "chat-scripts-partial.html#chat-scripts-partial" %}
 {% endblock scripts %}
