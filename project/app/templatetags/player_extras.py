@@ -15,10 +15,15 @@ def styled_link(value, arg, style_attrs=None):
     if style_attrs is None:
         style_attrs = ["font-size: xx-large"]
     comment = ""
-    if value == arg:
+
+    me = arg
+    if hasattr(me, "player"):
+        me = me.player
+
+    if value == me:
         style_attrs.append("color:green")
         comment = " (that's you!)"
-    elif value == arg.partner:
+    elif value == getattr(me, "partner", None):
         style_attrs.append("color:red")
         comment = "✨MUH PARTNER✨"
     return format_html(

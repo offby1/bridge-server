@@ -18,10 +18,10 @@
             </tr>
             {% for player in player_list %}
                 <tr style="border: 1px dotted">
-                    <td>{{ player|sedate_link:user.player }}</td>
+                    <td>{{ player|sedate_link:user }}</td>
                     <td>
                       {% if player.partner %}
-                      {{ player.partner|sedate_link:user.player }}
+                      {{ player.partner|sedate_link:user }}
                       {% else %}
                       😢
                       {% endif %}
