@@ -29,19 +29,24 @@ def bob(db):
 @pytest.fixture
 def usual_setup(db):
     t = Table.objects.create()
-    for username, attr in (
+
+    directions_by_player_name = dict([
         ("Bob", bridge.seat.Seat.NORTH),
         ("Carol", bridge.seat.Seat.EAST),
         ("Ted", bridge.seat.Seat.SOUTH),
         ("Alice", bridge.seat.Seat.WEST),
-    ):
-        u = auth.models.User.objects.create_user(username=username, password=username)
+    ])
+
+    for name in directions_by_player_name:
+        u = auth.models.User.objects.create_user(username=name, password=name)
         p = Player.objects.create(user=u)
-        if username == "Ted":
-            p.partner_with(Player.objects.get_by_name("Bob"))
-        elif username == "Alice":
-            p.partner_with(Player.objects.get_by_name("Carol"))
-        Seat.objects.create(direction=attr.value, player=p, table=t)
+
+    Player.objects.get_by_name("Ted").partner_with(Player.objects.get_by_name("Bob"))
+    Player.objects.get_by_name("Alice").partner_with(Player.objects.get_by_name("Carol"))
+
+    for name, direction in directions_by_player_name.items():
+        p = Player.objects.get_by_name(name)
+        Seat.objects.create(direction=direction.value, player=p, table=t)
 
 
 def test_all_seated_players_have_partners(usual_setup):
@@ -110,30 +115,29 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     assert response.context["show_cards_for"] == [Player.objects.get_by_name("Bob")]
 
 
-def test_player_cannot_be_at_two_seats(bob):
-    t = Table.objects.create()
+def test_player_cannot_be_at_two_seats(usual_setup):
+    t = Table.objects.first()
 
-    Seat.objects.create(
-        direction=bridge.seat.Seat.NORTH.value,
-        player=Player.objects.get_by_name("Bob"),
-        table=t,
-    )
-
+    # Try to sneak Bob into Carol's seat!
+    # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     with pytest.raises(IntegrityError):
-        Seat.objects.create(
+        Seat.objects.filter(
             direction=bridge.seat.Seat.EAST.value,
-            player=Player.objects.get_by_name("Bob"),
             table=t,
+        ).update(
+            player=Player.objects.get_by_name("Bob"),
         )
 
 
 def test_player_cannot_be_in_two_tables(usual_setup):
     bob = Player.objects.get_by_name("Bob")
 
+    # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     t2 = Table.objects.create()
 
+    s = Seat.objects.create(direction=bridge.seat.Seat.EAST.value, table=t2)
     with pytest.raises(IntegrityError):
-        Seat.objects.create(direction=bridge.seat.Seat.EAST.value, player=bob, table=t2)
+        Seat.objects.filter(pk=s.pk).update(player=bob)
 
 
 def test_view_filter(usual_setup, rf):
@@ -145,6 +149,13 @@ def test_view_filter(usual_setup, rf):
 
 
 def test_cant_just_make_up_directions(bob):
+    partner = Player.objects.create(
+        user=auth.models.User.objects.create_user(
+            username="partner",
+        ),
+    )
+    bob.partner_with(partner)
+
     t = Table.objects.create()
     with pytest.raises(Exception) as e:
         Seat.objects.create(direction=1234, player=bob, table=t)

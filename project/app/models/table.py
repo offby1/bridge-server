@@ -15,6 +15,8 @@ class TableManager(models.Manager):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
 
+# What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
+# onto each instance.
 class Table(models.Model):
     objects = TableManager()
 

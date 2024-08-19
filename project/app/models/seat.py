@@ -23,19 +23,42 @@ class Seat(models.Model):
     def __str__(self):
         return f"{SEAT_CHOICES[self.direction]} at {self.table}"
 
+    def _check_table_consistency(self):
+        if self.player is None:
+            return
+        if self.table is None:
+            return
+        if self.player.partner is None:
+            raise SeatException(f"Whoa thar friend; {self.player} has no partner!!")
+
+        if self.player.partner.table is None:
+            return
+
+        if self.table is None:
+            return
+
+        if self.player.partner.table != self.table:
+            raise SeatException(
+                f"Whoa thar friend {self.player}'s partner {self.player.partner} is already seated at {self.player.partner.table} but this is {self.table}!!",
+            )
+
+    def save(self, *args, **kwargs):
+        self._check_table_consistency()
+        super().save(*args, **kwargs)
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["player", "table"],
-                name="no_more_than_one_player_per_table",
-            ),
-            models.UniqueConstraint(
-                fields=["direction", "table"],
-                name="no_more_than_four_directions_per_table",
-            ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_direction_valid",
                 condition=models.Q(direction__in=SEAT_CHOICES),
+            ),
+            models.UniqueConstraint(
+                fields=["player"],
+                name="%(app_label)s_%(class)s_no_more_than_one_seat_per_player",
+            ),
+            models.UniqueConstraint(
+                fields=["direction", "table"],
+                name="%(app_label)s_%(class)s_no_more_than_four_directions_per_table",
             ),
         ]
 
