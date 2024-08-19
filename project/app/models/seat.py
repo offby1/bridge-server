@@ -20,40 +20,6 @@ class Seat(models.Model):
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)
 
-    def partner_with(self, other):
-        if self.player is None:
-            raise SeatException(
-                f"Cannot partner {self=} with {other=} because {self.player=} is None",
-            )
-
-        if other.player is None:
-            raise SeatException(
-                f"Cannot partner {self=} with {other=} because {other.player=} is None",
-            )
-
-        if self.player.partner is not None:
-            raise SeatException(
-                f"Cannot partner {self=} with {other=} because {self.player.partner=} is already partnered up",
-            )
-        if other.player.partner is not None:
-            raise SeatException(
-                f"Cannot partner {self=} with {other=} because {other.player.partner=} is already partnered up",
-            )
-
-        self.player.partner_with(other.player)
-
-    def save(self, *args, **kwargs):
-        partner_direction = bridge.seat.Seat(self.direction).partner()
-        partner_seat = Seat.objects.filter(
-            direction=partner_direction.value,
-            table=self.table,
-        ).first()
-
-        if self.player is not None and partner_seat is not None and partner_seat.player is not None:
-            self.partner_with(partner_seat)
-
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{SEAT_CHOICES[self.direction]} at {self.table}"
 

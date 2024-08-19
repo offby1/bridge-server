@@ -37,6 +37,10 @@ def usual_setup(db):
     ):
         u = auth.models.User.objects.create_user(username=username, password=username)
         p = Player.objects.create(user=u)
+        if username == "Ted":
+            p.partner_with(Player.objects.get_by_name("Bob"))
+        elif username == "Alice":
+            p.partner_with(Player.objects.get_by_name("Carol"))
         Seat.objects.create(direction=attr.value, player=p, table=t)
 
 
@@ -145,7 +149,7 @@ def test_cant_just_make_up_directions(bob):
     with pytest.raises(Exception) as e:
         Seat.objects.create(direction=1234, player=bob, table=t)
 
-    assert "not a valid Seat" in str(e.value)
+    assert "app_seat_direction_valid" in str(e.value)
 
 
 def test_breaking_up_is_hard_to_do(usual_setup):
