@@ -21,11 +21,11 @@
             {% if user.is_authenticated %}
                 Hello,
                 {% if user.player %}
-                    {{ user.player.as_link }}
+                    {{ user.player.as_link }}.
                 {% else %}
-                    {{ user }}
+                    {{ user }}.
                 {% endif %}
-                .
+
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <input type="submit" value="logout">
