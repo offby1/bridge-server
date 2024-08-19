@@ -7,7 +7,6 @@ app_name = "app"
 urlpatterns = [
     path("", home_view, name="home"),
     path("lobby/", lobby.lobby, name="lobby"),
-    path("partnership/<pk1>/<pk2>", player.partnership_view, name="partnership"),
     path("player/<pk>/", player.player_detail_view, name="player"),
     path("players/", player.player_list_view, name="players"),
     path("send_lobby_message/", lobby.send_lobby_message, name="send_lobby_message"),
