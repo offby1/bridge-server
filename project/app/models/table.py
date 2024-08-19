@@ -26,7 +26,7 @@ class Table(models.Model):
         return format_html(
             "<a href='{}'>{}</a>",
             reverse("app:table-detail", kwargs=dict(pk=self.pk)),
-            str(self).title(),
+            str(self),
         )
 
     def as_tuples(self):
