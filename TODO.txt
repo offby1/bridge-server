@@ -6,8 +6,6 @@ STILL TODO:
 
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
-* When displaying the signup page, put text focus on the first field, so I can start typing without having to hit TAB
-
 * When sending a chat message, make RET submit, so that we don't have to actually click on the button.
 
 * when bob logs out, his name should vanish from the "lobby"
@@ -23,6 +21,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* When displaying the signup page, put text focus on the first field, so I can start typing without having to hit TAB
 
 * When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
   - pop up a dialog with the body of the 403 response; and/or
