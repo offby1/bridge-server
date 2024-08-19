@@ -33,15 +33,15 @@ class Command(BaseCommand):
                 progress_bar.update()
 
                 # if there are no empty tables, create one
-                # find a seat at the first empty table
-                # update the player
                 t = Table.objects.get_nonfull().first()
                 if t is None:
                     t = Table.objects.create()
 
-                p_by_d = t.players_by_direction()
+                # find a seat at the first empty table
+                # update the player
+                this_tables_players_by_direction = t.players_by_direction()
                 for d in SEAT_CHOICES.keys():
-                    if d not in p_by_d:
+                    if d not in this_tables_players_by_direction:
                         Seat.objects.create(direction=d, player=p, table=t)
                         break
 
