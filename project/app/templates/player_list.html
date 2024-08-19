@@ -16,15 +16,30 @@
                 <th scope="col">Partner</th>
                 <th scope="col">Where</th>
             </tr>
+            <tr>
+                <td />
+                <td>
+                    <form method="get" action="{% url 'app:players' %}">
+                        {{ love_form }}
+                        <input type="submit" value="filter">
+                    </form>
+                </td>
+                <td>
+                    <form method="get" action="{% url 'app:players' %}">
+                        {{ seated_form }}
+                        <input type="submit" value="filter">
+                    </form>
+                </td>
+            </tr>
             {% for player in player_list %}
                 <tr style="border: 1px dotted">
                     <td>{{ player|sedate_link:user }}</td>
                     <td>
-                      {% if player.partner %}
-                      {{ player.partner|sedate_link:user }}
-                      {% else %}
-                      😢
-                      {% endif %}
+                        {% if player.partner %}
+                            {{ player.partner|sedate_link:user }}
+                        {% else %}
+                            😢
+                        {% endif %}
                     </td>
                     <td>
                         {% if player.table %}
@@ -36,25 +51,5 @@
                 </tr>
             {% endfor %}
         </table>
-        <div class="container">
-            <div class="row row-cols-auto">
-                <div class="col">
-                    <form method="get" action="{% url 'app:players' %}">
-                        {{ love_form }}
-                    </div>
-                    <div class="col">
-                        <input type="submit" value="filter">
-                    </div>
-                </div>
-                <div class="col">
-                    <form method="get" action="{% url 'app:players' %}">
-                        {{ seated_form }}
-                    </div>
-                    <div class="col">
-                        <input type="submit" value="filter">
-                    </div>
-                </div>
-            </form>
-        </div>
     {% endblock player_list %}
 {% endblock content %}
