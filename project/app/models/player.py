@@ -93,7 +93,12 @@ class Player(models.Model):
                 ),
             )
 
-            Seat.objects.filter(pk__in={self.seat.pk, self.partner.seat.pk}).update(player=None)
+            seat_pks = set()
+            for player in (self, self.partner):
+                if s := getattr(player, "seat", None):
+                    seat_pks.add(s.pk)
+
+            Seat.objects.filter(pk__in=seat_pks).update(player=None)
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
 
     @property

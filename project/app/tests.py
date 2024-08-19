@@ -72,6 +72,17 @@ def test_splitsville_ejects_us_from_table(usual_setup):
     assert Bob.table == Bob.table
 
 
+def test_splitsville_non_seated_partnership(bob):
+    Alice = Player.objects.create(
+        user=auth.models.User.objects.create_user(username="Alice", password="Alice"),
+    )
+    Alice.partner_with(bob)
+
+    Alice.break_partnership()
+    bob.refresh_from_db()
+    assert bob.partner is None
+
+
 def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get_by_name("Bob")
 
