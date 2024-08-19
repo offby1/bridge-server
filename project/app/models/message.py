@@ -84,23 +84,12 @@ class Message(models.Model):
         message,
         recipient,
     ):
-        obj = kls.objects.create(
+        return kls._create_event_args(
+            channel_name=kls.channel_name_from_players(from_player, recipient),
             from_player=from_player,
             message=message,
             recipient_obj=recipient,
         )
-
-        channel_name = kls.channel_name_from_players(from_player, recipient)
-
-        return [
-            channel_name,
-            "message",
-            {
-                "who": from_player.name,
-                "what": message,
-                "when": obj.timestamp,
-            },
-        ]
 
     @classmethod
     def create_lobby_event_args(kls, *, from_player, message):
@@ -112,14 +101,27 @@ class Message(models.Model):
                     f"Created {_THE_LOBBY=} so as to send {message=} from {from_player=} to it",
                 )
 
-        obj = kls.objects.create(
+        return kls._create_event_args(
+            channel_name="lobby",
             from_player=from_player,
-            message=message,
+            message=message,  # it's like a jungle, sometimes.  It makes me wonder how I keep from going under.
             recipient_obj=_THE_LOBBY,
         )
 
+    @classmethod
+    def _create_event_args(kls, *, channel_name, from_player, message, recipient_obj):
+        if len(message) > 100:
+            logger.warning(f"Truncating annoyingly-long ({len(message)} characters) message")
+            message = message[0:100]
+
+        obj = kls.objects.create(
+            from_player=from_player,
+            message=message,
+            recipient_obj=recipient_obj,
+        )
+
         return [
-            "lobby",
+            channel_name,
             "message",
             {
                 "who": from_player.name,
