@@ -37,6 +37,15 @@ class LookingForLoveForm(forms.Form):
     )
 
 
+class SeatedForm(forms.Form):
+    seated = forms.ChoiceField(
+        choices={True: "yes", False: "no", None: "don't care"},
+        label="Seated?",
+        required=False,
+        widget=forms.RadioSelect,
+    )
+
+
 # Does double-duty -- joins a partner, or breaks up with a partner.
 class PartnerForm(forms.Form):
     me = forms.IntegerField(widget=forms.HiddenInput)

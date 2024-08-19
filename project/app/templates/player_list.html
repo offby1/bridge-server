@@ -32,7 +32,15 @@
             <div class="row row-cols-auto">
                 <div class="col">
                     <form method="get" action="{% url 'app:players' %}">
-                        {{ form }}
+                        {{ love_form }}
+                    </div>
+                    <div class="col">
+                        <input type="submit" value="filter">
+                    </div>
+                </div>
+                <div class="col">
+                    <form method="get" action="{% url 'app:players' %}">
+                        {{ seated_form }}
                     </div>
                     <div class="col">
                         <input type="submit" value="filter">

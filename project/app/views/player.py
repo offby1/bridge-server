@@ -1,6 +1,6 @@
 import json
 
-from app.forms import LookingForLoveForm, PartnerForm
+from app.forms import LookingForLoveForm, PartnerForm, SeatedForm
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
@@ -18,24 +18,30 @@ SPLIT = "splitsville"
 
 def player_list_view(request):
     lookin_for_love = request.GET.get("lookin_for_love")
+    seated = request.GET.get("seated")
+
     model = Player
     template_name = "player_list.html"
-    form = LookingForLoveForm(request.GET)
 
-    context = {"form": form}
+    lfl_form = LookingForLoveForm(request.GET)
+    seated_form = SeatedForm(request.GET)
 
     qs = model.objects.all()
     total_count = qs.count()
 
-    filter_val = {"True": True, "False": False}.get(lookin_for_love)
+    if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
+        qs = qs.filter(partner__isnull=lfl_filter)
 
-    if filter_val is not None:
-        qs = qs.filter(partner__isnull=filter_val)
+    if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
+        qs = qs.filter(seat__isnull=not seated_filter)
+
     filtered_count = qs.count()
-    context["extra_crap"] = dict(total_count=total_count, filtered_count=filtered_count)
-
-    context["form"] = form
-    context["player_list"] = qs
+    context = {
+        "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
+        "love_form": lfl_form,
+        "player_list": qs,
+        "seated_form": seated_form,
+    }
 
     return render(request, template_name, context)
 
@@ -104,5 +110,7 @@ def send_player_message(request, recipient_pk):
                 recipient=recipient,
             ),
         )
+
+    return HttpResponse()
 
     return HttpResponse()
