@@ -12,6 +12,9 @@
               rel="stylesheet"
               integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
               crossorigin="anonymous">
+        <link href="{% static 'app/datatables.css' %}"
+              rel="stylesheet">
+
     </head>
     <body>
         <div>
@@ -54,6 +57,7 @@
                 crossorigin="anonymous"></script>
         <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
         <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+        <script src="{% static 'app/datatables.js' %}"></script>
         <script>
 // from https://docs.djangoproject.com/en/5.0/howto/csrf/#acquiring-the-token-if-csrf-use-sessions-and-csrf-cookie-httponly-are-false
 function getCookie(name) {

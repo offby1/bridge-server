@@ -11,45 +11,49 @@
         {% endif %}
         players.
         <table>
-            <tr>
-                <th scope="col">Who</th>
-                <th scope="col">Partner</th>
-                <th scope="col">Where</th>
-            </tr>
-            <tr>
-                <td />
-                <td>
-                    <form method="get" action="{% url 'app:players' %}">
-                        {{ love_form }}
-                        <input type="submit" value="filter">
-                    </form>
-                </td>
-                <td>
-                    <form method="get" action="{% url 'app:players' %}">
-                        {{ seated_form }}
-                        <input type="submit" value="filter">
-                    </form>
-                </td>
-            </tr>
-            {% for player in player_list %}
-                <tr style="border: 1px dotted">
-                    <td>{{ player|sedate_link:user }}</td>
+            <thead>
+                <tr>
+                    <th scope="col">Who</th>
+                    <th scope="col">Partner</th>
+                    <th scope="col">Where</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td />
                     <td>
-                        {% if player.partner %}
-                            {{ player.partner|sedate_link:user }}
-                        {% else %}
-                            😢
-                        {% endif %}
+                        <form method="get" action="{% url 'app:players' %}">
+                            {{ love_form }}
+                            <input type="submit" value="filter">
+                        </form>
                     </td>
                     <td>
-                        {% if player.table %}
-                            {{ player.table.as_link }}
-                        {% else %}
-                            <a href="{% url 'app:lobby' %}">lobby</a>
-                        {% endif %}
+                        <form method="get" action="{% url 'app:players' %}">
+                            {{ seated_form }}
+                            <input type="submit" value="filter">
+                        </form>
                     </td>
                 </tr>
-            {% endfor %}
+                {% for player in player_list %}
+                    <tr style="border: 1px dotted">
+                        <td>{{ player|sedate_link:user }}</td>
+                        <td>
+                            {% if player.partner %}
+                                {{ player.partner|sedate_link:user }}
+                            {% else %}
+                                😢
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.table %}
+                                {{ player.table.as_link }}
+                            {% else %}
+                                <a href="{% url 'app:lobby' %}">lobby</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
     {% endblock player_list %}
 {% endblock content %}
