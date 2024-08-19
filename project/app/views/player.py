@@ -74,7 +74,6 @@ def partnership_view(request, pk1, pk2):
             "them": partner.id,
             "action": SPLIT,
         }),
-        "me": me,
         "partner": partner,
         "show_cards_for": [me],
     }
@@ -104,7 +103,6 @@ def player_detail_view(request, pk):
             kwargs={"recipient_pk": player.pk},
         ),
         "chat_target": player.name,
-        "me": me,
         "player": player,
         "show_cards_for": [me],
     }

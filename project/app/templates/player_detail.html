@@ -3,15 +3,15 @@
 {% load partials %}
 {% block content %}
     <div>
-        {# "me" is whoever is logged in. "player" is the player whose details we're examining. #}
-        {{ player | styled_link:me }}
+        {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
+        {{ player | styled_link:user.player }}
         {% if player.looking_for_partner %}
-            is looking for a partner.  <a href="{% url 'app:players' %}?lookin_for_love=True">Find swinging singles in your area.</a>
+            is looking for a partner.
         {% else %}
             is partnered up with {{ player.partner }} and now that I think of it, you shouldn't even be seeing this.
         {% endif %}
-        {% if me.looking_for_partner and me != player %}
-            Oh! I am too!
+        {% if user.player.looking_for_partner and user.player != player %}
+            Oh! I am too!  <a href="{% url 'app:players' %}?lookin_for_love=True">Find swinging singles in your area.</a>
             <form method="post" action="{% url 'app:player' player.id %}">
                 {% csrf_token %}
                 {{ form }}
@@ -22,7 +22,7 @@
         {% if player.table %}
             {{ player.table.as_link }}
         {% else %}
-            {% if me == player %}
+            {% if user.player == player %}
                 You
             {% else %}
                 They

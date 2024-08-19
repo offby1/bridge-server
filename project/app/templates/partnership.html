@@ -2,7 +2,7 @@
 {% load player_extras %}
 {% load partials %}
 {% block content %}
-    <h1>The great {{ me }} | {{ partner }} partnership</h1>
+    <h1>The great {{ user.player }} | {{ partner }} partnership</h1>
     <div>
         <form method="post" action="{% url 'app:player' partner.id %}">
             {% csrf_token %}
@@ -18,12 +18,12 @@
     {% if partner.table %}
         {{ partner.table.as_link }}
     {% else %}
-        {% if me == partner %}
-            You
+        {% if user.player == partner %}
+            You are
         {% else %}
-            They
+            {{ partner }} is
         {% endif %}
-        are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+        in <a href="{% url 'app:lobby' %}">the lobby</a>.
     {% endif %}
 {% endblock content %}
 {% block scripts %}
