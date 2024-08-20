@@ -6,7 +6,7 @@
     <input type="text" id="outgoing-message" />
     <button type="button"
             onclick='postMessage(document.querySelector( "#outgoing-message" ).value)'>
-      Speak to {{ chat_target }}
+      {% if chat_target == me %}Mumble to yourself{% else %}Speak to {{ chat_target }}{% endif %}
     </button>
   </div>
   <div>

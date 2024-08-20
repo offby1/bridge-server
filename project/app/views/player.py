@@ -61,7 +61,8 @@ def player_detail_view(request, pk):
             "app:send_player_message",
             kwargs={"recipient_pk": them.pk},
         ),
-        "chat_target": them.name,
+        "chat_target": them,
+        "me": me,
         "player": them,
         "show_cards_for": [me],
     }
@@ -100,7 +101,7 @@ def send_player_message(request, recipient_pk):
         sender = request.user.player
         recipient = get_object_or_404(Player, pk=recipient_pk)
 
-        if sender.is_seated or recipient.is_seated:
+        if (sender != recipient) and (sender.is_seated or recipient.is_seated):
             return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
 
         send_event(
