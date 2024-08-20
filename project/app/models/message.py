@@ -34,9 +34,6 @@ class Lobby(models.Model):
 _THE_LOBBY = None  # singleton instance, assigned later
 
 
-# TODO idea -- rather than have two or more nullable foreign keys, constraining at most one to be non-null, maybe I
-# should have a little inheritance hierarchy -- an abstrace Message base, and LobbyMessage and PlayerMessage inheriting
-# from that.
 class Message(models.Model):
     objects = MessageManager()
 
