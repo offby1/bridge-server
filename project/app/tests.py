@@ -259,8 +259,7 @@ def test_sending_player_messages(usual_setup, rf):
 
         request = rf.post(
             reverse("app:send_player_message", args=[target.pk]),
-            content_type="application/json",
-            data=json.dumps({"message": "hey you"}),
+            data={"message": "hey you"},
         )
 
         request.user = user

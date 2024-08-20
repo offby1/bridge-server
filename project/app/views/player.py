@@ -107,7 +107,7 @@ def send_player_message(request, recipient_pk):
         send_event(
             *Message.create_player_event_args(
                 from_player=sender,
-                message=json.loads(request.body)["message"],
+                message=request.POST["message"],
                 recipient=recipient,
             ),
         )

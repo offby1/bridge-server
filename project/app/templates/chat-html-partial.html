@@ -5,6 +5,7 @@
   <div>
     <input
         type="text"
+        name="message"
         hx-post="{{ chat_post_endpoint }}"
         hx-target="#chat-log"
         hx-trigger="keyup[key=='Enter']"
