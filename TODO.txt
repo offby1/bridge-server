@@ -1,5 +1,13 @@
 STILL TODO:
 
+* The datatables default of 10 entries per page isn't enough; make it 100 or something.
+
+* The new "lobby view" ("/players/?seated=False") doesn't tell you how many *total* players there are.  (Because I nuked the " 3 / 15 players" thing)
+
+* When someone clicks the "partner up" button, the other person needs to get an alert, telling them that that happened.
+
+* It should be blindingly obvious that you have a partner so you don't have to go around looking for another one.
+
 * when not logged in, we still attempt to listen to server-sent events ... but fail with 400 (cuz that endpoint requires authentication, I guess).
 
 * When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
