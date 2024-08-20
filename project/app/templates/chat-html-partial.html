@@ -3,11 +3,15 @@
 {% partialdef chat-html-partial %}
 <div>
   <div>
-    <input type="text" id="outgoing-message" />
-    <button type="button"
-            onclick='postMessage(document.querySelector( "#outgoing-message" ).value)'>
+    <input
+        type="text"
+        hx-post="{{ chat_post_endpoint }}"
+        hx-target="#chat-log"
+        hx-trigger="keyup[key=='Enter']"
+        />
+    <label>
       {% if chat_target == me %}Mumble to yourself{% else %}Speak to {{ chat_target }}{% endif %}
-    </button>
+    </label>
   </div>
   <div>
     Chat Log

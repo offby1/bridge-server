@@ -24,19 +24,6 @@
 
   document.querySelector( "#chat-log" ).append(newRow);
   }, false);
-
-  window.postMessage = function(message){
-  fetch("{{ chat_post_endpoint }}", {
-  method: "POST",
-  headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-  body: JSON.stringify({message: message})
-  }).then(
-  (response) => {
-  if (!response.ok) {
-  response.text().then((text) => alert(text));
-  }
-  }
-  );
-  }
+  
 </script>
 {% endpartialdef chat-scripts-partial %}
