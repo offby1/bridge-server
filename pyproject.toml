@@ -18,6 +18,7 @@ bridge = {path = "../library"}
 django-eventstream = {extras = ["drf"], version = "^5.3.0"}
 daphne = "^4.1.2"
 django-template-partials = "^24.4"
+whitenoise = "^6.7.0"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^3.2.3"
