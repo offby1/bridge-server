@@ -1,13 +1,14 @@
 {% load partials %}
 
 {% partialdef chat-html-partial %}
-<div>
+<div id="chat-html-partial">
   <div>
     <input
+        autofocus
         type="text"
         name="message"
         hx-post="{{ chat_post_endpoint }}"
-        hx-target="#chat-log"
+        hx-swap="none"
         hx-trigger="keyup[key=='Enter']"
         />
     <label>
@@ -15,7 +16,7 @@
     </label>
   </div>
   <div>
-    Chat Log
+    Chat Log 'twixt {{ me }} and {{ chat_target }}
     <table id="chat-log">
       <tr>
         <th scope="col">When</th>

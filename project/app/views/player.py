@@ -1,5 +1,3 @@
-import json
-
 from app.forms import LookingForLoveForm, PartnerForm, SeatedForm
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
@@ -7,6 +5,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirec
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event
 
@@ -46,6 +45,15 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
+def _chat_partial_context(*, event_source, old_messages, post_endpoint, target_description):
+    return {
+        "chat_event_source_endpoint": event_source,
+        "chat_messages": old_messages,
+        "chat_post_endpoint": post_endpoint,
+        "chat_target": target_description,
+    }
+
+
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
@@ -53,19 +61,20 @@ def player_detail_view(request, pk):
     them = get_object_or_404(Player, pk=pk)
 
     context = {
-        "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(me, them)}",
-        "chat_messages": (
-            Message.objects.get_for_player_pair(me, them).order_by("timestamp").all()[0:100]
-        ),
-        "chat_post_endpoint": reverse(
-            "app:send_player_message",
-            kwargs={"recipient_pk": them.pk},
-        ),
-        "chat_target": them,
         "me": me,
         "player": them,
         "show_cards_for": [me],
-    }
+    } | _chat_partial_context(
+        target_description=them,
+        post_endpoint=reverse(
+            "app:send_player_message",
+            kwargs={"recipient_pk": them.pk},
+        ),
+        old_messages=(
+            Message.objects.get_for_player_pair(me, them).order_by("timestamp").all()[0:100]
+        ),
+        event_source=f"/events/player/{Message.channel_name_from_players(me, them)}",
+    )
 
     if request.method == "GET":
         form = PartnerForm({
@@ -95,21 +104,39 @@ def player_detail_view(request, pk):
     return TemplateResponse(request, "player_detail.html", context=context)
 
 
+@require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def send_player_message(request, recipient_pk):
-    if request.method == "POST":
-        sender = request.user.player
-        recipient = get_object_or_404(Player, pk=recipient_pk)
+    sender = request.user.player
+    recipient = get_object_or_404(Player, pk=recipient_pk)
 
-        if (sender != recipient) and (sender.is_seated or recipient.is_seated):
-            return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
+    if (sender != recipient) and (sender.is_seated or recipient.is_seated):
+        return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
 
-        send_event(
-            *Message.create_player_event_args(
-                from_player=sender,
-                message=request.POST["message"],
-                recipient=recipient,
-            ),
-        )
+    args = Message.create_player_event_args(
+        from_player=sender,
+        message=request.POST["message"],
+        recipient=recipient,
+    )
+    message_content_dict = args[2]
+    send_event(
+        *args,
+    )
 
-    return HttpResponse()
+    # TODO -- this tewtally duplicates a bit of the template
+    return HttpResponse(
+        format_html(
+            """
+      <tr style="border: 1px dotted">
+        <td style="font-weight: lighter;
+                   font-family: monospace;
+                   border: 1px solid">{}</td>
+        <td>{}</td>
+        <td style="border: 1px solid">{}</td>
+      </tr>
+        """,
+            message_content_dict["when"].isoformat(),
+            message_content_dict["who"],
+            message_content_dict["what"],
+        ),
+    )
