@@ -113,5 +113,3 @@ def send_player_message(request, recipient_pk):
         )
 
     return HttpResponse()
-
-    return HttpResponse()
