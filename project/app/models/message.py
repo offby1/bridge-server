@@ -57,16 +57,14 @@ class Message(models.Model):
             f"At {self.timestamp}, {self.from_player} says {self.message} to {self.recipient_obj}"
         )
 
-    def as_html_table_row(self):
+    def as_html(self):
         return format_html(
             """
-      <tr style="border: 1px dotted">
-        <td style="font-weight: lighter;
-                   font-family: monospace;
-                   border: 1px solid">{}</td>
-        <td>{}</td>
-        <td style="border: 1px solid">{}</td>
-      </tr>
+      <div class="chat-message-row">
+        <div style="display: inline; font-family: monospace;" class="chat-message-timestamp">{}</div>
+        <div style="display: inline;" class="chat-message-sender-name">{}</div>
+        <div style="display: inline;" class="chat-message-text">{}</div>
+      </div>
         """,
             self.timestamp.isoformat(),
             self.from_player.name,
@@ -137,7 +135,7 @@ class Message(models.Model):
         return [
             channel_name,
             "message",
-            obj.as_html_table_row(),
+            obj.as_html(),
         ]
 
     class Meta:

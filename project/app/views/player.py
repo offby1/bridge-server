@@ -54,7 +54,7 @@ def player_detail_view(request, pk):
     context = {
         "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(me, them)}",
         "chat_messages": ([
-            m.as_html_table_row
+            m.as_html()
             for m in Message.objects.get_for_player_pair(me, them)
             .order_by("timestamp")
             .all()[0:100]

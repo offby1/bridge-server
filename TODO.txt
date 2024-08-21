@@ -1,7 +1,5 @@
 STILL TODO:
 
-* The chat log can get annoyingly long -- the new messages are at the bottom, so I gotta scroll to see them.
-
 * The datatables default of 10 entries per page isn't enough; make it 100 or something.
 
 * The new "lobby view" ("/players/?seated=False") doesn't tell you how many *total* players there are.  (Because I nuked the " 3 / 15 players" thing)
@@ -30,6 +28,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* The chat log can get annoyingly long -- the new messages are at the bottom, so I gotta scroll to see them.
 
 * When sending a chat message, the newly-appended log line isn't styled quite the same as those logs that were sent by the server when the page loaded.
 

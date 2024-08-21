@@ -17,20 +17,16 @@
   </div>
   <div>
     Chat Log 'twixt {{ user.player }} and {{ chat_target }}
-    <table id="chat-log"
+    <div id="chat-log"
            hx-ext="sse"
-           hx-swap="beforeend"
+           hx-swap="beforeend scroll:bottom"
            sse-connect="{{ chat_event_source_endpoint }}"
-           sse-swap="message">
-      <tr>
-        <th scope="col">When</th>
-        <th scope="col">Who</th>
-        <th scope="col">What</th>
-      </tr>
+           sse-swap="message"
+         style="border: 1px solid; overflow: auto; height: 200px;">
       {% for message in chat_messages %}
         {{ message }}
       {% endfor %}
-    </table>
+    </div>
   </div>
 </div>
 {% endpartialdef chat-html-partial %}
