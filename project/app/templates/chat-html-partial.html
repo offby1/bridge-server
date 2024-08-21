@@ -17,7 +17,11 @@
   </div>
   <div>
     Chat Log 'twixt {{ me }} and {{ chat_target }}
-    <table id="chat-log">
+    <table id="chat-log"
+           hx-ext="sse"
+           hx-swap="beforeend"
+           sse-connect="{{ chat_event_source_endpoint }}"
+           sse-swap="message">
       <tr>
         <th scope="col">When</th>
         <th scope="col">Who</th>
