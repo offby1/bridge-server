@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.html import format_html
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +121,22 @@ class Message(models.Model):
         return [
             channel_name,
             "message",
-            {
-                "who": from_player.name,
-                "what": message,
-                "when": obj.timestamp,
-            },
+            # TODO -- this tewtally duplicates a bit of the template
+            # Also -- ugh, presentation mixed up in my model
+            format_html(
+                """
+      <tr style="border: 1px dotted">
+        <td style="font-weight: lighter;
+                   font-family: monospace;
+                   border: 1px solid">{}</td>
+        <td>{}</td>
+        <td style="border: 1px solid">{}</td>
+      </tr>
+        """,
+                obj.timestamp.isoformat(),
+                from_player.name,
+                message,
+            ),
         ]
 
     class Meta:

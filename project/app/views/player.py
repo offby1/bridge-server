@@ -113,30 +113,19 @@ def send_player_message(request, recipient_pk):
     if (sender != recipient) and (sender.is_seated or recipient.is_seated):
         return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
 
-    args = Message.create_player_event_args(
+    channel_name, message_type, message_content = Message.create_player_event_args(
         from_player=sender,
         message=request.POST["message"],
         recipient=recipient,
     )
-    message_content_dict = args[2]
+
     send_event(
-        *args,
+        channel_name,
+        message_type,
+        message_content,
+        json_encode=False,
     )
 
-    # TODO -- this tewtally duplicates a bit of the template
     return HttpResponse(
-        format_html(
-            """
-      <tr style="border: 1px dotted">
-        <td style="font-weight: lighter;
-                   font-family: monospace;
-                   border: 1px solid">{}</td>
-        <td>{}</td>
-        <td style="border: 1px solid">{}</td>
-      </tr>
-        """,
-            message_content_dict["when"].isoformat(),
-            message_content_dict["who"],
-            message_content_dict["what"],
-        ),
+        message_content,
     )
