@@ -12,9 +12,6 @@ STILL TODO:
 
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
-* When sending a chat message, make RET submit, so that we don't have to actually click on the button.
-  Note that simply using htmx with `hx-trigger="keyup[key=='Enter']"` doesn't work on mobile, since they ain't no key events 😭
-
 * when bob logs out, his name should vanish from the "lobby"
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
@@ -28,6 +25,9 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* When sending a chat message, make RET submit, so that we don't have to actually click on the button.
+  Note that simply using htmx with `hx-trigger="keyup[key=='Enter']"` doesn't work on mobile, since they ain't no key events 😭
 
 * The chat log can get annoyingly long -- the new messages are at the bottom, so I gotta scroll to see them.
 
