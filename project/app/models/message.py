@@ -57,6 +57,22 @@ class Message(models.Model):
             f"At {self.timestamp}, {self.from_player} says {self.message} to {self.recipient_obj}"
         )
 
+    def as_html_table_row(self):
+        return format_html(
+            """
+      <tr style="border: 1px dotted">
+        <td style="font-weight: lighter;
+                   font-family: monospace;
+                   border: 1px solid">{}</td>
+        <td>{}</td>
+        <td style="border: 1px solid">{}</td>
+      </tr>
+        """,
+            self.timestamp.isoformat(),
+            self.from_player.name,
+            self.message,
+        )
+
     @staticmethod
     def channel_name_from_player_pks(pk1: int, pk2: int) -> str:
         return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
@@ -121,22 +137,7 @@ class Message(models.Model):
         return [
             channel_name,
             "message",
-            # TODO -- this tewtally duplicates a bit of the template
-            # Also -- ugh, presentation mixed up in my model
-            format_html(
-                """
-      <tr style="border: 1px dotted">
-        <td style="font-weight: lighter;
-                   font-family: monospace;
-                   border: 1px solid">{}</td>
-        <td>{}</td>
-        <td style="border: 1px solid">{}</td>
-      </tr>
-        """,
-                obj.timestamp.isoformat(),
-                from_player.name,
-                message,
-            ),
+            obj.as_html_table_row(),
         ]
 
     class Meta:

@@ -12,11 +12,11 @@
         hx-trigger="keyup[key=='Enter']"
         />
     <label>
-      {% if chat_target == me %}Mumble to yourself{% else %}Speak to {{ chat_target }}{% endif %}
+      {% if chat_target == user.player %}Mumble to yourself{% else %}Speak to {{ chat_target }}{% endif %}
     </label>
   </div>
   <div>
-    Chat Log 'twixt {{ me }} and {{ chat_target }}
+    Chat Log 'twixt {{ user.player }} and {{ chat_target }}
     <table id="chat-log"
            hx-ext="sse"
            hx-swap="beforeend"
@@ -28,13 +28,7 @@
         <th scope="col">What</th>
       </tr>
       {% for message in chat_messages %}
-      <tr style="border: 1px dotted">
-        <td style="font-weight: lighter;
-                   font-family: monospace;
-                   border: 1px solid">{{ message.timestamp.isoformat }}</td>
-        <td>{{ message.from_player }}</td>
-        <td style="border: 1px solid">{{ message.message }}</td>
-      </tr>
+        {{ message }}
       {% endfor %}
     </table>
   </div>

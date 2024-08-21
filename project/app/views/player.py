@@ -45,15 +45,6 @@ def player_list_view(request):
     return render(request, template_name, context)
 
 
-def _chat_partial_context(*, event_source, old_messages, post_endpoint, target_description):
-    return {
-        "chat_event_source_endpoint": event_source,
-        "chat_messages": old_messages,
-        "chat_post_endpoint": post_endpoint,
-        "chat_target": target_description,
-    }
-
-
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
@@ -61,20 +52,21 @@ def player_detail_view(request, pk):
     them = get_object_or_404(Player, pk=pk)
 
     context = {
-        "me": me,
-        "player": them,
-        "show_cards_for": [me],
-    } | _chat_partial_context(
-        target_description=them,
-        post_endpoint=reverse(
+        "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(me, them)}",
+        "chat_messages": ([
+            m.as_html_table_row
+            for m in Message.objects.get_for_player_pair(me, them)
+            .order_by("timestamp")
+            .all()[0:100]
+        ]),
+        "chat_post_endpoint": reverse(
             "app:send_player_message",
             kwargs={"recipient_pk": them.pk},
         ),
-        old_messages=(
-            Message.objects.get_for_player_pair(me, them).order_by("timestamp").all()[0:100]
-        ),
-        event_source=f"/events/player/{Message.channel_name_from_players(me, them)}",
-    )
+        "chat_target": them,
+        "player": them,
+        "show_cards_for": [me],
+    }
 
     if request.method == "GET":
         form = PartnerForm({
