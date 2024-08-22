@@ -1,10 +1,11 @@
 STILL TODO:
 
+* When someone clicks the "partner up" button, the other person needs to get an alert, telling them that that happened.
+  And their "player detail" page, or at least some section of it, needs to refresh so that it now says who their partner is.
+
 * The datatables default of 10 entries per page isn't enough; make it 100 or something.
 
 * The new "lobby view" ("/players/?seated=False") doesn't tell you how many *total* players there are.  (Because I nuked the " 3 / 15 players" thing)
-
-* When someone clicks the "partner up" button, the other person needs to get an alert, telling them that that happened.
 
 * It should be blindingly obvious that you have a partner so you don't have to go around looking for another one.
 
