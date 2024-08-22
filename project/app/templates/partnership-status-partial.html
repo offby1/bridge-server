@@ -1,0 +1,25 @@
+{% load partials %}
+{% load player_extras %}
+{% partialdef partnership-status-partial %}
+<div id="partnership-status"
+     hx-ext="sse"
+     sse-connect="{{ partnership_event_source_endpoint }}"
+     sse-swap="message">
+<ul>
+<li>Viewer: {{ as_viewed_by }}; your partner {{ as_viewed_by.partner }}</li>
+<li>Subject: {{ subject }}; their partner {{ subject.partner }}</li>
+<li>sse-connect="{{ partnership_event_source_endpoint }}"</li>
+</ul>
+    <div class="container">
+        <div class="row">
+            <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
+            <div class="col">
+                {% if text %}{{ text }}{% endif %}
+            </div>
+            <div class="col">
+                {% if button %}{{ button }}{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endpartialdef partnership-status-partial %}

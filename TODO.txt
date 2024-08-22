@@ -1,7 +1,10 @@
 STILL TODO:
 
-* When someone clicks the "partner up" button, the other person needs to get an alert, telling them that that happened.
-  And their "player detail" page, or at least some section of it, needs to refresh so that it now says who their partner is.
+* splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
+
+* django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog
+
+* rename the "foo-html-partial.html" files to "foo-partial.html"
 
 * The datatables default of 10 entries per page isn't enough; make it 100 or something.
 
@@ -26,6 +29,27 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* sam is looking at his own page
+  bob is looging at sam's page
+  They are partners
+  sam clicks "Splitsville"
+  bob's page doesn't update
+  I suspect I need to spray more messages -- one to subject, viewer, and subject's partner
+
+* I am sending the same blob of HTML to all browsers.  Specifically, if abigail and juan are partners, and each is looking at Juan's page, after some splitsville and parter-up, I see
+    Hello, Juan
+    juan: muh partner
+  I think I need the channel to include both the logged-in user, and the "subject" (i.e., the user whose ID is in the URL); only then will the view have enough information to render the stuff correctly.
+
+* BEEG BOOG: logged in as abigail on the phone, looking at the page for alan.
+  meanwhile the browser is logged in as juan, and *it* is also looking at alan's page.
+  When juan partners up, abigail sees "JUAN is muh partner" and "their partner is you! juan".
+
+  I suspect I wrote the template partial on the assumption that there were only two people in the world -- the player and their partner.
+
+* When someone clicks the "partner up" button, the other person needs to get an alert, telling them that that happened.
+  And their "player detail" page, or at least some section of it, needs to refresh so that it now says who their partner is.
 
 * When sending a chat message, make RET submit, so that we don't have to actually click on the button.
   Note that simply using htmx with `hx-trigger="keyup[key=='Enter']"` doesn't work on mobile, since they ain't no key events 😭

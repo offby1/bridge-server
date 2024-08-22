@@ -16,19 +16,19 @@ def styled_link(value, arg, style_attrs=None):
         style_attrs = ["font-size: xx-large"]
     comment = ""
 
-    me = arg
-    if hasattr(me, "player"):
-        me = me.player
+    subject = value
+    del value
+    viewer = arg
 
-    if value == me:
+    if subject == viewer:
         style_attrs.append("color:green")
         comment = " (that's you!)"
-    elif value == getattr(me, "partner", None):
+    elif subject == getattr(viewer, "partner", None):
         style_attrs.append("color:red")
         comment = "✨MUH PARTNER✨"
     return format_html(
         "{}{}",
-        value.as_link(style=";".join(style_attrs)),
+        subject.as_link(style=";".join(style_attrs)),
         comment,
     )
 

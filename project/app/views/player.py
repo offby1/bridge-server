@@ -1,10 +1,13 @@
-from app.forms import PartnerForm
+import itertools
+
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
+from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event
 
@@ -14,80 +17,171 @@ JOIN = "partnerup"
 SPLIT = "splitsville"
 
 
-def player_list_view(request):
-    lookin_for_love = request.GET.get("lookin_for_love")
-    seated = request.GET.get("seated")
+def player_detail_endpoint(player):
+    return reverse("app:player", args=[player.id])
 
-    model = Player
-    template_name = "player_list.html"
 
-    qs = model.objects.all()
-    total_count = qs.count()
+def player_link(player):
+    return format_html(
+        "<a href='{}'>{}</a>",
+        player_detail_endpoint(player),
+        player,
+    )
 
-    if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
-        qs = qs.filter(partner__isnull=lfl_filter)
 
-    if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
-        qs = qs.filter(seat__isnull=not seated_filter)
+def partnership_status_channel_name(*, viewer, subject):
+    return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
-    filtered_count = qs.count()
-    context = {
-        "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
-        "player_list": qs,
+
+def _button(*, page_subject, action):
+    assert action in (JOIN, SPLIT)
+    url = player_detail_endpoint(page_subject)
+
+    return format_html(
+        """<button
+      hx-post="{}"
+      hx-swap="none"            # the partnership-status partial listens for an event that the model will send
+      name="action"
+      value={}
+      >{}</button>""",
+        url,
+        action,
+        action,
+    )
+
+
+def _find_swinging_singles_link():
+    return format_html(
+        """<a href="{}?lookin_for_love=True">Find swinging singles in your area.</a>""",
+        reverse("app:players"),
+    )
+
+
+def _get_text(subject, as_viewed_by):
+    if subject == as_viewed_by:
+        posessive = "Your"
+    else:
+        posessive = "Their"
+
+    if subject.partner:
+        if subject.partner != as_viewed_by:
+            return format_html(posessive + " partner is {}", player_link(subject.partner))
+
+        return f"{posessive} partner is, gosh, you!"
+
+    if as_viewed_by.partner and as_viewed_by != subject:
+        return format_html("Maybe you should divorce {} and link up", as_viewed_by.partner)
+
+    return None
+
+
+def _get_button(subject, as_viewed_by):
+    if subject.partner is None and as_viewed_by.partner is None:
+        if subject != as_viewed_by:
+            return _button(page_subject=subject, action=JOIN)
+
+    if subject == as_viewed_by:
+        if subject.partner is not None:
+            return _button(page_subject=subject, action=SPLIT)
+
+    if subject == as_viewed_by.partner:
+        return _button(page_subject=subject, action=SPLIT)
+
+    return None
+
+
+def partnership_context(*, subject, as_viewed_by):
+    text = _get_text(subject, as_viewed_by)
+    button = _get_button(subject, as_viewed_by)
+
+    return {
+        "as_viewed_by": as_viewed_by,
+        "button": button,
+        "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
+        "subject": subject,
+        "text": text,
     }
-
-    return render(request, template_name, context)
 
 
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
-    me = request.user.player
-    them = get_object_or_404(Player, pk=pk)
+    who_clicked = request.user.player
+    subject = get_object_or_404(Player, pk=pk)
 
-    context = {
-        "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(me, them)}",
+    common_context = {
+        "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(who_clicked, subject)}",
         "chat_messages": ([
             m.as_html()
-            for m in Message.objects.get_for_player_pair(me, them)
+            for m in Message.objects.get_for_player_pair(who_clicked, subject)
             .order_by("timestamp")
             .all()[0:100]
         ]),
         "chat_post_endpoint": reverse(
             "app:send_player_message",
-            kwargs={"recipient_pk": them.pk},
+            kwargs={"recipient_pk": subject.pk},
         ),
-        "chat_target": them,
-        "player": them,
-        "show_cards_for": [me],
+        "chat_target": subject,
+        "player": subject,
+        "show_cards_for": [who_clicked],
     }
 
-    if request.method == "GET":
-        form = PartnerForm({
-            "me": me.pk,
-            "them": pk,
-            "action": SPLIT if request.user.player.partner is not None else JOIN,
-        })
-        context["form"] = form
-    else:
-        form = PartnerForm(request.POST)
-
-        if not form.is_valid():
-            return HttpResponse(f"Something's rotten in the state of {form.errors=}")
-
-        them = Player.objects.get(pk=form.cleaned_data.get("them"))
-        action = form.cleaned_data.get("action")
+    if request.method == "POST":
+        action = request.POST.get("action")
+        old_partner = None
         try:
             if action == SPLIT:
-                me.break_partnership()
+                old_partner = who_clicked.partner
+                who_clicked.break_partnership()
             elif action == JOIN:
-                me.partner_with(them)
+                who_clicked.partner_with(subject)
+
         except PartnerException as e:
             django_web_messages.add_message(request, django_web_messages.INFO, str(e))
 
-        return HttpResponseRedirect(reverse("app:player", kwargs=dict(pk=pk)))
+        if old_partner:
+            old_partner.refresh_from_db()
+        who_clicked.refresh_from_db()
+        subject.refresh_from_db()
 
-    return TemplateResponse(request, "player_detail.html", context=context)
+        print()
+
+        print(f"{id(subject)=}")
+        recipients = {who_clicked, subject}
+        if old_partner is not None:
+            recipients.add(old_partner)
+            print(f"Added {old_partner=} to {recipients=}")
+
+        print(f"{who_clicked=} did {action=}")
+        print(f"{id(subject)=} {recipients=}")
+
+        for subject, viewer in itertools.product(recipients, repeat=2):
+            # TODO -- I wonder if I'm mixing up the as_viewed_by with the request.user.player -- those can be different.
+            # request.user will be the user who made this POST we're currently handling, but for some of these messages,
+            # we want the template to be rendered "from the point of view" of whoever will be looking at it later.
+            # Hence "as_viewed_by"
+            context = partnership_context(subject=subject, as_viewed_by=viewer)
+            data = loader.render_to_string(
+                request=request,
+                template_name="partnership-status-partial.html#partnership-status-partial",
+                context=context,
+            )
+            channel = partnership_status_channel_name(viewer=viewer, subject=subject)
+            print(f"Sending to {channel} {context=}")
+            kwargs = dict(
+                channel=channel,
+                event_type="message",
+                data=data,
+                json_encode=False,
+            )
+            send_event(**kwargs)
+        return HttpResponse()
+
+    return TemplateResponse(
+        request,
+        "player_detail.html",
+        context=common_context | partnership_context(subject=subject, as_viewed_by=who_clicked),
+    )
 
 
 @require_http_methods(["POST"])
@@ -115,3 +209,28 @@ def send_player_message(request, recipient_pk):
     return HttpResponse(
         message_content,
     )
+
+
+def player_list_view(request):
+    lookin_for_love = request.GET.get("lookin_for_love")
+    seated = request.GET.get("seated")
+
+    model = Player
+    template_name = "player_list.html"
+
+    qs = model.objects.all()
+    total_count = qs.count()
+
+    if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
+        qs = qs.filter(partner__isnull=lfl_filter)
+
+    if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
+        qs = qs.filter(seat__isnull=not seated_filter)
+
+    filtered_count = qs.count()
+    context = {
+        "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
+        "player_list": qs,
+    }
+
+    return render(request, template_name, context)

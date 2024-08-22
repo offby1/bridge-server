@@ -37,6 +37,7 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
+    # TODO -- conceptually, this oughta be a OneToOneField, no?
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
     messages_for_me = GenericRelation(
@@ -140,9 +141,16 @@ class Player(models.Model):
 
     class Meta:
         ordering = ["user__username"]
+        constraints = [
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_cant_be_own_partner",
+                condition=models.Q(partner__isnull=True) | ~models.Q(partner_id=models.F("id")),
+            ),
+        ]
 
     def __str__(self):
-        return self.name
+        partner_str = self.partner.name if self.partner else "None"
+        return f"{self.name} ({self.id}, {partner_str})"
 
 
 admin.site.register(Player)
