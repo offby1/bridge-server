@@ -1,11 +1,10 @@
-from app.forms import LookingForLoveForm, PartnerForm, SeatedForm
+from app.forms import PartnerForm
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event
 
@@ -22,9 +21,6 @@ def player_list_view(request):
     model = Player
     template_name = "player_list.html"
 
-    lfl_form = LookingForLoveForm(request.GET)
-    seated_form = SeatedForm(request.GET)
-
     qs = model.objects.all()
     total_count = qs.count()
 
@@ -37,9 +33,7 @@ def player_list_view(request):
     filtered_count = qs.count()
     context = {
         "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
-        "love_form": lfl_form,
         "player_list": qs,
-        "seated_form": seated_form,
     }
 
     return render(request, template_name, context)
