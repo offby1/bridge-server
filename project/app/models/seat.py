@@ -47,6 +47,7 @@ class Seat(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
+        ordering = ["direction"]
         constraints = [
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_direction_valid",

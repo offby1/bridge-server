@@ -304,3 +304,8 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
 
     assert cm.can_read_channel(Ted.user, channel)
     assert not cm.can_read_channel(Carol.user, channel)
+
+
+def test_seat_ordering(usual_setup):
+    t = Table.objects.first()
+    assert " ".join([t[0] for t in t.as_tuples()]) == "NORTH EAST SOUTH WEST"
