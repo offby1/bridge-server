@@ -5,38 +5,37 @@
     <div>
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
         {{ player | styled_link:user }}
-
         {% if player == user.player %}
-        {% if player.partner %}<br>My partner is {{ player.partner|sedate_link:user }}{% endif %}
+            {% if player.partner %}
+                <br>
+                My partner is {{ player.partner|sedate_link:user }}
+            {% endif %}
         {% endif %}
-
         {% if player.looking_for_partner %}
             is looking for a partner.
             {% if user.player.looking_for_partner %}
                 {% if user.player != player %}Oh! I am too!{% endif %}
                 <a href="{% url 'app:players' %}?lookin_for_love=True">Find swinging singles in your area.</a>
                 {% if user.player != player %}
-                <form method="post" action="{% url 'app:player' player.id %}">
-                    {% csrf_token %}
-                    {{ form }}
-                    <input type="submit" value="Partner Me Up, Daddy-O">
-                </form>
+                    <form method="post" action="{% url 'app:player' player.id %}">
+                        {% csrf_token %}
+                        {{ form }}
+                        <input type="submit" value="Partner Me Up, Daddy-O">
+                    </form>
                 {% endif %}
             {% endif %}
         {% else %}
-        {% if player.partner == user.player %}
-    <h1>The great {{ user.player }} | {{ player }} partnership</h1>
-    <div>
-        <form method="post" action="{% url 'app:player' player.id %}">
-            {% csrf_token %}
-            {{ form }}
-            <input type="submit" value="Splitsville">
-        </form>
-    </div>
+            {% if player.partner == user.player %}
+                <h1>The great {{ user.player }} | {{ player }} partnership</h1>
+                <div>
+                    <form method="post" action="{% url 'app:player' player.id %}">
+                        {% csrf_token %}
+                        {{ form }}
+                        <input type="submit" value="Splitsville">
+                    </form>
+                </div>
+            {% endif %}
         {% endif %}
-        {% endif %}
-
-
         <br />
         {% if player.table %}
             {{ player.table.as_link }}
@@ -49,7 +48,5 @@
             are in <a href="{% url 'app:lobby' %}">the lobby</a>.
         {% endif %}
     </div>
-    <div>
-        {% include "chat-html-partial.html#chat-html-partial" %}
-    </div>
+    <div>{% include "chat-html-partial.html#chat-html-partial" %}</div>
 {% endblock content %}
