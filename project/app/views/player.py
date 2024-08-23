@@ -69,10 +69,10 @@ def _get_text(subject, as_viewed_by):
 
         return f"{posessive} partner is, gosh, you!"
 
-    if as_viewed_by.partner and as_viewed_by != subject:
-        return format_html("Maybe you should divorce {} and link up", as_viewed_by.partner)
+    if as_viewed_by == subject:
+        return _find_swinging_singles_link()
 
-    return _find_swinging_singles_link()
+    return "They have no partner 😢"
 
 
 def _get_button(subject, as_viewed_by):
