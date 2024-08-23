@@ -139,27 +139,19 @@ def player_detail_view(request, pk):
         except PartnerException as e:
             django_web_messages.add_message(request, django_web_messages.INFO, str(e))
 
+        # I can't explain it, but it seems crucial to do these "refresh_from_db" calls as early as possible.  Previously
+        # I was looping through "recipients" and refreshing each item in it, and somehow I was passing a stale instance
+        # to the template renderer.
         if old_partner:
             old_partner.refresh_from_db()
         who_clicked.refresh_from_db()
         subject.refresh_from_db()
 
-        print()
-
-        print(f"{id(subject)=}")
         recipients = {who_clicked, subject}
         if old_partner is not None:
             recipients.add(old_partner)
-            print(f"Added {old_partner=} to {recipients=}")
-
-        print(f"{who_clicked=} did {action=}")
-        print(f"{id(subject)=} {recipients=}")
 
         for subject, viewer in itertools.product(recipients, repeat=2):
-            # TODO -- I wonder if I'm mixing up the as_viewed_by with the request.user.player -- those can be different.
-            # request.user will be the user who made this POST we're currently handling, but for some of these messages,
-            # we want the template to be rendered "from the point of view" of whoever will be looking at it later.
-            # Hence "as_viewed_by"
             context = partnership_context(subject=subject, as_viewed_by=viewer)
             data = loader.render_to_string(
                 request=request,
@@ -167,7 +159,7 @@ def player_detail_view(request, pk):
                 context=context,
             )
             channel = partnership_status_channel_name(viewer=viewer, subject=subject)
-            print(f"Sending to {channel} {context=}")
+
             kwargs = dict(
                 channel=channel,
                 event_type="message",

@@ -149,8 +149,7 @@ class Player(models.Model):
         ]
 
     def __str__(self):
-        partner_str = self.partner.name if self.partner else "None"
-        return f"{self.name} ({self.id}, {partner_str})"
+        return self.name
 
 
 admin.site.register(Player)
