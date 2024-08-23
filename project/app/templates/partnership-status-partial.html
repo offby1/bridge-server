@@ -6,7 +6,11 @@
      hx-ext="sse"
      sse-connect="{{ partnership_event_source_endpoint }}"
      sse-swap="message"
-     style="border: 1px solid">
+     style="border: 1px solid"
+     data-actor="{{ user.player }}"
+     data-subject="{{ subject }}"
+     data-viewer="{{ as_viewed_by }}" <!--this should be the same value as the same-named attribute on the body-->
+     >
     <ul>
     <li>User is {{ user.player }}</li>
     <li>as_viewed_by is {{ as_viewed_by }}</li>

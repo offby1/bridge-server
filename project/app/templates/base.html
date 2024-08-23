@@ -16,7 +16,8 @@
               rel="stylesheet">
 
     </head>
-    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+          data-viewer="{{ user.player }}">
         <div>
             <a href="{% url 'app:home' %}">Home</a> | <a href="{% url 'app:lobby' %}">Lobby</a> | <a href="{% url 'app:table' %}">Tables</a>
             | <a href="{% url 'app:players' %}">Players</a>
