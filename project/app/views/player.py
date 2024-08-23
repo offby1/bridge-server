@@ -72,7 +72,7 @@ def _get_text(subject, as_viewed_by):
     if as_viewed_by.partner and as_viewed_by != subject:
         return format_html("Maybe you should divorce {} and link up", as_viewed_by.partner)
 
-    return None
+    return _find_swinging_singles_link()
 
 
 def _get_button(subject, as_viewed_by):
