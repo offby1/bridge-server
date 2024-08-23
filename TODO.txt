@@ -1,5 +1,13 @@
 STILL TODO:
 
+* Oy
+  So anne is logged in, looking at kelly's page.
+  kelly is anne's partner.
+  brett is logged in, also looking at Kelly's page.
+  When anne splitsvilles, brett doesn't find out.
+  I think this means that the "viewer.pk" bit of the channel needs to be optional.
+  Anyone who looks at a subject will subscribe to that empty-viewer channel, except for ... I guess ... the subject in question, or their partner.
+
 * splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
 
 * django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog.
