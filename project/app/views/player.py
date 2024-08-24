@@ -55,21 +55,16 @@ def _find_swinging_singles_link():
 
 
 def _get_text(subject, as_viewed_by):
-    if subject == as_viewed_by:
-        posessive = "Your"
-    else:
-        posessive = "Their"
-
     if subject.partner:
         if subject.partner != as_viewed_by:
-            return format_html(posessive + " partner is {}", player_link(subject.partner))
+            return format_html("{}'s partner is {}", subject, player_link(subject.partner))
 
-        return f"{posessive} partner is, gosh, you!"
+        return f"{subject}'s partner is, gosh, you!"
 
     if as_viewed_by == subject:
         return _find_swinging_singles_link()
 
-    return "They have no partner 😢"
+    return f"{subject} has no partner 😢"
 
 
 def _get_button(subject, as_viewed_by):
