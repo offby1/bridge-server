@@ -37,6 +37,13 @@ STILL TODO:
 
 DONE:
 
+* REGRESSION
+  When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
+  - pop up a dialog with the body of the 403 response; and/or
+  - just don't have the text area and "talk with" button visible in the first place.
+
+  I guess I gotta fiddle with https://htmx.org/events/#htmx:responseError
+
 * The datatables default of 10 entries per page isn't enough; make it 100 or something.
 
 * See "trouble" in this directory.
@@ -93,10 +100,6 @@ DONE:
   - It's not a partial; I just made "players" do double-duty
 
 * When displaying the signup page, put text focus on the first field, so I can start typing without having to hit TAB
-
-* When sending a chat message, but failing -- because e.g. you or the recipient are seated at a table, there's no feedback about the failure.  Either
-  - pop up a dialog with the body of the 403 response; and/or
-  - just don't have the text area and "talk with" button visible in the first place.
 
 * Refactor: I've got two almost-but-not-quite-identical chunks of HTML for rendering a chat log: one in the lobby, one in the player detail.
   Ideas:
