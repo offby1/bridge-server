@@ -1,5 +1,9 @@
 STILL TODO:
 
+* chat log should scroll to bottom on page load.
+
+  Otherwise, if it's got a lotta crap in it, I wind up looking at the oldest (i.e., least-interesting) stuff.
+
 * splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
 
 * django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog.
