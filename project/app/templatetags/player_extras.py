@@ -23,9 +23,7 @@ def styled_link(value, arg, style_attrs=None):
     if subject == viewer:
         style_attrs.append("color:green")
         comment = " (that's you!)"
-    elif subject == getattr(viewer, "partner", None):
-        style_attrs.append("color:red")
-        comment = "✨MUH PARTNER✨"
+
     return format_html(
         "{}{}",
         subject.as_link(style=";".join(style_attrs)),
