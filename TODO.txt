@@ -1,12 +1,9 @@
 STILL TODO:
 
-* Oy
-  So anne is logged in, looking at kelly's page.
-  kelly is anne's partner.
-  brett is logged in, also looking at Kelly's page.
-  When anne splitsvilles, brett doesn't find out.
-  I think this means that the "viewer.pk" bit of the channel needs to be optional.
-  Anyone who looks at a subject will subscribe to that empty-viewer channel, except for ... I guess ... the subject in question, or their partner.
+* See "trouble" in this directory.
+  Dunno what happened exactly, but I had one browser window logged in as kelly, looking at anne, another (private) window logged in as anne and looking at kelly; and a mobile browser logged in as brett, looking at kelly.
+
+  I tried sending a message from the first window (i.e., from kelly -> anne) and noticed that nothing happened.  I sent a message from the second window (anne -> kelly) and that worked OK.  Then after a while I saw the stack trace in "trouble".
 
 * splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
 
@@ -40,6 +37,14 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Oy
+  So anne is logged in, looking at kelly's page.
+  kelly is anne's partner.
+  brett is logged in, also looking at Kelly's page.
+  When anne splitsvilles, brett doesn't find out.
+  I think this means that the "viewer.pk" bit of the channel needs to be optional.
+  Anyone who looks at a subject will subscribe to that empty-viewer channel, except for ... I guess ... the subject in question, or their partner.
 
 * paginated the player list a while ago, by using datatables, which gives me pagination for free.
 
