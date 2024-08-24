@@ -1,10 +1,7 @@
-import itertools
-
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
-from django.template import loader
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html

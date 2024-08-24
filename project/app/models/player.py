@@ -65,15 +65,15 @@ class Player(models.Model):
             self.partner = other
             other.partner = self
 
-            send_event(
-                *Message.create_lobby_event_args(
-                    from_player=self,
-                    message=f"Partnered with {self.partner.name}",
-                ),
-            )
-
             self.save()
             other.save()
+
+        send_event(
+            *Message.create_lobby_event_args(
+                from_player=self,
+                message=f"Partnered with {self.partner.name}",
+            ),
+        )
 
     def break_partnership(self):
         with transaction.atomic():

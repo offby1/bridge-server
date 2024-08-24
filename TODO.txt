@@ -1,10 +1,5 @@
 STILL TODO:
 
-* See "trouble" in this directory.
-  Dunno what happened exactly, but I had one browser window logged in as kelly, looking at anne, another (private) window logged in as anne and looking at kelly; and a mobile browser logged in as brett, looking at kelly.
-
-  I tried sending a message from the first window (i.e., from kelly -> anne) and noticed that nothing happened.  I sent a message from the second window (anne -> kelly) and that worked OK.  Then after a while I saw the stack trace in "trouble".
-
 * splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
 
 * django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog.
@@ -37,6 +32,13 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* See "trouble" in this directory.
+  Dunno what happened exactly, but I had one browser window logged in as kelly, looking at anne, another (private) window logged in as anne and looking at kelly; and a mobile browser logged in as brett, looking at kelly.
+
+  I tried sending a message from the first window (i.e., from kelly -> anne) and noticed that nothing happened.  I sent a message from the second window (anne -> kelly) and that worked OK.  Then after a while I saw the stack trace in "trouble".
+
+  - gonna assume I fixed this, but 🤷
 
 * Oy
   So anne is logged in, looking at kelly's page.
