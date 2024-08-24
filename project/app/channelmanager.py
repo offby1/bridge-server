@@ -12,7 +12,7 @@ class MyChannelManager(DefaultChannelManager):
             return True
 
         # Everyone can see who's partnered with whom
-        if channel.startswith("partnership-status:"):
+        if channel == "partnerships":
             return True
 
         if (player_pks := models.Message.player_pks_from_channel_name(channel)) is not None:

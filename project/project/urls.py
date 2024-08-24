@@ -16,4 +16,10 @@ urlpatterns = [
         "events/player/<channel>/",
         include(django_eventstream.urls),
     ),
+    path(
+        # public.  Messages are like {"joined": [16, 17], "split": []} or {"split": [16, 17], "joined": []}
+        "events/partnerships/",
+        include(django_eventstream.urls),
+        kwargs={"channels": ["partnerships"]},
+    ),
 ] + debug_toolbar_urls()

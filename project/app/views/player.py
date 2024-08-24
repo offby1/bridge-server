@@ -128,51 +128,55 @@ def player_detail_view(request, pk):
 
     if request.method == "POST":
         action = request.POST.get("action")
+        print(f"{request.POST=} {who_clicked=} {subject=} {action=}")
         old_partner = None
         try:
             if action == SPLIT:
                 old_partner = who_clicked.partner
+                print(f"{old_partner=}")
                 who_clicked.break_partnership()
             elif action == JOIN:
                 who_clicked.partner_with(subject)
 
         except PartnerException as e:
             django_web_messages.add_message(request, django_web_messages.INFO, str(e))
+            return HttpResponse()
 
-        # I can't explain it, but it seems crucial to do these "refresh_from_db" calls as early as possible.  Previously
-        # I was looping through "recipients" and refreshing each item in it, and somehow I was passing a stale instance
-        # to the template renderer.
-        if old_partner:
-            old_partner.refresh_from_db()
-        who_clicked.refresh_from_db()
-        subject.refresh_from_db()
+        # We always send two arrays, even though one is empty.  That's because I'm too stupid a JS programmer to deal
+        # with missing attributes.
+        data = {"split": [], "joined": []}
 
-        recipients = {who_clicked, subject}
-        if old_partner is not None:
-            recipients.add(old_partner)
+        if action == SPLIT:
+            data["split"] = [old_partner.pk, who_clicked.pk]
+        else:
+            data["joined"] = [subject.pk, who_clicked.pk]
 
-        for subject, viewer in itertools.product(recipients, repeat=2):
-            context = partnership_context(subject=subject, as_viewed_by=viewer)
-            data = loader.render_to_string(
-                request=request,
-                template_name="partnership-status-partial.html#partnership-status-partial",
-                context=context,
-            )
-            channel = partnership_status_channel_name(viewer=viewer, subject=subject)
+        channel = "partnerships"
 
-            kwargs = dict(
-                channel=channel,
-                event_type="message",
-                data=data,
-                json_encode=False,
-            )
-            send_event(**kwargs)
+        print(f"Sending {data=} to {channel=}")
+        send_event(
+            channel=channel,
+            event_type="message",
+            data=data,
+        )
         return HttpResponse()
 
     return TemplateResponse(
         request,
         "player_detail.html",
         context=common_context | partnership_context(subject=subject, as_viewed_by=who_clicked),
+    )
+
+
+@require_http_methods(["GET"])
+@logged_in_as_player_required()
+def partnership_view(request, pk):
+    subject = get_object_or_404(Player, pk=pk)
+    context = partnership_context(subject=subject, as_viewed_by=request.user.player)
+    return TemplateResponse(
+        request=request,
+        template="partnership-status-partial.html#partnership-status-partial",
+        context=context,
     )
 
 

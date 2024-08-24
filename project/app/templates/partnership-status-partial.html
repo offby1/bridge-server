@@ -1,15 +1,13 @@
 {% load partials %}
 {% load player_extras %}
 {% partialdef partnership-status-partial %}
-{# Note that in this context, "user" is whoever clicked the "partnerup" or "splitsville" button; NOT necessarily the person who is viewing the web page!  *That* person is "as_viewed_by". #}
+
 <div id="partnership-status"
-     hx-ext="sse"
-     sse-connect="{{ partnership_event_source_endpoint }}"
-     sse-swap="message"
      style="border: 1px solid"
-     data-actor="{{ user.player }}"
-     data-subject="{{ subject }}"
-     data-viewer="{{ as_viewed_by }}" <!--this should be the same value as the same-named attribute on the body-->
+     data-player="{{ user.player.pk }}"
+     {% if user.player.partner %}data-player-partner="{{ user.player.partner.pk }}"{% endif %}
+     data-subject="{{ subject.pk }}"
+     {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}
      >
     <ul>
     <li>User is {{ user.player }}</li>
