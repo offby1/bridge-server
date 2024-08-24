@@ -131,8 +131,13 @@ def player_detail_view(request, pk):
                 who_clicked.partner_with(subject)
 
         except PartnerException as e:
-            django_web_messages.add_message(request, django_web_messages.INFO, str(e))
-            return HttpResponse()
+            django_web_messages.add_message(
+                request,
+                django_web_messages.INFO,
+                str(e),
+                fail_silently=True,
+            )
+            return HttpResponseForbidden(str(e))
 
         # We always send two arrays, even though one is empty.  That's because I'm too stupid a JS programmer to deal
         # with missing attributes.

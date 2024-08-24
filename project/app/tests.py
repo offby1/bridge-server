@@ -277,3 +277,44 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
 def test_seat_ordering(usual_setup):
     t = Table.objects.first()
     assert " ".join([t[0] for t in t.as_tuples()]) == "NORTH EAST SOUTH WEST"
+
+
+def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
+    Bob = Player.objects.get_by_name("Bob")
+    assert Bob.partner is not None
+
+    request = rf.post(
+        "/player_detail_endpoint_whatever_tf_it_is HEY IT TURNS OUT THIS DOESN'T MATTER, WHO KNEW??/",
+        data=dict(action="splitsville"),
+    )
+
+    request.user = Bob.user
+
+    send_event_kwargs_log = []
+
+    def mock_send_event(*args, **kwargs):
+        send_event_kwargs_log.append(kwargs)
+
+    monkeypatch.setattr(player, "send_event", mock_send_event)
+    response = player.player_detail_view(request, Bob.pk)
+
+    assert len(send_event_kwargs_log) == 1
+    the_kwargs = send_event_kwargs_log.pop()
+
+    assert the_kwargs["channel"] == "partnerships"
+    assert the_kwargs["data"]["joined"] == []
+    assert set(the_kwargs["data"]["split"]) == set([3, 1])
+
+    assert response.status_code == 200
+
+    Bob.refresh_from_db()
+    assert Bob.partner is None
+
+    # Now do it again -- bob ain't got no partner no mo, so we should get an error.
+    response = player.player_detail_view(request, Bob.pk)
+    assert 400 <= response.status_code <= 499
+
+    assert b"cannot" in response.content.lower()
+    assert b"partner" in response.content.lower()
+
+    assert len(send_event_kwargs_log) == 0
