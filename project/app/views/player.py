@@ -120,12 +120,12 @@ def player_detail_view(request, pk):
 
     if request.method == "POST":
         action = request.POST.get("action")
-        print(f"{request.POST=} {who_clicked=} {subject=} {action=}")
+
         old_partner = None
         try:
             if action == SPLIT:
                 old_partner = who_clicked.partner
-                print(f"{old_partner=}")
+
                 who_clicked.break_partnership()
             elif action == JOIN:
                 who_clicked.partner_with(subject)
@@ -150,7 +150,6 @@ def player_detail_view(request, pk):
 
         channel = "partnerships"
 
-        print(f"Sending {data=} to {channel=}")
         send_event(
             channel=channel,
             event_type="message",

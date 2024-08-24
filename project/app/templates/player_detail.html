@@ -10,10 +10,6 @@
      data-subject="{{ subject.pk }}"
      {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}
      >
-    <ul>
-    <li>User is {{ user.player }}</li>
-    <li>as_viewed_by is {{ as_viewed_by }}</li>
-    </ul>
     <div class="container">
         <div class="row">
             <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
