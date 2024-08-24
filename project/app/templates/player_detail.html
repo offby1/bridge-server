@@ -40,20 +40,20 @@ es.addEventListener('message', function (e) {
 
     // collect the (up to) four relevant player IDs from this page
     var watchedPKs = new Set();
-    var pageDataset = document.querySelector("#partnership-status").dataset;
+    var partnershipStatusDataset = document.querySelector("#partnership-status").dataset;
 
-    if ("player" in pageDataset) {
-       watchedPKs.add(pageDataset.player);
+    if ("player" in partnershipStatusDataset) {
+       watchedPKs.add(partnershipStatusDataset.player);
     }
-    if ("player-partner" in pageDataset) {
+    if ("player-partner" in partnershipStatusDataset) {
         // camelCase: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset#name_conversion
-       watchedPKs.add(pageDataset.playerPartner);
+       watchedPKs.add(partnershipStatusDataset.playerPartner);
     }
-    if ("subject" in pageDataset) {
-       watchedPKs.add(pageDataset.subject);
+    if ("subject" in partnershipStatusDataset) {
+       watchedPKs.add(partnershipStatusDataset.subject);
     }
-    if ("subject-partner" in pageDataset) {
-       watchedPKs.add(pageDataset.subjectPartner);
+    if ("subject-partner" in partnershipStatusDataset) {
+       watchedPKs.add(partnershipStatusDataset.subjectPartner);
     }
 
     console.log("messagePKs:" + messagePKs);
@@ -63,7 +63,7 @@ es.addEventListener('message', function (e) {
     // if the intersection is non-empty, reload the relevant bit of the page.
 
     if (messagePKs.intersection(watchedPKs).size > 0) {
-      htmx.ajax('GET', '/player/' + pageDataset.subject + '/partnership/', {target:'#partnership-status', swap:'outerHTML'});
+      htmx.ajax('GET', '/player/' + partnershipStatusDataset.subject + '/partnership/', {target:'#partnership-status', swap:'outerHTML'});
     }
 
 }, false);
