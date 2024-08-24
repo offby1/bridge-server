@@ -37,7 +37,9 @@
 {% block scripts %}
 <script>
 $(document).ready( function () {
-    $('#player-list').DataTable();
+    $('#player-list').DataTable(
+      {pageLength: 50}
+    );
 } );
 </script>
 {% endblock %}

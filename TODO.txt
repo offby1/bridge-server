@@ -10,8 +10,6 @@ STILL TODO:
 
   I assume django_web_messages is designed to display only when I refresh the page; although istr seeing something somewhere that makes them pop up as alerts or something.
 
-* The datatables default of 10 entries per page isn't enough; make it 100 or something.
-
 * The new "lobby view" ("/players/?seated=False") doesn't tell you how many *total* players there are.  (Because I nuked the " 3 / 15 players" thing)
 
 * when not logged in, we still attempt to listen to server-sent events ... but fail with 400 (cuz that endpoint requires authentication, I guess).
@@ -36,6 +34,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* The datatables default of 10 entries per page isn't enough; make it 100 or something.
 
 * See "trouble" in this directory.
   Dunno what happened exactly, but I had one browser window logged in as kelly, looking at anne, another (private) window logged in as anne and looking at kelly; and a mobile browser logged in as brett, looking at kelly.
