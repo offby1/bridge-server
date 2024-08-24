@@ -172,7 +172,7 @@ def partnership_view(request, pk):
     context = partnership_context(subject=subject, as_viewed_by=request.user.player)
     return TemplateResponse(
         request=request,
-        template="partnership-status-partial.html#partnership-status-partial",
+        template="player_detail.html#partnership-status-partial",
         context=context,
     )
 

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load player_extras %}
+{% load partials %}
+{% block content %}
+    <div>
+        {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
+        {% block partnership-status-html %}{% endblock partnership-status-html %}
+        <br />
+        {% if player.table %}
+            {{ player.table.as_link }}
+        {% else %}
+            {% if user.player == player %}
+                You
+            {% else %}
+                They
+            {% endif %}
+            are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+        {% endif %}
+    </div>
+    {% include "chat-partial.html#chat-html-partial" %}
+{% endblock content %}
+{% block scripts %}
+{% endblock scripts %}

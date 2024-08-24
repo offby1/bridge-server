@@ -1,25 +1,36 @@
-{% extends "base.html" %}
+{% extends "base_player_detail.html" %}
 {% load player_extras %}
 {% load partials %}
-{% block content %}
-    <div>
-        {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
-        {% include "partnership-status-partial.html#partnership-status-partial" %}
-        <br />
-        {% if player.table %}
-            {{ player.table.as_link }}
-        {% else %}
-            {% if user.player == player %}
-                You
-            {% else %}
-                They
-            {% endif %}
-            are in <a href="{% url 'app:lobby' %}">the lobby</a>.
-        {% endif %}
+{% partialdef partnership-status-partial %}
+{% block partnership-status-html %}
+<div id="partnership-status"
+     style="border: 1px solid"
+     data-player="{{ user.player.pk }}"
+     {% if user.player.partner %}data-player-partner="{{ user.player.partner.pk }}"{% endif %}
+     data-subject="{{ subject.pk }}"
+     {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}
+     >
+    <ul>
+    <li>User is {{ user.player }}</li>
+    <li>as_viewed_by is {{ as_viewed_by }}</li>
+    </ul>
+    <div class="container">
+        <div class="row">
+            <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
+            <div class="col">
+                {% if text %}{{ text }}{% endif %}
+            </div>
+            <div class="col">
+                {% if button %}{{ button }}{% endif %}
+            </div>
+        </div>
     </div>
-    {% include "chat-partial.html#chat-html-partial" %}
-{% endblock content %}
+</div>
+{% endblock partnership-status-html %}
+{% endpartialdef partnership-status-partial %}
 {% block scripts %}
+{{ block.super }}
+
 <script>
 var es = new ReconnectingEventSource('/events/partnerships/');
 
@@ -62,4 +73,5 @@ es.addEventListener('message', function (e) {
 }, false);
 
 </script>
-{% endblock %}
+
+{% endblock scripts %}
