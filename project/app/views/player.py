@@ -37,7 +37,7 @@ def _button(*, page_subject, action):
     return format_html(
         """<button
       hx-post="{}"
-      hx-swap="none"            # the partnership-status partial listens for an event that the model will send
+      hx-swap="none"
       name="action"
       value={}
       >{}</button>""",
