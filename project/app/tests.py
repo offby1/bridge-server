@@ -77,7 +77,20 @@ def test_splitsville_ejects_us_from_table(usual_setup):
     assert Bob.partner == Ted.partner
 
     assert Bob.table is None
-    assert Bob.table == Bob.table
+    assert Ted.table is None
+
+
+def test_both_table_partnerships_splitting_removes_table(usual_setup):
+    assert Table.objects.count() == 1
+
+    Bob = Player.objects.get_by_name("Bob")
+    Carol = Player.objects.get_by_name("Carol")
+
+    Bob.break_partnership()
+    assert Table.objects.count() == 1
+
+    Carol.break_partnership()
+    assert Table.objects.count() == 0
 
 
 def test_splitsville_non_seated_partnership(bob):

@@ -34,6 +34,17 @@ class Table(models.Model):
     def as_tuples(self):
         return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction().items()]
 
+    def is_empty(self):
+        for p in self.players_by_direction().values():
+            if p is not None:
+                return False
+
+        return True
+
+    def go_away_if_empty(self):
+        if self.is_empty():
+            self.delete()
+
     def __str__(self):
         playaz = ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
         return f"Table {self.id} ({playaz})"
