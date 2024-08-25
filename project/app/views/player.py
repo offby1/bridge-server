@@ -1,5 +1,6 @@
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
@@ -233,6 +234,14 @@ def player_list_view(request):
         qs = qs.filter(seat__isnull=not seated_filter)
 
     filtered_count = qs.count()
+    qs = qs.annotate(
+        maybe_a_link=(
+            Q(seat__isnull=True)
+            & Q(partner__isnull=False)
+            & ~Q(pk=request.user.player.pk)
+            & ~Q(pk=request.user.player.partner.pk)
+        ),
+    )
     context = {
         "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
         "player_list": qs,

@@ -8,6 +8,7 @@
                     <th scope="col">Who</th>
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
+                    <th scope="col">Let's All Make A Table Together</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,6 +28,9 @@
                             {% else %}
                                 <a href="{% url 'app:lobby' %}">lobby</a>
                             {% endif %}
+                        </td>
+                        <td>
+                          {{ player.maybe_a_link }}
                         </td>
                     </tr>
                 {% endfor %}
