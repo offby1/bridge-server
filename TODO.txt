@@ -1,5 +1,15 @@
 STILL TODO:
 
+* Occasionally some page will take ages to load.  Like, right now http://localhost:8000/players/?lookin_for_love=True took 34 seconds.
+
+  There are only 17 players.
+
+  Nothing of interest in the stdout or stderr of daphne.
+
+  I didn't think to look in the Django debug toolbar for timing info.
+
+  I guess the first step is to read up on Daphne and see how I can control the log level and format.
+
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
 
 * chat log should scroll to bottom on page load.
