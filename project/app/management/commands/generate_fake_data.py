@@ -39,6 +39,8 @@ class Command(BaseCommand):
                 if len(unseated_players) < 2:
                     continue
 
+                # TODO -- use the new new_table_for_two_partnerships thing
+
                 # if there are no tables with two open seats, create one
                 t = Table.objects.annotate(num_seats=Count("seat")).filter(num_seats__lt=3).first()
                 if t is None:

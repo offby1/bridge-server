@@ -1,6 +1,5 @@
 import importlib
 import json
-import re
 
 import bridge.seat
 import pytest
@@ -11,7 +10,7 @@ from django.test import Client
 from django.urls import reverse
 
 from .models import Message, Player, PlayerException, Seat, Table
-from .views import lobby, player
+from .views import lobby, player, table
 
 
 def test_we_gots_a_home_page():
@@ -318,3 +317,25 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert b"partner" in response.content.lower()
 
     assert len(send_event_kwargs_log) == 0
+
+
+def test_table_creation(bob, rf):
+    sam = Player.objects.create(
+        user=auth.models.User.objects.create_user(
+            username="sam",
+            password="sam",
+        ),
+    )
+    sam.partner_with(bob)
+
+    assert bob.partner is not None
+
+    request = rf.post(
+        "/woteva/",
+        data=dict(pk1=bob.pk, pk2=bob.pk),
+    )
+
+    request.user = bob.user
+    response = table.new_table_for_two_partnerships(request, bob.pk, bob.pk)
+    assert response.status_code == 403
+    assert b"four distinct" in response.content

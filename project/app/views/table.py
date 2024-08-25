@@ -1,7 +1,10 @@
+from django.db import transaction
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.views.decorators.http import require_http_methods
 
-from ..models import Table
+from ..models import SEAT_CHOICES, Player, Seat, Table
 from .misc import logged_in_as_player_required
 
 
@@ -23,3 +26,36 @@ def table_detail_view(request, pk):
     }
 
     return TemplateResponse(request, "table_detail.html", context=context)
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def new_table_for_two_partnerships(request, pk1, pk2):
+    p1 = get_object_or_404(Player, pk=pk1)
+    if p1.partner is None:
+        return HttpResponseForbidden(f"Hey man {p1=} doesn't have a partner")
+
+    p2 = get_object_or_404(Player, pk=pk2)
+    if p2.partner is None:
+        return HttpResponseForbidden(f"Hey man {p2=} doesn't have a partner")
+
+    p3 = get_object_or_404(Player, pk=p1.partner.pk)
+    p4 = get_object_or_404(Player, pk=p2.partner.pk)
+
+    all_four = set([p1, p2, p3, p4])
+    if len(all_four) != 4:
+        return HttpResponseForbidden(f"Hey man {all_four} isn't four distinct players")
+
+    if request.user.player not in all_four:
+        return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
+
+    t = Table.objects.create()
+    with transaction.atomic():
+        for seat, player in zip(SEAT_CHOICES, (pk1, pk2, pk1.partner, pk2.partner)):
+            Seat.objects.create(
+                direction=seat,
+                player=player,
+                table=t,
+            )
+
+    # TODO -- send one of those groovy Server Sent Events
