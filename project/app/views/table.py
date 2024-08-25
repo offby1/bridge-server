@@ -1,11 +1,10 @@
-from django.db import transaction
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from ..models import SEAT_CHOICES, Player, Seat, Table
+from ..models import Player, Table
 from .misc import logged_in_as_player_required
 
 
@@ -50,14 +49,7 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     if request.user.player not in all_four:
         return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
 
-    t = Table.objects.create()
-    with transaction.atomic():
-        for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
-            Seat.objects.create(
-                direction=seat,
-                player=player,
-                table=t,
-            )
+    t = Table.objects.create_with_two_partnerships(p1, p2)
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
     # TODO -- send one of those groovy Server Sent Events

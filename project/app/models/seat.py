@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.db import models
 
 from . import SEAT_CHOICES
-from .table import Table
 
 
 class SeatException(Exception):
@@ -14,7 +13,7 @@ class Seat(models.Model):
         choices=SEAT_CHOICES,
     )
     player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
-    table = models.ForeignKey(Table, on_delete=models.CASCADE)
+    table = models.ForeignKey("Table", on_delete=models.CASCADE)
 
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)

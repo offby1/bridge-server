@@ -1,9 +1,10 @@
 from django.contrib import admin
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
 
 from . import SEAT_CHOICES
+from .seat import Seat
 
 
 class TableException(Exception):
@@ -13,6 +14,20 @@ class TableException(Exception):
 class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
+
+    def create_with_two_partnerships(self, p1, p2):
+        t = self.create()
+        try:
+            with transaction.atomic():
+                for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
+                    Seat.objects.create(
+                        direction=seat,
+                        player=player,
+                        table=t,
+                    )
+        except Exception as e:
+            raise TableException from e
+        return t
 
 
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
