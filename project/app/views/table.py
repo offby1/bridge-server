@@ -1,7 +1,8 @@
 from django.db import transaction
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from ..models import SEAT_CHOICES, Player, Seat, Table
@@ -51,11 +52,12 @@ def new_table_for_two_partnerships(request, pk1, pk2):
 
     t = Table.objects.create()
     with transaction.atomic():
-        for seat, player in zip(SEAT_CHOICES, (pk1, pk2, pk1.partner, pk2.partner)):
+        for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
             Seat.objects.create(
                 direction=seat,
                 player=player,
                 table=t,
             )
 
+    return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
     # TODO -- send one of those groovy Server Sent Events

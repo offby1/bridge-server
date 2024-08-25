@@ -320,12 +320,14 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
 
 
 def test_table_creation(bob, rf):
+    players_by_name = {"bob": bob}
     sam = Player.objects.create(
         user=auth.models.User.objects.create_user(
             username="sam",
             password="sam",
         ),
     )
+    players_by_name["sam"] = sam
     sam.partner_with(bob)
 
     assert bob.partner is not None
@@ -339,3 +341,23 @@ def test_table_creation(bob, rf):
     response = table.new_table_for_two_partnerships(request, bob.pk, bob.pk)
     assert response.status_code == 403
     assert b"four distinct" in response.content
+
+    for name in ("tina", "tony"):
+        p = Player.objects.create(
+            user=auth.models.User.objects.create_user(
+                username=name,
+                password=name,
+            ),
+        )
+        players_by_name[name] = p
+
+    players_by_name["tina"].partner_with(players_by_name["tony"])
+
+    request = rf.post(
+        "/woteva/",
+        data=dict(pk1=bob.pk, pk2=players_by_name["tina"].pk),
+    )
+    request.user = bob.user
+    response = table.new_table_for_two_partnerships(request, bob.pk, players_by_name["tina"].pk)
+
+    assert response.status_code == 302
