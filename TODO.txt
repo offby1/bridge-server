@@ -20,8 +20,6 @@ STILL TODO:
 
   It's not obvious how to tell if a player is logged in.  There's a `django_sessions` table which appears to hold, I guess, cookie data; but it's not obvious how I can connect that to a Player.
 
-* the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
-
 * paginate the table list
   <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example
   or maybe just use datatables
@@ -32,6 +30,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
 * when not logged in, we still attempt to listen to server-sent events ... but fail with 400 (cuz that endpoint requires authentication, I guess).
 
