@@ -69,7 +69,8 @@ def _get_text(subject, as_viewed_by):
             text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
         else:
             text = format_html(f"{subject}'s partner is, gosh, you!")
-        return text + addendum
+
+        return format_html("{}{}", text, addendum)
 
     if as_viewed_by == subject:
         return _find_swinging_singles_link()
@@ -234,14 +235,15 @@ def player_list_view(request):
         qs = qs.filter(seat__isnull=not seated_filter)
 
     filtered_count = qs.count()
-    qs = qs.annotate(
-        maybe_a_link=(
-            Q(seat__isnull=True)
-            & Q(partner__isnull=False)
-            & ~Q(pk=request.user.player.pk)
-            & ~Q(pk=request.user.player.partner.pk)
-        ),
-    )
+    if request.user.player.partner is not None:
+        qs = qs.annotate(
+            maybe_a_link=(
+                Q(seat__isnull=True)
+                & Q(partner__isnull=False)
+                & ~Q(pk=request.user.player.pk)
+                & ~Q(pk=request.user.player.partner.pk)
+            ),
+        )
     context = {
         "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
         "player_list": qs,

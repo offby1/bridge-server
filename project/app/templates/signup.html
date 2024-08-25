@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-{% if not request.user.is_authenticated %}
-<div>
-<form method="post" action="{% url 'app:signup' %}">
-{% csrf_token %}
-{{ form }}
-<input type="submit" value="signup">
-<input type="hidden" name="next" value="{{ next }}">
-</form>
-</div>
-{% else %}
-Yer already logged in
-{% endif %}
+    {% if not request.user.is_authenticated %}
+        <div>
+            <form method="post" action="{% url 'app:signup' %}">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="signup">
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+        </div>
+    {% else %}
+        Yer already logged in
+    {% endif %}
 {% endblock content %}

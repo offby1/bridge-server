@@ -30,7 +30,12 @@
                             {% endif %}
                         </td>
                         <td>
-                          {{ player.maybe_a_link }}
+                            {% if player.maybe_a_link %}
+                                <form method="post" action="{% url 'app:new-table' player.pk user.player.pk %}">
+                                  {% csrf_token %}
+                                  <input type="submit" value="Table up with these dudes"></input>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
@@ -39,11 +44,11 @@
     {% endblock player_list %}
 {% endblock content %}
 {% block scripts %}
-<script>
+    <script>
 $(document).ready( function () {
     $('#player-list').DataTable(
       {pageLength: 50}
     );
 } );
-</script>
+    </script>
 {% endblock %}
