@@ -9,6 +9,7 @@ from django_eventstream import send_event
 
 from .message import Message
 from .seat import Seat
+from .table import Table
 
 logger = logging.getLogger(__name__)
 
@@ -87,20 +88,20 @@ class Player(models.Model):
                     "Oh shit -- our partner doesn't have a partner",
                 )
 
-            send_event(
-                *Message.create_lobby_event_args(
-                    from_player=self,
-                    message=f"Splitsville with {self.partner.name}",
-                ),
-            )
+            table = self.table
 
-            seat_pks = set()
-            for player in (self, self.partner):
-                if s := getattr(player, "seat", None):
-                    seat_pks.add(s.pk)
-
-            Seat.objects.filter(pk__in=seat_pks).update(player=None)
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
+            Seat.objects.filter(player__in={self, self.partner}).update(player=None)
+
+            if table is not None:
+                table.go_away_if_empty()
+
+        send_event(
+            *Message.create_lobby_event_args(
+                from_player=self,
+                message=f"Splitsville with {self.partner.name}",
+            ),
+        )
 
     @property
     def table(self):

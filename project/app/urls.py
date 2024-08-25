@@ -19,4 +19,5 @@ urlpatterns = [
     path("signup/", signup_view, name="signup"),
     path("table/", table.table_list_view, name="table"),
     path("table/<pk>", table.table_detail_view, name="table-detail"),
+    path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]

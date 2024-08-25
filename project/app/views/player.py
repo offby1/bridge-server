@@ -1,5 +1,6 @@
 from app.models import Message, PartnerException, Player
 from django.contrib import messages as django_web_messages
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
@@ -55,11 +56,21 @@ def _find_swinging_singles_link():
 
 
 def _get_text(subject, as_viewed_by):
+    addendum = ""
+    if not subject.is_seated and not as_viewed_by.is_seated:
+        addendum = format_html(
+            """<a href="{}"> other unseated partnerships </a>""",
+            # TODO -- use reverse, duh
+            "/players/?seated=False&lookin_for_love=False&exclude_me=True",
+        )
+
     if subject.partner:
         if subject.partner != as_viewed_by:
-            return format_html("{}'s partner is {}", subject, player_link(subject.partner))
+            text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
+        else:
+            text = format_html(f"{subject}'s partner is, gosh, you!")
 
-        return f"{subject}'s partner is, gosh, you!"
+        return format_html("{}{}", text, addendum)
 
     if as_viewed_by == subject:
         return _find_swinging_singles_link()
@@ -206,12 +217,16 @@ def send_player_message(request, recipient_pk):
 def player_list_view(request):
     lookin_for_love = request.GET.get("lookin_for_love")
     seated = request.GET.get("seated")
+    exclude_me = request.GET.get("exclude_me")
 
     model = Player
     template_name = "player_list.html"
 
     qs = model.objects.all()
     total_count = qs.count()
+
+    if {"True": True, "False": False}.get(exclude_me) is True:
+        qs = qs.exclude(pk=request.user.player.pk).exclude(partner=request.user.player)
 
     if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
         qs = qs.filter(partner__isnull=lfl_filter)
@@ -220,6 +235,15 @@ def player_list_view(request):
         qs = qs.filter(seat__isnull=not seated_filter)
 
     filtered_count = qs.count()
+    if request.user.player.partner is not None:
+        qs = qs.annotate(
+            maybe_a_link=(
+                Q(seat__isnull=True)
+                & Q(partner__isnull=False)
+                & ~Q(pk=request.user.player.pk)
+                & ~Q(pk=request.user.player.partner.pk)
+            ),
+        )
     context = {
         "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
         "player_list": qs,

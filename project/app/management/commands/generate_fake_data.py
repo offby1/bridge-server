@@ -27,40 +27,27 @@ class Command(BaseCommand):
             unseated_players = []
             while Player.objects.count() < options["players"]:
                 username = fake.unique.first_name().lower()
-                django_user = User.objects.create_user(
-                    username=username,
-                    password=username,
-                )
 
-                p = Player.objects.create(user=django_user)
+                p = Player.objects.create(
+                    user=User.objects.create_user(
+                        username=username,
+                        password=username,
+                    ),
+                )
                 progress_bar.update()
                 unseated_players.append(p)
 
-                if len(unseated_players) < 2:
+                if len(unseated_players) < 4:
                     continue
 
-                # if there are no tables with two open seats, create one
-                t = Table.objects.annotate(num_seats=Count("seat")).filter(num_seats__lt=3).first()
-                if t is None:
-                    t = Table.objects.create()
+                unseated_players[0].partner_with(unseated_players[1])
+                unseated_players[2].partner_with(unseated_players[3])
 
-                # find a seat at the first empty table
-                this_tables_players_by_direction = t.players_by_direction()
-                for seat in bridge.seat.Seat:
-                    if seat.value not in this_tables_players_by_direction:
-                        unseated_players[0].partner_with(unseated_players[1])
-                        Seat.objects.create(
-                            direction=seat.value,
-                            player=unseated_players[0],
-                            table=t,
-                        )
-                        Seat.objects.create(
-                            direction=seat.partner().value,
-                            player=unseated_players[1],
-                            table=t,
-                        )
-                        unseated_players = []
-                        break
+                Table.objects.create_with_two_partnerships(
+                    unseated_players[0],
+                    unseated_players[2],
+                )
+                unseated_players = []
 
         # Now create a couple of unseated players.
         count_before = Player.objects.count()
