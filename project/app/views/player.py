@@ -55,11 +55,20 @@ def _find_swinging_singles_link():
 
 
 def _get_text(subject, as_viewed_by):
+    addendum = ""
+    if not subject.is_seated and not as_viewed_by.is_seated:
+        addendum = format_html(
+            """<a href="{}"> other unseated partnerships </a>""",
+            # TODO -- use reverse, duh
+            "/players/?seated=False&lookin_for_love=False&exclude_me=True",
+        )
+
     if subject.partner:
         if subject.partner != as_viewed_by:
-            return format_html("{}'s partner is {}", subject, player_link(subject.partner))
-
-        return f"{subject}'s partner is, gosh, you!"
+            text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
+        else:
+            text = format_html(f"{subject}'s partner is, gosh, you!")
+        return text + addendum
 
     if as_viewed_by == subject:
         return _find_swinging_singles_link()
@@ -206,12 +215,16 @@ def send_player_message(request, recipient_pk):
 def player_list_view(request):
     lookin_for_love = request.GET.get("lookin_for_love")
     seated = request.GET.get("seated")
+    exclude_me = request.GET.get("exclude_me")
 
     model = Player
     template_name = "player_list.html"
 
     qs = model.objects.all()
     total_count = qs.count()
+
+    if {"True": True, "False": False}.get(exclude_me) is True:
+        qs = qs.exclude(pk=request.user.player.pk).exclude(partner=request.user.player)
 
     if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
         qs = qs.filter(partner__isnull=lfl_filter)
