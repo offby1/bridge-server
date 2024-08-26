@@ -55,13 +55,15 @@ class TableManager(models.Manager):
 class Table(models.Model):
     objects = TableManager()
 
-    # def cards_by_player(self):
-    #     rv = {}
-    #     board = self.current_board
-    #     if board is None:
-    #         return rv
-    #     for s in self.seat_set.all():
-    #         rv[s.player] =
+    def cards_by_player(self):
+        rv = {}
+        board = self.current_board
+        if board is None:
+            return rv
+        for s in self.seat_set.all():
+            rv[s.player] = f"wtf goes here {s=}"
+        print(f"{rv=}")
+        return rv
 
     # TODO -- find the newest one, not the "first" one
     @property

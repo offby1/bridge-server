@@ -4,21 +4,12 @@
 
 OK so like here's the complete table, Yo:
 
-HEY HERE'S ALL THE CARDS WHEEEE
-{{ table.current_board.cards }}
-
 <ul>
-{% for direction, player in table.as_tuples %}
+{% for player, cards in card_display %}
 
 <li>
-{{ direction|title }}:
-{% if player in show_cards_for  %}
-{{ player.as_link }} TODO: No cards yet, sorry
-{% else %}
-{{ player.as_link }} (No count of cards yet, sorry)
+{{ player.as_link }} {{ cards }}
 </li>
-{% endif %}
-
 {% endfor %}
 </ul>
 
