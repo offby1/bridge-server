@@ -28,6 +28,7 @@ ALLOWED_HOSTS = [
     "192.168.4.39",  # laptop at home
     "localhost",
     "offby1.info",
+    ".orb.local",
 ]
 
 
