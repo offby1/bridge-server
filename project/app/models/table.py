@@ -90,6 +90,13 @@ class Table(models.Model):
 
         return True
 
+    def is_full(self):
+        for p in self.players_by_direction().values():
+            if p is None:
+                return False
+
+        return True
+
     def go_away_if_empty(self):
         if self.is_empty():
             self.delete()

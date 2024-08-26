@@ -3,10 +3,19 @@
 
 {% block table_list %}
 
-All {{ table_list.count }} tables.
+<h2>All {{ table_list.count }} tables.</h2>
+
+<h3>Full</h3>
 <ul>
 {% for table in table_list %}
-<li>{{ table.as_link }}</li>
+{% if table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
+{% endfor %}
+</ul>
+
+<h3>Non-full</h3>
+<ul>
+{% for table in table_list %}
+{% if not table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
 {% endfor %}
 </ul>
 
