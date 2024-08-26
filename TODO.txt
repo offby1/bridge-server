@@ -1,5 +1,16 @@
 STILL TODO:
 
+* DEAL THEM CARDS!!!
+
+* Think about optimization (without actually doing it, since that would be premature):
+  Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
+
+  So, consider which events really need to be public, and which can be "private".
+
+  e.g player_detail_view sends "splitsville" in response to a player clicking the button, but surely only (at most) four players need to know about this *instantly*; other people can reload the page to find out who's partnered with whom.
+
+  Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
+
 * Occasionally some page will take ages to load.  Like, right now http://localhost:8000/players/?lookin_for_love=True took 34 seconds.
 
   There are only 17 players.

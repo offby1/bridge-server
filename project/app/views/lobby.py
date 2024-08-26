@@ -12,6 +12,7 @@ def lobby(request):
     return HttpResponseRedirect(reverse("app:players") + "?seated=False")
 
 
+# TODO -- I don't think anyone listens for these
 @logged_in_as_player_required(redirect=False)
 def send_lobby_message(request):
     if request.method == "POST":
