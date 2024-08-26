@@ -37,7 +37,14 @@ class TableManager(models.Manager):
         random.shuffle(deck)
 
         Board.objects.create(
-            ns_vulnerable=False, ew_vulnerable=False, dealer=0, cards=deck, table=t
+            ns_vulnerable=False,
+            ew_vulnerable=False,
+            dealer=0,
+            north_cards=deck[0:13],
+            east_cards=deck[13:26],
+            south_cards=deck[26:39],
+            west_cards=deck[40:52],
+            table=t,
         )
 
         return t
@@ -47,6 +54,14 @@ class TableManager(models.Manager):
 # onto each instance.
 class Table(models.Model):
     objects = TableManager()
+
+    # def cards_by_player(self):
+    #     rv = {}
+    #     board = self.current_board
+    #     if board is None:
+    #         return rv
+    #     for s in self.seat_set.all():
+    #         rv[s.player] =
 
     # TODO -- find the newest one, not the "first" one
     @property

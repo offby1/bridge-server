@@ -11,7 +11,14 @@ class Board(models.Model):
 
     dealer = models.SmallIntegerField()  # corresponds to bridge library's "direction"
 
-    cards = models.CharField(max_length=104)
+    @property
+    def cards(self):
+        return self.north_cards + self.east_cards + self.south_cards + self.west_cards
+
+    north_cards = models.CharField(max_length=26)
+    east_cards = models.CharField(max_length=26)
+    south_cards = models.CharField(max_length=26)
+    west_cards = models.CharField(max_length=26)
 
     # Hmm, if we delete a table, and if the table is associated with a transcript ... what happens to the transcript?
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
