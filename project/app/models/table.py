@@ -59,7 +59,8 @@ class Table(models.Model):
         if board is None:
             return rv
         for s in self.seat_set.all():
-            rv[s.player] = board.cards_for_direction(s.direction)
+            if s.player is not None:
+                rv[s.player] = board.cards_for_direction(s.direction)
         print(f"{rv=}")
         return rv
 
