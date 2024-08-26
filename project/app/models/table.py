@@ -36,14 +36,12 @@ class TableManager(models.Manager):
         deck = Card.deck()
         random.shuffle(deck)
 
-        Board.objects.create(
+        print(f"{deck=}")
+        Board.objects.create_with_deck(
             ns_vulnerable=False,
             ew_vulnerable=False,
             dealer=0,
-            north_cards=deck[0:13],
-            east_cards=deck[13:26],
-            south_cards=deck[26:39],
-            west_cards=deck[40:52],
+            deck=deck,
             table=t,
         )
 

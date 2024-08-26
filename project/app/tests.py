@@ -410,3 +410,7 @@ def test_random_dude_cannot_create_table(usual_setup, rf):
 
     response = seat_em_dano(Bob)
     assert response.status_code == 302
+
+    t = Table.objects.first()
+    print(t.cards_by_player())
+    assert "cat" == "dog"
