@@ -28,12 +28,17 @@ class Command(BaseCommand):
             while Player.objects.count() < options["players"]:
                 username = fake.unique.first_name().lower()
 
-                p = Player.objects.create(
-                    user=User.objects.create_user(
-                        username=username,
-                        password=username,
-                    ),
-                )
+                try:
+                    p = Player.objects.create(
+                        user=User.objects.create_user(
+                            username=username,
+                            password=username,
+                        ),
+                    )
+                except Exception as e:
+                    self.stderr.write(f"Hmm, {e}")
+                    continue
+
                 progress_bar.update()
                 unseated_players.append(p)
 
@@ -53,10 +58,14 @@ class Command(BaseCommand):
         count_before = Player.objects.count()
         while Player.objects.count() < count_before + 3:
             username = fake.unique.first_name().lower()
-            django_user = User.objects.create_user(
-                username=username,
-                password=username,
-            )
+            try:
+                django_user = User.objects.create_user(
+                    username=username,
+                    password=username,
+                )
+            except Exception as e:
+                self.stderr.write(f"Hmm, {e}")
+                continue
 
             Player.objects.create(user=django_user)
 
