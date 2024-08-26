@@ -27,7 +27,7 @@ def table_detail_view(request, pk):
         dem_cards_baby = f"{len(cards)} cards"
         print(f"{player=} {request.user.player=}")
         if player == request.user.player:
-            dem_cards_baby = cards
+            dem_cards_baby = sorted(cards, reverse=True)
         print(f"{dem_cards_baby=}")
         card_display.append((player, dem_cards_baby))
 
