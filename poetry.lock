@@ -108,7 +108,7 @@ description = ""
 optional = false
 python-versions = ">=3.7"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 colorama = "*"
@@ -1489,4 +1489,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10"
-content-hash = "cd8f2db88cb85ab310e3dcd772b704a8d983768881188b19ae9820032915b8e5"
+content-hash = "051c491a9d5da69e9da6fe5e33b1cc0726159738fb51d0e61157638b953735dd"
