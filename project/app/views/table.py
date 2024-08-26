@@ -20,9 +20,20 @@ def table_list_view(request):
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
+    # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
+    # in which case show 'em all
+    card_display = []
+    for player, cards in table.cards_by_player().items():
+        dem_cards_baby = f"{len(cards)} cards"
+        print(f"{player=} {request.user.player=}")
+        if player == request.user.player:
+            dem_cards_baby = cards
+        print(f"{dem_cards_baby=}")
+        card_display.append((player, dem_cards_baby))
+
     context = {
+        "card_display": card_display,
         "table": table,
-        "show_cards_for": [request.user.player],
     }
 
     return TemplateResponse(request, "table_detail.html", context=context)
