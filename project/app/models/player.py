@@ -9,7 +9,6 @@ from django_eventstream import send_event
 
 from .message import Message
 from .seat import Seat
-from .table import Table
 
 logger = logging.getLogger(__name__)
 

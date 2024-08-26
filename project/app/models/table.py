@@ -1,9 +1,13 @@
+import random
+
+from bridge.card import Card
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
 
 from . import SEAT_CHOICES
+from .board import Board
 from .seat import Seat
 
 
@@ -27,6 +31,15 @@ class TableManager(models.Manager):
                     )
         except Exception as e:
             raise TableException from e
+
+        # TODO -- choose vulnerabilty and dealer sensibly
+        deck = Card.deck()
+        random.shuffle(deck)
+
+        Board.objects.create(
+            ns_vulnerable=False, ew_vulnerable=False, dealer=0, cards=deck, table=t
+        )
+
         return t
 
 
@@ -34,6 +47,11 @@ class TableManager(models.Manager):
 # onto each instance.
 class Table(models.Model):
     objects = TableManager()
+
+    # TODO -- find the newest one, not the "first" one
+    @property
+    def current_board(self):
+        return self.board_set.first()
 
     def players_by_direction(self):
         seats = self.seat_set.all()
