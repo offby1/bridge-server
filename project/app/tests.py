@@ -374,3 +374,39 @@ def test_table_creation(bob, rf):
     response = table.new_table_for_two_partnerships(request, bob.pk, players_by_name["tina"].pk)
 
     assert response.status_code == 302
+
+
+def test_random_dude_cannot_create_table(usual_setup, rf):
+    Bob = Player.objects.get_by_name("Bob")
+    Ted = Player.objects.get_by_name("Ted")
+    Carol = Player.objects.get_by_name("Carol")
+    Alice = Player.objects.get_by_name("Alice")
+
+    Bob.break_partnership()
+    Bob.partner_with(Ted)
+    Carol.break_partnership()
+    Carol.partner_with(Alice)
+
+    assert Table.objects.count() == 0
+
+    # OK now we got four players ready to sit at a table.
+
+    RandomDude = Player.objects.create(
+        user=auth.models.User.objects.create_user(
+            username="J.Random Hacker",
+            password="J.Random Hacker",
+        ),
+    )
+
+    def seat_em_dano(player=None):
+        request = rf.post("/woteva/")
+
+        request.user = player.user
+        return table.new_table_for_two_partnerships(request, Bob.pk, Carol.pk)
+
+    response = seat_em_dano(RandomDude)
+    assert response.status_code == 403
+    assert b"isn't one of" in response.content
+
+    response = seat_em_dano(Bob)
+    assert response.status_code == 302
