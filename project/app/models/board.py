@@ -25,7 +25,7 @@ class BoardManager(models.Manager):
         north_cards = deserialize_hand(deck[0:13])
         east_cards = deserialize_hand(deck[13:26])
         south_cards = deserialize_hand(deck[26:39])
-        west_cards = deserialize_hand(deck[40:52])
+        west_cards = deserialize_hand(deck[39:52])
 
         return self.create(
             ns_vulnerable=ns_vulnerable,
