@@ -1,3 +1,5 @@
+from bridge.seat import Seat
+
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
 # https://en.wikipedia.org/wiki/Board_(bridge)
 # One of the four slots says "dealer" next to it.
@@ -11,9 +13,13 @@ class Board(models.Model):
 
     dealer = models.SmallIntegerField()  # corresponds to bridge library's "direction"
 
-    @property
-    def cards(self):
-        return self.north_cards + self.east_cards + self.south_cards + self.west_cards
+    def cards_for_direction(self, direction_integer):
+        return {
+            Seat.NORTH.value: self.north_cards,
+            Seat.EAST.value: self.east_cards,
+            Seat.SOUTH.value: self.south_cards,
+            Seat.WEST.value: self.west_cards,
+        }[direction_integer]
 
     north_cards = models.CharField(max_length=26)
     east_cards = models.CharField(max_length=26)

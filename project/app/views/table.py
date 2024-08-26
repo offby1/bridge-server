@@ -24,6 +24,7 @@ def table_detail_view(request, pk):
     # in which case show 'em all
     card_display = []
     for player, cards in table.cards_by_player().items():
+        print(f"psst ... {player=} {cards=}")
         dem_cards_baby = f"{len(cards) // 2} cards"
         print(f"{player=} {request.user.player=}")
         if player == request.user.player:
