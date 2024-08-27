@@ -1,7 +1,5 @@
 STILL TODO:
 
-* DEAL THEM CARDS!!!
-
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
 
@@ -51,6 +49,13 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* AttributeError at /players/
+  http://192.168.4.39:8000/players/?seated=False&lookin_for_love=False&exclude_me=True
+
+  'AnonymousUser' object has no attribute 'player'
+
+* DEAL THEM CARDS!!!
 
 * the coverage report has a lot of "empty"s near the right margin, and "coverage html" prints `CoverageWarning: No contexts were measured`
 
