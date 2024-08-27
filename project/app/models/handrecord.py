@@ -5,16 +5,19 @@ from django.db import models
 
 
 class HandRecord(models.Model):
+    # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
         primary_key=True
     )  # it's the default, but it can't hurt to be explicit.
 
-    # The "who" (including the "where" and maybe even "when")
-    seat = models.ForeignKey("Seat", on_delete=models.CASCADE)
+    # The "where"
+    table = models.ForeignKey("Table", on_delete=models.CASCADE)
 
-    @property
-    def player(self):
-        return self.seat.player
+    def __str__(self):
+        calls = [str(c) for c in self.call_set.order_by("id")]
+        plays = [str(p) for p in self.play_set.order_by("id")]
+
+        return f"Auction: {';'.join(calls)}\nPlay: {';'.join(plays)}"
 
 
 admin.site.register(HandRecord)
@@ -36,7 +39,7 @@ class Call(models.Model):
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)
-        return f"Call #{self.id}: {self.hand.seat} says {self.serialized} which means {call}"
+        return f"Call #{self.id}: Someone at {self.hand.table} says {self.serialized} which means {call}"
 
 
 admin.site.register(Call)
@@ -56,7 +59,7 @@ class Play(models.Model):
 
     def __str__(self):
         play = Card.deserialize(self.serialized)
-        return f"{self.player} ({self.seat.direction} at {self.seat.table}) played {self.serialized} which means {play}"
+        return f"Mystery player at {self.hand.table} played {self.serialized} which means {play}"
 
 
 admin.site.register(Play)

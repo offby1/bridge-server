@@ -45,7 +45,7 @@ class Board(models.Model):
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
 
-    dealer = models.SmallIntegerField()  # corresponds to bridge library's "direction"
+    dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)
 
     @property
     def hand_strings_by_direction(self):

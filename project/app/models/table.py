@@ -53,13 +53,13 @@ class TableManager(models.Manager):
 class Table(models.Model):
     objects = TableManager()
 
-    # def calls(self):
-    #     seats = self.seat_set.all()
-    #     calls = s.handrecord_set.filter(something_about_excluding_the_bids)
+    @property
+    def handrecords(self):
+        return self.handrecord_set.order_by("id")
 
-    # def bids(self):
-    #     seats = self.seat_set.all()
-    #     bids = s.handrecord_set.filter(something_about_excluding_the_calls)
+    @property
+    def dealer(self):
+        return self.current_board.dealer
 
     def cards_by_player(self):
         rv = {}
