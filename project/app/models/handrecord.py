@@ -13,11 +13,16 @@ class HandRecord(models.Model):
     # The "where"
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
 
-    def __str__(self):
-        calls = [str(c) for c in self.call_set.order_by("id")]
-        plays = [str(p) for p in self.play_set.order_by("id")]
+    @property
+    def calls(self):
+        return self.call_set.order_by("id")
 
-        return f"Auction: {';'.join(calls)}\nPlay: {';'.join(plays)}"
+    @property
+    def plays(self):
+        return self.play_set.order_by("id")
+
+    def __str__(self):
+        return f"Auction: {';'.join(self.calls)}\nPlay: {';'.join(self.plays)}"
 
 
 admin.site.register(HandRecord)
