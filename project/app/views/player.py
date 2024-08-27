@@ -224,8 +224,11 @@ def player_list_view(request):
     qs = model.objects.all()
     total_count = qs.count()
 
-    if {"True": True, "False": False}.get(exclude_me) is True:
-        qs = qs.exclude(pk=request.user.player.pk).exclude(partner=request.user.player)
+    player = getattr(request.user, "player", None)
+
+    if player is not None:
+        if {"True": True, "False": False}.get(exclude_me) is True:
+            qs = qs.exclude(pk=player.pk).exclude(partner=player)
 
     if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
         qs = qs.filter(partner__isnull=lfl_filter)
@@ -234,14 +237,14 @@ def player_list_view(request):
         qs = qs.filter(seat__isnull=not seated_filter)
 
     filtered_count = qs.count()
-    if hasattr(request.user, "player"):
-        if request.user.player.partner is not None:
+    if player is not None:
+        if player.partner is not None:
             qs = qs.annotate(
                 maybe_a_link=(
                     Q(seat__isnull=True)
                     & Q(partner__isnull=False)
-                    & ~Q(pk=request.user.player.pk)
-                    & ~Q(pk=request.user.player.partner.pk)
+                    & ~Q(pk=player.pk)
+                    & ~Q(pk=player.partner.pk)
                 ),
             )
 
