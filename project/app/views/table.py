@@ -20,17 +20,30 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-# Despite the argument list, this isn't a view (it returns HTML, not an HttpResponse)
-def _bidding_box(request, pk):
+def _bidding_box(table):
     calls_by_level = collections.defaultdict(list)
-    for (
-        call
-    ) in bridge.contract.Bid.all_exceeding():  # TODO -- stick the table's most-recent call in here
+
+    for call in bridge.contract.Bid.all_exceeding():
         calls_by_level[call.level].append(call)
+
+    mrb = None
+    if table.current_handrecord.most_recent_bid is not None:
+        mrb = table.current_handrecord.most_recent_bid.libraryCall
 
     rows = []
     for level, calls in calls_by_level.items():
-        row = '<div class="row">' + "".join(f'<div class="col">{c}</div>' for c in calls) + "</div>"
+        row = '<div class="row">'
+
+        col_divs = []
+        for c in calls:
+            if mrb is not None and c <= mrb:
+                col_divs.append(f'<div class="col"><s>{c}</s></div>')
+            else:
+                col_divs.append(f'<div class="col">{c}</div>')
+        row += "".join(col_divs)
+
+        row += "</div>"
+
         rows.append(row)
 
     return format_html(f"""
@@ -70,7 +83,7 @@ def table_detail_view(request, pk):
         card_display.append((player, dem_cards_baby))
 
     context = {
-        "bidding_box": _bidding_box(request, pk),
+        "bidding_box": _bidding_box(table),
         "card_display": card_display,
         "card_picker": _card_picker(request, pk),
         "table": table,

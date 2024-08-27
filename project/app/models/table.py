@@ -8,6 +8,7 @@ from django.utils.html import format_html
 
 from . import SEAT_CHOICES
 from .board import Board
+from .handrecord import HandRecord
 from .seat import Seat
 
 
@@ -36,7 +37,6 @@ class TableManager(models.Manager):
         deck = Card.deck()
         random.shuffle(deck)
 
-        print(f"{deck=}")
         Board.objects.create_with_deck(
             ns_vulnerable=False,
             ew_vulnerable=False,
@@ -45,6 +45,7 @@ class TableManager(models.Manager):
             table=t,
         )
 
+        HandRecord.objects.create(table=t)
         return t
 
 
@@ -76,7 +77,7 @@ class Table(models.Model):
 
         return rv
 
-    # TODO -- find the newest one, not the "first" one
+    # TODO -- find the newest one, not the first one
     @property
     def current_board(self):
         return self.board_set.first()

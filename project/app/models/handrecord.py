@@ -13,6 +13,21 @@ class HandRecord(models.Model):
     # The "where"
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
 
+    # The "what" is in our implicit "call_set" and "play_set" attributes.
+
+    @property
+    def most_recent_call(self):
+        return self.call_set.order_by("-id").first()
+
+    @property
+    def most_recent_bid(self):
+        return (
+            self.call_set.order_by("-id")
+            .annotate(first=models.F("serialized")[0])
+            .filter(first__in="1234567")
+            .first()
+        )
+
     @property
     def calls(self):
         return self.call_set.order_by("id")
@@ -41,6 +56,10 @@ class Call(models.Model):
         max_length=10,
         db_comment="A short string with which we can create a bridge.contract.Call object",
     )
+
+    @property
+    def libraryCall(self):
+        return Bid.deserialize(self.serialized)
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)

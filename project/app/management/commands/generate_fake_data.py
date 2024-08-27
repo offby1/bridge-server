@@ -19,7 +19,7 @@ class Command(BaseCommand):
         )
 
     def generate_some_fake_calls_and_plays_at(self, table):
-        h = HandRecord.objects.create(table=table)
+        h = table.current_handrecord
         h.call_set.create(serialized="Pass")
         h.call_set.create(serialized="1NT")
         h.call_set.create(serialized="Double")
