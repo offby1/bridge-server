@@ -5,6 +5,7 @@ SEAT_CHOICES = {v.value: k for k, v in bridge.seat.Seat.__members__.items()}
 
 
 from .board import Board  # noqa
+from .handrecord import Call, HandRecord, Play  # noqa
 from .message import Message  # noqa
 from .player import (  # noqa
     PartnerException,
