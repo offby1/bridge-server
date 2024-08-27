@@ -1,7 +1,11 @@
+import collections
+
+import bridge.contract
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
 from ..models import Player, Table
@@ -14,6 +18,40 @@ def table_list_view(request):
     }
 
     return TemplateResponse(request, "table_list.html", context=context)
+
+
+# Despite the argument list, this isn't a view (it returns HTML, not an HttpResponse)
+def _bidding_box(request, pk):
+    calls_by_level = collections.defaultdict(list)
+    for (
+        call
+    ) in bridge.contract.Bid.all_exceeding():  # TODO -- stick the table's most-recent call in here
+        calls_by_level[call.level].append(call)
+
+    rows = []
+    for level, calls in calls_by_level.items():
+        row = '<div class="row">' + "".join(f'<div class="col">{c}</div>' for c in calls) + "</div>"
+        rows.append(row)
+
+    return format_html(f"""
+    <div class="bidding-box">
+
+    <div class="container">
+    <div class="row">
+    <div class="col">Pass</div><div class="col">Double</div><div class="col">Redouble</div>
+    </div>
+    </div>
+
+    <div class="container">
+    {"\n".join(rows)}
+    </div>
+
+    </div>
+    """)
+
+
+def _card_picker(request, pk):
+    pass
 
 
 @logged_in_as_player_required()
@@ -32,7 +70,9 @@ def table_detail_view(request, pk):
         card_display.append((player, dem_cards_baby))
 
     context = {
+        "bidding_box": _bidding_box(request, pk),
         "card_display": card_display,
+        "card_picker": _card_picker(request, pk),
         "table": table,
     }
 
