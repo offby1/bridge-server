@@ -58,7 +58,6 @@ class Board(models.Model):
 
     def cards_for_direction(self, direction_integer):
         card_string = self.hand_strings_by_direction[direction_integer]
-        print(f"{card_string=}")
         return [Card.deserialize(c) for c in more_itertools.chunked(card_string, 2)]
 
     north_cards = models.CharField(max_length=26)

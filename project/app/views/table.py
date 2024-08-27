@@ -25,10 +25,10 @@ def table_detail_view(request, pk):
     card_display = []
     for player, cards in table.cards_by_player().items():
         dem_cards_baby = f"{len(cards)} cards"
-        print(f"{player=} {request.user.player=}")
+
         if player == request.user.player:
             dem_cards_baby = sorted(cards, reverse=True)
-        print(f"{dem_cards_baby=}")
+
         card_display.append((player, dem_cards_baby))
 
     context = {

@@ -61,7 +61,7 @@ class Table(models.Model):
         for s in self.seat_set.all():
             if s.player is not None:
                 rv[s.player] = board.cards_for_direction(s.direction)
-        print(f"{rv=}")
+
         return rv
 
     # TODO -- find the newest one, not the "first" one
