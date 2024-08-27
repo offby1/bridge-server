@@ -36,7 +36,7 @@ class Call(models.Model):
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)
-        return f"{self.player} ({self.seat.direction} at {self.seat.table}) says {self.serialized} which means {call}"
+        return f"Call #{self.id}: {self.hand.seat} says {self.serialized} which means {call}"
 
 
 admin.site.register(Call)

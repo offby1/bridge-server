@@ -53,6 +53,14 @@ class TableManager(models.Manager):
 class Table(models.Model):
     objects = TableManager()
 
+    # def calls(self):
+    #     seats = self.seat_set.all()
+    #     calls = s.handrecord_set.filter(something_about_excluding_the_bids)
+
+    # def bids(self):
+    #     seats = self.seat_set.all()
+    #     bids = s.handrecord_set.filter(something_about_excluding_the_calls)
+
     def cards_by_player(self):
         rv = {}
         board = self.current_board
