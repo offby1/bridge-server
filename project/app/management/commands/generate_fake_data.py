@@ -1,9 +1,7 @@
-import bridge
 import tqdm
-from app.models import Player, Seat, Table
+from app.models import HandRecord, Player, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db.models import Count
 from faker import Faker
 
 
@@ -19,6 +17,13 @@ class Command(BaseCommand):
             default=3,
             type=int,
         )
+
+    def generate_some_fake_calls_and_plays_at(self, table):
+        h = HandRecord.objects.create(table=table)
+        h.call_set.create(serialized="Pass")
+        h.call_set.create(serialized="1NT")
+        h.call_set.create(serialized="Double")
+        self.stdout.write(f"OK, {table=} has a couple of calls")
 
     def handle(self, *args, **options):
         fake = Faker()
@@ -53,6 +58,8 @@ class Command(BaseCommand):
                     unseated_players[2],
                 )
                 unseated_players = []
+
+        self.generate_some_fake_calls_and_plays_at(Table.objects.first())
 
         # Now create a couple of unseated players.
         count_before = Player.objects.count()

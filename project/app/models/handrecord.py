@@ -22,7 +22,7 @@ class HandRecord(models.Model):
         return self.play_set.order_by("id")
 
     def __str__(self):
-        return f"Auction: {';'.join(self.calls)}\nPlay: {';'.join(self.plays)}"
+        return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
 
 
 admin.site.register(HandRecord)
@@ -44,7 +44,7 @@ class Call(models.Model):
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)
-        return f"Call #{self.id}: Someone at {self.hand.table} says {self.serialized} which means {call}"
+        return f"Call #{self.id}: Someone at {self.hand.table} says {self.serialized=} which means {call}"
 
 
 admin.site.register(Call)

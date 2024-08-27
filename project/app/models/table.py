@@ -58,6 +58,10 @@ class Table(models.Model):
         return self.handrecord_set.order_by("id")
 
     @property
+    def current_handrecord(self):
+        return self.handrecord_set.order_by("-id").first()
+
+    @property
     def dealer(self):
         return self.current_board.dealer
 

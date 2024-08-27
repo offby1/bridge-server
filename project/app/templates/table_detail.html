@@ -1,22 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-
-
-OK so like here's the complete table, Yo:
-
-<ul>
-{% for player, cards in card_display %}
-
-<li>
-{{ player.as_link }} {{ cards }}
-</li>
-{% endfor %}
-</ul>
-
-I suppose I should put a count of tricks here. OK, fine:
-<ul>
-  <li>North-South: 0</li>
-  <li>East-West: 0</li>
-</ul>
-Happy now, bitch?
+    <div>
+        OK so like here's the complete table, Yo:
+        <ul>
+            {% for player, cards in card_display %}<li>{{ player.as_link }} {{ cards }}</li>{% endfor %}
+        </ul>
+    </div>
+    <div>
+        And here's a record of the auction and play
+        <div>
+            Calls
+            <ul>
+            {% for c in table.current_handrecord.calls %}<li>{{ c }}</li>{% endfor %}
+            </ul>
+        </div>
+        <div>
+            Plays
+            <ul>
+            {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
+            </ul>
+        </div>
+    </div>
 {% endblock content %}
