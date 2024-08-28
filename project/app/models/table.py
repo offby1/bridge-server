@@ -34,14 +34,11 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        # TODO -- choose vulnerabilty and dealer sensibly
         deck = Card.deck()
         random.shuffle(deck)
 
-        b = Board.objects.create_with_deck(
-            ns_vulnerable=random.choice(range(2)),
-            ew_vulnerable=random.choice(range(2)),
-            dealer=random.choice(list(SEAT_CHOICES)),
+        b = Board.objects.create_from_deck_and_board_number(
+            board_number=Board.objects.count() + 1,
             deck=deck,
         )
 

@@ -1,17 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     <div>
-        Board #{{ table.current_handrecord.board.id }}.
-        {% if table.current_handrecord.board.ns_vulnerable and table.current_handrecord.board.ew_vulnerable %}
-        Both sides vulnerable.
-        {% elif not table.current_handrecord.board.ns_vulnerable and not table.current_handrecord.board.ew_vulnerable %}
-        Neither side vulnerable.
-        {% elif table.current_handrecord.board.ns_vulnerable %}
-        North/South vulnerable.
-        {% else %}
-        East/West vulnerable.
-        {% endif %}
-        The dealer was {{ table.current_handrecord.board.fancy_dealer }}.
+        {{ table.current_handrecord.board }}.
         <div>
             <ul>
             {% for index, player, c in table.current_handrecord.annotated_calls %}
