@@ -73,18 +73,21 @@ def table_detail_view(request, pk):
 
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
-    card_display = []
+    cards_by_direction_display = {}
     for seat, cards in table.cards_by_player().items():
         dem_cards_baby = f"{len(cards)} cards"
 
         if seat.player == request.user.player:
             dem_cards_baby = sorted(cards, reverse=True)
 
-        card_display.append((seat, dem_cards_baby))
+        cards_by_direction_display[seat.named_direction] = {
+            "player": seat.player,
+            "cards": dem_cards_baby,
+        }
 
     context = {
         "bidding_box": _bidding_box(table),
-        "card_display": card_display,
+        "card_display": cards_by_direction_display,
         "card_picker": _card_picker(request, pk),
         "table": table,
     }

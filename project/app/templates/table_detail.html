@@ -19,11 +19,25 @@
             </ul>
         </div>
     </div>
-    <div>
-        And here's the complete table.
-        <ul>
-            {% for seat, cards in card_display %}<li>{{ seat.named_direction }}:{{ seat.player.as_link }} {{ cards }}</li>{% endfor %}
-        </ul>
+    {# Here I've got North at the top, but maybe it should be #}
+    {# Declarer at the bottom; or        #}
+    {# request.user.player at the bottom #}
+    <div class="container" style="border: 1px solid;">
+        <div class="row">
+          <div class="col"></div>
+          <div class="col">{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}</div>
+          <div class="col"></div>
+        </div>
+        <div class="row">
+          <div class="col">{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
+          <div class="col"></div>
+          <div class="col">{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
+        </div>
+        <div class="row">
+          <div class="col"></div>
+          <div class="col">{{card_display.SOUTH.player.name_dir}}: {{ card_display.SOUTH.cards }}</div>
+          <div class="col"></div>
+        </div>
     </div>
     <div>
       <div>

@@ -116,6 +116,13 @@ class Player(models.Model):
     def name(self):
         return self.user.username
 
+    @property
+    def name_dir(self):
+        direction = ""
+        if hasattr(self, "seat"):
+            direction = f" ({self.seat.named_direction})"
+        return f"{self.user.username}{direction}"
+
     def as_link(self, style=""):
         return format_html(
             "<a style='{}' href='{}'>{}</a>",
