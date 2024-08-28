@@ -37,15 +37,14 @@ class TableManager(models.Manager):
         deck = Card.deck()
         random.shuffle(deck)
 
-        Board.objects.create_with_deck(
+        b = Board.objects.create_with_deck(
             ns_vulnerable=False,
             ew_vulnerable=False,
             dealer=0,
             deck=deck,
-            table=t,
         )
 
-        HandRecord.objects.create(table=t)
+        HandRecord.objects.create(board=b, table=t)
         return t
 
 

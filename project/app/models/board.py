@@ -17,7 +17,6 @@ class BoardManager(models.Manager):
         ew_vulnerable,
         dealer,
         deck,
-        table,
     ):
         def deserialize_hand(cards):
             return "".join([c.serialize() for c in cards])
@@ -35,7 +34,6 @@ class BoardManager(models.Manager):
             east_cards=east_cards,
             south_cards=south_cards,
             west_cards=west_cards,
-            table=table,
         )
 
 
