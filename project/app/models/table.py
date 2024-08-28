@@ -66,14 +66,14 @@ class Table(models.Model):
     def dealer(self):
         return self.current_board.dealer
 
-    def cards_by_player(self):
+    def cards_by_player(self) -> dict[Seat, list[Card]]:
         rv = {}
         board = self.current_board
         if board is None:
             return rv
         for s in self.seat_set.all():
             if s.player is not None:
-                rv[s.player] = board.cards_for_direction(s.direction)
+                rv[s] = board.cards_for_direction(s.direction)
 
         return rv
 
