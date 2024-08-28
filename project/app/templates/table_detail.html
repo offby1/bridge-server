@@ -1,15 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
     <div>
-        OK so like here's the complete table, Yo:
-        <ul>
-            {% for player, cards in card_display %}<li>{{ player.as_link }} {{ cards }}</li>{% endfor %}
-        </ul>
-    </div>
-    <div>
-        And here's a record of the auction and play.  The dealer was {{ table.current_handrecord.board.fancy_dealer }}.
+        So like here's a record of the auction and play.  The dealer was {{ table.current_handrecord.board.fancy_dealer }}.
         <div>
-            Calls
             <ul>
             {% for index, player, c in table.current_handrecord.annotated_calls %}
             <li>Call #{{ index }}: {{ player }} said {{ c }}</li>
@@ -17,11 +10,16 @@
             </ul>
         </div>
         <div>
-            Plays
             <ul>
             {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
             </ul>
         </div>
+    </div>
+    <div>
+        And here's the complete table.
+        <ul>
+            {% for player, cards in card_display %}<li>{{ player.as_link }} {{ cards }}</li>{% endfor %}
+        </ul>
     </div>
     <div>
       <div>
