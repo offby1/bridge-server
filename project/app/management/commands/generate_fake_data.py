@@ -1,8 +1,9 @@
 import tqdm
-from app.models import HandRecord, Player, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
+
+from app.models import HandRecord, Player, Table
 
 
 class Command(BaseCommand):

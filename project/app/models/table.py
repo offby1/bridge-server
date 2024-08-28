@@ -39,9 +39,9 @@ class TableManager(models.Manager):
         random.shuffle(deck)
 
         b = Board.objects.create_with_deck(
-            ns_vulnerable=False,
-            ew_vulnerable=False,
-            dealer=librarySeat.NORTH.value,
+            ns_vulnerable=random.choice(range(2)),
+            ew_vulnerable=random.choice(range(2)),
+            dealer=random.choice(list(SEAT_CHOICES)),
             deck=deck,
         )
 
