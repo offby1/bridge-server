@@ -22,7 +22,8 @@ class BoardManager(models.Manager):
         deck,
     ):
         def deserialize_hand(cards):
-            return "".join([c.serialize() for c in cards])
+            # sorted only so that they look purty in the Admin site.
+            return "".join([c.serialize() for c in sorted(cards)])
 
         north_cards = deserialize_hand(deck[0:13])
         east_cards = deserialize_hand(deck[13:26])
