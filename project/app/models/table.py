@@ -1,6 +1,7 @@
 import random
 
 from bridge.card import Card
+from bridge.seat import Seat as librarySeat
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -40,7 +41,7 @@ class TableManager(models.Manager):
         b = Board.objects.create_with_deck(
             ns_vulnerable=False,
             ew_vulnerable=False,
-            dealer=0,
+            dealer=librarySeat.NORTH.value,
             deck=deck,
         )
 
@@ -76,10 +77,9 @@ class Table(models.Model):
 
         return rv
 
-    # TODO -- find the newest one, not the first one
     @property
     def current_board(self):
-        return self.board_set.first()
+        return self.current_handrecord.board
 
     def players_by_direction(self):
         seats = self.seat_set.all()

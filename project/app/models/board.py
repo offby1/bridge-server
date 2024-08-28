@@ -1,12 +1,15 @@
 import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
+from django.contrib import admin
 
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
 # https://en.wikipedia.org/wiki/Board_(bridge)
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
+
+from . import SEAT_CHOICES
 
 
 class BoardManager(models.Manager):
@@ -46,6 +49,10 @@ class Board(models.Model):
     dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)
 
     @property
+    def fancy_dealer(self):
+        return SEAT_CHOICES[self.dealer]
+
+    @property
     def hand_strings_by_direction(self):
         return {
             Seat.NORTH.value: self.north_cards,
@@ -66,3 +73,6 @@ class Board(models.Model):
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         return super().save(*args, **kwargs)
+
+
+admin.site.register(Board)
