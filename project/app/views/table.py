@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 
 import bridge.contract
@@ -31,7 +33,7 @@ def _bidding_box(table):
         mrb = table.current_handrecord.most_recent_bid.libraryCall
 
     rows = []
-    for level, calls in calls_by_level.items():
+    for calls in calls_by_level.values():
         row = '<div class="row">'
 
         col_divs = []
@@ -110,7 +112,7 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     p3 = get_object_or_404(Player, pk=p1.partner.pk)
     p4 = get_object_or_404(Player, pk=p2.partner.pk)
 
-    all_four = set([p1, p2, p3, p4])
+    all_four = {p1, p2, p3, p4}
     if len(all_four) != 4:
         return HttpResponseForbidden(f"Hey man {all_four} isn't four distinct players")
 
