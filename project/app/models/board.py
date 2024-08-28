@@ -1,6 +1,7 @@
 import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
+from django.contrib import admin
 
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
 # https://en.wikipedia.org/wiki/Board_(bridge)
@@ -8,8 +9,26 @@ from bridge.seat import Seat
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
 
+from . import SEAT_CHOICES
+
 
 class BoardManager(models.Manager):
+    def create_from_deck_and_board_number(self, *, deck, board_number):
+        board_number = board_number % 16
+
+        # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
+        dealer = (board_number - 1) % 4 + 1
+        only_ns_vuln = board_number in (2, 5, 12, 15)
+        only_ew_vuln = board_number in (3, 6, 9, 16)
+        all_vuln = board_number in (4, 7, 10, 13)
+        kwargs = {
+            "ns_vulnerable": only_ns_vuln or all_vuln,
+            "ew_vulnerable": only_ew_vuln or all_vuln,
+            "dealer": dealer,
+            "deck": deck,
+        }
+        return self.create_with_deck(**kwargs)
+
     def create_with_deck(
         self,
         *,
@@ -17,10 +36,10 @@ class BoardManager(models.Manager):
         ew_vulnerable,
         dealer,
         deck,
-        table,
     ):
         def deserialize_hand(cards):
-            return "".join([c.serialize() for c in cards])
+            # sorted only so that they look purty in the Admin site.
+            return "".join([c.serialize() for c in sorted(cards)])
 
         north_cards = deserialize_hand(deck[0:13])
         east_cards = deserialize_hand(deck[13:26])
@@ -35,7 +54,6 @@ class BoardManager(models.Manager):
             east_cards=east_cards,
             south_cards=south_cards,
             west_cards=west_cards,
-            table=table,
         )
 
 
@@ -45,7 +63,11 @@ class Board(models.Model):
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
 
-    dealer = models.SmallIntegerField()  # corresponds to bridge library's "direction"
+    dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)
+
+    @property
+    def fancy_dealer(self):
+        return SEAT_CHOICES[self.dealer]
 
     @property
     def hand_strings_by_direction(self):
@@ -65,9 +87,21 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
-    # Hmm, if we delete a table, and if the table is associated with a transcript ... what happens to the transcript?
-    table = models.ForeignKey("Table", on_delete=models.CASCADE)
+    def __str__(self):
+        if self.ns_vulnerable and self.ew_vulnerable:
+            vuln = "Both sides"
+        elif not self.ns_vulnerable and not self.ew_vulnerable:
+            vuln = "Neither side"
+        elif self.ns_vulnerable:
+            vuln = "North/South"
+        else:
+            vuln = "East/West"
+
+        return f"Board #{self.id}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         return super().save(*args, **kwargs)
+
+
+admin.site.register(Board)

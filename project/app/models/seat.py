@@ -18,8 +18,12 @@ class Seat(models.Model):
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)
 
+    @property
+    def named_direction(self):
+        return SEAT_CHOICES[self.direction]
+
     def __str__(self):
-        return f"{SEAT_CHOICES[self.direction]} at {self.table}"
+        return f"{self.named_direction} at {self.table}"
 
     def _check_table_consistency(self):
         if self.player is None:

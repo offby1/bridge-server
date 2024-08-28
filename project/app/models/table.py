@@ -1,6 +1,7 @@
 import random
 
 from bridge.card import Card
+from bridge.seat import Seat as librarySeat
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -8,6 +9,7 @@ from django.utils.html import format_html
 
 from . import SEAT_CHOICES
 from .board import Board
+from .handrecord import HandRecord
 from .seat import Seat
 
 
@@ -32,19 +34,15 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        # TODO -- choose vulnerabilty and dealer sensibly
         deck = Card.deck()
         random.shuffle(deck)
 
-        print(f"{deck=}")
-        Board.objects.create_with_deck(
-            ns_vulnerable=False,
-            ew_vulnerable=False,
-            dealer=0,
+        b = Board.objects.create_from_deck_and_board_number(
+            board_number=Board.objects.count() + 1,
             deck=deck,
-            table=t,
         )
 
+        HandRecord.objects.create(board=b, table=t)
         return t
 
 
@@ -53,21 +51,32 @@ class TableManager(models.Manager):
 class Table(models.Model):
     objects = TableManager()
 
-    def cards_by_player(self):
+    @property
+    def handrecords(self):
+        return self.handrecord_set.order_by("id")
+
+    @property
+    def current_handrecord(self):
+        return self.handrecord_set.order_by("-id").first()
+
+    @property
+    def dealer(self):
+        return self.current_board.dealer
+
+    def cards_by_player(self) -> dict[Seat, list[Card]]:
         rv = {}
         board = self.current_board
         if board is None:
             return rv
         for s in self.seat_set.all():
             if s.player is not None:
-                rv[s.player] = board.cards_for_direction(s.direction)
+                rv[s] = board.cards_for_direction(s.direction)
 
         return rv
 
-    # TODO -- find the newest one, not the "first" one
     @property
     def current_board(self):
-        return self.board_set.first()
+        return self.current_handrecord.board
 
     def players_by_direction(self):
         seats = self.seat_set.all()

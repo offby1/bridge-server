@@ -45,6 +45,8 @@ STILL TODO:
 
 * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
 
+  Unit tests seem slow, too.
+
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
 

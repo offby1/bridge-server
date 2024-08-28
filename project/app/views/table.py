@@ -1,7 +1,11 @@
+import collections
+
+import bridge.contract
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
 from ..models import Player, Table
@@ -16,6 +20,53 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
+def _bidding_box(table):
+    calls_by_level = collections.defaultdict(list)
+
+    for call in bridge.contract.Bid.all_exceeding():
+        calls_by_level[call.level].append(call)
+
+    mrb = None
+    if table.current_handrecord.most_recent_bid is not None:
+        mrb = table.current_handrecord.most_recent_bid.libraryCall
+
+    rows = []
+    for level, calls in calls_by_level.items():
+        row = '<div class="row">'
+
+        col_divs = []
+        for c in calls:
+            if mrb is not None and c <= mrb:
+                col_divs.append(f'<div class="col"><s>{c}</s></div>')
+            else:
+                col_divs.append(f'<div class="col">{c}</div>')
+        row += "".join(col_divs)
+
+        row += "</div>"
+
+        rows.append(row)
+
+    return format_html(f"""
+    <div class="bidding-box">
+
+    <div class="container">
+    <div class="row">
+    <div class="col">Pass</div><div class="col">Double</div><div class="col">Redouble</div>
+    </div>
+    </div>
+
+    <div class="container">
+    {"\n".join(rows)}
+    </div>
+
+    </div>
+    """)
+
+
+def _card_picker(request, pk):
+    pass
+
+
 @logged_in_as_player_required()
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
@@ -23,16 +74,18 @@ def table_detail_view(request, pk):
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
     card_display = []
-    for player, cards in table.cards_by_player().items():
+    for seat, cards in table.cards_by_player().items():
         dem_cards_baby = f"{len(cards)} cards"
 
-        if player == request.user.player:
+        if seat.player == request.user.player:
             dem_cards_baby = sorted(cards, reverse=True)
 
-        card_display.append((player, dem_cards_baby))
+        card_display.append((seat, dem_cards_baby))
 
     context = {
+        "bidding_box": _bidding_box(table),
         "card_display": card_display,
+        "card_picker": _card_picker(request, pk),
         "table": table,
     }
 
