@@ -13,7 +13,8 @@ class HandRecord(models.Model):
     # The "where"
     table = models.ForeignKey("Table", on_delete=models.CASCADE)
 
-    # The "what" is in our implicit "call_set" and "play_set" attributes.
+    # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
+    board = models.OneToOneField("Board", on_delete=models.CASCADE)
 
     @property
     def most_recent_call(self):

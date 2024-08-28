@@ -65,9 +65,6 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
-    # Hmm, if we delete a table, and if the table is associated with a transcript ... what happens to the transcript?
-    table = models.ForeignKey("Table", on_delete=models.CASCADE)
-
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         return super().save(*args, **kwargs)
