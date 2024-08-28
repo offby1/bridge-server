@@ -77,6 +77,7 @@ def table_detail_view(request, pk):
     for seat, cards in table.cards_by_player().items():
         dem_cards_baby = f"{len(cards)} cards"
 
+        # TODO -- this seems redundant with "show_cards_for"
         if seat.player == request.user.player:
             dem_cards_baby = sorted(cards, reverse=True)
 

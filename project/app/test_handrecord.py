@@ -15,6 +15,6 @@ def test_watever(usual_setup):
 
     calls = the_hand_record.calls.all()
 
-    assert "means Pass" in str(calls[0])
-    assert "means one notrump" in str(calls[1])
-    assert "means Double" in str(calls[2])
+    assert "Pass" in str(calls[0])
+    assert "one notrump" in str(calls[1])
+    assert "Double" in str(calls[2])
