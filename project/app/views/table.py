@@ -68,10 +68,6 @@ def _bidding_box(table):
     """)
 
 
-def _card_picker(request, pk):
-    pass
-
-
 def cards_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     by_suit = {s: [] for s in bridge.card.Suit}
     for c in cards:
@@ -117,7 +113,6 @@ def table_detail_view(request, pk):
     context = {
         "bidding_box": _bidding_box(table),
         "card_display": cards_by_direction_display,
-        "card_picker": _card_picker(request, pk),
         "table": table,
     }
 
