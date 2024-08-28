@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import collections
 
+import bridge.card
 import bridge.contract
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 
 from ..models import Player, Table
@@ -48,6 +50,7 @@ def _bidding_box(table):
 
         rows.append(row)
 
+    # TODO -- figure out whether to strike out Double and Redouble!!
     return format_html(f"""
     <div class="bidding-box">
 
@@ -69,6 +72,29 @@ def _card_picker(request, pk):
     pass
 
 
+def cards_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
+    by_suit = {s: [] for s in bridge.card.Suit}
+    for c in cards:
+        by_suit[c.suit].append(c)
+
+    row_divs = [
+        f"""
+    <div class="row">
+    <div class="col">{(" ".join(str(c) for c in reversed(cards))) if cards else "-"}</div>
+    </div>
+    """
+        for suit, cards in sorted(by_suit.items(), reverse=True)
+    ]
+
+    return SafeString(
+        f"""
+    <div class="container">
+    {"\n".join(row_divs)}
+    </div>
+    """,
+    )
+
+
 @logged_in_as_player_required()
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
@@ -81,7 +107,7 @@ def table_detail_view(request, pk):
 
         # TODO -- this seems redundant with "show_cards_for"
         if seat.player == request.user.player:
-            dem_cards_baby = sorted(cards, reverse=True)
+            dem_cards_baby = cards_as_four_divs(cards)
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
