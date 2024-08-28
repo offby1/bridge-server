@@ -1,9 +1,10 @@
+import random
+
 import tqdm
+from app.models import Player, Table
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
-
-from app.models import HandRecord, Player, Table
 
 
 class Command(BaseCommand):
@@ -21,10 +22,26 @@ class Command(BaseCommand):
 
     def generate_some_fake_calls_and_plays_at(self, table):
         h = table.current_handrecord
-        h.call_set.create(serialized="Pass")
-        h.call_set.create(serialized="1NT")
-        h.call_set.create(serialized="Double")
-        self.stdout.write(f"OK, {table=} has a couple of calls")
+
+        canned_calls = [
+            "Pass",
+            "1NT",
+            "Double",
+            "Pass",
+            "2♣",
+            "Pass",
+            "Pass",
+            "3NT",
+            "Double",
+            "Redouble",
+            "Pass",
+            "Pass",
+            "Pass",
+            "Pass",
+        ]
+
+        for c in canned_calls[0 : random.randrange(len(canned_calls))]:
+            h.call_set.create(serialized=c)
 
     def handle(self, *args, **options):
         fake = Faker()
@@ -54,13 +71,13 @@ class Command(BaseCommand):
                 unseated_players[0].partner_with(unseated_players[1])
                 unseated_players[2].partner_with(unseated_players[3])
 
-                Table.objects.create_with_two_partnerships(
+                t = Table.objects.create_with_two_partnerships(
                     unseated_players[0],
                     unseated_players[2],
                 )
                 unseated_players = []
 
-        self.generate_some_fake_calls_and_plays_at(Table.objects.first())
+                self.generate_some_fake_calls_and_plays_at(t)
 
         # Now create a couple of unseated players.
         count_before = Player.objects.count()
