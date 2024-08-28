@@ -11,7 +11,9 @@
         <div>
             Calls
             <ul>
-            {% for c in table.current_handrecord.calls %}<li>{{ c }}</li>{% endfor %}
+            {% for index, player, c in table.current_handrecord.annotated_calls %}
+            <li>Call #{{ index }}: {{ player }} said {{ c }}</li>
+            {% endfor %}
             </ul>
         </div>
         <div>

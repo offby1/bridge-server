@@ -1,5 +1,8 @@
+import itertools
+
 from bridge.card import Card
 from bridge.contract import Bid
+from bridge.seat import Seat
 from django.contrib import admin
 from django.db import models
 
@@ -34,6 +37,17 @@ class HandRecord(models.Model):
         return self.call_set.order_by("id")
 
     @property
+    def annotated_calls(self):
+        players_cycle = Seat.cycle()
+        while True:
+            s = next(players_cycle)
+
+            if s.value == self.board.dealer:
+                break
+        # I *think* the first call is made by dealer's LHO :-)
+        return zip(itertools.count(1), players_cycle, self.calls.all())
+
+    @property
     def plays(self):
         return self.play_set.order_by("id")
 
@@ -64,7 +78,7 @@ class Call(models.Model):
 
     def __str__(self):
         call = Bid.deserialize(self.serialized)
-        return f"Call #{self.id}: Someone at {self.hand.table} says {self.serialized=} which means {call}"
+        return f"{self.serialized=} which means {call}"
 
 
 admin.site.register(Call)
