@@ -59,6 +59,13 @@ django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser
 [group('bs')]
 t *options: makemigrations (test "--exitfirst --failed-first " + options)
 
+# Draw a nice entity-relationship diagram
+[group('django')]
+graph: migrate
+    cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
+    open $TMPDIR/graph.svg
+
+
 # Run all the tests
 [group('bs')]
 [script('bash')]
