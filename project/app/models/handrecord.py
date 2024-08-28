@@ -77,8 +77,7 @@ class Call(models.Model):
         return Bid.deserialize(self.serialized)
 
     def __str__(self):
-        call = Bid.deserialize(self.serialized)
-        return f"{self.serialized=} which means {call}"
+        return str(self.libraryCall)
 
 
 admin.site.register(Call)
