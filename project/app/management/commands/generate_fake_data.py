@@ -47,6 +47,14 @@ class Command(BaseCommand):
         fake = Faker()
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
+            # Make sure we always have "bob", because his name is easy to type, and to remember :-)
+            Player.objects.create(
+                user=User.objects.create_user(
+                    username="bob",
+                    password="bob",
+                ),
+            )
+
             unseated_players = []
             while Player.objects.count() < options["players"]:
                 username = fake.unique.first_name().lower()
