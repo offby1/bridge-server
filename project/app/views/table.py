@@ -68,14 +68,20 @@ def _bidding_box(table):
     """)
 
 
-def cards_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
+def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     by_suit = {s: [] for s in bridge.card.Suit}
     for c in cards:
         by_suit[c.suit].append(c)
 
+    def card_button(c, color):
+        return f"""<button type="button"
+        class="btn btn-primary"
+        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc">{c}</button>"""
+
     def single_row_divs(suit, cards):
-        cols = [f"""<div class="col">{c}</div>""" for c in reversed(cards)]
-        return f"""<div class="row">{"".join(cols)}</div>"""
+        color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        cols = [card_button(c, color) for c in reversed(cards)]
+        return f"""<div class="btn-group">{"".join(cols)}</div>"""
 
     row_divs = [
         single_row_divs(suit, cards) if cards else "<div>-</div>"
@@ -97,7 +103,7 @@ def table_detail_view(request, pk):
 
         # TODO -- this seems redundant with "show_cards_for"
         if True or seat.player == request.user.player:
-            dem_cards_baby = cards_as_four_divs(cards)
+            dem_cards_baby = card_buttons_as_four_divs(cards)
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
