@@ -102,8 +102,8 @@ def table_detail_view(request, pk):
         dem_cards_baby = f"{len(cards)} cards"
 
         # TODO -- this seems redundant with "show_cards_for"
-        if seat.player == request.user.player:
-            dem_cards_baby = cards_as_four_divs(cards)
+        if True or seat.player == request.user.player:
+            dem_cards_baby = sorted(cards, reverse=True)
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
