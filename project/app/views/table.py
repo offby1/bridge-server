@@ -81,14 +81,14 @@ def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
         cols = [card_button(c, color) for c in reversed(cards)]
-        return f"""<div class="btn-group">{"".join(cols)}</div>"""
+        return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
 
     row_divs = [
         single_row_divs(suit, cards) if cards else "<div>-</div>"
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
-    return SafeString("\n".join(row_divs))
+    return SafeString("<br>" + "\n".join(row_divs))
 
 
 @logged_in_as_player_required()
