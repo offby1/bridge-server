@@ -22,6 +22,7 @@ class TableManager(models.Manager):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
     def create_with_two_partnerships(self, p1, p2):
+        first_table = not self.exists()
         t = self.create()
         try:
             with transaction.atomic():
@@ -35,7 +36,12 @@ class TableManager(models.Manager):
             raise TableException from e
 
         deck = Card.deck()
-        random.shuffle(deck)
+
+        # Just for testing, the first board will give each player a single 13-card suit
+        if first_table:
+            pass
+        else:
+            random.shuffle(deck)
 
         b = Board.objects.create_from_deck_and_board_number(
             board_number=Board.objects.count() + 1,
