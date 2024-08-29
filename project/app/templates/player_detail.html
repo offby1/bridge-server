@@ -10,17 +10,17 @@
      data-subject="{{ subject.pk }}"
      {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}
      >
-    <div class="container">
-        <div class="row">
-            <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
-            <div class="col">
-                {% if text %}{{ text }}{% endif %}
-            </div>
-            <div class="col">
-                {% if button %}{{ button }}{% endif %}
-            </div>
-        </div>
-    </div>
+
+     <div class="row">
+       <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
+       <div class="col">
+         {% if text %}{{ text }}{% endif %}
+       </div>
+       <div class="col">
+         {% if button %}{{ button }}{% else %}...{% endif %}
+       </div>
+     </div>
+
 </div>
 {% endblock partnership-status-html %}
 {% endpartialdef partnership-status-partial %}

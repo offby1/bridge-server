@@ -59,7 +59,7 @@ def _get_text(subject, as_viewed_by):
     addendum = ""
     if not subject.is_seated and not as_viewed_by.is_seated:
         addendum = format_html(
-            """<a href="{}"> other unseated partnerships </a>""",
+            """ (<a href="{}"> other unseated partnerships </a>)""",
             reverse("app:players") + "?seated=False&lookin_for_love=False&exclude_me=True",
         )
 
