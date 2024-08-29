@@ -4,6 +4,7 @@ import collections
 
 import bridge.card
 import bridge.contract
+from app.models import Player, Table
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -12,7 +13,6 @@ from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 
-from ..models import Player, Table
 from .misc import logged_in_as_player_required
 
 
@@ -54,15 +54,15 @@ def _bidding_box(table):
     return format_html(f"""
     <div class="bidding-box">
 
-    <div class="container">
+
     <div class="row">
     <div class="col">Pass</div><div class="col">Double</div><div class="col">Redouble</div>
     </div>
-    </div>
 
-    <div class="container">
+
+
     {"\n".join(rows)}
-    </div>
+
 
     </div>
     """)
@@ -73,22 +73,22 @@ def cards_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     for c in cards:
         by_suit[c.suit].append(c)
 
+    def single_row_divs(cards):
+        cols = [f"""<div class="col">{c}</div>""" for c in reversed(cards)]
+        return f"""
+
+            <div class="row">
+            {"".join(cols)}
+        </div>
+
+            """
+
     row_divs = [
-        f"""
-    <div class="row">
-    <div class="col">{(" ".join(str(c) for c in reversed(cards))) if cards else "-"}</div>
-    </div>
-    """
+        single_row_divs(cards) if cards else "<div>-</div>"
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
-    return SafeString(
-        f"""
-    <div class="container">
-    {"\n".join(row_divs)}
-    </div>
-    """,
-    )
+    return SafeString("\n".join(row_divs))
 
 
 @logged_in_as_player_required()
