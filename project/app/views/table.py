@@ -73,18 +73,12 @@ def cards_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     for c in cards:
         by_suit[c.suit].append(c)
 
-    def single_row_divs(cards):
+    def single_row_divs(suit, cards):
         cols = [f"""<div class="col">{c}</div>""" for c in reversed(cards)]
-        return f"""
-
-            <div class="row">
-            {"".join(cols)}
-        </div>
-
-            """
+        return f"""<div class="row">{"".join(cols)}</div>"""
 
     row_divs = [
-        single_row_divs(cards) if cards else "<div>-</div>"
+        single_row_divs(suit, cards) if cards else "<div>-</div>"
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
@@ -103,7 +97,7 @@ def table_detail_view(request, pk):
 
         # TODO -- this seems redundant with "show_cards_for"
         if True or seat.player == request.user.player:
-            dem_cards_baby = sorted(cards, reverse=True)
+            dem_cards_baby = cards_as_four_divs(cards)
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
