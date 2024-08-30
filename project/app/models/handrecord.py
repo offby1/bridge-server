@@ -28,8 +28,9 @@ class HandRecord(models.Model):
         for index, seat, call in self.annotated_calls:
             print(f"{rv=}")
             print(f"{seat=}")
-            print(f"{call=}")
             player = Player(seat=seat, name="wtf", hand="whaaaat")
+            print(f"{player=}")
+            print(f"{call=}")
             rv.append_located_call(player, call)
         return rv
 

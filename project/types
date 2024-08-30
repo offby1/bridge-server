@@ -34,3 +34,17 @@ The bridge library:
 | card     | Suit(enum.IntEnum) |
 | table    | Table              |
 | xscript  | Trick              |
+
+Let's do one example:
+
+    AssertionError: I want a <class 'bridge.table.Table'> but you done gimme a <class 'app.models.table.Table'>
+
+model Table => library Table
+model Table has four seats, and a buncha handrecords.
+library Table has a dict mapping library Seats to library Players.
+   library Seat (int enum)
+   library Player is a library Seat(!), a name (str), and a library Hand
+   library Hand is a list of library Card
+   library Card is a Suit (int enum) and a Rank (int enum)
+
+ok those seem reasonably close.
