@@ -29,7 +29,7 @@ def _bidding_box(table):
         return f"""
         <button type="button"
         class="btn btn-primary" {"" if active else "disabled"}>
-        {call}
+        {call.str_for_bidding_box()}
         </button>
         """
 
@@ -60,12 +60,13 @@ def _bidding_box(table):
 
     # TODO -- figure out whether to strike out Double and Redouble!!
     return format_html(f"""
+    <div style="font-family: monospace;">
     <div class="btn-group">
     {buttonize(bridge.contract.Pass)}{buttonize(bridge.contract.Double)}{buttonize(bridge.contract.Redouble)}
     </div>
     <br/>
     {"\n".join(rows)}
-    """)
+    </div>""")
 
 
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
