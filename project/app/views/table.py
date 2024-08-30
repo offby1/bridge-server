@@ -25,6 +25,14 @@ def table_list_view(request):
 
 
 def _bidding_box(table):
+    def buttonize(call):
+        return f"""
+        <button type="button"
+        class="btn btn-primary" {"" if active else "disabled"}>
+        {call}
+        </button>
+        """
+
     calls_by_level = collections.defaultdict(list)
 
     for call in bridge.contract.Bid.all_exceeding():
@@ -36,35 +44,27 @@ def _bidding_box(table):
 
     rows = []
     for calls in calls_by_level.values():
-        row = '<div class="row">'
+        row = '<div class="btn-group">'
 
-        col_divs = []
+        buttons = []
         for c in calls:
-            if mrb is not None and c <= mrb:
-                col_divs.append(f'<div class="col"><s>{c}</s></div>')
-            else:
-                col_divs.append(f'<div class="col">{c}</div>')
-        row += "".join(col_divs)
+            active = mrb is None or c > mrb
 
-        row += "</div>"
+            buttons.append(buttonize(c))
+
+        row += "".join(buttons)
+
+        row += "</div><br/>"
 
         rows.append(row)
 
     # TODO -- figure out whether to strike out Double and Redouble!!
     return format_html(f"""
-    <div class="bidding-box">
-
-
-    <div class="row">
-    <div class="col">Pass</div><div class="col">Double</div><div class="col">Redouble</div>
+    <div class="btn-group">
+    {buttonize(bridge.contract.Pass)}{buttonize(bridge.contract.Double)}{buttonize(bridge.contract.Redouble)}
     </div>
-
-
-
+    <br/>
     {"\n".join(rows)}
-
-
-    </div>
     """)
 
 
