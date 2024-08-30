@@ -1,6 +1,8 @@
 import pytest
+from bridge.card import Suit
+from bridge.contract import Bid, Pass
 
-from .models import Play, Table
+from .models import Call, Play, Table
 from .views.table import _bidding_box
 
 
@@ -23,8 +25,17 @@ def test_watever(usual_setup):
     assert "Double" in str(calls[2])
 
 
+def set_auction_to(bid, table):
+    Call.objects.create(hand=table.current_handrecord, serialized=bid.serialize())
+    Call.objects.create(hand=table.current_handrecord, serialized=Pass.serialize())
+    Call.objects.create(hand=table.current_handrecord, serialized=Pass.serialize())
+    Call.objects.create(hand=table.current_handrecord, serialized=Pass.serialize())
+
+
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+
     first_seat = t.seat_set.first()
 
     before = t.current_cards_by_seat[first_seat]

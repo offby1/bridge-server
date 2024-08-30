@@ -2,17 +2,17 @@ import bridge.seat
 import pytest
 from django.contrib import auth
 
-from .models import Player, Seat, Table
+from .models import Player, Table
 
 
 @pytest.fixture
 def usual_setup(db):
-    directions_by_player_name = dict([
-        ("Bob", bridge.seat.Seat.NORTH),
-        ("Carol", bridge.seat.Seat.EAST),
-        ("Ted", bridge.seat.Seat.SOUTH),
-        ("Alice", bridge.seat.Seat.WEST),
-    ])
+    directions_by_player_name = {
+        "Bob": bridge.seat.Seat.NORTH,
+        "Carol": bridge.seat.Seat.EAST,
+        "Ted": bridge.seat.Seat.SOUTH,
+        "Alice": bridge.seat.Seat.WEST,
+    }
 
     for name in directions_by_player_name:
         Player.objects.create(

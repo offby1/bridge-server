@@ -4,6 +4,7 @@ from bridge.auction import Auction
 from bridge.card import Card
 from bridge.contract import Bid
 from bridge.seat import Seat
+from bridge.table import Player
 from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
@@ -23,9 +24,12 @@ class HandRecord(models.Model):
 
     @cached_property
     def auction(self):
-        # TODO -- convert django model instances into library thingies
         rv = Auction(table=self.table, dealer=self.board.dealer)
-        for index, player, call in self.annotated_calls:
+        for index, seat, call in self.annotated_calls:
+            print(f"{rv=}")
+            print(f"{seat=}")
+            print(f"{call=}")
+            player = Player(seat=seat, name="wtf", hand="whaaaat")
             rv.append_located_call(player, call)
         return rv
 
@@ -51,7 +55,7 @@ class HandRecord(models.Model):
         return self.call_set.order_by("id")
 
     @property
-    def annotated_calls(self):
+    def annotated_calls(self) -> list[tuple[int, Seat, "Call"]]:
         seat_cycle = Seat.cycle()
         while True:
             s = next(seat_cycle)
