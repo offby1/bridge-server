@@ -38,9 +38,8 @@ def _bidding_box(table):
     for call in bridge.contract.Bid.all_exceeding():
         calls_by_level[call.level].append(call)
 
-    mrb = None
-    if table.current_handrecord.most_recent_bid is not None:
-        mrb = table.current_handrecord.most_recent_bid.libraryCall
+    auction = table.current_auction
+    mrb = auction.player_calls[-1] if auction.player_calls else None
 
     rows = []
     for calls in calls_by_level.values():

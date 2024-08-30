@@ -1,10 +1,11 @@
 import random
 
+from bridge.auction import Auction
 from bridge.card import Card
-from bridge.seat import Seat as librarySeat
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.html import format_html
 
 from . import SEAT_CHOICES
@@ -60,6 +61,13 @@ class Table(models.Model):
     @property
     def handrecords(self):
         return self.handrecord_set.order_by("id")
+
+    @cached_property
+    def current_auction(self):
+        rv = Auction(table=self, dealer=self.board.wtf.who_dealt)
+        for player_int, call in self.current_handrecord.annotated_calls:
+            rv.append_located_call(player_int, call)
+        return rv
 
     @property
     def current_handrecord(self):
