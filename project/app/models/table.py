@@ -62,13 +62,9 @@ class Table(models.Model):
     def handrecords(self):
         return self.handrecord_set.order_by("id")
 
-    @cached_property
+    @property
     def current_auction(self):
-        rv = Auction(table=self, dealer=self.current_handrecord.board.dealer)
-        for index, seat, call in self.current_handrecord.annotated_calls:
-            player = self.players_by_direction[seat.value].library_thing
-            rv.append_located_call(player, call)
-        return rv
+        return self.current_handrecord.auction
 
     @property
     def current_handrecord(self):
@@ -87,6 +83,16 @@ class Table(models.Model):
             if s.player is not None:
                 rv[s] = board.cards_for_direction(s.direction)
 
+        return rv
+
+    @property
+    def current_cards_by_seat(self) -> dict[Seat, list[Card]]:
+        rv = self.dealt_cards_by_player()
+        # Now walk through the hand record, removing one card at a time from each hand.
+        for p in self.current_handrecord.plays:
+            # p.serialized => card
+            # p.hand
+            libPlay = mumble.wtf.deserialize(p.serialized)
         return rv
 
     @property

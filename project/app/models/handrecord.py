@@ -1,10 +1,12 @@
 import itertools
 
+from bridge.auction import Auction
 from bridge.card import Card
 from bridge.contract import Bid
 from bridge.seat import Seat
 from django.contrib import admin
 from django.db import models
+from django.utils.functional import cached_property
 
 
 class HandRecord(models.Model):
@@ -18,6 +20,18 @@ class HandRecord(models.Model):
 
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField("Board", on_delete=models.CASCADE)
+
+    @cached_property
+    def auction(self):
+        # TODO -- convert django model instances into library thingies
+        rv = Auction(table=self.table, dealer=self.board.dealer)
+        for index, player, call in self.annotated_calls:
+            rv.append_located_call(player, call)
+        return rv
+
+    @property
+    def declarer(self):
+        return self.auction.declarer
 
     @property
     def most_recent_call(self):
@@ -38,14 +52,25 @@ class HandRecord(models.Model):
 
     @property
     def annotated_calls(self):
-        players_cycle = Seat.cycle()
+        seat_cycle = Seat.cycle()
         while True:
-            s = next(players_cycle)
+            s = next(seat_cycle)
 
             if s.value == self.board.dealer:
                 break
         # I *think* the first call is made by dealer's LHO :-)
-        return zip(itertools.count(1), players_cycle, self.calls.all())
+        return zip(itertools.count(1), seat_cycle, self.calls.all())
+
+    @property
+    def annotated_plays(self):
+        seat_cycle = Seat.cycle()
+        while True:
+            s = next(seat_cycle)
+
+            if s.value == self.declarer.lho:
+                break
+
+        return zip(itertools.count(1), seat_cycle, self.plays.all())
 
     @property
     def plays(self):
@@ -98,6 +123,8 @@ class Play(models.Model):
     def __str__(self):
         play = Card.deserialize(self.serialized)
         return f"Mystery player at {self.hand.table} played {self.serialized} which means {play}"
+
+    # TODO -- a constraint that says a given card must appear no more than once in a given handrecord
 
 
 admin.site.register(Play)

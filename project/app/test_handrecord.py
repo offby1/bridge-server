@@ -23,6 +23,14 @@ def test_watever(usual_setup):
     assert "Double" in str(calls[2])
 
 
+def test_cards_by_player(usual_setup):
+    t = Table.objects.first()
+    before = t.current_cards_by_seat[Seat.NORTH]
+    play = Play.objects.create(hand=wtf, serialized="c2")
+    t.current_handrecord
+    after = t.current_cards_by_seat[Seat.NORTH]
+
+
 @pytest.mark.xfail(reason="WIP")
 def test_bidding_box_html(usual_setup):
     t = Table.objects.first()
