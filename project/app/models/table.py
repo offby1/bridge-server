@@ -1,7 +1,7 @@
 import random
 
-from bridge.auction import Auction
 from bridge.card import Card
+from bridge.contract import Contract
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -74,7 +74,8 @@ class Table(models.Model):
     def dealer(self):
         return self.current_board.dealer
 
-    def dealt_cards_by_player(self) -> dict[Seat, list[Card]]:
+    @cached_property
+    def dealt_cards_by_seat(self) -> dict[Seat, list[Card]]:
         rv = {}
         board = self.current_board
         if board is None:
@@ -87,12 +88,15 @@ class Table(models.Model):
 
     @property
     def current_cards_by_seat(self) -> dict[Seat, list[Card]]:
-        rv = self.dealt_cards_by_player()
-        # Now walk through the hand record, removing one card at a time from each hand.
-        for p in self.current_handrecord.plays:
-            # p.serialized => card
-            # p.hand
-            libPlay = mumble.wtf.deserialize(p.serialized)
+        rv = {}
+        for seat, cardlist in self.dealt_cards_by_seat.items():
+            rv[seat] = set(cardlist)
+
+        if isinstance(self.current_handrecord.auction.status, Contract):
+            for index, seat, play in self.current_handrecord.annotated_plays:
+                card_to_remove = Card.deserialize(play.serialized)
+                rv[seat].remove(card_to_remove)
+
         return rv
 
     @property

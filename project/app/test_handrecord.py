@@ -1,6 +1,6 @@
 import pytest
 
-from .models import Table
+from .models import Play, Table
 from .views.table import _bidding_box
 
 
@@ -25,10 +25,13 @@ def test_watever(usual_setup):
 
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
-    before = t.current_cards_by_seat[Seat.NORTH]
-    play = Play.objects.create(hand=wtf, serialized="c2")
-    t.current_handrecord
-    after = t.current_cards_by_seat[Seat.NORTH]
+    first_seat = t.seat_set.first()
+
+    before = t.current_cards_by_seat[first_seat]
+    Play.objects.create(hand=t.current_handrecord, serialized="c2")
+    t.refresh_from_db()
+    after = t.current_cards_by_seat[first_seat]
+    assert before != after
 
 
 @pytest.mark.xfail(reason="WIP")
