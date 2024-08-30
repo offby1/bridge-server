@@ -1,5 +1,6 @@
 import logging
 
+import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
@@ -140,6 +141,10 @@ class Player(models.Model):
 
         if self.partner is None:
             raise PlayerException(f"{self} is seated at {self.seat} but has no partner!!")
+
+    @property
+    def library_thing(self):
+        return bridge.table.Player(seat=self.seat, name=self.name, hand=self.hand)
 
     # TODO -- see if we can do this check in a constraint
     def save(self, *args, **kwargs):

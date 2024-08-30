@@ -1,4 +1,7 @@
+import pytest
+
 from .models import Table
+from .views.table import _bidding_box
 
 
 def test_watever(usual_setup):
@@ -18,3 +21,10 @@ def test_watever(usual_setup):
     assert "Pass" in str(calls[0])
     assert "one notrump" in str(calls[1])
     assert "Double" in str(calls[2])
+
+
+@pytest.mark.xfail(reason="WIP")
+def test_bidding_box_html(usual_setup):
+    t = Table.objects.first()
+    bb_html = _bidding_box(t)
+    assert "wow lookit all them bids" in bb_html

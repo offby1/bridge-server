@@ -64,9 +64,10 @@ class Table(models.Model):
 
     @cached_property
     def current_auction(self):
-        rv = Auction(table=self, dealer=self.board.wtf.who_dealt)
-        for player_int, call in self.current_handrecord.annotated_calls:
-            rv.append_located_call(player_int, call)
+        rv = Auction(table=self, dealer=self.current_handrecord.board.dealer)
+        for index, seat, call in self.current_handrecord.annotated_calls:
+            player = self.players_by_direction[seat.value].library_thing
+            rv.append_located_call(player, call)
         return rv
 
     @property
@@ -77,7 +78,7 @@ class Table(models.Model):
     def dealer(self):
         return self.current_board.dealer
 
-    def cards_by_player(self) -> dict[Seat, list[Card]]:
+    def dealt_cards_by_player(self) -> dict[Seat, list[Card]]:
         rv = {}
         board = self.current_board
         if board is None:
@@ -92,6 +93,7 @@ class Table(models.Model):
     def current_board(self):
         return self.current_handrecord.board
 
+    @property
     def players_by_direction(self):
         seats = self.seat_set.all()
         return {s.direction: s.player for s in seats}
@@ -104,17 +106,17 @@ class Table(models.Model):
         )
 
     def as_tuples(self):
-        return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction().items()]
+        return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction.items()]
 
     def is_empty(self):
-        for p in self.players_by_direction().values():
+        for p in self.players_by_direction.values():
             if p is not None:
                 return False
 
         return True
 
     def is_full(self):
-        for p in self.players_by_direction().values():
+        for p in self.players_by_direction.values():
             if p is None:
                 return False
 

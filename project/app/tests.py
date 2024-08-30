@@ -26,7 +26,7 @@ def bob(db):
 
 
 def test_all_seated_players_have_partners(usual_setup):
-    for _, p in Table.objects.first().players_by_direction().items():
+    for _, p in Table.objects.first().players_by_direction.items():
         assert p.partner is not None
         p.partner = None
         with pytest.raises(Exception) as e:
