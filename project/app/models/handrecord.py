@@ -1,5 +1,5 @@
 import itertools
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from bridge.auction import Auction
 from bridge.card import Card as libCard

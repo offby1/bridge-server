@@ -21,6 +21,7 @@ die-if-poetry-active:
 [group('virtualenv')]
 poetry-install: die-if-poetry-active
     poetry install
+    poetry run pip uninstall -y pydocstyle
 
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
