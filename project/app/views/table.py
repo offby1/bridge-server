@@ -27,12 +27,13 @@ def table_list_view(request):
 
 def _bidding_box(table):
     def buttonize(call):
-        return f"""
-        <button type="button"
-        class="btn btn-primary" {"" if active else "disabled"}>
-        {call.str_for_bidding_box()}
-        </button>
-        """
+        # All one line for ease of unit testing
+        return (
+            """<button type="button"""
+            + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
+            + call.str_for_bidding_box()
+            + """</button>\n"""
+        )
 
     calls_by_level = collections.defaultdict(list)
 

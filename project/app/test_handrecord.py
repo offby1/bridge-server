@@ -1,4 +1,5 @@
-import pytest
+import re
+
 from bridge.card import Suit
 from bridge.contract import Bid, Pass
 
@@ -45,8 +46,18 @@ def test_cards_by_player(usual_setup):
     assert before != after
 
 
-@pytest.mark.xfail(reason="WIP")
 def test_bidding_box_html(usual_setup):
     t = Table.objects.first()
-    bb_html = _bidding_box(t)
-    assert "wow lookit all them bids" in bb_html
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+
+    def button_text(html_button_line):
+        if (m := re.search(r">([^<]*?)</button>", html_button_line)) is not None:
+            return m.group(1)
+
+    disabled_buttons = []
+    bb_html_lines = _bidding_box(t).split("\n")
+    for line in bb_html_lines:
+        if " disabled" in line:
+            disabled_buttons.append(button_text(line))
+
+    assert set(disabled_buttons) == {"1♣", "Double", "Redouble"}
