@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 
+import bridge.auction
 import bridge.card
 import bridge.contract
 from app.models import Player, Table
@@ -36,10 +37,14 @@ def _bidding_box(table):
     calls_by_level = collections.defaultdict(list)
 
     for call in bridge.contract.Bid.all_exceeding():
+        assert isinstance(call, bridge.contract.Bid)
         calls_by_level[call.level].append(call)
 
     auction = table.current_auction
-    mrb = auction.player_calls[-1] if auction.player_calls else None
+    assert isinstance(auction, bridge.auction.Auction)
+
+    most_recent_bid = auction.last_located_bid
+    assert isinstance(most_recent_bid, bridge.auction.PlayerCall)
 
     rows = []
     for calls in calls_by_level.values():
@@ -47,7 +52,10 @@ def _bidding_box(table):
 
         buttons = []
         for c in calls:
-            active = mrb is None or c > mrb
+            assert isinstance(c, bridge.contract.Bid)
+            active = (
+                most_recent_bid is None or c is bridge.contract.Pass or c > most_recent_bid.call
+            )
 
             buttons.append(buttonize(c))
 
@@ -98,7 +106,7 @@ def table_detail_view(request, pk):
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
     cards_by_direction_display = {}
-    for seat, cards in table.dealt_cards_by_player.items():
+    for seat, cards in table.dealt_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
         # TODO -- this seems redundant with "show_cards_for"
