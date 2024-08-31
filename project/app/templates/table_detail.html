@@ -2,51 +2,45 @@
 {% block content %}
     <div>
         {{ table.current_handrecord.board }}.
-        <div class="container">
 
-            {% for index, player, c in table.current_handrecord.annotated_calls %}
-            <div class="row">
-              <div class="col-2">Call #{{ index }}</div>
-              <div class="col-2">{{ player }}</div>
-              <div class="col-2">{{ c }}</div>
+        {% for index, player, c in table.current_handrecord.annotated_calls %}
+        <div class="row">
+          <div class="col-2">Call #{{ index }}</div>
+          <div class="col-2">{{ player }}</div>
+          <div class="col-2">{{ c }}</div>
+        </div>
+        {% endfor %}
+
+        <div>
+            <div>
+                Now, over here we have your bidding box:
+                {{ bidding_box }}
             </div>
-            {% endfor %}
-
         </div>
         <div>
             <ul>
-            {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
+                {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
             </ul>
         </div>
     </div>
     {# Here I've got North at the top, but maybe it should be #}
     {# Declarer at the bottom; or        #}
     {# request.user.player at the bottom #}
-    <div class="container" style="border: 1px solid;">
+    <div class="fs-1" style="border: 1px solid;">
         <div class="row">
-          <div class="col"></div>
-          <div class="col">{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}</div>
-          <div class="col"></div>
+            <div class="col"></div>
+            <div class="col">{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}</div>
+            <div class="col"></div>
         </div>
         <div class="row">
-          <div class="col">{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
-          <div class="col"></div>
-          <div class="col">{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
+            <div class="col">{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
+            <div class="col"></div>
+            <div class="col">{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
         </div>
         <div class="row">
-          <div class="col"></div>
-          <div class="col">{{card_display.SOUTH.player.name_dir}}: {{ card_display.SOUTH.cards }}</div>
-          <div class="col"></div>
+            <div class="col"></div>
+            <div class="col">{{ card_display.SOUTH.player.name_dir }}: {{ card_display.SOUTH.cards }}</div>
+            <div class="col"></div>
         </div>
-    </div>
-    <div>
-      <div>
-        Now, over here we have your bidding box:
-        {{ bidding_box }}
-      </div>
-      <div>
-        And here's your card-picker thingy:
-        {{ card_picker }}
-      </div>
     </div>
 {% endblock content %}

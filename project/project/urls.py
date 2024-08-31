@@ -1,5 +1,5 @@
-import django_eventstream
-from debug_toolbar.toolbar import debug_toolbar_urls
+import django_eventstream  # type: ignore
+from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore
 from django.contrib import admin
 from django.urls import include, path
 

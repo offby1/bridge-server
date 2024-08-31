@@ -63,7 +63,7 @@ class Board(models.Model):
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
 
-    dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)
+    dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
 
     @property
     def fancy_dealer(self):

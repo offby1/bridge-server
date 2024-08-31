@@ -22,6 +22,9 @@ die-if-poetry-active:
 poetry-install: die-if-poetry-active
     poetry install
 
+mypy: poetry-install
+    poetry run mypy . --exclude=/migrations/
+
 [group('django')]
 [private]
 all-but-django-prep: poetry-install
@@ -49,7 +52,7 @@ runme *options: test django-superuser migrate
 
 # Create a bunch of users and tables
 [group('bs')]
-pop *options: django-superuser migrate (manage "generate_fake_data " + options)
+pop: django-superuser migrate (manage "generate_fake_data")
 
 [group('django')]
 [private]
@@ -57,7 +60,7 @@ django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser
 
 # Run tests with --exitfirst and --failed-first
 [group('bs')]
-t *options: makemigrations (test "--exitfirst --failed-first " + options)
+t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Draw a nice entity-relationship diagram
 [group('django')]
@@ -69,7 +72,7 @@ graph: migrate
 # Run all the tests
 [group('bs')]
 [script('bash')]
-test *options: makemigrations
+test *options: makemigrations mypy
     set -euxo pipefail
     cd project
     pytest_exe=$(poetry env info --path)/bin/pytest

@@ -1,0 +1,50 @@
+I got a buncha types in this project *and* the library, with similar names.  Cheat sheet for converting from one to the other.
+
+This django project:
+
+| module     | model      |
+|------------+------------|
+| board      | Board      |
+| handrecord | Call       |
+| handrecord | HandRecord |
+| message    | Lobby      |
+| message    | Message    |
+| handrecord | Play       |
+| player     | Player     |
+| seat       | Seat       |
+| table      | Table      |
+
+The bridge library:
+
+| module   | class              |
+|----------+--------------------|
+| auction  | Auction            |
+| contract | Bid(Call)          |
+| contract | Call               |
+| card     | Card               |
+| contract | Contract           |
+| table    | Hand               |
+| xscript  | HandTranscript     |
+| xscript  | Play               |
+| table    | Player             |
+| auction  | PlayerCall         |
+| card     | Rank(enum.IntEnum) |
+| xscript  | Score              |
+| seat     | Seat(enum.Enum)    |
+| card     | Suit(enum.IntEnum) |
+| table    | Table              |
+| xscript  | Trick              |
+
+Let's do one example:
+
+    AssertionError: I want a <class 'bridge.table.Table'> but you done gimme a <class 'app.models.table.Table'>
+
+model Table => library Table
+model Table has four seats, and a buncha handrecords.
+library Table has a dict mapping library Seats to library Players.
+   library Seat (int enum)
+   library Player is a library Seat(!), a name (str), and a library Hand
+   library Hand is a list of library Card
+   library Card is a Suit (int enum) and a Rank (int enum)
+
+ok those seem reasonably close.

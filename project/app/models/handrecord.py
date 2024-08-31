@@ -1,10 +1,18 @@
 import itertools
+from typing import TYPE_CHECKING, Any
 
-from bridge.card import Card
-from bridge.contract import Bid
-from bridge.seat import Seat
+from bridge.auction import Auction
+from bridge.card import Card as libCard
+from bridge.contract import Bid as libBid
+from bridge.seat import Seat as libSeat
 from django.contrib import admin
 from django.db import models
+from django.utils.functional import cached_property
+
+from .utils import assert_type
+
+if TYPE_CHECKING:
+    from . import Board, Seat, Table  # noqa
 
 
 class HandRecord(models.Model):
@@ -14,10 +22,25 @@ class HandRecord(models.Model):
     )  # it's the default, but it can't hurt to be explicit.
 
     # The "where"
-    table = models.ForeignKey("Table", on_delete=models.CASCADE)
+    table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
-    board = models.OneToOneField("Board", on_delete=models.CASCADE)
+    board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
+
+    @cached_property
+    def auction(self):
+        dealer = libSeat(self.board.dealer)
+
+        libTable = self.table.libraryThing()
+        rv = Auction(table=libTable, dealer=dealer)
+        for index, seat, call in self.annotated_calls:
+            player = libTable.players[seat]
+            rv.append_located_call(player=player, call=call.libraryThing)
+        return rv
+
+    @property
+    def declarer(self):
+        return self.auction.declarer
 
     @property
     def most_recent_call(self):
@@ -32,20 +55,35 @@ class HandRecord(models.Model):
             .first()
         )
 
+    def seat_from_libseat(self, seat: libSeat):
+        assert_type(seat, libSeat)
+        return self.table.seat_set.get(direction=seat.value)
+
     @property
     def calls(self):
         return self.call_set.order_by("id")
 
     @property
     def annotated_calls(self):
-        players_cycle = Seat.cycle()
+        seat_cycle = libSeat.cycle()
         while True:
-            s = next(players_cycle)
+            s = next(seat_cycle)
 
-            if s.value == self.board.dealer:
+            if s.lho().value == self.board.dealer:
                 break
-        # I *think* the first call is made by dealer's LHO :-)
-        return zip(itertools.count(1), players_cycle, self.calls.all())
+        # The first call is made by dealer.
+        return zip(itertools.count(1), seat_cycle, self.calls.all())
+
+    @property
+    def annotated_plays(self):
+        seat_cycle = libSeat.cycle()
+        while True:
+            s = next(seat_cycle)
+
+            if s.lho() == self.declarer.seat:
+                break
+
+        return zip(itertools.count(1), seat_cycle, self.plays.all())
 
     @property
     def plays(self):
@@ -67,17 +105,17 @@ class Call(models.Model):
     # Now, the "what":
     # pass, bid, double, redouble
 
-    serialized = models.CharField(
+    serialized = models.CharField(  # type: ignore
         max_length=10,
         db_comment="A short string with which we can create a bridge.contract.Call object",
     )
 
     @property
-    def libraryCall(self):
-        return Bid.deserialize(self.serialized)
+    def libraryThing(self):
+        return libBid.deserialize(self.serialized)
 
     def __str__(self):
-        return str(self.libraryCall)
+        return str(self.libraryThing)
 
 
 admin.site.register(Call)
@@ -90,14 +128,16 @@ class Play(models.Model):
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
 
-    serialized = models.CharField(
+    serialized = models.CharField(  # type: ignore
         max_length=2,
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
     def __str__(self):
-        play = Card.deserialize(self.serialized)
+        play = libCard.deserialize(self.serialized)
         return f"Mystery player at {self.hand.table} played {self.serialized} which means {play}"
+
+    # TODO -- a constraint that says a given card must appear no more than once in a given handrecord
 
 
 admin.site.register(Play)

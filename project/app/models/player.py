@@ -1,11 +1,12 @@
 import logging
 
+import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.html import format_html
-from django_eventstream import send_event
+from django_eventstream import send_event  # type: ignore
 
 from .message import Message
 from .seat import Seat
@@ -149,7 +150,7 @@ class Player(models.Model):
     class Meta:
         ordering = ["user__username"]
         constraints = [
-            models.CheckConstraint(
+            models.CheckConstraint(  # type: ignore
                 name="%(app_label)s_%(class)s_cant_be_own_partner",
                 condition=models.Q(partner__isnull=True) | ~models.Q(partner_id=models.F("id")),
             ),

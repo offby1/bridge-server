@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import collections
 
+import bridge.auction
+import bridge.card
 import bridge.contract
+from app.models import Player, Table
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 
-from ..models import Player, Table
 from .misc import logged_in_as_player_required
 
 
@@ -22,51 +25,79 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def _bidding_box(table):
-    calls_by_level = collections.defaultdict(list)
+def _bidding_box(table: Table):
+    def buttonize(call, active=True):
+        # All one line for ease of unit testing
+        return (
+            """<button type="button" """
+            + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
+            + call.str_for_bidding_box()
+            + """</button>\n"""
+        )
 
-    for call in bridge.contract.Bid.all_exceeding():
-        calls_by_level[call.level].append(call)
-
-    mrb = None
-    if table.current_handrecord.most_recent_bid is not None:
-        mrb = table.current_handrecord.most_recent_bid.libraryCall
+    auction = table.current_auction
+    assert isinstance(auction, bridge.auction.Auction)
+    legal_calls = auction.legal_calls()
 
     rows = []
-    for calls in calls_by_level.values():
-        row = '<div class="row">'
+    bids_by_level = [
+        [
+            bridge.contract.Bid(level=level, denomination=denomination)
+            for denomination in list(bridge.card.Suit) + [None]
+        ]
+        for level in range(1, 8)
+    ]
 
-        col_divs = []
-        for c in calls:
-            if mrb is not None and c <= mrb:
-                col_divs.append(f'<div class="col"><s>{c}</s></div>')
-            else:
-                col_divs.append(f'<div class="col">{c}</div>')
-        row += "".join(col_divs)
+    for bids in bids_by_level:
+        row = '<div class="btn-group">'
 
-        row += "</div>"
+        buttons = []
+        for b in bids:
+            active = b in legal_calls
+            buttons.append(buttonize(b, active))
+
+        row += "".join(buttons)
+
+        row += "</div><br/>"
 
         rows.append(row)
 
+    top_button_group = """<div class="btn-group">"""
+    for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
+        active = call in legal_calls
+
+        top_button_group += buttonize(call, active)
+    top_button_group += "</div>"
+
     return format_html(f"""
-    <div class="bidding-box">
-
-    <div class="container">
-    <div class="row">
-    <div class="col">Pass</div><div class="col">Double</div><div class="col">Redouble</div>
-    </div>
-    </div>
-
-    <div class="container">
+    <div style="font-family: monospace;">
+    {top_button_group}
+    <br/>
     {"\n".join(rows)}
-    </div>
-
-    </div>
-    """)
+    </div>""")
 
 
-def _card_picker(request, pk):
-    pass
+def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
+    by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
+    for c in cards:
+        by_suit[c.suit].append(c)
+
+    def card_button(c, color):
+        return f"""<button type="button"
+        class="btn btn-primary"
+        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc">{c}</button>"""
+
+    def single_row_divs(suit, cards):
+        color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        cols = [card_button(c, color) for c in reversed(cards)]
+        return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
+
+    row_divs = [
+        single_row_divs(suit, cards) if cards else "<div>-</div>"
+        for suit, cards in sorted(by_suit.items(), reverse=True)
+    ]
+
+    return SafeString("<br>" + "\n".join(row_divs))
 
 
 @logged_in_as_player_required()
@@ -76,12 +107,12 @@ def table_detail_view(request, pk):
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
     cards_by_direction_display = {}
-    for seat, cards in table.cards_by_player().items():
+    for seat, cards in table.dealt_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
         # TODO -- this seems redundant with "show_cards_for"
-        if seat.player == request.user.player:
-            dem_cards_baby = sorted(cards, reverse=True)
+        if True or seat.player == request.user.player:
+            dem_cards_baby = card_buttons_as_four_divs(cards)
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
@@ -91,7 +122,6 @@ def table_detail_view(request, pk):
     context = {
         "bidding_box": _bidding_box(table),
         "card_display": cards_by_direction_display,
-        "card_picker": _card_picker(request, pk),
         "table": table,
     }
 
