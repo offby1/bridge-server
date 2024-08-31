@@ -71,12 +71,24 @@ def _bidding_box(table: Table):
 
         rows.append(row)
 
-    # TODO -- figure out whether to strike out Double and Redouble!!
+    top_button_group = """<div class="btn-group">"""
+    for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
+        # TODO -- take into account *who* doubled, not just if *someone* doubled
+
+        active = False
+        if call is bridge.contract.Pass:
+            active = True
+        elif call is bridge.contract.Double:
+            active = auction.is_doubled is None
+        else:
+            active = auction.is_doubled == 2
+
+        top_button_group += buttonize(call, active)
+    top_button_group += "</div>"
+
     return format_html(f"""
     <div style="font-family: monospace;">
-    <div class="btn-group">
-    {buttonize(bridge.contract.Pass)}{buttonize(bridge.contract.Double)}{buttonize(bridge.contract.Redouble)}
-    </div>
+    {top_button_group}
     <br/>
     {"\n".join(rows)}
     </div>""")

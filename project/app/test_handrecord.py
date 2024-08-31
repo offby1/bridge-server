@@ -48,7 +48,7 @@ def test_cards_by_player(usual_setup):
 
 def test_bidding_box_html(usual_setup):
     t = Table.objects.first()
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    set_auction_to(Bid(level=1, denomination=Suit.DIAMONDS), t)
 
     def button_text(html_button_line):
         if (m := re.search(r">([^<]*?)</button>", html_button_line)) is not None:
@@ -60,4 +60,4 @@ def test_bidding_box_html(usual_setup):
         if " disabled" in line:
             disabled_buttons.append(button_text(line))
 
-    assert set(disabled_buttons) == {"1♣", "Double", "Redouble"}
+    assert set(disabled_buttons) == {"1♣", "1♦", "Redouble"}
