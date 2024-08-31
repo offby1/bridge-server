@@ -29,40 +29,31 @@ def _bidding_box(table: Table):
     def buttonize(call, active=True):
         # All one line for ease of unit testing
         return (
-            """<button type="button"""
+            """<button type="button" """
             + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
             + call.str_for_bidding_box()
             + """</button>\n"""
         )
 
-    # : collections.defaultdict[int, bridge.contract.Bid]
-    bids_by_level = collections.defaultdict(list)
-
-    for bid in bridge.contract.Bid.all_exceeding():
-        assert isinstance(bid, bridge.contract.Bid)
-        bids_by_level[bid.level].append(bid)
-
     auction = table.current_auction
     assert isinstance(auction, bridge.auction.Auction)
-
-    most_recent_bid = auction.last_located_bid
-    if most_recent_bid is not None:
-        assert isinstance(most_recent_bid, bridge.auction.PlayerCall)
+    legal_calls = auction.legal_calls()
 
     rows = []
-    for bids in bids_by_level.values():
+    bids_by_level = [
+        [
+            bridge.contract.Bid(level=level, denomination=denomination)
+            for denomination in list(bridge.card.Suit) + [None]
+        ]
+        for level in range(1, 8)
+    ]
+
+    for bids in bids_by_level:
         row = '<div class="btn-group">'
 
         buttons = []
         for b in bids:
-            assert isinstance(b, bridge.contract.Bid)
-            if most_recent_bid is None:
-                active = True
-            elif isinstance(most_recent_bid.call, bridge.contract.Bid):
-                active = b > most_recent_bid.call
-            else:
-                active = False
-
+            active = b in legal_calls
             buttons.append(buttonize(b, active))
 
         row += "".join(buttons)
@@ -73,15 +64,7 @@ def _bidding_box(table: Table):
 
     top_button_group = """<div class="btn-group">"""
     for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
-        # TODO -- take into account *who* doubled, not just if *someone* doubled
-
-        active = False
-        if call is bridge.contract.Pass:
-            active = True
-        elif call is bridge.contract.Double:
-            active = auction.is_doubled is None
-        else:
-            active = auction.is_doubled == 2
+        active = call in legal_calls
 
         top_button_group += buttonize(call, active)
     top_button_group += "</div>"
