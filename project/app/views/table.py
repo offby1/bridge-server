@@ -44,7 +44,8 @@ def _bidding_box(table):
     assert isinstance(auction, bridge.auction.Auction)
 
     most_recent_bid = auction.last_located_bid
-    assert isinstance(most_recent_bid, bridge.auction.PlayerCall)
+    if most_recent_bid is not None:
+        assert isinstance(most_recent_bid, bridge.auction.PlayerCall)
 
     rows = []
     for calls in calls_by_level.values():
