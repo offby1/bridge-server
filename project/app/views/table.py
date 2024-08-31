@@ -77,7 +77,7 @@ def _bidding_box(table):
 
 
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
-    by_suit = {s: [] for s in bridge.card.Suit}
+    by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in cards:
         by_suit[c.suit].append(c)
 

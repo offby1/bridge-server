@@ -1,4 +1,4 @@
-from django_eventstream.channelmanager import DefaultChannelManager
+from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore
 
 from . import models
 

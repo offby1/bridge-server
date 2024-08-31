@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from django.contrib import admin
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -39,7 +40,7 @@ class Message(models.Model):
     objects = MessageManager()
 
     timestamp = models.DateTimeField(auto_now_add=True)
-    from_player = models.ForeignKey(
+    from_player = models.ForeignKey(  # type: ignore
         "Player",
         on_delete=models.CASCADE,
         related_name="sent_message",
@@ -76,11 +77,11 @@ class Message(models.Model):
         return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
 
     @staticmethod
-    def channel_name_from_players(p1: int, p2: int) -> str:
+    def channel_name_from_players(p1, p2) -> str:
         return Message.channel_name_from_player_pks(p1.pk, p2.pk)
 
     @staticmethod
-    def player_pks_from_channel_name(channel_name: str) -> set[int]:
+    def player_pks_from_channel_name(channel_name: str) -> Optional[set[int]]:
         try:
             _, pk_underscore_string = channel_name.split(":")
             return set([int(p) for p in pk_underscore_string.split("_")])

@@ -1,4 +1,5 @@
 import random
+from typing import TYPE_CHECKING
 
 from bridge.card import Card
 from bridge.contract import Contract
@@ -7,6 +8,7 @@ from bridge.table import Player as libraryPlayer
 from bridge.table import Table as libraryTable
 from django.contrib import admin
 from django.db import models, transaction
+from django.db.models import Manager
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -60,6 +62,8 @@ class TableManager(models.Manager):
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
 class Table(models.Model):
+    seat_set: Manager[Seat]
+
     objects = TableManager()
 
     def libraryThing(self):
@@ -90,7 +94,7 @@ class Table(models.Model):
 
     @cached_property
     def dealt_cards_by_seat(self) -> dict[Seat, list[Card]]:
-        rv = {}
+        rv: dict[Seat, list[Card]] = {}
         board = self.current_board
         if board is None:
             return rv
@@ -101,7 +105,7 @@ class Table(models.Model):
         return rv
 
     @property
-    def current_cards_by_seat(self) -> dict[Seat, list[Card]]:
+    def current_cards_by_seat(self) -> dict[Seat, set[Card]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
             assert_type(seat, Seat)

@@ -1,4 +1,5 @@
 import itertools
+from typing import TYPE_CHECKING, Any
 
 from bridge.auction import Auction
 from bridge.card import Card as libCard
@@ -10,6 +11,9 @@ from django.utils.functional import cached_property
 
 from .utils import assert_type
 
+if TYPE_CHECKING:
+    from . import Board, Seat, Table  # noqa
+
 
 class HandRecord(models.Model):
     # The "when", and, when combined with knowledge of who dealt, the "who"
@@ -18,10 +22,10 @@ class HandRecord(models.Model):
     )  # it's the default, but it can't hurt to be explicit.
 
     # The "where"
-    table = models.ForeignKey("Table", on_delete=models.CASCADE)
+    table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
-    board = models.OneToOneField("Board", on_delete=models.CASCADE)
+    board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
     @cached_property
     def auction(self):
@@ -60,7 +64,7 @@ class HandRecord(models.Model):
         return self.call_set.order_by("id")
 
     @property
-    def annotated_calls(self) -> list[tuple[int, libSeat, "Call"]]:
+    def annotated_calls(self):
         seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
@@ -101,7 +105,7 @@ class Call(models.Model):
     # Now, the "what":
     # pass, bid, double, redouble
 
-    serialized = models.CharField(
+    serialized = models.CharField(  # type: ignore
         max_length=10,
         db_comment="A short string with which we can create a bridge.contract.Call object",
     )
@@ -124,7 +128,7 @@ class Play(models.Model):
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
 
-    serialized = models.CharField(
+    serialized = models.CharField(  # type: ignore
         max_length=2,
         db_comment="A short string with which we can create a bridge.card.Card object",
     )

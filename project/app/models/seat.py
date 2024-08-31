@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 import bridge.seat
 from django.contrib import admin
 from django.db import models
 
 from . import SEAT_CHOICES
+
+if TYPE_CHECKING:
+    from . import Table  # noqa
 
 
 class SeatException(Exception):
@@ -11,10 +16,10 @@ class SeatException(Exception):
 
 class Seat(models.Model):
     direction = models.SmallIntegerField(
-        choices=SEAT_CHOICES,
+        choices=SEAT_CHOICES.items(),
     )
     player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
-    table = models.ForeignKey("Table", on_delete=models.CASCADE)
+    table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)
@@ -56,7 +61,7 @@ class Seat(models.Model):
     class Meta:
         ordering = ["direction"]
         constraints = [
-            models.CheckConstraint(
+            models.CheckConstraint(  # type: ignore
                 name="%(app_label)s_%(class)s_direction_valid",
                 condition=models.Q(direction__in=SEAT_CHOICES),
             ),

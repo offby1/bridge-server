@@ -7,7 +7,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event
+from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
 
