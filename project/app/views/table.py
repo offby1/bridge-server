@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import collections
-
 import bridge.auction
 import bridge.card
 import bridge.contract
