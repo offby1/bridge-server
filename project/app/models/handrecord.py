@@ -1,10 +1,9 @@
 import itertools
 
 from bridge.auction import Auction
-from bridge.card import Card
-from bridge.contract import Bid
-from bridge.seat import Seat
-from bridge.table import Player
+from bridge.card import Card as libCard
+from bridge.contract import Bid as libBid
+from bridge.seat import Seat as libSeat
 from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
@@ -24,14 +23,13 @@ class HandRecord(models.Model):
 
     @cached_property
     def auction(self):
-        rv = Auction(table=self.table, dealer=self.board.dealer)
+        dealer = libSeat(self.board.dealer)
+
+        libTable = self.table.libraryThing()
+        rv = Auction(table=libTable, dealer=dealer)
         for index, seat, call in self.annotated_calls:
-            print(f"{rv=}")
-            print(f"{seat=}")
-            player = Player(seat=seat, name="wtf", hand="whaaaat")
-            print(f"{player=}")
-            print(f"{call=}")
-            rv.append_located_call(player, call)
+            player = libTable.players[seat]
+            rv.append_located_call(player=player, call=call.libraryThing)
         return rv
 
     @property
@@ -56,23 +54,23 @@ class HandRecord(models.Model):
         return self.call_set.order_by("id")
 
     @property
-    def annotated_calls(self) -> list[tuple[int, Seat, "Call"]]:
-        seat_cycle = Seat.cycle()
+    def annotated_calls(self) -> list[tuple[int, libSeat, "Call"]]:
+        seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
 
-            if s.value == self.board.dealer:
+            if s.lho().value == self.board.dealer:
                 break
-        # I *think* the first call is made by dealer's LHO :-)
+        # The first call is made by dealer.
         return zip(itertools.count(1), seat_cycle, self.calls.all())
 
     @property
     def annotated_plays(self):
-        seat_cycle = Seat.cycle()
+        seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
 
-            if s.value == self.declarer.lho:
+            if s.lho() == self.declarer.seat:
                 break
 
         return zip(itertools.count(1), seat_cycle, self.plays.all())
@@ -103,11 +101,11 @@ class Call(models.Model):
     )
 
     @property
-    def libraryCall(self):
-        return Bid.deserialize(self.serialized)
+    def libraryThing(self):
+        return libBid.deserialize(self.serialized)
 
     def __str__(self):
-        return str(self.libraryCall)
+        return str(self.libraryThing)
 
 
 admin.site.register(Call)
@@ -126,7 +124,7 @@ class Play(models.Model):
     )
 
     def __str__(self):
-        play = Card.deserialize(self.serialized)
+        play = libCard.deserialize(self.serialized)
         return f"Mystery player at {self.hand.table} played {self.serialized} which means {play}"
 
     # TODO -- a constraint that says a given card must appear no more than once in a given handrecord

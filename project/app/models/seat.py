@@ -1,3 +1,4 @@
+import bridge.seat
 from django.contrib import admin
 from django.db import models
 
@@ -17,6 +18,10 @@ class Seat(models.Model):
 
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)
+
+    @property
+    def libraryThing(self):
+        return bridge.seat.Seat(self.direction)
 
     @property
     def named_direction(self):

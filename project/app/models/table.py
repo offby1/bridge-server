@@ -1,7 +1,11 @@
 import random
+from typing import Any, Type
 
 from bridge.card import Card
 from bridge.contract import Contract
+from bridge.table import Hand as libraryHand
+from bridge.table import Player as libraryPlayer
+from bridge.table import Table as libraryTable
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -12,6 +16,12 @@ from . import SEAT_CHOICES
 from .board import Board
 from .handrecord import HandRecord
 from .seat import Seat
+
+
+def _assert_type(obj_: Any, expected_type: Type[Any]) -> None:
+    assert isinstance(
+        obj_, expected_type
+    ), f"I want a {expected_type} but you done gimme a {type(obj_)}"
 
 
 class TableException(Exception):
@@ -58,6 +68,16 @@ class TableManager(models.Manager):
 class Table(models.Model):
     objects = TableManager()
 
+    def libraryThing(self):
+        players = []
+        for seat in self.seat_set.all():
+            name = seat.player.name
+            hand = self.current_handrecord.board.cards_for_direction(seat.direction)
+            players.append(
+                libraryPlayer(seat=seat.libraryThing, name=name, hand=libraryHand(cards=hand))
+            )
+        return libraryTable(players=players)
+
     @property
     def handrecords(self):
         return self.handrecord_set.order_by("id")
@@ -90,10 +110,14 @@ class Table(models.Model):
     def current_cards_by_seat(self) -> dict[Seat, list[Card]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
+            _assert_type(seat, Seat)
+            _assert_type(cardlist, list)
+
             rv[seat] = set(cardlist)
 
         if isinstance(self.current_handrecord.auction.status, Contract):
             for index, seat, play in self.current_handrecord.annotated_plays:
+                _assert_type(seat, Seat)
                 card_to_remove = Card.deserialize(play.serialized)
                 rv[seat].remove(card_to_remove)
 
