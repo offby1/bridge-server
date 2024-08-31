@@ -1,5 +1,4 @@
 import random
-from typing import Any, Type
 
 from bridge.card import Card
 from bridge.contract import Contract
@@ -16,12 +15,7 @@ from . import SEAT_CHOICES
 from .board import Board
 from .handrecord import HandRecord
 from .seat import Seat
-
-
-def _assert_type(obj_: Any, expected_type: Type[Any]) -> None:
-    assert isinstance(
-        obj_, expected_type
-    ), f"I want a {expected_type} but you done gimme a {type(obj_)}"
+from .utils import assert_type
 
 
 class TableException(Exception):
@@ -110,14 +104,15 @@ class Table(models.Model):
     def current_cards_by_seat(self) -> dict[Seat, list[Card]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
-            _assert_type(seat, Seat)
-            _assert_type(cardlist, list)
+            assert_type(seat, Seat)
+            assert_type(cardlist, list)
 
             rv[seat] = set(cardlist)
 
         if isinstance(self.current_handrecord.auction.status, Contract):
             for index, seat, play in self.current_handrecord.annotated_plays:
-                _assert_type(seat, Seat)
+                seat = self.current_handrecord.seat_from_libseat(seat)
+                assert_type(seat, Seat)
                 card_to_remove = Card.deserialize(play.serialized)
                 rv[seat].remove(card_to_remove)
 

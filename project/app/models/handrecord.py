@@ -8,6 +8,8 @@ from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
 
+from .utils import assert_type
+
 
 class HandRecord(models.Model):
     # The "when", and, when combined with knowledge of who dealt, the "who"
@@ -48,6 +50,10 @@ class HandRecord(models.Model):
             .filter(first__in="1234567")
             .first()
         )
+
+    def seat_from_libseat(self, seat: libSeat):
+        assert_type(seat, libSeat)
+        return self.table.seat_set.get(direction=seat.value)
 
     @property
     def calls(self):
