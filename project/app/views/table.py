@@ -25,8 +25,8 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def _bidding_box(table):
-    def buttonize(call):
+def _bidding_box(table: Table):
+    def buttonize(call, active=True):
         # All one line for ease of unit testing
         return (
             """<button type="button"""
@@ -35,11 +35,12 @@ def _bidding_box(table):
             + """</button>\n"""
         )
 
-    calls_by_level = collections.defaultdict(list)
+    # : collections.defaultdict[int, bridge.contract.Bid]
+    bids_by_level = collections.defaultdict(list)
 
-    for call in bridge.contract.Bid.all_exceeding():
-        assert isinstance(call, bridge.contract.Bid)
-        calls_by_level[call.level].append(call)
+    for bid in bridge.contract.Bid.all_exceeding():
+        assert isinstance(bid, bridge.contract.Bid)
+        bids_by_level[bid.level].append(bid)
 
     auction = table.current_auction
     assert isinstance(auction, bridge.auction.Auction)
@@ -49,17 +50,20 @@ def _bidding_box(table):
         assert isinstance(most_recent_bid, bridge.auction.PlayerCall)
 
     rows = []
-    for calls in calls_by_level.values():
+    for bids in bids_by_level.values():
         row = '<div class="btn-group">'
 
         buttons = []
-        for c in calls:
-            assert isinstance(c, bridge.contract.Bid)
-            active = (
-                most_recent_bid is None or c is bridge.contract.Pass or c > most_recent_bid.call
-            )
+        for b in bids:
+            assert isinstance(b, bridge.contract.Bid)
+            if most_recent_bid is None:
+                active = True
+            elif isinstance(most_recent_bid.call, bridge.contract.Bid):
+                active = b > most_recent_bid.call
+            else:
+                active = False
 
-            buttons.append(buttonize(c))
+            buttons.append(buttonize(b, active))
 
         row += "".join(buttons)
 
