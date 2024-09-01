@@ -1,5 +1,9 @@
 STILL TODO:
 
+* Only show bidding box if auction is incomplete, *and* request.user is seated at the table.
+
+* If the above are true, but it's not request.user's turn to call, disable the bidding box visually somehow.
+
 * The auction history is one call per line, but I think newspapers used to display it with four columns -- one for each seat.  I think.
 
 * Think about optimization (without actually doing it, since that would be premature):
