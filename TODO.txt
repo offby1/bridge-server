@@ -1,7 +1,5 @@
 STILL TODO:
 
-* Only show bidding box if auction is incomplete, *and* request.user is seated at the table.
-
 * If the above are true, but it's not request.user's turn to call, disable the bidding box visually somehow.
 
 * The auction history is one call per line, but I think newspapers used to display it with four columns -- one for each seat.  I think.
@@ -57,6 +55,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Only show bidding box if auction is incomplete, *and* request.user is seated at the table.
 
 * AttributeError at /players/
   http://192.168.4.39:8000/players/?seated=False&lookin_for_love=False&exclude_me=True

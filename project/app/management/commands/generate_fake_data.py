@@ -6,6 +6,23 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
 
+canned_calls = [
+    "Pass",
+    "1NT",
+    "Double",
+    "Pass",
+    "2♣",
+    "Pass",
+    "Pass",
+    "3NT",
+    "Double",
+    "Redouble",
+    "Pass",
+    "Pass",
+    "Pass",
+    "Pass",
+]
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -14,50 +31,26 @@ class Command(BaseCommand):
             default=14,
             type=int,
         )
-        parser.add_argument(
-            "--tables",
-            default=3,
-            type=int,
-        )
 
-    def generate_some_fake_calls_and_plays_at(self, table):
+    def generate_some_fake_calls_and_plays_at(self, table, this_tables_index):
         h = table.current_handrecord
 
-        canned_calls = [
-            "Pass",
-            "1NT",
-            "Double",
-            "Pass",
-            "2♣",
-            "Pass",
-            "Pass",
-            "3NT",
-            "Double",
-            "Redouble",
-            "Pass",
-            "Pass",
-            "Pass",
-            "Pass",
-        ]
+        calls_prefix = canned_calls[0:this_tables_index]
 
-        for c in canned_calls[0 : random.randrange(len(canned_calls))]:
+        for c in calls_prefix:
             h.call_set.create(serialized=c)
 
     def handle(self, *args, **options):
         fake = Faker()
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
-            # Make sure we always have "bob", because his name is easy to type, and to remember :-)
-            Player.objects.create(
-                user=User.objects.create_user(
-                    username="bob",
-                    password="bob",
-                ),
-            )
-
             unseated_players = []
             while Player.objects.count() < options["players"]:
-                username = fake.unique.first_name().lower()
+                # Make sure we always have "bob", because his name is easy to type, and to remember :-)
+                if not Player.objects.exists():
+                    username = "bob"
+                else:
+                    username = fake.unique.first_name().lower()
 
                 try:
                     p = Player.objects.create(
@@ -85,7 +78,7 @@ class Command(BaseCommand):
                 )
                 unseated_players = []
 
-                self.generate_some_fake_calls_and_plays_at(t)
+                self.generate_some_fake_calls_and_plays_at(t, Table.objects.count() - 1)
 
         # Now create a couple of unseated players.
         count_before = Player.objects.count()

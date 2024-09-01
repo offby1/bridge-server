@@ -52,7 +52,7 @@ runme *options: test django-superuser migrate
 
 # Create a bunch of users and tables
 [group('bs')]
-pop: django-superuser migrate (manage "generate_fake_data")
+pop: django-superuser migrate (manage "generate_fake_data --players=56")
 
 [group('django')]
 [private]

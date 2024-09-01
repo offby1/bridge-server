@@ -23,7 +23,7 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def _bidding_box(table: Table):
+def _bidding_box(table: Table) -> SafeString:
     def buttonize(call, active=True):
         # All one line for ease of unit testing
         return (
@@ -35,6 +35,7 @@ def _bidding_box(table: Table):
 
     auction = table.current_auction
     assert isinstance(auction, bridge.auction.Auction)
+
     legal_calls = auction.legal_calls()
 
     rows = []
@@ -117,8 +118,12 @@ def table_detail_view(request, pk):
             "cards": dem_cards_baby,
         }
 
+    player = request.user.player
+    seat = getattr(player, "seat", None)
+    bidding_box = _bidding_box(table) if seat and seat.table == table else ""
+
     context = {
-        "bidding_box": _bidding_box(table),
+        "bidding_box": bidding_box,
         "card_display": cards_by_direction_display,
         "table": table,
     }
