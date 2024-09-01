@@ -2,21 +2,38 @@
 {% block content %}
     <div>
         {{ table.current_handrecord.board }}.
+        <table class="table fs-4">
+            <th>
+                <tr>
+                    <td>
+                        <i>West</i>
+                    </td>
+                    <td>
+                        <i>North</i>
+                    </td>
+                    <td>
+                        <i>East</i>
+                    </td>
+                    <td>
+                        <i>South</i>
+                    </td>
+                </tr>
+            </th>
+            <tbody>
+                {% for row in table.current_auction.fancy_two_dimensional_display %}
+                    <tr>
+                        {% for call in row %}
+                            <td>
+                                {% if call is not None %}{{ call.serialize }}{% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-        {% for index, player, c in table.current_handrecord.annotated_calls %}
-        <div class="row">
-          <div class="col-2">Call #{{ index }}</div>
-          <div class="col-2">{{ player }}</div>
-          <div class="col-2">{{ c }}</div>
-        </div>
-        {% endfor %}
+        {{ bidding_box }}
 
-        <div>
-            <div>
-                Now, over here we have your bidding box:
-                {{ bidding_box }}
-            </div>
-        </div>
         <div>
             <ul>
                 {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
