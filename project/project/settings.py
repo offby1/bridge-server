@@ -25,11 +25,12 @@ SECRET_KEY = "django-insecure-d)83erqvk0gay745i(^j_l37bg$+14&zgc5=pf5o*-3w%!h$92
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    ".orb.local",
+    ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
     "192.168.4.39",  # laptop at home
     "localhost",
     "offby1.info",
-    ".orb.local",
 ]
 
 
