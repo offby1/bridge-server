@@ -47,8 +47,24 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
-runme *options: test django-superuser migrate
-    cd project && poetry run daphne --verbosity 3 --bind 0.0.0.0 --log-fmt="%(asctime)sZ %(levelname)s %(filename)s %(funcName)s %(message)s"  {{ options }} project.asgi:application
+runme *options: test django-superuser migrate (manage "runserver " + options)
+
+# TODO -- figure out how to get daphne to restart when a file changes.
+# For production
+[group('bs')]
+[script('bash')]
+daphne: test django-superuser migrate
+    set -euxo pipefail
+    cd project
+    tput rmam
+    trap "tput smam" EXIT
+    poetry run daphne                                                               \
+    --verbosity                                                                     \
+    1                                                                               \
+    --bind                                                                          \
+    0.0.0.0                                                                         \
+    --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s"   \
+    project.asgi:application
 
 # Create a bunch of users and tables
 [group('bs')]
