@@ -134,7 +134,11 @@ def call_post_view(request, table_pk):
     who_clicked = request.user.player
     serialzed_call = request.POST["call"]
     print(f"Looks like {who_clicked} called {serialzed_call}")
-    table.current_handrecord.call_set.create(serialized=serialzed_call)
+    try:
+        table.current_handrecord.call_set.create(serialized=serialzed_call)
+    except Exception as e:
+        return HttpResponseForbidden(str(e))
+
     send_event(
         channel=_auction_channel_for_table(table),
         event_type="message",

@@ -7,12 +7,15 @@ from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
 from django.contrib import admin
 from django.db import models
-from django.utils.functional import cached_property
 
 from .utils import assert_type
 
 if TYPE_CHECKING:
     from . import Board, Seat, Table  # noqa
+
+
+class AuctionException(Exception):
+    pass
 
 
 class HandRecord(models.Model):
@@ -27,7 +30,7 @@ class HandRecord(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
-    @cached_property
+    @property
     def auction(self):
         dealer = libSeat(self.board.dealer)
 
@@ -116,6 +119,14 @@ class Call(models.Model):
 
     def __str__(self):
         return str(self.libraryThing)
+
+    def save(self, *args, **kwargs):
+        auction = self.hand.auction
+        legal_calls = auction.legal_calls()  # ugh this seems expensive
+        us = self.libraryThing
+        if us not in legal_calls:
+            raise AuctionException(f"{us} is not a legal call")
+        return super().save(*args, **kwargs)
 
 
 admin.site.register(Call)

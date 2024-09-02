@@ -1,9 +1,10 @@
 import re
 
+import pytest
 from bridge.card import Suit
 from bridge.contract import Bid, Pass
 
-from .models import Board, Call, Play, Table
+from .models import AuctionException, Board, Call, Play, Table
 from .views.table import _bidding_box
 
 
@@ -13,6 +14,9 @@ def test_watever(usual_setup):
     h = t.current_handrecord
     h.call_set.create(serialized="Pass")
     h.call_set.create(serialized="1NT")
+    with pytest.raises(AuctionException):
+        h.call_set.create(serialized="1NT")
+
     h.call_set.create(serialized="Double")
 
     assert t.handrecords.count() == 1  # we've only played one hand at this table

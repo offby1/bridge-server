@@ -46,5 +46,9 @@ es.addEventListener('message', function (e) {
 
 }, false);
 
+htmx.on("htmx:responseError", function(evt) {
+   alert(evt.detail.xhr.response);
+});
+
 </script>
 {% endpartialdef auction-scripts %}
