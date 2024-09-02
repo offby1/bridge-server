@@ -118,9 +118,13 @@ def table_detail_view(request, pk):
             "cards": dem_cards_baby,
         }
 
-    player = request.user.player
-    seat = getattr(player, "seat", None)
-    bidding_box = _bidding_box(table) if seat and seat.table == table else ""
+    bidding_box = ""
+
+    if table.current_handrecord.auction.status == bridge.auction.Auction.Incomplete:
+        player = request.user.player
+        seat = getattr(player, "seat", None)
+        if seat and seat.table == table:
+            bidding_box = _bidding_box(table)
 
     context = {
         "bidding_box": bidding_box,
