@@ -48,7 +48,7 @@ migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
 runme *options: test django-superuser migrate
-    cd project && poetry run daphne --verbosity 3 --bind 0.0.0.0 {{ options }} project.asgi:application
+    cd project && poetry run daphne --verbosity 3 --bind 0.0.0.0 --log-fmt="%(asctime)sZ %(levelname)s %(filename)s %(funcName)s %(message)s"  {{ options }} project.asgi:application
 
 # Create a bunch of users and tables
 [group('bs')]
