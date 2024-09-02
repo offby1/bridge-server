@@ -1,0 +1,23 @@
+{% load partials %}
+{% partialdef bidding-box-partial %}
+<div style="font-family: monospace;"
+     id="bidding-box">
+  {{ bidding_box_buttons }}
+</div>
+{% endpartialdef bidding-box-partial %}
+
+{% partialdef bidding-box-scripts %}
+<script>
+var es = new ReconnectingEventSource('{{ auction_event_source_endpoint }}');
+
+es.addEventListener('message', function (e) {
+    console.log(e.data);
+
+    var d = JSON.parse(e.data) ;
+    // for now, totally ignore the content of the message, and just reload the partial
+    htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'});
+
+}, false);
+
+</script>
+{% endpartialdef bidding-box-scripts %}

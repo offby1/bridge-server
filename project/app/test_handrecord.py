@@ -4,8 +4,8 @@ import pytest
 from bridge.card import Suit
 from bridge.contract import Bid, Pass
 
-from .models import AuctionException, Board, Call, Play, Table
-from .views.table import _bidding_box
+from .models import AuctionException, Board, Call, Play, Player, Table
+from .views.table import bidding_box_partial_view
 
 
 def test_watever(usual_setup):
@@ -50,9 +50,13 @@ def test_cards_by_player(usual_setup):
     assert before != after
 
 
-def collect_disabled_buttons(t):
+def _collect_disabled_buttons(t, request):
+    response: TemplateResponse = bidding_box_partial_view(request, t.pk)
+    response.render()
+
     disabled_buttons = []
-    bb_html_lines = _bidding_box(t).split("\n")
+    bb_html_lines = response.content.decode().split("\n")
+
     for line in bb_html_lines:
         if " disabled" in line:
             m = re.search(r">([^<]*?)</button>", line)
@@ -63,12 +67,17 @@ def collect_disabled_buttons(t):
     return disabled_buttons
 
 
-def test_bidding_box_html(usual_setup):
+def test_bidding_box_html(usual_setup, rf):
     # First case: completed auction, contract is one diamond, not doubled.
     t = Table.objects.first()
 
     set_auction_to(Bid(level=1, denomination=Suit.DIAMONDS), t)
-    assert len(collect_disabled_buttons(t)) == 38
+    request = rf.get("/woteva/", data={"table_pk": t.pk})
+    request.user = Player.objects.get_by_name("Alice").user
+
+    response = bidding_box_partial_view(request, t.pk)
+    assert b"No bidding box" in response.content
+    assert b"<button" not in response.content
 
     t.handrecord_set.all().delete()
     t.handrecord_set.create(board=Board.objects.first())
@@ -77,10 +86,10 @@ def test_bidding_box_html(usual_setup):
     Call.objects.create(
         hand=t.current_handrecord, serialized=Bid(level=1, denomination=Suit.DIAMONDS).serialize()
     )
-    assert set(collect_disabled_buttons(t)) == {"1♣", "1♦", "Redouble"}
+    assert set(_collect_disabled_buttons(t, request)) == {"1♣", "1♦", "Redouble"}
 
     # Third case: as above but with one more "Pass".
     Call.objects.create(hand=t.current_handrecord, serialized=Pass.serialize())
 
     # you cannot double your own partner.
-    assert set(collect_disabled_buttons(t)) == {"1♣", "1♦", "Redouble", "Double"}
+    assert set(_collect_disabled_buttons(t, request)) == {"1♣", "1♦", "Redouble", "Double"}

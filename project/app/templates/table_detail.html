@@ -7,7 +7,7 @@
         {{ table.current_auction.status }}
         </div>
 
-        {{ bidding_box }}
+        Any bidding box goes here -->{% include 'bidding-box-partial.html#bidding-box-partial' %}<----
 
         <div>
             <ul>
@@ -15,7 +15,7 @@
             </ul>
         </div>
     </div>
-    {# Here I've got North at the top, but maybe it should be #}
+    {# TODO: Here I've got North at the top, but maybe it should be #}
     {# Declarer at the bottom; or        #}
     {# request.user.player at the bottom #}
     <div class="fs-1" style="border: 1px solid;">
@@ -38,4 +38,5 @@
 {% endblock content %}
 {% block scripts %}
 {% include 'auction-partial.html#auction-scripts' %}
+{% include 'bidding-box-partial.html#bidding-box-scripts' %}
 {% endblock scripts %}

@@ -4,7 +4,7 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 from app.models import Player, Table
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -24,8 +24,10 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def _bidding_box(table: Table) -> SafeString:
-    call_post_endpoint = reverse("app:call-post", args=[table.pk])
+def bidding_box_buttons(*, auction: bridge.auction.Auction, call_post_endpoint: str) -> SafeString:
+    assert isinstance(auction, bridge.auction.Auction)
+
+    legal_calls = auction.legal_calls()
 
     def buttonize(call: bridge.contract.Call, active=True):
         # All one line for ease of unit testing
@@ -39,11 +41,6 @@ def _bidding_box(table: Table) -> SafeString:
             + call.str_for_bidding_box()
             + """</button>\n"""
         )
-
-    auction = table.current_auction
-    assert isinstance(auction, bridge.auction.Auction)
-
-    legal_calls = auction.legal_calls()
 
     rows = []
     bids_by_level = [
@@ -75,12 +72,7 @@ def _bidding_box(table: Table) -> SafeString:
         top_button_group += buttonize(call, active)
     top_button_group += "</div>"
 
-    return format_html(f"""
-    <div style="font-family: monospace;">
-    {top_button_group}
-    <br/>
-    {"\n".join(rows)}
-    </div>""")
+    return format_html(f"""{top_button_group} <br/> {"\n".join(rows)}""")
 
 
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
@@ -116,6 +108,29 @@ def _auction_context_for_table(table):
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "table": table,
     }
+
+
+@logged_in_as_player_required()
+def bidding_box_partial_view(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+
+    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
+        return HttpResponse("No bidding box 'cuz the auction is over")
+
+    player = request.user.player  # type: ignore
+    seat = getattr(player, "seat", None)
+    if not seat or seat.table != table:
+        return HttpResponse("No bidding box 'cuz it ain't your turn to bid")
+
+    context = {
+        "bidding_box_buttons": bidding_box_buttons(
+            auction=table.current_auction,
+            call_post_endpoint=reverse("app:call-post", args=[table_pk]),
+        ),
+    }
+    return TemplateResponse(
+        request, "bidding-box-partial.html#bidding-box-partial", context=context
+    )
 
 
 @logged_in_as_player_required()
@@ -166,19 +181,19 @@ def table_detail_view(request, pk):
             "cards": dem_cards_baby,
         }
 
-    bidding_box = ""
-
-    if table.current_handrecord.auction.status == bridge.auction.Auction.Incomplete:
-        player = request.user.player
-        seat = getattr(player, "seat", None)
-        if seat and seat.table == table:
-            bidding_box = _bidding_box(table)
-
-    context = {
-        "bidding_box": bidding_box,
-        "card_display": cards_by_direction_display,
-        "table": table,
-    } | _auction_context_for_table(table)
+    context = (
+        {
+            "card_display": cards_by_direction_display,
+            "table": table,
+        }
+        | _auction_context_for_table(table)
+        | {
+            "bidding_box_buttons": bidding_box_buttons(
+                auction=table.current_auction,
+                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+            )
+        }
+    )
 
     return TemplateResponse(request, "table_detail.html", context=context)
 
