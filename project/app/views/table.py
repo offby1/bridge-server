@@ -4,7 +4,7 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 from app.models import Player, Table
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -24,10 +24,16 @@ def table_list_view(request):
 
 
 def _bidding_box(table: Table) -> SafeString:
-    def buttonize(call, active=True):
+    def buttonize(call: bridge.contract.Call, active=True):
+        call_post_endpoint = reverse("app:call-post", args=[table.pk])
+
         # All one line for ease of unit testing
         return (
             """<button type="button" """
+            # + """hx-include="[css-selector-for-my-own-value]" """
+            + f"""hx-post="{call_post_endpoint}" """
+            + """hx-swap="none" """
+            + f"""value="{call.serialize()}" """
             + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
             + call.str_for_bidding_box()
             + """</button>\n"""
@@ -99,6 +105,30 @@ def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     return SafeString("<br>" + "\n".join(row_divs))
 
 
+def _auction_context_for_table(table):
+    return {
+        "auction_event_source_endpoint": f"/events/table/{table.pk}",
+        "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
+        "table": table,
+    }
+
+
+@logged_in_as_player_required()
+def auction_partial_view(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+    context = _auction_context_for_table(table)
+    print(f"{request=} {table_pk=} {context=}")
+    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def call_post_view(request, table_pk):
+    who_clicked = request.user.player
+    print(f"Looks like {who_clicked} did {request.POST=}")
+    return HttpResponse()
+
+
 @logged_in_as_player_required()
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
@@ -130,7 +160,7 @@ def table_detail_view(request, pk):
         "bidding_box": bidding_box,
         "card_display": cards_by_direction_display,
         "table": table,
-    }
+    } | _auction_context_for_table(table)
 
     return TemplateResponse(request, "table_detail.html", context=context)
 
