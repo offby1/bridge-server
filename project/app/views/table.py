@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
+from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
 
@@ -105,9 +106,13 @@ def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     return SafeString("<br>" + "\n".join(row_divs))
 
 
+def _auction_channel_for_table(table):
+    return str(table.pk)
+
+
 def _auction_context_for_table(table):
     return {
-        "auction_event_source_endpoint": f"/events/table/{table.pk}",
+        "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "table": table,
     }
@@ -124,10 +129,17 @@ def auction_partial_view(request, table_pk):
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+
     who_clicked = request.user.player
     serialzed_call = request.POST["call"]
-    call = bridge.contract.Bid.deserialize(serialzed_call)
-    print(f"Looks like {who_clicked} called {call}")
+    print(f"Looks like {who_clicked} called {serialzed_call}")
+    table.current_handrecord.call_set.create(serialized=serialzed_call)
+    send_event(
+        channel=_auction_channel_for_table(table),
+        event_type="message",
+        data=f"It doesn't much matter but FYI {who_clicked} called {serialzed_call}",
+    )
     return HttpResponse()
 
 
