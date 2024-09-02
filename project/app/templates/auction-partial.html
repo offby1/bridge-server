@@ -1,0 +1,33 @@
+{% load partials %}
+{% load player_extras %}
+{% partialdef auction-partial %}
+<table class="table fs-4">
+  <th>
+    <tr>
+      <td>
+        <i>West</i>
+      </td>
+      <td>
+        <i>North</i>
+      </td>
+      <td>
+        <i>East</i>
+      </td>
+      <td>
+        <i>South</i>
+      </td>
+    </tr>
+  </th>
+  <tbody>
+    {% for row in table.current_auction.fancy_two_dimensional_display %}
+    <tr>
+      {% for call in row %}
+      <td>
+        {% if call is not None %}{{ call.serialize }}{% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endpartialdef auction-partial %}
