@@ -24,16 +24,16 @@ def table_list_view(request):
 
 
 def _bidding_box(table: Table) -> SafeString:
-    def buttonize(call: bridge.contract.Call, active=True):
-        call_post_endpoint = reverse("app:call-post", args=[table.pk])
+    call_post_endpoint = reverse("app:call-post", args=[table.pk])
 
+    def buttonize(call: bridge.contract.Call, active=True):
         # All one line for ease of unit testing
         return (
             """<button type="button" """
-            # + """hx-include="[css-selector-for-my-own-value]" """
+            + """hx-include="this" """
             + f"""hx-post="{call_post_endpoint}" """
             + """hx-swap="none" """
-            + f"""value="{call.serialize()}" """
+            + f"""name="call" value="{call.serialize()}" """
             + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
             + call.str_for_bidding_box()
             + """</button>\n"""
@@ -125,7 +125,9 @@ def auction_partial_view(request, table_pk):
 @logged_in_as_player_required()
 def call_post_view(request, table_pk):
     who_clicked = request.user.player
-    print(f"Looks like {who_clicked} did {request.POST=}")
+    serialzed_call = request.POST["call"]
+    call = bridge.contract.Bid.deserialize(serialzed_call)
+    print(f"Looks like {who_clicked} called {call}")
     return HttpResponse()
 
 
