@@ -13,6 +13,8 @@ from django.db import models
 from .utils import assert_type
 
 if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
     from . import Board, Player, Seat, Table  # noqa
 
 
@@ -21,6 +23,9 @@ class AuctionException(Exception):
 
 
 class HandRecord(models.Model):
+    if TYPE_CHECKING:
+        call_set = RelatedManager["Call"]()
+
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
         primary_key=True
@@ -32,7 +37,7 @@ class HandRecord(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
-    def add_call_from_player(self, *, player, call):
+    def add_call_from_player(self, *, player: libPlayer, call: libCall):
         assert_type(player, libPlayer)
         assert_type(call, libCall)
 
