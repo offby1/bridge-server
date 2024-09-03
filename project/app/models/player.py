@@ -49,6 +49,22 @@ class Player(models.Model):
     )
 
     @property
+    def libraryThing(self) -> bridge.table.Player:
+        try:
+            libHand = bridge.table.Hand(
+                cards=self.seat.table.current_board.cards_for_direction(self.seat.direction),
+            )
+        except KeyError as e:
+            print(f"Player.libraryThing caught {e=}")
+            raise PlayerException(f"{self} just might not be seated at {self.table}") from e
+
+        return bridge.table.Player(
+            seat=self.seat.libraryThing,
+            name=self.name,
+            hand=libHand,
+        )
+
+    @property
     def looking_for_partner(self):
         return self.partner is None
 

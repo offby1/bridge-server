@@ -28,7 +28,7 @@ class HandRecord(models.Model):
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     # The "where"
@@ -45,7 +45,7 @@ class HandRecord(models.Model):
         try:
             auction.raise_if_illegal_call(player=player, call=call)
         except Exception as e:
-            raise AuctionException from e
+            raise AuctionException(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
 
@@ -125,7 +125,7 @@ admin.site.register(HandRecord)
 
 class Call(models.Model):
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
@@ -150,7 +150,7 @@ admin.site.register(Call)
 
 class Play(models.Model):
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)

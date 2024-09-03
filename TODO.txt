@@ -1,7 +1,5 @@
 STILL TODO:
 
-* bob is able to call at someone else's table!!
-
 * reload or hide (as appropriate) the bidding box when we get the "someone just made a call" message.
 
 * If the above are true, but it's not request.user's turn to call, disable the bidding box visually somehow.
@@ -59,6 +57,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* bob is able to call at someone else's table!!
 
 * catch the "illegal call" thing somewhere and return it as an HttpResponseForbidden or similar
 

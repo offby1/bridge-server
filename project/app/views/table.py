@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 import bridge.auction
 import bridge.card
 import bridge.contract
-from app.models import Player, Table
+from app.models import Player, PlayerException, Table
+from app.models.utils import assert_type
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -14,6 +17,8 @@ from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
+
+logger = logging.getLogger(__name__)
 
 
 def table_list_view(request):
@@ -135,7 +140,9 @@ def bidding_box_partial_view(request, table_pk):
     context = _bidding_box_context_for_table(table)
 
     return TemplateResponse(
-        request, "bidding-box-partial.html#bidding-box-partial", context=context
+        request,
+        "bidding-box-partial.html#bidding-box-partial",
+        context=context,
     )
 
 
@@ -149,21 +156,34 @@ def auction_partial_view(request, table_pk):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request, table_pk):
+def call_post_view(request: HttpRequest, table_pk: str):
+    assert_type(request.user.player, Player)
+
+    try:
+        who_clicked = request.user.player.libraryThing  # type: ignore
+    except PlayerException as e:
+        print(f"Caught {e=}")
+        return HttpResponseForbidden(str(e))
+
     table = get_object_or_404(Table, pk=table_pk)
 
-    who_clicked = request.user.player
-    serialzed_call = request.POST["call"]
-    print(f"Looks like {who_clicked} called {serialzed_call}")
+    serialized_call: str = request.POST["call"]
+    libCall = bridge.contract.Bid.deserialize(serialized_call)
+    print(f"Looks like {who_clicked=} called {serialized_call=} ({libCall=})")
+    print(f"{table.players_by_direction=}")
     try:
-        table.current_handrecord.add_call_from_player(player=who_clicked, call=call)
+        table.current_handrecord.add_call_from_player(
+            player=who_clicked,
+            call=libCall,
+        )
     except Exception as e:
+        logger.exception(f"trying to add {serialized_call=} for {who_clicked=}")
         return HttpResponseForbidden(str(e))
 
     send_event(
         channel=_auction_channel_for_table(table),
         event_type="message",
-        data=f"It doesn't much matter but FYI {who_clicked} called {serialzed_call}",
+        data=f"It doesn't much matter but FYI {who_clicked} called {serialized_call}",
     )
     return HttpResponse()
 
