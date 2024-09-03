@@ -72,9 +72,9 @@ class HandRecord(models.Model):
         while True:
             s = next(seat_cycle)
 
+            # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
                 break
-        # The first call is made by dealer.
         return zip(itertools.count(1), seat_cycle, self.calls.all())
 
     @property
@@ -83,6 +83,7 @@ class HandRecord(models.Model):
         while True:
             s = next(seat_cycle)
 
+            # The first play is made by declarer.
             if s.lho() == self.declarer.seat:
                 break
 
@@ -122,6 +123,14 @@ class Call(models.Model):
 
     def save(self, *args, **kwargs):
         auction = self.hand.auction
+        # TODO -- check, not just that this is a legal call; but also that it's the current caller's turn (however we
+        # figure that out) I.e, we can puked for at least *two* reasons: Out Of order, and insufficient.  (There are
+        # probably also mistakes you can make with doubles, too)
+
+        # all that logic should be done in the library, not here
+
+        # if not auction.bidding_allowed: raise if [current
+        # player] != auction.allowed_caller: raise
         legal_calls = auction.legal_calls()  # ugh this seems expensive
         us = self.libraryThing
         if us not in legal_calls:
