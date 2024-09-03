@@ -156,7 +156,7 @@ def call_post_view(request, table_pk):
     serialzed_call = request.POST["call"]
     print(f"Looks like {who_clicked} called {serialzed_call}")
     try:
-        table.current_handrecord.call_set.create(serialized=serialzed_call)
+        table.current_handrecord.add_call_from_player(player=who_clicked, call=call)
     except Exception as e:
         return HttpResponseForbidden(str(e))
 

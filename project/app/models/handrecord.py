@@ -1,17 +1,19 @@
 import itertools
 from typing import TYPE_CHECKING
 
-from bridge.auction import Auction
+from bridge.auction import Auction as libAuction
 from bridge.card import Card as libCard
 from bridge.contract import Bid as libBid
+from bridge.contract import Call as libCall
 from bridge.seat import Seat as libSeat
+from bridge.table import Player as libPlayer
 from django.contrib import admin
 from django.db import models
 
 from .utils import assert_type
 
 if TYPE_CHECKING:
-    from . import Board, Seat, Table  # noqa
+    from . import Board, Player, Seat, Table  # noqa
 
 
 class AuctionException(Exception):
@@ -30,12 +32,24 @@ class HandRecord(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
+    def add_call_from_player(self, *, player, call):
+        assert_type(player, libPlayer)
+        assert_type(call, libCall)
+
+        auction = self.auction
+        try:
+            auction.raise_if_illegal_call(player=player, call=call)
+        except Exception as e:
+            raise AuctionException from e
+
+        self.call_set.create(serialized=call.serialize())
+
     @property
     def auction(self):
         dealer = libSeat(self.board.dealer)
 
         libTable = self.table.libraryThing()
-        rv = Auction(table=libTable, dealer=dealer)
+        rv = libAuction(table=libTable, dealer=dealer)
         for index, seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
@@ -48,6 +62,10 @@ class HandRecord(models.Model):
     @property
     def most_recent_call(self):
         return self.call_set.order_by("-id").first()
+
+    @property
+    def most_recent_annotated_call(self):
+        return self.annotated_calls[-1]  # TODO -- maybe inefficient?
 
     @property
     def most_recent_bid(self):
@@ -120,22 +138,6 @@ class Call(models.Model):
 
     def __str__(self):
         return str(self.libraryThing)
-
-    def save(self, *args, **kwargs):
-        auction = self.hand.auction
-        # TODO -- check, not just that this is a legal call; but also that it's the current caller's turn (however we
-        # figure that out) I.e, we can puked for at least *two* reasons: Out Of order, and insufficient.  (There are
-        # probably also mistakes you can make with doubles, too)
-
-        # all that logic should be done in the library, not here
-
-        # if not auction.bidding_allowed: raise if [current
-        # player] != auction.allowed_caller: raise
-        legal_calls = auction.legal_calls()  # ugh this seems expensive
-        us = self.libraryThing
-        if us not in legal_calls:
-            raise AuctionException(f"{us} is not a legal call")
-        return super().save(*args, **kwargs)
 
 
 admin.site.register(Call)
