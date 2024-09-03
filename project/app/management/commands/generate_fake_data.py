@@ -41,6 +41,7 @@ class Command(BaseCommand):
             h.call_set.create(serialized=c)
 
     def handle(self, *args, **options):
+        random.seed(0)  # TODO -- remove me when I'm done debugging
         fake = Faker()
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
