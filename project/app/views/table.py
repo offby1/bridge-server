@@ -110,6 +110,16 @@ def _auction_context_for_table(table):
     }
 
 
+def _bidding_box_context_for_table(table):
+    return {
+        "bidding_box_buttons": bidding_box_buttons(
+            auction=table.current_auction,
+            call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+        ),
+        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
+    }
+
+
 @logged_in_as_player_required()
 def bidding_box_partial_view(request, table_pk):
     table = get_object_or_404(Table, pk=table_pk)
@@ -122,12 +132,8 @@ def bidding_box_partial_view(request, table_pk):
     if not seat or seat.table != table:
         return HttpResponse("No bidding box 'cuz it ain't your turn to bid")
 
-    context = {
-        "bidding_box_buttons": bidding_box_buttons(
-            auction=table.current_auction,
-            call_post_endpoint=reverse("app:call-post", args=[table_pk]),
-        ),
-    }
+    context = _bidding_box_context_for_table(table)
+
     return TemplateResponse(
         request, "bidding-box-partial.html#bidding-box-partial", context=context
     )
@@ -187,12 +193,7 @@ def table_detail_view(request, pk):
             "table": table,
         }
         | _auction_context_for_table(table)
-        | {
-            "bidding_box_buttons": bidding_box_buttons(
-                auction=table.current_auction,
-                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-            )
-        }
+        | _bidding_box_context_for_table(table)
     )
 
     return TemplateResponse(request, "table_detail.html", context=context)
