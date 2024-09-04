@@ -16,10 +16,11 @@ class Command(BaseCommand):
     def run_forever(self):
         while True:
             messages = SSEClient(
-                "http://localhost:8000/events/partnerships/",
+                "http://localhost:8000/events/table/1/",
             )
             for msg in messages:
-                self.stdout.write(f"Ooh ooh Mr Kotter {vars(msg)=}")
+                if msg.event != "keep-alive":
+                    self.stdout.write(f"Ooh ooh Mr Kotter {vars(msg)=}")
 
     def handle(self, *args, **options):
         try:
