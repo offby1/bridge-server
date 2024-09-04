@@ -126,12 +126,24 @@ def _auction_context_for_table(table):
     }
 
 
-def _bidding_box_context_for_table(table):
+def _bidding_box_context_for_table(request, table):
+    buttons = bidding_box_buttons(
+        auction=table.current_auction,
+        call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+    )
+    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
+        buttons = "No bidding box 'cuz the auction is over"
+    else:
+        player = request.user.player  # type: ignore
+        seat = getattr(player, "seat", None)
+
+        if not seat or seat.table != table:
+            buttons = "No bidding box 'cuz you are not at this table"
+        elif player.name != table.current_auction.allowed_caller().name:
+            buttons = "No bidding box 'cuz it's not your turn to call"
+
     return {
-        "bidding_box_buttons": bidding_box_buttons(
-            auction=table.current_auction,
-            call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-        ),
+        "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
     }
 
@@ -140,15 +152,7 @@ def _bidding_box_context_for_table(table):
 def bidding_box_partial_view(request, table_pk):
     table = get_object_or_404(Table, pk=table_pk)
 
-    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
-        return HttpResponse("No bidding box 'cuz the auction is over")
-
-    player = request.user.player  # type: ignore
-    seat = getattr(player, "seat", None)
-    if not seat or seat.table != table:
-        return HttpResponse("No bidding box 'cuz it ain't your turn to bid")
-
-    context = _bidding_box_context_for_table(table)
+    context = _bidding_box_context_for_table(request, table)
 
     return TemplateResponse(
         request,
@@ -221,7 +225,7 @@ def table_detail_view(request, pk):
             "table": table,
         }
         | _auction_context_for_table(table)
-        | _bidding_box_context_for_table(table)
+        | _bidding_box_context_for_table(request, table)
     )
 
     return TemplateResponse(request, "table_detail.html", context=context)
