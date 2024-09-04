@@ -1,5 +1,20 @@
 STILL TODO:
 
+* Occasionally some page will take ages to load.  Like, right now http://localhost:8000/players/?lookin_for_love=True took 34 seconds.
+
+  There are only 17 players.
+
+  Nothing of interest in the stdout or stderr of daphne.
+
+  I didn't think to look in the Django debug toolbar for timing info.
+
+  <https://developer.chrome.com/docs/devtools/network/reference/#timing-explanation> says
+  > Queueing. The browser queues requests before connection start and when:
+  >    There are higher priority requests.
+  >    There are already six TCP connections open for this origin, which is the limit. Applies to HTTP/1.0 and HTTP/1.1 only.
+
+  I wonder if that's pertinent.  The browser is indeed using HTTP/1.1 (as revealed by opening the developer tools, clicking the "Network" tab, right-clicking any column, and selecting Protocol from the menu)
+
 * If the above are true, but it's not request.user's turn to call, disable the bidding box visually somehow.
 
 * The auction history is one call per line, but I think newspapers used to display it with four columns -- one for each seat.  I think.
@@ -12,16 +27,6 @@ STILL TODO:
   e.g player_detail_view sends "splitsville" in response to a player clicking the button, but surely only (at most) four players need to know about this *instantly*; other people can reload the page to find out who's partnered with whom.
 
   Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
-
-* Occasionally some page will take ages to load.  Like, right now http://localhost:8000/players/?lookin_for_love=True took 34 seconds.
-
-  There are only 17 players.
-
-  Nothing of interest in the stdout or stderr of daphne.
-
-  I didn't think to look in the Django debug toolbar for timing info.
-
-  I guess the first step is to read up on Daphne and see how I can control the log level and format.
 
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
 
