@@ -161,7 +161,7 @@ def bidding_box_partial_view(request, table_pk):
 def auction_partial_view(request, table_pk):
     table = get_object_or_404(Table, pk=table_pk)
     context = _auction_context_for_table(table)
-    print(f"{request=} {table_pk=} {context=}")
+
     return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
 
 
@@ -173,22 +173,19 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     try:
         who_clicked = request.user.player.libraryThing  # type: ignore
     except PlayerException as e:
-        print(f"Caught {e=}")
         return HttpResponseForbidden(str(e))
 
     table = get_object_or_404(Table, pk=table_pk)
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
-    print(f"Looks like {who_clicked=} called {serialized_call=} ({libCall=})")
-    print(f"{table.players_by_direction=}")
+
     try:
         table.current_handrecord.add_call_from_player(
             player=who_clicked,
             call=libCall,
         )
     except Exception as e:
-        logger.exception(f"trying to add {serialized_call=} for {who_clicked=}")
         return HttpResponseForbidden(str(e))
 
     send_event(

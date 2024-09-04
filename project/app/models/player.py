@@ -57,7 +57,6 @@ class Player(models.Model):
                 cards=self.seat.table.current_board.cards_for_direction(self.seat.direction),
             )
         except KeyError as e:
-            print(f"Player.libraryThing caught {e=}")
             raise PlayerException(f"{self} just might not be seated at {self.table}") from e
 
         return bridge.table.Player(
