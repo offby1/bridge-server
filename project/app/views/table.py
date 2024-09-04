@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
 import bridge.auction
 import bridge.card
 import bridge.contract
 from app.models import Player, PlayerException, Table
 from app.models.utils import assert_type
+from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -19,6 +21,15 @@ from django_eventstream import send_event  # type: ignore
 from .misc import logged_in_as_player_required
 
 logger = logging.getLogger(__name__)
+
+
+class UserMitPlaya(User):
+    player: Optional[Player]
+
+
+# See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
+class AuthedHttpRequest(HttpRequest):
+    user: UserMitPlaya  # type: ignore [assignment]
 
 
 def table_list_view(request):
@@ -156,7 +167,7 @@ def auction_partial_view(request, table_pk):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: HttpRequest, table_pk: str):
+def call_post_view(request: AuthedHttpRequest, table_pk: str):
     assert_type(request.user.player, Player)
 
     try:

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import bridge.table
 from django.contrib import admin, auth
@@ -31,6 +32,7 @@ class PartnerException(PlayerException):
 
 
 class Player(models.Model):
+    seat: Any
     objects = PlayerManager()
 
     user = models.OneToOneField(
