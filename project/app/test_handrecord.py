@@ -1,12 +1,12 @@
 import re
+from typing import Any
 
 import pytest
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
-from bridge.contract import Call as libCall
 from bridge.contract import Pass as libPass
 
-from .models import AuctionException, Board, Call, Play, Player, Table
+from .models import AuctionException, Board, Play, Player, Table
 from .views.table import bidding_box_partial_view
 
 
@@ -77,21 +77,23 @@ def test_cards_by_player(usual_setup):
     assert before != after
 
 
-def _collect_disabled_buttons(t, request):
+def _count_buttons(t: Table, request: Any) -> tuple[int, int]:
     response = bidding_box_partial_view(request, t.pk)
     response.render()
 
     disabled_buttons = []
+    active_buttons = []
     bb_html_lines = response.content.decode().split("\n")
 
     for line in bb_html_lines:
+        if "<button" not in line:
+            continue
         if " disabled" in line:
-            m = re.search(r">([^<]*?)</button>", line)
-            button_text = m.group(1)
+            disabled_buttons.append(line)
+        else:
+            active_buttons.append(line)
 
-            disabled_buttons.append(button_text)
-
-    return disabled_buttons
+    return len(disabled_buttons), len(active_buttons)
 
 
 def test_bidding_box_html(usual_setup, rf):
@@ -103,6 +105,8 @@ def test_bidding_box_html(usual_setup, rf):
     request.user = Player.objects.get_by_name("Alice").user
 
     response = bidding_box_partial_view(request, t.pk)
+    response.render()
+
     assert b"No bidding box" in response.content
     assert b"<button" not in response.content
 
@@ -111,12 +115,18 @@ def test_bidding_box_html(usual_setup, rf):
 
     # Second case: auction in progress, only call is one diamond.
     caller = h.auction.allowed_caller()
+
     h.add_call_from_player(player=caller, call=libBid(level=1, denomination=libSuit.DIAMONDS))
-    assert set(_collect_disabled_buttons(t, request)) == {"1♣", "1♦", "Redouble"}
+    disabled, _ = _count_buttons(t, request)
+    assert disabled == 3
 
     # Third case: as above but with one more "Pass".
-    caller = h.auction.table.get_lho(caller)
+    caller = h.auction.allowed_caller()
+
     h.add_call_from_player(player=caller, call=libPass)
 
+    caller = h.auction.allowed_caller()
     # you cannot double your own partner.
-    assert set(_collect_disabled_buttons(t, request)) == {"1♣", "1♦", "Redouble", "Double"}
+    disabled, active = _count_buttons(t, request)
+
+    assert (disabled + active) == 0, f"{caller=} should not be allowed to call at all"

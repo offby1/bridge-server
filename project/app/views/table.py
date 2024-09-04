@@ -149,7 +149,7 @@ def _bidding_box_context_for_table(request, table):
 
 
 @logged_in_as_player_required()
-def bidding_box_partial_view(request, table_pk):
+def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateResponse:
     table = get_object_or_404(Table, pk=table_pk)
 
     context = _bidding_box_context_for_table(request, table)
