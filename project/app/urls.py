@@ -6,6 +6,7 @@ app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
+    path("call/<table_pk>/", table.call_post_view, name="call-post"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("player/<pk>/", player.player_detail_view, name="player"),
     path("player/<pk>/partnership/", player.partnership_view, name="player_partnership"),
@@ -19,5 +20,9 @@ urlpatterns = [
     path("signup/", signup_view, name="signup"),
     path("table/", table.table_list_view, name="table"),
     path("table/<pk>", table.table_detail_view, name="table-detail"),
+    path("table/<table_pk>/auction", table.auction_partial_view, name="auction-partial"),
+    path(
+        "table/<table_pk>/bidding-box", table.bidding_box_partial_view, name="bidding-box-partial"
+    ),
     path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]

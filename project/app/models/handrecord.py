@@ -1,24 +1,34 @@
 import itertools
 from typing import TYPE_CHECKING
 
-from bridge.auction import Auction
+from bridge.auction import Auction as libAuction
 from bridge.card import Card as libCard
 from bridge.contract import Bid as libBid
+from bridge.contract import Call as libCall
 from bridge.seat import Seat as libSeat
+from bridge.table import Player as libPlayer
 from django.contrib import admin
 from django.db import models
-from django.utils.functional import cached_property
 
 from .utils import assert_type
 
 if TYPE_CHECKING:
-    from . import Board, Seat, Table  # noqa
+    from django.db.models.manager import RelatedManager
+
+    from . import Board, Player, Seat, Table  # noqa
+
+
+class AuctionException(Exception):
+    pass
 
 
 class HandRecord(models.Model):
+    if TYPE_CHECKING:
+        call_set = RelatedManager["Call"]()
+
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     # The "where"
@@ -27,12 +37,24 @@ class HandRecord(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
-    @cached_property
+    def add_call_from_player(self, *, player: libPlayer, call: libCall):
+        assert_type(player, libPlayer)
+        assert_type(call, libCall)
+
+        auction = self.auction
+        try:
+            auction.raise_if_illegal_call(player=player, call=call)
+        except Exception as e:
+            raise AuctionException(str(e)) from e
+
+        self.call_set.create(serialized=call.serialize())
+
+    @property
     def auction(self):
         dealer = libSeat(self.board.dealer)
 
         libTable = self.table.libraryThing()
-        rv = Auction(table=libTable, dealer=dealer)
+        rv = libAuction(table=libTable, dealer=dealer)
         for index, seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
@@ -45,6 +67,10 @@ class HandRecord(models.Model):
     @property
     def most_recent_call(self):
         return self.call_set.order_by("-id").first()
+
+    @property
+    def most_recent_annotated_call(self):
+        return self.annotated_calls[-1]  # TODO -- maybe inefficient?
 
     @property
     def most_recent_bid(self):
@@ -69,9 +95,9 @@ class HandRecord(models.Model):
         while True:
             s = next(seat_cycle)
 
+            # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
                 break
-        # The first call is made by dealer.
         return zip(itertools.count(1), seat_cycle, self.calls.all())
 
     @property
@@ -80,6 +106,7 @@ class HandRecord(models.Model):
         while True:
             s = next(seat_cycle)
 
+            # The first play is made by declarer.
             if s.lho() == self.declarer.seat:
                 break
 
@@ -98,7 +125,7 @@ admin.site.register(HandRecord)
 
 class Call(models.Model):
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
@@ -123,7 +150,7 @@ admin.site.register(Call)
 
 class Play(models.Model):
     id = models.BigAutoField(
-        primary_key=True
+        primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)

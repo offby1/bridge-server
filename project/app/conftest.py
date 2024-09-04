@@ -8,10 +8,10 @@ from .models import Player, Table
 @pytest.fixture
 def usual_setup(db):
     directions_by_player_name = {
-        "Bob": bridge.seat.Seat.NORTH,
-        "Carol": bridge.seat.Seat.EAST,
-        "Ted": bridge.seat.Seat.SOUTH,
-        "Alice": bridge.seat.Seat.WEST,
+        "Ted": bridge.seat.Seat.NORTH,
+        "Alice": bridge.seat.Seat.EAST,
+        "Bob": bridge.seat.Seat.SOUTH,
+        "Carol": bridge.seat.Seat.WEST,
     }
 
     for name in directions_by_player_name:

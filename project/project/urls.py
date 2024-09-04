@@ -17,6 +17,10 @@ urlpatterns = [
         include(django_eventstream.urls),
     ),
     path(
+        "events/table/<channel>/",  # "channel" is an integer -- the table's primary key
+        include(django_eventstream.urls),
+    ),
+    path(
         # public.  Messages are like {"joined": [16, 17], "split": []} or {"split": [16, 17], "joined": []}
         "events/partnerships/",
         include(django_eventstream.urls),

@@ -1,18 +1,35 @@
 from __future__ import annotations
 
+import logging
+from typing import Optional
+
 import bridge.auction
 import bridge.card
 import bridge.contract
-from app.models import Player, Table
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from app.models import Player, PlayerException, Table
+from app.models.utils import assert_type
+from django.contrib.auth.models import User
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
+from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
+
+logger = logging.getLogger(__name__)
+
+
+class UserMitPlaya(User):
+    player: Optional[Player]
+
+
+# See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
+class AuthedHttpRequest(HttpRequest):
+    user: UserMitPlaya  # type: ignore [assignment]
 
 
 def table_list_view(request):
@@ -23,20 +40,23 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def _bidding_box(table: Table) -> SafeString:
-    def buttonize(call, active=True):
+def bidding_box_buttons(*, auction: bridge.auction.Auction, call_post_endpoint: str) -> SafeString:
+    assert isinstance(auction, bridge.auction.Auction)
+
+    legal_calls = auction.legal_calls()
+
+    def buttonize(call: bridge.contract.Call, active=True):
         # All one line for ease of unit testing
         return (
             """<button type="button" """
+            + """hx-include="this" """
+            + f"""hx-post="{call_post_endpoint}" """
+            + """hx-swap="none" """
+            + f"""name="call" value="{call.serialize()}" """
             + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
             + call.str_for_bidding_box()
             + """</button>\n"""
         )
-
-    auction = table.current_auction
-    assert isinstance(auction, bridge.auction.Auction)
-
-    legal_calls = auction.legal_calls()
 
     rows = []
     bids_by_level = [
@@ -68,12 +88,7 @@ def _bidding_box(table: Table) -> SafeString:
         top_button_group += buttonize(call, active)
     top_button_group += "</div>"
 
-    return format_html(f"""
-    <div style="font-family: monospace;">
-    {top_button_group}
-    <br/>
-    {"\n".join(rows)}
-    </div>""")
+    return format_html(f"""{top_button_group} <br/> {"\n".join(rows)}""")
 
 
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
@@ -99,6 +114,92 @@ def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     return SafeString("<br>" + "\n".join(row_divs))
 
 
+def _auction_channel_for_table(table):
+    return str(table.pk)
+
+
+def _auction_context_for_table(table):
+    return {
+        "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
+        "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
+        "table": table,
+    }
+
+
+def _bidding_box_context_for_table(request, table):
+    buttons = bidding_box_buttons(
+        auction=table.current_auction,
+        call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+    )
+    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
+        buttons = "No bidding box 'cuz the auction is over"
+    else:
+        player = request.user.player  # type: ignore
+        seat = getattr(player, "seat", None)
+
+        if not seat or seat.table != table:
+            buttons = "No bidding box 'cuz you are not at this table"
+        elif player.name != table.current_auction.allowed_caller().name:
+            buttons = "No bidding box 'cuz it's not your turn to call"
+
+    return {
+        "bidding_box_buttons": buttons,
+        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
+    }
+
+
+@logged_in_as_player_required()
+def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateResponse:
+    table = get_object_or_404(Table, pk=table_pk)
+
+    context = _bidding_box_context_for_table(request, table)
+
+    return TemplateResponse(
+        request,
+        "bidding-box-partial.html#bidding-box-partial",
+        context=context,
+    )
+
+
+@logged_in_as_player_required()
+def auction_partial_view(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+    context = _auction_context_for_table(table)
+
+    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def call_post_view(request: AuthedHttpRequest, table_pk: str):
+    assert_type(request.user.player, Player)
+
+    try:
+        who_clicked = request.user.player.libraryThing  # type: ignore
+    except PlayerException as e:
+        return HttpResponseForbidden(str(e))
+
+    table = get_object_or_404(Table, pk=table_pk)
+
+    serialized_call: str = request.POST["call"]
+    libCall = bridge.contract.Bid.deserialize(serialized_call)
+
+    try:
+        table.current_handrecord.add_call_from_player(
+            player=who_clicked,
+            call=libCall,
+        )
+    except Exception as e:
+        return HttpResponseForbidden(str(e))
+
+    send_event(
+        channel=_auction_channel_for_table(table),
+        event_type="message",
+        data=f"It doesn't much matter but FYI {who_clicked} called {serialized_call}",
+    )
+    return HttpResponse()
+
+
 @logged_in_as_player_required()
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
@@ -118,19 +219,14 @@ def table_detail_view(request, pk):
             "cards": dem_cards_baby,
         }
 
-    bidding_box = ""
-
-    if table.current_handrecord.auction.status == bridge.auction.Auction.Incomplete:
-        player = request.user.player
-        seat = getattr(player, "seat", None)
-        if seat and seat.table == table:
-            bidding_box = _bidding_box(table)
-
-    context = {
-        "bidding_box": bidding_box,
-        "card_display": cards_by_direction_display,
-        "table": table,
-    }
+    context = (
+        {
+            "card_display": cards_by_direction_display,
+            "table": table,
+        }
+        | _auction_context_for_table(table)
+        | _bidding_box_context_for_table(request, table)
+    )
 
     return TemplateResponse(request, "table_detail.html", context=context)
 

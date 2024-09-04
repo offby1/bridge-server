@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import bridge.table
 from django.contrib import admin, auth
@@ -31,6 +32,7 @@ class PartnerException(PlayerException):
 
 
 class Player(models.Model):
+    seat: Any
     objects = PlayerManager()
 
     user = models.OneToOneField(
@@ -47,6 +49,21 @@ class Player(models.Model):
         content_type_field="recipient_content_type",
         object_id_field="recipient_object_id",
     )
+
+    @property
+    def libraryThing(self) -> bridge.table.Player:
+        try:
+            libHand = bridge.table.Hand(
+                cards=self.seat.table.current_board.cards_for_direction(self.seat.direction),
+            )
+        except KeyError as e:
+            raise PlayerException(f"{self} just might not be seated at {self.table}") from e
+
+        return bridge.table.Player(
+            seat=self.seat.libraryThing,
+            name=self.name,
+            hand=libHand,
+        )
 
     @property
     def looking_for_partner(self):

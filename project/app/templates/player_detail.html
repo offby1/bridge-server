@@ -42,16 +42,15 @@ es.addEventListener('message', function (e) {
     var watchedPKs = new Set();
     var partnershipStatusDataset = document.querySelector("#partnership-status").dataset;
 
-    if ("player" in partnershipStatusDataset) {
-       watchedPKs.add(partnershipStatusDataset.player);
-    }
+    watchedPKs.add(partnershipStatusDataset.player);
+
     if ("player-partner" in partnershipStatusDataset) {
         // camelCase: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset#name_conversion
        watchedPKs.add(partnershipStatusDataset.playerPartner);
     }
-    if ("subject" in partnershipStatusDataset) {
-       watchedPKs.add(partnershipStatusDataset.subject);
-    }
+
+    watchedPKs.add(partnershipStatusDataset.subject);
+
     if ("subject-partner" in partnershipStatusDataset) {
        watchedPKs.add(partnershipStatusDataset.subjectPartner);
     }

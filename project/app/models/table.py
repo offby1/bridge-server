@@ -8,7 +8,6 @@ from bridge.table import Player as libraryPlayer
 from bridge.table import Table as libraryTable
 from django.contrib import admin
 from django.db import models, transaction
-from django.db.models import Manager
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -62,7 +61,7 @@ class TableManager(models.Manager):
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
 class Table(models.Model):
-    seat_set: Manager[Seat]
+    seat_set: models.Manager[Seat]
 
     objects = TableManager()
 
@@ -72,7 +71,7 @@ class Table(models.Model):
             name = seat.player.name
             hand = self.current_handrecord.board.cards_for_direction(seat.direction)
             players.append(
-                libraryPlayer(seat=seat.libraryThing, name=name, hand=libraryHand(cards=hand))
+                libraryPlayer(seat=seat.libraryThing, name=name, hand=libraryHand(cards=hand)),
             )
         return libraryTable(players=players)
 

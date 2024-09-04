@@ -2,41 +2,12 @@
 {% block content %}
     <div>
         {{ table.current_handrecord.board }}.
-        <table class="table fs-4">
-            <th>
-                <tr>
-                    <td>
-                        <i>West</i>
-                    </td>
-                    <td>
-                        <i>North</i>
-                    </td>
-                    <td>
-                        <i>East</i>
-                    </td>
-                    <td>
-                        <i>South</i>
-                    </td>
-                </tr>
-            </th>
-            <tbody>
-                {% for row in table.current_auction.fancy_two_dimensional_display %}
-                    <tr>
-                        {% for call in row %}
-                            <td>
-                                {% if call is not None %}{{ call.serialize }}{% endif %}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
+        {% include 'auction-partial.html#auction-partial' %}
         <div>
         {{ table.current_auction.status }}
         </div>
 
-        {{ bidding_box }}
+        Any bidding box goes here -->{% include 'bidding-box-partial.html#bidding-box-partial' %}<----
 
         <div>
             <ul>
@@ -44,9 +15,7 @@
             </ul>
         </div>
     </div>
-    {# Here I've got North at the top, but maybe it should be #}
-    {# Declarer at the bottom; or        #}
-    {# request.user.player at the bottom #}
+    {# North at the top as per the Bridge Writing Style Guide #}
     <div class="fs-1" style="border: 1px solid;">
         <div class="row">
             <div class="col"></div>
@@ -65,3 +34,7 @@
         </div>
     </div>
 {% endblock content %}
+{% block scripts %}
+{% include 'auction-partial.html#auction-scripts' %}
+{% include 'bidding-box-partial.html#bidding-box-scripts' %}
+{% endblock scripts %}
