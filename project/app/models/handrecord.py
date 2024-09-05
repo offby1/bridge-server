@@ -108,7 +108,12 @@ class HandRecord(models.Model):
             # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
                 break
-        return zip(itertools.count(1), seat_cycle, self.calls.all())
+        return zip(
+            itertools.count(1),
+            seat_cycle,
+            # TODO -- might be nice to explicitly order these
+            self.calls.all(),
+        )
 
     @property
     def annotated_plays(self):
