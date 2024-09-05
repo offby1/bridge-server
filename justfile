@@ -58,14 +58,11 @@ daphne: test django-superuser migrate
     cd project
     tput rmam
     trap "tput smam" EXIT
-    private_key="$HOME/Library/Application Support/info.offby1.bridge/erics-work-macbook-pro.tail571dc2.ts.net.key"
-           cert="$HOME/Library/Application Support/info.offby1.bridge/erics-work-macbook-pro.tail571dc2.ts.net.crt"
     poetry run daphne                                                               \
       --verbosity                                                                   \
       2                                                                             \
       --bind                                                                        \
       0.0.0.0                                                                       \
-      -e ssl:443:privateKey="${private_key}":certKey="${cert}"                      \
       --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
       project.asgi:application
 
