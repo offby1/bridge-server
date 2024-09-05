@@ -21,6 +21,14 @@ class Seat(models.Model):
     player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
+    @property
+    def jsonable(self):
+        return {
+            "direction": self.direction,
+            "player": self.player.pk,
+            "table": self.table.pk,
+        }
+
     def others_at_table(self):
         return self.table.seat_set.exclude(direction=self.direction)
 

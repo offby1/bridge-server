@@ -71,6 +71,10 @@ daphne: test django-superuser migrate
 [group('bs')]
 pop: django-superuser migrate (manage "generate_fake_data --players=56")
 
+# Run the little bids-and-plays bot
+[group('bs')]
+bot: migrate (manage "bot")
+
 [group('django')]
 [private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")

@@ -189,6 +189,7 @@ def auction_partial_view(request, table_pk):
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, table_pk: str):
     assert_type(request.user.player, Player)
+    assert request.user is not None and request.user.player is not None  # for mypy
 
     try:
         who_clicked = request.user.player.libraryThing  # type: ignore
@@ -272,4 +273,3 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     t = Table.objects.create_with_two_partnerships(p1, p2)
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
-    # TODO -- send one of those groovy Server Sent Events

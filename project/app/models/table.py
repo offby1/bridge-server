@@ -1,5 +1,5 @@
+import logging
 import random
-from typing import TYPE_CHECKING
 
 from bridge.card import Card
 from bridge.contract import Contract
@@ -11,12 +11,15 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
+from django_eventstream import send_event  # type: ignore
 
 from . import SEAT_CHOICES
 from .board import Board
 from .handrecord import HandRecord
 from .seat import Seat
 from .utils import assert_type
+
+logger = logging.getLogger(__name__)
 
 
 class TableException(Exception):
@@ -55,6 +58,17 @@ class TableManager(models.Manager):
         )
 
         HandRecord.objects.create(board=b, table=t)
+
+        send_event(
+            channel="all-tables",
+            event_type="message",
+            data={
+                "table": t.pk,
+                "seats": [s.jsonable for s in t.seat_set.all()],
+                "action": "just formed",
+            },
+        )
+
         return t
 
 
