@@ -18,11 +18,15 @@ def is_requests_error(exception):
 
 class Command(BaseCommand):
     def dispatch(self, data: dict[str, typing.Any]) -> None:
-        # TODO -- somehow ignore events that result from actions that *we* just took :-) Lest we loop endlessly.
+        # TODO: don't impersonate a player if they are an actual human, trying to use this site!
         action = data.get("action")
         table = data.get("table")
 
-        table = Table.objects.get(pk=table)
+        try:
+            table = Table.objects.get(pk=table)
+        except Table.DoesNotExist:
+            return
+
         handrecord = table.current_handrecord
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
