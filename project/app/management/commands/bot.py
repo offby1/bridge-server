@@ -31,6 +31,7 @@ class Command(BaseCommand):
                 player_to_impersonate = player_to_impersonate.libraryThing
                 a = table.current_auction
                 call = a.legal_calls()[0]  # great bidding strategy, that
+                time.sleep(1)
                 handrecord.add_call_from_player(player=player_to_impersonate, call=call)
                 self.stdout.write(
                     f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",

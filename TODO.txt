@@ -1,5 +1,7 @@
 STILL TODO:
 
+* In the table list, include the auction status, or play status, as appropriate.
+
 * paginate the table list
   <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example
   or maybe just use datatables

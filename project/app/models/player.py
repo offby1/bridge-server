@@ -15,6 +15,10 @@ from .seat import Seat
 logger = logging.getLogger(__name__)
 
 
+JOIN = "partnerup"
+SPLIT = "splitsville"
+
+
 class PlayerManager(models.Manager):
     def get_from_user(self, user):
         return self.get(user=user)
@@ -69,6 +73,32 @@ class Player(models.Model):
     def looking_for_partner(self):
         return self.partner is None
 
+    def _send_partnershipt_messages(self, *, action, old_partner_pk=None):
+        if action == JOIN:
+            send_event(
+                *Message.create_lobby_event_args(
+                    from_player=self,
+                    message=f"Partnered with {self.partner.name}",
+                ),
+            )
+
+        # We always send two arrays, even though one is empty.  That's because I'm too stupid a JS programmer to deal
+        # with missing attributes.
+        data = {"split": [], "joined": []}
+
+        if action == SPLIT:
+            data["split"] = [old_partner_pk, self.pk]
+        else:
+            data["joined"] = [self.partner.pk, self.pk]
+
+        channel = "partnerships"
+
+        send_event(
+            channel=channel,
+            event_type="message",
+            data=data,
+        )
+
     def partner_with(self, other):
         with transaction.atomic():
             if self.partner not in (None, other):
@@ -85,13 +115,7 @@ class Player(models.Model):
 
             self.save()
             other.save()
-
-        send_event(
-            *Message.create_lobby_event_args(
-                from_player=self,
-                message=f"Partnered with {self.partner.name}",
-            ),
-        )
+            self._send_partnershipt_messages(action=JOIN)
 
     def break_partnership(self):
         with transaction.atomic():
@@ -107,18 +131,14 @@ class Player(models.Model):
 
             table = self.table
 
+            old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
             Seat.objects.filter(player__in={self, self.partner}).update(player=None)
 
             if table is not None:
                 table.delete()
 
-        send_event(
-            *Message.create_lobby_event_args(
-                from_player=self,
-                message=f"Splitsville with {self.partner.name}",
-            ),
-        )
+        self._send_partnershipt_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
     def table(self):

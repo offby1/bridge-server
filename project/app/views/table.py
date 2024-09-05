@@ -15,7 +15,6 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
 
@@ -209,12 +208,6 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     except Exception as e:
         return HttpResponseForbidden(str(e))
 
-    for channel in (_auction_channel_for_table(table), "all-tables"):
-        send_event(
-            channel=channel,
-            event_type="message",
-            data={"table": table.pk, "player": request.user.player.pk, "call": serialized_call},
-        )
     return HttpResponse()
 
 

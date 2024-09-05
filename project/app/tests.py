@@ -293,7 +293,9 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     def mock_send_event(*args, **kwargs):
         send_event_kwargs_log.append(kwargs)
 
-    monkeypatch.setattr(player, "send_event", mock_send_event)
+    import app.models.player
+
+    monkeypatch.setattr(app.models.player, "send_event", mock_send_event)
     response = player.player_detail_view(request, Bob.pk)
 
     assert len(send_event_kwargs_log) == 1

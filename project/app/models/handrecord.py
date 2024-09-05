@@ -9,6 +9,7 @@ from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 from django.contrib import admin
 from django.db import models
+from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
 
@@ -48,6 +49,17 @@ class HandRecord(models.Model):
             raise AuctionException(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
+
+        from app.models import Player
+
+        modelPlayer = Player.objects.get_by_name(player.name)
+        # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
+        for channel in (str(self.table.pk), "all-tables"):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
+            )
 
     @property
     def auction(self):

@@ -1,4 +1,5 @@
 from app.models import Message, PartnerException, Player
+from app.models.player import JOIN, SPLIT
 from django.contrib import messages as django_web_messages
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
@@ -10,9 +11,6 @@ from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
-
-JOIN = "partnerup"
-SPLIT = "splitsville"
 
 
 def player_detail_endpoint(player):
@@ -131,11 +129,8 @@ def player_detail_view(request, pk):
     if request.method == "POST":
         action = request.POST.get("action")
 
-        old_partner = None
         try:
             if action == SPLIT:
-                old_partner = who_clicked.partner
-
                 who_clicked.break_partnership()
             elif action == JOIN:
                 who_clicked.partner_with(subject)
@@ -149,22 +144,6 @@ def player_detail_view(request, pk):
             )
             return HttpResponseForbidden(str(e))
 
-        # We always send two arrays, even though one is empty.  That's because I'm too stupid a JS programmer to deal
-        # with missing attributes.
-        data = {"split": [], "joined": []}
-
-        if action == SPLIT:
-            data["split"] = [old_partner.pk, who_clicked.pk]
-        else:
-            data["joined"] = [subject.pk, who_clicked.pk]
-
-        channel = "partnerships"
-
-        send_event(
-            channel=channel,
-            event_type="message",
-            data=data,
-        )
         return HttpResponse()
 
     return TemplateResponse(
