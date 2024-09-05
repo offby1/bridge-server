@@ -36,7 +36,9 @@ def test_all_seated_players_have_partners(usual_setup):
         p.save()
 
 
-def test_splitsville_ejects_us_from_table(usual_setup):
+def test_splitsville_ejects_everyone_from_table(usual_setup):
+    table_count_before = Table.objects.count()
+
     Bob = Player.objects.get_by_name("Bob")
     Ted = Player.objects.get_by_name("Ted")
 
@@ -56,6 +58,13 @@ def test_splitsville_ejects_us_from_table(usual_setup):
     assert Bob.table is None
     assert Ted.table is None
 
+    assert Table.objects.count() == table_count_before - 1
+
+    Carol = Player.objects.get_by_name("Carol")
+    Alice = Player.objects.get_by_name("Alice")
+    assert Carol.table is None
+    assert Alice.table is None
+
 
 def test_both_table_partnerships_splitting_removes_table(usual_setup):
     assert Table.objects.count() == 1
@@ -64,7 +73,7 @@ def test_both_table_partnerships_splitting_removes_table(usual_setup):
     Carol = Player.objects.get_by_name("Carol")
 
     Bob.break_partnership()
-    assert Table.objects.count() == 1
+    assert Table.objects.count() == 0
 
     Carol.break_partnership()
     assert Table.objects.count() == 0

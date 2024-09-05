@@ -111,7 +111,7 @@ class Player(models.Model):
             Seat.objects.filter(player__in={self, self.partner}).update(player=None)
 
             if table is not None:
-                table.go_away_if_empty()
+                table.delete()
 
         send_event(
             *Message.create_lobby_event_args(

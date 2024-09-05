@@ -1,14 +1,5 @@
 STILL TODO:
 
-* I had four browser windows open, each to a different player; all 4 players were seated at the same table.
-
-  I clicked "splitsville" on one of them, then reloaded the others.  Each of the other three displayed
-
-  AttributeError at /table/1
-  'NoneType' object has no attribute 'name'
-  /Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py, line 71, in libraryThing
-  seat <Seat: EAST at Table 1 (NORTH: bob, EAST: None, SOUTH: aimee, WEST: None)>
-
 * Occasionally some page will take ages to load.  Like, right now http://localhost:8000/players/?lookin_for_love=True took 34 seconds.
 
   There are only 17 players.
@@ -69,6 +60,15 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* I had four browser windows open, each to a different player; all 4 players were seated at the same table.
+
+  I clicked "splitsville" on one of them, then reloaded the others.  Each of the other three displayed
+
+  AttributeError at /table/1
+  'NoneType' object has no attribute 'name'
+  /Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py, line 71, in libraryThing
+  seat <Seat: EAST at Table 1 (NORTH: bob, EAST: None, SOUTH: aimee, WEST: None)>
 
 * reload or hide (as appropriate) the bidding box when we get the "someone just made a call" message.
 
