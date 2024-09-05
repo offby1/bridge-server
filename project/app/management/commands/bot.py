@@ -22,14 +22,21 @@ class Command(BaseCommand):
         action = data.get("action")
         table = data.get("table")
 
-        if action == "just formed":
-            table = Table.objects.get(pk=table)
-            handrecord = table.current_handrecord
-            player = handrecord.player_who_may_call
-            if player is not None:
+        table = Table.objects.get(pk=table)
+        handrecord = table.current_handrecord
+
+        if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
+            player_to_impersonate = handrecord.player_who_may_call
+            if player_to_impersonate is not None:
+                player_to_impersonate = player_to_impersonate.libraryThing
+                a = table.current_auction
+                call = a.legal_calls()[0]  # great bidding strategy, that
+                handrecord.add_call_from_player(player=player_to_impersonate, call=call)
                 self.stdout.write(
-                    f"Pretend I impersonated {player} at {table} and made a call on their behalf",
+                    f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
                 )
+        else:
+            self.stderr.write(f"No idea what to do with {data=}")
 
     @retrying.retry(wait_exponential_multiplier=1000, retry_on_exception=is_requests_error)
     def run_forever(self):
