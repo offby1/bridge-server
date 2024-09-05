@@ -15,7 +15,7 @@ from .utils import assert_type
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from . import Board, Player, Seat, Table  # noqa
+    from . import Board, Seat, Table  # noqa
 
 
 class AuctionException(Exception):
@@ -63,6 +63,16 @@ class HandRecord(models.Model):
     @property
     def declarer(self):
         return self.auction.declarer
+
+    @property
+    def player_who_may_call(self):
+        from . import Player
+
+        if self.auction.status is libAuction.Incomplete:
+            libAllowed = self.auction.allowed_caller()
+            return Player.objects.get_by_name(libAllowed.name)
+
+        return None
 
     @property
     def most_recent_call(self):
