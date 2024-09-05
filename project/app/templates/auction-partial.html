@@ -23,11 +23,11 @@
       </tr>
     </th>
     <tbody>
-      {% for row in table.current_auction.fancy_two_dimensional_display %}
+      {% for row in table.current_auction.fancy_HTML_display %}
       <tr>
         {% for call in row %}
         <td>
-          {% if call is not None %}{{ call.serialize }}{% endif %}
+          {% if call is not None %}{{ call|safe }}{% endif %}
         </td>
         {% endfor %}
       </tr>
