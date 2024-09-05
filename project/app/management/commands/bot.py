@@ -30,7 +30,14 @@ class Command(BaseCommand):
             if player_to_impersonate is not None:
                 player_to_impersonate = player_to_impersonate.libraryThing
                 a = table.current_auction
-                call = a.legal_calls()[0]  # great bidding strategy, that
+
+                # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
+                legal_calls = a.legal_calls()
+                if len(legal_calls) > 1:
+                    call = legal_calls[1]  # great bidding strategy, that
+                else:
+                    call = legal_calls[0]
+
                 time.sleep(1)
                 handrecord.add_call_from_player(player=player_to_impersonate, call=call)
                 self.stdout.write(
