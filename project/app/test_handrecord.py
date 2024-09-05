@@ -129,4 +129,4 @@ def test_bidding_box_html(usual_setup, rf):
     # you cannot double your own partner.
     disabled, active = _count_buttons(t, request)
 
-    assert (disabled + active) == 0, f"{caller=} should not be allowed to call at all"
+    assert (disabled, active) == (38, 0), f"{caller=} should not be allowed to call at all"

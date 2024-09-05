@@ -39,12 +39,25 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def bidding_box_buttons(*, auction: bridge.auction.Auction, call_post_endpoint: str) -> SafeString:
+def bidding_box_buttons(
+    *,
+    auction: bridge.auction.Auction,
+    call_post_endpoint: str,
+    disabled_because_out_of_turn=False,
+) -> SafeString:
     assert isinstance(auction, bridge.auction.Auction)
 
     legal_calls = auction.legal_calls()
 
     def buttonize(call: bridge.contract.Call, active=True):
+        class_ = "btn btn-primary"
+        text = call.str_for_bidding_box()
+
+        if disabled_because_out_of_turn:
+            text = text if active else f"<s>{text}</s>"
+            active = False
+            class_ = "btn btn-danger"
+
         # All one line for ease of unit testing
         return (
             """<button type="button" """
@@ -52,8 +65,8 @@ def bidding_box_buttons(*, auction: bridge.auction.Auction, call_post_endpoint: 
             + f"""hx-post="{call_post_endpoint}" """
             + """hx-swap="none" """
             + f"""name="call" value="{call.serialize()}" """
-            + f"""class="btn btn-primary" {"" if active else "disabled"}>"""
-            + call.str_for_bidding_box()
+            + f"""class="{class_}" {"" if active else "disabled"}>"""
+            + text
             + """</button>\n"""
         )
 
@@ -126,10 +139,6 @@ def _auction_context_for_table(table):
 
 
 def _bidding_box_context_for_table(request, table):
-    buttons = bidding_box_buttons(
-        auction=table.current_auction,
-        call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-    )
     if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
         buttons = "No bidding box 'cuz the auction is over"
     else:
@@ -139,8 +148,16 @@ def _bidding_box_context_for_table(request, table):
         if not seat or seat.table != table:
             buttons = "No bidding box 'cuz you are not at this table"
         elif player.name != table.current_auction.allowed_caller().name:
-            buttons = "No bidding box 'cuz it's not your turn to call"
-
+            buttons = bidding_box_buttons(
+                auction=table.current_auction,
+                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+                disabled_because_out_of_turn=True,
+            )
+        else:
+            buttons = bidding_box_buttons(
+                auction=table.current_auction,
+                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+            )
     return {
         "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),

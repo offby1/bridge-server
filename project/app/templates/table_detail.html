@@ -3,9 +3,7 @@
     <div>
         {{ table.current_handrecord.board }}.
         {% include 'auction-partial.html#auction-partial' %}
-
-        Any bidding box goes here -->{% include 'bidding-box-partial.html#bidding-box-partial' %}<----
-
+        {% include 'bidding-box-partial.html#bidding-box-partial' %}
         <div>
             <ul>
                 {% for p in table.current_handrecord.plays %}<li>{{ p }}</li>{% endfor %}
