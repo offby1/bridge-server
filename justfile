@@ -60,9 +60,10 @@ daphne: test django-superuser migrate
     trap "tput smam" EXIT
     poetry run daphne                                                               \
       --verbosity                                                                   \
-      2                                                                             \
+      1                                                                             \
       --bind                                                                        \
       0.0.0.0                                                                       \
+      --port 9000 \
       --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
       project.asgi:application
 
