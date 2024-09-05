@@ -208,11 +208,12 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     except Exception as e:
         return HttpResponseForbidden(str(e))
 
-    send_event(
-        channel=_auction_channel_for_table(table),
-        event_type="message",
-        data=f"It doesn't much matter but FYI {who_clicked} called {serialized_call}",
-    )
+    for channel in (_auction_channel_for_table(table), "all-tables"):
+        send_event(
+            channel=channel,
+            event_type="message",
+            data={"table": table.pk, "player": request.user.player.pk, "call": serialized_call},
+        )
     return HttpResponse()
 
 

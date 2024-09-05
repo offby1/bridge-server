@@ -1,3 +1,6 @@
+import json
+import pprint
+
 import requests
 import retrying
 from django.core.management.base import BaseCommand
@@ -16,11 +19,14 @@ class Command(BaseCommand):
     def run_forever(self):
         while True:
             messages = SSEClient(
-                "http://localhost:8000/events/table/1/",
+                "http://localhost:8000/events/all-tables/",
             )
             for msg in messages:
                 if msg.event != "keep-alive":
-                    self.stdout.write(f"Ooh ooh Mr Kotter {vars(msg)=}")
+                    if msg.data:
+                        pprint.pprint(json.loads(msg.data), self.stdout)
+                    else:
+                        self.stdout.write(f"Ooh ooh Mr Kotter {vars(msg)=}")
 
     def handle(self, *args, **options):
         try:
