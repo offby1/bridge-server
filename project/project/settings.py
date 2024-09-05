@@ -32,7 +32,10 @@ ALLOWED_HOSTS = [
     "localhost",
     "offby1.info",
 ]
-CSRF_TRUSTED_ORIGINS = ["https://teensy-info.tail571dc2.ts.net"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://teensy-info.tail571dc2.ts.net",
+    "https://erics-work-macbook-pro.tail571dc2.ts.net",
+]
 
 # Application definition
 
