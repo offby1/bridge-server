@@ -13,7 +13,6 @@ from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpRe
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
@@ -88,7 +87,7 @@ def bidding_box_buttons(*, auction: bridge.auction.Auction, call_post_endpoint: 
         top_button_group += buttonize(call, active)
     top_button_group += "</div>"
 
-    return format_html(f"""{top_button_group} <br/> {"\n".join(rows)}""")
+    return SafeString(f"""{top_button_group} <br/> {"\n".join(rows)}""")
 
 
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:

@@ -67,7 +67,7 @@ def _get_text(subject, as_viewed_by):
         if subject.partner != as_viewed_by:
             text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
         else:
-            text = format_html(f"{subject}'s partner is, gosh, you!")
+            text = format_html("{}'s partner is, gosh, you!", subject)
 
         return format_html("{}{}", text, addendum)
 
