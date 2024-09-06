@@ -21,9 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-d)83erqvk0gay745i(^j_l37bg$+14&zgc5=pf5o*-3w%!h$92"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = [
     ".orb.local",
     ".tail571dc2.ts.net",  # tailscale!
@@ -90,10 +87,6 @@ TEMPLATES = [
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
-            # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
-            #   'debug': ... defaults to the value of the DEBUG setting.
-            # but that seems not to be the case, so we set it explicitly.
-            "debug": True,
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
