@@ -17,9 +17,7 @@ def temp_umask(new_umask):
         os.umask(old_umask)
 
 
-secret_key_path = (
-    platformdirs.site_data_path(appname=APP_NAME, ensure_exists=True) / "django_secret_key"
-)
+secret_key_path = platformdirs.site_data_path(appname=APP_NAME) / "django_secret_key"
 if not secret_key_path.is_file():
     with temp_umask(0o77):
         with open(secret_key_path, "w") as outf:
