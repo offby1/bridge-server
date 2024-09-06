@@ -111,10 +111,6 @@ class Message(models.Model):
         global _THE_LOBBY
         if _THE_LOBBY is None:
             _THE_LOBBY, created = Lobby.objects.get_or_create()
-            if created:
-                logger.warning(
-                    f"Created {_THE_LOBBY=} so as to send {message=} from {from_player=} to it",
-                )
 
         return kls._create_event_args(
             channel_name="lobby",

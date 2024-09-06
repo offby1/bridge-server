@@ -35,10 +35,10 @@ mypy = "^1.11.2"
 types-tqdm = "^4.66.0.20240417"
 python-lsp-server = {extras = ["all"], version = "^1.12.0"}
 
+[tool.pydocstyle]
 # Disable pydocstyle entirely.
 # This seems cleaner than uninstalling it.
 # We hates it, we does.
-[tool.pydocstyle]
 ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D212", "D213"]
 
 [tool.coverage.run]

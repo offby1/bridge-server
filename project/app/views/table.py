@@ -9,13 +9,13 @@ import bridge.contract
 from app.models import Player, PlayerException, Table
 from app.models.utils import assert_type
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event  # type: ignore
 
 from .misc import logged_in_as_player_required
 
@@ -32,8 +32,13 @@ class AuthedHttpRequest(HttpRequest):
 
 
 def table_list_view(request):
+    table_list = Table.objects.all()
+    paginator = Paginator(table_list, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     context = {
-        "table_list": Table.objects.all(),
+        "page_obj": page_obj,
+        "total_count": Table.objects.count(),
     }
 
     return TemplateResponse(request, "table_list.html", context=context)
@@ -189,6 +194,7 @@ def auction_partial_view(request, table_pk):
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, table_pk: str):
     assert_type(request.user.player, Player)
+    assert request.user is not None and request.user.player is not None  # for mypy
 
     try:
         who_clicked = request.user.player.libraryThing  # type: ignore
@@ -208,11 +214,6 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     except Exception as e:
         return HttpResponseForbidden(str(e))
 
-    send_event(
-        channel=_auction_channel_for_table(table),
-        event_type="message",
-        data=f"It doesn't much matter but FYI {who_clicked} called {serialized_call}",
-    )
     return HttpResponse()
 
 
@@ -271,4 +272,3 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     t = Table.objects.create_with_two_partnerships(p1, p2)
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
-    # TODO -- send one of those groovy Server Sent Events

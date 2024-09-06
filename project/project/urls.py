@@ -16,6 +16,13 @@ urlpatterns = [
         "events/player/<channel>/",
         include(django_eventstream.urls),
     ),
+    # This gets all events for all tables.
+    path(
+        "events/all-tables/",
+        include(django_eventstream.urls),
+        kwargs={"channels": ["all-tables"]},
+    ),
+    # This gets a subset of table events.
     path(
         "events/table/<channel>/",  # "channel" is an integer -- the table's primary key
         include(django_eventstream.urls),

@@ -9,13 +9,14 @@ from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 from django.contrib import admin
 from django.db import models
+from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from . import Board, Player, Seat, Table  # noqa
+    from . import Board, Seat, Table  # noqa
 
 
 class AuctionException(Exception):
@@ -49,6 +50,17 @@ class HandRecord(models.Model):
 
         self.call_set.create(serialized=call.serialize())
 
+        from app.models import Player
+
+        modelPlayer = Player.objects.get_by_name(player.name)
+        # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
+        for channel in (str(self.table.pk), "all-tables"):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
+            )
+
     @property
     def auction(self):
         dealer = libSeat(self.board.dealer)
@@ -63,6 +75,16 @@ class HandRecord(models.Model):
     @property
     def declarer(self):
         return self.auction.declarer
+
+    @property
+    def player_who_may_call(self):
+        from . import Player
+
+        if self.auction.status is libAuction.Incomplete:
+            libAllowed = self.auction.allowed_caller()
+            return Player.objects.get_by_name(libAllowed.name)
+
+        return None
 
     @property
     def most_recent_call(self):
@@ -98,7 +120,12 @@ class HandRecord(models.Model):
             # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
                 break
-        return zip(itertools.count(1), seat_cycle, self.calls.all())
+        return zip(
+            itertools.count(1),
+            seat_cycle,
+            # TODO -- might be nice to explicitly order these
+            self.calls.all(),
+        )
 
     @property
     def annotated_plays(self):

@@ -47,7 +47,8 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
-runme *options: test django-superuser migrate (manage "runserver " + options)
+runme *options: test django-superuser migrate
+    cd project && poetry run python manage.py runserver  9000 {{ options }}
 
 # TODO -- figure out how to get daphne to restart when a file changes.
 # For production
@@ -70,6 +71,10 @@ daphne: test django-superuser migrate
 # Create a bunch of users and tables
 [group('bs')]
 pop: django-superuser migrate (manage "generate_fake_data --players=56")
+
+# Run the little bids-and-plays bot
+[group('bs')]
+bot: migrate (manage "bot")
 
 [group('django')]
 [private]
