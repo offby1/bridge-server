@@ -50,6 +50,8 @@ migrate *options: makemigrations (manage "migrate " + options)
 runme *options: test django-superuser migrate
     cd project && poetry run python manage.py runserver  9000 {{ options }}
 
+alias runserver := runme
+
 # TODO -- figure out how to get daphne to restart when a file changes.
 # For production
 [group('bs')]
