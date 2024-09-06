@@ -54,7 +54,7 @@ class Command(BaseCommand):
     def run_forever(self):
         while True:
             messages = SSEClient(
-                "http://localhost:8000/events/all-tables/",
+                "http://localhost:9000/events/all-tables/",
             )
             for msg in messages:
                 if msg.event != "keep-alive":
