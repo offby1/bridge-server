@@ -91,9 +91,9 @@ class Command(BaseCommand):
         while Player.objects.count() < count_before + 3:
             username = fake.unique.first_name().lower()
             try:
-                django_user = User.objects.create_user(
+                django_user = User.objects.create(
                     username=username,
-                    password=username,
+                    password=everybodys_password,
                 )
             except Exception as e:
                 self.stderr.write(f"Hmm, {e}")

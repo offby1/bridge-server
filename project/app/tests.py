@@ -20,8 +20,8 @@ def test_we_gots_a_home_page():
 
 
 @pytest.fixture
-def bob(db):
-    u = auth.models.User.objects.create_user(username="Bob", password="Bob")
+def bob(db, everybodys_password):
+    u = auth.models.User.objects.create(username="Bob", password=everybodys_password)
     return Player.objects.create(user=u)
 
 
@@ -79,9 +79,9 @@ def test_both_table_partnerships_splitting_removes_table(usual_setup):
     assert Table.objects.count() == 0
 
 
-def test_splitsville_non_seated_partnership(bob):
+def test_splitsville_non_seated_partnership(bob, everybodys_password):
     Alice = Player.objects.create(
-        user=auth.models.User.objects.create_user(username="Alice", password="Alice"),
+        user=auth.models.User.objects.create(username="Alice", password=everybodys_password),
     )
     Alice.partner_with(bob)
 
@@ -107,7 +107,7 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     response = r()
     assert not response.context.get("show_cards_for")
 
-    c.login(username="Bob", password="Bob")
+    c.login(username="Bob", password=".")
 
     response = r()
     assert response.context["show_cards_for"] == [Player.objects.get_by_name("Bob")]
@@ -138,10 +138,11 @@ def test_player_cannot_be_in_two_tables(usual_setup):
         Seat.objects.filter(pk=s.pk).update(player=bob)
 
 
-def test_cant_just_make_up_directions(bob):
+def test_cant_just_make_up_directions(bob, everybodys_password):
     partner = Player.objects.create(
-        user=auth.models.User.objects.create_user(
+        user=auth.models.User.objects.create(
             username="partner",
+            password=everybodys_password,
         ),
     )
     bob.partner_with(partner)
@@ -211,7 +212,7 @@ def test_sending_lobby_messages(usual_setup, rf):
     assert response.status_code == 200
 
 
-def test_sending_player_messages(usual_setup, rf):
+def test_sending_player_messages(usual_setup, rf, everybodys_password):
     bob = Player.objects.get_by_name("Bob")
 
     def hey_bob(*, target=None, sender_player=None):
@@ -241,9 +242,9 @@ def test_sending_player_messages(usual_setup, rf):
 
     for n in ("lobbyboy", "lobbygirl"):
         Player.objects.create(
-            user=auth.models.User.objects.create_user(
+            user=auth.models.User.objects.create(
                 username=n,
-                password=n,
+                password=everybodys_password,
             ),
         )
 
@@ -320,12 +321,12 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert len(send_event_kwargs_log) == 0
 
 
-def test_table_creation(bob, rf):
+def test_table_creation(bob, rf, everybodys_password):
     players_by_name = {"bob": bob}
     sam = Player.objects.create(
-        user=auth.models.User.objects.create_user(
+        user=auth.models.User.objects.create(
             username="sam",
-            password="sam",
+            password=everybodys_password,
         ),
     )
     players_by_name["sam"] = sam
@@ -345,7 +346,7 @@ def test_table_creation(bob, rf):
 
     for name in ("tina", "tony"):
         p = Player.objects.create(
-            user=auth.models.User.objects.create_user(
+            user=auth.models.User.objects.create(
                 username=name,
                 password=name,
             ),
@@ -364,7 +365,7 @@ def test_table_creation(bob, rf):
     assert response.status_code == 302
 
 
-def test_random_dude_cannot_create_table(usual_setup, rf):
+def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     Bob = Player.objects.get_by_name("Bob")
     Ted = Player.objects.get_by_name("Ted")
     Carol = Player.objects.get_by_name("Carol")
@@ -380,9 +381,9 @@ def test_random_dude_cannot_create_table(usual_setup, rf):
     # OK now we got four players ready to sit at a table.
 
     RandomDude = Player.objects.create(
-        user=auth.models.User.objects.create_user(
+        user=auth.models.User.objects.create(
             username="J.Random Hacker",
-            password="J.Random Hacker",
+            password=everybodys_password,
         ),
     )
 
