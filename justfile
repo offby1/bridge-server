@@ -1,6 +1,6 @@
 set unstable
 
-export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.settings")
+export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export POETRY_VIRTUALENVS_IN_PROJECT := "false"
 
 [private]
@@ -59,6 +59,7 @@ daphne: test django-superuser migrate
     cd project
     tput rmam
     trap "tput smam" EXIT
+    export -n DJANGO_SETTINGS_MODULE
     poetry run daphne                                                               \
       --verbosity                                                                   \
       1                                                                             \
