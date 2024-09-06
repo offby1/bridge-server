@@ -9,6 +9,7 @@ import bridge.contract
 from app.models import Player, PlayerException, Table
 from app.models.utils import assert_type
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -31,8 +32,13 @@ class AuthedHttpRequest(HttpRequest):
 
 
 def table_list_view(request):
+    table_list = Table.objects.all()
+    paginator = Paginator(table_list, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     context = {
-        "table_list": Table.objects.all(),
+        "page_obj": page_obj,
+        "total_count": Table.objects.count(),
     }
 
     return TemplateResponse(request, "table_list.html", context=context)

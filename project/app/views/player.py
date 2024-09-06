@@ -1,6 +1,7 @@
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from django.contrib import messages as django_web_messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
@@ -197,11 +198,9 @@ def player_list_view(request):
     seated = request.GET.get("seated")
     exclude_me = request.GET.get("exclude_me")
 
-    model = Player
     template_name = "player_list.html"
 
-    qs = model.objects.all()
-    total_count = qs.count()
+    qs = Player.objects.all()
 
     player = getattr(request.user, "player", None)
 
@@ -227,9 +226,14 @@ def player_list_view(request):
                 ),
             )
 
+    total_count = qs.count()
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     context = {
         "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
-        "player_list": qs,
+        "page_obj": page_obj,
     }
 
     return render(request, template_name, context)

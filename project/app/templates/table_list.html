@@ -3,21 +3,21 @@
 
 {% block table_list %}
 
-<h2>All {{ table_list.count }} tables.</h2>
+<h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
 
 <h3>Full</h3>
 <ul>
-{% for table in table_list %}
+{% for table in page_obj %}
 {% if table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
 {% endfor %}
 </ul>
 
 <h3>Non-full</h3>
 <ul>
-{% for table in table_list %}
+{% for table in page_obj %}
 {% if not table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
 {% endfor %}
 </ul>
-
+{% include 'pagination-controls.html' %}
 {% endblock table_list %}
 {% endblock content %}
