@@ -1,12 +1,14 @@
 STILL TODO:
 
+* Performance.
+
+  * pages load awfully slowly.  Even after paginating the player list -- so that only 10 players appear per page -- that page seems to take 500ms of CPU time on the server, and over three seconds to fully render.  That's nuts.
+  * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
+  * Unit tests seem slow, too.
+
 * If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
 
 * In the table list, include the auction status, or play status, as appropriate.
-
-* paginate the table list
-  <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example
-  or maybe just use datatables
 
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
@@ -39,14 +41,14 @@ STILL TODO:
 
   It's not obvious how to tell if a player is logged in.  There's a `django_sessions` table which appears to hold, I guess, cookie data; but it's not obvious how I can connect that to a Player.
 
-* figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
-
-  Unit tests seem slow, too.
-
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* paginate the table list
+  <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example
+  or maybe just use datatables
 
 * If the auction is incomplete, and request.user is seated at the table *but* its not their turn to call, disable the bidding box visually somehow.
 
