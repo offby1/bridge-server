@@ -2,10 +2,6 @@ STILL TODO:
 
 * Performance.
 
-  * pages load awfully slowly.  Even after paginating the player list -- so that only 10 players appear per page -- that page seems to take 500ms of CPU time on the server, and over three seconds to fully render.  That's nuts.
-    Splitting settings into prod and dev seems to greatly speed up prod (that django debug toolbar is slow, it seems).
-  * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
-    Unsurprisingly, it's _hashlib.pbkdf2_hmac, whose whole purpose in life is to be slow.
   * Unit tests seem slow, too.
 
 * If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
@@ -47,6 +43,14 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Performance.
+
+  * pages load awfully slowly.  Even after paginating the player list -- so that only 10 players appear per page -- that page seems to take 500ms of CPU time on the server, and over three seconds to fully render.  That's nuts.
+    Splitting settings into prod and dev seems to greatly speed up prod (that django debug toolbar is slow, it seems).
+
+  * figure out why "generate_fake_data" only creates 7 players per second -- it otta do hundreds.
+    Unsurprisingly, it's _hashlib.pbkdf2_hmac, whose whole purpose in life is to be slow.
 
 * paginate the table list
   <https://spookylukey.github.io/django-views-the-right-way/list-view.html#displaying-a-list-of-objects> has an example

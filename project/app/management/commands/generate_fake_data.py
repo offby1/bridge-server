@@ -2,6 +2,7 @@ import random
 
 import tqdm
 from app.models import Player, Table
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
@@ -42,6 +43,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging
+
+        # Use the same password for everybody, to speed things up :-)
+        everybodys_password = make_password(".")
+
         fake = Faker()
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
@@ -55,9 +60,9 @@ class Command(BaseCommand):
 
                 try:
                     p = Player.objects.create(
-                        user=User.objects.create_user(
+                        user=User.objects.create(
                             username=username,
-                            password=username,
+                            password=everybodys_password,
                         ),
                     )
                 except Exception as e:
