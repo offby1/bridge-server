@@ -1,7 +1,7 @@
-import re
 from typing import Any
 
 import pytest
+from bridge.card import Card
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
@@ -74,7 +74,8 @@ def test_cards_by_player(usual_setup):
     Play.objects.create(hand=t.current_handrecord, serialized="c2")
     t.refresh_from_db()
     after = t.current_cards_by_seat[first_seat]
-    assert before != after
+    club_two = Card(suit=libSuit.CLUBS, rank=2)
+    assert before - after == set([club_two])
 
 
 def _count_buttons(t: Table, request: Any) -> tuple[int, int]:
