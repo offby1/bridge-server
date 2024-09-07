@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+import bridge.auction
 import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
@@ -161,6 +162,16 @@ class Player(models.Model):
         direction = ""
         if hasattr(self, "seat"):
             direction = f" ({self.seat.named_direction})"
+
+            # TODO -- mark the dummy too, I guess?
+            status = self.seat.table.current_auction.status
+
+            if isinstance(status, bridge.auction.Contract):
+                libPlayer = status.player
+
+                if self.name == libPlayer.name:
+                    return f"Declarer! {self.user.username}{direction}"
+
         return f"{self.user.username}{direction}"
 
     def as_link(self, style=""):
