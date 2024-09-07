@@ -1,5 +1,14 @@
 STILL TODO:
 
+* Somehow ensure that "git pull" on the server code updates the library as well.
+  git Submodules maybe?  Specifying a commit hash in pyproject.toml?
+
+  That out-of-syncness was the cause of this:
+
+    on commit 9088f1632af549e090694e960b6e84373bba82f3, on https://teensy-info.tail571dc2.ts.net/table/14, all the auction tables are empty
+
+    I see "West 	North 	East 	South" but no further rows under that; the next thing down is " No bidding box 'cuz you are not at this table"
+
 * If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
 
 * In the table list, include the auction status, or play status, as appropriate.
