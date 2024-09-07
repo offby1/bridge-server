@@ -1,0 +1,12 @@
+{% load partials %}
+{% partialdef three-by-three-trick-display %}
+<div class="three-by-three-yadda-yadda" style="border: 10px dotted;">
+    {% for row in three_by_three_trick_display.rows %}
+        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
+            {% for column in row %}
+            <div class="col" style="border: 1px solid;">{{ column }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+{% endpartialdef three-by-three-trick-display %}

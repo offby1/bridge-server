@@ -258,6 +258,7 @@ def table_detail_view(request, pk):
         }
         | _auction_context_for_table(table)
         | _bidding_box_context_for_table(request, table)
+        | _three_by_three_trick_display_context_for_table(request, table)
     )
 
     return TemplateResponse(request, "table_detail.html", context=context)

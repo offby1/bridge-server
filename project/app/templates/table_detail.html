@@ -11,18 +11,18 @@
         </div>
     </div>
     {# North at the top as per the Bridge Writing Style Guide #}
-    <div class="fs-1" style="border: 1px solid;">
-        <div class="row">
+    <div style="border: 1px solid;">
+        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
             <div class="col"></div>
             <div class="col">{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}</div>
             <div class="col"></div>
         </div>
-        <div class="row">
+        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
             <div class="col">{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
-            <div class="col"></div>
+            <div class="col">{% include 'three-by-three-trick-display-partial.html#three-by-three-trick-display' %}</div>
             <div class="col">{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
         </div>
-        <div class="row">
+        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
             <div class="col"></div>
             <div class="col">{{ card_display.SOUTH.player.name_dir }}: {{ card_display.SOUTH.cards }}</div>
             <div class="col"></div>
