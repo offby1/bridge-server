@@ -108,15 +108,18 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {"\n".join(rows)}""")
 
 
+# TODO -- somehow activate the buttons *only* if it's our player's turn to play *and* if the associated card is a legal play.
 def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in cards:
         by_suit[c.suit].append(c)
 
     def card_button(c, color):
-        return f"""<button type="button"
+        return f"""<button
+        type="button"
         class="btn btn-primary"
-        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc">{c}</button>"""
+        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        disabled>{c}</button>"""
 
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
@@ -140,6 +143,18 @@ def _auction_context_for_table(table):
         "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "table": table,
+    }
+
+
+def _three_by_three_trick_display_context_for_table(request, table):
+    return {
+        "three_by_three_trick_display": {
+            "rows": [
+                ["", "North's card goes here", ""],
+                ["West's card goes here", "", "East's card goes here"],
+                ["", "South's card goes here", ""],
+            ],
+        },
     }
 
 
