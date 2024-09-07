@@ -52,11 +52,10 @@ runme *options: test django-superuser migrate
 
 alias runserver := runme
 
-# TODO -- figure out how to get daphne to restart when a file changes.
-# For production
+# For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate
+daphne: test django-superuser migrate collectstatic
     set -euxo pipefail
     cd project
     tput rmam                   # disables line wrapping

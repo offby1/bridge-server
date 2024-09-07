@@ -12,9 +12,8 @@
               rel="stylesheet"
               integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
               crossorigin="anonymous">
-        <link href="{% static 'app/datatables.css' %}"
-              rel="stylesheet">
-
+        <link href="{% static 'app/datatables.css' %}" rel="stylesheet">
+        <link rel="icon" type="image/png" href="{% static 'app/spadesuit.png' %}" />
     </head>
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
           data-viewer="{{ user.player }}">
@@ -30,7 +29,6 @@
                 {% else %}
                     {{ user }}.
                 {% endif %}
-
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <input type="submit" value="logout">
@@ -61,6 +59,7 @@
         <script src="{% static 'app/datatables.js' %}"></script>
         <script src="{% static 'app/htmx.min.js' %}"></script>
         <script src="{% static 'app/sse.js' %}"></script>
-        {% block scripts %}{% endblock %}
+        {% block scripts %}
+        {% endblock %}
     </body>
 </html>
