@@ -1,10 +1,12 @@
 import itertools
 from typing import TYPE_CHECKING
 
+import more_itertools
 from bridge.auction import Auction as libAuction
 from bridge.card import Card as libCard
 from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
+from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 from django.contrib import admin
@@ -74,6 +76,8 @@ class HandRecord(models.Model):
 
     @property
     def declarer(self):
+        if not isinstance(self.auction.status, libContract):
+            return None
         return self.auction.declarer
 
     @property
@@ -128,7 +132,17 @@ class HandRecord(models.Model):
         )
 
     @property
+    def current_trick(self):
+        if not self.annotated_plays:
+            return []
+        tricks = more_itertools.chunked(self.annotated_plays, 4)
+        return tricks[-1]
+
+    @property
     def annotated_plays(self):
+        if not self.declarer:
+            return []
+
         seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
@@ -189,7 +203,7 @@ class Play(models.Model):
 
     def __str__(self):
         play = libCard.deserialize(self.serialized)
-        return f"Mystery player at {self.hand.table} played {self.serialized} which means {play}"
+        return f"Mystery player at {self.hand.table} (declarer is {self.hand.declarer}) played {self.serialized} which means {play}"
 
     # TODO -- a constraint that says a given card must appear no more than once in a given handrecord
 

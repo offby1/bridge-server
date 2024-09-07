@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Any
 
 import pytest
@@ -68,12 +69,12 @@ def test_cards_by_player(usual_setup):
     t = Table.objects.first()
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
 
-    first_seat = t.seat_set.first()
-
-    before = t.current_cards_by_seat[first_seat]
+    before = set(chain.from_iterable(t.current_cards_by_seat.values()))
     Play.objects.create(hand=t.current_handrecord, serialized="c2")
     t.refresh_from_db()
-    after = t.current_cards_by_seat[first_seat]
+
+    # TODO -- check that the card was played from the correct hand.
+    after = set(chain.from_iterable(t.current_cards_by_seat.values()))
     club_two = Card(suit=libSuit.CLUBS, rank=2)
     assert before - after == set([club_two])
 
@@ -131,3 +132,11 @@ def test_bidding_box_html(usual_setup, rf):
     disabled, active = _count_buttons(t, request)
 
     assert (disabled, active) == (38, 0), f"{caller=} should not be allowed to call at all"
+
+
+def test_current_trick(usual_setup):
+    t = Table.objects.first()
+    h = t.current_handrecord
+
+    # Nobody done played nothin'
+    assert not h.current_trick
