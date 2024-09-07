@@ -3,9 +3,10 @@ import random
 
 from bridge.card import Card
 from bridge.contract import Contract
-from bridge.table import Hand as libraryHand
-from bridge.table import Player as libraryPlayer
-from bridge.table import Table as libraryTable
+from bridge.seat import Seat as libSeat
+from bridge.table import Hand as libHand
+from bridge.table import Player as libPlayer
+from bridge.table import Table as libTable
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -79,15 +80,19 @@ class Table(models.Model):
 
     objects = TableManager()
 
+    def __getitem__(self, seat: libSeat) -> libPlayer:
+        modelPlayer = self.players_by_direction[seat.value]
+        return modelPlayer.libraryThing
+
     def libraryThing(self):
         players = []
         for seat in self.seat_set.all():
             name = seat.player.name
             hand = self.current_handrecord.board.cards_for_direction(seat.direction)
             players.append(
-                libraryPlayer(seat=seat.libraryThing, name=name, hand=libraryHand(cards=hand)),
+                libPlayer(seat=seat.libraryThing, name=name, hand=libHand(cards=hand)),
             )
-        return libraryTable(players=players)
+        return libTable(players=players)
 
     @property
     def handrecords(self):

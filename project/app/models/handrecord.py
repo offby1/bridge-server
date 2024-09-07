@@ -28,6 +28,7 @@ class AuctionException(Exception):
 class HandRecord(models.Model):
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
+        play_set = RelatedManager["Play"]()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -61,6 +62,30 @@ class HandRecord(models.Model):
                 channel=channel,
                 event_type="message",
                 data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
+            )
+
+    def add_play_from_player(self, *, player: libPlayer, card: libCard):
+        assert_type(player, libPlayer)
+        assert_type(card, libCard)
+
+        # TODO: check that:
+        # - the card is present in the player's hand
+        # - it's this player's turn
+        # - they're following suit if they can
+
+        # This will probably entail that we use bridge.xscript.HandTranscript
+
+        self.play_set.create(serialized=card.serialize())
+
+        from app.models import Player
+
+        modelPlayer = Player.objects.get_by_name(player.name)
+        # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
+        for channel in (str(self.table.pk), "all-tables"):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={"table": self.table.pk, "player": modelPlayer.pk, "card": card.serialize()},
             )
 
     @property
@@ -136,7 +161,7 @@ class HandRecord(models.Model):
         if not self.annotated_plays:
             return []
         tricks = more_itertools.chunked(self.annotated_plays, 4)
-        return tricks[-1]
+        return list(tricks)[-1]
 
     @property
     def annotated_plays(self):

@@ -140,3 +140,15 @@ def test_current_trick(usual_setup):
 
     # Nobody done played nothin'
     assert not h.current_trick
+
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    declarer = h.declarer
+    first_players_seat = declarer.seat.lho()
+    first_player = t[first_players_seat]
+
+    # Does this dude even *have* the two of clubs? Beats me :-)
+    club_two = Card(suit=libSuit.CLUBS, rank=2)
+    h.add_play_from_player(player=first_player, card=club_two)
+    assert len(h.current_trick) == 1
+    which, where, what = h.current_trick[0]
+    assert what.serialized == club_two.serialize()
