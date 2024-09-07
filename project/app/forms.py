@@ -25,7 +25,7 @@ class SignupForm(forms.Form):
             self.cleaned_data["username"],
             password=self.cleaned_data["password"],
         )
-        Player.objects.create(user=u)
+        Player.objects.create(user=u, is_human=True)
 
 
 # Does double-duty -- joins a partner, or breaks up with a partner.

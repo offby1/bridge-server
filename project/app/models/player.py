@@ -44,6 +44,8 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
+    is_human = models.BooleanField(default=False)
+
     # TODO -- conceptually, this oughta be a OneToOneField, no?
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 

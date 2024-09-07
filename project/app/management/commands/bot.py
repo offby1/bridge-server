@@ -31,14 +31,14 @@ class Command(BaseCommand):
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             player_to_impersonate = handrecord.player_who_may_call
-            if player_to_impersonate is not None:
+            if player_to_impersonate is not None and not player_to_impersonate.is_human:
                 player_to_impersonate = player_to_impersonate.libraryThing
                 a = table.current_auction
 
                 # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
                 legal_calls = a.legal_calls()
                 if len(legal_calls) > 1:
-                    call = legal_calls[1]  # great bidding strategy, that
+                    call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
                 else:
                     call = legal_calls[0]
 
