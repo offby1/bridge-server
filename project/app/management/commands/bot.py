@@ -31,18 +31,20 @@ class Command(BaseCommand):
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             player_to_impersonate = handrecord.player_who_may_call
+
             if player_to_impersonate is None:
                 self.stderr.write("player_to_impersonate is None??!")
                 return
+
             if player_to_impersonate.is_human:
                 self.stderr.write(
-                    f"They tell me {player_to_impersonate} is human, so I will bow out"
+                    f"They tell me {player_to_impersonate} is human, so I will bow out",
                 )
                 return
 
             if player_to_impersonate.user.last_login is not None:
                 self.stderr.write(
-                    f"Human or not, {player_to_impersonate} has logged in, so I will bow out"
+                    f"Human or not, {player_to_impersonate} has logged in, so I will bow out",
                 )
                 return
 
@@ -67,6 +69,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
                 )
+
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
