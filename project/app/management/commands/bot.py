@@ -18,7 +18,7 @@ class Command(BaseCommand):
         try:
             table = Table.objects.get(pk=data.get("table"))
         except Table.DoesNotExist:
-            self.stderr.write(f"Warning: table {table} does not exist")
+            self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
         handrecord = table.current_handrecord
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             player_to_impersonate = handrecord.player_who_may_call
 
             if player_to_impersonate is None:
-                self.stderr.write("player_to_impersonate is None??!")
+                self.stderr.write("player_to_impersonate is None -- auction must be over.")
                 return
 
             if player_to_impersonate.is_human:

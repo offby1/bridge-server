@@ -196,8 +196,12 @@ class HandRecord(models.Model):
         )
 
     @property
+    def tricks(self):
+        return more_itertools.chunked(self.annotated_plays, 4)
+
+    @property
     def current_trick(self):
-        tricks = list(more_itertools.chunked(self.annotated_plays, 4))
+        tricks = list(self.tricks)
         if not tricks:
             return []
 

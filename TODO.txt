@@ -1,12 +1,15 @@
 STILL TODO:
 
-* The bot sleeps too much!
+* Table 14's hand record looks like this
+    No bidding box 'cuz the auction is over
+    South at Table 14 played ♦2
+    West at Table 14 played ♦T
+    North at Table 14 played ♦K
+    East at Table 14 played ♦8
+    South at Table 14 played ♠3
+  That suggests that, even though North played the winning card, *South* led to the second trick.
 
-  It needs to slow down the actions that it takes *at a particular table*, but if there are 100 tables, we don't want an action at the first to slow down all the others.
-
-  This suggests keeping track of the time we last performed an action at a given table, and the next time we want to take action at that same table, deferring it until a second has passed.
-
-  And that, unfortunately, suggests threads or async.  Or maybe one bot per table?
+  Also the opening lead is wrong -- the contract is "three notrump, redoubled, played by stephanie, sitting South" so West should make the first play.
 
 * Make the auction record vanish once the opening lead has been made.
 
@@ -49,6 +52,16 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* The bot sleeps too much!
+
+  It needs to slow down the actions that it takes *at a particular table*, but if there are 100 tables, we don't want an action at the first to slow down all the others.
+
+  This suggests keeping track of the time we last performed an action at a given table, and the next time we want to take action at that same table, deferring it until a second has passed.
+
+  And that, unfortunately, suggests threads or async.  Or maybe one bot per table?
+
+  - no need for async.
 
 * Somehow ensure that "git pull" on the server code updates the library as well.
   git Submodules maybe?  Specifying a commit hash in pyproject.toml?
