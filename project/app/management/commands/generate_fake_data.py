@@ -151,12 +151,11 @@ class Command(BaseCommand):
             desc="tables",
             unit="t",
         ):
-            h = t.current_handrecord
-            chosen_card = random.choice(h.xscript.legal_cards())
+            for _ in range(2):
+                h = t.current_handrecord
+                legal_cards = h.xscript.legal_cards()
+                if legal_cards:
+                    chosen_card = random.choice(legal_cards)
 
-            @db_retry
-            def add_play():
-                return h.add_play_from_player(player=h.xscript.player, card=chosen_card)
-
-            p = add_play()
-            self.stdout.write(f"Played {p}")
+                    self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
+                    p = h.add_play_from_player(player=h.xscript.player, card=chosen_card)
