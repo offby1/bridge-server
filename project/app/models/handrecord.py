@@ -81,7 +81,7 @@ class HandRecord(models.Model):
                 data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
             )
 
-    def add_play_from_player(self, *, player: libPlayer, card: libCard):
+    def add_play_from_player(self, *, player: libPlayer, card: libCard) -> "Play":
         assert_type(player, libPlayer)
         assert_type(card, libCard)
 
@@ -96,7 +96,7 @@ class HandRecord(models.Model):
         if card not in legal_cards:
             raise PlayException(f"{card} is not a legal play")
 
-        self.play_set.create(serialized=card.serialize())
+        rv = self.play_set.create(serialized=card.serialize())
 
         from app.models import Player
 
@@ -108,6 +108,8 @@ class HandRecord(models.Model):
                 event_type="message",
                 data={"table": self.table.pk, "player": modelPlayer.pk, "card": card.serialize()},
             )
+
+        return rv
 
     @property
     def auction(self) -> libAuction:
@@ -250,7 +252,11 @@ class Play(models.Model):
 
     def __str__(self):
         play = libCard.deserialize(self.serialized)
-        return f"Mystery player at {self.hand.table} (declarer is {self.hand.declarer}) played {self.serialized} which means {play}"
+
+        for index, seat, candidate in self.hand.annotated_plays:
+            if self == candidate:
+                return f"{seat} at {self.hand.table} (declarer is {self.hand.declarer}) played {self.serialized} which means {play}"
+        raise Exception(f"Internal error, cannot find {self} in {self.annotated_plays}")
 
     # TODO -- a constraint that says a given card must appear no more than once in a given handrecord
 

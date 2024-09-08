@@ -2,6 +2,7 @@ import random
 
 import tqdm
 from app.models import Player, Table
+from bridge.contract import Contract
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -102,3 +103,16 @@ class Command(BaseCommand):
             Player.objects.create(user=django_user)
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
+
+        # Now find some tables with complete auctions, and play a few cards.
+        for t in tqdm.tqdm(
+            Table.objects.all(),
+            desc="tables",
+            total=Table.objects.count(),
+            unit="t",
+        ):
+            if isinstance(t.current_auction.status, Contract):
+                h = t.current_handrecord
+                chosen_card = random.choice(h.xscript.legal_cards())
+                p = h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+                self.stdout.write(f"{p=}")
