@@ -167,9 +167,7 @@ class Player(models.Model):
             status = self.seat.table.current_auction.status
 
             if isinstance(status, bridge.auction.Contract):
-                libPlayer = status.player
-
-                if self.name == libPlayer.name:
+                if self.name == status.declarer.name:
                     return f"Declarer! {self.user.username}{direction}"
 
         return f"{self.user.username}{direction}"
