@@ -99,18 +99,23 @@ def test_player_names_are_links_to_detail_page(usual_setup):
 
 
 def test_only_bob_can_see_bobs_cards(usual_setup):
-    c = Client()
+    bob = Player.objects.get_by_name("Bob")
+    bobs_cards = bob.libraryThing.hand.cards
+
+    client = Client()
 
     def r():
-        return c.get(reverse("app:player", kwargs=dict(pk=1)), follow=True)
+        return client.get(reverse("app:table-detail", kwargs=dict(pk=1)), follow=True)
 
     response = r()
-    assert not response.context.get("show_cards_for")
+    for c in bobs_cards:
+        assert c.serialize() not in response.content.decode()
 
-    c.login(username="Bob", password=".")
+    client.login(username="Bob", password=".")
 
     response = r()
-    assert response.context["show_cards_for"] == [Player.objects.get_by_name("Bob")]
+    for c in bobs_cards:
+        assert c.serialize() in response.content.decode()
 
 
 def test_player_cannot_be_at_two_seats(usual_setup):

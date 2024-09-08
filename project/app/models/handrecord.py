@@ -46,6 +46,18 @@ class HandRecord(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
+    @property
+    def xscript(self) -> HandTranscript:
+        rv = HandTranscript(
+            table=self.table.libraryThing(),
+            auction=self.table.current_auction,
+        )
+        # *sigh* now replay the entire hand
+        for p in self.plays:
+            rv.add_card(libCard.deserialize(p.serialized))
+
+        return rv
+
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
         assert_type(player, libPlayer)
         assert_type(call, libCall)
@@ -80,15 +92,7 @@ class HandRecord(models.Model):
 
         # This will probably entail that we use bridge.xscript.HandTranscript
 
-        xscript = HandTranscript(
-            table=self.table.libraryThing(),
-            auction=self.table.current_auction,
-        )
-        # *sigh* now replay the entire hand
-        for p in self.plays:
-            xscript.add_card(libCard.deserialize(p.serialized))
-
-        legal_cards = xscript.legal_cards()
+        legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
             raise PlayException(f"{card} is not a legal play")
 
@@ -106,7 +110,7 @@ class HandRecord(models.Model):
             )
 
     @property
-    def auction(self):
+    def auction(self) -> libAuction:
         dealer = libSeat(self.board.dealer)
 
         libTable = self.table.libraryThing()

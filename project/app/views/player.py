@@ -124,7 +124,6 @@ def player_detail_view(request, pk):
         ),
         "chat_target": subject,
         "player": subject,
-        "show_cards_for": [who_clicked],
     }
 
     if request.method == "POST":

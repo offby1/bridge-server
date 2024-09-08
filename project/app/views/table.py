@@ -242,7 +242,6 @@ def table_detail_view(request, pk):
     for seat, cards in table.dealt_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
-        # TODO -- this seems redundant with "show_cards_for"
         if seat.player == request.user.player:
             dem_cards_baby = card_buttons_as_four_divs(cards)
 
