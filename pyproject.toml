@@ -15,6 +15,7 @@ more-itertools = "^10.3.0"
 pytest-django = "^4.7.0"
 tqdm = "^4.66.4"
 bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "94c4b5d637e7a62633de5efcf5dbc403f63b6e68" }
+#bridge = {path = "../library", develop = true}
 django-eventstream = {extras = ["drf"], version = "^5.3.0"}
 daphne = "^4.1.2"
 django-template-partials = "^24.4"

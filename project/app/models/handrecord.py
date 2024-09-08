@@ -9,6 +9,7 @@ from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
+from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
 from django_eventstream import send_event  # type: ignore
@@ -22,6 +23,10 @@ if TYPE_CHECKING:
 
 
 class AuctionException(Exception):
+    pass
+
+
+class PlayException(Exception):
     pass
 
 
@@ -74,6 +79,18 @@ class HandRecord(models.Model):
         # - they're following suit if they can
 
         # This will probably entail that we use bridge.xscript.HandTranscript
+
+        xscript = HandTranscript(
+            table=self.table.libraryThing(),
+            auction=self.table.current_auction,
+        )
+        # *sigh* now replay the entire hand
+        for p in self.plays:
+            xscript.add_card(libCard.deserialize(p.serialized))
+
+        legal_cards = xscript.legal_cards()
+        if card not in legal_cards:
+            raise PlayException(f"{card} is not a legal play")
 
         self.play_set.create(serialized=card.serialize())
 

@@ -143,12 +143,22 @@ def test_current_trick(usual_setup):
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
     declarer = h.declarer
+
     first_players_seat = declarer.seat.lho()
     first_player = t[first_players_seat]
+    first_players_cards = first_player.hand.cards
 
-    # Does this dude even *have* the two of clubs? Beats me :-)
-    club_two = Card(suit=libSuit.CLUBS, rank=2)
-    h.add_play_from_player(player=first_player, card=club_two)
+    second_player = t[first_players_seat.lho()]
+    second_players_cards = second_player.hand.cards
+
+    first_card = first_players_cards[0]
+    h.add_play_from_player(player=first_player, card=first_card)
     assert len(h.current_trick) == 1
-    which, where, what = h.current_trick[0]
-    assert what.serialized == club_two.serialize()
+    which, where, what = h.current_trick[-1]
+    assert what.serialized == first_card.serialize()
+
+    second_card = second_players_cards[0]
+    h.add_play_from_player(player=second_player, card=second_card)
+    assert len(h.current_trick) == 2
+    which, where, what = h.current_trick[-1]
+    assert what.serialized == second_card.serialize()
