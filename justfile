@@ -80,7 +80,20 @@ pop: django-superuser migrate (manage "generate_fake_data --players=56")
 
 # Run the little bids-and-plays bot
 [group('bs')]
-bot: migrate (manage "bot")
+bot *options: migrate
+    cd project && poetry run python manage.py bot {{ options }}
+
+# Run many bots in parallel
+[group('bs')]
+[script('bash')]
+botstorm: migrate
+    set -euxo pipefail
+    cd project
+    for i in $(seq 15)
+    do
+       poetry run python manage.py bot --table=${i} &
+    done
+    wait
 
 [group('django')]
 [private]

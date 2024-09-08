@@ -1,5 +1,7 @@
 import random
 
+import django.db.utils
+import retrying
 import tqdm
 from app.models import Player, Table
 from bridge.contract import Contract
@@ -7,6 +9,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from faker import Faker
+
+db_retry = retrying.retry(
+    retry_on_exception=(
+        django.db.utils.OperationalError,
+        django.db.utils.DatabaseError,
+    ),
+    wait_exponential_multiplier=2,
+    wait_jitter_max=1000,
+)
+
 
 canned_calls = [
     "Pass",
@@ -40,7 +52,12 @@ class Command(BaseCommand):
         calls_prefix = canned_calls[0:this_tables_index]
 
         for c in calls_prefix:
-            h.call_set.create(serialized=c)
+
+            @db_retry
+            def create_call():
+                h.call_set.create(serialized=c)
+
+            create_call()
 
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging
@@ -59,16 +76,16 @@ class Command(BaseCommand):
                 else:
                     username = fake.unique.first_name().lower()
 
-                try:
-                    p = Player.objects.create(
+                @db_retry
+                def create_player():
+                    return Player.objects.create(
                         user=User.objects.create(
                             username=username,
                             password=everybodys_password,
                         ),
                     )
-                except Exception as e:
-                    self.stderr.write(f"Hmm, {e}")
-                    continue
+
+                p = create_player()
 
                 progress_bar.update()
                 unseated_players.append(p)
@@ -79,10 +96,15 @@ class Command(BaseCommand):
                 unseated_players[0].partner_with(unseated_players[1])
                 unseated_players[2].partner_with(unseated_players[3])
 
-                t = Table.objects.create_with_two_partnerships(
-                    unseated_players[0],
-                    unseated_players[2],
-                )
+                @db_retry
+                def create_table():
+                    return Table.objects.create_with_two_partnerships(
+                        unseated_players[0],
+                        unseated_players[2],
+                    )
+
+                t = create_table()
+
                 unseated_players = []
 
                 self.generate_some_fake_calls_and_plays_at(t, Table.objects.count() - 1)
@@ -91,16 +113,17 @@ class Command(BaseCommand):
         count_before = Player.objects.count()
         while Player.objects.count() < count_before + 3:
             username = fake.unique.first_name().lower()
-            try:
-                django_user = User.objects.create(
-                    username=username,
-                    password=everybodys_password,
-                )
-            except Exception as e:
-                self.stderr.write(f"Hmm, {e}")
-                continue
 
-            Player.objects.create(user=django_user)
+            @db_retry
+            def create_player():
+                return Player.objects.create(
+                    user=User.objects.create(
+                        username=username,
+                        password=everybodys_password,
+                    ),
+                )
+
+            create_player()
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
@@ -114,5 +137,10 @@ class Command(BaseCommand):
             if isinstance(t.current_auction.status, Contract):
                 h = t.current_handrecord
                 chosen_card = random.choice(h.xscript.legal_cards())
-                p = h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+
+                @db_retry
+                def add_play():
+                    return h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+
+                p = add_play()
                 self.stdout.write(f"{p=}")

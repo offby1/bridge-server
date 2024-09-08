@@ -1,7 +1,9 @@
+import collections
 import json
 import time
 import typing
 
+import django.db.utils
 import requests
 import retrying  # type: ignore
 from app.models import AuctionException, Table
@@ -9,21 +11,14 @@ from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
 
-def is_requests_error(exception):
-    return isinstance(
-        exception,
-        (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
-    )
-
-
 class Command(BaseCommand):
-    def dispatch(self, data: dict[str, typing.Any]) -> None:
+    def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
-        table = data.get("table")
 
         try:
-            table = Table.objects.get(pk=table)
+            table = Table.objects.get(pk=data.get("table"))
         except Table.DoesNotExist:
+            self.stderr.write(f"Warning: table {table} does not exist")
             return
 
         handrecord = table.current_handrecord
@@ -57,9 +52,20 @@ class Command(BaseCommand):
             else:
                 call = legal_calls[0]
 
-            time.sleep(1)
-            try:
+            # Hopefully if we were using Postgres instead of sqlite, these wouldn't be necessary.
+            @retrying.retry(
+                retry_on_exception=(
+                    django.db.utils.OperationalError,
+                    django.db.utils.DatabaseError,
+                ),
+                wait_exponential_multiplier=10,
+                wait_jitter_max=1000,
+            )
+            def add_call():
                 handrecord.add_call_from_player(player=player_to_impersonate, call=call)
+
+            try:
+                add_call()
             except AuctionException as e:
                 # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
                 # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
@@ -69,10 +75,20 @@ class Command(BaseCommand):
                     f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
                 )
 
+            now = time.time()
+            sleep_until = self.last_action_timestamps_by_table_id[table.pk] + 1
+            self.last_action_timestamps_by_table_id[table.pk] = now
+
+            if sleep_until - now > 0:
+                time.sleep(sleep_until - now)
+
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
-    @retrying.retry(wait_exponential_multiplier=1000, retry_on_exception=is_requests_error)
+    @retrying.retry(
+        retry_on_exception=(requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+        wait_exponential_multiplier=1000,
+    )
     def run_forever(self):
         while True:
             messages = SSEClient(
@@ -82,7 +98,7 @@ class Command(BaseCommand):
                 if msg.event != "keep-alive":
                     if msg.data:
                         data = json.loads(msg.data)
-                        self.dispatch(data)
+                        self.dispatch(data=data)
                     else:
                         self.stdout.write(f"message with no data: {vars(msg)=}")
 
@@ -90,6 +106,7 @@ class Command(BaseCommand):
             time.sleep(1)
 
     def handle(self, *args, **options):
+        self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
         try:
             self.run_forever()
         except KeyboardInterrupt:
