@@ -274,7 +274,13 @@ class Play(models.Model):
                 return f"{seat} at {self.hand.table} (declarer is {self.hand.declarer}) played {self.serialized} which means {play}"
         raise Exception(f"Internal error, cannot find {self} in {self.annotated_plays}")
 
-    # TODO -- a constraint that says a given card must appear no more than once in a given handrecord
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["hand", "serialized"],
+                name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
+            ),
+        ]
 
 
 admin.site.register(Play)
