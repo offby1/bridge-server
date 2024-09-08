@@ -146,17 +146,19 @@ name = "bridge"
 version = "0.1.0"
 description = ""
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 colorama = "*"
 tabulate = "*"
 
 [package.source]
-type = "directory"
-url = "../library"
+type = "git"
+url = "https://gitlab.com/offby1/bridge.git"
+reference = "94c4b5d637e7a62633de5efcf5dbc403f63b6e68"
+resolved_reference = "94c4b5d637e7a62633de5efcf5dbc403f63b6e68"
 
 [[package]]
 name = "certifi"
@@ -2158,4 +2160,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "f13cdb7c1c79a28838a1aed8a5e25567b87255711c4ecb40fa34b41e475684b9"
+content-hash = "064bc9357e2ac838b23cfb6b3c094dfcd3296d117dd787570fd84fd2382b11bd"
