@@ -267,11 +267,9 @@ class Play(models.Model):
     )
 
     def __str__(self):
-        play = libCard.deserialize(self.serialized)
-
         for index, seat, candidate in self.hand.annotated_plays:
             if self == candidate:
-                return f"{seat} at {self.hand.table} (declarer is {self.hand.declarer}) played {self.serialized} which means {play}"
+                return f"{seat} at {self.hand.table} played {self.serialized}"
         raise Exception(f"Internal error, cannot find {self} in {self.annotated_plays}")
 
     class Meta:

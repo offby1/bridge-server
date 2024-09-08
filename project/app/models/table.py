@@ -178,7 +178,7 @@ class Table(models.Model):
         return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
 
     def __str__(self):
-        return f"Table {self.id} ({self.playaz})"
+        return f"Table {self.id}"
 
 
 admin.site.register(Table)
