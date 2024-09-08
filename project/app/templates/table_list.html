@@ -1,23 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-
-{% block table_list %}
-
-<h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
-
-<h3>Full</h3>
-<ul>
-{% for table in page_obj %}
-{% if table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
-{% endfor %}
-</ul>
-
-<h3>Non-full</h3>
-<ul>
-{% for table in page_obj %}
-{% if not table.is_full %}<li>{{ table.as_link }}</li>{% endif %}
-{% endfor %}
-</ul>
-{% include 'pagination-controls.html' %}
-{% endblock table_list %}
+    {% block table_list %}
+        <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
+        <table class="table">
+            {# yep, it's a table of tables #}
+            <th>
+                <tr>
+                    <td>ID</td>
+                    <td>players</td>
+                    <td>Auction</td>
+                </tr>
+            </th>
+            {% for table in page_obj %}
+                <tr>
+                    <td>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.pk }}</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.playaz }}</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_auction.status }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% include 'pagination-controls.html' %}
+    {% endblock table_list %}
 {% endblock content %}

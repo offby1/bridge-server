@@ -11,8 +11,6 @@ STILL TODO:
 
 * If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
 
-* In the table list, include the auction status, or play status, as appropriate.
-
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
 
@@ -48,6 +46,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* In the table list, include the auction status, or play status, as appropriate.
 
 * Performance.
 

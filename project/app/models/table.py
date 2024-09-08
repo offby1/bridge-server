@@ -168,9 +168,12 @@ class Table(models.Model):
 
         return True
 
+    @property
+    def playaz(self):
+        return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
+
     def __str__(self):
-        playaz = ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
-        return f"Table {self.id} ({playaz})"
+        return f"Table {self.id} ({self.playaz})"
 
 
 admin.site.register(Table)
