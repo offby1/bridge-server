@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import bridge.auction
 import bridge.card
@@ -151,7 +151,14 @@ def _auction_context_for_table(table):
     }
 
 
-def _three_by_three_trick_display_context_for_table(request, table):
+def _three_by_three_trick_display_context_for_table(
+    request: HttpRequest,
+    table: Table,
+) -> dict[str, Any]:
+    h = table.current_handrecord
+    cards = h.current_trick
+    print(f"{cards=}")
+
     return {
         "three_by_three_trick_display": {
             "rows": [

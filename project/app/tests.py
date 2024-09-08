@@ -5,6 +5,7 @@ import bridge.seat
 import pytest
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
+from bridge.seat import Seat as libSeat
 from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
 from django.db import IntegrityError
@@ -426,3 +427,40 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
 
     response = seat_em_dano(Bob)
     assert response.status_code == 302
+
+
+def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
+    request = rf.get("/woteva/")
+    t = Table.objects.first()
+
+    h = t.current_handrecord
+
+    # Nobody done played nothin'
+    assert not h.current_trick
+
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    declarer = h.declarer
+
+    # TODO -- add a "lho" method to model.Player
+    first_players_seat = declarer.seat.lho()
+    first_player = t[first_players_seat]
+    first_players_cards = first_player.hand.cards
+
+    second_player = t[first_players_seat.lho()]
+    second_players_cards = second_player.hand.cards
+
+    first_card = first_players_cards[0]
+    h.add_play_from_player(player=first_player, card=first_card)
+
+    expected_cards_by_direction = {
+        s.value: modelPlay.serialized for index, s, modelPlay in h.current_trick
+    }
+    ya = table._three_by_three_trick_display_context_for_table(request, t)
+    north_row, east_west_row, south_row = ya["three_by_three_trick_display"]["rows"]
+    actual_cards_by_direction = {
+        libSeat.NORTH.value: north_row[1],
+        libSeat.EAST.value: east_west_row[2],
+        libSeat.SOUTH.value: south_row[1],
+        libSeat.WEST.value: east_west_row[0],
+    }
+    assert actual_cards_by_direction == expected_cards_by_direction
