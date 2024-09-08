@@ -31,28 +31,42 @@ class Command(BaseCommand):
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             player_to_impersonate = handrecord.player_who_may_call
-            if player_to_impersonate is not None and not player_to_impersonate.is_human:
-                player_to_impersonate = player_to_impersonate.libraryThing
-                a = table.current_auction
+            if player_to_impersonate is None:
+                self.stderr.write("player_to_impersonate is None??!")
+                return
+            if player_to_impersonate.is_human:
+                self.stderr.write(
+                    f"They tell me {player_to_impersonate} is human, so I will bow out"
+                )
+                return
 
-                # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
-                legal_calls = a.legal_calls()
-                if len(legal_calls) > 1:
-                    call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
-                else:
-                    call = legal_calls[0]
+            if player_to_impersonate.user.last_login is not None:
+                self.stderr.write(
+                    f"Human or not, {player_to_impersonate} has logged in, so I will bow out"
+                )
+                return
 
-                time.sleep(1)
-                try:
-                    handrecord.add_call_from_player(player=player_to_impersonate, call=call)
-                except AuctionException as e:
-                    # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
-                    # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
-                    self.stderr.write(f"Uh-oh -- {e}")
-                else:
-                    self.stdout.write(
-                        f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
-                    )
+            player_to_impersonate = player_to_impersonate.libraryThing
+            a = table.current_auction
+
+            # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
+            legal_calls = a.legal_calls()
+            if len(legal_calls) > 1:
+                call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
+            else:
+                call = legal_calls[0]
+
+            time.sleep(1)
+            try:
+                handrecord.add_call_from_player(player=player_to_impersonate, call=call)
+            except AuctionException as e:
+                # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
+                # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
+                self.stderr.write(f"Uh-oh -- {e}")
+            else:
+                self.stdout.write(
+                    f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
+                )
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 

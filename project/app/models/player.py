@@ -207,7 +207,7 @@ class Player(models.Model):
         ]
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({'human' if self.is_human else 'bot'})"
 
 
 admin.site.register(Player)
