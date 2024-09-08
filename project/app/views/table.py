@@ -6,6 +6,7 @@ from typing import Any, Optional
 import bridge.auction
 import bridge.card
 import bridge.contract
+import bridge.seat
 from app.models import Player, PlayerException, Table
 from app.models.utils import assert_type
 from django.contrib.auth.models import User
@@ -156,15 +157,19 @@ def _three_by_three_trick_display_context_for_table(
     table: Table,
 ) -> dict[str, Any]:
     h = table.current_handrecord
-    cards = h.current_trick
-    print(f"{cards=}")
+
+    cards_by_seat = {c[1]: c[2].serialized for c in h.current_trick}
+
+    def c(direction):
+        key = getattr(bridge.seat.Seat, direction)
+        return cards_by_seat.get(key, "")
 
     return {
         "three_by_three_trick_display": {
             "rows": [
-                ["", "North's card goes here", ""],
-                ["West's card goes here", "", "East's card goes here"],
-                ["", "South's card goes here", ""],
+                ["North-->", c("NORTH"), "<--North"],
+                [c("WEST"), "<---west east--->", c("EAST")],
+                ["South-->", c("SOUTH"), "<--South"],
             ],
         },
     }

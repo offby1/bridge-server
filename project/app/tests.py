@@ -446,15 +446,13 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     first_player = t[first_players_seat]
     first_players_cards = first_player.hand.cards
 
-    second_player = t[first_players_seat.lho()]
-    second_players_cards = second_player.hand.cards
-
     first_card = first_players_cards[0]
     h.add_play_from_player(player=first_player, card=first_card)
 
-    expected_cards_by_direction = {
-        s.value: modelPlay.serialized for index, s, modelPlay in h.current_trick
-    }
+    expected_cards_by_direction = {dir_.value: "" for dir_ in libSeat}
+    for index, s, modelPlay in h.current_trick:
+        expected_cards_by_direction[s.value] = modelPlay.serialized
+
     ya = table._three_by_three_trick_display_context_for_table(request, t)
     north_row, east_west_row, south_row = ya["three_by_three_trick_display"]["rows"]
     actual_cards_by_direction = {
