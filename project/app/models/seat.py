@@ -43,6 +43,9 @@ class Seat(models.Model):
     def __str__(self):
         return f"{self.named_direction} at {self.table}"
 
+    def __repr__(self):
+        return f"Model seat {vars(self)}"
+
     def _check_table_consistency(self):
         if self.player is None:
             return

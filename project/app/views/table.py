@@ -158,7 +158,7 @@ def _three_by_three_trick_display_context_for_table(
 ) -> dict[str, Any]:
     h = table.current_handrecord
 
-    cards_by_seat = {c[1]: c[2].serialized for c in h.current_trick}
+    cards_by_seat = {c[1]: c[2].serialize() for c in h.current_trick}
 
     def c(direction):
         key = getattr(bridge.seat.Seat, direction)

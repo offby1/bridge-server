@@ -209,18 +209,12 @@ class HandRecord(models.Model):
 
     @property
     def annotated_plays(self):
-        if not self.declarer:
-            return []
+        flattened = []
+        for t in self.xscript.tricks:
+            for p in t.plays:
+                flattened.append((1 + len(flattened), p.player.seat, p.card))
 
-        seat_cycle = libSeat.cycle()
-        while True:
-            s = next(seat_cycle)
-
-            # The first play is made by declarer.
-            if s.lho() == self.declarer.seat:
-                break
-
-        return zip(itertools.count(1), seat_cycle, self.plays.all())
+        return flattened
 
     @property
     def plays(self):

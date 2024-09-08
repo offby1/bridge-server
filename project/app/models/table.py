@@ -132,11 +132,10 @@ class Table(models.Model):
             rv[seat] = set(cardlist)
 
         if isinstance(self.current_handrecord.auction.status, Contract):
-            for index, seat, play in self.current_handrecord.annotated_plays:
+            for index, seat, card in self.current_handrecord.annotated_plays:
                 seat = self.current_handrecord.seat_from_libseat(seat)
                 assert_type(seat, Seat)
-                card_to_remove = Card.deserialize(play.serialized)
-                rv[seat].remove(card_to_remove)
+                rv[seat].remove(card)
 
         return rv
 

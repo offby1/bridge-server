@@ -6,6 +6,7 @@ from bridge.card import Card
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
+from bridge.seat import Seat as libSeat
 
 from .models import AuctionException, Board, Play, Player, Table
 from .testutils import set_auction_to
@@ -49,15 +50,16 @@ def test_rejects_illegal_calls(usual_setup):
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    assert t.current_auction.declarer.seat == libSeat.NORTH
 
     before = set(chain.from_iterable(t.current_cards_by_seat.values()))
-    Play.objects.create(hand=t.current_handrecord, serialized="c2")
+    Play.objects.create(hand=t.current_handrecord, serialized="d2")
     t.refresh_from_db()
 
     # TODO -- check that the card was played from the correct hand.
     after = set(chain.from_iterable(t.current_cards_by_seat.values()))
-    club_two = Card(suit=libSuit.CLUBS, rank=2)
-    assert before - after == set([club_two])
+    diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
+    assert before - after == set([diamond_two])
 
 
 def _count_buttons(t: Table, request: Any) -> tuple[int, int]:
@@ -137,10 +139,10 @@ def test_current_trick(usual_setup):
     h.add_play_from_player(player=first_player, card=first_card)
     assert len(h.current_trick) == 1
     which, where, what = h.current_trick[-1]
-    assert what.serialized == first_card.serialize()
+    assert what == first_card
 
     second_card = second_players_cards[0]
     h.add_play_from_player(player=second_player, card=second_card)
     assert len(h.current_trick) == 2
     which, where, what = h.current_trick[-1]
-    assert what.serialized == second_card.serialize()
+    assert what == second_card
