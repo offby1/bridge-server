@@ -1,5 +1,7 @@
 STILL TODO:
 
+* Whatever happened to lobby chat?  It must have slipped into a crack at some point.
+
 * Somehow ensure that "git pull" on the server code updates the library as well.
   git Submodules maybe?  Specifying a commit hash in pyproject.toml?
 
