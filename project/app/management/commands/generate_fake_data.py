@@ -159,3 +159,4 @@ class Command(BaseCommand):
                 return h.add_play_from_player(player=h.xscript.player, card=chosen_card)
 
             p = add_play()
+            self.stdout.write(f"Played {p}")
