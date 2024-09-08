@@ -1,11 +1,43 @@
 set unstable
 
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
+export PGDATA := env("PGDATA", home_dir() / "Library/Application Support/Postgres/var-14")
 export POETRY_VIRTUALENVS_IN_PROJECT := "false"
 
 [private]
 default:
     just --list
+
+[group('postgres')]
+pg-create-cluster:
+    [ -d "${PGDATA}" ] || initdb
+
+[group('postgres')]
+[private]
+pg-start: pg-create-cluster
+    @pg_ctl status || pg_ctl start --log=/tmp/postgresql.log || tail /tmp/postgresql.log
+
+alias start := pg-start
+
+[group('postgres')]
+[private]
+pg-stop: pg-create-cluster
+    if pg_ctl status; then pg_ctl stop; fi
+
+alias stop := pg-stop
+
+[group('postgres')]
+[private]
+pg-create-db: pg-start
+    if ! createdb -T template0 bridge ; then echo "$(tput setaf 2)'database already exists' is OK! ctfo$(tput sgr0)"; fi
+
+[group('postgres')]
+[private]
+pg-overall-prep: pg-create-cluster pg-start pg-create-db
+
+[group('postgres')]
+drop: pg-start
+    if ! dropdb  --force bridge; then echo "$(tput setaf 2)'database does not exist' is OK! ctfo$(tput sgr0)"; fi
 
 [private]
 [script('bash')]
@@ -27,7 +59,7 @@ mypy: poetry-install
 
 [group('django')]
 [private]
-all-but-django-prep: poetry-install
+all-but-django-prep: poetry-install pg-overall-prep
 
 [group('django')]
 [private]
@@ -127,11 +159,6 @@ cover: test
     cd project
     poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
     open htmlcov/index.html
-
-# Delete the sqlite database.
-[group('bs')]
-drop:
-    -rm -fv project/db.sqlite3
 
 #  Nix the virtualenv and anything not checked in to git, but leave the database.
 [script('bash')]

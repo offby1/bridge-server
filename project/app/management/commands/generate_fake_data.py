@@ -1,7 +1,7 @@
 import random
 
 import django.db.utils
-import retrying
+import retrying  # type: ignore
 import tqdm
 from app.models import Player, Table
 from bridge.contract import Contract

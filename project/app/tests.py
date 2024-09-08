@@ -103,13 +103,14 @@ def test_player_names_are_links_to_detail_page(usual_setup):
 
 
 def test_only_bob_can_see_bobs_cards(usual_setup):
+    t = Table.objects.first()
     bob = Player.objects.get_by_name("Bob")
     bobs_cards = bob.libraryThing.hand.cards
 
     client = Client()
 
     def r():
-        return client.get(reverse("app:table-detail", kwargs=dict(pk=1)), follow=True)
+        return client.get(reverse("app:table-detail", kwargs=dict(pk=t.pk)), follow=True)
 
     response = r()
     for c in bobs_cards:
@@ -332,7 +333,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
 
     assert the_kwargs["channel"] == "partnerships"
     assert the_kwargs["data"]["joined"] == []
-    assert set(the_kwargs["data"]["split"]) == set([3, 1])
+    assert set(the_kwargs["data"]["split"]) == set([Bob.pk, Bob.partner.pk])
 
     assert response.status_code == 200
 
