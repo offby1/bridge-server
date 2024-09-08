@@ -47,10 +47,12 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate *options: makemigrations (manage "migrate " + options)
 
 [group('bs')]
+[script('bash')]
 runme *options: test django-superuser migrate
-    cd project && poetry run coverage  run --rcfile={{ justfile_dir() }}/pyproject.toml --branch manage.py runserver 9000 {{ options }}
-    cd project && poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
-    open project/htmlcov/index.html
+    set -euxo pipefail
+    cd project
+    trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && open htmlcov/index.html" EXIT
+    poetry run coverage  run --rcfile={{ justfile_dir() }}/pyproject.toml --branch manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
 
