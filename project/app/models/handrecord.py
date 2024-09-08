@@ -81,6 +81,22 @@ class HandRecord(models.Model):
                 data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
             )
 
+            if self.declarer:  # the auction just settled
+                contract = self.auction.status
+                assert isinstance(contract, libContract)
+                send_event(
+                    channel=channel,
+                    event_type="message",
+                    data={
+                        "table": self.table.pk,
+                        "contract": {
+                            "bid": contract.bid.serialize(),
+                            "multiplier": contract.multiplier,
+                            "player": contract.player.seat.value,
+                        },
+                    },
+                )
+
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> "Play":
         assert_type(player, libPlayer)
         assert_type(card, libCard)
@@ -123,7 +139,7 @@ class HandRecord(models.Model):
         return rv
 
     @property
-    def declarer(self):
+    def declarer(self) -> libPlayer | None:
         if not isinstance(self.auction.status, libContract):
             return None
         return self.auction.declarer
