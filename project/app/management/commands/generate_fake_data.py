@@ -8,13 +8,22 @@ from bridge.contract import Contract
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 from faker import Faker
 
+
+def is_retryable_db_error(e):
+    return isinstance(
+        e,
+        (
+            django.db.utils.OperationalError,
+            django.db.utils.DatabaseError,
+        ),
+    ) and not isinstance(e, IntegrityError)
+
+
 db_retry = retrying.retry(
-    retry_on_exception=(
-        django.db.utils.OperationalError,
-        django.db.utils.DatabaseError,
-    ),
+    retry_on_exception=is_retryable_db_error,
     wait_exponential_multiplier=2,
     wait_jitter_max=1000,
 )
@@ -85,7 +94,10 @@ class Command(BaseCommand):
                         ),
                     )
 
-                p = create_player()
+                try:
+                    p = create_player()
+                except IntegrityError:
+                    continue
 
                 progress_bar.update()
                 unseated_players.append(p)
@@ -123,24 +135,27 @@ class Command(BaseCommand):
                     ),
                 )
 
-            create_player()
+            try:
+                create_player()
+            except IntegrityError:
+                continue
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
         # Now find some tables with complete auctions, and play a few cards.
+        playable_tables = [
+            t for t in Table.objects.all() if isinstance(t.current_auction.status, Contract)
+        ]
         for t in tqdm.tqdm(
-            Table.objects.all(),
+            playable_tables,
             desc="tables",
-            total=Table.objects.count(),
             unit="t",
         ):
-            if isinstance(t.current_auction.status, Contract):
-                h = t.current_handrecord
-                chosen_card = random.choice(h.xscript.legal_cards())
+            h = t.current_handrecord
+            chosen_card = random.choice(h.xscript.legal_cards())
 
-                @db_retry
-                def add_play():
-                    return h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+            @db_retry
+            def add_play():
+                return h.add_play_from_player(player=h.xscript.player, card=chosen_card)
 
-                p = add_play()
-                self.stdout.write(f"{p=}")
+            p = add_play()
