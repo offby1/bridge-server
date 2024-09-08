@@ -1,5 +1,13 @@
 STILL TODO:
 
+* The bot sleeps too much!
+
+  It needs to slow down the actions that it takes *at a particular table*, but if there are 100 tables, we don't want an action at the first to slow down all the others.
+
+  This suggests keeping track of the time we last performed an action at a given table, and the next time we want to take action at that same table, deferring it until a second has passed.
+
+  And that, unfortunately, suggests threads or async.  Or maybe one bot per table?
+
 * Make the auction record vanish once the opening lead has been made.
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.

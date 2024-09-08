@@ -18,7 +18,6 @@ def is_requests_error(exception):
 
 class Command(BaseCommand):
     def dispatch(self, data: dict[str, typing.Any]) -> None:
-        # TODO: don't impersonate a player if they are an actual human, trying to use this site!
         action = data.get("action")
         table = data.get("table")
 
