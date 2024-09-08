@@ -3,6 +3,8 @@ import json
 
 import bridge.seat
 import pytest
+from bridge.card import Suit as libSuit
+from bridge.contract import Bid as libBid
 from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
 from django.db import IntegrityError
@@ -10,6 +12,7 @@ from django.test import Client
 from django.urls import reverse
 
 from .models import Message, Player, PlayerException, Seat, Table
+from .testutils import set_auction_to
 from .views import lobby, player, table
 
 
@@ -116,6 +119,25 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     response = r()
     for c in bobs_cards:
         assert c.serialize() in response.content.decode()
+
+
+def test_legal_cards(usual_setup, rf):
+    t = Table.objects.first()
+    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    h = t.current_handrecord
+    declarer = h.declarer
+    leader = t[declarer.seat.lho()]
+
+    client = Client()
+    client.login(username=leader.name, password=".")
+
+    def r():
+        return client.get(reverse("app:table-detail", kwargs=dict(pk=t.pk)), follow=True)
+
+    response = r()
+    assert "disabled" not in response.content.decode()
+
+    # TODO -- play a card, ensure various holdings are now indeed disabled
 
 
 def test_player_cannot_be_at_two_seats(usual_setup):

@@ -8,6 +8,7 @@ from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
 
 from .models import AuctionException, Board, Play, Player, Table
+from .testutils import set_auction_to
 from .views.table import bidding_box_partial_view
 
 
@@ -43,26 +44,6 @@ def test_rejects_illegal_calls(usual_setup):
     assert "Pass" in str(calls[0])
     assert "one notrump" in str(calls[1])
     assert "Double" in str(calls[2])
-
-
-def set_auction_to(bid, table):
-    h = table.current_handrecord
-
-    def next_caller(current_caller):
-        table = h.auction.table
-        return table.get_lho(current_caller)
-
-    caller = h.auction.allowed_caller()
-    h.add_call_from_player(player=caller, call=bid)
-    caller = next_caller(caller)
-
-    h.add_call_from_player(player=caller, call=libPass)
-    caller = next_caller(caller)
-
-    h.add_call_from_player(player=caller, call=libPass)
-    caller = next_caller(caller)
-
-    h.add_call_from_player(player=caller, call=libPass)
 
 
 def test_cards_by_player(usual_setup):
@@ -144,6 +125,7 @@ def test_current_trick(usual_setup):
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
     declarer = h.declarer
 
+    # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
     first_player = t[first_players_seat]
     first_players_cards = first_player.hand.cards

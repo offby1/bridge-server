@@ -108,18 +108,23 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {"\n".join(rows)}""")
 
 
-# TODO -- somehow activate the buttons *only* if it's our player's turn to play *and* if the associated card is a legal play.
-def card_buttons_as_four_divs(cards: list[bridge.card.Card]) -> SafeString:
+def card_buttons_as_four_divs(
+    *,
+    players_cards: list[bridge.card.Card],
+    legal_cards: list[bridge.card.Card],
+) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
-    for c in cards:
+    for c in players_cards:
         by_suit[c.suit].append(c)
 
+    # TODO -- make the button, uh, do something when you click on it!
     def card_button(c, color):
+        disabled = " disabled" if c not in legal_cards else ""
         return f"""<button
         type="button"
         class="btn btn-primary"
         style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
-        disabled>{c}</button>"""
+        {disabled}>{c}</button>"""
 
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
@@ -236,6 +241,11 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
 def table_detail_view(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
+    # No cards are legal to play if the auction hasn't settled.
+    legal_cards = []
+    if isinstance(table.current_auction.status, bridge.auction.Contract):
+        legal_cards = table.current_handrecord.xscript.legal_cards()
+
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
     cards_by_direction_display = {}
@@ -243,7 +253,10 @@ def table_detail_view(request, pk):
         dem_cards_baby = f"{len(cards)} cards"
 
         if seat.player == request.user.player:
-            dem_cards_baby = card_buttons_as_four_divs(cards)
+            dem_cards_baby = card_buttons_as_four_divs(
+                players_cards=cards,
+                legal_cards=legal_cards,
+            )
 
         cards_by_direction_display[seat.named_direction] = {
             "player": seat.player,
