@@ -35,7 +35,7 @@ manage *options: all-but-django-prep
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
-collectstatic *options: (manage "collectstatic " + options)
+collectstatic: (manage "collectstatic --no-input")
 
 [group('django')]
 shell *options: migrate (manage "shell_plus --print-sql " + options)
