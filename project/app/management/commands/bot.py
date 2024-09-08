@@ -82,6 +82,12 @@ class Command(BaseCommand):
             if sleep_until - now > 0:
                 time.sleep(sleep_until - now)
 
+        elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
+            "table",
+            "player",
+            "card",
+        }:
+            self.stderr.write(f"I guess I should start playing some cards at {data['table']}")
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
