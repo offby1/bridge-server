@@ -123,7 +123,7 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
         assert c.serialize() in response.content.decode()
 
 
-def test_legal_cards(usual_setup, rf):
+def test_legal_cards(usual_setup, rf, settings):
     t = Table.objects.first()
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
     h = t.current_handrecord
@@ -133,10 +133,10 @@ def test_legal_cards(usual_setup, rf):
     client = Client()
     client.login(username=leader.name, password=".")
 
-    def r():
-        return client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)
-
-    response = r()
+    settings.DEBUG = (
+        False  # otherwise we display all four hands, three of whose cards are indeed all disabled
+    )
+    response = client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled

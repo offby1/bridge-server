@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table
@@ -22,7 +23,14 @@ urlpatterns = [
     path("table/<pk>", table.table_detail_view, name="table-detail"),
     path("table/<table_pk>/auction", table.auction_partial_view, name="auction-partial"),
     path(
-        "table/<table_pk>/bidding-box", table.bidding_box_partial_view, name="bidding-box-partial"
+        "table/<table_pk>/bidding-box",
+        table.bidding_box_partial_view,
+        name="bidding-box-partial",
     ),
     path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]
+
+if settings.DEBUG:
+    urlpatterns.append(
+        path("yo/bot/", table.poke_de_bot, name="poke-de-bot"),
+    )

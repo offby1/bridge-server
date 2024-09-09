@@ -103,6 +103,8 @@ class Command(BaseCommand):
         }:
             self.make_a_groovy_play(handrecord=handrecord)
             self.maybe_sleep(table=table)
+        elif set(data.keys()) == {"table", "direction", "action"}:
+            self.stderr.write(f"I wonder if someone at {data=} wanted to tell me something")
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 

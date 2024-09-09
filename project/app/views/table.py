@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -7,6 +8,7 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 import bridge.seat
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
@@ -15,6 +17,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
+from django_eventstream import send_event  # type: ignore
 
 from app.models import Player, PlayerException, Table
 from app.models.utils import assert_type
@@ -114,6 +117,7 @@ def card_buttons_as_four_divs(
     *,
     players_cards: list[bridge.card.Card],
     legal_cards: list[bridge.card.Card],
+    seat,
 ) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in players_cards:
@@ -138,7 +142,9 @@ def card_buttons_as_four_divs(
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
-    return SafeString("<br>" + "\n".join(row_divs))
+    return SafeString(
+        "<br>" + "\n".join(row_divs),
+    )
 
 
 def _auction_channel_for_table(table):
@@ -151,6 +157,21 @@ def _auction_context_for_table(table):
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "table": table,
     }
+
+
+def poke_de_bot(request):
+    wassup = json.loads(request.POST["who pokes me"])
+
+    send_event(
+        channel="all-tables",
+        event_type="message",
+        data={
+            "table": wassup["table_id"],
+            "direction": wassup["direction"],
+            "action": "pokey pokey",
+        },
+    )
+    return HttpResponse("Pokey enough for ya??")
 
 
 def _three_by_three_trick_display_context_for_table(
@@ -263,23 +284,50 @@ def table_detail_view(request, pk):
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
     # in which case show 'em all
     cards_by_direction_display = {}
+    pokey_buttons_by_direction = {}
     for seat, cards in table.current_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
-        if seat.player == request.user.player:
+        if settings.DEBUG or seat.player == request.user.player:
             dem_cards_baby = card_buttons_as_four_divs(
                 players_cards=cards,
                 legal_cards=legal_cards,
+                seat=seat,
+            )
+
+        value = json.dumps(
+            {
+                "direction": seat.direction,
+                "player_id": seat.player_id,
+                "table_id": seat.table_id,
+            },
+        )
+
+        if settings.DEBUG:
+            pokey_buttons_by_direction[seat.named_direction] = (
+                SafeString(f"""<div class="btn-group">
+        <button
+        type="button"
+        class="btn btn-primary"
+        name="who pokes me"
+        value='{value}'
+        hx-post="/yo/bot/"
+        hx-swap="none"
+        >POKE ME {seat.named_direction}</button>
+        </div>
+        <br/>
+        """)
             )
 
         cards_by_direction_display[seat.named_direction] = {
-            "player": seat.player,
             "cards": dem_cards_baby,
+            "player": seat.player,
         }
 
     context = (
         {
             "card_display": cards_by_direction_display,
+            "pokey_buttons": pokey_buttons_by_direction,
             "table": table,
         }
         | _auction_context_for_table(table)
