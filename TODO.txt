@@ -1,17 +1,8 @@
 STILL TODO:
 
-* Table 14's hand record looks like this
-    No bidding box 'cuz the auction is over
-    South at Table 14 played ♦2
-    West at Table 14 played ♦T
-    North at Table 14 played ♦K
-    East at Table 14 played ♦8
-    South at Table 14 played ♠3
-  That suggests that, even though North played the winning card, *South* led to the second trick.
-
-  Also the opening lead is wrong -- the contract is "three notrump, redoubled, played by stephanie, sitting South" so West should make the first play.
-
 * Make the auction record vanish once the opening lead has been made.
+
+* Try out <https://docs.djangoproject.com/en/5.1/ref/contrib/admin/admindocs/#module-django.contrib.admindocs>
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
@@ -52,6 +43,17 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Table 14's hand record looks like this
+    No bidding box 'cuz the auction is over
+    South at Table 14 played ♦2
+    West at Table 14 played ♦T
+    North at Table 14 played ♦K
+    East at Table 14 played ♦8
+    South at Table 14 played ♠3
+  That suggests that, even though North played the winning card, *South* led to the second trick.
+
+  Also the opening lead is wrong -- the contract is "three notrump, redoubled, played by stephanie, sitting South" so West should make the first play.
 
 * The bot sleeps too much!
 
