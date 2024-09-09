@@ -29,9 +29,13 @@ mypy: poetry-install
 version-file:
     git describe --always --dirty --tags > project/VERSION
 
+[private]
+pre-commit:
+    pre-commit install
+
 [group('django')]
 [private]
-all-but-django-prep: version-file poetry-install
+all-but-django-prep: version-file pre-commit poetry-install
 
 [group('django')]
 [private]
