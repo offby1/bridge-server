@@ -12,12 +12,9 @@ In particular, I'm grumpy about getting an SSL certificate and rigging up the HT
 ## Research I've done
 
 [The obvious search](https://duckduckgo.com/?q=django+hosting).  As expected, most of the results look scammy.
-Two hits that weren't obviously scammy:
 
-### ✘ google cloud
-
-Bleah.
-
+### [Tailscale](https://login.tailscale.com/admin/machines)
+They don't *host*, but they do have a dead-easy TLS-doing reverse proxy, which [I'm using now](https://teensy-info.tail571dc2.ts.net/).
 ### digital ocean
 
 [Use an Existing Domain](https://docs.digitalocean.com/products/networking/load-balancers/how-to/ssl-termination/#use-an-existing-domain) says
@@ -54,8 +51,12 @@ As mentioned by "boxed" on discord.  Looks interesting.
 
 Mentions uvicorn, which *might* work for me.
 
+### Roll my own with [caddy](https://hub.docker.com/_/caddy)
+I otta be able to make a simple docker-compose that includes a caddy image, and a django image (and well ok maybe also a postgresql image if I feel like using that).
+
 ### ✘[Fly.io](https://fly.io/docs/django/getting-started/existing/)
 
 Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
-### Roll my own with [caddy](https://hub.docker.com/_/caddy)
-I otta be able to make a simple docker-compose that includes a caddy image, and a django image (and well ok maybe also a postgresql image if I feel like using that).
+### ✘ google cloud
+
+Bleah.
