@@ -1,5 +1,7 @@
 STILL TODO:
 
+* Try out <https://docs.djangoproject.com/en/5.1/ref/contrib/admin/admindocs/#module-django.contrib.admindocs>
+
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
 * If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
