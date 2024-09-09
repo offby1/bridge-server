@@ -15,6 +15,71 @@ from sseclient import SSEClient  # type: ignore
 
 
 class Command(BaseCommand):
+    def make_a_groovy_call(self, *, handrecord):
+        table = handrecord.table
+        player_to_impersonate = handrecord.player_who_may_call
+
+        if player_to_impersonate is None:
+            self.stderr.write("player_to_impersonate is None -- auction must be over.")
+            return
+
+        if player_to_impersonate.is_human:
+            self.stderr.write(
+                f"They tell me {player_to_impersonate} is human, so I will bow out",
+            )
+            # return
+
+        if player_to_impersonate.user.last_login is not None:
+            self.stderr.write(
+                f"Human or not, {player_to_impersonate} has logged in, so I will bow out",
+            )
+            # return
+
+        player_to_impersonate = player_to_impersonate.libraryThing
+        a = table.current_auction
+
+        # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
+        legal_calls = a.legal_calls()
+        if len(legal_calls) > 1:
+            call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
+        else:
+            call = legal_calls[0]
+
+        # Hopefully if we were using Postgres instead of sqlite, these wouldn't be necessary.
+        @retrying.retry(
+            retry_on_exception=(
+                django.db.utils.OperationalError,
+                django.db.utils.DatabaseError,
+            ),
+            wait_exponential_multiplier=10,
+            wait_jitter_max=1000,
+        )
+        def add_call():
+            handrecord.add_call_from_player(player=player_to_impersonate, call=call)
+
+        try:
+            add_call()
+        except AuctionException as e:
+            # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
+            # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
+            self.stderr.write(f"Uh-oh -- {e}")
+        else:
+            self.stdout.write(
+                f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
+            )
+
+    def make_a_groovy_play(self, *, handrecord):
+        table = handrecord.table
+        self.stderr.write(f"I guess I should start playing some cards at {table}")
+
+    def maybe_sleep(self, *, table):
+        now = time.time()
+        sleep_until = self.last_action_timestamps_by_table_id[table.pk] + 1
+        self.last_action_timestamps_by_table_id[table.pk] = now
+
+        if sleep_until - now > 0:
+            time.sleep(sleep_until - now)
+
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
 
@@ -27,70 +92,16 @@ class Command(BaseCommand):
         handrecord = table.current_handrecord
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
-            player_to_impersonate = handrecord.player_who_may_call
-
-            if player_to_impersonate is None:
-                self.stderr.write("player_to_impersonate is None -- auction must be over.")
-                return
-
-            if player_to_impersonate.is_human:
-                self.stderr.write(
-                    f"They tell me {player_to_impersonate} is human, so I will bow out",
-                )
-                return
-
-            if player_to_impersonate.user.last_login is not None:
-                self.stderr.write(
-                    f"Human or not, {player_to_impersonate} has logged in, so I will bow out",
-                )
-                return
-
-            player_to_impersonate = player_to_impersonate.libraryThing
-            a = table.current_auction
-
-            # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
-            legal_calls = a.legal_calls()
-            if len(legal_calls) > 1:
-                call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
-            else:
-                call = legal_calls[0]
-
-            # Hopefully if we were using Postgres instead of sqlite, these wouldn't be necessary.
-            @retrying.retry(
-                retry_on_exception=(
-                    django.db.utils.OperationalError,
-                    django.db.utils.DatabaseError,
-                ),
-                wait_exponential_multiplier=10,
-                wait_jitter_max=1000,
-            )
-            def add_call():
-                handrecord.add_call_from_player(player=player_to_impersonate, call=call)
-
-            try:
-                add_call()
-            except AuctionException as e:
-                # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
-                # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
-                self.stderr.write(f"Uh-oh -- {e}")
-            else:
-                self.stdout.write(
-                    f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
-                )
-
-            now = time.time()
-            sleep_until = self.last_action_timestamps_by_table_id[table.pk] + 1
-            self.last_action_timestamps_by_table_id[table.pk] = now
-
-            if sleep_until - now > 0:
-                time.sleep(sleep_until - now)
+            self.make_a_groovy_call(handrecord=handrecord)
+            self.maybe_sleep(table=table)
 
         elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
             "table",
             "player",
             "card",
         }:
-            self.stderr.write(f"I guess I should start playing some cards at {data['table']}")
+            self.make_a_groovy_play(handrecord=handrecord)
+            self.maybe_sleep(table=table)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
