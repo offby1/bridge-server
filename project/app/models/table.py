@@ -153,6 +153,14 @@ class Table(models.Model):
         seats = self.seat_set.all()
         return {s.direction: s.player for s in seats}
 
+    @property
+    def next_seat_to_play(self) -> Seat | None:
+        if isinstance(self.current_auction.status, Contract):
+            xscript = self.current_handrecord.xscript
+            return Seat.objects.get(table=self, direction=xscript.player.seat.value)
+
+        return None
+
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",

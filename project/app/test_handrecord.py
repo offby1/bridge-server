@@ -148,3 +148,15 @@ def test_current_trick(usual_setup):
     assert len(h.current_trick) == 2
     which, where, what = h.current_trick[-1]
     assert what == second_card
+
+
+def test_next_seat_to_play(usual_setup):
+    t = Table.objects.first()
+    h = t.current_handrecord
+
+    assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
+
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+
+    assert h.declarer.seat == libSeat.NORTH
+    assert t.next_seat_to_play.named_direction == "EAST"

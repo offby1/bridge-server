@@ -70,7 +70,8 @@ class Command(BaseCommand):
 
     def make_a_groovy_play(self, *, handrecord):
         table = handrecord.table
-        self.stderr.write(f"I guess I should start playing some cards at {table}")
+        seat_to_impersonate = table.next_seat_to_play
+        self.stderr.write(f"I guess I should play one of {seat_to_impersonate}'s cards at {table}")
 
     def maybe_sleep(self, *, table):
         now = time.time()

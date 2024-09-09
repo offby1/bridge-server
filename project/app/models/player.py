@@ -210,6 +210,9 @@ class Player(models.Model):
             ),
         ]
 
+    def __repr__(self) -> str:
+        return f"modelPlayer{vars(self)}"
+
     def __str__(self):
         return f"{self.name} ({'human' if self.is_human else 'bot'})"
 
