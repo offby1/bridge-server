@@ -38,7 +38,7 @@ class AuthedHttpRequest(HttpRequest):
 
 def table_list_view(request):
     table_list = Table.objects.all()
-    paginator = Paginator(table_list, 5)
+    paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     context = {

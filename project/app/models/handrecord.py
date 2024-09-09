@@ -269,9 +269,9 @@ class Play(models.Model):
 
     def __str__(self):
         for _index, seat, candidate in self.hand.annotated_plays:
-            if self == candidate:
+            if self.serialized == candidate.serialize():
                 return f"{seat} at {self.hand.table} played {self.serialized}"
-        msg = f"Internal error, cannot find {self} in {self.annotated_plays}"
+        msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
 
     class Meta:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import contextlib
 import json
+import random
 import time
 import typing
 
@@ -10,6 +11,7 @@ import django.db.utils
 import requests
 import retrying  # type: ignore
 from app.models import AuctionException, Table
+from bridge.contract import Contract
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -69,9 +71,22 @@ class Command(BaseCommand):
             )
 
     def make_a_groovy_play(self, *, handrecord):
+        if not isinstance(handrecord.auction.status, Contract):
+            return
+
         table = handrecord.table
+
         seat_to_impersonate = table.next_seat_to_play
-        self.stderr.write(f"I guess I should play one of {seat_to_impersonate}'s cards at {table}")
+
+        legal_cards = handrecord.xscript.legal_cards()
+        if not legal_cards:
+            self.stderr.write(f"No legal cards at {seat_to_impersonate}? The hand must be over.")
+            return
+
+        chosen_card = random.choice(legal_cards)
+
+        p = handrecord.add_play_from_player(player=handrecord.xscript.player, card=chosen_card)
+        self.stdout.write(f"At {table}, played {p} from {legal_cards}")
 
     def maybe_sleep(self, *, table):
         now = time.time()
@@ -105,6 +120,9 @@ class Command(BaseCommand):
             self.maybe_sleep(table=table)
         elif set(data.keys()) == {"table", "direction", "action"}:
             self.stderr.write(f"I wonder if someone at {data=} wanted to tell me something")
+            self.make_a_groovy_call(handrecord=handrecord)
+            self.make_a_groovy_play(handrecord=handrecord)
+            self.maybe_sleep(table=table)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
