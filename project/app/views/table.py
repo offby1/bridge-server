@@ -6,8 +6,6 @@ from typing import Optional
 import bridge.auction
 import bridge.card
 import bridge.contract
-from app.models import Player, PlayerException, Table
-from app.models.utils import assert_type
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
@@ -17,13 +15,16 @@ from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 
+from app.models import Player, PlayerException, Table
+from app.models.utils import assert_type
+
 from .misc import logged_in_as_player_required
 
 logger = logging.getLogger(__name__)
 
 
 class UserMitPlaya(User):
-    player: Optional[Player]
+    player: Player | None
 
 
 # See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
@@ -79,7 +80,7 @@ def bidding_box_buttons(
     bids_by_level = [
         [
             bridge.contract.Bid(level=level, denomination=denomination)
-            for denomination in list(bridge.card.Suit) + [None]
+            for denomination in [*list(bridge.card.Suit), None]
         ]
         for level in range(1, 8)
     ]
@@ -209,7 +210,8 @@ def auction_partial_view(request, table_pk):
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, table_pk: str):
     assert_type(request.user.player, Player)
-    assert request.user is not None and request.user.player is not None  # for mypy
+    assert request.user is not None
+    assert request.user.player is not None
 
     try:
         who_clicked = request.user.player.libraryThing  # type: ignore

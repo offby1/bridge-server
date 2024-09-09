@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import contextlib
 import json
 import time
 import typing
@@ -91,7 +94,5 @@ class Command(BaseCommand):
             time.sleep(1)
 
     def handle(self, *args, **options):
-        try:
+        with contextlib.suppress(KeyboardInterrupt):
             self.run_forever()
-        except KeyboardInterrupt:
-            pass

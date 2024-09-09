@@ -18,8 +18,8 @@ VERSION = "unknown"
 try:
     with open(BASE_DIR / "VERSION") as inf:
         VERSION = inf.read()
-except FileNotFoundError as e:
-    print(e)
+except FileNotFoundError:
+    pass
 
 APP_NAME = "info.offby1.bridge"
 

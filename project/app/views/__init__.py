@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from ..forms import SignupForm
+from app.forms import SignupForm
 
 
 def home_view(request):
@@ -42,3 +42,4 @@ def signup_view(request):
             return start_over_with_message(str(e))
 
         return HttpResponseRedirect(reverse("login"))
+    return None

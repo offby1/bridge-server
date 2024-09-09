@@ -67,7 +67,7 @@ class HandRecord(models.Model):
 
         libTable = self.table.libraryThing()
         rv = libAuction(table=libTable, dealer=dealer)
-        for index, seat, call in self.annotated_calls:
+        for _index, seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
         return rv

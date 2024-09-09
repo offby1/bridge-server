@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import bridge.seat
 
 # {1: 'NORTH', 2: 'EAST', 3: 'SOUTH', 4: 'WEST'}

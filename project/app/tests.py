@@ -26,7 +26,7 @@ def bob(db, everybodys_password):
 
 
 def test_all_seated_players_have_partners(usual_setup):
-    for _, p in Table.objects.first().players_by_direction.items():
+    for p in Table.objects.first().players_by_direction.values():
         assert p.partner is not None
         p.partner = None
         with pytest.raises(Exception) as e:
@@ -102,7 +102,7 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
     c = Client()
 
     def r():
-        return c.get(reverse("app:player", kwargs=dict(pk=1)), follow=True)
+        return c.get(reverse("app:player", kwargs={"pk": 1}), follow=True)
 
     response = r()
     assert not response.context.get("show_cards_for")
@@ -199,7 +199,7 @@ def test_sending_lobby_messages(usual_setup, rf):
         request = rf.post(
             "/send_lobby_message/",
             content_type="application/json",
-            data=json.dumps(dict(message="hey you")),
+            data=json.dumps({"message": "hey you"}),
         )
         request.user = user
         return request
@@ -219,10 +219,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
         if target is None:
             target = bob
 
-        if sender_player is None:
-            user = AnonymousUser()
-        else:
-            user = sender_player.user
+        user = AnonymousUser() if sender_player is None else sender_player.user
 
         request = rf.post(
             reverse("app:send_player_message", args=[target.pk]),
@@ -284,7 +281,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
 
     request = rf.post(
         "/player_detail_endpoint_whatever_tf_it_is HEY IT TURNS OUT THIS DOESN'T MATTER, WHO KNEW??/",
-        data=dict(action="splitsville"),
+        data={"action": "splitsville"},
     )
 
     request.user = Bob.user
@@ -304,7 +301,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
 
     assert the_kwargs["channel"] == "partnerships"
     assert the_kwargs["data"]["joined"] == []
-    assert set(the_kwargs["data"]["split"]) == set([3, 1])
+    assert set(the_kwargs["data"]["split"]) == {3, 1}
 
     assert response.status_code == 200
 
@@ -336,7 +333,7 @@ def test_table_creation(bob, rf, everybodys_password):
 
     request = rf.post(
         "/woteva/",
-        data=dict(pk1=bob.pk, pk2=bob.pk),
+        data={"pk1": bob.pk, "pk2": bob.pk},
     )
 
     request.user = bob.user
@@ -357,7 +354,7 @@ def test_table_creation(bob, rf, everybodys_password):
 
     request = rf.post(
         "/woteva/",
-        data=dict(pk1=bob.pk, pk2=players_by_name["tina"].pk),
+        data={"pk1": bob.pk, "pk2": players_by_name["tina"].pk},
     )
     request.user = bob.user
     response = table.new_table_for_two_partnerships(request, bob.pk, players_by_name["tina"].pk)

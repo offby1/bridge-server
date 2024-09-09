@@ -18,7 +18,7 @@ repos:
     # Run the linter.
     - id: ruff
       exclude: '/migrations/'
-      args: [ --fix ]
+      args: [ --unsafe-fixes ]
     # Run the formatter.
     - id: ruff-format
       exclude: '/migrations/'

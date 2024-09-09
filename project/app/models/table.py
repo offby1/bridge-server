@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import random
 
@@ -127,7 +129,7 @@ class Table(models.Model):
             rv[seat] = set(cardlist)
 
         if isinstance(self.current_handrecord.auction.status, Contract):
-            for index, seat, play in self.current_handrecord.annotated_plays:
+            for _index, seat, play in self.current_handrecord.annotated_plays:
                 seat = self.current_handrecord.seat_from_libseat(seat)
                 assert_type(seat, Seat)
                 card_to_remove = Card.deserialize(play.serialized)
@@ -147,7 +149,7 @@ class Table(models.Model):
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",
-            reverse("app:table-detail", kwargs=dict(pk=self.pk)),
+            reverse("app:table-detail", kwargs={"pk": self.pk}),
             str(self),
         )
 
@@ -155,18 +157,10 @@ class Table(models.Model):
         return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction.items()]
 
     def is_empty(self):
-        for p in self.players_by_direction.values():
-            if p is not None:
-                return False
-
-        return True
+        return all(p is None for p in self.players_by_direction.values())
 
     def is_full(self):
-        for p in self.players_by_direction.values():
-            if p is None:
-                return False
-
-        return True
+        return all(p is not None for p in self.players_by_direction.values())
 
     @property
     def playaz(self):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 import pytest
@@ -75,7 +77,7 @@ def test_cards_by_player(usual_setup):
     t.refresh_from_db()
     after = t.current_cards_by_seat[first_seat]
     club_two = Card(suit=libSuit.CLUBS, rank=2)
-    assert before - after == set([club_two])
+    assert before - after == {club_two}
 
 
 def _count_buttons(t: Table, request: Any) -> tuple[int, int]:
