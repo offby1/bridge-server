@@ -1,11 +1,7 @@
 {% load partials %}
 {% partialdef bidding-box-partial %}
-<div style="font-family: monospace;"
-     id="bidding-box">
-  {{ bidding_box_buttons }}
-</div>
+<div style="font-family: monospace;" id="bidding-box">{{ bidding_box_buttons }}</div>
 {% endpartialdef bidding-box-partial %}
-
 {% partialdef bidding-box-scripts %}
 <script>
 var es = new ReconnectingEventSource('{{ auction_event_source_endpoint }}');

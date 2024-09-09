@@ -3,31 +3,31 @@
 {% load partials %}
 {% partialdef partnership-status-partial %}
 {% block partnership-status-html %}
-<div id="partnership-status"
-     style="border: 1px solid"
-     data-player="{{ user.player.pk }}"
-     {% if user.player.partner %}data-player-partner="{{ user.player.partner.pk }}"{% endif %}
-     data-subject="{{ subject.pk }}"
-     {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}
-     >
-
-     <div class="row">
-       <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
-       <div class="col">
-         {% if text %}{{ text }}{% endif %}
-       </div>
-       <div class="col">
-         {% if button %}{{ button }}{% else %}...{% endif %}
-       </div>
-     </div>
-
-</div>
+    <div id="partnership-status"
+         style="border: 1px solid"
+         data-player="{{ user.player.pk }}"
+         {% if user.player.partner %}data-player-partner="{{ user.player.partner.pk }}"{% endif %}
+         data-subject="{{ subject.pk }}"
+         {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}>
+        <div class="row">
+            <div class="col">{{ subject | styled_link:as_viewed_by }}</div>
+            <div class="col">
+                {% if text %}{{ text }}{% endif %}
+            </div>
+            <div class="col">
+                {% if button %}
+                    {{ button }}
+                {% else %}
+                    ...
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock partnership-status-html %}
 {% endpartialdef partnership-status-partial %}
 {% block scripts %}
-{{ block.super }}
-
-<script>
+    {{ block.super }}
+    <script>
 var es = new ReconnectingEventSource('/events/partnerships/');
 
 es.addEventListener('message', function (e) {
@@ -67,6 +67,5 @@ es.addEventListener('message', function (e) {
 
 }, false);
 
-</script>
-
+    </script>
 {% endblock scripts %}

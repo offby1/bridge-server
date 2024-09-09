@@ -2,36 +2,34 @@
 {% load player_extras %}
 {% partialdef chat-html-partial %}
 <div id="chat-html-partial">
-  <div>
-    <input
-        autofocus
-        id="input"
-        type="text"
-        name="message"
-        hx-post="{{ chat_post_endpoint }}"
-        hx-swap="none"
-        hx-trigger="keyup[key=='Enter']"
-        />
-    <button
-      hx-include="#input"
-      hx-post="{{ chat_post_endpoint }}"
-      hx-swap="none"
-      >
-      {% if chat_target == user.player %}Mumble to yourself{% else %}Speak to {{ chat_target }}{% endif %}
-    </button>
-  </div>
-  <div>
-    Chat Log 'twixt {{ user.player|styled_link:user.player }} and {{ chat_target|styled_link:user.player }}
-    <div id="chat-log"
-           hx-ext="sse"
-           hx-swap="beforeend scroll:bottom"
-           sse-connect="{{ chat_event_source_endpoint }}"
-           sse-swap="message"
-         style="border: 1px solid; overflow: auto; height: 200px;">
-      {% for message in chat_messages %}
-        {{ message }}
-      {% endfor %}
+    <div>
+        <input autofocus
+               id="input"
+               type="text"
+               name="message"
+               hx-post="{{ chat_post_endpoint }}"
+               hx-swap="none"
+               hx-trigger="keyup[key=='Enter']" />
+        <button hx-include="#input" hx-post="{{ chat_post_endpoint }}" hx-swap="none">
+            {% if chat_target == user.player %}
+                Mumble to yourself
+            {% else %}
+                Speak to {{ chat_target }}
+            {% endif %}
+        </button>
     </div>
-  </div>
+    <div>
+        Chat Log 'twixt {{ user.player|styled_link:user.player }} and {{ chat_target|styled_link:user.player }}
+        <div id="chat-log"
+             hx-ext="sse"
+             hx-swap="beforeend scroll:bottom"
+             sse-connect="{{ chat_event_source_endpoint }}"
+             sse-swap="message"
+             style="border: 1px solid;
+                    overflow: auto;
+                    height: 200px">
+            {% for message in chat_messages %}{{ message }}{% endfor %}
+        </div>
+    </div>
 </div>
 {% endpartialdef chat-html-partial %}

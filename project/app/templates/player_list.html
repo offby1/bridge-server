@@ -2,7 +2,7 @@
 {% load player_extras %}
 {% block content %}
     {% block player_list %}
-    <h2>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</h2>
+        <h2>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</h2>
         <table id="player-list" class="table">
             <thead>
                 <tr>
@@ -44,6 +44,6 @@
             {% endfor %}
         </tbody>
     </table>
-{% include 'pagination-controls.html' %}
+    {% include 'pagination-controls.html' %}
 {% endblock player_list %}
 {% endblock content %}

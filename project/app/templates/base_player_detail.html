@@ -4,7 +4,8 @@
 {% block content %}
     <div>
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
-        {% block partnership-status-html %}{% endblock partnership-status-html %}
+        {% block partnership-status-html %}
+        {% endblock partnership-status-html %}
         <br />
         {% if player.table %}
             {{ player.table.as_link }}
@@ -20,5 +21,5 @@
     {% include "chat-partial.html#chat-html-partial" %}
 {% endblock content %}
 {% block scripts %}
-{% include "chat-scripts.js" %}
+    {% include "chat-scripts.js" %}
 {% endblock scripts %}

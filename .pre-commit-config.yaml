@@ -22,3 +22,12 @@ repos:
     # Run the formatter.
     - id: ruff-format
       exclude: '/migrations/'
+
+- repo: https://github.com/djlint/djLint
+  rev: v1.35.2
+  hooks:
+    - id: djlint-reformat-django
+
+    # Disabled because there are too many problems :-(
+    # - id: djlint-django
+    #   exclude: 'bootstrap-fiddling.html'
