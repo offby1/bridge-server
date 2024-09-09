@@ -63,7 +63,7 @@ version-file:
 
 [private]
 pre-commit:
-    pre-commit install
+    -pre-commit install
 
 [group('django')]
 [private]

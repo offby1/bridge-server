@@ -1,5 +1,26 @@
 # Wassup homies
 
+## Getting prerequistes &c
+
+### just
+- $ `curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin`
+  $ `PATH=$PATH:$HOME/.local/bin`
+  Yeah, I hate `curl | sh` too, but there doesn't seem to be any other foolproof way.
+  Take a look at <https://just.systems/man/en/chapter_4.html> for other options.
+
+### pre-commit
+Optional but slick.
+
+### pipx
+- `sudo apt install pipx`
+
+### poetry
+- `pipx install poetry`
+
+### postgres
+- $ `sudo apt install postgresql`
+- $ `PATH=$PATH:/usr/lib/postgresql/16/bin`
+
 ## Thoughts about state
 
 So ... I never put a lot of thought into what, exactly, should live in the db; and of that stuff, what should be immutable.
