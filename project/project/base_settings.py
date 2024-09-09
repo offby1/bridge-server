@@ -14,6 +14,12 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+VERSION = "unknown"
+try:
+    with open(BASE_DIR / "VERSION") as inf:
+        VERSION = inf.read()
+except FileNotFoundError as e:
+    print(e)
 
 APP_NAME = "info.offby1.bridge"
 
@@ -90,6 +96,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "app.template.context_processors.stick_that_version_in_there_daddy_O",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",

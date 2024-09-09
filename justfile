@@ -25,9 +25,13 @@ poetry-install: die-if-poetry-active
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
 
+[private]
+version-file:
+    git describe --always --dirty --tags > project/VERSION
+
 [group('django')]
 [private]
-all-but-django-prep: poetry-install
+all-but-django-prep: version-file poetry-install
 
 [group('django')]
 [private]
