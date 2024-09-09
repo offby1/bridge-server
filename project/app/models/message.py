@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional
 
@@ -81,38 +83,38 @@ class Message(models.Model):
         return Message.channel_name_from_player_pks(p1.pk, p2.pk)
 
     @staticmethod
-    def player_pks_from_channel_name(channel_name: str) -> Optional[set[int]]:
+    def player_pks_from_channel_name(channel_name: str) -> set[int] | None:
         if ":" not in channel_name:
             return None
         try:
             _, pk_underscore_string = channel_name.split(":")
-            return set([int(p) for p in pk_underscore_string.split("_")])
+            return {int(p) for p in pk_underscore_string.split("_")}
         except Exception:
             logger.exception(channel_name)
             return None
 
     @classmethod
     def create_player_event_args(
-        kls,
+        cls,
         *,
         from_player,
         message,
         recipient,
     ):
-        return kls._create_event_args(
-            channel_name=kls.channel_name_from_players(from_player, recipient),
+        return cls._create_event_args(
+            channel_name=cls.channel_name_from_players(from_player, recipient),
             from_player=from_player,
             message=message,
             recipient_obj=recipient,
         )
 
     @classmethod
-    def create_lobby_event_args(kls, *, from_player, message):
+    def create_lobby_event_args(cls, *, from_player, message):
         global _THE_LOBBY
         if _THE_LOBBY is None:
             _THE_LOBBY, created = Lobby.objects.get_or_create()
 
-        return kls._create_event_args(
+        return cls._create_event_args(
             channel_name="lobby",
             from_player=from_player,
             message=message,  # it's like a jungle, sometimes.  It makes me wonder how I keep from going under.
@@ -120,12 +122,12 @@ class Message(models.Model):
         )
 
     @classmethod
-    def _create_event_args(kls, *, channel_name, from_player, message, recipient_obj):
+    def _create_event_args(cls, *, channel_name, from_player, message, recipient_obj):
         if len(message) > 100:
             logger.warning(f"Truncating annoyingly-long ({len(message)} characters) message")
             message = message[0:100]
 
-        obj = kls.objects.create(
+        obj = cls.objects.create(
             from_player=from_player,
             message=message,
             recipient_obj=recipient_obj,

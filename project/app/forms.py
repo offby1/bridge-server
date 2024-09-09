@@ -16,8 +16,9 @@ class SignupForm(forms.Form):
         password_again = cleaned_data.get("password_again")
 
         if password != password_again:
+            msg = f"{password=} != {password_again=}"
             raise ValidationError(
-                f"{password=} != {password_again=}",
+                msg,
             )
 
     def create_user(self):

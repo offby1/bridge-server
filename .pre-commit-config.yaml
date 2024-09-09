@@ -1,0 +1,33 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+        exclude_types: [css, json, javascript]
+    -   id: end-of-file-fixer
+        exclude_types: [css, json, javascript]
+    -   id: check-yaml
+    -   id: check-added-large-files
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.6.4
+  hooks:
+    # Run the linter.
+    - id: ruff
+      exclude: '/migrations/'
+      args: [ --unsafe-fixes ]
+    # Run the formatter.
+    - id: ruff-format
+      exclude: '/migrations/'
+
+- repo: https://github.com/djlint/djLint
+  rev: v1.35.2
+  hooks:
+    - id: djlint-reformat-django
+
+    # Disabled because there are too many problems :-(
+    # - id: djlint-django
+    #   exclude: 'bootstrap-fiddling.html'

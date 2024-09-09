@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import collections
+import contextlib
 import json
 import time
 import typing
@@ -113,7 +116,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
-        try:
+
+        with contextlib.suppress(KeyboardInterrupt):
             self.run_forever()
-        except KeyboardInterrupt:
-            pass

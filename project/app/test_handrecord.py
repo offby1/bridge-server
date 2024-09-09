@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from itertools import chain
 from typing import Any
 
@@ -59,7 +61,7 @@ def test_cards_by_player(usual_setup):
     # TODO -- check that the card was played from the correct hand.
     after = set(chain.from_iterable(t.current_cards_by_seat.values()))
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
-    assert before - after == set([diamond_two])
+    assert before - after == {diamond_two}
 
 
 def _count_buttons(t: Table, request: Any) -> tuple[int, int]:

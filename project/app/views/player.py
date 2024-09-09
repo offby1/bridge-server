@@ -1,5 +1,3 @@
-from app.models import Message, PartnerException, Player
-from app.models.player import JOIN, SPLIT
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -10,6 +8,9 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
+
+from app.models import Message, PartnerException, Player
+from app.models.player import JOIN, SPLIT
 
 from .misc import logged_in_as_player_required
 
@@ -77,13 +78,11 @@ def _get_text(subject, as_viewed_by):
 
 
 def _get_button(subject, as_viewed_by):
-    if subject.partner is None and as_viewed_by.partner is None:
-        if subject != as_viewed_by:
-            return _button(page_subject=subject, action=JOIN)
+    if subject.partner is None and as_viewed_by.partner is None and subject != as_viewed_by:
+        return _button(page_subject=subject, action=JOIN)
 
-    if subject == as_viewed_by:
-        if subject.partner is not None:
-            return _button(page_subject=subject, action=SPLIT)
+    if subject == as_viewed_by and subject.partner is not None:
+        return _button(page_subject=subject, action=SPLIT)
 
     if subject == as_viewed_by.partner:
         return _button(page_subject=subject, action=SPLIT)
@@ -112,12 +111,14 @@ def player_detail_view(request, pk):
 
     common_context = {
         "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(who_clicked, subject)}",
-        "chat_messages": ([
-            m.as_html()
-            for m in Message.objects.get_for_player_pair(who_clicked, subject)
-            .order_by("timestamp")
-            .all()[0:100]
-        ]),
+        "chat_messages": (
+            [
+                m.as_html()
+                for m in Message.objects.get_for_player_pair(who_clicked, subject)
+                .order_by("timestamp")
+                .all()[0:100]
+            ]
+        ),
         "chat_post_endpoint": reverse(
             "app:send_player_message",
             kwargs={"recipient_pk": subject.pk},
@@ -203,9 +204,8 @@ def player_list_view(request):
 
     player = getattr(request.user, "player", None)
 
-    if player is not None:
-        if {"True": True, "False": False}.get(exclude_me) is True:
-            qs = qs.exclude(pk=player.pk).exclude(partner=player)
+    if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
+        qs = qs.exclude(pk=player.pk).exclude(partner=player)
 
     if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
         qs = qs.filter(partner__isnull=lfl_filter)
@@ -214,16 +214,15 @@ def player_list_view(request):
         qs = qs.filter(seat__isnull=not seated_filter)
 
     filtered_count = qs.count()
-    if player is not None:
-        if player.partner is not None:
-            qs = qs.annotate(
-                maybe_a_link=(
-                    Q(seat__isnull=True)
-                    & Q(partner__isnull=False)
-                    & ~Q(pk=player.pk)
-                    & ~Q(pk=player.partner.pk)
-                ),
-            )
+    if player is not None and player.partner is not None:
+        qs = qs.annotate(
+            maybe_a_link=(
+                Q(seat__isnull=True)
+                & Q(partner__isnull=False)
+                & ~Q(pk=player.pk)
+                & ~Q(pk=player.partner.pk)
+            ),
+        )
 
     total_count = qs.count()
     paginator = Paginator(qs, 10)
@@ -231,7 +230,7 @@ def player_list_view(request):
     page_obj = paginator.get_page(page_number)
 
     context = {
-        "extra_crap": dict(total_count=total_count, filtered_count=filtered_count),
+        "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
         "page_obj": page_obj,
     }
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from typing import TYPE_CHECKING
 
@@ -97,7 +99,7 @@ class HandRecord(models.Model):
                     },
                 )
 
-    def add_play_from_player(self, *, player: libPlayer, card: libCard) -> "Play":
+    def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
 
@@ -110,7 +112,8 @@ class HandRecord(models.Model):
 
         legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
-            raise PlayException(f"{card} is not a legal play")
+            msg = f"{card} is not a legal play"
+            raise PlayException(msg)
 
         rv = self.play_set.create(serialized=card.serialize())
 
@@ -133,7 +136,7 @@ class HandRecord(models.Model):
 
         libTable = self.table.libraryThing()
         rv = libAuction(table=libTable, dealer=dealer)
-        for index, seat, call in self.annotated_calls:
+        for _index, seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
         return rv
@@ -265,10 +268,11 @@ class Play(models.Model):
     )
 
     def __str__(self):
-        for index, seat, candidate in self.hand.annotated_plays:
+        for _index, seat, candidate in self.hand.annotated_plays:
             if self == candidate:
                 return f"{seat} at {self.hand.table} played {self.serialized}"
-        raise Exception(f"Internal error, cannot find {self} in {self.annotated_plays}")
+        msg = f"Internal error, cannot find {self} in {self.annotated_plays}"
+        raise Exception(msg)
 
     class Meta:
         constraints = [

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import logging
 import random
+from typing import TYPE_CHECKING
 
 from bridge.card import Card
 from bridge.contract import Contract
-from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -19,6 +21,9 @@ from .board import Board
 from .handrecord import HandRecord
 from .seat import Seat
 from .utils import assert_type
+
+if TYPE_CHECKING:
+    from bridge.seat import Seat as libSeat
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +137,7 @@ class Table(models.Model):
             rv[seat] = set(cardlist)
 
         if isinstance(self.current_handrecord.auction.status, Contract):
-            for index, seat, card in self.current_handrecord.annotated_plays:
+            for _index, seat, card in self.current_handrecord.annotated_plays:
                 seat = self.current_handrecord.seat_from_libseat(seat)
                 assert_type(seat, Seat)
                 rv[seat].remove(card)
@@ -151,7 +156,7 @@ class Table(models.Model):
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",
-            reverse("app:table-detail", kwargs=dict(pk=self.pk)),
+            reverse("app:table-detail", kwargs={"pk": self.pk}),
             str(self),
         )
 
@@ -159,18 +164,10 @@ class Table(models.Model):
         return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction.items()]
 
     def is_empty(self):
-        for p in self.players_by_direction.values():
-            if p is not None:
-                return False
-
-        return True
+        return all(p is None for p in self.players_by_direction.values())
 
     def is_full(self):
-        for p in self.players_by_direction.values():
-            if p is None:
-                return False
-
-        return True
+        return all(p is not None for p in self.players_by_direction.values())
 
     @property
     def playaz(self):

@@ -64,7 +64,8 @@ class Player(models.Model):
                 cards=self.seat.table.current_board.cards_for_direction(self.seat.direction),
             )
         except KeyError as e:
-            raise PlayerException(f"{self} just might not be seated at {self.table}") from e
+            msg = f"{self} just might not be seated at {self.table}"
+            raise PlayerException(msg) from e
 
         return bridge.table.Player(
             seat=self.seat.libraryThing,
@@ -105,12 +106,14 @@ class Player(models.Model):
     def partner_with(self, other):
         with transaction.atomic():
             if self.partner not in (None, other):
+                msg = f"Cannot partner with {other=} cuz I'm already partnered with {self.partner=}"
                 raise PartnerException(
-                    f"Cannot partner with {other=} cuz I'm already partnered with {self.partner=}",
+                    msg,
                 )
             if other.partner not in (None, self):
+                msg = f"Cannot partner {other=} with {self=} cuz they are already partnered with {other.partner=}"
                 raise PartnerException(
-                    f"Cannot partner {other=} with {self=} cuz they are already partnered with {other.partner=}",
+                    msg,
                 )
 
             self.partner = other
@@ -123,13 +126,15 @@ class Player(models.Model):
     def break_partnership(self):
         with transaction.atomic():
             if self.partner is None:
+                msg = "Cannot break up with partner 'cuz we don't *have* a partner"
                 raise PartnerException(
-                    "Cannot break up with partner 'cuz we don't *have* a partner",
+                    msg,
                 )
 
             if self.partner.partner is None:
+                msg = "Oh shit -- our partner doesn't have a partner"
                 raise PartnerException(
-                    "Oh shit -- our partner doesn't have a partner",
+                    msg,
                 )
 
             table = self.table
@@ -176,7 +181,7 @@ class Player(models.Model):
         return format_html(
             "<a style='{}' href='{}'>{}</a>",
             style,
-            reverse("app:player", kwargs=dict(pk=self.pk)),
+            reverse("app:player", kwargs={"pk": self.pk}),
             str(self),
         )
 
@@ -188,7 +193,8 @@ class Player(models.Model):
             return
 
         if self.partner is None:
-            raise PlayerException(f"{self} is seated at {self.seat} but has no partner!!")
+            msg = f"{self} is seated at {self.seat} but has no partner!!"
+            raise PlayerException(msg)
 
     # TODO -- see if we can do this check in a constraint
     def save(self, *args, **kwargs):
