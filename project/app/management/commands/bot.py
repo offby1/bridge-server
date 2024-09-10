@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import datetime
 import json
 import random
 import time
@@ -16,7 +17,22 @@ from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
 
+def ts(time_t=None):
+    if time_t is None:
+        time_t = time.time()
+    return datetime.datetime.fromtimestamp(time_t, tz=datetime.timezone.utc)
+
+
 class Command(BaseCommand):
+    @contextlib.contextmanager
+    def delayed_action(self, *, table):
+        previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
+        sleep_until = previous_action_time + 1
+        if (duration := sleep_until - self.last_action_timestamps_by_table_id[table.pk]) > 0:
+            time.sleep(duration)
+        yield
+        self.last_action_timestamps_by_table_id[table.pk] = time.time()
+
     def make_a_groovy_call(self, *, handrecord):
         table = handrecord.table
         player_to_impersonate = handrecord.player_who_may_call
@@ -88,14 +104,6 @@ class Command(BaseCommand):
         p = handrecord.add_play_from_player(player=handrecord.xscript.player, card=chosen_card)
         self.stdout.write(f"At {table}, played {p} from {legal_cards}")
 
-    def maybe_sleep(self, *, table):
-        now = time.time()
-        sleep_until = self.last_action_timestamps_by_table_id[table.pk] + 1
-        self.last_action_timestamps_by_table_id[table.pk] = now
-
-        if sleep_until - now > 0:
-            time.sleep(sleep_until - now)
-
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
 
@@ -108,21 +116,21 @@ class Command(BaseCommand):
         handrecord = table.current_handrecord
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
-            self.make_a_groovy_call(handrecord=handrecord)
-            self.maybe_sleep(table=table)
+            with self.delayed_action(table=table):
+                self.make_a_groovy_call(handrecord=handrecord)
 
         elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
             "table",
             "player",
             "card",
         }:
-            self.make_a_groovy_play(handrecord=handrecord)
-            self.maybe_sleep(table=table)
+            with self.delayed_action(table=table):
+                self.make_a_groovy_play(handrecord=handrecord)
         elif set(data.keys()) == {"table", "direction", "action"}:
             self.stderr.write(f"I wonder if someone at {data=} wanted to tell me something")
-            self.make_a_groovy_call(handrecord=handrecord)
-            self.make_a_groovy_play(handrecord=handrecord)
-            self.maybe_sleep(table=table)
+            with self.delayed_action(table=table):
+                self.make_a_groovy_call(handrecord=handrecord)
+                self.make_a_groovy_play(handrecord=handrecord)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
