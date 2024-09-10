@@ -9,6 +9,7 @@
                     <td>ID</td>
                     <td>players</td>
                     <td>Auction</td>
+                    <td>Play</td>
                 </tr>
             </th>
             {% for table in page_obj %}
@@ -21,6 +22,9 @@
                     </td>
                     <td>
                         <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_auction.status }}</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_handrecord.status }}</a>
                     </td>
                 </tr>
             {% endfor %}

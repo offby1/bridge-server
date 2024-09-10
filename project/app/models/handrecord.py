@@ -219,6 +219,12 @@ class HandRecord(models.Model):
 
         return flattened
 
+    # TODO -- don't just count the tricks; indicate which side took how many, and whether the hand is complete
+    @property
+    def status(self):
+        q, r = divmod(self.play_set.count(), 4)
+        return f"{q}/13 tricks{'+' if r else ''}"
+
     @property
     def plays(self):
         return self.play_set.order_by("id")
