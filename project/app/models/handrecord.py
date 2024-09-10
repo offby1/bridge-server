@@ -143,7 +143,7 @@ class HandRecord(models.Model):
 
     @property
     def declarer(self) -> libPlayer | None:
-        if not isinstance(self.auction.status, libContract):
+        if not self.auction.found_contract:
             return None
         return self.auction.declarer
 

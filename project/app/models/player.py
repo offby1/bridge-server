@@ -169,11 +169,9 @@ class Player(models.Model):
             direction = f" ({self.seat.named_direction})"
 
             # TODO -- mark the dummy too, I guess?
-            status = self.seat.table.current_auction.status
-
-            if isinstance(status, bridge.auction.Contract):
-                if self.name == status.declarer.name:
-                    return f"Declarer! {self.user.username}{direction}"
+            a = self.seat.table.current_auction
+            if a.found_contract and self.name == a.status.declarer.name:
+                return f"Declarer! {self.user.username}{direction}"
 
         return f"{self.user.username}{direction}"
 

@@ -14,7 +14,7 @@ faker = "^26.0.0"
 more-itertools = "^10.3.0"
 pytest-django = "^4.7.0"
 tqdm = "^4.66.4"
-#bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "78636ca2cb17304d72324020cd4d8dfbd70a681d" }
+#bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "e129dc53ac997b66b49760394598cef8915813bc" }
 bridge = {path = "../library", develop = true}
 django-eventstream = {extras = ["drf"], version = "^5.3.0"}
 daphne = "^4.1.2"

@@ -87,7 +87,7 @@ class Command(BaseCommand):
             )
 
     def make_a_groovy_play(self, *, handrecord):
-        if not isinstance(handrecord.auction.status, Contract):
+        if not handrecord.auction.found_contract:
             return
 
         table = handrecord.table

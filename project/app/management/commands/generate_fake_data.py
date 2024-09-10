@@ -143,9 +143,7 @@ class Command(BaseCommand):
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
         # Now find some tables with complete auctions, and play a few cards.
-        playable_tables = [
-            t for t in Table.objects.all() if isinstance(t.current_auction.status, Contract)
-        ]
+        playable_tables = [t for t in Table.objects.all() if t.current_auction.found_contract]
         for t in tqdm.tqdm(
             playable_tables,
             desc="tables",

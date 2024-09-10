@@ -136,7 +136,7 @@ class Table(models.Model):
 
             rv[seat] = set(cardlist)
 
-        if isinstance(self.current_handrecord.auction.status, Contract):
+        if self.current_handrecord.auction.found_contract:
             for _index, seat, card in self.current_handrecord.annotated_plays:
                 seat = self.current_handrecord.seat_from_libseat(seat)
                 assert_type(seat, Seat)
@@ -155,7 +155,7 @@ class Table(models.Model):
 
     @property
     def next_seat_to_play(self) -> Seat | None:
-        if isinstance(self.current_auction.status, Contract):
+        if self.current_auction.found_contract:
             xscript = self.current_handrecord.xscript
             return Seat.objects.get(table=self, direction=xscript.player.seat.value)
 

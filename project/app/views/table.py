@@ -278,7 +278,7 @@ def table_detail_view(request, pk):
 
     # No cards are legal to play if the auction hasn't settled.
     legal_cards = []
-    if isinstance(table.current_auction.status, bridge.auction.Contract):
+    if table.current_auction.found_contract:
         legal_cards = table.current_handrecord.xscript.legal_cards()
 
     # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
