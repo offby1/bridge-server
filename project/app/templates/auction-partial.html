@@ -1,7 +1,7 @@
 {% load partials %}
 {% load player_extras %}
 {% partialdef auction-partial %}
-<div id="auction">
+<div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
     {{ table.current_auction.status }}
     <table class="table">
         <th>
@@ -43,7 +43,7 @@ es.addEventListener('message', function (e) {
 
     var d = JSON.parse(e.data) ;
     // for now, totally ignore the content of the message, and just reload the partial
-    htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML'});
+    htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
 
 }, false);
 

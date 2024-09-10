@@ -5,7 +5,7 @@
         {% include 'auction-partial.html#auction-partial' %}
         {% include 'bidding-box-partial.html#bidding-box-partial' %}
         {# TODO -- omit this.  It's nice for someone like me who has no memory, but it's Not Done® in a duplicate club. #}
-        <div>
+        <div style="border: 1px dotted; overflow: auto; height: 100px">
             <ul>
                 {% for t in table.current_handrecord.tricks %}
                     {% for p in t %}<li>{{ p }}</li>{% endfor %}
@@ -15,7 +15,7 @@
         </div>
     </div>
     {# North at the top as per the Bridge Writing Style Guide #}
-    <div style="border: 1px solid;">
+    <div style="border: 1px solid; height: 50%">
         <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
             <div class="col"></div>
             <div class="col">
