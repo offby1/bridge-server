@@ -1,43 +1,12 @@
+import 'postgres.just'
 set unstable
 
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
-export PGDATA := env("PGDATA", home_dir() / "Library/Application Support/Postgres/var-14")
 export POETRY_VIRTUALENVS_IN_PROJECT := "false"
 
 [private]
 default:
     just --list
-
-[group('postgres')]
-pg-create-cluster:
-    [ -d "${PGDATA}" ] || initdb
-
-[group('postgres')]
-[private]
-pg-start: pg-create-cluster
-    @pg_ctl status || pg_ctl start --log=/tmp/postgresql.log || tail /tmp/postgresql.log
-
-alias start := pg-start
-
-[group('postgres')]
-[private]
-pg-stop: pg-create-cluster
-    if pg_ctl status; then pg_ctl stop; fi
-
-alias stop := pg-stop
-
-[group('postgres')]
-[private]
-pg-create-db: pg-start
-    if ! createdb -T template0 bridge ; then echo "$(tput setaf 2)'database already exists' is OK! ctfo$(tput sgr0)"; fi
-
-[group('postgres')]
-[private]
-pg-overall-prep: pg-create-cluster pg-start pg-create-db
-
-[group('postgres')]
-drop: pg-start
-    if ! dropdb  --force bridge; then echo "$(tput setaf 2)'database does not exist' is OK! ctfo$(tput sgr0)"; fi
 
 [private]
 [script('bash')]
@@ -49,6 +18,8 @@ die-if-poetry-active:
 
       false
     fi
+
+
 
 [group('virtualenv')]
 poetry-install: die-if-poetry-active
@@ -67,7 +38,7 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-overall-prep
+all-but-django-prep: version-file pre-commit poetry-install pg-create-db
 
 [group('django')]
 [private]
@@ -123,18 +94,6 @@ pop: django-superuser migrate (manage "generate_fake_data --players=56")
 bot *options: migrate
     cd project && poetry run python manage.py bot {{ options }}
 
-# Run many bots in parallel
-[group('bs')]
-[script('bash')]
-botstorm: migrate
-    set -euxo pipefail
-    cd project
-    for i in $(seq 15)
-    do
-       poetry run python manage.py bot --table=${i} &
-    done
-    wait
-
 [group('django')]
 [private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
@@ -175,4 +134,4 @@ clean: die-if-poetry-active
     git clean -dx --interactive --exclude='*.sqlite3'
 
 # Kill it all.  Kill it all, with fire.
-nuke: clean drop
+nuke: clean docker-nuke
