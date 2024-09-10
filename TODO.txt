@@ -1,5 +1,18 @@
 STILL TODO:
 
+* Somehow the cards in one dude's hand aren't sorted, even though they're sorted in the board:
+  https://erics-work-macbook-pro.tail571dc2.ts.net/table/14 shows East holding 9, K, 4, J of diamonds (in that order);
+  https://erics-work-macbook-pro.tail571dc2.ts.net/admin/app/board/14/change/ shows East's cards as "♣2♣6♣T♣Q♦4♦9♦J♦K♥4♠3♠4♠T♠Q" (i.e., nicely sorted)
+
+* Consider timestamps for important stuff, in particular calls and plays.
+
+* Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
+
+* Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
+  I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
+  <https://en.wikipedia.org/wiki/Duplicate_bridge>
+  ("Teams"? "Pairs"? "Individual"?)
+
 * It looks like the played-a-card message is forcing the *auction log* to reload -- I've seen it jitter.
 
 * Make the auction record vanish once the opening lead has been made.
