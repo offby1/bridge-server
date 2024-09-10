@@ -189,9 +189,9 @@ def _three_by_three_trick_display_context_for_table(
     return {
         "three_by_three_trick_display": {
             "rows": [
-                ["North-->", c("NORTH"), "<--North"],
-                [c("WEST"), "<---west east--->", c("EAST")],
-                ["South-->", c("SOUTH"), "<--South"],
+                [" ", c("NORTH"), " "],
+                [c("WEST"), " ", c("EAST")],
+                [" ", c("SOUTH"), " "],
             ],
         },
     }
