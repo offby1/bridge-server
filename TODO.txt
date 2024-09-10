@@ -1,5 +1,7 @@
 STILL TODO:
 
+* It looks like the played-a-card message is forcing the *auction log* to reload -- I've seen it jitter.
+
 * Make the auction record vanish once the opening lead has been made.
 
 * Try out <https://docs.djangoproject.com/en/5.1/ref/contrib/admin/admindocs/#module-django.contrib.admindocs>
@@ -43,6 +45,31 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* The auction log is missing some events, and fails to update thereafter, until I reload the page
+  I see this in the browser's console
+
+    htmx.min.js:1 htmx:swapError
+    w @ htmx.min.js:1
+    htmx.min.js:1 TypeError: Cannot read properties of null (reading 'insertBefore')
+        at c (htmx.min.js:1:11666)
+        at Me (htmx.min.js:1:12591)
+        at _e (htmx.min.js:1:13292)
+        at ze (htmx.min.js:1:14782)
+        at e (htmx.min.js:1:46625)
+        at Mn (htmx.min.js:1:47396)
+        at p.onload (htmx.min.js:1:42510)
+    w @ htmx.min.js:1
+    htmx.min.js:1 Uncaught TypeError: Cannot read properties of null (reading 'insertBefore')
+        at c (htmx.min.js:1:11666)
+        at Me (htmx.min.js:1:12591)
+        at _e (htmx.min.js:1:13292)
+        at ze (htmx.min.js:1:14782)
+        at e (htmx.min.js:1:46625)
+        at Mn (htmx.min.js:1:47396)
+        at p.onload (htmx.min.js:1:42510)
+
+  But since I fixed the problem whereby the bot was sending events in rapid succession, this seems to be gone.
 
 * Table 14's hand record looks like this
     No bidding box 'cuz the auction is over
