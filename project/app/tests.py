@@ -133,7 +133,7 @@ def test_legal_cards(usual_setup, rf, settings):
     client = Client()
     client.login(username=leader.name, password=".")
 
-    settings.DEBUG = (
+    settings.POKEY_BOT_BUTTONS = (
         False  # otherwise we display all four hands, three of whose cards are indeed all disabled
     )
     response = client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)

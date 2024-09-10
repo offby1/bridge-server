@@ -30,7 +30,7 @@ urlpatterns = [
     path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]
 
-if settings.DEBUG:
+if settings.POKEY_BOT_BUTTONS:
     urlpatterns.append(
         path("yo/bot/", table.poke_de_bot, name="poke-de-bot"),
     )

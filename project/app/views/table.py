@@ -288,7 +288,7 @@ def table_detail_view(request, pk):
     for seat, cards in table.current_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
-        if settings.DEBUG or seat.player == request.user.player:
+        if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
             dem_cards_baby = card_buttons_as_four_divs(
                 players_cards=cards,
                 legal_cards=legal_cards,
@@ -303,7 +303,7 @@ def table_detail_view(request, pk):
             },
         )
 
-        if settings.DEBUG:
+        if settings.POKEY_BOT_BUTTONS:
             pokey_buttons_by_direction[seat.named_direction] = (
                 SafeString(f"""<div class="btn-group">
         <button
