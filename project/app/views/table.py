@@ -134,7 +134,7 @@ def card_buttons_as_four_divs(
 
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
-        cols = [card_button(c, color) for c in reversed(cards)]
+        cols = [card_button(c, color) for c in sorted(cards, reverse=True)]
         return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
 
     row_divs = [
