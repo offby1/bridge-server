@@ -1,5 +1,7 @@
 STILL TODO:
 
+* Dockerize the bot, now that I've done the web service.
+
 * Consider timestamps for important stuff, in particular calls and plays.
 
 * Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
