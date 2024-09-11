@@ -110,7 +110,8 @@ def bidding_box_buttons(
         top_button_group += buttonize(call, active)
     top_button_group += "</div>"
 
-    return SafeString(f"""{top_button_group} <br/> {"\n".join(rows)}""")
+    joined_rows = "\n".join(rows)
+    return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
 def card_buttons_as_four_divs(
