@@ -132,10 +132,10 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
 
-# typical usage: just nuke ; docker volume prune --all --force ; just dcu --build
+# typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file
+dcu: version-file
     set -euo pipefail
 
     # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
@@ -146,7 +146,7 @@ dcu *options: version-file
        exit 1
     fi
     set -x
-    docker compose up {{ options }}
+    docker compose up --build
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
