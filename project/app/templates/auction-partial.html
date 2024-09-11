@@ -42,8 +42,10 @@ es.addEventListener('message', function (e) {
     console.log("Auction event listener saw " + e.data);
 
     var d = JSON.parse(e.data) ;
-    // for now, totally ignore the content of the message, and just reload the partial
-    htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
+    // Reload the partial only if the data indicates something about the auction.
+    if ("call" in d) {
+      htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
+    }
 
 }, false);
 
