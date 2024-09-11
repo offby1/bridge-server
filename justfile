@@ -132,5 +132,16 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dx --interactive --exclude='*.sqlite3'
 
+# typical usage: just nuke ; docker volume prune --all --force ; just dcu --build
+[group('docker')]
+[script('bash')]
+dcu *options: version-file
+    set -euo pipefail
+
+    # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
+    export DJANGO_SECRET_KEY=$(cat "{{ config_directory() }}/info.offby1.bridge/django_secret_key")
+    set -x
+    docker compose up {{ options }}
+
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke

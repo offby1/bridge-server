@@ -1,0 +1,50 @@
+volumes:
+  postgres_data: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    depends_on:
+      django-migrated:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    environment:
+      DJANGO_SECRET_FILE: /run/secrets/django_secret
+      PGHOST: postgres
+      PGPASS: postgres
+    ports:
+      - "9000:9000"
+    secrets:
+      - django_secret
+
+  django-migrated:
+    <<: *django
+    command: "poetry run python manage.py migrate --noinput"
+    restart: "no"
+    ports: []
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    environment:
+      # only for initializing the db
+      POSTGRES_DB: bridge
+      POSTGRES_PASSWORD: postgres
+    # TODO -- figure out how to tell docker to put the backing store where I want it, or at the very least, figure out
+    # where it is
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6
+
+secrets:
+  django_secret:
+    environment: "DJANGO_SECRET_KEY"

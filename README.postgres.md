@@ -30,6 +30,8 @@ The latter is for the postgresql docker image, and (along with `POSTGRES_PASSWOR
 defaults to `postgres`; the password has no default).  Without a valid password, I *think* the db won't even come up.
 `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
 
+<https://www.postgresql.org/docs/current/libpq-envars.html>
+
 ## Wassup with port 5432
 
 So I have done local, non-docker development with a MacOS version of postgres, which unsurprisingly listens on 5432.

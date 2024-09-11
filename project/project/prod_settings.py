@@ -17,12 +17,10 @@ def temp_umask(new_umask):
         os.umask(old_umask)
 
 
-secret_key_path = platformdirs.site_data_path(appname=APP_NAME) / "django_secret_key"
-if not secret_key_path.is_file():
-    with temp_umask(0o77), open(secret_key_path, "w") as outf:
-        outf.write(django.core.management.utils.get_random_secret_key())
+SECRET_KEY_FILE = os.environ.get("DJANGO_SECRET_FILE")
 
-with open(secret_key_path) as inf:
-    SECRET_KEY = inf.read()
+if SECRET_KEY_FILE is not None:
+    with open(SECRET_KEY_FILE) as inf:
+        SECRET_KEY = inf.read()
 
 DEBUG = False

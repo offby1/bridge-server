@@ -9,6 +9,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from __future__ import annotations
+
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,7 +30,7 @@ APP_NAME = "info.offby1.bridge"
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-d)83erqvk0gay745i(^j_l37bg$+14&zgc5=pf5o*-3w%!h$92"
+SECRET_KEY: str | None = "django-insecure-d)83erqvk0gay745i(^j_l37bg$+14&zgc5=pf5o*-3w%!h$92"
 
 ALLOWED_HOSTS = [
     ".orb.local",
@@ -116,13 +119,12 @@ WSGI_APPLICATION = "project.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": "localhost",
+        "HOST": os.environ.get("PGHOST", "localhost"),
         "NAME": "bridge",
-        "PASSWORD": "postgres",
-        "USER": "postgres",
+        "PASSWORD": os.environ.get("PGPASS", "postgres"),
+        "USER": os.environ.get("PGUSER", "postgres"),
     },
 }
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
