@@ -7,6 +7,7 @@ from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
@@ -158,7 +159,7 @@ class Player(models.Model):
     def is_seated(self):
         return Seat.objects.filter(player=self).exists()
 
-    @property
+    @cached_property
     def name(self):
         return self.user.username
 

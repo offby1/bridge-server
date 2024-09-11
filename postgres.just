@@ -46,7 +46,7 @@ pg-create-db: pg-start
 
 
 orb:
-    if [ "{{os_family()}}" = "macos" ]; then orb start; else echo not mac I guess; fi
+    if [ "{{os()}}" = "macos" ]; then orb start; else echo not mac I guess; fi
 
 [script('bash')]
 docker-nuke: orb

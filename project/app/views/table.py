@@ -11,7 +11,13 @@ import bridge.seat
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -19,7 +25,7 @@ from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
-from app.models import Player, PlayerException, Table
+from app.models import Player, PlayerException, Table, TableException
 from app.models.utils import assert_type
 
 from .misc import logged_in_as_player_required
@@ -199,7 +205,7 @@ def _three_by_three_trick_display_context_for_table(
 
 
 def _bidding_box_context_for_table(request, table):
-    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
+    if table.current_auction.status != bridge.auction.Auction.Incomplete:
         buttons = "No bidding box 'cuz the auction is over"
     else:
         player = request.user.player  # type: ignore
@@ -360,6 +366,9 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     if request.user.player not in all_four:
         return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
 
-    t = Table.objects.create_with_two_partnerships(p1, p2)
+    try:
+        t = Table.objects.create_with_two_partnerships(p1, p2)
+    except TableException as e:
+        return HttpResponseForbidden(str(e))
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
