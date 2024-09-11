@@ -9,12 +9,20 @@
                name="message"
                hx-post="{{ chat_post_endpoint }}"
                hx-swap="none"
-               hx-trigger="keyup[key=='Enter']" />
-        <button hx-include="#input" hx-post="{{ chat_post_endpoint }}" hx-swap="none">
-            {% if chat_target == user.player %}
-                Mumble to yourself
+               hx-trigger="keyup[key=='Enter']"
+               {% if chat_disabled %}disabled{% endif %} />
+        <button hx-include="#input"
+                hx-post="{{ chat_post_endpoint }}"
+                hx-swap="none"
+                {% if chat_disabled %}disabled{% endif %}>
+            {% if chat_disabled %}
+                {{ chat_disabled }}
             {% else %}
-                Speak to {{ chat_target }}
+                {% if chat_target == user.player %}
+                    Mumble to yourself
+                {% else %}
+                    Speak to {{ chat_target }}
+                {% endif %}
             {% endif %}
         </button>
     </div>

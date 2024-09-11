@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -103,6 +105,19 @@ def partnership_context(*, subject, as_viewed_by):
     }
 
 
+def _chat_disabled_explanation(*, sender, recipient) -> str | None:
+    # You can always mumble to yourself.
+    if sender == recipient:
+        return None
+
+    if recipient.is_seated:
+        return f"{recipient} is already seated"
+    if sender.is_seated:
+        return "You are already seated"
+
+    return None
+
+
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request, pk):
@@ -110,6 +125,7 @@ def player_detail_view(request, pk):
     subject = get_object_or_404(Player, pk=pk)
 
     common_context = {
+        "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
         "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(who_clicked, subject)}",
         "chat_messages": (
             [
@@ -172,8 +188,8 @@ def send_player_message(request, recipient_pk):
     sender = request.user.player
     recipient = get_object_or_404(Player, pk=recipient_pk)
 
-    if (sender != recipient) and (sender.is_seated or recipient.is_seated):
-        return HttpResponseForbidden(f"Either {sender} or {recipient} is already seated")
+    if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
+        return HttpResponseForbidden(explanation)
 
     channel_name, message_type, message_content = Message.create_player_event_args(
         from_player=sender,
