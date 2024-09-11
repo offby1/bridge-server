@@ -39,20 +39,20 @@ class Command(BaseCommand):
         player_to_impersonate = handrecord.player_who_may_call
 
         if player_to_impersonate is None:
-            self.stderr.write("player_to_impersonate is None -- auction must be over.")
+            self.stdout.write(f"{table}: player_to_impersonate is None -- auction must be over.")
             return
 
         if player_to_impersonate.is_human:
-            self.stderr.write(
-                f"They tell me {player_to_impersonate} is human, so I will bow out",
+            self.stdout.write(
+                f"{table}: They tell me {player_to_impersonate} is human, so I will bow out",
             )
-            # return
+            return
 
         if player_to_impersonate.user.last_login is not None:
-            self.stderr.write(
-                f"Human or not, {player_to_impersonate} has logged in, so I will bow out",
+            self.stdout.write(
+                f"{table}: Human or not, {player_to_impersonate} has logged in, so I will bow out",
             )
-            # return
+            return
 
         player_to_impersonate = player_to_impersonate.libraryThing
         a = table.current_auction
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             self.stderr.write(f"Uh-oh -- {e}")
         else:
             self.stdout.write(
-                f"Just impersonated {player_to_impersonate} at {table} and said {call} on their behalf",
+                f"{table}: Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
     def make_a_groovy_play(self, *, handrecord):
@@ -97,13 +97,15 @@ class Command(BaseCommand):
 
         legal_cards = handrecord.xscript.legal_cards()
         if not legal_cards:
-            self.stderr.write(f"No legal cards at {seat_to_impersonate}? The hand must be over.")
+            self.stdout.write(
+                f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over."
+            )
             return
 
         chosen_card = random.choice(legal_cards)
 
         p = handrecord.add_play_from_player(player=handrecord.xscript.player, card=chosen_card)
-        self.stdout.write(f"At {table}, played {p} from {legal_cards}")
+        self.stdout.write(f"{table}: played {p} from {legal_cards}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
@@ -128,7 +130,7 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_play(handrecord=handrecord)
         elif set(data.keys()) == {"table", "direction", "action"}:
-            self.stderr.write(f"I wonder if someone at {data=} wanted to tell me something")
+            self.stdout.write(f"{table}: I believe I been poked: {data=}")
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(handrecord=handrecord)
                 self.make_a_groovy_play(handrecord=handrecord)
