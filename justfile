@@ -70,11 +70,12 @@ alias runserver := runme
 [group('bs')]
 [script('bash')]
 daphne: test django-superuser migrate collectstatic
-    set -euxo pipefail
+    set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     export -n DJANGO_SETTINGS_MODULE
+    set -x
     poetry run daphne                                                               \
       --verbosity                                                                   \
       1                                                                             \
