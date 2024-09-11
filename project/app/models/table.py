@@ -108,6 +108,21 @@ class Table(models.Model):
         return self.current_handrecord.auction
 
     @property
+    def current_auction_status(self) -> str:
+        s = self.current_auction.status
+        if s is self.current_auction.Incomplete:
+            calls = self.current_auction.player_calls
+            calls_description = "no calls"
+            if calls:
+                last = calls[-1]
+                plural_suffix = "" if len(calls) == 1 else "s"
+                calls_description = (
+                    f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
+                )
+            return calls_description
+        return s
+
+    @property
     def current_handrecord(self):
         return self.handrecord_set.order_by("-id").first()
 
