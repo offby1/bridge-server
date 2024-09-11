@@ -1,5 +1,6 @@
 import 'postgres.just'
-set unstable
+
+set unstable := true
 
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export POETRY_VIRTUALENVS_IN_PROJECT := "false"
@@ -18,8 +19,6 @@ die-if-poetry-active:
 
       false
     fi
-
-
 
 [group('virtualenv')]
 poetry-install: die-if-poetry-active
@@ -108,7 +107,6 @@ graph: migrate
     cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
-
 # Run all the tests
 [group('bs')]
 [script('bash')]
@@ -127,7 +125,7 @@ cover: test
     poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
     open htmlcov/index.html
 
-#  Nix the virtualenv and anything not checked in to git, but leave the database.
+# Nix the virtualenv and anything not checked in to git, but leave the database.
 [script('bash')]
 clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
