@@ -27,9 +27,6 @@ Optional but slick.
 ### libpq
 - $ `sudo apt install libpq5`
 
-### redis
-- $ `sudo apt install redis`
-
 ## Thoughts about state
 
 So ... I never put a lot of thought into what, exactly, should live in the db; and of that stuff, what should be immutable.
