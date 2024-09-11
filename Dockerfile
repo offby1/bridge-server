@@ -21,5 +21,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 WORKDIR /bridge/project
 ENV PGHOST=postgres
+ENV REDIS_HOST=redis
 
 CMD ["bash", "-c", "poetry run python manage.py collectstatic --no-input && poetry run python manage.py migrate && poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application"]

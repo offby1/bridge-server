@@ -4,6 +4,7 @@ import collections
 import contextlib
 import datetime
 import json
+import os
 import random
 import time
 import typing
@@ -139,9 +140,11 @@ class Command(BaseCommand):
         wait_exponential_multiplier=1000,
     )
     def run_forever(self):
+        django_host = os.environ.get("DJANGO_HOST", "localhost")
+        self.stdout.write(f"Connecting to {django_host}")
         while True:
             messages = SSEClient(
-                "http://localhost:9000/events/all-tables/",
+                f"http://{django_host}:9000/events/all-tables/",
             )
             for msg in messages:
                 if msg.event != "keep-alive":

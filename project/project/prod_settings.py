@@ -24,3 +24,5 @@ if SECRET_KEY_FILE is not None:
         SECRET_KEY = inf.read()
 
 DEBUG = False
+
+ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-compose stack

@@ -1,5 +1,7 @@
 STILL TODO:
 
+* In the table list's auction status, don't just say "Incomplete"; say how many calls have been made, and perhaps show the dealer & vuln.
+
 * Dockerize the bot, now that I've done the web service.
 
 * Consider timestamps for important stuff, in particular calls and plays.

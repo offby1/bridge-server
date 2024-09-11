@@ -23,6 +23,15 @@ services:
     secrets:
       - django_secret
 
+  bot:
+    <<: *django
+    command: "poetry run python manage.py bot"
+    ports: []
+    depends_on:
+      - django
+    environment:
+      DJANGO_HOST: django
+
   django-migrated:
     <<: *django
     command: "poetry run python manage.py migrate --noinput"
