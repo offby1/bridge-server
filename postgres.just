@@ -41,7 +41,8 @@ pg-stop:
 [group('postgres')]
 [private]
 pg-create-db: pg-start
-    @if ! docker exec postgres createdb --username=postgres -T template0 bridge ; then echo "$(tput setaf 2)'database already exists' is OK! ctfo$(tput sgr0)"; fi
+    until docker exec postgres pg_isready --username=postgres; do sleep 1; date; done
+    if ! docker exec postgres createdb --username=postgres -T template0 bridge ; then echo "$(tput setaf 2)'database already exists' is OK! ctfo$(tput sgr0)"; fi
 
 
 orb:
