@@ -8,6 +8,13 @@
   Yeah, I hate `curl | sh` too, but there doesn't seem to be any other foolproof way.
   Take a look at <https://just.systems/man/en/chapter_4.html> for other options.
 
+### git
+- $ `sudo apt install git`
+
+### docker
+- $ `sudo apt install docker.io`
+- add yourself to the docker group: "sudo vigr" and then "sudo vigr -s"
+
 ### pre-commit
 Optional but slick.
 
@@ -17,9 +24,8 @@ Optional but slick.
 ### poetry
 - `pipx install poetry`
 
-### postgres
-- $ `sudo apt install postgresql`
-- $ `PATH=$PATH:/usr/lib/postgresql/16/bin`
+### libpq
+- $ `sudo apt install libpq5`
 
 ## Thoughts about state
 
