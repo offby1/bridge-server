@@ -1,8 +1,6 @@
 STILL TODO:
 
-* In the table list's auction status, don't just say "Incomplete"; say how many calls have been made, and perhaps show the dealer & vuln.
-
-* Dockerize the bot, now that I've done the web service.
+* In the table list's auction status, don't just say "Incomplete"; say how many calls have been made.
 
 * Consider timestamps for important stuff, in particular calls and plays.
 
@@ -58,6 +56,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* Dockerize the bot, now that I've done the web service.
 
 * Somehow the cards in one dude's hand aren't sorted, even though they're sorted in the board:
   https://erics-work-macbook-pro.tail571dc2.ts.net/table/14 shows East holding 9, K, 4, J of diamonds (in that order);
