@@ -15,12 +15,24 @@ pg-start: orb pg-data
 
     docker container restart postgres 2> /dev/null && exit
 
-    docker run -d \
+    docker run --detach \
     --name postgres \
-    -e POSTGRES_PASSWORD=postgres \
-    -v pg-data:/var/lib/postgresql/data \
+    --env POSTGRES_PASSWORD=postgres \
+    --volume pg-data:/var/lib/postgresql/data \
     --publish 5432:5432 \
     postgres
+
+# Doesn't work on MacOS, at least when running inside an orbstack machine, since the *host*'s redis is listening on 6379, and thus
+# - we cannot start our own process listening on that port, 'cuz EADDRINUSE; and
+# - we don't need it anyway
+[linux]
+[script('bash')]
+redis:
+    set -euxo pipefail
+
+    docker container restart redis 2> /dev/null && exit
+
+    docker run --detach --name redis --publish 6379:6379 redis
 
 [group('postgres')]
 pg-stop:
