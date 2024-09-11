@@ -140,6 +140,11 @@ dcu *options: version-file
 
     # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
     export DJANGO_SECRET_KEY=$(cat "{{ config_directory() }}/info.offby1.bridge/django_secret_key")
+    if [ -z "${DJANGO_SECRET_KEY}" ]
+    then
+       echo "Hey man, the secret key is empty; it should be under {{ config_directory() }}"
+       exit 1
+    fi
     set -x
     docker compose up {{ options }}
 
