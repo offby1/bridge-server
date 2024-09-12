@@ -24,7 +24,7 @@ from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
-from app.models import Player, PlayerException, Table, TableException
+from app.models import Player, PlayerException, Seat, Table, TableException
 from app.models.utils import assert_type
 
 from .misc import logged_in_as_player_required
@@ -121,21 +121,24 @@ def bidding_box_buttons(
 
 def card_buttons_as_four_divs(
     *,
-    players_cards: list[bridge.card.Card],
+    players_cards: set[bridge.card.Card],
     legal_cards: list[bridge.card.Card],
-    seat,
+    seat: Seat,
 ) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in players_cards:
         by_suit[c.suit].append(c)
 
-    # TODO -- make the button, uh, do something when you click on it!
+    play_post_endpoint = reverse("app:play-post", args=[seat.pk])
+
     def card_button(c, color):
         disabled = " disabled" if c not in legal_cards else ""
+
         return f"""<button
         type="button"
         class="btn btn-primary"
         style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        hx-post="{play_post_endpoint}"
         {disabled}>{c}</button>"""
 
     def single_row_divs(suit, cards):
@@ -252,7 +255,7 @@ def auction_partial_view(request, table_pk):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, table_pk: str):
+def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     assert_type(request.user.player, Player)
     assert request.user is not None
     assert request.user.player is not None
@@ -278,8 +281,14 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     return HttpResponse()
 
 
+@require_http_methods(["POST"])
 @logged_in_as_player_required()
-def table_detail_view(request, pk):
+def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
+    return HttpResponseForbidden("Sorry man I haven't gotten around to writing this yet")
+
+
+@logged_in_as_player_required()
+def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(Table, pk=pk)
 
     # No cards are legal to play if the auction hasn't settled.
@@ -291,6 +300,8 @@ def table_detail_view(request, pk):
     # in which case show 'em all
     cards_by_direction_display = {}
     pokey_buttons_by_direction = {}
+    seat: Seat
+    cards: set[bridge.card.Card]
     for seat, cards in table.current_cards_by_seat.items():
         dem_cards_baby = f"{len(cards)} cards"
 
@@ -304,8 +315,8 @@ def table_detail_view(request, pk):
         value = json.dumps(
             {
                 "direction": seat.direction,
-                "player_id": seat.player_id,
-                "table_id": seat.table_id,
+                "player_id": seat.player.pk,
+                "table_id": seat.table.pk,
             },
         )
 
@@ -333,6 +344,7 @@ def table_detail_view(request, pk):
     context = (
         {
             "card_display": cards_by_direction_display,
+            "play_event_source_endpoint": "/events/all-tables/",
             "pokey_buttons": pokey_buttons_by_direction,
             "table": table,
         }

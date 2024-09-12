@@ -145,7 +145,6 @@ class Player(models.Model):
 
             old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
-            Seat.objects.filter(player__in={self, self.partner}).update(player=None)
 
             if table is not None:
                 table.delete()

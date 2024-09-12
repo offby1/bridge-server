@@ -8,6 +8,7 @@ app_name = "app"
 urlpatterns = [
     path("", home_view, name="home"),
     path("call/<table_pk>/", table.call_post_view, name="call-post"),
+    path("play/<seat_pk>/", table.play_post_view, name="play-post"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("player/<pk>/", player.player_detail_view, name="player"),
     path("player/<pk>/partnership/", player.partnership_view, name="player_partnership"),

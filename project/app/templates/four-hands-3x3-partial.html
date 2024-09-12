@@ -34,7 +34,7 @@ four_hands_event_source.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;
     if ("play" in d) {
       // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
-      htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands, swap:'outerHTML'});
+      htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
     }
 
 }, false);

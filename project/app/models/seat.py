@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 from . import SEAT_CHOICES
 
 if TYPE_CHECKING:
-    from . import Table  # noqa
+    from . import Player, Table  # noqa
 
 
 class SeatException(Exception):
@@ -19,7 +19,7 @@ class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES.items(),
     )
-    player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
+    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
     @cached_property

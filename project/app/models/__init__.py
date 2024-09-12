@@ -18,7 +18,7 @@ from .player import (  # noqa
     Player,
     PlayerException,
 )
-from .seat import Seat  # noqa
+from .seat import Seat, SeatException  # noqa
 from .table import Table, TableException  # noqa
 
 

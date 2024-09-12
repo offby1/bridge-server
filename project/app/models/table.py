@@ -4,7 +4,7 @@ import logging
 import random
 from typing import TYPE_CHECKING
 
-from bridge.card import Card
+from bridge.card import Card as libCard
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -50,7 +50,7 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        deck = Card.deck()
+        deck = libCard.deck()
 
         # Just for testing, the first board will give each player a single 13-card suit
         if first_table:
@@ -135,8 +135,8 @@ class Table(models.Model):
         return self.current_board.dealer
 
     @cached_property
-    def dealt_cards_by_seat(self) -> dict[Seat, list[Card]]:
-        rv: dict[Seat, list[Card]] = {}
+    def dealt_cards_by_seat(self) -> dict[Seat, list[libCard]]:
+        rv: dict[Seat, list[libCard]] = {}
         board = self.current_board
         if board is None:
             return rv
@@ -147,7 +147,7 @@ class Table(models.Model):
         return rv
 
     @property
-    def current_cards_by_seat(self) -> dict[Seat, set[Card]]:
+    def current_cards_by_seat(self) -> dict[Seat, set[libCard]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
             assert_type(seat, Seat)
