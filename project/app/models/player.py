@@ -28,6 +28,9 @@ class PlayerManager(models.Manager):
     def get_by_name(self, name):
         return self.get(user__username=name)
 
+    def all(self, *args, **kwargs):
+        return self.select_related("partner", "seat__table", "user").all()
+
 
 class PlayerException(Exception):
     pass
