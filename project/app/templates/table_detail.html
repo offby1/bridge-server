@@ -16,4 +16,9 @@
     {% include 'auction-partial.html#auction-scripts' %}
     {% include 'bidding-box-partial.html#bidding-box-scripts' %}
     {% include 'four-hands-3x3-partial.html#four-hands-3x3-scripts' %}
+    <script>
+htmx.on("htmx:responseError", function(evt) {
+   alert(evt.detail.xhr.response);
+});
+    </script>
 {% endblock scripts %}

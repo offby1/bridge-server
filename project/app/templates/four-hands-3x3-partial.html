@@ -39,10 +39,5 @@ four_hands_event_source.addEventListener('message', function (e) {
 
 }, false);
 
-{# TODO: probably redundant, given that other stuff on this same page has the idential error handler #}
-htmx.on("htmx:responseError", function(evt) {
-   alert(evt.detail.xhr.response);
-});
-
 </script>
 {% endpartialdef four-hands-3x3-scripts %}
