@@ -33,7 +33,7 @@ four_hands_event_source.addEventListener('message', function (e) {
     if ("card" in d) {
       console.log("Play event listener saw " + e.data);
 
-      var partnershipStatusDataset = document.querySelector("#partnership-status").dataset;
+      var partnershipStatusDataset = document.querySelector("#four-hands").dataset;
 
       // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
       htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});

@@ -28,6 +28,11 @@ urlpatterns = [
         table.bidding_box_partial_view,
         name="bidding-box-partial",
     ),
+    path(
+        "table/<table_pk>/four-hands",
+        table.four_hands_partial_view,
+        name="four-hands-partial",
+    ),
     path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]
 
