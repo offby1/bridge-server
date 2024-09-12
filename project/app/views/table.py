@@ -15,7 +15,6 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
-    HttpResponseNotFound,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404

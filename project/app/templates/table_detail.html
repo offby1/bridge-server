@@ -10,28 +10,7 @@
         {% include 'auction-partial.html#auction-partial' %}
         {% include 'bidding-box-partial.html#bidding-box-partial' %}
     </div>
-    {# North at the top as per the Bridge Writing Style Guide #}
-    <div style="border: 1px solid; height: 50%">
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col"></div>
-            <div class="col">
-                {{ pokey_buttons.NORTH }}{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}
-            </div>
-            <div class="col"></div>
-        </div>
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col">{{ pokey_buttons.WEST }}{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
-            <div class="col">{% include 'three-by-three-trick-display-partial.html#three-by-three-trick-display' %}</div>
-            <div class="col">{{ pokey_buttons.EAST }}{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
-        </div>
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col"></div>
-            <div class="col">
-                {{ pokey_buttons.SOUTH }}{{ card_display.SOUTH.player.name_dir }}: {{ card_display.SOUTH.cards }}
-            </div>
-            <div class="col"></div>
-        </div>
-    </div>
+    {% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}
 {% endblock content %}
 {% block scripts %}
     {% include 'auction-partial.html#auction-scripts' %}
