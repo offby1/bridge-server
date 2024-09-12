@@ -131,12 +131,13 @@ def card_buttons_as_four_divs(
 
     play_post_endpoint = reverse("app:play-post", args=[seat.pk])
 
-    def card_button(c, color):
+    def card_button(c: bridge.card.Card, color: str) -> str:
         disabled = " disabled" if c not in legal_cards else ""
 
         return f"""<button
         type="button"
         class="btn btn-primary"
+        name="play" value="{c.serialize()}"
         style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
         hx-post="{play_post_endpoint}"
         {disabled}>{c}</button>"""
@@ -284,7 +285,12 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
-    return HttpResponseForbidden("Sorry man I haven't gotten around to writing this yet")
+    seat = get_object_or_404(Seat, pk=seat_pk)
+    h = seat.table.current_handrecord  # TODO -- check if it's our turn to play?
+    h.add_play_from_player(
+        player=seat.player.libraryThing, card=bridge.card.Card.deserialize(request.POST["play"])
+    )
+    return HttpResponse("Happy now, bitch?")
 
 
 @logged_in_as_player_required()
@@ -301,13 +307,13 @@ def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     cards_by_direction_display = {}
     pokey_buttons_by_direction = {}
     seat: Seat
-    cards: set[bridge.card.Card]
-    for seat, cards in table.current_cards_by_seat.items():
-        dem_cards_baby = f"{len(cards)} cards"
+    libcards: set[bridge.card.Card]
+    for seat, libcards in table.current_cards_by_seat.items():
+        dem_cards_baby = f"{len(libcards)} cards"
 
         if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
             dem_cards_baby = card_buttons_as_four_divs(
-                players_cards=cards,
+                players_cards=libcards,
                 legal_cards=legal_cards,
                 seat=seat,
             )
