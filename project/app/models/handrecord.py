@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -30,6 +30,10 @@ class AuctionException(Exception):
 
 class PlayException(Exception):
     pass
+
+
+TriplePlay = tuple[int, libSeat, libCard]
+TriplePlays = list[TriplePlay]
 
 
 class HandRecord(models.Model):
@@ -212,20 +216,20 @@ class HandRecord(models.Model):
         )
 
     @property
-    def tricks(self):
+    def tricks(self) -> Iterator[TriplePlays]:
         return more_itertools.chunked(self.annotated_plays, 4)
 
     @property
-    def current_trick(self):
+    def current_trick(self) -> TriplePlays | None:
         tricks = list(self.tricks)
         if not tricks:
-            return []
+            return None
 
         return tricks[-1]
 
     @property
-    def annotated_plays(self):
-        flattened = []
+    def annotated_plays(self) -> TriplePlays:
+        flattened: TriplePlays = []
         for t in self.xscript.tricks:
             for p in t.plays:
                 flattened.append((1 + len(flattened), p.player.seat, p.card))

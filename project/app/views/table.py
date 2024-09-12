@@ -253,11 +253,15 @@ def _three_by_three_trick_display_context_for_table(
 ) -> dict[str, Any]:
     h = table.current_handrecord
 
-    cards_by_seat = {c[1]: c[2].serialize() for c in h.current_trick}
+    cards_by_seat: dict[Seat, list[bridge.card.Card]] = {}
+
+    if h.current_trick:
+        for card in h.current_trick:
+            cards_by_seat[card[1]] = card[2].serialize()
 
     def c(direction):
         key = getattr(bridge.seat.Seat, direction)
-        return cards_by_seat.get(key, "")
+        return cards_by_seat.get(key, "__")
 
     return {
         "three_by_three_trick_display": {
