@@ -21,7 +21,7 @@ from .utils import assert_type
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from . import Board, Seat, Table  # noqa
+    from . import Board, Player, Seat, Table  # noqa
 
 
 class AuctionException(Exception):
@@ -103,12 +103,14 @@ class HandRecord(models.Model):
         assert_type(player, libPlayer)
         assert_type(card, libCard)
 
-        # TODO: check that:
-        # - the card is present in the player's hand
-        # - it's this player's turn
-        # - they're following suit if they can
+        legit_player = self.player_who_may_play
+        if legit_player is None:
+            msg = "For some crazy reason, nobody is allowed to play a card! Maybe the auction is incomplete, or the hand is over"
+            raise PlayException(msg)
 
-        # This will probably entail that we use bridge.xscript.HandTranscript
+        if player.name != legit_player.name:
+            msg = f"It is not {player.name}'s turn to play"
+            raise PlayException(msg)
 
         legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
@@ -148,7 +150,7 @@ class HandRecord(models.Model):
         return self.auction.declarer
 
     @property
-    def player_who_may_call(self):
+    def player_who_may_call(self) -> Player | None:
         from . import Player
 
         if self.auction.status is libAuction.Incomplete:
@@ -156,6 +158,17 @@ class HandRecord(models.Model):
             return Player.objects.get_by_name(libAllowed.name)
 
         return None
+
+    @property
+    def player_who_may_play(self) -> Player | None:
+        from . import Player
+
+        if not self.auction.found_contract:
+            return None
+
+        libPlayer = self.xscript.players[0]
+
+        return Player.objects.get_by_name(libPlayer.name)
 
     @property
     def most_recent_call(self):
