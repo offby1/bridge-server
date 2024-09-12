@@ -200,10 +200,6 @@ class Table(models.Model):
     def is_full(self):
         return all(p is not None for p in self.players_by_direction.values())
 
-    @property
-    def playaz(self):
-        return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
-
     def __str__(self):
         return f"Table {self.id}"
 
