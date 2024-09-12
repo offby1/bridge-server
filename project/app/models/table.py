@@ -4,8 +4,7 @@ import logging
 import random
 from typing import TYPE_CHECKING
 
-from bridge.card import Card
-from bridge.contract import Contract
+from bridge.card import Card as libCard
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -23,6 +22,7 @@ from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
+    from bridge.auction import Auction as libAuction
     from bridge.seat import Seat as libSeat
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        deck = Card.deck()
+        deck = libCard.deck()
 
         # Just for testing, the first board will give each player a single 13-card suit
         if first_table:
@@ -89,10 +89,14 @@ class Table(models.Model):
         modelPlayer = self.players_by_direction[seat.value]
         return modelPlayer.libraryThing
 
+    @cached_property
+    def seats(self):
+        return self.seat_set.select_related("player__user").all()
+
     def libraryThing(self):
         players = []
-        for seat in self.seat_set.all():
-            name = seat.player.name
+        for seat in self.seats:
+            name = seat.player_name
             hand = self.current_handrecord.board.cards_for_direction(seat.direction)
             players.append(
                 libPlayer(seat=seat.libraryThing, name=name, hand=libHand(cards=hand)),
@@ -104,7 +108,7 @@ class Table(models.Model):
         return self.handrecord_set.order_by("id")
 
     @property
-    def current_auction(self):
+    def current_auction(self) -> libAuction:
         return self.current_handrecord.auction
 
     @property
@@ -120,9 +124,9 @@ class Table(models.Model):
                     f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
                 )
             return calls_description
-        return s
+        return str(s)
 
-    @property
+    @cached_property
     def current_handrecord(self):
         return self.handrecord_set.order_by("-id").first()
 
@@ -131,19 +135,19 @@ class Table(models.Model):
         return self.current_board.dealer
 
     @cached_property
-    def dealt_cards_by_seat(self) -> dict[Seat, list[Card]]:
-        rv: dict[Seat, list[Card]] = {}
+    def dealt_cards_by_seat(self) -> dict[Seat, list[libCard]]:
+        rv: dict[Seat, list[libCard]] = {}
         board = self.current_board
         if board is None:
             return rv
-        for s in self.seat_set.all():
+        for s in self.seats:
             if s.player is not None:
                 rv[s] = board.cards_for_direction(s.direction)
 
         return rv
 
     @property
-    def current_cards_by_seat(self) -> dict[Seat, set[Card]]:
+    def current_cards_by_seat(self) -> dict[Seat, set[libCard]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
             assert_type(seat, Seat)
@@ -151,9 +155,14 @@ class Table(models.Model):
 
             rv[seat] = set(cardlist)
 
-        if self.current_handrecord.auction.found_contract:
-            for _index, seat, card in self.current_handrecord.annotated_plays:
-                seat = self.current_handrecord.seat_from_libseat(seat)
+        if self.current_auction.found_contract:
+            model_seats_by_lib_seats = {}
+            for _index, libseat, card in self.current_handrecord.annotated_plays:
+                if libseat not in model_seats_by_lib_seats:
+                    model_seats_by_lib_seats[libseat] = self.current_handrecord.seat_from_libseat(
+                        libseat
+                    )
+                seat = model_seats_by_lib_seats[libseat]
                 assert_type(seat, Seat)
                 rv[seat].remove(card)
 
@@ -165,8 +174,7 @@ class Table(models.Model):
 
     @property
     def players_by_direction(self):
-        seats = self.seat_set.all()
-        return {s.direction: s.player for s in seats}
+        return {s.direction: s.player for s in self.seats}
 
     @property
     def next_seat_to_play(self) -> Seat | None:
@@ -191,10 +199,6 @@ class Table(models.Model):
 
     def is_full(self):
         return all(p is not None for p in self.players_by_direction.values())
-
-    @property
-    def playaz(self):
-        return ", ".join([f"{d}: {p}" for d, p in self.as_tuples()])
 
     def __str__(self):
         return f"Table {self.id}"

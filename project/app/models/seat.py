@@ -3,11 +3,12 @@ from typing import TYPE_CHECKING
 import bridge.seat
 from django.contrib import admin
 from django.db import models
+from django.utils.functional import cached_property
 
 from . import SEAT_CHOICES
 
 if TYPE_CHECKING:
-    from . import Table  # noqa
+    from . import Player, Table  # noqa
 
 
 class SeatException(Exception):
@@ -18,8 +19,12 @@ class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES.items(),
     )
-    player = models.OneToOneField("Player", null=True, on_delete=models.CASCADE)
+    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
+
+    @cached_property
+    def player_name(self):
+        return self.player.name
 
     @property
     def jsonable(self):

@@ -39,19 +39,15 @@
 var es = new ReconnectingEventSource('{{ auction_event_source_endpoint }}');
 
 es.addEventListener('message', function (e) {
-    console.log("Auction event listener saw " + e.data);
-
     var d = JSON.parse(e.data) ;
     // Reload the partial only if the data indicates something about the auction.
     if ("call" in d) {
+      console.log("Auction event listener saw " + e.data);
+
       htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
     }
 
 }, false);
-
-htmx.on("htmx:responseError", function(evt) {
-   alert(evt.detail.xhr.response);
-});
 
 </script>
 {% endpartialdef auction-scripts %}

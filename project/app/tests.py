@@ -12,7 +12,7 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
-from .models import Message, Player, PlayerException, Seat, Table
+from .models import Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import lobby, player, table
 
@@ -162,9 +162,8 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     t2 = Table.objects.create()
 
-    s = Seat.objects.create(direction=bridge.seat.Seat.EAST.value, table=t2)
-    with pytest.raises(IntegrityError):
-        Seat.objects.filter(pk=s.pk).update(player=bob)
+    with pytest.raises(SeatException):
+        Seat.objects.create(direction=bridge.seat.Seat.EAST.value, table=t2, player=bob)
 
 
 def test_cant_just_make_up_directions(bob, everybodys_password):

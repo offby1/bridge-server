@@ -27,6 +27,7 @@ twisted = {extras = ["http2", "tls"], version = "^24.7.0"}
 types-requests = "^2.32.0.20240712"
 platformdirs = "^4.2.2"
 psycopg = "^3.2.1"
+sentry-sdk = "^2.14.0"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^3.2.3"

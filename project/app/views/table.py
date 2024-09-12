@@ -11,7 +11,12 @@ import bridge.seat
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -19,7 +24,7 @@ from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
-from app.models import Player, PlayerException, Table
+from app.models import Player, PlayerException, Seat, Table, TableException
 from app.models.utils import assert_type
 
 from .misc import logged_in_as_player_required
@@ -116,21 +121,26 @@ def bidding_box_buttons(
 
 def card_buttons_as_four_divs(
     *,
-    players_cards: list[bridge.card.Card],
+    players_cards: set[bridge.card.Card],
     legal_cards: list[bridge.card.Card],
-    seat,
+    seat: Seat,
 ) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in players_cards:
         by_suit[c.suit].append(c)
 
-    # TODO -- make the button, uh, do something when you click on it!
-    def card_button(c, color):
+    play_post_endpoint = reverse("app:play-post", args=[seat.pk])
+
+    def card_button(c: bridge.card.Card, color: str) -> str:
         disabled = " disabled" if c not in legal_cards else ""
+
         return f"""<button
         type="button"
         class="btn btn-primary"
+        name="play" value="{c.serialize()}"
         style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        hx-post="{play_post_endpoint}"
+        hx-swap="none"
         {disabled}>{c}</button>"""
 
     def single_row_divs(suit, cards):
@@ -158,6 +168,68 @@ def _auction_context_for_table(table):
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "table": table,
     }
+
+
+def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> dict[str, Any]:
+    # No cards are legal to play if the auction hasn't settled.
+    legal_cards = []
+    if table.current_auction.found_contract:
+        legal_cards = table.current_handrecord.xscript.legal_cards()
+
+    cards_by_direction_display = {}
+    pokey_buttons_by_direction = {}
+
+    # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
+    # in which case show 'em all
+
+    seat: Seat
+    libcards: set[bridge.card.Card]
+    for seat, libcards in table.current_cards_by_seat.items():
+        dem_cards_baby = f"{len(libcards)} cards"
+
+        if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
+            dem_cards_baby = card_buttons_as_four_divs(
+                players_cards=libcards,
+                legal_cards=legal_cards,
+                seat=seat,
+            )
+
+        value = json.dumps(
+            {
+                "direction": seat.direction,
+                "player_id": seat.player.pk,
+                "table_id": seat.table.pk,
+            },
+        )
+
+        if settings.POKEY_BOT_BUTTONS:
+            pokey_buttons_by_direction[seat.named_direction] = (
+                SafeString(f"""<div class="btn-group">
+        <button
+        type="button"
+        class="btn btn-primary"
+        name="who pokes me"
+        value='{value}'
+        hx-post="/yo/bot/"
+        hx-swap="none"
+        >POKE ME {seat.named_direction}</button>
+        </div>
+        <br/>
+        """)
+            )
+
+        cards_by_direction_display[seat.named_direction] = {
+            "cards": dem_cards_baby,
+            "player": seat.player,
+        }
+
+    return {
+        "card_display": cards_by_direction_display,
+        "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
+        "play_event_source_endpoint": "/events/all-tables/",
+        "pokey_buttons": pokey_buttons_by_direction,
+        "table": table,
+    } | _three_by_three_trick_display_context_for_table(request, table)
 
 
 def poke_de_bot(request):
@@ -199,7 +271,7 @@ def _three_by_three_trick_display_context_for_table(
 
 
 def _bidding_box_context_for_table(request, table):
-    if table.current_handrecord.auction.status != bridge.auction.Auction.Incomplete:
+    if table.current_auction.status != bridge.auction.Auction.Incomplete:
         buttons = "No bidding box 'cuz the auction is over"
     else:
         player = request.user.player  # type: ignore
@@ -245,9 +317,19 @@ def auction_partial_view(request, table_pk):
     return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
 
 
+@logged_in_as_player_required()
+def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
+    table = get_object_or_404(Table, pk=table_pk)
+    context = _four_hands_context_for_table(request, table)
+
+    return TemplateResponse(
+        request, "four-hands-3x3-partial.html#four-hands-3x3-partial", context=context
+    )
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, table_pk: str):
+def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     assert_type(request.user.player, Player)
     assert request.user is not None
     assert request.user.player is not None
@@ -273,67 +355,25 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str):
     return HttpResponse()
 
 
+@require_http_methods(["POST"])
 @logged_in_as_player_required()
-def table_detail_view(request, pk):
+def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
+    seat = get_object_or_404(Seat, pk=seat_pk)
+    h = seat.table.current_handrecord  # TODO -- check if it's our turn to play?
+    card = bridge.card.Card.deserialize(request.POST["play"])
+    h.add_play_from_player(player=seat.player.libraryThing, card=card)
+
+    return HttpResponse()
+
+
+@logged_in_as_player_required()
+def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(Table, pk=pk)
 
-    # No cards are legal to play if the auction hasn't settled.
-    legal_cards = []
-    if table.current_auction.found_contract:
-        legal_cards = table.current_handrecord.xscript.legal_cards()
-
-    # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
-    # in which case show 'em all
-    cards_by_direction_display = {}
-    pokey_buttons_by_direction = {}
-    for seat, cards in table.current_cards_by_seat.items():
-        dem_cards_baby = f"{len(cards)} cards"
-
-        if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
-            dem_cards_baby = card_buttons_as_four_divs(
-                players_cards=cards,
-                legal_cards=legal_cards,
-                seat=seat,
-            )
-
-        value = json.dumps(
-            {
-                "direction": seat.direction,
-                "player_id": seat.player_id,
-                "table_id": seat.table_id,
-            },
-        )
-
-        if settings.POKEY_BOT_BUTTONS:
-            pokey_buttons_by_direction[seat.named_direction] = (
-                SafeString(f"""<div class="btn-group">
-        <button
-        type="button"
-        class="btn btn-primary"
-        name="who pokes me"
-        value='{value}'
-        hx-post="/yo/bot/"
-        hx-swap="none"
-        >POKE ME {seat.named_direction}</button>
-        </div>
-        <br/>
-        """)
-            )
-
-        cards_by_direction_display[seat.named_direction] = {
-            "cards": dem_cards_baby,
-            "player": seat.player,
-        }
-
     context = (
-        {
-            "card_display": cards_by_direction_display,
-            "pokey_buttons": pokey_buttons_by_direction,
-            "table": table,
-        }
+        _four_hands_context_for_table(request, table)
         | _auction_context_for_table(table)
         | _bidding_box_context_for_table(request, table)
-        | _three_by_three_trick_display_context_for_table(request, table)
     )
 
     return TemplateResponse(request, "table_detail.html", context=context)
@@ -360,6 +400,9 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     if request.user.player not in all_four:
         return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
 
-    t = Table.objects.create_with_two_partnerships(p1, p2)
+    try:
+        t = Table.objects.create_with_two_partnerships(p1, p2)
+    except TableException as e:
+        return HttpResponseForbidden(str(e))
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))

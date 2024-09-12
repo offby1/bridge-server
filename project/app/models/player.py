@@ -7,6 +7,7 @@ from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
@@ -26,6 +27,9 @@ class PlayerManager(models.Manager):
 
     def get_by_name(self, name):
         return self.get(user__username=name)
+
+    def all(self, *args, **kwargs):
+        return self.select_related("partner", "seat__table", "user").all()
 
 
 class PlayerException(Exception):
@@ -141,7 +145,6 @@ class Player(models.Model):
 
             old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
-            Seat.objects.filter(player__in={self, self.partner}).update(player=None)
 
             if table is not None:
                 table.delete()
@@ -158,7 +161,7 @@ class Player(models.Model):
     def is_seated(self):
         return Seat.objects.filter(player=self).exists()
 
-    @property
+    @cached_property
     def name(self):
         return self.user.username
 

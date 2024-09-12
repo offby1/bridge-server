@@ -28,6 +28,10 @@ I seem to recall things failing mysteriously until I manually accepted the gitla
 
 ## Other ideas to explore
 
+### [Sentry](https://eric-hanchrow.sentry.io/releases/56beb2495cce905f8fa43bbfbf98d3713f790fdf/?project=4507936354205696)
+
+...has already pointed out an ["N+1 query" problem](https://docs.djangoproject.com/en/5.1/topics/db/optimization/#retrieve-everything-at-once-if-you-know-you-will-need-it)
+
 Starting from <https://docs.djangoproject.com/en/5.1/topics/performance/>
 
 ### <https://awesomedjango.org/#performance>

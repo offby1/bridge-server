@@ -7,11 +7,11 @@
 var es = new ReconnectingEventSource('{{ auction_event_source_endpoint }}');
 
 es.addEventListener('message', function (e) {
-    console.log("Bidding box event listener saw " + e.data);
-
     var d = JSON.parse(e.data) ;
     // Reload the partial only if the data indicates something about the auction.
     if ("call" in d) {
+        console.log("Bidding box event listener saw " + e.data);
+
         htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'});
     }
 }, false);

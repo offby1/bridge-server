@@ -9,40 +9,16 @@
     <div>
         {% include 'auction-partial.html#auction-partial' %}
         {% include 'bidding-box-partial.html#bidding-box-partial' %}
-        {# TODO -- omit this.  It's nice for someone like me who has no memory, but it's Not Done® in a duplicate club. #}
-        <div style="border: 1px dotted; overflow: auto; height: 100px">
-            <ul>
-                {% for t in table.current_handrecord.tricks %}
-                    {% for p in t %}<li>{{ p }}</li>{% endfor %}
-                    <br />
-                {% endfor %}
-            </ul>
-        </div>
     </div>
-    {# North at the top as per the Bridge Writing Style Guide #}
-    <div style="border: 1px solid; height: 50%">
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col"></div>
-            <div class="col">
-                {{ pokey_buttons.NORTH }}{{ card_display.NORTH.player.name_dir }}: {{ card_display.NORTH.cards }}
-            </div>
-            <div class="col"></div>
-        </div>
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col">{{ pokey_buttons.WEST }}{{ card_display.WEST.player.name_dir }}: {{ card_display.WEST.cards }}</div>
-            <div class="col">{% include 'three-by-three-trick-display-partial.html#three-by-three-trick-display' %}</div>
-            <div class="col">{{ pokey_buttons.EAST }}{{ card_display.EAST.player.name_dir }}: {{ card_display.EAST.cards }}</div>
-        </div>
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-            <div class="col"></div>
-            <div class="col">
-                {{ pokey_buttons.SOUTH }}{{ card_display.SOUTH.player.name_dir }}: {{ card_display.SOUTH.cards }}
-            </div>
-            <div class="col"></div>
-        </div>
-    </div>
+    {% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}
 {% endblock content %}
 {% block scripts %}
     {% include 'auction-partial.html#auction-scripts' %}
     {% include 'bidding-box-partial.html#bidding-box-scripts' %}
+    {% include 'four-hands-3x3-partial.html#four-hands-3x3-scripts' %}
+    <script>
+htmx.on("htmx:responseError", function(evt) {
+   alert(evt.detail.xhr.response);
+});
+    </script>
 {% endblock scripts %}

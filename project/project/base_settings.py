@@ -14,6 +14,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import sentry_sdk
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -149,3 +151,15 @@ STATIC_ROOT = BASE_DIR / "static_root"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 POKEY_BOT_BUTTONS = True
+
+
+sentry_sdk.init(
+    dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
