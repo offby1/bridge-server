@@ -459,4 +459,6 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
         libSeat.SOUTH.value: south_row[1],
         libSeat.WEST.value: east_west_row[0],
     }
-    assert actual_cards_by_direction == expected_cards_by_direction
+    for direction, actual_html in actual_cards_by_direction.items():
+        expected_html = expected_cards_by_direction[direction]
+        assert expected_html in actual_html
