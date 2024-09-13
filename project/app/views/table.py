@@ -119,11 +119,12 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
-def card_buttons_as_four_divs(
+def cards_as_four_divs(
     *,
     players_cards: set[bridge.card.Card],
     legal_cards: list[bridge.card.Card],
     seat: Seat,
+    buttons: bool = True,
 ) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in players_cards:
@@ -134,18 +135,33 @@ def card_buttons_as_four_divs(
     def card_button(c: bridge.card.Card, color: str) -> str:
         disabled = " disabled" if c not in legal_cards else ""
 
+        color_styles = (
+            """style="--bs-btn-disabled-color: #ffffff85; --bs-btn-disabled-bg: #0d6efd57" """
+            if disabled
+            else f"""style="--bs-btn-color: {color}; --bs-btn-bg: #ccc" """
+        )
+
         return f"""<button
         type="button"
         class="btn btn-primary"
         name="play" value="{c.serialize()}"
-        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        {color_styles}
         hx-post="{play_post_endpoint}"
         hx-swap="none"
         {disabled}>{c}</button>"""
 
+    def card_text(c: bridge.card.Card, color: str) -> str:
+        return f"""<span
+        class="btn btn-primary inactive-button"
+        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        >{c}</span>"""
+
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
-        cols = [card_button(c, color) for c in sorted(cards, reverse=True)]
+        cols = [
+            card_button(c, color) if buttons else card_text(c, color)
+            for c in sorted(cards, reverse=True)
+        ]
         return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
 
     row_divs = [
@@ -188,10 +204,11 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         dem_cards_baby = f"{len(libcards)} cards"
 
         if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
-            dem_cards_baby = card_buttons_as_four_divs(
+            dem_cards_baby = cards_as_four_divs(
                 players_cards=libcards,
                 legal_cards=legal_cards,
                 seat=seat,
+                buttons=table.current_auction.found_contract,
             )
 
         value = json.dumps(

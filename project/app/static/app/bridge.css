@@ -1,0 +1,14 @@
+/* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
+.inactive-button {
+  pointer-events: none;
+  cursor: default;
+}
+
+.inactive-button:hover,
+.inactive-button:focus,
+.inactive-button:active {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
