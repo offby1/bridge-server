@@ -2,7 +2,7 @@ STILL TODO:
 
 * I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
 
-* Find another color for inactive card buttons, to make them much dimmer or less saturated or something; it's not blindingly obvious that they're inactive.
+* Find another color for inactive card buttons, to make them much dimmer or less saturated or something; it's not blindingly obvious that they're inactive.  Maybe `--bs-btn-disabled-color`?
 
 * Where it currently says "No bidding box 'cuz the auction is over", have it display, you know, the CONTRACT at this table :-|
 
