@@ -52,6 +52,18 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "postgres"]
+      # Runs the healthcheck every 12 hours.  We don't particularly want this, but we are forced to specify *some*
+      # interval.
+      interval: 12h
+      timeout: 10s
+      retries: 3
+
+      # This is what we really care about -- it amends the "interval" above, by running the health check every second,
+      # stopping after 10 seconds, or if the test succeeds, whichever comes first.
+      start_period: 10s
+      start_interval: 1s
 
   redis:
     image: redis:6

@@ -13,7 +13,7 @@
 pg-start: orb
     set -euxo pipefail
 
-    docker compose up postgres --detach
+    docker compose up --wait postgres --detach
 
 # Doesn't work on MacOS, at least when running inside an orbstack machine, since the *host*'s redis is listening on 6379, and thus
 # - we cannot start our own process listening on that port, 'cuz EADDRINUSE; and
@@ -26,6 +26,12 @@ redis:
     docker container restart redis 2> /dev/null && exit
 
     docker run --detach --name redis --publish 6379:6379 redis
+
+[group('postgres')]
+drop: pg-start
+    docker exec --user postgres server-postgres-1 dropdb --if-exists bridge
+    # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
+    docker compose down --volumes postgres
 
 [group('postgres')]
 pg-stop:
