@@ -135,7 +135,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu: version-file
+dcu *options: version-file
     set -euo pipefail
 
     # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
@@ -146,7 +146,7 @@ dcu: version-file
        exit 1
     fi
     set -x
-    docker compose up --build
+    docker compose up --build {{ options }}
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
