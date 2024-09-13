@@ -150,7 +150,7 @@ STATIC_ROOT = BASE_DIR / "static_root"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-POKEY_BOT_BUTTONS = True
+POKEY_BOT_BUTTONS = False
 
 
 sentry_sdk.init(

@@ -6,4 +6,4 @@ from .base_settings import *  # noqa
 #   django_coverage_plugin.plugin.DjangoTemplatePluginException: Template debugging must be enabled in settings.
 TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
-POKEY_BOT_BUTTONS = False
+POKEY_BOT_BUTTONS = True
