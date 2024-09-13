@@ -7,7 +7,11 @@ In particular, I'm grumpy about getting an SSL certificate and rigging up the HT
 * make this easy
 * specialize in Django
 
-✘ means "this sucks; no need to investigate further"
+## Random ideas
+
+- Now that I've gotten this reasonably containerized, maybe I should read about those "run your container" services -- pretty sure AWS and Azure have those.  E.g., in a perfect world, I'd sign up for the service, they'd give me some sort of credential and URL; I'd type "docker context mumble something credential URL", and then just "docker compose up" should push the containers onto their hosting and Bob's my uncle.
+
+In the below, ✘ means "this sucks; no need to investigate further"
 
 ## Research I've done
 

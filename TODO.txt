@@ -1,6 +1,16 @@
 STILL TODO:
 
-* In the table list's auction status, don't just say "Incomplete"; say how many calls have been made.
+* I've seen the card display fail to become active after the bot plays.  This has happened a couple of times.
+
+* Find another color for inactive card buttons, to make them much dimmer or less saturated or something; it's not blindingly obvious that they're inactive.
+
+* The bot container doesn't seem to be emitting any output at all when I run "just dcu".
+
+* Where it currently says "No bidding box 'cuz the auction is over", have it display, you know, the CONTRACT at this table :-|
+
+* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
+
+* Maybe, after the hand has been played, reveal the original cards.
 
 * Consider timestamps for important stuff, in particular calls and plays.
 
@@ -56,6 +66,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* In the table list's auction status, don't just say "Incomplete"; say how many calls have been made.
 
 * Dockerize the bot, now that I've done the web service.
 
