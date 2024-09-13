@@ -87,7 +87,7 @@ daphne: test django-superuser migrate collectstatic
 
 # Create a bunch of users and tables
 [group('bs')]
-pop: django-superuser migrate (manage "generate_fake_data --players=56")
+pop: django-superuser migrate (manage "generate_fake_data --players=4")
 
 # Run the little bids-and-plays bot
 [group('bs')]

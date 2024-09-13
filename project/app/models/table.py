@@ -36,8 +36,7 @@ class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
-    def create_with_two_partnerships(self, p1, p2):
-        first_table = not self.exists()
+    def create_with_two_partnerships(self, p1, p2, shuffle_deck=True):
         t = self.create()
         try:
             with transaction.atomic():
@@ -52,10 +51,7 @@ class TableManager(models.Manager):
 
         deck = libCard.deck()
 
-        # Just for testing, the first board will give each player a single 13-card suit
-        if first_table:
-            pass
-        else:
+        if shuffle_deck:
             random.shuffle(deck)
 
         b = Board.objects.create_from_deck_and_board_number(

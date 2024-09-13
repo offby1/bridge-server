@@ -35,4 +35,5 @@ def usual_setup(db, everybodys_password):
     Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("Ted"),
         p2=Player.objects.get_by_name("Alice"),
+        shuffle_deck=False,
     )

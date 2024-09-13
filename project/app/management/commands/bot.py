@@ -12,8 +12,7 @@ import typing
 import django.db.utils
 import requests
 import retrying  # type: ignore
-from app.models import AuctionException, Table
-from bridge.contract import Contract
+from app.models import AuctionException, HandRecord, Player, Table
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -34,27 +33,35 @@ class Command(BaseCommand):
         yield
         self.last_action_timestamps_by_table_id[table.pk] = time.time()
 
-    def make_a_groovy_call(self, *, handrecord):
+    def skip_player(self, *, table: Table, player: Player) -> bool:
+        if player is None:
+            self.stdout.write(f"{table}: player is None -- auction or play must be over.")
+            return True
+
+        if player.is_human:
+            self.stdout.write(
+                f"{table}: They tell me {player} is human, so I will bow out",
+            )
+            return True
+
+        if player.user.last_login is not None:
+            self.stdout.write(
+                f"{table}: Human or not, {player} has logged in, so I will bow out",
+            )
+            return True
+        return False
+
+    def make_a_groovy_call(self, *, handrecord: HandRecord) -> None:
         table = handrecord.table
-        player_to_impersonate = handrecord.player_who_may_call
+        modplayer = handrecord.player_who_may_call
 
-        if player_to_impersonate is None:
-            self.stdout.write(f"{table}: player_to_impersonate is None -- auction must be over.")
+        if modplayer is None:
             return
 
-        if player_to_impersonate.is_human:
-            self.stdout.write(
-                f"{table}: They tell me {player_to_impersonate} is human, so I will bow out",
-            )
+        if self.skip_player(table=table, player=modplayer):
             return
 
-        if player_to_impersonate.user.last_login is not None:
-            self.stdout.write(
-                f"{table}: Human or not, {player_to_impersonate} has logged in, so I will bow out",
-            )
-            return
-
-        player_to_impersonate = player_to_impersonate.libraryThing
+        player_to_impersonate = modplayer.libraryThing
         a = table.current_auction
 
         # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
@@ -87,13 +94,19 @@ class Command(BaseCommand):
                 f"{table}: Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
-    def make_a_groovy_play(self, *, handrecord):
+    def make_a_groovy_play(self, *, handrecord: HandRecord) -> None:
         if not handrecord.auction.found_contract:
             return
 
         table = handrecord.table
 
         seat_to_impersonate = table.next_seat_to_play
+
+        if seat_to_impersonate is None:
+            return
+
+        if self.skip_player(table=table, player=seat_to_impersonate.player):
+            return
 
         legal_cards = handrecord.xscript.legal_cards()
         if not legal_cards:
