@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import random
+import sys
 import time
 import typing
 
@@ -21,6 +22,12 @@ def ts(time_t=None):
     if time_t is None:
         time_t = time.time()
     return datetime.datetime.fromtimestamp(time_t, tz=datetime.timezone.utc)
+
+
+def _request_ex_filter(ex):
+    rv = isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
+    sys.stderr.write(f"Caught {ex}; {'will' if rv else 'will not'} retry\n")
+    return rv
 
 
 class Command(BaseCommand):
@@ -153,26 +160,23 @@ class Command(BaseCommand):
             self.stderr.write(f"No idea what to do with {data=}")
 
     @retrying.retry(
-        retry_on_exception=(requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+        retry_on_exception=_request_ex_filter,
         wait_exponential_multiplier=1000,
     )
     def run_forever(self):
         django_host = os.environ.get("DJANGO_HOST", "localhost")
         self.wf(f"Connecting to {django_host}")
-        while True:
-            messages = SSEClient(
-                f"http://{django_host}:9000/events/all-tables/",
-            )
-            for msg in messages:
-                if msg.event != "keep-alive":
-                    if msg.data:
-                        data = json.loads(msg.data)
-                        self.dispatch(data=data)
-                    else:
-                        self.wf(f"message with no data: {vars(msg)=}")
 
-            self.stderr.write("Consumed all messages; starting over")
-            time.sleep(1)
+        messages = SSEClient(
+            f"http://{django_host}:9000/events/all-tables/",
+        )
+        for msg in messages:
+            if msg.event != "keep-alive":
+                if msg.data:
+                    data = json.loads(msg.data)
+                    self.dispatch(data=data)
+                else:
+                    self.wf(f"message with no data: {vars(msg)=}")
 
     def handle(self, *args, **options):
         self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
