@@ -261,7 +261,16 @@ def _three_by_three_trick_display_context_for_table(
 
     def c(direction):
         key = getattr(bridge.seat.Seat, direction)
-        return cards_by_seat.get(key, "__")
+        card = cards_by_seat.get(key)
+        color = "black"
+        if card is not None:
+            # TODO -- teach the library to return a color for each card
+            if bridge.card.Card.deserialize(card).suit in {
+                bridge.card.Suit.HEARTS,
+                bridge.card.Suit.DIAMONDS,
+            }:
+                color = "red"
+        return f"""<span style="color: {color}">{card or '__'}</span>"""
 
     return {
         "three_by_three_trick_display": {

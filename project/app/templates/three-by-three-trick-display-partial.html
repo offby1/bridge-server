@@ -5,7 +5,7 @@
         <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
             {% for column in row %}
                 <div class="col"
-                     {% if column != " " %}style="border: 1px dotted;"{% endif %}>{{ column }}</div>
+                     {% if column != " " %}style="border: 1px dotted;"{% endif %}>{{ column|safe }}</div>
             {% endfor %}
         </div>
     {% endfor %}
