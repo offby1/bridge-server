@@ -76,7 +76,6 @@ class Command(BaseCommand):
         fake = Faker()
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
-            unseated_players = []
             while Player.objects.count() < options["players"]:
                 # Make sure we always have "bob", because his name is easy to type, and to remember :-)
                 if not Player.objects.exists():
@@ -94,31 +93,49 @@ class Command(BaseCommand):
                     )
 
                 try:
-                    p = create_player()
+                    create_player()
                 except IntegrityError:
                     continue
 
                 progress_bar.update()
-                unseated_players.append(p)
 
-                if len(unseated_players) < 4:
-                    continue
+        # Now partner 'em up
+        while True:
+            single_players = Player.objects.filter(partner__isnull=True).all()[0:2]
 
-                unseated_players[0].partner_with(unseated_players[1])
-                unseated_players[2].partner_with(unseated_players[3])
+            if len(single_players) < 2:
+                break
 
-                @db_retry
-                def create_table():
-                    return Table.objects.create_with_two_partnerships(
-                        unseated_players[0],
-                        unseated_players[2],
-                    )
+            single_players[0].partner_with(single_players[1])
 
-                t = create_table()
+        # Now seat those players.
+        while True:
+            unseated_player_one = Player.objects.filter(
+                partner__isnull=False, seat__isnull=True
+            ).first()
 
-                unseated_players = []
+            if not unseated_player_one:
+                break
 
-                self.generate_some_fake_calls_and_plays_at(t, Table.objects.count() - 1)
+            # find another unseated partnership
+            unseated_player_two = (
+                Player.objects.exclude(
+                    pk__in={unseated_player_one.pk, unseated_player_one.partner.pk}
+                )
+                .filter(partner__isnull=False, seat__isnull=True)
+                .first()
+            )
+
+            if not unseated_player_two:
+                break
+
+            Table.objects.create_with_two_partnerships(
+                unseated_player_one,
+                unseated_player_two,
+            )
+
+        last_table = Table.objects.order_by("-pk").first()
+        self.generate_some_fake_calls_and_plays_at(last_table, Table.objects.count() - 1)
 
         # Now create a couple of unseated players.
         count_before = Player.objects.count()
@@ -155,4 +172,4 @@ class Command(BaseCommand):
                     chosen_card = random.choice(legal_cards)
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
-                    p = h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+                    h.add_play_from_player(player=h.xscript.player, card=chosen_card)
