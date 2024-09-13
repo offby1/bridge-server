@@ -18,6 +18,7 @@ from django_eventstream import send_event  # type: ignore
 from . import SEAT_CHOICES
 from .board import Board
 from .handrecord import HandRecord
+from .player import Player
 from .seat import Seat
 from .utils import assert_type
 
@@ -84,6 +85,9 @@ class Table(models.Model):
     def __getitem__(self, seat: libSeat) -> libPlayer:
         modelPlayer = self.players_by_direction[seat.value]
         return modelPlayer.libraryThing
+
+    def modPlayer_by_seat(self, seat: libSeat) -> Player:
+        return Player.objects.get_by_name(self[seat].name)
 
     @cached_property
     def seats(self):

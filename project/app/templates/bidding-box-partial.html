@@ -1,6 +1,8 @@
 {% load partials %}
 {% partialdef bidding-box-partial %}
-<div style="font-family: monospace;" id="bidding-box">{{ bidding_box_buttons }}</div>
+<div style="font-family: monospace;" id="bidding-box">
+    {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+</div>
 {% endpartialdef bidding-box-partial %}
 {% partialdef bidding-box-scripts %}
 <script>

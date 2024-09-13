@@ -64,7 +64,9 @@ INSTALLED_APPS = [
     "app",
 ]
 
+# TODO: This seems to do a lot of queries, duh; maybe we don't need it?
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
+
 EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 EVENTSTREAM_REDIS = {
     "host": os.environ.get("REDIS_HOST", "localhost"),

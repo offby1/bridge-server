@@ -1,7 +1,6 @@
 import importlib
 import json
 
-import bridge.seat
 import pytest
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
@@ -24,8 +23,8 @@ def test_we_gots_a_home_page():
 
 
 @pytest.fixture
-def bob(db, everybodys_password):
-    u = auth.models.User.objects.create(username="Bob", password=everybodys_password)
+def j_northam(db, everybodys_password):
+    u = auth.models.User.objects.create(username="Jeremy Northam", password=everybodys_password)
     return Player.objects.create(user=u)
 
 
@@ -41,10 +40,10 @@ def test_all_seated_players_have_partners(usual_setup):
 
 
 def test_splitsville_ejects_everyone_from_table(usual_setup):
-    table_count_before = Table.objects.count()
+    table = Table.objects.first()
 
-    Bob = Player.objects.get_by_name("Bob")
-    Ted = Player.objects.get_by_name("Ted")
+    Bob = table.modPlayer_by_seat(libSeat.NORTH)
+    Ted = table.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
     assert Bob.partner == Ted
@@ -53,59 +52,64 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
     assert Bob.table is not None
     assert Bob.table == Ted.table
 
+    table_count_before = Table.objects.count()
+    assert table_count_before == 1
+
+    Carol = table.modPlayer_by_seat(libSeat.EAST)
+    Alice = table.modPlayer_by_seat(libSeat.WEST)
+
     Bob.break_partnership()
+
     Bob.refresh_from_db()
     Ted.refresh_from_db()
-    assert Bob.partner is None
-    assert Bob.partner == Ted.partner
+    Carol.refresh_from_db()
+    Alice.refresh_from_db()
 
-    assert Bob.table is None
-    assert Ted.table is None
+    assert Bob.partner is None
+    assert Ted.partner is None
+    assert Alice.partner == Carol
+    assert Carol.partner == Alice
 
     assert Table.objects.count() == table_count_before - 1
 
-    Carol = Player.objects.get_by_name("Carol")
-    Alice = Player.objects.get_by_name("Alice")
+    assert Bob.table is None
+    assert Ted.table is None
     assert Carol.table is None
     assert Alice.table is None
 
 
-def test_both_table_partnerships_splitting_removes_table(usual_setup):
+def test_one_partnerships_splitting_removes_table(usual_setup):
     assert Table.objects.count() == 1
-
-    Bob = Player.objects.get_by_name("Bob")
-    Carol = Player.objects.get_by_name("Carol")
+    t = Table.objects.first()
+    Bob = t.modPlayer_by_seat(libSeat.NORTH)
 
     Bob.break_partnership()
     assert Table.objects.count() == 0
 
-    Carol.break_partnership()
-    assert Table.objects.count() == 0
 
-
-def test_splitsville_non_seated_partnership(bob, everybodys_password):
+def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
     Alice = Player.objects.create(
         user=auth.models.User.objects.create(username="Alice", password=everybodys_password),
     )
-    Alice.partner_with(bob)
+    Alice.partner_with(j_northam)
 
     Alice.break_partnership()
-    bob.refresh_from_db()
-    assert bob.partner is None
+    j_northam.refresh_from_db()
+    assert j_northam.partner is None
 
 
 def test_player_names_are_links_to_detail_page(usual_setup):
-    p = Player.objects.get_by_name("Bob")
+    p = Player.objects.get_by_name("Jeremy Northam")
 
     link = p.as_link()
-    assert ">Bob" in link
+    assert ">Jeremy Northam" in link
     assert "href='/player/" in link
 
 
-def test_only_bob_can_see_bobs_cards(usual_setup):
+def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup):
     t = Table.objects.first()
-    bob = Player.objects.get_by_name("Bob")
-    bobs_cards = bob.libraryThing.hand.cards
+    north = t.modPlayer_by_seat(libSeat.NORTH)
+    norths_cards = north.libraryThing.hand.cards
 
     client = Client()
 
@@ -113,13 +117,13 @@ def test_only_bob_can_see_bobs_cards(usual_setup):
         return client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)
 
     response = r()
-    for c in bobs_cards:
+    for c in norths_cards:
         assert c.serialize() not in response.content.decode()
 
-    client.login(username="Bob", password=".")
+    client.login(username=north.name, password=".")
 
     response = r()
-    for c in bobs_cards:
+    for c in norths_cards:
         assert c.serialize() in response.content.decode()
 
 
@@ -145,69 +149,71 @@ def test_legal_cards(usual_setup, rf, settings):
 def test_player_cannot_be_at_two_seats(usual_setup):
     t = Table.objects.first()
 
-    # Try to sneak Bob into Carol's seat!
+    # Try to sneak Jeremy into Esther's seat!
     # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     with pytest.raises(IntegrityError):
         Seat.objects.filter(
-            direction=bridge.seat.Seat.EAST.value,
+            direction=libSeat.EAST.value,
             table=t,
         ).update(
-            player=Player.objects.get_by_name("Bob"),
+            player=t.modPlayer_by_seat(libSeat.NORTH),
         )
 
 
 def test_player_cannot_be_in_two_tables(usual_setup):
-    bob = Player.objects.get_by_name("Bob")
+    t1 = Table.objects.first()
+    north = t1.modPlayer_by_seat(libSeat.NORTH)
 
     # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     t2 = Table.objects.create()
 
     with pytest.raises(SeatException):
-        Seat.objects.create(direction=bridge.seat.Seat.EAST.value, table=t2, player=bob)
+        Seat.objects.create(direction=libSeat.EAST.value, table=t2, player=north)
 
 
-def test_cant_just_make_up_directions(bob, everybodys_password):
+def test_cant_just_make_up_directions(j_northam, everybodys_password):
     partner = Player.objects.create(
         user=auth.models.User.objects.create(
             username="partner",
             password=everybodys_password,
         ),
     )
-    bob.partner_with(partner)
+    j_northam.partner_with(partner)
 
     t = Table.objects.create()
     with pytest.raises(Exception) as e:
-        Seat.objects.create(direction=1234, player=bob, table=t)
+        Seat.objects.create(direction=1234, player=j_northam, table=t)
 
     assert "app_seat_direction_valid" in str(e.value)
 
 
 def test_breaking_up_is_hard_to_do(usual_setup):
-    Bob = Player.objects.get_by_name("Bob")
-    Carol = Player.objects.get_by_name("Carol")
-    Ted = Player.objects.get_by_name("Ted")
-    Alice = Player.objects.get_by_name("Alice")
+    t = Table.objects.first()
+    North = t.modPlayer_by_seat(libSeat.NORTH)
+    East = t.modPlayer_by_seat(libSeat.EAST)
+    South = t.modPlayer_by_seat(libSeat.SOUTH)
+    West = t.modPlayer_by_seat(libSeat.WEST)
 
-    assert Bob.partner == Ted
-    assert Ted.partner == Bob
+    assert North.partner == South
+    assert South.partner == North
 
     # No exception because Bob is already partnered with Ted, so an exception would serve no purpose.
-    Bob.partner_with(Ted)
+    North.partner_with(South)
 
     with pytest.raises(PlayerException) as e:
-        Bob.partner_with(Carol)
+        North.partner_with(East)
     assert "already partnered with" in str(e.value)
 
-    Bob.break_partnership()
-    Bob.refresh_from_db()
-    Ted.refresh_from_db()
-    assert Bob.partner is None
-    assert Ted.partner is None
+    North.break_partnership()
+    North.refresh_from_db()
+    South.refresh_from_db()
+    assert North.partner is None
+    assert South.partner is None
 
     # No exception because Bob is single
-    Alice.break_partnership()
-    Carol.refresh_from_db()
-    Bob.partner_with(Carol)
+    West.break_partnership()
+    East.refresh_from_db()
+    North.partner_with(East)
 
 
 def test_player_channnel_encoding():
@@ -236,16 +242,18 @@ def test_sending_lobby_messages(usual_setup, rf):
     assert response.status_code == 403  # client isn't authenticated
     assert response.content == b"Go away, anonymous scoundrel"
 
-    response = lobby.send_lobby_message(say_hey(user=Player.objects.get_by_name("Bob").user))
+    t = Table.objects.first()
+    response = lobby.send_lobby_message(say_hey(user=t.modPlayer_by_seat(libSeat.NORTH).user))
     assert response.status_code == 200
 
 
 def test_sending_player_messages(usual_setup, rf, everybodys_password):
-    bob = Player.objects.get_by_name("Bob")
+    t = Table.objects.first()
+    north = t.modPlayer_by_seat(libSeat.NORTH)
 
     def hey_bob(*, target=None, sender_player=None):
         if target is None:
-            target = bob
+            target = north
 
         user = AnonymousUser() if sender_player is None else sender_player.user
 
@@ -261,7 +269,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     assert response.status_code == 403  # client isn't authenticated
     assert response.content == b"Go away, anonymous scoundrel"
 
-    response = hey_bob(sender_player=Player.objects.get_by_name("Ted"))
+    response = hey_bob(sender_player=t.modPlayer_by_seat(libSeat.SOUTH))
     assert response.status_code == 403  # we're both at a table, so we can't talk
     assert b"already seated" in response.content
 
@@ -288,9 +296,8 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
     module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
-    Bob = Player.objects.get_by_name("Bob")
-    Ted = Player.objects.get_by_name("Ted")
-    Carol = Player.objects.get_by_name("Carol")
+    t = Table.objects.first()
+    Bob, Ted, Carol, _ = t.players_by_direction.values()
 
     channel = Message.channel_name_from_players(Ted, Bob)
 
@@ -304,15 +311,16 @@ def test_seat_ordering(usual_setup):
 
 
 def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
-    Bob = Player.objects.get_by_name("Bob")
-    assert Bob.partner is not None
+    t = Table.objects.first()
+    north = t.modPlayer_by_seat(libSeat.NORTH)
+    assert north.partner is not None
 
     request = rf.post(
         "/player_detail_endpoint_whatever_tf_it_is HEY IT TURNS OUT THIS DOESN'T MATTER, WHO KNEW??/",
         data={"action": "splitsville"},
     )
 
-    request.user = Bob.user
+    request.user = north.user
 
     send_event_kwargs_log = []
 
@@ -322,7 +330,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     import app.models.player
 
     monkeypatch.setattr(app.models.player, "send_event", mock_send_event)
-    response = player.player_detail_view(request, Bob.pk)
+    response = player.player_detail_view(request, north.pk)
 
     assert len(send_event_kwargs_log) == 1
     the_kwargs = send_event_kwargs_log.pop()
@@ -330,15 +338,15 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert the_kwargs["channel"] == "partnerships"
     assert the_kwargs["data"]["joined"] == []
 
-    assert set(the_kwargs["data"]["split"]) == {Bob.pk, Bob.partner.pk}
+    assert set(the_kwargs["data"]["split"]) == {north.pk, north.partner.pk}
 
     assert response.status_code == 200
 
-    Bob.refresh_from_db()
-    assert Bob.partner is None
+    north.refresh_from_db()
+    assert north.partner is None
 
     # Now do it again -- bob ain't got no partner no mo, so we should get an error.
-    response = player.player_detail_view(request, Bob.pk)
+    response = player.player_detail_view(request, north.pk)
     assert 400 <= response.status_code <= 499
 
     assert b"cannot" in response.content.lower()
@@ -347,8 +355,8 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert len(send_event_kwargs_log) == 0
 
 
-def test_table_creation(bob, rf, everybodys_password):
-    players_by_name = {"bob": bob}
+def test_table_creation(j_northam, rf, everybodys_password):
+    players_by_name = {"bob": j_northam}
     sam = Player.objects.create(
         user=auth.models.User.objects.create(
             username="sam",
@@ -356,17 +364,17 @@ def test_table_creation(bob, rf, everybodys_password):
         ),
     )
     players_by_name["sam"] = sam
-    sam.partner_with(bob)
+    sam.partner_with(j_northam)
 
-    assert bob.partner is not None
+    assert j_northam.partner is not None
 
     request = rf.post(
         "/woteva/",
-        data={"pk1": bob.pk, "pk2": bob.pk},
+        data={"pk1": j_northam.pk, "pk2": j_northam.pk},
     )
 
-    request.user = bob.user
-    response = table.new_table_for_two_partnerships(request, bob.pk, bob.pk)
+    request.user = j_northam.user
+    response = table.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
     assert response.status_code == 403
     assert b"four distinct" in response.content
 
@@ -383,22 +391,26 @@ def test_table_creation(bob, rf, everybodys_password):
 
     request = rf.post(
         "/woteva/",
-        data={"pk1": bob.pk, "pk2": players_by_name["tina"].pk},
+        data={"pk1": j_northam.pk, "pk2": players_by_name["tina"].pk},
     )
-    request.user = bob.user
-    response = table.new_table_for_two_partnerships(request, bob.pk, players_by_name["tina"].pk)
+    request.user = j_northam.user
+    response = table.new_table_for_two_partnerships(
+        request, j_northam.pk, players_by_name["tina"].pk
+    )
 
     assert response.status_code == 302
 
 
 def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
-    Bob = Player.objects.get_by_name("Bob")
-    Ted = Player.objects.get_by_name("Ted")
-    Carol = Player.objects.get_by_name("Carol")
-    Alice = Player.objects.get_by_name("Alice")
+    t = Table.objects.first()
+    Bob, Carol, Ted, Alice = t.players_by_direction.values()
 
-    Bob.break_partnership()
+    from app.models import logged_queries
+
+    with logged_queries():
+        Bob.break_partnership()
     Bob.partner_with(Ted)
+
     Carol.break_partnership()
     Carol.partner_with(Alice)
 

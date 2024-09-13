@@ -146,7 +146,7 @@ class Player(models.Model):
             old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
 
-            if table is not None:
+            if table is not None and table.id is not None:
                 table.delete()
 
         self._send_partnershipt_messages(action=SPLIT, old_partner_pk=old_partner_pk)

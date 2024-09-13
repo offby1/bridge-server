@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from bridge.card import Card
@@ -9,10 +9,14 @@ from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
+from bridge.table import Player as libPlayer
 
 from .models import AuctionException, Board, Play, Player, Table
 from .testutils import set_auction_to
 from .views.table import bidding_box_partial_view, table_detail_view
+
+if TYPE_CHECKING:
+    from django.template.response import TemplateResponse
 
 
 def test_rejects_illegal_calls(usual_setup):
@@ -64,23 +68,45 @@ def test_cards_by_player(usual_setup):
     assert before - after == {diamond_two}
 
 
-def _count_buttons(t: Table, request: Any) -> tuple[int, int]:
+def _bidding_box_as_seen_by(t: Table, as_seen_by: Player | libPlayer, rf) -> TemplateResponse:
+    from app.models.utils import assert_type
+
+    if isinstance(as_seen_by, libPlayer):
+        as_seen_by = Player.objects.get_by_name(as_seen_by.name)
+    assert_type(as_seen_by, Player)
+    assert isinstance(as_seen_by, Player)
+
+    request = rf.get("/woteva/", data={"table_pk": t.pk})
+    request.user = as_seen_by.user
+
     response = bidding_box_partial_view(request, t.pk)
     response.render()
+    return response
 
-    disabled_buttons = []
-    active_buttons = []
+
+def _partition_button_values(t: Table, as_seen_by: Player, rf) -> tuple[list[str], list[str]]:
+    response = _bidding_box_as_seen_by(t, as_seen_by, rf)
+
+    disabled_buttons: list[str] = []
+    active_buttons: list[str] = []
     bb_html_lines = response.content.decode().split("\n")
+
+    def value(html: str) -> str:
+        import re
+
+        m = re.search(r'value="(.*?)"', html)
+        assert m is not None, html
+        return m.group(1)
 
     for line in bb_html_lines:
         if "<button" not in line:
             continue
         if " disabled" in line:
-            disabled_buttons.append(line)
+            disabled_buttons.append(value(line))
         else:
-            active_buttons.append(line)
+            active_buttons.append(value(line))
 
-    return len(disabled_buttons), len(active_buttons)
+    return disabled_buttons, active_buttons
 
 
 def test_bidding_box_html(usual_setup, rf):
@@ -88,34 +114,55 @@ def test_bidding_box_html(usual_setup, rf):
     t = Table.objects.first()
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
-    request = rf.get("/woteva/", data={"table_pk": t.pk})
-    request.user = Player.objects.get_by_name("Alice").user
+    # set_auction_to has set the declarer to be the dealer.
 
-    response = table_detail_view(request, t.pk)
-    response.render()
+    assert t.current_auction.found_contract
 
-    assert b'id="bidding-box"' not in response.content
-
-    t.handrecord_set.all().delete()
-    h = t.handrecord_set.create(board=Board.objects.first())
+    # The auction is settled, so no bidding box.
+    response = _bidding_box_as_seen_by(t, t.current_auction.allowed_caller(), rf)
+    assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.
-    caller = h.auction.allowed_caller()
+    t.handrecord_set.all().delete()
+    h = t.handrecord_set.create(board=Board.objects.first())
+    assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
-    h.add_call_from_player(player=caller, call=libBid(level=1, denomination=libSuit.DIAMONDS))
-    disabled, _ = _count_buttons(t, request)
-    assert disabled == 3
+    from app.models import logged_queries
+
+    h.add_call_from_player(
+        player=h.auction.allowed_caller(),
+        call=libBid(level=1, denomination=libSuit.DIAMONDS),
+    )
+
+    with logged_queries():
+        t = Table.objects.get(pk=t.pk)  # like refresh_from_db, but updates all the relations too
+
+        assert t.current_auction.allowed_caller().name == "Clint Eastwood"
+
+    disabled, enabled = _partition_button_values(t, as_seen_by=h.auction.allowed_caller(), rf=rf)
+    assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
     # Third case: as above but with one more "Pass".
-    caller = h.auction.allowed_caller()
+    h.add_call_from_player(
+        player=h.auction.allowed_caller(),
+        call=libPass,
+    )
 
-    h.add_call_from_player(player=caller, call=libPass)
+    t = Table.objects.get(pk=t.pk)
+    assert t.current_auction.allowed_caller().name == "J.D. Souther"
 
-    caller = h.auction.allowed_caller()
     # you cannot double your own partner.
-    disabled, active = _count_buttons(t, request)
+    disabled, active = _partition_button_values(t, as_seen_by=h.auction.allowed_caller(), rf=rf)
 
-    assert (disabled, active) == (38, 0), f"{caller=} should not be allowed to call at all"
+    assert set(disabled) == {
+        "1♣",
+        "1♦",
+        "Double",
+        "Redouble",
+    }
+    esther = Player.objects.get_by_name("Clint Eastwood")
+    disabled, active = _partition_button_values(t, as_seen_by=esther, rf=rf)
+    assert len(disabled) == 38, f"{esther} shouldn't be allowed to call at all"
 
 
 def test_current_trick(usual_setup):
