@@ -1,6 +1,6 @@
 STILL TODO:
 
-* I've seen the card display fail to become active after the bot plays.  This has happened a couple of times.
+* I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
 
 * Find another color for inactive card buttons, to make them much dimmer or less saturated or something; it's not blindingly obvious that they're inactive.
 
