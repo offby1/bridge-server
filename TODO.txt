@@ -1,5 +1,13 @@
 STILL TODO:
 
+* Ugh, the bidding box doesn't go away after the auction is settled *unless* I reload the page.
+
+  I need to (if I'm not already) send an "auction settled" message, or maybe the "someone played a card" message is the right place to handle that.
+
+* Customize the 404 page that it at least has a link to home.
+
+  Right now it's just "NOT FOUND" "The requested resource was not found on this server."
+
 * Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
 
   Of course, switch my existing bot to use it, once it exists.
