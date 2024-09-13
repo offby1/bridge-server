@@ -10,17 +10,10 @@
 
 [group('postgres')]
 [script('bash')]
-pg-start: orb pg-data
+pg-start: orb
     set -euxo pipefail
 
-    docker container restart postgres 2> /dev/null && exit
-
-    docker run --detach \
-    --name postgres \
-    --env POSTGRES_PASSWORD=postgres \
-    --volume pg-data:/var/lib/postgresql/data \
-    --publish 5432:5432 \
-    postgres
+    docker compose up postgres --detach
 
 # Doesn't work on MacOS, at least when running inside an orbstack machine, since the *host*'s redis is listening on 6379, and thus
 # - we cannot start our own process listening on that port, 'cuz EADDRINUSE; and
@@ -36,14 +29,7 @@ redis:
 
 [group('postgres')]
 pg-stop:
-    -docker stop postgres
-
-[group('postgres')]
-[private]
-pg-create-db: pg-start
-    until docker exec postgres pg_isready --username=postgres; do sleep 1; date; done
-    if ! docker exec postgres createdb --username=postgres -T template0 bridge ; then echo "$(tput setaf 2)'database already exists' is OK! ctfo$(tput sgr0)"; fi
-
+    docker compose down postgres
 
 orb:
     if [ "{{os()}}" = "macos" ]; then orb start; else echo not mac I guess; fi
@@ -59,8 +45,3 @@ docker-nuke: orb
     echo "Removing plugins!"
     docker plugin ls --quiet | xargs --no-run-if-empty docker plugin rm
     echo "Done!"
-
-
-[group('postgres')]
-pg-data: orb
-    docker volume create pg-data
