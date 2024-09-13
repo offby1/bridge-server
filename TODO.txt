@@ -4,8 +4,6 @@ STILL TODO:
 
 * Find another color for inactive card buttons, to make them much dimmer or less saturated or something; it's not blindingly obvious that they're inactive.
 
-* The bot container doesn't seem to be emitting any output at all when I run "just dcu".
-
 * Where it currently says "No bidding box 'cuz the auction is over", have it display, you know, the CONTRACT at this table :-|
 
 * Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.

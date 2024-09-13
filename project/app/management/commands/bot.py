@@ -24,6 +24,10 @@ def ts(time_t=None):
 
 
 class Command(BaseCommand):
+    def wf(self, *args, **kwargs):
+        self.stdout.write(*args, **kwargs)
+        self.stdout.flush()
+
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
@@ -35,17 +39,17 @@ class Command(BaseCommand):
 
     def skip_player(self, *, table: Table, player: Player) -> bool:
         if player is None:
-            self.stdout.write(f"{table}: player is None -- auction or play must be over.")
+            self.wf(f"{table}: player is None -- auction or play must be over.")
             return True
 
         if player.is_human:
-            self.stdout.write(
+            self.wf(
                 f"{table}: They tell me {player} is human, so I will bow out",
             )
             return True
 
         if player.user.last_login is not None:
-            self.stdout.write(
+            self.wf(
                 f"{table}: Human or not, {player} has logged in, so I will bow out",
             )
             return True
@@ -90,7 +94,7 @@ class Command(BaseCommand):
             # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
             self.stderr.write(f"Uh-oh -- {e}")
         else:
-            self.stdout.write(
+            self.wf(
                 f"{table}: Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
@@ -110,15 +114,13 @@ class Command(BaseCommand):
 
         legal_cards = handrecord.xscript.legal_cards()
         if not legal_cards:
-            self.stdout.write(
-                f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over."
-            )
+            self.wf(f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over.")
             return
 
         chosen_card = random.choice(legal_cards)
 
         p = handrecord.add_play_from_player(player=handrecord.xscript.player, card=chosen_card)
-        self.stdout.write(f"{table}: played {p} from {legal_cards}")
+        self.wf(f"{table}: played {p} from {legal_cards}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
@@ -143,7 +145,7 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_play(handrecord=handrecord)
         elif set(data.keys()) == {"table", "direction", "action"}:
-            self.stdout.write(f"{table}: I believe I been poked: {data=}")
+            self.wf(f"{table}: I believe I been poked: {data=}")
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(handrecord=handrecord)
                 self.make_a_groovy_play(handrecord=handrecord)
@@ -156,7 +158,7 @@ class Command(BaseCommand):
     )
     def run_forever(self):
         django_host = os.environ.get("DJANGO_HOST", "localhost")
-        self.stdout.write(f"Connecting to {django_host}")
+        self.wf(f"Connecting to {django_host}")
         while True:
             messages = SSEClient(
                 f"http://{django_host}:9000/events/all-tables/",
@@ -167,7 +169,7 @@ class Command(BaseCommand):
                         data = json.loads(msg.data)
                         self.dispatch(data=data)
                     else:
-                        self.stdout.write(f"message with no data: {vars(msg)=}")
+                        self.wf(f"message with no data: {vars(msg)=}")
 
             self.stderr.write("Consumed all messages; starting over")
             time.sleep(1)
