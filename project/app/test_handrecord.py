@@ -12,7 +12,7 @@ from bridge.seat import Seat as libSeat
 
 from .models import AuctionException, Board, Play, Player, Table
 from .testutils import set_auction_to
-from .views.table import bidding_box_partial_view
+from .views.table import bidding_box_partial_view, table_detail_view
 
 
 def test_rejects_illegal_calls(usual_setup):
@@ -91,11 +91,10 @@ def test_bidding_box_html(usual_setup, rf):
     request = rf.get("/woteva/", data={"table_pk": t.pk})
     request.user = Player.objects.get_by_name("Alice").user
 
-    response = bidding_box_partial_view(request, t.pk)
+    response = table_detail_view(request, t.pk)
     response.render()
 
-    assert b"No bidding box" in response.content
-    assert b"<button" not in response.content
+    assert b'id="bidding-box"' not in response.content
 
     t.handrecord_set.all().delete()
     h = t.handrecord_set.create(board=Board.objects.first())

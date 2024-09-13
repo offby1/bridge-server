@@ -1,38 +1,41 @@
 {% load partials %}
 {% load player_extras %}
 {% partialdef auction-partial %}
-<div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
-    {{ table.current_auction.status }}
-    <table class="table">
-        <th>
-            <tr>
-                <td>
-                    <i>West</i>
-                </td>
-                <td>
-                    <i>North</i>
-                </td>
-                <td>
-                    <i>East</i>
-                </td>
-                <td>
-                    <i>South</i>
-                </td>
-            </tr>
-        </th>
-        <tbody>
-            {% for row in table.current_auction.fancy_HTML_display %}
+{% if show_auction_history %}
+    <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
+        <table class="table">
+            <th>
                 <tr>
-                    {% for call in row %}
-                        <td>
-                            {% if call is not None %}{{ call|safe }}{% endif %}
-                        </td>
-                    {% endfor %}
+                    <td>
+                        <i>West</i>
+                    </td>
+                    <td>
+                        <i>North</i>
+                    </td>
+                    <td>
+                        <i>East</i>
+                    </td>
+                    <td>
+                        <i>South</i>
+                    </td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            </th>
+            <tbody>
+                {% for row in table.current_auction.fancy_HTML_display %}
+                    <tr>
+                        {% for call in row %}
+                            <td>
+                                {% if call is not None %}{{ call|safe }}{% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <h2>{{ table.current_auction.status }}</h2>
+{% endif %}
 {% endpartialdef auction-partial %}
 {% partialdef auction-scripts %}
 <script>

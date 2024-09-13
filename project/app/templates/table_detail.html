@@ -8,7 +8,9 @@
     </div>
     <div>
         {% include 'auction-partial.html#auction-partial' %}
-        {% include 'bidding-box-partial.html#bidding-box-partial' %}
+        {% if display_bidding_box %}
+            {% include 'bidding-box-partial.html#bidding-box-partial' %}
+        {% endif %}
     </div>
     {% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}
 {% endblock content %}

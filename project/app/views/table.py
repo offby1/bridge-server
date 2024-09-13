@@ -182,6 +182,7 @@ def _auction_context_for_table(table):
     return {
         "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
+        "show_auction_history": table.current_auction.status is bridge.auction.Auction.Incomplete,
         "table": table,
     }
 
@@ -301,25 +302,17 @@ def _three_by_three_trick_display_context_for_table(
 
 
 def _bidding_box_context_for_table(request, table):
-    if table.current_auction.status != bridge.auction.Auction.Incomplete:
-        buttons = "No bidding box 'cuz the auction is over"
-    else:
-        player = request.user.player  # type: ignore
-        seat = getattr(player, "seat", None)
+    player = request.user.player  # type: ignore
+    seat = getattr(player, "seat", None)
 
-        if not seat or seat.table != table:
-            buttons = "No bidding box 'cuz you are not at this table"
-        elif player.name != table.current_auction.allowed_caller().name:
-            buttons = bidding_box_buttons(
-                auction=table.current_auction,
-                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-                disabled_because_out_of_turn=True,
-            )
-        else:
-            buttons = bidding_box_buttons(
-                auction=table.current_auction,
-                call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-            )
+    if not seat or seat.table != table:
+        buttons = "No bidding box 'cuz you are not at this table"
+    else:
+        buttons = bidding_box_buttons(
+            auction=table.current_auction,
+            call_post_endpoint=reverse("app:call-post", args=[table.pk]),
+            disabled_because_out_of_turn=player.name != table.current_auction.allowed_caller().name,
+        )
     return {
         "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
@@ -399,12 +392,16 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
 @logged_in_as_player_required()
 def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(Table, pk=pk)
+    display_bidding_box = table.current_auction.status == bridge.auction.Auction.Incomplete
 
     context = (
-        _four_hands_context_for_table(request, table)
+        {"display_bidding_box": display_bidding_box}
+        | _four_hands_context_for_table(request, table)
         | _auction_context_for_table(table)
-        | _bidding_box_context_for_table(request, table)
     )
+
+    if display_bidding_box:
+        context |= _bidding_box_context_for_table(request, table)
 
     return TemplateResponse(request, "table_detail.html", context=context)
 
