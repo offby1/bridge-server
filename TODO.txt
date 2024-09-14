@@ -1,5 +1,11 @@
 STILL TODO:
 
+* Sentry caught a crash!  Very handy.
+
+  https://eric-hanchrow.sentry.io/share/issue/414efa5798154d1a93e21eeb06d382bf/
+
+  Seems it's in the library; I'd just bid 7NT and it was trying to find a legal bid beyond that, and presumably the only bids left were "Pass", which it weights at zero, and ...
+
 * Wow, I never mentioned that I gotta do the dummy!
   - gotta display dummy's hand (to all players) after the opening lead
   - declarer needs to be able to control the dummy as well as their own hand
