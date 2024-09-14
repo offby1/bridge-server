@@ -2,6 +2,18 @@ STILL TODO:
 
 * I can't articulate this precisely, but ... card buttons are often *too* dim.  It's ok for them to be really dim when they're in *my* hand, and they're not legal to play (i.e., they are a different suit than the led suit, and I have some cards of that led suit).  But when they're e.g. in the dummy's hand, and I'm not the declarer *and* it's not the dummy's turn to play, they should be easier to read.
 
+  In general, there are two orthogonal dimensions to buttons:
+  - active vs inactive
+  - EZ to read vs deliberatly dim
+
+  Here's a table.  By "border" I guess I mean `class="border border-success border-5"` around the entire hand -- it's ugly but gets the job done.
+
+  | My turn to play? | Izzit a legal card? | how do things look?        | how "cards_as_four_divs" thinks of it |
+  |------------------+---------------------+----------------------------+---------------------------------------|
+  | no               | N/A                 | no border, clear, inactive | text                                  |
+  | yes              | no                  | border, muted, inactive    | disabled button                       |
+  | yes              | yes                 | border, clear, active      | active button                         |
+
 * Sentry caught a crash!  Very handy.
 
   https://eric-hanchrow.sentry.io/share/issue/414efa5798154d1a93e21eeb06d382bf/

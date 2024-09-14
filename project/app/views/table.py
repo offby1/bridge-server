@@ -124,7 +124,7 @@ def cards_as_four_divs(
     players_cards: set[bridge.card.Card],
     legal_cards: list[bridge.card.Card],
     seat: Seat,
-    buttons: bool = True,
+    my_turn_to_play: bool,
 ) -> SafeString:
     by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
     for c in players_cards:
@@ -159,7 +159,7 @@ def cards_as_four_divs(
     def single_row_divs(suit, cards):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
         cols = [
-            card_button(c, color) if buttons else card_text(c, color)
+            card_button(c, color) if my_turn_to_play else card_text(c, color)
             for c in sorted(cards, reverse=True)
         ]
         return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
@@ -169,9 +169,8 @@ def cards_as_four_divs(
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
-    return SafeString(
-        "<br>" + "\n".join(row_divs),
-    )
+    class_ = 'class="border border-success border-5"' if my_turn_to_play else ""
+    return SafeString("<br>" f"<div {class_}>" + "\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
@@ -201,6 +200,10 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     modelSeat: Seat
     libcards: set[bridge.card.Card]
     for modelSeat, libcards in table.current_cards_by_seat.items():
+        my_turn_to_play = (
+            table.current_auction.found_contract
+            and table.current_handrecord.xscript.player.seat.value == modelSeat.direction
+        )
         dem_cards_baby = f"{len(libcards)} cards"
 
         is_dummy = modelSeat == table.dummy
@@ -214,7 +217,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
                 players_cards=libcards,
                 legal_cards=legal_cards,  # TODO -- what about the dummy
                 seat=modelSeat,
-                buttons=table.current_auction.found_contract,
+                my_turn_to_play=my_turn_to_play,
             )
 
         value = json.dumps(
