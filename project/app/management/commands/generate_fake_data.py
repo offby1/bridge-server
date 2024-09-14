@@ -4,6 +4,7 @@ import django.db.utils
 import retrying  # type: ignore
 import tqdm
 from app.models import Player, Table
+from bridge.contract import Bid as libBid
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -42,7 +43,6 @@ canned_calls = [
     "Pass",
     "Pass",
     "Pass",
-    "Pass",
 ]
 
 
@@ -60,12 +60,10 @@ class Command(BaseCommand):
         calls_prefix = canned_calls[0:this_tables_index]
 
         for c in calls_prefix:
+            player = h.auction.allowed_caller()
+            call = libBid.deserialize(c)
 
-            @db_retry
-            def create_call():
-                h.call_set.create(serialized=c)
-
-            create_call()
+            h.add_call_from_player(player=player, call=call)
 
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging
