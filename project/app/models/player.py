@@ -171,10 +171,15 @@ class Player(models.Model):
         if hasattr(self, "seat"):
             direction = f" ({self.seat.named_direction})"
 
-            # TODO -- mark the dummy too, I guess?
             a = self.seat.table.current_auction
-            if a.found_contract and self.name == a.status.declarer.name:
-                return f"Declarer! {self.user.username}{direction}"
+            if a.found_contract:
+                if self.name == a.status.declarer.name:
+                    return f"Declarer! {self.user.username}{direction}"
+
+                dummy = self.seat.table[a.status.declarer.seat.partner()]
+
+                if self.name == dummy.name:
+                    return f"Dummy! {self.user.username}{direction}"
 
         return f"{self.user.username}{direction}"
 
