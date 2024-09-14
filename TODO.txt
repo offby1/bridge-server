@@ -1,5 +1,9 @@
 STILL TODO:
 
+* Wow, I never mentioned that I gotta do the dummy!
+  - gotta display dummy's hand (to all players) after the opening lead
+  - declarer needs to be able to control the dummy as well as their own hand
+
 * Maybe somehow visually distinguish cards of the trump suit?
 
 * Customize the 404 page that it at least has a link to home.

@@ -57,9 +57,9 @@ class Command(BaseCommand):
 
         if player.user.last_login is not None:
             self.wf(
-                f"{table}: Human or not, {player} has logged in, so I will bow out",
+                f"{table}: Non-human {player} has logged in, so I really should bow out, but I won't",
             )
-            return True
+
         return False
 
     def make_a_groovy_call(self, *, handrecord: HandRecord) -> None:

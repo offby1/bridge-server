@@ -88,6 +88,7 @@ class Command(BaseCommand):
                             username=username,
                             password=everybodys_password,
                         ),
+                        is_human=username == "bob",
                     )
 
                 try:
