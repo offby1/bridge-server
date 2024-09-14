@@ -1,5 +1,7 @@
 STILL TODO:
 
+* How about an "I am human" toggle on each player's home page?  At least when DEBUG is True.
+
 * Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
 
 * Indicate the number of tricks taken by each side
@@ -79,6 +81,8 @@ STILL TODO:
 
 
 DONE:
+
+* How about an "I am human" toggle on each player's home page?  At least when DEBUG is True.
 
 * Declarer needs to be able to control the dummy as well as their own hand
   There's two parts to this:
