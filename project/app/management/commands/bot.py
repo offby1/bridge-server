@@ -74,13 +74,7 @@ class Command(BaseCommand):
 
         player_to_impersonate = modplayer.libraryThing
         a = table.current_auction
-
-        # Try not to pass, because it's more entertaining to make a call that keeps the auction alive.
-        legal_calls = a.legal_calls()
-        if len(legal_calls) > 1:
-            call = legal_calls[1]  # I happen to know that legal_calls[0] is always Pass :-)
-        else:
-            call = legal_calls[0]
+        call = a.random_legal_call()
 
         # Hopefully if we were using Postgres instead of sqlite, these wouldn't be necessary.
         @retrying.retry(

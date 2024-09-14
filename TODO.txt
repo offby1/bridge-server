@@ -1,5 +1,7 @@
 STILL TODO:
 
+* Maybe somehow visually distinguish cards of the trump suit?
+
 * Customize the 404 page that it at least has a link to home.
 
   Right now it's just "NOT FOUND" "The requested resource was not found on this server."
