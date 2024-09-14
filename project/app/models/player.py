@@ -41,7 +41,7 @@ class PartnerException(PlayerException):
 
 
 class Player(models.Model):
-    seat: Any
+    seat: Seat
     objects = PlayerManager()
 
     user = models.OneToOneField(

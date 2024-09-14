@@ -60,6 +60,17 @@ class Command(BaseCommand):
                 f"{table}: Non-human {player} has logged in, so I really should bow out, but I won't",
             )
 
+        dummy_seat = table.dummy
+        declarer_seat = table.declarer
+        if declarer_seat is not None:
+            if player.seat == dummy_seat and self.skip_player(
+                table=table, player=declarer_seat.player
+            ):
+                self.wf(
+                    f"{table}: Way-ul, I'm not supposed to play the declarer's hand, so I guess I shouldn't play dummy, either",
+                )
+                return True
+
         return False
 
     def make_a_groovy_call(self, *, handrecord: HandRecord) -> None:

@@ -1,6 +1,16 @@
 STILL TODO:
 
-* Declarer needs to be able to control the dummy as well as their own hand
+* Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
+
+* Indicate the number of tricks taken by each side
+
+* After each hand has been played:
+  - reveal the original cards
+  - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
+  - I guess let any player break up the table
+    - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
+
+* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
 
 * Maybe somehow visually distinguish cards of the trump suit?
 
@@ -17,10 +27,6 @@ STILL TODO:
 * I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
 
   Naturally it didn't repro the one time I actually tried to repro it.
-
-* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
-
-* Maybe, after the hand has been played, reveal the original cards.
 
 * Consider timestamps for important stuff, in particular calls and plays.
 
@@ -71,7 +77,13 @@ STILL TODO:
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
 
+
 DONE:
+
+* Declarer needs to be able to control the dummy as well as their own hand
+  There's two parts to this:
+  - the bot needs to fiddle with the dummy exactly as much, or as little, as it fiddles with declarer
+  - the "is this button active" stuff needs to make 'em active if request.player is dummy's partner
 
 * Sentry caught a crash!  Very handy.
 
