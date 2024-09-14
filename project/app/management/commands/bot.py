@@ -10,7 +10,6 @@ import sys
 import time
 import typing
 
-import django.db.utils
 import requests
 import retrying  # type: ignore
 from app.models import AuctionException, HandRecord, Player, Table
@@ -26,7 +25,8 @@ def ts(time_t=None):
 
 def _request_ex_filter(ex):
     rv = isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
-    sys.stderr.write(f"Caught {ex}; {'will' if rv else 'will not'} retry\n")
+    now = ts().replace(microsecond=0).isoformat()
+    sys.stderr.write(f"{now} Caught {ex}; {'will' if rv else 'will not'} retry\n")
     return rv
 
 
@@ -76,20 +76,8 @@ class Command(BaseCommand):
         a = table.current_auction
         call = a.random_legal_call()
 
-        # Hopefully if we were using Postgres instead of sqlite, these wouldn't be necessary.
-        @retrying.retry(
-            retry_on_exception=(
-                django.db.utils.OperationalError,
-                django.db.utils.DatabaseError,
-            ),
-            wait_exponential_multiplier=10,
-            wait_jitter_max=1000,
-        )
-        def add_call():
-            handrecord.add_call_from_player(player=player_to_impersonate, call=call)
-
         try:
-            add_call()
+            handrecord.add_call_from_player(player=player_to_impersonate, call=call)
         except AuctionException as e:
             # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
             # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
@@ -164,6 +152,7 @@ class Command(BaseCommand):
         messages = SSEClient(
             f"http://{django_host}:9000/events/all-tables/",
         )
+        self.wf(f"Finally! Connected to {django_host}.")
         for msg in messages:
             if msg.event != "keep-alive":
                 if msg.data:
