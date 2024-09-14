@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,13 +156,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 POKEY_BOT_BUTTONS = False
 
 
-sentry_sdk.init(
-    dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
+# we don't call `sentry_sdk.init` now, since we don't yet know the value of DEBUG, which we incorporate into the sentry
+# environment.
+
+SENTRY_SDK_INIT_DEFAULTS = {
+    "dsn": "https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for tracing.
-    traces_sample_rate=1.0,
+    "traces_sample_rate": 1.0,
     # Set profiles_sample_rate to 1.0 to profile 100%
     # of sampled transactions.
     # We recommend adjusting this value in production.
-    profiles_sample_rate=1.0,
-)
+    "profiles_sample_rate": 1.0,
+    "integrations": [
+        DjangoIntegration(
+            middleware_spans=False,
+            signals_spans=False,
+        ),
+    ],
+    "release": VERSION,
+}
