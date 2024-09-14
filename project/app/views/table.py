@@ -169,8 +169,8 @@ def cards_as_four_divs(
         for suit, cards in sorted(by_suit.items(), reverse=True)
     ]
 
-    class_ = 'class="border border-success border-5"' if my_turn_to_play else ""
-    return SafeString("<br>" f"<div {class_}>" + "\n".join(row_divs) + "</div>")
+    style = 'style="opacity: 25%"' if not my_turn_to_play else ""
+    return SafeString("<br>" f"<div {style}>" + "\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
