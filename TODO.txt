@@ -2,6 +2,10 @@ STILL TODO:
 
 * Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
 
+  Two pieces to the fix:
+  - send a message to the table that says "The auction is settled and the opening lead will be made by so-and-so";
+  - have the reload-the-cards event listener *also* trigger on that message, if so-and-so is in fact the browser user
+
 * Indicate the number of tricks taken by each side
 
 * After each hand has been played:
