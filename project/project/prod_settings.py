@@ -27,4 +27,4 @@ DEBUG = False
 
 ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-compose stack
 
-sentry_sdk.init(**dict(SENTRY_SDK_INIT_DEFAULTS, environment="production"))
+sentry_sdk.init(**dict(SENTRY_SDK_INIT_DEFAULTS, environment="production"))  # type: ignore

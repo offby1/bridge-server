@@ -196,32 +196,37 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     cards_by_direction_display = {}
     pokey_buttons_by_direction = {}
 
-    # TODO -- figure out if there's a dummy, in which case show those; and figure out if the auction and play are over,
-    # in which case show 'em all
+    # TODO -- figure out if the auction and play are over, in which case show 'em all
 
-    seat: Seat
+    modelSeat: Seat
     libcards: set[bridge.card.Card]
-    for seat, libcards in table.current_cards_by_seat.items():
+    for modelSeat, libcards in table.current_cards_by_seat.items():
         dem_cards_baby = f"{len(libcards)} cards"
 
-        if settings.POKEY_BOT_BUTTONS or seat.player == request.user.player:
+        is_dummy = modelSeat == table.dummy
+
+        if (
+            settings.POKEY_BOT_BUTTONS
+            or (is_dummy and table.current_handrecord and table.current_handrecord.current_trick)
+            or modelSeat.player == request.user.player
+        ):
             dem_cards_baby = cards_as_four_divs(
                 players_cards=libcards,
-                legal_cards=legal_cards,
-                seat=seat,
+                legal_cards=legal_cards,  # TODO -- what about the dummy
+                seat=modelSeat,
                 buttons=table.current_auction.found_contract,
             )
 
         value = json.dumps(
             {
-                "direction": seat.direction,
-                "player_id": seat.player.pk,
-                "table_id": seat.table.pk,
+                "direction": modelSeat.direction,
+                "player_id": modelSeat.player.pk,
+                "table_id": modelSeat.table.pk,
             },
         )
 
         if settings.POKEY_BOT_BUTTONS:
-            pokey_buttons_by_direction[seat.named_direction] = (
+            pokey_buttons_by_direction[modelSeat.named_direction] = (
                 SafeString(f"""<div class="btn-group">
         <button
         type="button"
@@ -230,15 +235,15 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         value='{value}'
         hx-post="/yo/bot/"
         hx-swap="none"
-        >POKE ME {seat.named_direction}</button>
+        >POKE ME {modelSeat.named_direction}</button>
         </div>
         <br/>
         """)
             )
 
-        cards_by_direction_display[seat.named_direction] = {
+        cards_by_direction_display[modelSeat.named_direction] = {
             "cards": dem_cards_baby,
-            "player": seat.player,
+            "player": modelSeat.player,
         }
 
     return {
@@ -271,19 +276,18 @@ def _three_by_three_trick_display_context_for_table(
 ) -> dict[str, Any]:
     h = table.current_handrecord
 
-    cards_by_seat: dict[Seat, list[bridge.card.Card]] = {}
+    cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
     if h.current_trick:
-        for card in h.current_trick:
-            cards_by_seat[card[1]] = card[2].serialize()
+        for _index, libSeat, libCard in h.current_trick:
+            cards_by_direction_number[libSeat.value] = libCard
 
-    def c(direction):
-        key = getattr(bridge.seat.Seat, direction)
-        card = cards_by_seat.get(key)
+    def c(direction: int):
+        card = cards_by_direction_number.get(direction)
         color = "black"
         if card is not None:
             # TODO -- teach the library to return a color for each card
-            if bridge.card.Card.deserialize(card).suit in {
+            if card.suit in {
                 bridge.card.Suit.HEARTS,
                 bridge.card.Suit.DIAMONDS,
             }:
@@ -293,9 +297,9 @@ def _three_by_three_trick_display_context_for_table(
     return {
         "three_by_three_trick_display": {
             "rows": [
-                [" ", c("NORTH"), " "],
-                [c("WEST"), " ", c("EAST")],
-                [" ", c("SOUTH"), " "],
+                [" ", c(bridge.seat.Seat.NORTH.value), " "],
+                [c(bridge.seat.Seat.WEST.value), " ", c(bridge.seat.Seat.EAST.value)],
+                [" ", c(bridge.seat.Seat.SOUTH.value), " "],
             ],
         },
     }

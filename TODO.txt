@@ -1,14 +1,14 @@
 STILL TODO:
 
+* I can't articulate this precisely, but ... card buttons are often *too* dim.  It's ok for them to be really dim when they're in *my* hand, and they're not legal to play (i.e., they are a different suit than the led suit, and I have some cards of that led suit).  But when they're e.g. in the dummy's hand, and I'm not the declarer *and* it's not the dummy's turn to play, they should be easier to read.
+
 * Sentry caught a crash!  Very handy.
 
   https://eric-hanchrow.sentry.io/share/issue/414efa5798154d1a93e21eeb06d382bf/
 
   Seems it's in the library; I'd just bid 7NT and it was trying to find a legal bid beyond that, and presumably the only bids left were "Pass", which it weights at zero, and ...
 
-* Wow, I never mentioned that I gotta do the dummy!
-  - gotta display dummy's hand (to all players) after the opening lead
-  - declarer needs to be able to control the dummy as well as their own hand
+* Declarer needs to be able to control the dummy as well as their own hand
 
 * Maybe somehow visually distinguish cards of the trump suit?
 
@@ -80,6 +80,8 @@ STILL TODO:
   In particular, what tables they played at, and who else was at those tables.
 
 DONE:
+
+* gotta display dummy's hand (to all players) after the opening lead
 
 * Ugh, the bidding box doesn't go away after the auction is settled *unless* I reload the page.
 

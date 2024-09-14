@@ -79,6 +79,7 @@ class TableManager(models.Manager):
 # onto each instance.
 class Table(models.Model):
     seat_set: models.Manager[Seat]
+    handrecord_set: models.Manager[HandRecord]
 
     objects = TableManager()
 
@@ -127,12 +128,28 @@ class Table(models.Model):
         return str(s)
 
     @cached_property
-    def current_handrecord(self):
-        return self.handrecord_set.order_by("-id").first()
+    def current_handrecord(self) -> HandRecord:
+        rv = self.handrecord_set.order_by("-id").first()
+        assert rv is not None
+        return rv
 
     @property
     def dealer(self):
         return self.current_board.dealer
+
+    @property
+    def declarer(self) -> Seat | None:
+        if self.current_handrecord.declarer is None:
+            return None
+        modelSeat = self.current_handrecord.declarer.seat
+        return Seat.objects.get(direction=modelSeat.value, table=self)
+
+    @property
+    def dummy(self) -> Seat | None:
+        if self.current_handrecord.dummy is None:
+            return None
+        modelSeat = self.current_handrecord.dummy.seat
+        return Seat.objects.get(direction=modelSeat.value, table=self)
 
     @cached_property
     def dealt_cards_by_seat(self) -> dict[Seat, list[libCard]]:

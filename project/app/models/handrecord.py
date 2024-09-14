@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -152,6 +152,12 @@ class HandRecord(models.Model):
         if not self.auction.found_contract:
             return None
         return self.auction.declarer
+
+    @property
+    def dummy(self) -> libPlayer | None:
+        if not self.auction.found_contract:
+            return None
+        return self.auction.dummy
 
     @property
     def player_who_may_call(self) -> Player | None:

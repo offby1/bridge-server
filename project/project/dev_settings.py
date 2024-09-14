@@ -8,4 +8,4 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 POKEY_BOT_BUTTONS = True
 
-sentry_sdk.init(**dict(SENTRY_SDK_INIT_DEFAULTS, environment="development"))
+sentry_sdk.init(**dict(SENTRY_SDK_INIT_DEFAULTS, environment="development"))  # type: ignore

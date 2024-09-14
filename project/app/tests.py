@@ -457,6 +457,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     first_players_cards = first_player.hand.cards
 
     first_card = first_players_cards[0]
+
     h.add_play_from_player(player=first_player, card=first_card)
 
     expected_cards_by_direction = {dir_.value: "__" for dir_ in libSeat}
@@ -464,13 +465,16 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
         expected_cards_by_direction[s.value] = modelCard.serialize()
 
     ya = table._three_by_three_trick_display_context_for_table(request, t)
-    north_row, east_west_row, south_row = ya["three_by_three_trick_display"]["rows"]
+    three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
+
+    north_row, east_west_row, south_row = three_by_three_trick_display_rows
     actual_cards_by_direction = {
         libSeat.NORTH.value: north_row[1],
         libSeat.EAST.value: east_west_row[2],
         libSeat.SOUTH.value: south_row[1],
         libSeat.WEST.value: east_west_row[0],
     }
+
     for direction, actual_html in actual_cards_by_direction.items():
         expected_html = expected_cards_by_direction[direction]
         assert expected_html in actual_html
