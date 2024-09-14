@@ -72,6 +72,7 @@ class Command(BaseCommand):
         everybodys_password = make_password(".")
 
         fake = Faker()
+        Faker.seed(0)
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
             while Player.objects.count() < options["players"]:
@@ -88,7 +89,7 @@ class Command(BaseCommand):
                             username=username,
                             password=everybodys_password,
                         ),
-                        is_human=username == "bob",
+                        is_human=username == "bob" or Player.objects.count() < 4,
                     )
 
                 try:
@@ -172,3 +173,6 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+
+        for human in Player.objects.filter(is_human=True).all():
+            self.stdout.write(f"{human} is human!")
