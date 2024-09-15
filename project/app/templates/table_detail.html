@@ -6,11 +6,11 @@
         </div>
         <div class="col">{{ table.current_handrecord.board }}.</div>
     </div>
-    <div>
-        {% include 'auction-partial.html#auction-partial' %}
-        {% include 'auction-partial.html#bidding-box-partial' %}
+    <div class="col">{% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}</div>
+    <div style="display: flex;">
+        <div>{% include 'auction-partial.html#bidding-box-partial' %}</div>
+        <div style="flex-grow: 1">{% include 'auction-partial.html#auction-partial' %}</div>
     </div>
-    {% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}
 {% endblock content %}
 {% block scripts %}
     {% include 'auction-partial.html#auction-scripts' %}
