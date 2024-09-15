@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import sys
 from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
@@ -32,8 +33,8 @@ class PlayException(Exception):
     pass
 
 
-TriplePlay = tuple[int, libSeat, libCard]
-TriplePlays = list[TriplePlay]
+TrickTuple = tuple[int, libSeat, libCard, bool]
+TrickTuples = list[TrickTuple]
 
 
 class HandRecord(models.Model):
@@ -122,7 +123,16 @@ class HandRecord(models.Model):
             msg = f"{card} is not a legal play"
             raise PlayException(msg)
 
+        # If this is the last play in a trick, go back and update the play that won it.
         rv = self.play_set.create(serialized=card.serialize())
+        last_trick = list(self.tricks)[-1]
+        if len(last_trick) == 4:
+            for _which, _where, _what, won in last_trick:
+                if won:
+                    sys.stdout.write(
+                        f"I should really do something with {_which=} {_where=} {_what=} {won=}\n"
+                    )
+                    break
 
         from app.models import Player
 
@@ -223,11 +233,11 @@ class HandRecord(models.Model):
         )
 
     @property
-    def tricks(self) -> Iterator[TriplePlays]:
+    def tricks(self) -> Iterator[TrickTuples]:
         return more_itertools.chunked(self.annotated_plays, 4)
 
     @property
-    def current_trick(self) -> TriplePlays | None:
+    def current_trick(self) -> TrickTuples | None:
         tricks = list(self.tricks)
         if not tricks:
             return None
@@ -235,11 +245,13 @@ class HandRecord(models.Model):
         return tricks[-1]
 
     @property
-    def annotated_plays(self) -> TriplePlays:
-        flattened: TriplePlays = []
+    def annotated_plays(self) -> TrickTuples:
+        flattened: TrickTuples = []
+
         for t in self.xscript.tricks:
+            # Who won this trick?
             for p in t.plays:
-                flattened.append((1 + len(flattened), p.player.seat, p.card))
+                flattened.append((1 + len(flattened), p.player.seat, p.card, p.wins_the_trick))
 
         return flattened
 
@@ -290,6 +302,10 @@ class Play(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
+    # This is redundant -- it can in theory be computed given that we know who made the opening lead, the trump suit,
+    # and the rules of bridge.  But geez.
+    won_its_trick = models.BooleanField(null=True)
+
     hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
 
     serialized = models.CharField(  # type: ignore
@@ -297,8 +313,8 @@ class Play(models.Model):
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
-    def __str__(self):
-        for _index, seat, candidate in self.hand.annotated_plays:
+    def __str__(self) -> str:
+        for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
             if self.serialized == candidate.serialize():
                 return f"{seat} at {self.hand.table} played {self.serialized}"
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"

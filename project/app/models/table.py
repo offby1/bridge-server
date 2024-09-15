@@ -174,7 +174,7 @@ class Table(models.Model):
 
         if self.current_auction.found_contract:
             model_seats_by_lib_seats = {}
-            for _index, libseat, card in self.current_handrecord.annotated_plays:
+            for _index, libseat, card, _is_winner in self.current_handrecord.annotated_plays:
                 if libseat not in model_seats_by_lib_seats:
                     model_seats_by_lib_seats[libseat] = self.current_handrecord.seat_from_libseat(
                         libseat

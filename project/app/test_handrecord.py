@@ -186,13 +186,13 @@ def test_current_trick(usual_setup):
     first_card = first_players_cards[0]
     h.add_play_from_player(player=first_player, card=first_card)
     assert len(h.current_trick) == 1
-    which, where, what = h.current_trick[-1]
+    which, where, what, winner = h.current_trick[-1]
     assert what == first_card
 
     second_card = second_players_cards[0]
     h.add_play_from_player(player=second_player, card=second_card)
     assert len(h.current_trick) == 2
-    which, where, what = h.current_trick[-1]
+    which, where, what, winner = h.current_trick[-1]
     assert what == second_card
 
 

@@ -284,7 +284,7 @@ def _three_by_three_trick_display_context_for_table(
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
     if h.current_trick:
-        for _index, libSeat, libCard in h.current_trick:
+        for _index, libSeat, libCard, _is_winner in h.current_trick:
             cards_by_direction_number[libSeat.value] = libCard
 
     def c(direction: int):

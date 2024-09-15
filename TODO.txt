@@ -1,10 +1,12 @@
+IN PROGRESS:
+
+* Indicate the number of tricks taken by each side
+
 STILL TODO:
 
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
-
-* Indicate the number of tricks taken by each side
 
 * After each hand has been played:
   - reveal the original cards
