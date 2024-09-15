@@ -1,12 +1,20 @@
 STILL TODO:
 
-* Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
+* Mostly fixed, but see addendum.
+
+  Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
 
   Two pieces to the fix:
   - send a message to the table that says "The auction is settled and the opening lead will be made by so-and-so";
     seems done, in `handrecord.add_call_from_player`
   - have the reload-the-cards event listener *also* trigger on that message, if so-and-so is in fact the browser user
     Or add a new listener just for this 🤷
+
+  Addendum: *sometimes* the opening leader's bidding box doesn't go away 😭; other times the "one Club played by bob, sitting South" message doesn't appear.
+
+  I wonder: do multiple event listeners on the same page, listening to the same URL, interfere with each other? Like, each message gets delivered to just one of them?
+  Or if not, might they interfere with each other when they go to fiddle the DOM?
+  <https://htmx.org/attributes/hx-sync/> might be useful, although TBH I don't understand what problem that solves, nor what *my* problem is.
 
 * Indicate the number of tricks taken by each side
 
