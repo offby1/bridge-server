@@ -4,7 +4,9 @@ STILL TODO:
 
   Two pieces to the fix:
   - send a message to the table that says "The auction is settled and the opening lead will be made by so-and-so";
+    seems done, in `handrecord.add_call_from_player`
   - have the reload-the-cards event listener *also* trigger on that message, if so-and-so is in fact the browser user
+    Or add a new listener just for this 🤷
 
 * Indicate the number of tricks taken by each side
 
