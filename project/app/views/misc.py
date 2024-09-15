@@ -1,4 +1,5 @@
 import functools
+import logging
 
 from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
@@ -6,6 +7,8 @@ from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
 from app.models import Player
+
+logger = logging.getLogger(__name__)
 
 
 # Set redirect to False for AJAX endoints.
@@ -24,7 +27,9 @@ def logged_in_as_player_required(redirect=True):
                     f"You ({request.user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
                 )
                 return HttpResponseRedirect(reverse("app:home"))
-
+            logger.warning(
+                f"Got request from {request.user.username} at {request.META.get('REMOTE_PORT')}"
+            )
             return view_function(request, *args, **kwargs)
 
         if redirect:

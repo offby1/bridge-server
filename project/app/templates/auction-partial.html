@@ -44,7 +44,7 @@
 {% endpartialdef bidding-box-partial %}
 {% partialdef auction-scripts %}
 <script>
-var auctionEventSource = new ReconnectingEventSource('{{ auction_event_source_endpoint }}');
+var auctionEventSource = new EventSource('{{ auction_event_source_endpoint }}');
 
 auctionEventSource.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;
@@ -53,7 +53,9 @@ auctionEventSource.addEventListener('message', function (e) {
       console.log("Auction event listener saw " + e.data);
 
       htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
+      console.log("Auction event listener got {{ auction_partial_endpoint }}");
       htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'});
+      console.log("Auction event listener got {{ bidding_box_partial_endpoint }}" );
     }
 
 }, false);
