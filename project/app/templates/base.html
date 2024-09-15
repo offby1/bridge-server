@@ -82,8 +82,6 @@
         <script src="{% static 'app/datatables.js' %}"></script>
         <script src="{% static 'app/htmx.min.js' %}"></script>
         <script src="{% static 'app/sse.js' %}"></script>
-        <script>htmx.logAll();</script>
-        {% block scripts %}
-        {% endblock %}
+        {% block scripts %}{% endblock %}
     </body>
 </html>

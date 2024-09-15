@@ -16,6 +16,21 @@ STILL TODO:
   Or if not, might they interfere with each other when they go to fiddle the DOM?
   <https://htmx.org/attributes/hx-sync/> might be useful, although TBH I don't understand what problem that solves, nor what *my* problem is.
 
+  I wonder: does the final fetch of some auction-related endpoint cause some JS to disappear, and it was that JS which was supposed to do the final fetch?
+
+  Looks like after the final pass, someone failed to refetch the bidding box partial:
+
+    HTTP POST /call/12/ 200 [0.23, 127.0.0.1:52208]
+    HTTP GET /table/12/auction 200 [0.17, 127.0.0.1:52250]
+    HTTP GET /table/12/auction 200 [0.17, 127.0.0.1:52251]
+    HTTP GET /table/12/auction 200 [0.21, 127.0.0.1:52237]
+    HTTP GET /table/12/auction 200 [0.21, 127.0.0.1:52249]
+    HTTP GET /table/12/bidding-box 200 [0.10, 127.0.0.1:52237]
+    HTTP GET /table/12/bidding-box 200 [0.11, 127.0.0.1:52249]
+    HTTP GET /table/12/bidding-box 200 [0.16, 127.0.0.1:52250]
+    HTTP GET /table/12/four-hands 200 [0.22, 127.0.0.1:52208]
+
+
 * Indicate the number of tricks taken by each side
 
 * After each hand has been played:

@@ -337,7 +337,7 @@ def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateRes
 
     return TemplateResponse(
         request,
-        "bidding-box-partial.html#bidding-box-partial",
+        "auction-partial.html#bidding-box-partial",
         context=context,
     )
 
