@@ -36,15 +36,17 @@
                 </div>
                 <div class="col">
                     {# TODO -- reload the whole page, or somehow update the "Hello" message, which includes whether we're a bot or not #}
-                    <button class="btn btn-primary"
-                            hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}">
-                        Click to make yourself
-                        {% if user.player.is_human %}
-                            a bot
-                        {% else %}
-                            human
-                        {% endif %}
-                    </button>
+                    {% if user.player %}
+                        <button class="btn btn-primary"
+                                hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}">
+                            Click to make yourself
+                            {% if user.player.is_human %}
+                                a bot
+                            {% else %}
+                                human
+                            {% endif %}
+                        </button>
+                    {% endif %}
                 </div>
             </div>
             <div class="row">

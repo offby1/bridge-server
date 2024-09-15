@@ -48,13 +48,14 @@ var opening_lead_event_source = new ReconnectingEventSource('/events/table/{{ ta
 opening_lead_event_source.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;
     if ("contract" in d) {
-      console.log("Play event listener saw " + e.data);
+      console.log("Opening lead event listener saw " + e.data);
 
-      var openingLead = d["contract"]["opening_lead"];
+      var openingLeader = d["contract"]["opening_leader"];
 
-      if (opening_lead == {{ user.player.seat }}) {
+      if (openingLeader == {{ user.player.seat.direction }}) {
         // Ideally we'd just reload the one hand that changed, not all four; but oh well
         htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
+        opening_lead_event_source.close();
       }
     }
 

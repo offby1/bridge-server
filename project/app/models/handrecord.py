@@ -99,7 +99,7 @@ class HandRecord(models.Model):
                             "bid": contract.bid.serialize(),
                             "declarer": contract.declarer.seat.value,
                             "multiplier": contract.multiplier,
-                            "opening_lead": contract.declarer.seat.lho().value,
+                            "opening_leader": contract.declarer.seat.lho().value,
                         },
                     },
                 )
