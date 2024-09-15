@@ -130,7 +130,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup):
 def test_legal_cards(usual_setup, rf, settings):
     t = Table.objects.first()
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
-    h = t.current_handrecord
+    h = t.current_action
     declarer = h.declarer
     leader = t[declarer.seat.lho()]
 
@@ -443,7 +443,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     request = rf.get("/woteva/")
     t = Table.objects.first()
 
-    h = t.current_handrecord
+    h = t.current_action
 
     # Nobody done played nothin'
     assert not h.current_trick

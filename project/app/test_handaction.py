@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def test_rejects_illegal_calls(usual_setup):
     t = Table.objects.first()
 
-    h = t.current_handrecord
+    h = t.current_action
     caller = h.auction.allowed_caller()
 
     def next_caller(current_caller):
@@ -42,11 +42,11 @@ def test_rejects_illegal_calls(usual_setup):
 
     h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
 
-    assert t.handrecords.count() == 1  # we've only played one hand at this table
+    assert t.handaction_set.count() == 1  # we've only played one hand at this table
 
-    the_hand_record = t.handrecords.first()
+    the_hand_action = t.handaction_set.first()
 
-    calls = the_hand_record.calls.all()
+    calls = the_hand_action.calls.all()
 
     assert "Pass" in str(calls[0])
     assert "one notrump" in str(calls[1])
@@ -59,7 +59,7 @@ def test_cards_by_player(usual_setup):
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
     before = set(chain.from_iterable(t.current_cards_by_seat.values()))
-    Play.objects.create(hand=t.current_handrecord, serialized="d2")
+    Play.objects.create(hand=t.current_action, serialized="d2")
     t.refresh_from_db()
 
     # TODO -- check that the card was played from the correct hand.
@@ -123,8 +123,8 @@ def test_bidding_box_html(usual_setup, rf):
     assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.
-    t.handrecord_set.all().delete()
-    h = t.handrecord_set.create(board=Board.objects.first())
+    t.handaction_set.all().delete()
+    h = t.handaction_set.create(board=Board.objects.first())
     assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
     from app.models import logged_queries
@@ -167,7 +167,7 @@ def test_bidding_box_html(usual_setup, rf):
 
 def test_current_trick(usual_setup):
     t = Table.objects.first()
-    h = t.current_handrecord
+    h = t.current_action
 
     # Nobody done played nothin'
     assert not h.current_trick
@@ -198,7 +198,7 @@ def test_current_trick(usual_setup):
 
 def test_next_seat_to_play(usual_setup):
     t = Table.objects.first()
-    h = t.current_handrecord
+    h = t.current_action
 
     assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
 

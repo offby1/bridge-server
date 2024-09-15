@@ -17,7 +17,7 @@ from django_eventstream import send_event  # type: ignore
 
 from . import SEAT_CHOICES
 from .board import Board
-from .handrecord import HandRecord
+from .handaction import HandAction
 from .player import Player
 from .seat import Seat
 from .utils import assert_type
@@ -60,7 +60,7 @@ class TableManager(models.Manager):
             deck=deck,
         )
 
-        HandRecord.objects.create(board=b, table=t)
+        HandAction.objects.create(board=b, table=t)
 
         send_event(
             channel="all-tables",
@@ -79,7 +79,7 @@ class TableManager(models.Manager):
 # onto each instance.
 class Table(models.Model):
     seat_set: models.Manager[Seat]
-    handrecord_set: models.Manager[HandRecord]
+    handaction_set: models.Manager[HandAction]
 
     objects = TableManager()
 
@@ -98,19 +98,19 @@ class Table(models.Model):
         players = []
         for seat in self.seats:
             name = seat.player_name
-            hand = self.current_handrecord.board.cards_for_direction(seat.direction)
+            hand = self.current_action.board.cards_for_direction(seat.direction)
             players.append(
                 libPlayer(seat=seat.libraryThing, name=name, hand=libHand(cards=hand)),
             )
         return libTable(players=players)
 
     @property
-    def handrecords(self):
-        return self.handrecord_set.order_by("id")
+    def actions(self):
+        return self.handaction_set.order_by("id")
 
     @property
     def current_auction(self) -> libAuction:
-        return self.current_handrecord.auction
+        return self.current_action.auction
 
     @property
     def current_auction_status(self) -> str:
@@ -128,8 +128,8 @@ class Table(models.Model):
         return str(s)
 
     @cached_property
-    def current_handrecord(self) -> HandRecord:
-        rv = self.handrecord_set.order_by("-id").first()
+    def current_action(self) -> HandAction:
+        rv = self.handaction_set.order_by("-id").first()
         assert rv is not None
         return rv
 
@@ -139,16 +139,16 @@ class Table(models.Model):
 
     @property
     def declarer(self) -> Seat | None:
-        if self.current_handrecord.declarer is None:
+        if self.current_action.declarer is None:
             return None
-        modelSeat = self.current_handrecord.declarer.seat
+        modelSeat = self.current_action.declarer.seat
         return Seat.objects.get(direction=modelSeat.value, table=self)
 
     @property
     def dummy(self) -> Seat | None:
-        if self.current_handrecord.dummy is None:
+        if self.current_action.dummy is None:
             return None
-        modelSeat = self.current_handrecord.dummy.seat
+        modelSeat = self.current_action.dummy.seat
         return Seat.objects.get(direction=modelSeat.value, table=self)
 
     @cached_property
@@ -174,9 +174,9 @@ class Table(models.Model):
 
         if self.current_auction.found_contract:
             model_seats_by_lib_seats = {}
-            for _index, libseat, card, _is_winner in self.current_handrecord.annotated_plays:
+            for _index, libseat, card, _is_winner in self.current_action.annotated_plays:
                 if libseat not in model_seats_by_lib_seats:
-                    model_seats_by_lib_seats[libseat] = self.current_handrecord.seat_from_libseat(
+                    model_seats_by_lib_seats[libseat] = self.current_action.seat_from_libseat(
                         libseat
                     )
                 seat = model_seats_by_lib_seats[libseat]
@@ -187,7 +187,7 @@ class Table(models.Model):
 
     @property
     def current_board(self):
-        return self.current_handrecord.board
+        return self.current_action.board
 
     @property
     def players_by_direction(self):
@@ -196,7 +196,7 @@ class Table(models.Model):
     @property
     def next_seat_to_play(self) -> Seat | None:
         if self.current_auction.found_contract:
-            xscript = self.current_handrecord.xscript
+            xscript = self.current_action.xscript
             return Seat.objects.get(table=self, direction=xscript.player.seat.value)
 
         return None

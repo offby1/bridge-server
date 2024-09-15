@@ -37,7 +37,11 @@ TrickTuple = tuple[int, libSeat, libCard, bool]
 TrickTuples = list[TrickTuple]
 
 
-class HandRecord(models.Model):
+class HandAction(models.Model):
+    """
+    All the calls and plays for a given hand.
+    """
+
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
@@ -269,7 +273,7 @@ class HandRecord(models.Model):
         return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
 
 
-admin.site.register(HandRecord)
+admin.site.register(HandAction)
 
 
 class Call(models.Model):
@@ -277,7 +281,7 @@ class Call(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
-    hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
+    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
     # Now, the "what":
     # pass, bid, double, redouble
 
@@ -306,7 +310,7 @@ class Play(models.Model):
     # and the rules of bridge.  But geez.
     won_its_trick = models.BooleanField(null=True)
 
-    hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
+    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
 
     serialized = models.CharField(  # type: ignore
         max_length=2,

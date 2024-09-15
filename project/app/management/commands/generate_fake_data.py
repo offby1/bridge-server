@@ -54,8 +54,8 @@ class Command(BaseCommand):
             type=int,
         )
 
-    def generate_some_fake_calls_and_plays_at(self, table, this_tables_index):
-        h = table.current_handrecord
+    def generate_some_fake_calls_and_plays_at(self, table: Table, this_tables_index: int):
+        h = table.current_action
 
         calls_prefix = canned_calls[0:this_tables_index]
 
@@ -166,7 +166,7 @@ class Command(BaseCommand):
             unit="t",
         ):
             for _ in range(2):
-                h = t.current_handrecord
+                h = t.current_action
                 legal_cards = h.xscript.legal_cards()
                 if legal_cards:
                     chosen_card = random.choice(legal_cards)

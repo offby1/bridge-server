@@ -190,7 +190,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     # No cards are legal to play if the auction hasn't settled.
     legal_cards = []
     if table.current_auction.found_contract:
-        legal_cards = table.current_handrecord.xscript.legal_cards()
+        legal_cards = table.current_action.xscript.legal_cards()
 
     cards_by_direction_display = {}
     pokey_buttons_by_direction = {}
@@ -202,7 +202,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     for modelSeat, libcards in table.current_cards_by_seat.items():
         my_turn_to_play = (
             table.current_auction.found_contract
-            and table.current_handrecord.xscript.player.seat.value == modelSeat.direction
+            and table.current_action.xscript.player.seat.value == modelSeat.direction
             and request.user.player == modelSeat.player
         )
         dem_cards_baby = f"{len(libcards)} cards"
@@ -211,7 +211,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
 
         if (
             settings.POKEY_BOT_BUTTONS
-            or (is_dummy and table.current_handrecord and table.current_handrecord.current_trick)
+            or (is_dummy and table.current_action and table.current_action.current_trick)
             or modelSeat.player == request.user.player
         ):
             dem_cards_baby = cards_as_four_divs(
@@ -253,7 +253,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     return {
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
-        "handrecord_summary_endpoint": reverse("app:handrecord-summary-view", args=[table.pk]),
+        "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "pokey_buttons": pokey_buttons_by_direction,
         "table": table,
@@ -279,7 +279,7 @@ def _three_by_three_trick_display_context_for_table(
     request: HttpRequest,
     table: Table,
 ) -> dict[str, Any]:
-    h = table.current_handrecord
+    h = table.current_action
 
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
@@ -330,10 +330,10 @@ def _bidding_box_context_for_table(request, table):
     }
 
 
-def handrecord_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
+def handaction_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
     table = get_object_or_404(Table, pk=table_pk)
 
-    return HttpResponse(table.current_handrecord.status)
+    return HttpResponse(table.current_action.status)
 
 
 @logged_in_as_player_required()
@@ -385,7 +385,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
-        table.current_handrecord.add_call_from_player(
+        table.current_action.add_call_from_player(
             player=who_clicked,
             call=libCall,
         )
@@ -400,7 +400,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     seat = get_object_or_404(Seat, pk=seat_pk)
     whos_asking = request.user.player
-    h = seat.table.current_handrecord  # TODO -- check if it's our turn to play?
+    h = seat.table.current_action  # TODO -- check if it's our turn to play?
     if whos_asking != h.player_who_may_play:
         return HttpResponseForbidden(
             f"Hey! {whos_asking} can't play now; only {h.player_who_may_play} can"
