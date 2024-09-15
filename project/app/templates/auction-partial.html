@@ -52,10 +52,13 @@ auctionEventSource.addEventListener('message', function (e) {
     if ("call" in d) {
       console.log("Auction event listener saw " + e.data);
 
-      htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'});
-      console.log("Auction event listener got {{ auction_partial_endpoint }}");
-      htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'});
-      console.log("Auction event listener got {{ bidding_box_partial_endpoint }}" );
+      htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
+          console.log("Auction event listener got {{ auction_partial_endpoint }}");
+          htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
+              console.log("Auction event listener got {{ bidding_box_partial_endpoint }}" );
+          });
+      });
+
     }
 
 }, false);
