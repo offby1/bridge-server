@@ -253,6 +253,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
     return {
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
+        "handrecord_summary_endpoint": reverse("app:handrecord-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "pokey_buttons": pokey_buttons_by_direction,
         "table": table,
@@ -327,6 +328,12 @@ def _bidding_box_context_for_table(request, table):
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
         "display_bidding_box": display_bidding_box,
     }
+
+
+def handrecord_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
+    table = get_object_or_404(Table, pk=table_pk)
+
+    return HttpResponse(table.current_handrecord.status)
 
 
 @logged_in_as_player_required()

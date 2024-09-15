@@ -34,6 +34,11 @@ urlpatterns = [
         table.four_hands_partial_view,
         name="four-hands-partial",
     ),
+    path(
+        "table/<table_pk>/handrecord-summary-status",
+        table.handrecord_summary_view,
+        name="handrecord-summary-view",
+    ),
     path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
 ]
 

@@ -38,7 +38,9 @@ four_hands_event_source.addEventListener('message', function (e) {
       console.log("Play event listener saw " + e.data);
 
       // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
-      htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
+      htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
+        htmx.ajax('GET', '{{ handrecord_summary_endpoint }}', {target:'#handrecord-summary', swap:'innerHTML'})
+      });
     }
 
 }, false);

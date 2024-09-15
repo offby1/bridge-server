@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="row">
-        <div class="col">
-            <h1>{{ table }}</h1>
-        </div>
-        <div class="col">{{ table.current_handrecord.board }}.</div>
+    <div>
+        <h1>
+            <div>{{ table.current_handrecord.board }}</div>
+        </h1>
+        <h1>
+            <div id="handrecord-summary">{{ table.current_handrecord.status }}</div>
+        </h1>
+        <h1>
+            <div id="auction-summary">Auction: {{ table.current_auction.status }}</div>
+        </h1>
+    </div>
+    <div>
+        <h2>{{ table }}</h2>
     </div>
     <div class="col">{% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}</div>
     <div style="display: flex;">
