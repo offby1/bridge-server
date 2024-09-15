@@ -1,11 +1,10 @@
 import contextlib
 import os
 
-import django.core.management.utils
-import platformdirs
+import sentry_sdk
 
 from .base_settings import *  # noqa
-from .base_settings import APP_NAME  # redundant, but removes some complaints from emacs
+from .base_settings import ALLOWED_HOSTS, SENTRY_SDK_INIT_DEFAULTS
 
 
 @contextlib.contextmanager
