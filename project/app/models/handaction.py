@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import sys
 from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
@@ -64,8 +63,20 @@ class HandAction(models.Model):
             auction=self.table.current_auction,
         )
         # *sigh* now replay the entire hand
-        for p in self.plays:
+        play_pks_by_card_played = {}
+        for _index, p in enumerate(self.plays):
+            play_pks_by_card_played[p.serialized] = p.pk
             rv.add_card(libCard.deserialize(p.serialized))
+
+        if rv.tricks:
+            last_trick = rv.tricks[-1]
+            if last_trick.is_complete():
+                winning_play = [p for p in last_trick if p.wins_the_trick]
+                assert len(winning_play) == 1
+                winning_card_str = winning_play[0].card.serialize()
+                winning_play_pk = play_pks_by_card_played[winning_card_str]
+                # TODO -- I think this gets called 3 or 4 times, all but the first call are redundant.
+                self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
         return rv
 
@@ -129,14 +140,6 @@ class HandAction(models.Model):
 
         # If this is the last play in a trick, go back and update the play that won it.
         rv = self.play_set.create(serialized=card.serialize())
-        last_trick = list(self.tricks)[-1]
-        if len(last_trick) == 4:
-            for _which, _where, _what, won in last_trick:
-                if won:
-                    sys.stdout.write(
-                        f"I should really do something with {_which=} {_where=} {_what=} {won=}\n"
-                    )
-                    break
 
         from app.models import Player
 
