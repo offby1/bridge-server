@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 from bridge.card import Card
@@ -13,7 +13,7 @@ from bridge.table import Player as libPlayer
 
 from .models import AuctionException, Board, Play, Player, Table
 from .testutils import set_auction_to
-from .views.table import bidding_box_partial_view, table_detail_view
+from .views.table import bidding_box_partial_view
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse

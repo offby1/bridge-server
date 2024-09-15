@@ -1,4 +1,6 @@
 from .base_settings import *  # noqa
+from .base_settings import SENTRY_SDK_INIT_DEFAULTS, TEMPLATES
+import sentry_sdk
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.

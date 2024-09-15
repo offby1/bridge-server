@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 import bridge.auction
 import bridge.table

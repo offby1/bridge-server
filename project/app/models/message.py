@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from django.contrib import admin
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
