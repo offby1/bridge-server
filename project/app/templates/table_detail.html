@@ -8,13 +8,12 @@
     </div>
     <div>
         {% include 'auction-partial.html#auction-partial' %}
-        {% include 'bidding-box-partial.html#bidding-box-partial' %}
+        {% include 'auction-partial.html#bidding-box-partial' %}
     </div>
     {% include 'four-hands-3x3-partial.html#four-hands-3x3-partial' %}
 {% endblock content %}
 {% block scripts %}
     {% include 'auction-partial.html#auction-scripts' %}
-    {% include 'bidding-box-partial.html#bidding-box-scripts' %}
     {% include 'four-hands-3x3-partial.html#four-hands-3x3-scripts' %}
     <script>
 htmx.on("htmx:responseError", function(evt) {

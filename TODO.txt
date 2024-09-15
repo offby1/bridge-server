@@ -1,7 +1,5 @@
 STILL TODO:
 
-* Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
-
 * Indicate the number of tricks taken by each side
 
 * After each hand has been played:
@@ -79,6 +77,50 @@ STILL TODO:
 
 
 DONE:
+
+* Not 100% sure what's going on, but it feels like: if *I* am making the opening lead -- i.e., declarer is to my right -- my cards buttons aren't active unless I reload the page.
+
+  Two pieces to the fix:
+  - send a message to the table that says "The auction is settled and the opening lead will be made by so-and-so";
+    seems done, in `handrecord.add_call_from_player`
+  - have the reload-the-cards event listener *also* trigger on that message, if so-and-so is in fact the browser user
+    Or add a new listener just for this 🤷
+
+  Addendum: *sometimes* the opening leader's bidding box doesn't go away 😭; other times the "one Club played by bob, sitting South" message doesn't appear.
+
+  I wonder: do multiple event listeners on the same page, listening to the same URL, interfere with each other? Like, each message gets delivered to just one of them?
+  Or if not, might they interfere with each other when they go to fiddle the DOM?
+  <https://htmx.org/attributes/hx-sync/> might be useful, although TBH I don't understand what problem that solves, nor what *my* problem is.
+
+  I wonder: does the final fetch of some auction-related endpoint cause some JS to disappear, and it was that JS which was supposed to do the final fetch?
+
+  Looks like after the final pass, megan -- the opening leader -- unsurprisingly failed to refetch the bidding box partial:
+
+    Got request from megan at 54030
+    Got request from bob at 54031
+    Got request from katherine at 54024
+    Got request from admin at 54010
+    HTTP GET /table/14/bidding-box 200 [0.10, 127.0.0.1:54024]
+    HTTP GET /table/14/bidding-box 200 [0.13, 127.0.0.1:54031]
+    HTTP GET /table/14/bidding-box 200 [0.13, 127.0.0.1:54010]
+    HTTP GET /table/14/four-hands 200 [0.21, 127.0.0.1:54030]
+
+  - The fix was (I guess): realizing that `htmx.ajax` is *asynchronous*, and changing
+    {
+      htmx.ajax(update one bit of the page);
+      htmx.ajax(update another bit of the page);
+    }
+    to
+    {
+      htmx.ajax(update one bit of the page).then(() => {
+        htmx.ajax(update another bit of the page);
+      });
+    }
+  I will guess this is because the second ajax call is silently ignored, as described [here](  https://github.com/bigskysoftware/htmx/issues/2147#issuecomment-1880142872)
+
+* Gaah! At least when debug is True, East's buttons are active *regardless* of who is logged in!  I've got four humans at one table, and a browser window for each; and (once I reload all the pages to work around the below bug) the buttons are active in each window!
+
+* How about an "I am human" toggle on each player's home page?  At least when DEBUG is True.
 
 * Declarer needs to be able to control the dummy as well as their own hand
   There's two parts to this:

@@ -37,10 +37,27 @@ four_hands_event_source.addEventListener('message', function (e) {
     if ("card" in d) {
       console.log("Play event listener saw " + e.data);
 
-      var partnershipStatusDataset = document.querySelector("#four-hands").dataset;
-
       // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
       htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
+    }
+
+}, false);
+
+var opening_lead_event_source = new ReconnectingEventSource('/events/table/{{ table.pk }}');
+
+opening_lead_event_source.addEventListener('message', function (e) {
+    var d = JSON.parse(e.data) ;
+    if ("contract" in d) {
+      console.log("Opening lead event listener saw " + e.data);
+
+      var openingLeader = d["contract"]["opening_leader"];
+
+      if (openingLeader == {{ user.player.seat.direction }}) {
+        // Ideally we'd just reload the one hand that changed, not all four; but oh well
+        htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
+          opening_lead_event_source.close();
+        });
+      }
     }
 
 }, false);

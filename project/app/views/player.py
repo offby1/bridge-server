@@ -209,6 +209,15 @@ def send_player_message(request, recipient_pk):
     )
 
 
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def bot_checkbox_view(request, pk):
+    playa = get_object_or_404(Player, pk=pk)
+    playa.is_human = not playa.is_human
+    playa.save()
+    return HttpResponse(f"OK, now you {'are' if playa.is_human else 'are not'} human")
+
+
 def player_list_view(request):
     lookin_for_love = request.GET.get("lookin_for_love")
     seated = request.GET.get("seated")

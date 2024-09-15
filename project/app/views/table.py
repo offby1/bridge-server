@@ -203,6 +203,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         my_turn_to_play = (
             table.current_auction.found_contract
             and table.current_handrecord.xscript.player.seat.value == modelSeat.direction
+            and request.user.player == modelSeat.player
         )
         dem_cards_baby = f"{len(libcards)} cards"
 
@@ -336,7 +337,7 @@ def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateRes
 
     return TemplateResponse(
         request,
-        "bidding-box-partial.html#bidding-box-partial",
+        "auction-partial.html#bidding-box-partial",
         context=context,
     )
 
@@ -391,7 +392,13 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     seat = get_object_or_404(Seat, pk=seat_pk)
+    whos_asking = request.user.player
     h = seat.table.current_handrecord  # TODO -- check if it's our turn to play?
+    if whos_asking != h.player_who_may_play:
+        return HttpResponseForbidden(
+            f"Hey! {whos_asking} can't play now; only {h.player_who_may_play} can"
+        )
+
     card = bridge.card.Card.deserialize(request.POST["play"])
     h.add_play_from_player(player=seat.player.libraryThing, card=card)
 
