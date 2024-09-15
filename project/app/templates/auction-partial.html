@@ -53,9 +53,9 @@ auctionEventSource.addEventListener('message', function (e) {
       console.log("Auction event listener saw " + e.data);
 
       htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
-          console.log("Auction event listener got {{ auction_partial_endpoint }}");
+          console.log("Auction event listener fetched {{ auction_partial_endpoint }}");
           htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
-              console.log("Auction event listener got {{ bidding_box_partial_endpoint }}" );
+              console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
           });
       });
 

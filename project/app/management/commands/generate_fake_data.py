@@ -1,6 +1,10 @@
 import random
 
-from app.models import HandRecord, Player, Table, logged_queries
+import django.db.utils
+import retrying  # type: ignore
+import tqdm
+from app.models import Player, Table
+from bridge.contract import Bid as libBid
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -8,7 +12,59 @@ from django.db import IntegrityError
 from faker import Faker
 
 
+def is_retryable_db_error(e):
+    return isinstance(
+        e,
+        (
+            django.db.utils.OperationalError,
+            django.db.utils.DatabaseError,
+        ),
+    ) and not isinstance(e, IntegrityError)
+
+
+db_retry = retrying.retry(
+    retry_on_exception=is_retryable_db_error,
+    wait_exponential_multiplier=2,
+    wait_jitter_max=1000,
+)
+
+
+canned_calls = [
+    "Pass",
+    "1NT",
+    "Double",
+    "Pass",
+    "2♣",
+    "Pass",
+    "Pass",
+    "3NT",
+    "Double",
+    "Redouble",
+    "Pass",
+    "Pass",
+    "Pass",
+]
+
+
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--players",
+            default=14,
+            type=int,
+        )
+
+    def generate_some_fake_calls_and_plays_at(self, table, this_tables_index):
+        h = table.current_handrecord
+
+        calls_prefix = canned_calls[0:this_tables_index]
+
+        for c in calls_prefix:
+            player = h.auction.allowed_caller()
+            call = libBid.deserialize(c)
+
+            h.add_call_from_player(player=player, call=call)
+
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging
 
@@ -18,27 +74,30 @@ class Command(BaseCommand):
         fake = Faker()
         Faker.seed(0)
 
-        Player.objects.all().delete()
-        HandRecord.objects.all().delete()
-        Table.objects.all().delete()
+        with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
+            while Player.objects.count() < options["players"]:
+                # Make sure we always have "bob", because his name is easy to type, and to remember :-)
+                if not Player.objects.exists():
+                    username = "bob"
+                else:
+                    username = fake.unique.first_name().lower()
 
-        while User.objects.count() < 4:
-            existing_bob = User.objects.filter(username="bob")
+                @db_retry
+                def create_player():
+                    return Player.objects.create(
+                        user=User.objects.create(
+                            username=username,
+                            password=everybodys_password,
+                        ),
+                        is_human=username == "bob" or Player.objects.count() < 4,
+                    )
 
-            username = "bob" if not existing_bob.exists() else fake.unique.first_name().lower()
+                try:
+                    create_player()
+                except IntegrityError:
+                    continue
 
-            User.objects.create(
-                username=username,
-                password=everybodys_password,
-            )
-
-        for u in User.objects.all():
-            if Player.objects.count() == 4:
-                break
-
-            Player.objects.update_or_create(user=u, is_human=True)
-
-        self.stdout.write(f"Now we have {Player.objects.count()} players.")
+                progress_bar.update()
 
         # Now partner 'em up
         while True:
@@ -59,14 +118,13 @@ class Command(BaseCommand):
                 break
 
             # find another unseated partnership
-            with logged_queries():
-                not_p1_nor_his_partner = Player.objects.exclude(
+            unseated_player_two = (
+                Player.objects.exclude(
                     pk__in={unseated_player_one.pk, unseated_player_one.partner.pk}
-                ).all()
-
-                unseated_player_two = not_p1_nor_his_partner.filter(
-                    partner__isnull=False, seat__isnull=True
-                ).first()
+                )
+                .filter(partner__isnull=False, seat__isnull=True)
+                .first()
+            )
 
             if not unseated_player_two:
                 break
@@ -76,10 +134,45 @@ class Command(BaseCommand):
                 unseated_player_two,
             )
 
-        for p in Player.objects.all():
-            self.stdout.write(f"{p.user.username}: {p.partner.user.username}")
-
         last_table = Table.objects.order_by("-pk").first()
-        self.stdout.write(f"{last_table=}")
+        self.generate_some_fake_calls_and_plays_at(last_table, Table.objects.count() - 1)
+
+        # Now create a couple of unseated players.
+        count_before = Player.objects.count()
+        while Player.objects.count() < count_before + 3:
+            username = fake.unique.first_name().lower()
+
+            @db_retry
+            def create_player():
+                return Player.objects.create(
+                    user=User.objects.create(
+                        username=username,
+                        password=everybodys_password,
+                    ),
+                )
+
+            try:
+                create_player()
+            except IntegrityError:
+                continue
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
+
+        # Now find some tables with complete auctions, and play a few cards.
+        playable_tables = [t for t in Table.objects.all() if t.current_auction.found_contract]
+        for t in tqdm.tqdm(
+            playable_tables,
+            desc="tables",
+            unit="t",
+        ):
+            for _ in range(2):
+                h = t.current_handrecord
+                legal_cards = h.xscript.legal_cards()
+                if legal_cards:
+                    chosen_card = random.choice(legal_cards)
+
+                    self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
+                    h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+
+        for human in Player.objects.filter(is_human=True).all():
+            self.stdout.write(f"{human} is human!")

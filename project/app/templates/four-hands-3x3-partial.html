@@ -54,8 +54,9 @@ opening_lead_event_source.addEventListener('message', function (e) {
 
       if (openingLeader == {{ user.player.seat.direction }}) {
         // Ideally we'd just reload the one hand that changed, not all four; but oh well
-        htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
-        opening_lead_event_source.close();
+        htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
+          opening_lead_event_source.close();
+        });
       }
     }
 
