@@ -1,16 +1,21 @@
 STILL TODO:
 
+* "Claim" and "Concede" buttons, at least if you're declarer
+
+* Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
+
 * Indicate the number of tricks taken by each side
 
 * After each hand has been played:
   - reveal the original cards
   - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
+  - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
     - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
 
 * Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
 
-* Maybe somehow visually distinguish cards of the trump suit?
+* Maybe somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
 
 * Customize the 404 page that it at least has a link to home.
 
