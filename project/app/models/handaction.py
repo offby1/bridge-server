@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import itertools
 from typing import TYPE_CHECKING, Iterator
 
@@ -14,6 +15,7 @@ from bridge.table import Player as libPlayer
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
+from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
@@ -262,11 +264,16 @@ class HandAction(models.Model):
 
         return flattened
 
-    # TODO -- don't just count the tricks; indicate which side took how many, and whether the hand is complete
     @property
     def status(self):
-        q, r = divmod(self.play_set.count(), 4)
-        return f"{q}/13 tricks{'+' if r else ''}"
+        winning_plays = self.play_set.filter(won_its_trick=True)
+        wins_by_seat = collections.defaultdict(int)
+        for p in winning_plays:
+            wins_by_seat[p.seat] += 1
+        east_west = wins_by_seat[libSeat.EAST] + wins_by_seat[libSeat.WEST]
+        north_south = wins_by_seat[libSeat.NORTH] + wins_by_seat[libSeat.SOUTH]
+
+        return f"{east_west=}; {north_south=}"
 
     @property
     def plays(self):
@@ -320,12 +327,20 @@ class Play(models.Model):
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
-    def __str__(self) -> str:
+    @cached_property
+    def seat(self) -> libSeat:
         for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
             if self.serialized == candidate.serialize():
-                return f"{seat} at {self.hand.table} played {self.serialized}"
+                return seat
+
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
+
+    def __str__(self) -> str:
+        star = ""
+        if self.won_its_trick:
+            star = "*"
+        return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
 
     class Meta:
         constraints = [
