@@ -131,11 +131,9 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        action = table.current_action
-
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             with self.delayed_action(table=table):
-                self.make_a_groovy_call(action=action)
+                self.make_a_groovy_call(action=table.current_action)
 
         elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
             "table",
@@ -143,12 +141,12 @@ class Command(BaseCommand):
             "card",
         }:
             with self.delayed_action(table=table):
-                self.make_a_groovy_play(action=action)
+                self.make_a_groovy_play(action=table.current_action)
         elif set(data.keys()) == {"table", "direction", "action"}:
             self.wf(f"{table}: I believe I been poked: {data=}")
             with self.delayed_action(table=table):
-                self.make_a_groovy_call(action=action)
-                self.make_a_groovy_play(action=action)
+                self.make_a_groovy_call(action=table.current_action)
+                self.make_a_groovy_play(action=table.current_action)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
