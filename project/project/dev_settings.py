@@ -1,6 +1,5 @@
 from .base_settings import *  # noqa
-from .base_settings import SENTRY_SDK_INIT_DEFAULTS, TEMPLATES
-import sentry_sdk
+from .base_settings import TEMPLATES
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
@@ -9,5 +8,3 @@ import sentry_sdk
 TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 POKEY_BOT_BUTTONS = True
-
-sentry_sdk.init(**dict(SENTRY_SDK_INIT_DEFAULTS, environment="development"))  # type: ignore
