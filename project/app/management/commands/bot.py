@@ -13,6 +13,7 @@ import typing
 import requests
 import retrying  # type: ignore
 from app.models import AuctionException, HandAction, Player, Table
+from bridge.contract import Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -38,7 +39,7 @@ class Command(BaseCommand):
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 1
+        sleep_until = previous_action_time + 0.5
         if (duration := sleep_until - self.last_action_timestamps_by_table_id[table.pk]) > 0:
             time.sleep(duration)
         yield
@@ -85,7 +86,20 @@ class Command(BaseCommand):
 
         player_to_impersonate = modplayer.libraryThing
         a = table.current_auction
+
         call = a.random_legal_call()
+
+        # Try a few times to find something other than "pass", since a passed-out auction isn't interesting.
+        if [pc.call for pc in a.player_calls] == [Pass, Pass, Pass]:
+            for _ in range(5):
+                call = a.random_legal_call()
+                self.stderr.write(f"In loop, got {call=}")
+                if call != Pass:
+                    self.stderr.write("Gudenov")
+                    break
+                self.stderr.write("Nuts, a pass! Let's try again")
+            else:
+                self.stdout.write("I tried rilly rilly hard not to pass this hand out, but ... 😢")
 
         try:
             action.add_call_from_player(player=player_to_impersonate, call=call)
