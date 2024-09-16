@@ -1,8 +1,8 @@
 IN PROGRESS:
 
-* Indicate the number of tricks taken by each side
-
 STILL TODO:
+
+* Display the dummy's cards with 100% opacity when we're in pokey-button mode
 
 * "Claim" and "Concede" buttons, at least if you're declarer
 
@@ -82,6 +82,8 @@ STILL TODO:
 
 
 DONE:
+
+* Indicate the number of tricks taken by each side
 
 * Try out <https://docs.djangoproject.com/en/5.1/ref/contrib/admin/admindocs/#module-django.contrib.admindocs>
 
