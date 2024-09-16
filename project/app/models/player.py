@@ -39,6 +39,10 @@ class PartnerException(PlayerException):
     pass
 
 
+class PlayerAdmin(admin.ModelAdmin):
+    list_filter = ["is_human"]
+
+
 class Player(models.Model):
     seat: Seat
     objects = PlayerManager()
@@ -222,4 +226,4 @@ class Player(models.Model):
         return f"{self.name} ({'human' if self.is_human else 'bot'})"
 
 
-admin.site.register(Player)
+admin.site.register(Player, PlayerAdmin)
