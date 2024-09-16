@@ -113,10 +113,8 @@ class HandAction(models.Model):
                     event_type="message",
                     data={
                         "table": self.table.pk,
+                        "contract_text": str(contract),
                         "contract": {
-                            "bid": contract.bid.serialize(),
-                            "declarer": contract.declarer.seat.value,
-                            "multiplier": contract.multiplier,
                             "opening_leader": contract.declarer.seat.lho().value,
                         },
                     },

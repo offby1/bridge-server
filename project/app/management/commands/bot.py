@@ -149,7 +149,7 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(action=table.current_action)
 
-        elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
+        elif {"table", "contract"}.issubset(data.keys()) or set(data.keys()) == {
             "table",
             "player",
             "card",

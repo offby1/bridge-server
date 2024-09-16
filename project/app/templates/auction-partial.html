@@ -57,8 +57,8 @@ auctionEventSource.addEventListener('message', function (e) {
                     console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
                 });
             });
-        } else if ("contract" in d) {
-            htmx.swap ('#auction-summary', "Auction: " + JSON.stringify(d["contract"]), {swapStyle:'innerHTML'});
+        } else if ("contract_text" in d) {
+            htmx.swap ('#auction-summary', d.contract_text, {swapStyle:'innerHTML'});
         }
     }
 
