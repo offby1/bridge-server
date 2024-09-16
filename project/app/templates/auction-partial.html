@@ -47,16 +47,19 @@ var auctionEventSource = new EventSource('{{ auction_event_source_endpoint }}');
 auctionEventSource.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;
     // Reload the partial only if the data indicates something about the auction.
-    if ("call" in d) {
-      console.log("Auction event listener saw " + e.data);
+    if (("call" in d) || ("contract" in d)) {
+        console.log("Auction event listener saw " + e.data);
 
-      htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
-          console.log("Auction event listener fetched {{ auction_partial_endpoint }}");
-          htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
-              console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
-          });
-      });
-
+        if ("call" in d) {
+            htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
+                console.log("Auction event listener fetched {{ auction_partial_endpoint }}");
+                htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
+                    console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
+                });
+            });
+        } else if ("contract" in d) {
+            htmx.swap ('#auction-summary', "Auction: " + JSON.stringify(d["contract"]), {swapStyle:'innerHTML'});
+        }
     }
 
 }, false);
