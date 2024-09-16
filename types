@@ -5,11 +5,11 @@ This django project:
 | module     | model      |
 |------------+------------|
 | board      | Board      |
-| handrecord | Call       |
-| handrecord | HandRecord |
+| handaction | Call       |
+| handaction | HandAction |
 | message    | Lobby      |
 | message    | Message    |
-| handrecord | Play       |
+| handaction | Play       |
 | player     | Player     |
 | seat       | Seat       |
 | table      | Table      |
@@ -40,7 +40,7 @@ Let's do one example:
     AssertionError: I want a <class 'bridge.table.Table'> but you done gimme a <class 'app.models.table.Table'>
 
 model Table => library Table
-model Table has four seats, and a buncha handrecords.
+model Table has four seats, and a buncha handactions.
 library Table has a dict mapping library Seats to library Players.
    library Seat (int enum)
    library Player is a library Seat(!), a name (str), and a library Hand

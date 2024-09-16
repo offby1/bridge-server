@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import itertools
 from typing import TYPE_CHECKING, Iterator
 
@@ -14,6 +15,7 @@ from bridge.table import Player as libPlayer
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
+from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
@@ -32,11 +34,15 @@ class PlayException(Exception):
     pass
 
 
-TriplePlay = tuple[int, libSeat, libCard]
-TriplePlays = list[TriplePlay]
+TrickTuple = tuple[int, libSeat, libCard, bool]
+TrickTuples = list[TrickTuple]
 
 
-class HandRecord(models.Model):
+class HandAction(models.Model):
+    """
+    All the calls and plays for a given hand.
+    """
+
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
@@ -59,8 +65,20 @@ class HandRecord(models.Model):
             auction=self.table.current_auction,
         )
         # *sigh* now replay the entire hand
-        for p in self.plays:
+        play_pks_by_card_played = {}
+        for _index, p in enumerate(self.plays):
+            play_pks_by_card_played[p.serialized] = p.pk
             rv.add_card(libCard.deserialize(p.serialized))
+
+        if rv.tricks:
+            last_trick = rv.tricks[-1]
+            if last_trick.is_complete():
+                winning_play = [p for p in last_trick if p.wins_the_trick]
+                assert len(winning_play) == 1
+                winning_card_str = winning_play[0].card.serialize()
+                winning_play_pk = play_pks_by_card_played[winning_card_str]
+                # TODO -- I think this gets called 3 or 4 times, all but the first call are redundant.
+                self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
         return rv
 
@@ -122,6 +140,7 @@ class HandRecord(models.Model):
             msg = f"{card} is not a legal play"
             raise PlayException(msg)
 
+        # If this is the last play in a trick, go back and update the play that won it.
         rv = self.play_set.create(serialized=card.serialize())
 
         from app.models import Player
@@ -223,11 +242,11 @@ class HandRecord(models.Model):
         )
 
     @property
-    def tricks(self) -> Iterator[TriplePlays]:
+    def tricks(self) -> Iterator[TrickTuples]:
         return more_itertools.chunked(self.annotated_plays, 4)
 
     @property
-    def current_trick(self) -> TriplePlays | None:
+    def current_trick(self) -> TrickTuples | None:
         tricks = list(self.tricks)
         if not tricks:
             return None
@@ -235,19 +254,26 @@ class HandRecord(models.Model):
         return tricks[-1]
 
     @property
-    def annotated_plays(self) -> TriplePlays:
-        flattened: TriplePlays = []
+    def annotated_plays(self) -> TrickTuples:
+        flattened: TrickTuples = []
+
         for t in self.xscript.tricks:
+            # Who won this trick?
             for p in t.plays:
-                flattened.append((1 + len(flattened), p.player.seat, p.card))
+                flattened.append((1 + len(flattened), p.player.seat, p.card, p.wins_the_trick))
 
         return flattened
 
-    # TODO -- don't just count the tricks; indicate which side took how many, and whether the hand is complete
     @property
     def status(self):
-        q, r = divmod(self.play_set.count(), 4)
-        return f"{q}/13 tricks{'+' if r else ''}"
+        winning_plays = self.play_set.filter(won_its_trick=True)
+        wins_by_seat = collections.defaultdict(int)
+        for p in winning_plays:
+            wins_by_seat[p.seat] += 1
+        east_west = wins_by_seat[libSeat.EAST] + wins_by_seat[libSeat.WEST]
+        north_south = wins_by_seat[libSeat.NORTH] + wins_by_seat[libSeat.SOUTH]
+
+        return f"{east_west=}; {north_south=}"
 
     @property
     def plays(self):
@@ -257,7 +283,7 @@ class HandRecord(models.Model):
         return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
 
 
-admin.site.register(HandRecord)
+admin.site.register(HandAction)
 
 
 class Call(models.Model):
@@ -265,7 +291,7 @@ class Call(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
-    hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
+    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
     # Now, the "what":
     # pass, bid, double, redouble
 
@@ -290,19 +316,31 @@ class Play(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
-    hand = models.ForeignKey(HandRecord, on_delete=models.CASCADE)
+    # This is redundant -- it can in theory be computed given that we know who made the opening lead, the trump suit,
+    # and the rules of bridge.  But geez.
+    won_its_trick = models.BooleanField(null=True)
+
+    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
 
     serialized = models.CharField(  # type: ignore
         max_length=2,
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
-    def __str__(self):
-        for _index, seat, candidate in self.hand.annotated_plays:
+    @cached_property
+    def seat(self) -> libSeat:
+        for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
             if self.serialized == candidate.serialize():
-                return f"{seat} at {self.hand.table} played {self.serialized}"
+                return seat
+
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
+
+    def __str__(self) -> str:
+        star = ""
+        if self.won_its_trick:
+            star = "*"
+        return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
 
     class Meta:
         constraints = [

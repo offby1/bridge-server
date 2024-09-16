@@ -12,7 +12,7 @@ import typing
 
 import requests
 import retrying  # type: ignore
-from app.models import AuctionException, HandRecord, Player, Table
+from app.models import AuctionException, HandAction, Player, Table
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -73,9 +73,9 @@ class Command(BaseCommand):
 
         return False
 
-    def make_a_groovy_call(self, *, handrecord: HandRecord) -> None:
-        table = handrecord.table
-        modplayer = handrecord.player_who_may_call
+    def make_a_groovy_call(self, *, action: HandAction) -> None:
+        table = action.table
+        modplayer = action.player_who_may_call
 
         if modplayer is None:
             return
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         call = a.random_legal_call()
 
         try:
-            handrecord.add_call_from_player(player=player_to_impersonate, call=call)
+            action.add_call_from_player(player=player_to_impersonate, call=call)
         except AuctionException as e:
             # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
             # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
@@ -98,11 +98,11 @@ class Command(BaseCommand):
                 f"{table}: Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
-    def make_a_groovy_play(self, *, handrecord: HandRecord) -> None:
-        if not handrecord.auction.found_contract:
+    def make_a_groovy_play(self, *, action: HandAction) -> None:
+        if not action.auction.found_contract:
             return
 
-        table = handrecord.table
+        table = action.table
 
         seat_to_impersonate = table.next_seat_to_play
 
@@ -112,14 +112,14 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        legal_cards = handrecord.xscript.legal_cards()
+        legal_cards = action.xscript.legal_cards()
         if not legal_cards:
             self.wf(f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over.")
             return
 
         chosen_card = random.choice(legal_cards)
 
-        p = handrecord.add_play_from_player(player=handrecord.xscript.player, card=chosen_card)
+        p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
         self.wf(f"{table}: played {p} from {legal_cards}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
@@ -131,11 +131,11 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        handrecord = table.current_handrecord
+        action = table.current_action
 
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             with self.delayed_action(table=table):
-                self.make_a_groovy_call(handrecord=handrecord)
+                self.make_a_groovy_call(action=action)
 
         elif set(data.keys()) == {"table", "contract"} or set(data.keys()) == {
             "table",
@@ -143,12 +143,12 @@ class Command(BaseCommand):
             "card",
         }:
             with self.delayed_action(table=table):
-                self.make_a_groovy_play(handrecord=handrecord)
+                self.make_a_groovy_play(action=action)
         elif set(data.keys()) == {"table", "direction", "action"}:
             self.wf(f"{table}: I believe I been poked: {data=}")
             with self.delayed_action(table=table):
-                self.make_a_groovy_call(handrecord=handrecord)
-                self.make_a_groovy_play(handrecord=handrecord)
+                self.make_a_groovy_call(action=action)
+                self.make_a_groovy_play(action=action)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
