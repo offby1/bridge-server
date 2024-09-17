@@ -14,10 +14,12 @@ from app.models.player import Player
 from app.models.seat import Seat as modelSeat
 from app.models.utils import assert_type
 from bridge.card import Card as libCard
+from bridge.card import Suit as libSuit
 from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
+from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -121,6 +123,7 @@ class AllFourSuitHoldings:
     def our_turn_to_play(self) -> bool:
         for suit_name in ("spades", "hearts", "clubs", "diamonds"):
             holding = getattr(self, suit_name)
+            print(f"{holding=}")
             if holding.legal_now:
                 return True
         return False
@@ -225,7 +228,11 @@ class Table(models.Model):
         return rv
 
     def display_skeleton(self) -> DisplayThingy:
+        xscript = self.current_action.xscript
+        whose_turn_is_it = xscript.next_player().seat
+
         rv = {}
+        # xscript.legal_cards tells us which cards are legal for the current player.
         for mSeat, cards in self.current_cards_by_seat.items():
             seat = mSeat.libraryThing
             assert_type(seat, libSeat)
@@ -233,15 +240,21 @@ class Table(models.Model):
             cards_by_suit = collections.defaultdict(list)
             for c in cards:
                 cards_by_suit[c.suit].append(c)
-            spades = cards_by_suit[bridge.card.Suit.SPADES]
-            hearts = cards_by_suit[bridge.card.Suit.HEARTS]
-            clubs = cards_by_suit[bridge.card.Suit.CLUBS]
-            diamonds = cards_by_suit[bridge.card.Suit.DIAMONDS]
+
+            kwargs = {}
+
+            for suit in bridge.card.Suit:
+                legal_now = False
+                if seat == whose_turn_is_it:
+                    legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
+
+                kwargs[suit.name().lower()] = SuitHolding(
+                    cards_of_one_suit=cards_by_suit[suit],
+                    legal_now=legal_now,
+                )
+
             rv[seat] = AllFourSuitHoldings(
-                spades=SuitHolding(cards_of_one_suit=spades, legal_now=False),
-                hearts=SuitHolding(cards_of_one_suit=hearts, legal_now=False),
-                diamonds=SuitHolding(cards_of_one_suit=diamonds, legal_now=False),
-                clubs=SuitHolding(cards_of_one_suit=clubs, legal_now=False),
+                **kwargs,
                 textual_summary=f"{len(cards)} cards",
             )
         return DisplayThingy(holdings_by_seat=rv)
