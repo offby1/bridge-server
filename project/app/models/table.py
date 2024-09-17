@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 import random
 from typing import TYPE_CHECKING
 
 from bridge.card import Card as libCard
+from bridge.card import Suit as libSuit
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -23,6 +25,7 @@ from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
+    import bridge.seat
     from bridge.auction import Auction as libAuction
     from bridge.seat import Seat as libSeat
 
@@ -73,6 +76,30 @@ class TableManager(models.Manager):
         )
 
         return t
+
+
+"""
+These dataclasses are here to make life easy for the table view, and to be testable.  They conveniently collect most of the information that the view will need to display player's hands -- in fact, they collect everything *that this model knows about*.  Stuff that we *don't* know about, but which the view does, are: who is looking at the browser, are they human, &c
+
+I hope they will let me greatly simplify four_hands_partial_view and _four_hands_context_for_table.
+"""
+
+
+@dataclasses.dataclass
+class AnnotatedCard:
+    card: libCard
+    legal_now: bool
+
+
+@dataclasses.dataclass
+class SuitHolding:
+    cards_by_suit: dict[libSuit, list[AnnotatedCard]]
+
+
+@dataclasses.dataclass
+class DisplayThingy:
+    textual_summary: str
+    suit_holdings_by_seat: dict[bridge.seat.Seat, SuitHolding]
 
 
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
@@ -163,6 +190,9 @@ class Table(models.Model):
 
         return rv
 
+    def display_skeleton(self) -> DisplayThingy:
+        return DisplayThingy(textual_summary="htf do I know", suit_holdings_by_seat={})
+
     @property
     def current_cards_by_seat(self) -> dict[Seat, set[libCard]]:
         rv = {}
@@ -177,7 +207,7 @@ class Table(models.Model):
             for _index, libseat, card, _is_winner in self.current_action.annotated_plays:
                 if libseat not in model_seats_by_lib_seats:
                     model_seats_by_lib_seats[libseat] = self.current_action.seat_from_libseat(
-                        libseat
+                        libseat,
                     )
                 seat = model_seats_by_lib_seats[libseat]
                 assert_type(seat, Seat)
