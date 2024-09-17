@@ -6,8 +6,15 @@ import logging
 import random
 from typing import TYPE_CHECKING
 
-from bridge.card import Card as libCard
 import bridge.card
+from app.models import SEAT_CHOICES
+from app.models.board import Board
+from app.models.handaction import HandAction
+from app.models.player import Player
+from app.models.seat import Seat as modelSeat
+from app.models.utils import assert_type
+from bridge.card import Card as libCard
+from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -18,17 +25,10 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
-from app.models import SEAT_CHOICES
-from app.models.board import Board
-from app.models.handaction import HandAction
-from app.models.player import Player
-from app.models.seat import Seat as modelSeat
-from app.models.utils import assert_type
-
 if TYPE_CHECKING:
     import bridge.seat
     from bridge.auction import Auction as libAuction
-    from bridge.seat import Seat as libSeat
+
 
 logger = logging.getLogger(__name__)
 
@@ -126,12 +126,11 @@ class DisplayThingy:
     holdings_by_seat: dict[libSeat, AllFourSuitHoldings]
 
     def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
+        assert_type(seat, libSeat)
         return self.holdings_by_seat[seat]
 
     def our_turn_to_play(self) -> bool:
-        """I examine the holdings_by_seat, and return True if and only if any of those suits are legal to play.
-
-        """
+        """I examine the holdings_by_seat, and return True if and only if any of those suits are legal to play."""
         return False
 
 
@@ -225,7 +224,8 @@ class Table(models.Model):
 
     def display_skeleton(self) -> DisplayThingy:
         rv = {}
-        for seat, cards in self.current_cards_by_seat.items():
+        for mSeat, cards in self.current_cards_by_seat.items():
+            seat = mSeat.libraryThing
             assert_type(seat, libSeat)
 
             cards_by_suit = collections.defaultdict(list)
@@ -235,12 +235,12 @@ class Table(models.Model):
             hearts = cards_by_suit[bridge.card.Suit.HEARTS]
             clubs = cards_by_suit[bridge.card.Suit.CLUBS]
             diamonds = cards_by_suit[bridge.card.Suit.DIAMONDS]
-            rv[seat.libraryThing] = AllFourSuitHoldings(
-                spades=SuitHolding   (cards_of_one_suit=spades  , legal_now=False),
-                hearts=SuitHolding   (cards_of_one_suit=hearts  , legal_now=False),
-                diamonds=SuitHolding (cards_of_one_suit=diamonds, legal_now=False),
-                clubs=SuitHolding    (cards_of_one_suit=clubs   , legal_now=False),
-                textual_summary="htf do I know"
+            rv[seat] = AllFourSuitHoldings(
+                spades=SuitHolding(cards_of_one_suit=spades, legal_now=False),
+                hearts=SuitHolding(cards_of_one_suit=hearts, legal_now=False),
+                diamonds=SuitHolding(cards_of_one_suit=diamonds, legal_now=False),
+                clubs=SuitHolding(cards_of_one_suit=clubs, legal_now=False),
+                textual_summary=f"{len(cards)} cards",
             )
         return DisplayThingy(holdings_by_seat=rv)
 
