@@ -117,6 +117,14 @@ class AllFourSuitHoldings:
 
     textual_summary: str
 
+    @property
+    def our_turn_to_play(self) -> bool:
+        for suit_name in ("spades", "hearts", "clubs", "diamonds"):
+            holding = getattr(self, suit_name)
+            if holding.legal_now:
+                return True
+        return False
+
     def from_suit(self, s: bridge.card.Suit) -> SuitHolding:
         return getattr(self, s.name().lower())
 
@@ -128,12 +136,6 @@ class DisplayThingy:
     def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
         assert_type(seat, libSeat)
         return self.holdings_by_seat[seat]
-
-    def our_turn_to_play(self) -> bool:
-        """I examine the holdings_by_seat, and return True if and only if any of those suits are legal to play."""
-        return False
-
-
 
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
