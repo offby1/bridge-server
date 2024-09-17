@@ -134,7 +134,7 @@ class Command(BaseCommand):
         chosen_card = random.choice(legal_cards)
 
         p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
-        self.wf(f"{table}: played {p} from {legal_cards}")
+        self.wf(f"{table}: {p} from {legal_cards}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
