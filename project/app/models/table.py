@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import collections
 import dataclasses
 import logging
 import random
 from typing import TYPE_CHECKING
 
 from bridge.card import Card as libCard
+import bridge.card
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -16,12 +18,12 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
-from . import SEAT_CHOICES
-from .board import Board
-from .handaction import HandAction
-from .player import Player
-from .seat import Seat
-from .utils import assert_type
+from app.models import SEAT_CHOICES
+from app.models.board import Board
+from app.models.handaction import HandAction
+from app.models.player import Player
+from app.models.seat import Seat as modelSeat
+from app.models.utils import assert_type
 
 if TYPE_CHECKING:
     import bridge.seat
@@ -44,7 +46,7 @@ class TableManager(models.Manager):
         try:
             with transaction.atomic():
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
-                    Seat.objects.create(
+                    modelSeat.objects.create(
                         direction=seat,
                         player=player,
                         table=t,
@@ -76,7 +78,7 @@ class TableManager(models.Manager):
 
         return t
 
-
+
 """ These dataclasses are here to make life easy for the table view, and to be testable.  They conveniently collect most
 of the information that the view will need to display player's hands -- in fact, they collect everything *that this
 model knows about*.  Stuff that we *don't* know about, but which the view does, are: who is looking at the browser, are
@@ -97,9 +99,10 @@ class SuitHolding:
 
     legal_now: bool
 
-    cards_by_suit: list[libCard]
+    cards_of_one_suit: list[libCard]
 
 
+@dataclasses.dataclass
 class AllFourSuitHoldings:
     spades: SuitHolding
     hearts: SuitHolding
@@ -120,22 +123,23 @@ class AllFourSuitHoldings:
 
 @dataclasses.dataclass
 class DisplayThingy:
-    holdings_by_seat: dict[bridge.seat.Seat, AllFourSuitHoldings]
+    holdings_by_seat: dict[libSeat, AllFourSuitHoldings]
 
-    def __getitem__(self, seat: bridge.seat.Seat) -> AllFourSuitHoldings:
+    def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
         return self.holdings_by_seat[seat]
 
     def our_turn_to_play(self) -> bool:
-        """
-        I examine the holdings_by_seat, and return True if and only if any of those suits are legal to play.
+        """I examine the holdings_by_seat, and return True if and only if any of those suits are legal to play.
+
         """
         return False
 
 
+
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
 class Table(models.Model):
-    seat_set: models.Manager[Seat]
+    seat_set: models.Manager[modelSeat]
     handaction_set: models.Manager[HandAction]
 
     objects = TableManager()
@@ -195,22 +199,21 @@ class Table(models.Model):
         return self.current_board.dealer
 
     @property
-    def declarer(self) -> Seat | None:
+    def declarer(self) -> modelSeat | None:
         if self.current_action.declarer is None:
             return None
-        modelSeat = self.current_action.declarer.seat
-        return Seat.objects.get(direction=modelSeat.value, table=self)
+
+        return modelSeat.objects.get(direction=self.current_action.declarer.seat.value, table=self)
 
     @property
-    def dummy(self) -> Seat | None:
+    def dummy(self) -> modelSeat | None:
         if self.current_action.dummy is None:
             return None
-        modelSeat = self.current_action.dummy.seat
-        return Seat.objects.get(direction=modelSeat.value, table=self)
+        return modelSeat.objects.get(direction=self.current_action.dummy.seat.value, table=self)
 
     @cached_property
-    def dealt_cards_by_seat(self) -> dict[Seat, list[libCard]]:
-        rv: dict[Seat, list[libCard]] = {}
+    def dealt_cards_by_seat(self) -> dict[modelSeat, list[libCard]]:
+        rv: dict[modelSeat, list[libCard]] = {}
         board = self.current_board
         if board is None:
             return rv
@@ -221,13 +224,34 @@ class Table(models.Model):
         return rv
 
     def display_skeleton(self) -> DisplayThingy:
-        return DisplayThingy(holdings_by_seat={})
+        rv = {}
+        for seat, cards in self.current_cards_by_seat.items():
+            assert_type(seat, libSeat)
+
+            cards_by_suit = collections.defaultdict(list)
+            for c in cards:
+                cards_by_suit[c.suit].append(c)
+            spades = cards_by_suit[bridge.card.Suit.SPADES]
+            hearts = cards_by_suit[bridge.card.Suit.HEARTS]
+            clubs = cards_by_suit[bridge.card.Suit.CLUBS]
+            diamonds = cards_by_suit[bridge.card.Suit.DIAMONDS]
+            rv[seat.libraryThing] = AllFourSuitHoldings(
+                spades=SuitHolding   (cards_of_one_suit=spades  , legal_now=False),
+                hearts=SuitHolding   (cards_of_one_suit=hearts  , legal_now=False),
+                diamonds=SuitHolding (cards_of_one_suit=diamonds, legal_now=False),
+                clubs=SuitHolding    (cards_of_one_suit=clubs   , legal_now=False),
+                textual_summary="htf do I know"
+            )
+        return DisplayThingy(holdings_by_seat=rv)
+
+        holdings = AllFourSuitHoldings.from_current_cards_by_seat(self.current_cards_by_seat)
+        return DisplayThingy(holdings_by_seat=holdings)
 
     @property
-    def current_cards_by_seat(self) -> dict[Seat, set[libCard]]:
+    def current_cards_by_seat(self) -> dict[modelSeat, set[libCard]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
-            assert_type(seat, Seat)
+            assert_type(seat, modelSeat)
             assert_type(cardlist, list)
 
             rv[seat] = set(cardlist)
@@ -240,7 +264,7 @@ class Table(models.Model):
                         libseat,
                     )
                 seat = model_seats_by_lib_seats[libseat]
-                assert_type(seat, Seat)
+                assert_type(seat, modelSeat)
                 rv[seat].remove(card)
 
         return rv
@@ -254,10 +278,10 @@ class Table(models.Model):
         return {s.direction: s.player for s in self.seats}
 
     @property
-    def next_seat_to_play(self) -> Seat | None:
+    def next_seat_to_play(self) -> modelSeat | None:
         if self.current_auction.found_contract:
             xscript = self.current_action.xscript
-            return Seat.objects.get(table=self, direction=xscript.player.seat.value)
+            return modelSeat.objects.get(table=self, direction=xscript.player.seat.value)
 
         return None
 
