@@ -14,3 +14,5 @@ https://docs.sentry.io/concepts/key-terms/key-terms/ seems like it should define
   > trace - A trace is the record of the entire operation you want to measure or track - like page load, an instance of a user completing some action in your application, or a cron job in your backend.
 - transaction
   > A transaction represents a single instance of a service being called to support an operation you want to measure or track, like a page load, page navigation, or asynchronous task.
+
+It's quite expensive, too, although there's supposedly a way to [self-host](https://develop.sentry.dev/self-hosted/).
