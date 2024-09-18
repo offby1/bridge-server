@@ -21,3 +21,9 @@ repos:
     # Disabled because there are too many problems :-(
     # - id: djlint-django
     #   exclude: 'bootstrap-fiddling.html'
+- repo: local
+  hooks:
+    - id: ensure-no-local-dependencies
+      name: ensure-no-local-dependencies
+      language: system
+      entry: grep --quiet "^bridge *=.*https://gitlab.com" pyproject.toml
