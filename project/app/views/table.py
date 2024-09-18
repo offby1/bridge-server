@@ -215,8 +215,11 @@ def _four_hands_context_for_table(
     # TODO -- figure out if the auction and play are over, in which case show 'em all
 
     cards_by_direction_display = {}
+    libSeat: bridge.seat.Seat
     for libSeat, suitholdings in skel.items():
-        is_dummy = libSeat == table.dummy
+        if table.dummy is not None:
+            assert_type(table.dummy, app.models.seat.Seat)
+        is_dummy = table.dummy and libSeat == table.dummy.libraryThing
         this_seats_player = table.modPlayer_by_seat(libSeat)
         if (
             settings.POKEY_BOT_BUTTONS

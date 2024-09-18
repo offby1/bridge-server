@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import functools
+from typing import TYPE_CHECKING
 
 from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
@@ -7,12 +10,17 @@ from django.urls import reverse
 
 from app.models import Player
 
+if TYPE_CHECKING:
+    from .table import AuthedHttpRequest
+
 
 # Set redirect to False for AJAX endoints.
 def logged_in_as_player_required(redirect=True):
     def inner_wozzit(view_function):
         @functools.wraps(view_function)
-        def non_players_piss_off(request, *args, **kwargs):
+        def non_players_piss_off(
+            request: AuthedHttpRequest, *args, **kwargs
+        ) -> HttpResponseRedirect | HttpResponseForbidden:
             if not redirect and not request.user.is_authenticated:
                 return HttpResponseForbidden("Go away, anonymous scoundrel")
 

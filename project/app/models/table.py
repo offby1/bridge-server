@@ -270,9 +270,6 @@ class Table(models.Model):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-        holdings = AllFourSuitHoldings.from_current_cards_by_seat(self.current_cards_by_seat)
-        return DisplaySkeleton(holdings_by_seat=holdings)
-
     @property
     def current_cards_by_seat(self) -> dict[modelSeat, set[bridge.card.Card]]:
         rv = {}
