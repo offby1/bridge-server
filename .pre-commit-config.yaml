@@ -21,9 +21,15 @@ repos:
     # Disabled because there are too many problems :-(
     # - id: djlint-django
     #   exclude: 'bootstrap-fiddling.html'
+
+# Try to prevent me from pusing a pyproject.toml that says that the library is in ../library
+# That doesn't work "in production", but I keep forgetting.
 - repo: local
   hooks:
     - id: ensure-no-local-dependencies
       name: ensure-no-local-dependencies
       language: system
+      #TODO -- only do this if PRE_COMMIT_REMOTE_BRANCH=refs/heads/main
       entry: grep --quiet "^bridge *=.*https://gitlab.com" pyproject.toml
+      stages:
+        - pre-push

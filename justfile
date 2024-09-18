@@ -36,7 +36,7 @@ version-file:
 
 [private]
 pre-commit:
-    -pre-commit install
+    -pre-commit install  --hook-type pre-commit --hook-type pre-push
 
 [group('django')]
 [private]
