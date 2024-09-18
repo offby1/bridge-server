@@ -135,7 +135,7 @@ class AllFourSuitHoldings:
 
 
 @dataclasses.dataclass
-class DisplayThingy:
+class DisplaySkeleton:
     holdings_by_seat: dict[bridge.seat.Seat, AllFourSuitHoldings]
 
     def items(self) -> Iterable[tuple[bridge.seat.Seat, AllFourSuitHoldings]]:
@@ -235,7 +235,7 @@ class Table(models.Model):
 
         return rv
 
-    def display_skeleton(self) -> DisplayThingy:
+    def display_skeleton(self) -> DisplaySkeleton:
         xscript = self.current_action.xscript
         whose_turn_is_it = None
 
@@ -268,10 +268,10 @@ class Table(models.Model):
                 **kwargs,
                 textual_summary=f"{len(cards)} cards",
             )
-        return DisplayThingy(holdings_by_seat=rv)
+        return DisplaySkeleton(holdings_by_seat=rv)
 
         holdings = AllFourSuitHoldings.from_current_cards_by_seat(self.current_cards_by_seat)
-        return DisplayThingy(holdings_by_seat=holdings)
+        return DisplaySkeleton(holdings_by_seat=holdings)
 
     @property
     def current_cards_by_seat(self) -> dict[modelSeat, set[bridge.card.Card]]:

@@ -172,22 +172,25 @@ def _auction_context_for_table(table):
     }
 
 
-def _get_pokey_buttons(skel):
-    rv = {}
+# TODO -- rename "player_pk" to "as_viewed_by_pk"
+def _get_pokey_buttons(
+    *, skel: app.models.table.DisplaySkeleton, player_pk: str, table_pk: str
+) -> dict[str, SafeString]:
+    rv: dict[str, SafeString] = {}
 
     if not settings.POKEY_BOT_BUTTONS:
         return rv
 
-    for modelSeat in skel:
+    for libSeat, _ in skel.items():  # noqa
         button_value = json.dumps(
             {
-                "direction": modelSeat.direction,
-                "player_id": modelSeat.player.pk,
-                "table_id": modelSeat.table.pk,
+                "direction": libSeat.value,
+                "player_id": player_pk,
+                "table_id": table_pk,
             },
         )
 
-        rv[modelSeat.named_direction] = SafeString(f"""<div class="btn-group">
+        rv[libSeat.name] = SafeString(f"""<div class="btn-group">
         <button
         type="button"
         class="btn btn-primary"
@@ -195,7 +198,7 @@ def _get_pokey_buttons(skel):
         value='{button_value}'
         hx-post="/yo/bot/"
         hx-swap="none"
-        >POKE ME {modelSeat.named_direction}</button>
+        >POKE ME {libSeat.name}</button>
         </div>
         <br/>
         """)
@@ -236,7 +239,9 @@ def _four_hands_context_for_table(
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
         "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
-        "pokey_buttons": _get_pokey_buttons(skel=skel),
+        "pokey_buttons": _get_pokey_buttons(
+            skel=skel, player_pk=request.user.player.pk, table_pk=table.pk
+        ),
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
 
