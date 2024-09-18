@@ -122,7 +122,9 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
-def single_hand_as_four_divs(all_four: AllFourSuitHoldings, seat_pk: str) -> SafeString:
+def _single_hand_as_four_divs(
+    all_four: AllFourSuitHoldings, seat_pk: str, this_is_the_viewers_seat: bool
+) -> SafeString:
     def card_button(c: bridge.card.Card, suit_color: str) -> str:
         return f"""<button
         type="button"
@@ -145,8 +147,10 @@ def single_hand_as_four_divs(all_four: AllFourSuitHoldings, seat_pk: str) -> Saf
             "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
         )
         gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
+        active = holding.legal_now and this_is_the_viewers_seat
+
         cols = [
-            card_button(c, suit_color) if holding.legal_now else card_text(c, suit_color)
+            card_button(c, suit_color) if active else card_text(c, suit_color)
             for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
         gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
@@ -225,8 +229,10 @@ def _four_hands_context_for_table(
             or (is_dummy and table.current_action and table.current_action.current_trick)
             or libSeat == request.user.player.seat.direction
         ):
-            dem_cards_baby = single_hand_as_four_divs(
-                suitholdings, seat_pk=this_seats_player.seat.pk
+            dem_cards_baby = _single_hand_as_four_divs(
+                suitholdings,
+                seat_pk=this_seats_player.seat.pk,
+                this_is_the_viewers_seat=request.user.player == this_seats_player,
             )
         else:
             dem_cards_baby = SafeString(suitholdings.textual_summary)
@@ -435,7 +441,7 @@ def new_table_for_two_partnerships(request, pk1, pk2):
         return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
 
     try:
-        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
+        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)  # type: ignore
     except app.models.TableException as e:
         return HttpResponseForbidden(str(e))
 
