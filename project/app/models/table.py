@@ -14,12 +14,10 @@ from app.models.player import Player
 from app.models.seat import Seat as modelSeat
 from app.models.utils import assert_type
 from bridge.card import Card as libCard
-from bridge.card import Suit as libSuit
 from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
-from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -28,6 +26,7 @@ from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
 if TYPE_CHECKING:
+    from typing import Iterable
     import bridge.seat
     from bridge.auction import Auction as libAuction
 
@@ -123,13 +122,18 @@ class AllFourSuitHoldings:
     def our_turn_to_play(self) -> bool:
         for suit_name in ("spades", "hearts", "clubs", "diamonds"):
             holding = getattr(self, suit_name)
-            print(f"{holding=}")
+
             if holding.legal_now:
                 return True
         return False
 
     def from_suit(self, s: bridge.card.Suit) -> SuitHolding:
         return getattr(self, s.name().lower())
+
+    def items(self) -> Iterable[tuple[bridge.card.Suit, SuitHolding]]:
+        for suitname, suit_value in bridge.card.Suit.__members__.items():
+            holding = getattr(self, suitname.lower())
+            yield (suit_value, holding)
 
 
 @dataclasses.dataclass

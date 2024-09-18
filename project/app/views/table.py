@@ -25,6 +25,7 @@ from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
 from app.models import Player, PlayerException, Seat, Table, TableException
+from app.models.table import AllFourSuitHoldings, SuitHolding
 from app.models.utils import assert_type
 
 from .misc import logged_in_as_player_required
@@ -119,16 +120,7 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
-def cards_as_four_divs(
-    *,
-    players_cards: set[bridge.card.Card],
-    legal_cards: list[bridge.card.Card],
-    seat: Seat,
-    my_turn_to_play: bool,
-) -> SafeString:
-    by_suit: dict[bridge.card.Suit, list[bridge.card.Card]] = {s: [] for s in bridge.card.Suit}
-    for c in players_cards:
-        by_suit[c.suit].append(c)
+def cards_as_four_divs(all_four: AllFourSuitHoldings, seat: Seat) -> SafeString:
 
     play_post_endpoint = reverse("app:play-post", args=[seat.pk])
 
@@ -156,18 +148,17 @@ def cards_as_four_divs(
         style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
         >{c}</span>"""
 
-    def single_row_divs(suit, cards):
+    def single_row_divs(suit, holding: SuitHolding):
         color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
         cols = [
-            card_button(c, color) if my_turn_to_play else card_text(c, color)
-            for c in sorted(cards, reverse=True)
+            card_button(c, color) if holding.legal_now else card_text(c, color)
+            for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
         return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
 
-    row_divs = [
-        single_row_divs(suit, cards) if cards else "<div>-</div>"
-        for suit, cards in sorted(by_suit.items(), reverse=True)
-    ]
+    row_divs = []
+    for suit, holding in sorted(all_four.items(), reverse=True):
+        row_divs.append(single_row_divs(suit, holding) if holding else "<div>-</div>")
 
     style = 'style="opacity: 25%"' if not my_turn_to_play else ""
     return SafeString("<br>" f"<div {style}>" + "\n".join(row_divs) + "</div>")
@@ -186,42 +177,14 @@ def _auction_context_for_table(table):
     }
 
 
-def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> dict[str, Any]:
-    # No cards are legal to play if the auction hasn't settled.
-    legal_cards = []
-    if table.current_auction.found_contract:
-        legal_cards = table.current_action.xscript.legal_cards()
+def _get_pokey_buttons(skel):
+    rv = {}
 
-    cards_by_direction_display = {}
-    pokey_buttons_by_direction = {}
+    if not settings.POKEY_BOT_BUTTONS:
+        return rv
 
-    # TODO -- figure out if the auction and play are over, in which case show 'em all
-
-    modelSeat: Seat
-    libcards: set[bridge.card.Card]
-    for modelSeat, libcards in table.current_cards_by_seat.items():
-        my_turn_to_play = (
-            table.current_auction.found_contract
-            and table.current_action.xscript.player.seat.value == modelSeat.direction
-            and request.user.player == modelSeat.player
-        )
-        dem_cards_baby = f"{len(libcards)} cards"
-
-        is_dummy = modelSeat == table.dummy
-
-        if (
-            settings.POKEY_BOT_BUTTONS
-            or (is_dummy and table.current_action and table.current_action.current_trick)
-            or modelSeat.player == request.user.player
-        ):
-            dem_cards_baby = cards_as_four_divs(
-                players_cards=libcards,
-                legal_cards=legal_cards,  # TODO -- what about the dummy
-                seat=modelSeat,
-                my_turn_to_play=my_turn_to_play,
-            )
-
-        value = json.dumps(
+    for modelSeat, suitholdings in skel.items():
+        button_value = json.dumps(
             {
                 "direction": modelSeat.direction,
                 "player_id": modelSeat.player.pk,
@@ -229,14 +192,13 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
             },
         )
 
-        if settings.POKEY_BOT_BUTTONS:
-            pokey_buttons_by_direction[modelSeat.named_direction] = (
-                SafeString(f"""<div class="btn-group">
+        rv[modelSeat.named_direction] = (
+            SafeString(f"""<div class="btn-group">
         <button
         type="button"
         class="btn btn-primary"
         name="who pokes me"
-        value='{value}'
+        value='{button_value}'
         hx-post="/yo/bot/"
         hx-swap="none"
         >POKE ME {modelSeat.named_direction}</button>
@@ -244,6 +206,25 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         <br/>
         """)
             )
+
+    return rv
+
+
+def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> dict[str, Any]:
+    skel = table.display_skeleton()
+
+    # TODO -- figure out if the auction and play are over, in which case show 'em all
+
+    cards_by_direction_display = {}
+    for modelSeat, suitholdings in skel.items():
+        is_dummy = modelSeat == table.dummy
+
+        if (
+            settings.POKEY_BOT_BUTTONS
+            or (is_dummy and table.current_action and table.current_action.current_trick)
+            or modelSeat.player == request.user.player
+        ):
+            dem_cards_baby = cards_as_four_divs(suitholdings, seat=modelSeat)
 
         cards_by_direction_display[modelSeat.named_direction] = {
             "cards": dem_cards_baby,
@@ -255,7 +236,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
         "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
-        "pokey_buttons": pokey_buttons_by_direction,
+        "pokey_buttons": _get_pokey_buttons(),
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
 

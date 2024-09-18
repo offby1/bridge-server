@@ -22,3 +22,12 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     assert ds[Seat.EAST].our_turn_to_play
     assert not ds[Seat.SOUTH].our_turn_to_play
     assert not ds[Seat.WEST].our_turn_to_play
+
+    assert not ds[Seat.NORTH].is_dummy
+    assert not ds[Seat.EAST].is_dummy
+    assert ds[Seat.SOUTH].is_dummy
+    assert not ds[Seat.WEST].is_dummy
+
+    import pprint
+    pprint.pprint(ds)
+    assert "cat" == "dog"
