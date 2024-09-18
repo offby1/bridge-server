@@ -50,12 +50,6 @@ class Command(BaseCommand):
             self.wf(f"{table}: player is None -- auction or play must be over.")
             return True
 
-        if player.is_human:
-            self.wf(
-                f"{table}: They tell me {player} is human, so I will bow out",
-            )
-            return True
-
         if player.user.last_login is not None:
             self.wf(
                 f"{table}: Non-human {player} has logged in, so I really should bow out, but I won't",
@@ -64,13 +58,21 @@ class Command(BaseCommand):
         dummy_seat = table.dummy
         declarer_seat = table.declarer
         if declarer_seat is not None:
-            if player.seat == dummy_seat and self.skip_player(
-                table=table, player=declarer_seat.player
-            ):
+            if player.seat == dummy_seat:
+                skip_declarer = self.skip_player(table=table, player=declarer_seat.player)
+
+                verb = "not supposed" if skip_declarer else "supposed"
+
                 self.wf(
-                    f"{table}: Way-ul, I'm not supposed to play the declarer's hand, so I guess I shouldn't play dummy, either",
+                    f"{table}: Way-ul, I'm {verb} to play the declarer's hand, so I guess I'm {verb} to play dummy, too",
                 )
-                return True
+                return skip_declarer
+
+        if player.is_human:
+            self.wf(
+                f"{table}: They tell me {player} is human, so I will bow out",
+            )
+            return True
 
         return False
 
