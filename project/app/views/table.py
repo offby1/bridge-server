@@ -172,9 +172,8 @@ def _auction_context_for_table(table):
     }
 
 
-# TODO -- rename "player_pk" to "as_viewed_by_pk"
 def _get_pokey_buttons(
-    *, skel: app.models.table.DisplaySkeleton, player_pk: str, table_pk: str
+    *, skel: app.models.table.DisplaySkeleton, as_viewed_by_pk: str, table_pk: str
 ) -> dict[str, SafeString]:
     rv: dict[str, SafeString] = {}
 
@@ -185,7 +184,7 @@ def _get_pokey_buttons(
         button_value = json.dumps(
             {
                 "direction": libSeat.value,
-                "player_id": player_pk,
+                "player_id": as_viewed_by_pk,
                 "table_id": table_pk,
             },
         )
@@ -243,7 +242,7 @@ def _four_hands_context_for_table(
         "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "pokey_buttons": _get_pokey_buttons(
-            skel=skel, player_pk=request.user.player.pk, table_pk=table.pk
+            skel=skel, as_viewed_by_pk=request.user.player.pk, table_pk=table.pk
         ),
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
