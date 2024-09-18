@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import bridge.auction
 import bridge.card
@@ -25,10 +25,12 @@ from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
 import app.models
-from app.models.table import AllFourSuitHoldings, SuitHolding
 from app.models.utils import assert_type
 
 from .misc import logged_in_as_player_required
+
+if TYPE_CHECKING:
+    from app.models.table import AllFourSuitHoldings, SuitHolding
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +123,6 @@ def bidding_box_buttons(
 
 
 def single_hand_as_four_divs(all_four: AllFourSuitHoldings, seat_pk: str) -> SafeString:
-
     def card_button(c: bridge.card.Card, suit_color: str) -> str:
         return f"""<button
         type="button"
@@ -140,20 +141,22 @@ def single_hand_as_four_divs(all_four: AllFourSuitHoldings, seat_pk: str) -> Saf
         >{c}</span>"""
 
     def single_row_divs(suit, holding: SuitHolding):
-        suit_color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        suit_color = (
+            "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        )
         gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
         cols = [
             card_button(c, suit_color) if holding.legal_now else card_text(c, suit_color)
             for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
-        gauzy_style = f'style="opacity: 25%;"' if gauzy else ''
+        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
         return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div><br/>"""
 
     row_divs = []
     for suit, holding in sorted(all_four.items(), reverse=True):
         row_divs.append(single_row_divs(suit, holding) if holding else "<div>-</div>")
 
-    return SafeString("<br>" f"<div>" + "\n".join(row_divs) + "</div>")
+    return SafeString("<br>" "<div>" + "\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
@@ -175,7 +178,7 @@ def _get_pokey_buttons(skel):
     if not settings.POKEY_BOT_BUTTONS:
         return rv
 
-    for modelSeat, suitholdings in skel.items():
+    for modelSeat in skel:
         button_value = json.dumps(
             {
                 "direction": modelSeat.direction,
@@ -184,8 +187,7 @@ def _get_pokey_buttons(skel):
             },
         )
 
-        rv[modelSeat.named_direction] = (
-            SafeString(f"""<div class="btn-group">
+        rv[modelSeat.named_direction] = SafeString(f"""<div class="btn-group">
         <button
         type="button"
         class="btn btn-primary"
@@ -197,12 +199,13 @@ def _get_pokey_buttons(skel):
         </div>
         <br/>
         """)
-            )
 
     return rv
 
 
-def _four_hands_context_for_table(request: AuthedHttpRequest, table: app.models.Table) -> dict[str, Any]:
+def _four_hands_context_for_table(
+    request: AuthedHttpRequest, table: app.models.Table
+) -> dict[str, Any]:
     assert request.user.player is not None
     skel = table.display_skeleton()
 
@@ -218,8 +221,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: app.models.
             or libSeat == request.user.player.seat.direction
         ):
             dem_cards_baby = single_hand_as_four_divs(
-                suitholdings,
-                seat_pk=this_seats_player.seat.pk
+                suitholdings, seat_pk=this_seats_player.seat.pk
             )
         else:
             dem_cards_baby = SafeString(suitholdings.textual_summary)

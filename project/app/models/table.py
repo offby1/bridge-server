@@ -7,17 +7,8 @@ import random
 from typing import TYPE_CHECKING
 
 import bridge.card
-from app.models import SEAT_CHOICES
-from app.models.board import Board
-from app.models.handaction import HandAction
-from app.models.player import Player
-from app.models.seat import Seat as modelSeat
-from app.models.utils import assert_type
-from bridge.card import Card as libCard
-from bridge.seat import Seat as libSeat
-from bridge.table import Hand as libHand
-from bridge.table import Player as libPlayer
-from bridge.table import Table as libTable
+import bridge.seat
+import bridge.table
 from django.contrib import admin
 from django.db import models, transaction
 from django.urls import reverse
@@ -25,9 +16,16 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
+from app.models import SEAT_CHOICES
+from app.models.board import Board
+from app.models.handaction import HandAction
+from app.models.player import Player
+from app.models.seat import Seat as modelSeat
+from app.models.utils import assert_type
+
 if TYPE_CHECKING:
     from typing import Iterable
-    import bridge.seat
+
     from bridge.auction import Auction as libAuction
 
 
@@ -55,7 +53,7 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        deck = libCard.deck()
+        deck = bridge.card.Card.deck()
 
         if shuffle_deck:
             random.shuffle(deck)
@@ -79,7 +77,7 @@ class TableManager(models.Manager):
 
         return t
 
-
+
 """ These dataclasses are here to make life easy for the table view, and to be testable.  They conveniently collect most
 of the information that the view will need to display player's hands -- in fact, they collect everything *that this
 model knows about*.  Stuff that we *don't* know about, but which the view does, are: who is looking at the browser, are
@@ -100,7 +98,7 @@ class SuitHolding:
 
     legal_now: bool
 
-    cards_of_one_suit: list[libCard]
+    cards_of_one_suit: list[bridge.card.Card]
 
 
 @dataclasses.dataclass
@@ -138,16 +136,16 @@ class AllFourSuitHoldings:
 
 @dataclasses.dataclass
 class DisplayThingy:
-    holdings_by_seat: dict[libSeat, AllFourSuitHoldings]
+    holdings_by_seat: dict[bridge.seat.Seat, AllFourSuitHoldings]
 
-    def items(self) -> Iterable[tuple[libSeat, AllFourSuitHoldings]]:
+    def items(self) -> Iterable[tuple[bridge.seat.Seat, AllFourSuitHoldings]]:
         return self.holdings_by_seat.items()
 
-    def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
-        assert_type(seat, libSeat)
+    def __getitem__(self, seat: bridge.seat.Seat) -> AllFourSuitHoldings:
+        assert_type(seat, bridge.seat.Seat)
         return self.holdings_by_seat[seat]
 
-
+
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
 class Table(models.Model):
@@ -156,11 +154,11 @@ class Table(models.Model):
 
     objects = TableManager()
 
-    def __getitem__(self, seat: libSeat) -> libPlayer:
+    def __getitem__(self, seat: bridge.seat.Seat) -> bridge.table.Player:
         modelPlayer = self.players_by_direction[seat.value]
         return modelPlayer.libraryThing
 
-    def modPlayer_by_seat(self, seat: libSeat) -> Player:
+    def modPlayer_by_seat(self, seat: bridge.seat.Seat) -> Player:
         return Player.objects.get_by_name(self[seat].name)
 
     @cached_property
@@ -173,9 +171,11 @@ class Table(models.Model):
             name = seat.player_name
             hand = self.current_action.board.cards_for_direction(seat.direction)
             players.append(
-                libPlayer(seat=seat.libraryThing, name=name, hand=libHand(cards=hand)),
+                bridge.table.Player(
+                    seat=seat.libraryThing, name=name, hand=bridge.table.Hand(cards=hand)
+                ),
             )
-        return libTable(players=players)
+        return bridge.table.Table(players=players)
 
     @property
     def actions(self):
@@ -224,8 +224,8 @@ class Table(models.Model):
         return modelSeat.objects.get(direction=self.current_action.dummy.seat.value, table=self)
 
     @cached_property
-    def dealt_cards_by_seat(self) -> dict[modelSeat, list[libCard]]:
-        rv: dict[modelSeat, list[libCard]] = {}
+    def dealt_cards_by_seat(self) -> dict[modelSeat, list[bridge.card.Card]]:
+        rv: dict[modelSeat, list[bridge.card.Card]] = {}
         board = self.current_board
         if board is None:
             return rv
@@ -237,13 +237,16 @@ class Table(models.Model):
 
     def display_skeleton(self) -> DisplayThingy:
         xscript = self.current_action.xscript
-        whose_turn_is_it = xscript.next_player().seat
+        whose_turn_is_it = None
+
+        if xscript.auction.found_contract:
+            whose_turn_is_it = xscript.next_player().seat
 
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.
         for mSeat, cards in self.current_cards_by_seat.items():
             seat = mSeat.libraryThing
-            assert_type(seat, libSeat)
+            assert_type(seat, bridge.seat.Seat)
 
             cards_by_suit = collections.defaultdict(list)
             for c in cards:
@@ -271,7 +274,7 @@ class Table(models.Model):
         return DisplayThingy(holdings_by_seat=holdings)
 
     @property
-    def current_cards_by_seat(self) -> dict[modelSeat, set[libCard]]:
+    def current_cards_by_seat(self) -> dict[modelSeat, set[bridge.card.Card]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
             assert_type(seat, modelSeat)
