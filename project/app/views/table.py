@@ -123,7 +123,7 @@ def bidding_box_buttons(
 
 
 def _single_hand_as_four_divs(
-    all_four: AllFourSuitHoldings, seat_pk: str, this_is_the_viewers_seat: bool
+    all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
 ) -> SafeString:
     def card_button(c: bridge.card.Card, suit_color: str) -> str:
         return f"""<button
@@ -147,7 +147,7 @@ def _single_hand_as_four_divs(
             "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
         )
         gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
-        active = holding.legal_now and this_is_the_viewers_seat
+        active = holding.legal_now and viewer_may_control_this_seat
 
         cols = [
             card_button(c, suit_color) if active else card_text(c, suit_color)
@@ -222,17 +222,24 @@ def _four_hands_context_for_table(
     for libSeat, suitholdings in skel.items():
         if table.dummy is not None:
             assert_type(table.dummy, app.models.seat.Seat)
-        is_dummy = table.dummy and libSeat == table.dummy.libraryThing
+        is_dummy = bool(table.dummy and libSeat == table.dummy.libraryThing)
         this_seats_player = table.modPlayer_by_seat(libSeat)
         if (
             settings.POKEY_BOT_BUTTONS
             or (is_dummy and table.current_action and table.current_action.current_trick)
             or libSeat == request.user.player.seat.direction
         ):
+            viewer_may_control_this_seat = False
+
+            if request.user.player == this_seats_player:
+                viewer_may_control_this_seat = True
+            if is_dummy and table.dummy.libraryThing == this_seats_player.seat.libraryThing:
+                viewer_may_control_this_seat = True
+
             dem_cards_baby = _single_hand_as_four_divs(
                 suitholdings,
                 seat_pk=this_seats_player.seat.pk,
-                this_is_the_viewers_seat=request.user.player == this_seats_player,
+                viewer_may_control_this_seat=viewer_may_control_this_seat,
             )
         else:
             dem_cards_baby = SafeString(suitholdings.textual_summary)
@@ -394,8 +401,10 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
-    h = seat.table.current_action  # TODO -- check if it's our turn to play?
-    if whos_asking != h.player_who_may_play:
+    h = seat.table.current_action
+    if h.player_who_may_play.libraryThing == h.dummy and whos_asking.libraryThing == h.declarer:
+        pass
+    elif whos_asking != h.player_who_may_play:
         return HttpResponseForbidden(
             f"Hey! {whos_asking} can't play now; only {h.player_who_may_play} can"
         )
