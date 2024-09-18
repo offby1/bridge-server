@@ -28,8 +28,8 @@ repos:
   hooks:
     - id: ensure-no-local-dependencies
       name: ensure-no-local-dependencies
-      language: system
+      language: script
       #TODO -- only do this if PRE_COMMIT_REMOTE_BRANCH=refs/heads/main
-      entry: grep --quiet "^bridge *=.*https://gitlab.com" pyproject.toml
+      entry: barf-if-pyproject-points-to-relative-path.py
       stages:
         - pre-push
