@@ -106,8 +106,9 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     assert "href='/player/" in link
 
 
-def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup):
+def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     t = Table.objects.first()
+    assert t is not None
     north = t.modPlayer_by_seat(libSeat.NORTH)
     norths_cards = north.libraryThing.hand.cards
 

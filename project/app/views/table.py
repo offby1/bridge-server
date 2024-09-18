@@ -24,7 +24,7 @@ from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
-from app.models import Player, PlayerException, Seat, Table, TableException
+import app.models
 from app.models.table import AllFourSuitHoldings, SuitHolding
 from app.models.utils import assert_type
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserMitPlaya(User):
-    player: Player | None
+    player: app.models.Player | None
 
 
 # See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
@@ -43,13 +43,13 @@ class AuthedHttpRequest(HttpRequest):
 
 
 def table_list_view(request):
-    table_list = Table.objects.all()
+    table_list = app.models.Table.objects.all()
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     context = {
         "page_obj": page_obj,
-        "total_count": Table.objects.count(),
+        "total_count": app.models.Table.objects.count(),
     }
 
     return TemplateResponse(request, "table_list.html", context=context)
@@ -120,48 +120,40 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
-def cards_as_four_divs(all_four: AllFourSuitHoldings, seat: Seat) -> SafeString:
+def single_hand_as_four_divs(all_four: AllFourSuitHoldings, seat_pk: str) -> SafeString:
 
-    play_post_endpoint = reverse("app:play-post", args=[seat.pk])
-
-    def card_button(c: bridge.card.Card, color: str) -> str:
-        disabled = " disabled" if c not in legal_cards else ""
-
-        color_styles = (
-            """style="--bs-btn-disabled-color: #ffffff85; --bs-btn-disabled-bg: #0d6efd57" """
-            if disabled
-            else f"""style="--bs-btn-color: {color}; --bs-btn-bg: #ccc" """
-        )
-
+    def card_button(c: bridge.card.Card, suit_color: str) -> str:
         return f"""<button
         type="button"
         class="btn btn-primary"
         name="play" value="{c.serialize()}"
-        {color_styles}
-        hx-post="{play_post_endpoint}"
+        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
+        hx-post="{reverse("app:play-post", args=[seat_pk])}"
         hx-swap="none"
-        {disabled}>{c}</button>"""
+        >{c}</button>"""
 
-    def card_text(c: bridge.card.Card, color: str) -> str:
+    # Meant to look like an active button, but without any hover action.
+    def card_text(c: bridge.card.Card, suit_color: str) -> str:
         return f"""<span
         class="btn btn-primary inactive-button"
-        style="--bs-btn-color: {color}; --bs-btn-bg: #ccc"
+        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
         >{c}</span>"""
 
     def single_row_divs(suit, holding: SuitHolding):
-        color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        suit_color = "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
+        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
         cols = [
-            card_button(c, color) if holding.legal_now else card_text(c, color)
+            card_button(c, suit_color) if holding.legal_now else card_text(c, suit_color)
             for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
-        return f"""<div class="btn-group">{"".join(cols)}</div><br/>"""
+        gauzy_style = f'style="opacity: 25%;"' if gauzy else ''
+        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div><br/>"""
 
     row_divs = []
     for suit, holding in sorted(all_four.items(), reverse=True):
         row_divs.append(single_row_divs(suit, holding) if holding else "<div>-</div>")
 
-    style = 'style="opacity: 25%"' if not my_turn_to_play else ""
-    return SafeString("<br>" f"<div {style}>" + "\n".join(row_divs) + "</div>")
+    return SafeString("<br>" f"<div>" + "\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
@@ -210,25 +202,31 @@ def _get_pokey_buttons(skel):
     return rv
 
 
-def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> dict[str, Any]:
+def _four_hands_context_for_table(request: AuthedHttpRequest, table: app.models.Table) -> dict[str, Any]:
+    assert request.user.player is not None
     skel = table.display_skeleton()
 
     # TODO -- figure out if the auction and play are over, in which case show 'em all
 
     cards_by_direction_display = {}
-    for modelSeat, suitholdings in skel.items():
-        is_dummy = modelSeat == table.dummy
-
+    for libSeat, suitholdings in skel.items():
+        is_dummy = libSeat == table.dummy
+        this_seats_player = table.modPlayer_by_seat(libSeat)
         if (
             settings.POKEY_BOT_BUTTONS
             or (is_dummy and table.current_action and table.current_action.current_trick)
-            or modelSeat.player == request.user.player
+            or libSeat == request.user.player.seat.direction
         ):
-            dem_cards_baby = cards_as_four_divs(suitholdings, seat=modelSeat)
+            dem_cards_baby = single_hand_as_four_divs(
+                suitholdings,
+                seat_pk=this_seats_player.seat.pk
+            )
+        else:
+            dem_cards_baby = SafeString(suitholdings.textual_summary)
 
-        cards_by_direction_display[modelSeat.named_direction] = {
+        cards_by_direction_display[libSeat.name] = {
             "cards": dem_cards_baby,
-            "player": modelSeat.player,
+            "player": this_seats_player,
         }
 
     return {
@@ -236,7 +234,7 @@ def _four_hands_context_for_table(request: AuthedHttpRequest, table: Table) -> d
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
         "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
-        "pokey_buttons": _get_pokey_buttons(),
+        "pokey_buttons": _get_pokey_buttons(skel=skel),
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
 
@@ -258,7 +256,7 @@ def poke_de_bot(request):
 
 def _three_by_three_trick_display_context_for_table(
     request: HttpRequest,
-    table: Table,
+    table: app.models.Table,
 ) -> dict[str, Any]:
     h = table.current_action
 
@@ -312,14 +310,14 @@ def _bidding_box_context_for_table(request, table):
 
 
 def handaction_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
-    table = get_object_or_404(Table, pk=table_pk)
+    table = get_object_or_404(app.models.Table, pk=table_pk)
 
     return HttpResponse(table.current_action.status)
 
 
 @logged_in_as_player_required()
 def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateResponse:
-    table = get_object_or_404(Table, pk=table_pk)
+    table = get_object_or_404(app.models.Table, pk=table_pk)
 
     context = _bidding_box_context_for_table(request, table)
 
@@ -332,7 +330,7 @@ def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateRes
 
 @logged_in_as_player_required()
 def auction_partial_view(request, table_pk):
-    table = get_object_or_404(Table, pk=table_pk)
+    table = get_object_or_404(app.models.Table, pk=table_pk)
     context = _auction_context_for_table(table)
 
     return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
@@ -340,7 +338,7 @@ def auction_partial_view(request, table_pk):
 
 @logged_in_as_player_required()
 def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
-    table = get_object_or_404(Table, pk=table_pk)
+    table = get_object_or_404(app.models.Table, pk=table_pk)
     context = _four_hands_context_for_table(request, table)
 
     return TemplateResponse(
@@ -351,16 +349,16 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
-    assert_type(request.user.player, Player)
+    assert_type(request.user.player, app.models.Player)
     assert request.user is not None
     assert request.user.player is not None
 
     try:
         who_clicked = request.user.player.libraryThing  # type: ignore
-    except PlayerException as e:
+    except app.models.PlayerException as e:
         return HttpResponseForbidden(str(e))
 
-    table = get_object_or_404(Table, pk=table_pk)
+    table = get_object_or_404(app.models.Table, pk=table_pk)
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
@@ -379,7 +377,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
-    seat = get_object_or_404(Seat, pk=seat_pk)
+    seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
     h = seat.table.current_action  # TODO -- check if it's our turn to play?
     if whos_asking != h.player_who_may_play:
@@ -395,7 +393,7 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
 
 @logged_in_as_player_required()
 def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    table = get_object_or_404(Table, pk=pk)
+    table = get_object_or_404(app.models.Table, pk=pk)
 
     context = (
         _four_hands_context_for_table(request, table)
@@ -409,16 +407,16 @@ def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_table_for_two_partnerships(request, pk1, pk2):
-    p1 = get_object_or_404(Player, pk=pk1)
+    p1 = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
         return HttpResponseForbidden(f"Hey man {p1=} doesn't have a partner")
 
-    p2 = get_object_or_404(Player, pk=pk2)
+    p2 = get_object_or_404(app.models.Player, pk=pk2)
     if p2.partner is None:
         return HttpResponseForbidden(f"Hey man {p2=} doesn't have a partner")
 
-    p3 = get_object_or_404(Player, pk=p1.partner.pk)
-    p4 = get_object_or_404(Player, pk=p2.partner.pk)
+    p3 = get_object_or_404(app.models.Player, pk=p1.partner.pk)
+    p4 = get_object_or_404(app.models.Player, pk=p2.partner.pk)
 
     all_four = {p1, p2, p3, p4}
     if len(all_four) != 4:
@@ -428,8 +426,8 @@ def new_table_for_two_partnerships(request, pk1, pk2):
         return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
 
     try:
-        t = Table.objects.create_with_two_partnerships(p1, p2)
-    except TableException as e:
+        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
+    except app.models.TableException as e:
         return HttpResponseForbidden(str(e))
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))

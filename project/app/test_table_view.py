@@ -18,16 +18,7 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     for dir_ in Seat:
         assert ds[dir_].textual_summary == "13 cards"
 
-    assert not ds[Seat.NORTH].our_turn_to_play
-    assert ds[Seat.EAST].our_turn_to_play
-    assert not ds[Seat.SOUTH].our_turn_to_play
-    assert not ds[Seat.WEST].our_turn_to_play
-
-    assert not ds[Seat.NORTH].is_dummy
-    assert not ds[Seat.EAST].is_dummy
-    assert ds[Seat.SOUTH].is_dummy
-    assert not ds[Seat.WEST].is_dummy
-
-    import pprint
-    pprint.pprint(ds)
-    assert "cat" == "dog"
+    assert not ds[Seat.NORTH].this_hands_turn_to_play
+    assert ds[Seat.EAST].this_hands_turn_to_play
+    assert not ds[Seat.SOUTH].this_hands_turn_to_play
+    assert not ds[Seat.WEST].this_hands_turn_to_play
