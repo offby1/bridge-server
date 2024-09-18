@@ -233,8 +233,10 @@ def _four_hands_context_for_table(
 
             if request.user.player == this_seats_player:
                 viewer_may_control_this_seat = True
-            if is_dummy and table.dummy.libraryThing == this_seats_player.seat.libraryThing:
-                viewer_may_control_this_seat = True
+            if is_dummy:
+                assert table.dummy is not None
+                if table.dummy.libraryThing == this_seats_player.seat.libraryThing:
+                    viewer_may_control_this_seat = True
 
             dem_cards_baby = _single_hand_as_four_divs(
                 suitholdings,
@@ -402,6 +404,9 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
     h = seat.table.current_action
+    if h.player_who_may_play is None:
+        return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
+    assert whos_asking is not None
     if h.player_who_may_play.libraryThing == h.dummy and whos_asking.libraryThing == h.declarer:
         pass
     elif whos_asking != h.player_who_may_play:
