@@ -157,8 +157,8 @@ tabulate = "*"
 [package.source]
 type = "git"
 url = "https://gitlab.com/offby1/bridge.git"
-reference = "ce95e8c9e8c4182c6f12ac728460b9b66ebde4ed"
-resolved_reference = "ce95e8c9e8c4182c6f12ac728460b9b66ebde4ed"
+reference = "0f8a4dcf561b90373145b7edfe4627014591a20f"
+resolved_reference = "0f8a4dcf561b90373145b7edfe4627014591a20f"
 
 [[package]]
 name = "certifi"
@@ -2245,4 +2245,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "44fc044bf798a42b1817e9b0586f56ac19dda5389538f41fd0d7213b02ff5176"
+content-hash = "1d9bd204a3a9d66e9bfbbf3e49bbabc40ea1423d54a7077d5389fb75685e5f54"
