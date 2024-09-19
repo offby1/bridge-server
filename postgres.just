@@ -42,7 +42,7 @@ orb:
 
 [script('bash')]
 docker-nuke: orb
-    set -euxo pipefail
+    set -euo pipefail
 
     echo "Killing containers!"
     docker ps -aq | xargs --no-run-if-empty docker rm -f
