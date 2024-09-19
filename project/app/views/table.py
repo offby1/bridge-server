@@ -227,7 +227,7 @@ def _four_hands_context_for_table(
         if (
             settings.POKEY_BOT_BUTTONS
             or (is_dummy and table.current_action and table.current_action.current_trick)
-            or libSeat == request.user.player.seat.direction
+            or libSeat.value == request.user.player.seat.direction
         ):
             viewer_may_control_this_seat = False
 
