@@ -136,11 +136,11 @@ def _single_hand_as_four_divs(
         >{c}</button>"""
 
     # Meant to look like an active button, but without any hover action.
-    def card_text(c: bridge.card.Card, suit_color: str) -> str:
+    def card_text(text: str, suit_color: str) -> str:
         return f"""<span
         class="btn btn-primary inactive-button"
         style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
-        >{c}</span>"""
+        >{text}</span>"""
 
     def single_row_divs(suit, holding: SuitHolding):
         suit_color = (
@@ -150,17 +150,24 @@ def _single_hand_as_four_divs(
         active = holding.legal_now and viewer_may_control_this_seat
 
         cols = [
-            card_button(c, suit_color) if active else card_text(c, suit_color)
+            card_button(c, suit_color) if active else card_text(str(c), suit_color)
             for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
+        if not cols:
+            # placeholder
+            return """<span
+            class="btn btn-primary inactive-button"
+            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
+            >&nbsp;</span>"""
+
         gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
-        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div><br/>"""
+        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
 
     row_divs = []
     for suit, holding in sorted(all_four.items(), reverse=True):
-        row_divs.append(single_row_divs(suit, holding) if holding else "<div>-</div>")
+        row_divs.append(single_row_divs(suit, holding))
 
-    return SafeString("<br>" "<div>" + "\n".join(row_divs) + "</div>")
+    return SafeString("<div>" + "<br/>\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
