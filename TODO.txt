@@ -2,13 +2,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* Maybe somehow visually distinguish whose turn it is?  It *is* possible to tell, but you gotta squint.
-  What do we want to know?
-  * Which cards can I, the human, play *right now*?
-  * What other cards are in my hand, and the dummy?
-  * If we're in a debug mode, what other cards are in the other hands?
-  * Whose turn is it to play?
-
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
@@ -83,6 +76,13 @@ STILL TODO:
 
 
 DONE:
+
+* Maybe somehow visually distinguish whose turn it is?  It *is* possible to tell, but you gotta squint.
+  What do we want to know?
+  * Which cards can I, the human, play *right now*?
+  * What other cards are in my hand, and the dummy?
+  * If we're in a debug mode, what other cards are in the other hands?
+  * Whose turn is it to play?
 
 * Display the dummy's cards with 100% opacity when we're in pokey-button mode
 

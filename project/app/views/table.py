@@ -167,7 +167,10 @@ def _single_hand_as_four_divs(
     for suit, holding in sorted(all_four.items(), reverse=True):
         row_divs.append(single_row_divs(suit, holding))
 
-    return SafeString("<div>" + "<br/>\n".join(row_divs) + "</div>")
+    highlight_style = (
+        'style="background-color: lightgreen;"' if all_four.this_hands_turn_to_play else ""
+    )
+    return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
 
 
 def _auction_channel_for_table(table):
