@@ -284,7 +284,21 @@ class HandAction(models.Model):
 admin.site.register(HandAction)
 
 
+# This simple mechanism might be a better way to send events -- I can rig this up for every model I care about (calls and plays in particular), and this might be cleaner than doing it however I'm currently doing it.
+class CallManager(models.Manager):
+    def create(self, *args, **kwargs):
+        serialized, hand = kwargs["serialized"], kwargs["hand"]
+        table = hand.table
+        board = hand.board
+        print(
+            f"Hey man, someone created a call: {serialized=} {hand=} at {table=} ({board=}) ... imagine I sent an event"
+        )
+        return super().create(*args, **kwargs)
+
+
 class Call(models.Model):
+    objects = CallManager()
+
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
