@@ -2,6 +2,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Pointless but perhaps fun: write a management command to backfill the (redundant) "won_its_trick" column.
+
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?

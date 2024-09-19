@@ -77,7 +77,8 @@ class HandAction(models.Model):
                 assert len(winning_play) == 1
                 winning_card_str = winning_play[0].card.serialize()
                 winning_play_pk = play_pks_by_card_played[winning_card_str]
-                # TODO -- I think this gets called 3 or 4 times, all but the first call are redundant.
+                # TODO: I am not setting any of these to False.  I could probably set all the plays to the correct
+                # value, with a single query, by using a Django ORM annotation.
                 self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
         return rv
@@ -285,6 +286,12 @@ admin.site.register(HandAction)
 
 
 # This simple mechanism might be a better way to send events -- I can rig this up for every model I care about (calls and plays in particular), and this might be cleaner than doing it however I'm currently doing it.
+
+
+# Note that if you create one of these like this
+# c = Call(hand=HandAction.objects.first(), serialized="1N")
+# c.save()
+# then this magic will *not* trigger.  I'm not in the habit of creating objects that way, but it's a potential gotcha.
 class CallManager(models.Manager):
     def create(self, *args, **kwargs):
         serialized, hand = kwargs["serialized"], kwargs["hand"]
