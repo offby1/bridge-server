@@ -114,12 +114,12 @@ def bidding_box_buttons(
 def _single_hand_as_four_divs(
     all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
 ) -> SafeString:
-    def card_button(c: bridge.card.Card, suit_color: str) -> str:
+    def card_button(c: bridge.card.Card) -> str:
         return f"""<button
         type="button"
         class="btn btn-primary"
         name="play" value="{c.serialize()}"
-        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
+        style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
         hx-post="{reverse("app:play-post", args=[seat_pk])}"
         hx-swap="none"
         >{c}</button>"""
@@ -132,14 +132,11 @@ def _single_hand_as_four_divs(
         >{text}</span>"""
 
     def single_row_divs(suit, holding: SuitHolding):
-        suit_color = (
-            "red" if suit in {bridge.card.Suit.HEARTS, bridge.card.Suit.DIAMONDS} else "black"
-        )
         gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
         active = holding.legal_now and viewer_may_control_this_seat
 
         cols = [
-            card_button(c, suit_color) if active else card_text(str(c), suit_color)
+            card_button(c) if active else card_text(str(c), c.color)
             for c in sorted(holding.cards_of_one_suit, reverse=True)
         ]
         if not cols:
