@@ -11,13 +11,13 @@ WORKDIR /bridge
 RUN poetry install
 
 FROM python AS app
-COPY --from=poetry-install /bridge/ /bridge/
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
   libpq5 \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
 
+COPY --from=poetry-install /bridge/ /bridge/
 COPY /project /bridge/project/
 WORKDIR /bridge/project
 ENV PGHOST=postgres
