@@ -39,9 +39,16 @@ class Command(BaseCommand):
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 0.5
+        sleep_until = previous_action_time + 1
+        self.wf(f"{table}: prev: {ts(previous_action_time)} sleep until: {ts(sleep_until)} ...")
+
         if (duration := sleep_until - time.time()) > 0:
+            # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
+            # imply we're falling behind.
+            self.wf(f"{duration=}\n")
             time.sleep(duration)
+        else:
+            self.wf("\n")
         yield
         self.last_action_timestamps_by_table_id[table.pk] = time.time()
 

@@ -2,12 +2,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
-
-  Also, if all four hands are being played by the bot, sometimes it just appears to freeze; reloading the page resumes it. I saw nothing in the browser's console.
-
-  Naturally it didn't repro the one time I actually tried to repro it.
-
 * Pointless but perhaps fun: write a management command to backfill the (redundant) "won_its_trick" column.
 
 * "Claim" and "Concede" buttons, at least if you're declarer
@@ -80,6 +74,14 @@ STILL TODO:
 
 
 DONE:
+
+* I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
+
+  Also, if all four hands are being played by the bot, sometimes it just appears to freeze; reloading the page resumes it. I saw nothing in the browser's console.
+
+  Naturally it didn't repro the one time I actually tried to repro it.
+
+  - I don't *deeply* understand this problem, but I consider it fixed, now that the browser reloads an order of magnitude less frequently :-)
 
 * Maybe somehow visually distinguish whose turn it is?  It *is* possible to tell, but you gotta squint.
   What do we want to know?
