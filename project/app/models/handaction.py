@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 import itertools
-import logging
 from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
@@ -20,8 +19,6 @@ from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
-
-logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -84,18 +81,6 @@ class HandAction(models.Model):
                 # value, with a single query, by using a Django ORM annotation.
                 self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
-                if rv.final_score() is not None:  # the play is over
-                    kwargs = {
-                        "channel": str(self.table.pk),
-                        "event_type": "message",
-                        "data": {
-                            "table": self.table.pk,
-                            "final_score": str(rv.final_score()),
-                        },
-                    }
-                    logger.warning(f"Sending event {kwargs=}")
-                    send_event(**kwargs)
-
         return rv
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
@@ -150,13 +135,24 @@ class HandAction(models.Model):
             raise PlayError(msg)
 
         # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
-        # ANd if it's the last play in the *last* trick, it sends a message.  Side effects, ugh ...
         legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
             msg = f"{card} is not a legal play"
             raise PlayError(msg)
 
         rv = self.play_set.create(serialized=card.serialize())
+
+        if self.xscript.final_score():
+            kwargs = {
+                "channel": str(self.table.pk),
+                "event_type": "message",
+                "data": {
+                    "table": self.table.pk,
+                    "final_score": str(self.xscript.final_score()),
+                },
+            }
+            print(f"Sending event {kwargs=}")
+            send_event(**kwargs)
 
         from app.models import Player
 
