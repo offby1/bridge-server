@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import itertools
+import logging
 from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
@@ -19,6 +20,8 @@ from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore
 
 from .utils import assert_type
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -82,14 +85,16 @@ class HandAction(models.Model):
                 self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
                 if rv.final_score() is not None:  # the play is over
-                    send_event(
-                        channel=str(self.table.pk),
-                        event_type="message",
-                        data={
+                    kwargs = {
+                        "channel": str(self.table.pk),
+                        "event_type": "message",
+                        "data": {
                             "table": self.table.pk,
                             "final_score": str(rv.final_score()),
                         },
-                    )
+                    }
+                    logger.warning(f"Sending event {kwargs=}")
+                    send_event(**kwargs)
 
         return rv
 
