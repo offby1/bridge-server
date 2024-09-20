@@ -60,6 +60,7 @@ htmx.on("htmx:afterSettle", function(evt) {
     if (handStatusDataset.handStatus) {
         console.log("Way-ul, our DOM has settled, and the ol' clock on the wall says " +  handStatusDataset.handStatus + ", so maybe I'll forcibly reload this page");
         play_event_source.close();
+        window.location.reload();
     }
 })
 
