@@ -81,6 +81,16 @@ class HandAction(models.Model):
                 # value, with a single query, by using a Django ORM annotation.
                 self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
 
+                if rv.final_score() is not None:  # the play is over
+                    send_event(
+                        channel=str(self.table.pk),
+                        event_type="message",
+                        data={
+                            "table": self.table.pk,
+                            "final_score": str(rv.final_score()),
+                        },
+                    )
+
         return rv
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
@@ -134,12 +144,13 @@ class HandAction(models.Model):
             msg = f"It is not {player.name}'s turn to play"
             raise PlayException(msg)
 
+        # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
+        # ANd if it's the last play in the *last* trick, it sends a message.  Side effects, ugh ...
         legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
             msg = f"{card} is not a legal play"
             raise PlayException(msg)
 
-        # If this is the last play in a trick, go back and update the play that won it.
         rv = self.play_set.create(serialized=card.serialize())
 
         from app.models import Player
