@@ -40,7 +40,7 @@ class Command(BaseCommand):
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
         sleep_until = previous_action_time + 0.5
-        if (duration := sleep_until - self.last_action_timestamps_by_table_id[table.pk]) > 0:
+        if (duration := sleep_until - time.time()) > 0:
             time.sleep(duration)
         yield
         self.last_action_timestamps_by_table_id[table.pk] = time.time()
