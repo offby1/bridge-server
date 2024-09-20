@@ -9,7 +9,6 @@ import bridge.card
 import bridge.contract
 import bridge.seat
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
@@ -26,22 +25,12 @@ from django_eventstream import send_event  # type: ignore
 
 import app.models
 from app.models.utils import assert_type
-
-from .misc import logged_in_as_player_required
+from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
     from app.models.table import AllFourSuitHoldings, SuitHolding
 
 logger = logging.getLogger(__name__)
-
-
-class UserMitPlaya(User):
-    player: app.models.Player | None
-
-
-# See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
-class AuthedHttpRequest(HttpRequest):
-    user: UserMitPlaya  # type: ignore [assignment]
 
 
 def table_list_view(request):
@@ -179,7 +168,6 @@ def _auction_channel_for_table(table):
 
 def _auction_context_for_table(table):
     return {
-        "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "show_auction_history": table.current_auction.status is bridge.auction.Auction.Incomplete,
         "table": table,

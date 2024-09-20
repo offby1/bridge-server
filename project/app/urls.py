@@ -7,8 +7,8 @@ app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
-    path("call/<table_pk>/", table.call_post_view, name="call-post"),
-    path("play/<seat_pk>/", table.play_post_view, name="play-post"),
+    path("call/<table_pk>/", table.details.call_post_view, name="call-post"),
+    path("play/<seat_pk>/", table.details.play_post_view, name="play-post"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("player/<pk>/", player.player_detail_view, name="player"),
     path("player/<pk>/bot-checkbox-toggle", player.bot_checkbox_view, name="bot-checkbox-toggle"),
@@ -21,28 +21,29 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("table/", table.table_list_view, name="table"),
-    path("table/<pk>", table.table_detail_view, name="table-detail"),
-    path("table/<table_pk>/auction", table.auction_partial_view, name="auction-partial"),
+    path("table/", table.details.table_list_view, name="table"),
+    path("table/<pk>", table.details.table_detail_view, name="table-detail"),
+    path("table/<pk>/archive", table.archive_view, name="table-archive"),
+    path("table/<table_pk>/auction", table.details.auction_partial_view, name="auction-partial"),
     path(
         "table/<table_pk>/bidding-box",
-        table.bidding_box_partial_view,
+        table.details.bidding_box_partial_view,
         name="bidding-box-partial",
     ),
     path(
         "table/<table_pk>/four-hands",
-        table.four_hands_partial_view,
+        table.details.four_hands_partial_view,
         name="four-hands-partial",
     ),
     path(
         "table/<table_pk>/handaction-summary-status",
-        table.handaction_summary_view,
+        table.details.handaction_summary_view,
         name="handaction-summary-view",
     ),
-    path("table/new/<pk1>/<pk2>", table.new_table_for_two_partnerships, name="new-table"),
+    path("table/new/<pk1>/<pk2>", table.details.new_table_for_two_partnerships, name="new-table"),
 ]
 
 if settings.POKEY_BOT_BUTTONS:
     urlpatterns.append(
-        path("yo/bot/", table.poke_de_bot, name="poke-de-bot"),
+        path("yo/bot/", table.details.poke_de_bot, name="poke-de-bot"),
     )

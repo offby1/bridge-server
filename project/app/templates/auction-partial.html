@@ -42,7 +42,7 @@
 {% endpartialdef bidding-box-partial %}
 {% partialdef auction-scripts %}
 <script>
-var auctionEventSource = new EventSource('{{ auction_event_source_endpoint }}');
+var auctionEventSource = new ReconnectingEventSource('/events/table/{{ table.pk }}');
 
 auctionEventSource.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;

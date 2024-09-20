@@ -11,7 +11,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionException, Board, Play, Player, Table
+from .models import AuctionError, Board, Play, Player, Table
 from .testutils import set_auction_to
 from .views.table import bidding_box_partial_view
 
@@ -37,7 +37,7 @@ def test_rejects_illegal_calls(usual_setup):
     h.add_call_from_player(player=caller, call=one_notrump)
     caller = next_caller(caller)
 
-    with pytest.raises(AuctionException):
+    with pytest.raises(AuctionError):
         h.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
 
     h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))

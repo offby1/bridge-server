@@ -26,11 +26,11 @@ if TYPE_CHECKING:
     from . import Board, Player, Seat, Table  # noqa
 
 
-class AuctionException(Exception):
+class AuctionError(Exception):
     pass
 
 
-class PlayException(Exception):
+class PlayError(Exception):
     pass
 
 
@@ -91,7 +91,7 @@ class HandAction(models.Model):
         try:
             auction.raise_if_illegal_call(player=player, call=call)
         except Exception as e:
-            raise AuctionException(str(e)) from e
+            raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
 
@@ -128,19 +128,31 @@ class HandAction(models.Model):
         legit_player = self.player_who_may_play
         if legit_player is None:
             msg = "For some crazy reason, nobody is allowed to play a card! Maybe the auction is incomplete, or the hand is over"
-            raise PlayException(msg)
+            raise PlayError(msg)
 
         if player.name != legit_player.name:
             msg = f"It is not {player.name}'s turn to play"
-            raise PlayException(msg)
+            raise PlayError(msg)
 
+        # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
         legal_cards = self.xscript.legal_cards()
         if card not in legal_cards:
             msg = f"{card} is not a legal play"
-            raise PlayException(msg)
+            raise PlayError(msg)
 
-        # If this is the last play in a trick, go back and update the play that won it.
         rv = self.play_set.create(serialized=card.serialize())
+
+        if self.xscript.final_score():
+            kwargs = {
+                "channel": str(self.table.pk),
+                "event_type": "message",
+                "data": {
+                    "table": self.table.pk,
+                    "final_score": str(self.xscript.final_score()),
+                },
+            }
+            print(f"Sending event {kwargs=}")
+            send_event(**kwargs)
 
         from app.models import Player
 

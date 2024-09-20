@@ -375,7 +375,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
     )
 
     request.user = j_northam.user
-    response = table.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
+    response = table.details.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
     assert response.status_code == 403
     assert b"four distinct" in response.content
 
@@ -395,7 +395,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
         data={"pk1": j_northam.pk, "pk2": players_by_name["tina"].pk},
     )
     request.user = j_northam.user
-    response = table.new_table_for_two_partnerships(
+    response = table.details.new_table_for_two_partnerships(
         request, j_northam.pk, players_by_name["tina"].pk
     )
 
@@ -430,7 +430,7 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
         request = rf.post("/woteva/")
 
         request.user = player.user
-        return table.new_table_for_two_partnerships(request, Bob.pk, Carol.pk)
+        return table.details.new_table_for_two_partnerships(request, Bob.pk, Carol.pk)
 
     response = seat_em_dano(RandomDude)
     assert response.status_code == 403
@@ -465,7 +465,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for _index, s, modelCard, _is_winner in h.current_trick:
         expected_cards_by_direction[s.value] = modelCard.serialize()
 
-    ya = table._three_by_three_trick_display_context_for_table(request, t)
+    ya = table.details._three_by_three_trick_display_context_for_table(request, t)
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows
