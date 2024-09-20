@@ -51,6 +51,8 @@ play_event_source.addEventListener('message', function (e) {
             console.log("Play event listener saw " + d.card + ", so it fetched {{ four_hands_partial_endpoint }} and {{ handaction_summary_endpoint }}");
         });
 
+    } else if (("table" in d) && "final_score" in d) {
+        console.log("Play event listener saw something to suggest the hand is over?" + d.final_score );
     }
 
 

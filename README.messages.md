@@ -2,6 +2,7 @@
 
 | content                              | sender                                          | recipient channel    | notes                                            |
 |--------------------------------------|-------------------------------------------------|----------------------|--------------------------------------------------|
+| json: table, final_score             | handrecord.xscript                              | table.pk             | when the last card has been played               |
 | json: table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables | at every call                                    |
 | json: table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables | only once per table                              |
 | json: table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables |                                                  |
