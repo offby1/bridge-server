@@ -12,7 +12,7 @@ import typing
 
 import requests
 import retrying  # type: ignore
-from app.models import AuctionException, HandAction, Player, Table
+from app.models import AuctionError, HandAction, Player, Table
 from bridge.contract import Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
@@ -112,7 +112,7 @@ class Command(BaseCommand):
 
         try:
             action.add_call_from_player(player=player_to_impersonate, call=call)
-        except AuctionException as e:
+        except AuctionError as e:
             # The one time I saw this was when I clicked on a blue bidding box as soon as it appeared.  Then the
             # add_call_from_player call above discovered that the player_to_impersonate was out of turn.
             self.stderr.write(f"Uh-oh -- {e}")
