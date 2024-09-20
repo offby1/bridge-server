@@ -45,15 +45,10 @@ play_event_source.addEventListener('message', function (e) {
             htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
         }
     } else if ("card" in d) {
-        console.log("Play event listener saw  a card in " + d);
-        var tableDataset = document.querySelector("#four-hands").dataset;
-        console.log(tableDataset);
-
-        console.log("Play event listener saw " + d);
-
         // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
         htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
             htmx.ajax('GET', '{{ handaction_summary_endpoint }}', {target:'#handaction-summary', swap:'innerHTML'})
+            console.log("Play event listener saw " + d.card + ", so it fetched {{ four_hands_partial_endpoint }} and {{ handaction_summary_endpoint }}");
         });
 
     }
