@@ -20,6 +20,7 @@
                     </div>
                 {% endfor %}
             </div>
+            {% if not forloop.last %}<hr />{% endif %}
         {% endfor %}
     </div>
 {% endblock content %}
