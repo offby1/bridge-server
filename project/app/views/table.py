@@ -179,7 +179,6 @@ def _auction_channel_for_table(table):
 
 def _auction_context_for_table(table):
     return {
-        "auction_event_source_endpoint": f"/events/table/{_auction_channel_for_table(table)}",
         "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
         "show_auction_history": table.current_auction.status is bridge.auction.Auction.Incomplete,
         "table": table,

@@ -30,42 +30,34 @@
 {% endpartialdef four-hands-3x3-partial %}
 {% partialdef four-hands-3x3-scripts %}
 <script>
-var four_hands_event_source = new ReconnectingEventSource('{{ play_event_source_endpoint }}');
 
-four_hands_event_source.addEventListener('message', function (e) {
+var play_event_source = new ReconnectingEventSource('/events/table/{{ table.pk }}');
+
+play_event_source.addEventListener('message', function (e) {
     var d = JSON.parse(e.data) ;
-    if ("card" in d) {
+    if ("contract" in d) {
+        console.log("Opening lead event listener saw " + e.data);
+
+        var openingLeader = d["contract"]["opening_leader"];
+
+        if (openingLeader == {{ user.player.seat.direction }}) {
+            // Ideally we'd just reload the one hand that changed, not all four; but oh well
+            htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
+        }
+    } else if ("card" in d) {
         console.log("Play event listener saw  a card in " + d);
         var tableDataset = document.querySelector("#four-hands").dataset;
         console.log(tableDataset);
-        if (d.table == tableDataset.table) {
-            console.log("Play event listener saw " + d);
 
-            // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
-            htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
-                htmx.ajax('GET', '{{ handaction_summary_endpoint }}', {target:'#handaction-summary', swap:'innerHTML'})
-            });
-        }
-    }
+        console.log("Play event listener saw " + d);
 
-}, false);
-
-var opening_lead_event_source = new ReconnectingEventSource('/events/table/{{ table.pk }}');
-
-opening_lead_event_source.addEventListener('message', function (e) {
-    var d = JSON.parse(e.data) ;
-    if ("contract" in d) {
-      console.log("Opening lead event listener saw " + e.data);
-
-      var openingLeader = d["contract"]["opening_leader"];
-
-      if (openingLeader == {{ user.player.seat.direction }}) {
-        // Ideally we'd just reload the one hand that changed, not all four; but oh well
+        // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
         htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
-          opening_lead_event_source.close();
+            htmx.ajax('GET', '{{ handaction_summary_endpoint }}', {target:'#handaction-summary', swap:'innerHTML'})
         });
-      }
+
     }
+
 
 }, false);
 
