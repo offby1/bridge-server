@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+    <div>
+        <h1>Wassup at {{ table }}</h1>
+        <h2>{{ table.current_action.board }}</h2>
+    </div>
+    <div style="display: flex;">
+        <div style="flex-grow: 1">{% include 'auction-partial.html#auction-partial' %}</div>
+    </div>
+    <div>
+        <div>
+            <h2>{{ table.current_auction_status }}</h2>
+        </div>
+        {% for t in table.current_action.xscript.tricks %}
+            <div class="row">
+                {% for p in t.plays %}
+                    <div class="col">
+                        {{ p.player.name }} (sitting {{ p.player.seat }}) played {{ p.card }}
+                        {% if p.wins_the_trick %}✨{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}
