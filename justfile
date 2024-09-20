@@ -30,6 +30,7 @@ poetry-install: die-if-poetry-active
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
 
+alias version := version-file
 [private]
 version-file:
     git describe --always --dirty --tags > project/VERSION
