@@ -89,7 +89,7 @@ class Command(BaseCommand):
                             username=username,
                             password=everybodys_password,
                         ),
-                        is_human=username == "bob" or Player.objects.count() < 4,
+                        is_human=username == "bob",
                     )
 
                 try:
