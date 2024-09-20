@@ -207,6 +207,15 @@ class Table(models.Model):
         return rv
 
     @property
+    def hand_is_complete(self) -> bool:
+        h = self.handaction_set.first()
+        if h is None:
+            return False
+        rv = h.play_set.count() == 52
+        print(f"hand_is_complete: {h.play_set.count()=}; returning {rv=}")
+        return rv
+
+    @property
     def dealer(self):
         return self.current_board.dealer
 

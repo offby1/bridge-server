@@ -6,7 +6,8 @@
      style="border: 1px solid;
             height: 50%;
             font-family: monospace"
-     data-table="{{ table.pk }}">
+     data-table="{{ table.pk }}"
+     data-hand-status="{% if table.hand_is_complete is True %}It's all over now, Baby Blue{% endif %}">
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col"></div>
         <div class="col">
@@ -51,12 +52,17 @@ play_event_source.addEventListener('message', function (e) {
             console.log("Play event listener saw " + d.card + ", so it fetched {{ four_hands_partial_endpoint }} and {{ handaction_summary_endpoint }}");
         });
 
-    } else if (("table" in d) && "final_score" in d) {
-        console.log("Play event listener saw something to suggest the hand is over?" + d.final_score );
     }
-
-
 }, false);
+
+htmx.on("htmx:afterSettle", function(evt) {
+    var handStatusDataset = document.querySelector("#four-hands").dataset;
+    if (handStatusDataset.handStatus) {
+        console.log("Way-ul, our DOM has settled, and the ol' clock on the wall says " +  handStatusDataset.handStatus + ", so maybe I'll forcibly reload this page");
+        play_event_source.close();
+    }
+})
+
 
 </script>
 {% endpartialdef four-hands-3x3-scripts %}
