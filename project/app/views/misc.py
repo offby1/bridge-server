@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING
 
 from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.contrib.auth.models import User
+from django.http import HttpRequest, HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
-from app.models import Player
+import app.models
 
-if TYPE_CHECKING:
-    from .table import AuthedHttpRequest
+
+class UserMitPlaya(User):
+    player: app.models.Player | None
+
+
+# See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
+class AuthedHttpRequest(HttpRequest):
+    user: UserMitPlaya  # type: ignore [assignment]
 
 
 # Set redirect to False for AJAX endoints.
@@ -24,7 +30,7 @@ def logged_in_as_player_required(redirect=True):
             if not redirect and not request.user.is_authenticated:
                 return HttpResponseForbidden("Go away, anonymous scoundrel")
 
-            player = Player.objects.filter(user__username=request.user.username).first()
+            player = app.models.Player.objects.filter(user__username=request.user.username).first()
             if player is None:
                 django_web_messages.add_message(
                     request,
