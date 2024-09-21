@@ -8,6 +8,8 @@
 # `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
 
 
+alias start := pg-start
+
 [group('postgres')]
 [script('bash')]
 pg-start: orb
@@ -32,6 +34,8 @@ drop: pg-start
     docker exec --user postgres server-postgres-1 dropdb --if-exists bridge
     # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
     docker compose down --volumes postgres
+
+alias stop := pg-stop
 
 [group('postgres')]
 pg-stop:
