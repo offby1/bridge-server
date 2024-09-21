@@ -149,6 +149,8 @@ dcu *options: version-file
        echo "Hey man, the secret key is empty; it should be under {{ config_directory() }}"
        exit 1
     fi
+    tput rmam                   # disables line wrapping
+    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x
     docker compose up --build {{ options }}
 

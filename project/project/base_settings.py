@@ -153,3 +153,38 @@ STATIC_ROOT = BASE_DIR / "static_root"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 POKEY_BOT_BUTTONS = False
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname:5} {filename} {funcName} {message}",
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+            "style": "{",
+        },
+    },
+    "filters": {
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "propagate": True,
+        },
+        "app": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
+}

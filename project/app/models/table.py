@@ -212,7 +212,7 @@ class Table(models.Model):
         if h is None:
             return False
         rv = h.play_set.count() == 52
-        print(f"hand_is_complete: {h.play_set.count()=}; returning {rv=}")
+        logger.debug(f"hand_is_complete: {h.play_set.count()=}; returning {rv=}")
         return rv
 
     @property

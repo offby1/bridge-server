@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import itertools
+import logging
 from typing import TYPE_CHECKING, Iterator
 
 import more_itertools
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
     from . import Board, Player, Seat, Table  # noqa
+
+logger = logging.getLogger(__name__)
 
 
 class AuctionError(Exception):
@@ -151,7 +154,7 @@ class HandAction(models.Model):
                     "final_score": str(self.xscript.final_score()),
                 },
             }
-            print(f"Sending event {kwargs=}")
+            logger.debug(f"Sending event {kwargs=}")
             send_event(**kwargs)
 
         from app.models import Player
@@ -309,7 +312,7 @@ class CallManager(models.Manager):
         serialized, hand = kwargs["serialized"], kwargs["hand"]
         table = hand.table
         board = hand.board
-        print(
+        logger.debug(
             f"Hey man, someone created a call: {serialized=} {hand=} at {table=} ({board=}) ... imagine I sent an event"
         )
         return super().create(*args, **kwargs)
