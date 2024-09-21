@@ -18,18 +18,16 @@ repos:
   hooks:
     - id: djlint-reformat-django
 
-    # Disabled because there are too many problems :-(
-    # - id: djlint-django
-    #   exclude: 'bootstrap-fiddling.html'
+    - id: djlint-django
+      exclude: 'bootstrap-fiddling.html'
 
-# Try to prevent me from pusing a pyproject.toml that says that the library is in ../library
+# Prevent me from pusing a pyproject.toml that says that the library is in ../library
 # That doesn't work "in production", but I keep forgetting.
 - repo: local
   hooks:
     - id: ensure-no-local-dependencies
       name: ensure-no-local-dependencies
       language: script
-      #TODO -- only do this if PRE_COMMIT_REMOTE_BRANCH=refs/heads/main
       entry: barf-if-pyproject-points-to-relative-path.py
       stages:
         - pre-push
