@@ -112,6 +112,7 @@ class HandAction(models.Model):
             if self.declarer:  # the auction just settled
                 contract = self.auction.status
                 assert isinstance(contract, libContract)
+                assert contract.declarer is not None
                 send_event(
                     channel=channel,
                     event_type="message",
@@ -145,13 +146,15 @@ class HandAction(models.Model):
 
         rv = self.play_set.create(serialized=card.serialize())
 
-        if self.xscript.final_score():
+        if final_score := self.xscript.final_score(
+            declarer_vulnerable=True
+        ):  # TODO -- this is a lie half the time
             kwargs = {
                 "channel": str(self.table.pk),
                 "event_type": "message",
                 "data": {
                     "table": self.table.pk,
-                    "final_score": str(self.xscript.final_score()),
+                    "final_score": str(final_score),
                 },
             }
             logger.debug(f"Sending event {kwargs=}")

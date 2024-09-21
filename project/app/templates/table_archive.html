@@ -3,15 +3,15 @@
     <div>
         <h1>Review of {{ table }}</h1>
         <h2>{{ table.current_action.board }}</h2>
+        <h2>{{ table.current_auction_status }}</h2>
+        <h2>{{ score }}</h2>
+        <p>{{ vars_score }}</p>
     </div>
     <div>{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
     <div style="display: flex;">
         <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
     </div>
     <div>
-        <div>
-            <h2>{{ table.current_auction_status }}</h2>
-        </div>
         {% for t in table.current_action.xscript.tricks %}
             <div class="row">
                 {% for p in t.plays %}
