@@ -217,6 +217,8 @@ def _four_hands_context_for_table(
             assert_type(table.dummy, app.models.seat.Seat)
         is_dummy = bool(table.dummy and libSeat == table.dummy.libraryThing)
         this_seats_player = table.modPlayer_by_seat(libSeat)
+
+        # TODO -- show all four hands when as_dealt is True, but don't set viewer_may_control_this_seat.
         if (
             settings.POKEY_BOT_BUTTONS
             or (is_dummy and table.current_action and table.current_action.current_trick)
