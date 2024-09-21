@@ -205,12 +205,10 @@ def _get_pokey_buttons(
 
 
 def _four_hands_context_for_table(
-    request: AuthedHttpRequest, table: app.models.Table
+    request: AuthedHttpRequest, table: app.models.Table, as_dealt: bool = False
 ) -> dict[str, Any]:
     assert request.user.player is not None
-    skel = table.display_skeleton()
-
-    # TODO -- figure out if the auction and play are over, in which case show 'em all
+    skel = table.display_skeleton(as_dealt=as_dealt)
 
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
@@ -253,7 +251,9 @@ def _four_hands_context_for_table(
         "play_event_source_endpoint": "/events/all-tables/",
         "pokey_buttons": _get_pokey_buttons(
             skel=skel, as_viewed_by_pk=request.user.player.pk, table_pk=table.pk
-        ),
+        )
+        if not as_dealt
+        else "",
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
 

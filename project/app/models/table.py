@@ -244,7 +244,7 @@ class Table(models.Model):
 
         return rv
 
-    def display_skeleton(self) -> DisplaySkeleton:
+    def display_skeleton(self, as_dealt: bool = False) -> DisplaySkeleton:
         xscript = self.current_action.xscript
         whose_turn_is_it = None
 
@@ -253,7 +253,7 @@ class Table(models.Model):
 
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.
-        for mSeat, cards in self.current_cards_by_seat.items():
+        for mSeat, cards in self.current_cards_by_seat(as_dealt=as_dealt).items():
             seat = mSeat.libraryThing
             assert_type(seat, bridge.seat.Seat)
 
@@ -279,14 +279,18 @@ class Table(models.Model):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-    @property
-    def current_cards_by_seat(self) -> dict[modelSeat, set[bridge.card.Card]]:
+    def current_cards_by_seat(
+        self, as_dealt: bool = False
+    ) -> dict[modelSeat, set[bridge.card.Card]]:
         rv = {}
         for seat, cardlist in self.dealt_cards_by_seat.items():
             assert_type(seat, modelSeat)
             assert_type(cardlist, list)
 
             rv[seat] = set(cardlist)
+
+        if as_dealt:
+            return rv
 
         if self.current_auction.found_contract:
             model_seats_by_lib_seats = {}

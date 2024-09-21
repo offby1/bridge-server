@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
     <div>
-        <h1>Wassup at {{ table }}</h1>
+        <h1>Review of {{ table }}</h1>
         <h2>{{ table.current_action.board }}</h2>
     </div>
+    <div>{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
     <div style="display: flex;">
         <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
     </div>
