@@ -172,18 +172,18 @@ def _auction_context_for_table(table):
 
 
 def _get_pokey_buttons(
-    *, skel: app.models.table.DisplaySkeleton, as_viewed_by_pk: str, table_pk: str
+    *, skel: app.models.table.DisplaySkeleton, as_viewed_by: app.models.Player | None, table_pk: str
 ) -> dict[str, SafeString]:
     rv: dict[str, SafeString] = {}
 
-    if not settings.POKEY_BOT_BUTTONS:
+    if not settings.POKEY_BOT_BUTTONS or as_viewed_by is None:
         return rv
 
     for libSeat, _ in skel.items():  # noqa
         button_value = json.dumps(
             {
                 "direction": libSeat.value,
-                "player_id": as_viewed_by_pk,
+                "player_id": as_viewed_by.pk,
                 "table_id": table_pk,
             },
         )
@@ -208,19 +208,20 @@ def _display_and_control(
     *,
     table: app.models.Table,
     seat: bridge.seat.Seat,
-    as_viewed_by: app.models.Player,
+    as_viewed_by: app.models.Player | None,
     as_dealt: bool,
 ) -> dict[str, bool]:
     assert_type(table, app.models.Table)
     assert_type(seat, bridge.seat.Seat)
-    assert_type(as_viewed_by, app.models.Player)
+    if as_viewed_by is not None:
+        assert_type(as_viewed_by, app.models.Player)
     assert_type(as_dealt, bool)
     is_dummy = table.dummy and seat == table.dummy.libraryThing
 
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
         or settings.POKEY_BOT_BUTTONS  # we're debugging
-        or seat.value == as_viewed_by.seat.direction  # it's our hand, duuude
+        or (as_viewed_by and seat.value == as_viewed_by.seat.direction)  # it's our hand, duuude
         or (
             is_dummy and table.current_action and table.current_action.current_trick
         )  # it's dummy, and opening lead has been made
@@ -230,7 +231,7 @@ def _display_and_control(
         table.current_action.player_who_may_play
         and table.current_action.player_who_may_play.seat.direction == seat.value
     )
-    if display_cards and is_this_seats_turn_to_play:
+    if as_viewed_by is not None and display_cards and is_this_seats_turn_to_play:
         if seat.value == as_viewed_by.seat.direction:  # it's our hand, duuude
             viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
         elif table.dummy is not None and table.declarer is not None:
@@ -250,7 +251,10 @@ def _display_and_control(
 def _four_hands_context_for_table(
     request: AuthedHttpRequest, table: app.models.Table, as_dealt: bool = False
 ) -> dict[str, Any]:
-    assert request.user.player is not None
+    player = None
+    if hasattr(request.user, "player"):
+        player = request.user.player
+
     skel = table.display_skeleton(as_dealt=as_dealt)
 
     cards_by_direction_display = {}
@@ -259,7 +263,7 @@ def _four_hands_context_for_table(
         this_seats_player = table.modPlayer_by_seat(libSeat)
 
         visibility_and_control = _display_and_control(
-            table=table, seat=libSeat, as_viewed_by=request.user.player, as_dealt=as_dealt
+            table=table, seat=libSeat, as_viewed_by=player, as_dealt=as_dealt
         )
         if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(
@@ -280,9 +284,7 @@ def _four_hands_context_for_table(
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
         "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
-        "pokey_buttons": _get_pokey_buttons(
-            skel=skel, as_viewed_by_pk=request.user.player.pk, table_pk=table.pk
-        )
+        "pokey_buttons": _get_pokey_buttons(skel=skel, as_viewed_by=player, table_pk=table.pk)
         if not as_dealt
         else "",
         "table": table,
