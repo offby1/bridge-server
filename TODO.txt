@@ -9,6 +9,11 @@ IN PROGRESS:
 
 STILL TODO:
 
+* In the table archive view:
+
+  - put a trick number at the left of the hand record -- there are currently 13 rows with four columns, so add a fifth column on the left, and a header line.
+  - Maybe have a thingy which, when I hover over one of the cards in the hand, it points to the trick in which that card was played?  Or have it be a link instead of a tooltip?
+
 * Crazy idea for enforcing an upper bound on a table's "tempo":
 
   Return a 50whatever "throttled" response to any play or call post that comes too soon after the previous one.  Include a header that says when it's OK to try again.  That header's time should be e.g. one second in the future.  I might have to teach the browser to automatically retry; the alternative would be an annoying popup.  If the latter, at least I should show some visual thingy that makes it clear when it's OK to call or play.  (A shrinking bar, maybe?)
