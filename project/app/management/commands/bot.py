@@ -57,11 +57,6 @@ class Command(BaseCommand):
             self.wf(f"{table}: player is None -- auction or play must be over.")
             return True
 
-        if player.user.last_login is not None:
-            self.wf(
-                f"{table}: Non-human {player} has logged in, so I really should bow out, but I won't",
-            )
-
         dummy_seat = table.dummy
         declarer_seat = table.declarer
         if declarer_seat is not None:
