@@ -211,6 +211,10 @@ def _wat(
     as_viewed_by: app.models.Player,
     as_dealt: bool,
 ) -> dict[str, bool]:
+    assert_type(table, app.models.Table)
+    assert_type(seat, bridge.seat.Seat)
+    assert_type(as_viewed_by, app.models.Player)
+    assert_type(as_dealt, bool)
     is_dummy = table.dummy and seat == table.dummy.libraryThing
 
     display_cards = (
