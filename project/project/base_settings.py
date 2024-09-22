@@ -159,7 +159,8 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{asctime} {levelname:5} {filename} {funcName} {message}",
+            # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
+            "format": "{asctime} {levelname:5} {filename}({lineno}) {funcName} {message}",
             "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             "style": "{",
         },
