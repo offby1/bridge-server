@@ -15,6 +15,23 @@ STILL TODO:
 
   Perhaps allow each table to set its own tempo, down to some minimum that will keep the server unstressed, and the browsers capable of following along (1/2 second might be OK).
 
+  This argues for ...
+
+* Consider timestamps for important stuff, in particular calls and plays.
+
+* I've seen the hand display fail to update after I play a card from the sole human's hand.
+
+  In the browser console, I saw two messages like these
+
+    Play event listener saw ♦K, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
+    Play event listener saw ♣4, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
+
+  What's odd is that *I* played the ♣4, and my LHO played the ♦K -- which means the listener saw the events out of order :-(
+
+  I wonder if the listener somehow gets messed with when the browser reloads the partial?
+
+* Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
+
 * Pointless but perhaps fun: write a management command to backfill the (redundant) "won_its_trick" column.
 
 * "Claim" and "Concede" buttons, at least if you're declarer

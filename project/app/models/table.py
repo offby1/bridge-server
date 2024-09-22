@@ -211,9 +211,8 @@ class Table(models.Model):
         h = self.handaction_set.first()
         if h is None:
             return False
-        rv = h.play_set.count() == 52
-        logger.debug(f"hand_is_complete: {h.play_set.count()=}; returning {rv=}")
-        return rv
+        # TODO -- replace the 52 with ... something?  Probably the count of cards in the current board.
+        return h.play_set.count() == 52
 
     @property
     def dealer(self):
