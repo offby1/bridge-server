@@ -171,20 +171,22 @@ class Player(models.Model):
     @property
     def name_dir(self):
         direction = ""
+        role = ""
         if hasattr(self, "seat"):
             direction = f" ({self.seat.named_direction})"
 
             a = self.seat.table.current_auction
             if a.found_contract:
                 if self.name == a.status.declarer.name:
-                    return f"Declarer! {self.user.username}{direction}"
+                    role = "Declarer! "
+                else:
+                    dummy = self.seat.table[a.status.declarer.seat.partner()]
 
-                dummy = self.seat.table[a.status.declarer.seat.partner()]
+                    if self.name == dummy.name:
+                        role = "Dummy! "
 
-                if self.name == dummy.name:
-                    return f"Dummy! {self.user.username}{direction}"
-
-        return f"{self.user.username}{direction}"
+        bottiness = "" if self.is_human else " (bot)"
+        return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
 
     def as_link(self, style=""):
         return format_html(
