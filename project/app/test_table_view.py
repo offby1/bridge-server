@@ -1,4 +1,4 @@
-from bridge.card import Suit
+from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
 
@@ -27,6 +27,7 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
     t = Table.objects.first()
     assert t is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    assert str(t.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     settings.POKEY_BOT_BUTTONS = False
 
@@ -49,6 +50,22 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
             [1, 0, 0, 0],  # n
             [0, 1, 0, 0],  # e
             [0, 0, 1, 0],  # s
+            [0, 0, 0, 1],  # w
+        ]
+    )
+
+    # Make the opening lead
+    t.current_action.add_play_from_player(
+        player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
+    )
+
+    # Now the dummy (south) is visible
+    expect_visibility(
+        [
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
+            [0, 1, 0, 0],  # e
+            [1, 1, 1, 1],  # s
             [0, 0, 0, 1],  # w
         ]
     )
