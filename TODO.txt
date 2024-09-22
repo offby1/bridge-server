@@ -1,5 +1,7 @@
 IN PROGRESS:
 
+* https://erics-work-macbook-pro.tail571dc2.ts.net/table/152/archive e.g. shows two hands when run under daphne (i.e., in prod)
+
 * After each hand has been played:
   - reveal the original cards
   - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
