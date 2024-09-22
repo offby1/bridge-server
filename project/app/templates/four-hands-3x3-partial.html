@@ -51,7 +51,9 @@ play_event_source.addEventListener('message', function (e) {
             htmx.ajax('GET', '{{ handaction_summary_endpoint }}', {target:'#handaction-summary', swap:'innerHTML'})
             console.log(
                 new Date().toISOString(),
-                ": Play event listener saw "
+                ": Play event listener saw play #"
+                    + d.play_id
+                    + ", "
                     + d.card
                     + " from "
                     + d.player

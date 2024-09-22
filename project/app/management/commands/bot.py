@@ -143,6 +143,13 @@ class Command(BaseCommand):
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
 
+        if "play_id" in data:
+            if getattr(self, "play_id_hwm", None) is None:
+                self.play_id_hwm = int(data["play_id"])
+            elif int(data["play_id"]) <= self.play_id_hwm:
+                self.stderr.write(f"Gevalt!! {int(data['play_id'])=} <= {self.play_id_hwm=}!!")
+            self.play_id_hwm = max(self.play_id_hwm, int(data["play_id"]))
+
         try:
             table = Table.objects.get(pk=data.get("table"))
         except Table.DoesNotExist:
@@ -155,11 +162,11 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(action=table.current_action)
 
-        elif {"table", "contract"}.issubset(data.keys()) or set(data.keys()) == {
+        elif {"table", "contract"}.issubset(data.keys()) or {
             "table",
             "player",
             "card",
-        }:
+        }.issubset(data.keys()):
             with self.delayed_action(table=table):
                 self.make_a_groovy_play(action=table.current_action)
         elif set(data.keys()) == {"table", "direction", "action"}:

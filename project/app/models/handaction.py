@@ -147,8 +147,8 @@ class HandAction(models.Model):
         rv = self.play_set.create(serialized=card.serialize())
 
         if final_score := self.xscript.final_score(
-            declarer_vulnerable=True
-        ):  # TODO -- this is a lie half the time
+            declarer_vulnerable=True  # TODO -- this is a lie half the time
+        ):
             kwargs = {
                 "channel": str(self.table.pk),
                 "event_type": "message",
@@ -168,7 +168,12 @@ class HandAction(models.Model):
             send_event(
                 channel=channel,
                 event_type="message",
-                data={"table": self.table.pk, "player": modelPlayer.pk, "card": card.serialize()},
+                data={
+                    "table": self.table.pk,
+                    "player": modelPlayer.pk,
+                    "card": card.serialize(),
+                    "play_id": rv.pk,
+                },
             )
 
         return rv
