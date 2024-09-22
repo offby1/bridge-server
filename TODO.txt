@@ -75,6 +75,8 @@ STILL TODO:
 
 DONE:
 
+* https://erics-work-macbook-pro.tail571dc2.ts.net/table/152/archive e.g. shows two hands when run under daphne (i.e., in prod)
+
 * I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
 
   Also, if all four hands are being played by the bot, sometimes it just appears to freeze; reloading the page resumes it. I saw nothing in the browser's console.

@@ -204,6 +204,49 @@ def _get_pokey_buttons(
     return rv
 
 
+def _display_and_control(
+    *,
+    table: app.models.Table,
+    seat: bridge.seat.Seat,
+    as_viewed_by: app.models.Player,
+    as_dealt: bool,
+) -> dict[str, bool]:
+    assert_type(table, app.models.Table)
+    assert_type(seat, bridge.seat.Seat)
+    assert_type(as_viewed_by, app.models.Player)
+    assert_type(as_dealt, bool)
+    is_dummy = table.dummy and seat == table.dummy.libraryThing
+
+    display_cards = (
+        as_dealt  # hand is over and we're reviewing it
+        or settings.POKEY_BOT_BUTTONS  # we're debugging
+        or seat.value == as_viewed_by.seat.direction  # it's our hand, duuude
+        or (
+            is_dummy and table.current_action and table.current_action.current_trick
+        )  # it's dummy, and opening lead has been made
+    )
+    viewer_may_control_this_seat = False
+    is_this_seats_turn_to_play = (
+        table.current_action.player_who_may_play
+        and table.current_action.player_who_may_play.seat.direction == seat.value
+    )
+    if display_cards and is_this_seats_turn_to_play:
+        if seat.value == as_viewed_by.seat.direction:  # it's our hand, duuude
+            viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
+        elif table.dummy is not None and table.declarer is not None:
+            the_declarer: bridge.seat.Seat = table.declarer.libraryThing
+            if (
+                seat.value == table.dummy.direction
+                and the_declarer.value == as_viewed_by.seat.direction
+            ):
+                viewer_may_control_this_seat = True
+
+    return {
+        "display_cards": bool(display_cards),
+        "viewer_may_control_this_seat": bool(viewer_may_control_this_seat),
+    }
+
+
 def _four_hands_context_for_table(
     request: AuthedHttpRequest, table: app.models.Table, as_dealt: bool = False
 ) -> dict[str, Any]:
@@ -213,30 +256,16 @@ def _four_hands_context_for_table(
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
     for libSeat, suitholdings in skel.items():
-        if table.dummy is not None:
-            assert_type(table.dummy, app.models.seat.Seat)
-        is_dummy = bool(table.dummy and libSeat == table.dummy.libraryThing)
         this_seats_player = table.modPlayer_by_seat(libSeat)
 
-        # TODO -- show all four hands when as_dealt is True, but don't set viewer_may_control_this_seat.
-        if (
-            settings.POKEY_BOT_BUTTONS
-            or (is_dummy and table.current_action and table.current_action.current_trick)
-            or libSeat.value == request.user.player.seat.direction
-        ):
-            viewer_may_control_this_seat = False
-
-            if request.user.player == this_seats_player:
-                viewer_may_control_this_seat = True
-            if is_dummy:
-                assert table.dummy is not None
-                if table.dummy.libraryThing == this_seats_player.seat.libraryThing:
-                    viewer_may_control_this_seat = True
-
+        visibility_and_control = _display_and_control(
+            table=table, seat=libSeat, as_viewed_by=request.user.player, as_dealt=as_dealt
+        )
+        if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(
                 suitholdings,
                 seat_pk=this_seats_player.seat.pk,
-                viewer_may_control_this_seat=viewer_may_control_this_seat,
+                viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
             dem_cards_baby = SafeString(suitholdings.textual_summary)
