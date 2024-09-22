@@ -39,7 +39,7 @@ class Command(BaseCommand):
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 1
+        sleep_until = previous_action_time + 0.25
         self.wf(f"{table}: prev: {ts(previous_action_time)} sleep until: {ts(sleep_until)} ...")
 
         if (duration := sleep_until - time.time()) > 0:
