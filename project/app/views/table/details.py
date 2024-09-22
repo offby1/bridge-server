@@ -204,7 +204,7 @@ def _get_pokey_buttons(
     return rv
 
 
-def _wat(
+def _display_and_control(
     *,
     table: app.models.Table,
     seat: bridge.seat.Seat,
@@ -255,7 +255,7 @@ def _four_hands_context_for_table(
     for libSeat, suitholdings in skel.items():
         this_seats_player = table.modPlayer_by_seat(libSeat)
 
-        visibility_and_control = _wat(
+        visibility_and_control = _display_and_control(
             table=table, seat=libSeat, as_viewed_by=request.user.player, as_dealt=as_dealt
         )
         if visibility_and_control["display_cards"]:

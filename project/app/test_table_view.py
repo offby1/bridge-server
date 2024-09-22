@@ -4,7 +4,7 @@ from bridge.seat import Seat
 
 from .models import Table
 from .testutils import set_auction_to
-from .views.table.details import _wat
+from .views.table.details import _display_and_control
 
 
 def test_table_dataclass_thingy(usual_setup: None) -> None:
@@ -34,7 +34,7 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
     def expect_visibility(expecation_array):
         for seat in t.players_by_direction:
             for viewer in t.players_by_direction:
-                actual = _wat(
+                actual = _display_and_control(
                     table=t,
                     seat=Seat(seat),
                     as_viewed_by=t.players_by_direction[viewer],
