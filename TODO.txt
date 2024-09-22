@@ -1,18 +1,21 @@
 IN PROGRESS:
 
 * After each hand has been played:
-  - reveal the original cards
-  - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
     - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
 
 STILL TODO:
 
+* In the table list view, links should go directly to the archive, if the play at the table has finished.
+
 * In the table archive view:
 
   - put a trick number at the left of the hand record -- there are currently 13 rows with four columns, so add a fifth column on the left, and a header line.
-  - Maybe have a thingy which, when I hover over one of the cards in the hand, it points to the trick in which that card was played?  Or have it be a link instead of a tooltip?
+  - Maybe have a thingy which, when I hover over one of the cards in the hand, it points to the trick in which that card was played?
+  - Or have it be a link instead of a tooltip?  And the destination -- the row in the 13-row table -- should also have a link to take you back to the hand, so you don't have to scroll around to get back.
+
+    JS magic that just scrolls the page to the appropriate point might work as well as links.
 
 * Crazy idea for enforcing an upper bound on a table's "tempo":
 
@@ -87,6 +90,11 @@ STILL TODO:
 
 
 DONE:
+
+* After each hand has been played:
+  - reveal the original cards
+  - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
+  These were done in b735de4 and ae4c4caf
 
 * If the bot is playing two adjancent hands -- e.g., East and South -- it courteously waits a second in between those plays.  However, if I, Mister Human, play East, and the bot is playing South, it'll pounce the instant I make a play.  This is not only rude, but might be messing with the async crap in the browser (see below).
 
