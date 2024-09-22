@@ -1,22 +1,5 @@
 IN PROGRESS:
 
-* If the bot is playing two adjancent hands -- e.g., East and South -- it courteously waits a second in between those plays.  However, if I, Mister Human, play East, and the bot is playing South, it'll pounce the instant I make a play.  This is not only rude, but might be messing with the async crap in the browser (see below).
-
-  This argues for ...
-
-* Consider timestamps for important stuff, in particular calls and plays.
-
-* I've seen the hand display fail to update after I play a card from the sole human's hand.
-
-  In the browser console, I saw two messages like these
-
-    Play event listener saw ♦K, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
-    Play event listener saw ♣4, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
-
-  What's odd is that *I* played the ♣4, and my LHO played the ♦K -- which means the listener saw the events out of order :-(
-
-  I wonder if the listener somehow gets messed with when the browser reloads the partial?
-
 * After each hand has been played:
   - reveal the original cards
   - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
@@ -54,6 +37,8 @@ STILL TODO:
   Of course, switch my existing bot to use it, once it exists.
 
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
+
+* Consider timestamps for important stuff, in particular calls and plays.
 
 * Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
 
@@ -102,6 +87,21 @@ STILL TODO:
 
 
 DONE:
+
+* If the bot is playing two adjancent hands -- e.g., East and South -- it courteously waits a second in between those plays.  However, if I, Mister Human, play East, and the bot is playing South, it'll pounce the instant I make a play.  This is not only rude, but might be messing with the async crap in the browser (see below).
+
+* I've seen the hand display fail to update after I play a card from the sole human's hand.
+
+  In the browser console, I saw two messages like these
+
+    Play event listener saw ♦K, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
+    Play event listener saw ♣4, so it fetched /table/212/four-hands and /table/212/handaction-summary-status
+
+  What's odd is that *I* played the ♣4, and my LHO played the ♦K -- which means the listener saw the events out of order :-(
+
+  I wonder if the listener somehow gets messed with when the browser reloads the partial?
+
+  - as with most of these concurrency problems, I'm not *sure* that I've fixed it, but slowing down the bot again seems to have ameliorated it.
 
 * https://erics-work-macbook-pro.tail571dc2.ts.net/table/152/archive e.g. shows two hands when run under daphne (i.e., in prod)
 
