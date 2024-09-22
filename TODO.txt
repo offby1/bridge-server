@@ -1,7 +1,5 @@
 IN PROGRESS:
 
-* https://erics-work-macbook-pro.tail571dc2.ts.net/table/152/archive e.g. shows two hands when run under daphne (i.e., in prod)
-
 * After each hand has been played:
   - reveal the original cards
   - compute the score, although I don't think I ever got around to teaching the library how to do that :-)
@@ -76,6 +74,8 @@ STILL TODO:
 
 
 DONE:
+
+* https://erics-work-macbook-pro.tail571dc2.ts.net/table/152/archive e.g. shows two hands when run under daphne (i.e., in prod)
 
 * I've seen the card display fail to become active after the bot plays (on the ec2 box, but not on my laptop).  This has happened a couple of times.
 
