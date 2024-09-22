@@ -226,11 +226,14 @@ def _display_and_control(
         )  # it's dummy, and opening lead has been made
     )
     viewer_may_control_this_seat = False
-    if display_cards:
+    is_this_seats_turn_to_play = (
+        table.current_action.player_who_may_play
+        and table.current_action.player_who_may_play.seat.direction == seat.value
+    )
+    if display_cards and is_this_seats_turn_to_play:
         if seat.value == as_viewed_by.seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat = True
-
-        if table.dummy is not None and table.declarer is not None:
+            viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
+        elif table.dummy is not None and table.declarer is not None:
             the_declarer: bridge.seat.Seat = table.declarer.libraryThing
             if (
                 seat.value == table.dummy.direction

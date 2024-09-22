@@ -69,3 +69,62 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
             [0, 0, 0, 1],  # w
         ]
     )
+
+
+def test_hand_controlability(usual_setup: None, settings) -> None:
+    t = Table.objects.first()
+    assert t is not None
+
+    def expect_controlability(expecation_array):
+        for seat in t.players_by_direction:
+            for viewer in t.players_by_direction:
+                actual = _display_and_control(
+                    table=t,
+                    seat=Seat(seat),
+                    as_viewed_by=t.players_by_direction[viewer],
+                    as_dealt=False,
+                )
+                assert (
+                    actual["viewer_may_control_this_seat"] == expecation_array[seat - 1][viewer - 1]
+                ), f"{t.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+
+    # Nobody can control any cards, since the auction isn't settled
+    expect_controlability(
+        [
+            # n, e, s, w
+            [0, 0, 0, 0],  # n
+            [0, 0, 0, 0],  # e
+            [0, 0, 0, 0],  # s
+            [0, 0, 0, 0],  # w
+        ]
+    )
+
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    assert str(t.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
+
+    # Only opening leader can control his cards
+    expect_controlability(
+        [
+            # n, e, s, w
+            [0, 0, 0, 0],  # n
+            [0, 1, 0, 0],  # e
+            [0, 0, 0, 0],  # s
+            [0, 0, 0, 0],  # w
+        ]
+    )
+
+    # Make the opening lead
+    t.current_action.add_play_from_player(
+        player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
+    )
+
+    # Now declarer (north) can control the dummy (south).  (TODO -- what if the dummy is a bot?)
+    expect_controlability(
+        [
+            # n, e, s, w <-- viewers
+            [0, 0, 0, 0],  # n seat
+            [0, 0, 0, 0],  # e
+            [1, 0, 0, 0],  # s
+            [0, 0, 0, 0],  # w
+        ]
+    )
