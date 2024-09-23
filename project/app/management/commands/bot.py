@@ -73,14 +73,21 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
     - at notrump, if we play a card of whose suit we've stripped the opponents, its power is 0 (the maximum possible).
     """
     t = xscript.table
-    my_lho = t.get_lho(xscript.player)
-    my_rho = t.get_lho(t.get_partner(xscript.player))
-    opponents_cards = my_lho.hand.cards + my_rho.hand.cards
+
+    me = xscript.player
+    lho = t.get_lho(me)
+    rho = t.get_lho(t.get_partner(me))
+
+    cards_in_opponents_hands = lho.hand.cards + rho.hand.cards
+    opponents_cards_in_current_trick = [
+        play.card for play in xscript.tricks[-1] if play.player in (lho, rho)
+    ]
+
     assert isinstance(xscript.auction.status, Contract)
     trump_suit = xscript.auction.status.bid.denomination  # yikes!
     powah = 0
 
-    for oppo in opponents_cards:
+    for oppo in cards_in_opponents_hands + opponents_cards_in_current_trick:
         if would_beat(candidate=oppo, subject=c, trump_suit=trump_suit):
             powah -= 1
     return powah
