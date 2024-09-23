@@ -29,6 +29,11 @@ They don't *host*, but they do have a dead-easy TLS-doing reverse proxy, which [
 Clearly intends to do *something* like what I want.
 I tried it once many years ago, and fled in terror; but maybe it's better now (or I'm smarter).
 
+### [AWS Elastic Container Store]()
+[Here](https://www.docker.com/blog/docker-compose-from-local-to-amazon-ecs/) is a shockingly-badly written overview of how to use ECS as a docker context.
+
+The docker docs to which it points are "retired" :-(
+
 ### [dokku](https://dokku.com/docs/networking/proxies/caddy/)
 
 As mentioned by "boxed" on discord.  Looks interesting.
@@ -61,6 +66,11 @@ I otta be able to make a simple docker-compose that includes a caddy image, and 
 ### ✘[Fly.io](https://fly.io/docs/django/getting-started/existing/)
 
 Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
-### ✘ google cloud
+### [google cloud run](https://cloud.google.com/run/docs/overview/what-is-cloud-run)
 
-Bleah.
+No persistent state; you gotta use one of their other services for that.
+
+> To persist files permanently, you can integrate with Cloud Storage or mount a network filesystem (NFS).
+
+### I asked [perplexity.ai](https://www.perplexity.ai/search/what-hosting-service-will-be-e-h_5FvBqcQs2kFoQaGB1mww)
+It said basically Digital Ocean App Platform, or Heroku.  I'm pretty sure it ignored some bits of my question, like Poetry.
