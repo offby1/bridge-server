@@ -3,18 +3,23 @@ from __future__ import annotations
 import collections
 import contextlib
 import datetime
+import functools
 import json
 import os
 import sys
 import time
 import typing
 
+import bridge.card
 import requests
 import retrying  # type: ignore
 from app.models import AuctionError, HandAction, Player, Table
 from bridge.contract import Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
+
+if typing.TYPE_CHECKING:
+    import bridge.xscript
 
 
 def ts(time_t=None):
@@ -28,6 +33,22 @@ def _request_ex_filter(ex):
     now = ts().replace(microsecond=0).isoformat()
     sys.stderr.write(f"{now} Caught {ex}; {'will' if rv else 'will not'} retry\n")
     return rv
+
+
+def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
+    """
+    Roughly: how many opponent's cards rank higher than this one?
+    Return that value, negated.  If there's a trump suit, those count too.
+    Examples:
+    - at notrump, opening lead is the club 2, declarer & dummy have (say) six clubs.
+      All six beat the club two, so our value is -6.
+    - at one diamond, halfway through the hand, someone plays the 8 of spades.
+      - opponents have (say) 2, 3, and ten of spades, and 3 diamonds.
+      - our value is thus -1 * (1 for the ten of spades plus 3 for each diamond) == -4.
+    - at notrump, if we play a card of whose suit we've stripped the opponents, its power is 0 (the maximum possible).
+    """
+    print(f"Pretend I'm computing the trick-taking power of {c}")
+    return 0  # TODO!
 
 
 class Command(BaseCommand):
@@ -130,7 +151,9 @@ class Command(BaseCommand):
             self.wf(f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over.")
             return
 
-        chosen_card = action.xscript.slightly_less_dumb_play()
+        chosen_card = action.xscript.slightly_less_dumb_play(
+            order_func=functools.partial(trick_taking_power, xscript=action.xscript)
+        )
 
         p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
         self.wf(f"{table}: {p}")
