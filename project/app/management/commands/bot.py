@@ -47,7 +47,14 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
       - our value is thus -1 * (1 for the ten of spades plus 3 for each diamond) == -4.
     - at notrump, if we play a card of whose suit we've stripped the opponents, its power is 0 (the maximum possible).
     """
-    print(f"Pretend I'm computing the trick-taking power of {c}")
+    t = xscript.table
+    my_lho = t.get_lho(xscript.player)
+    my_rho = t.get_lho(t.get_partner(xscript.player))
+    opponents_cards = my_lho.hand.cards + my_rho.hand.cards
+    trump_suit = xscript.auction.status.bid.denomination  # yikes!
+    print(
+        f"Pretend I -- {xscript.player} -- am computing the trick-taking power of {c}, against {opponents_cards}, given {trump_suit=}"
+    )
     return 0  # TODO!
 
 
