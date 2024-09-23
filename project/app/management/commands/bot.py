@@ -41,9 +41,23 @@ def would_beat(
     *, candidate: bridge.card.Card, subject: bridge.card.Card, trump_suit: bridge.card.Suit | None
 ) -> bool:
     print(
-        f"Gosh, it sure is complex figuring out if {candidate=} would beat {subject} with {trump_suit=}"
+        f"Gosh, it sure is complex figuring out if {candidate=} would beat {subject} with {trump_suit=} ...",
+        end="",
     )
-    return True
+    if candidate.suit == subject.suit:
+        print(f"Both are the same suit, so {candidate.rank > subject.rank=}")
+        return candidate.rank > subject.rank
+
+    if candidate.suit == trump_suit:
+        print(f"{candidate=} is {trump_suit=}, so True")
+        return True
+
+    if subject.suit == trump_suit:
+        print(f"{subject=} is {trump_suit=}, so nah")
+        return False
+
+    print("No trumps involved; different suits, so nah")
+    return False
 
 
 def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
