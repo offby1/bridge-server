@@ -5,7 +5,6 @@ import contextlib
 import datetime
 import json
 import os
-import random
 import sys
 import time
 import typing
@@ -127,15 +126,14 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        legal_cards = action.xscript.legal_cards()
-        if not legal_cards:
+        if not action.xscript.legal_cards():
             self.wf(f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over.")
             return
 
-        chosen_card = random.choice(legal_cards)
+        chosen_card = action.xscript.slightly_less_dumb_play()
 
         p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
-        self.wf(f"{table}: {p} from {legal_cards}")
+        self.wf(f"{table}: {p}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
@@ -173,6 +171,9 @@ class Command(BaseCommand):
                 self.make_a_groovy_play(action=table.current_action)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
+
+        if table.current_action.current_trick and len(table.current_action.current_trick) == 4:
+            self.wf("\n")
 
     @retrying.retry(
         retry_on_exception=_request_ex_filter,
