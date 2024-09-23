@@ -35,6 +35,13 @@ drop: pg-start
     # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
     docker compose down --volumes postgres
 
+[group('postgres')]
+backup: pg-start
+    docker compose exec --user postgres postgres pg_dump bridge
+    @echo 'Now "just drop"' > /dev/stderr
+    @echo '"just start"' > /dev/stderr
+    @echo '"docker compose exec --user postgres --no-TTY postgres psql bridge < wherever-you-saved-it"' > /dev/stderr
+
 alias stop := pg-stop
 
 [group('postgres')]

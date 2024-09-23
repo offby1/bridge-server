@@ -58,7 +58,7 @@ shell *options: migrate (manage "shell_plus --print-sql " + options)
 makemigrations *options: (manage "makemigrations " + options)
 
 [group('django')]
-migrate *options: makemigrations (manage "migrate " + options)
+migrate: makemigrations (manage "migrate")
 
 [group('bs')]
 [script('bash')]
