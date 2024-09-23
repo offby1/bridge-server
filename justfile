@@ -139,7 +139,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file
+dcu *options: version-file orb
     set -euo pipefail
 
     # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
