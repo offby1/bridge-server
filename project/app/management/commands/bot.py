@@ -7,6 +7,7 @@ import functools
 import json
 import operator
 import os
+import random
 import sys
 import time
 import typing
@@ -20,6 +21,8 @@ from app.models.utils import assert_type
 from bridge.contract import Contract, Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
+
+random.seed(0)
 
 
 def ts(time_t=None):
@@ -74,6 +77,11 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
 
     for oppo in cards_in_opponents_hands + opponents_cards_in_current_trick:
         assert_type(oppo, bridge.card.Card)
+
+        # TODO -- this doesn't seem quite right.  If oppo is a trump card, and c is not, oppo will win *only* if either
+        # - trumps were led; or
+        # - opponents have a void in our suit, so they can legally play the trump
+        # But they cannot always play the trump, so it doesn't seem right to count it as a full minus one here.
         if xscript.would_beat(candidate=oppo, subject=c):
             powah -= 1
     return powah

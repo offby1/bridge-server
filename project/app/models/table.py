@@ -56,12 +56,16 @@ class TableManager(models.Manager):
         deck = bridge.card.Card.deck()
 
         if shuffle_deck:
+            random.seed(0)
             random.shuffle(deck)
 
-        b = Board.objects.create_from_deck_and_board_number(
-            board_number=Board.objects.count() + 1,
-            deck=deck,
-        )
+        # Always use board 1, creating it if it doesn't exist
+        if not Board.objects.exists():
+            Board.objects.create_from_deck_and_board_number(
+                board_number=1,
+                deck=deck,
+            )
+        b = Board.objects.first()
 
         HandAction.objects.create(board=b, table=t)
 
