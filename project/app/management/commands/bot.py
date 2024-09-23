@@ -40,23 +40,20 @@ def _request_ex_filter(ex):
 def would_beat(
     *, candidate: bridge.card.Card, subject: bridge.card.Card, trump_suit: bridge.card.Suit | None
 ) -> bool:
-    print(
-        f"Gosh, it sure is complex figuring out if {candidate=} would beat {subject} with {trump_suit=} ...",
-        end="",
-    )
+    # print(f"Would {candidate=} beat {subject} with {trump_suit=} ... ", end="",)
     if candidate.suit == subject.suit:
-        print(f"Both are the same suit, so {candidate.rank > subject.rank=}")
+        # print(f"both are the same suit, so {candidate.rank > subject.rank=}")
         return candidate.rank > subject.rank
 
     if candidate.suit == trump_suit:
-        print(f"{candidate=} is {trump_suit=}, so True")
+        # print(f"{candidate=} is {trump_suit=}, so True")
         return True
 
     if subject.suit == trump_suit:
-        print(f"{subject=} is {trump_suit=}, so nah")
+        # print(f"{subject=} is {trump_suit=}, so nah")
         return False
 
-    print("No trumps involved; different suits, so nah")
+    # print("no trumps involved; different suits, so nah")
     return False
 
 
@@ -118,24 +115,10 @@ class Command(BaseCommand):
 
         dummy_seat = table.dummy
         declarer_seat = table.declarer
-        if declarer_seat is not None:
-            if player.seat == dummy_seat:
-                skip_declarer = self.skip_player(table=table, player=declarer_seat.player)
+        if declarer_seat is not None and player.seat == dummy_seat:
+            return self.skip_player(table=table, player=declarer_seat.player)
 
-                verb = "not supposed" if skip_declarer else "supposed"
-
-                self.wf(
-                    f"{table}: Way-ul, I'm {verb} to play the declarer's hand, so I guess I'm {verb} to play dummy, too",
-                )
-                return skip_declarer
-
-        if player.is_human:
-            self.wf(
-                f"{table}: They tell me {player} is human, so I will bow out",
-            )
-            return True
-
-        return False
+        return bool(player.is_human)
 
     def make_a_groovy_call(self, *, action: HandAction) -> None:
         table = action.table
@@ -197,8 +180,11 @@ class Command(BaseCommand):
             order_func=functools.partial(trick_taking_power, xscript=action.xscript)
         )
 
+        ranked_options = [
+            (c, trick_taking_power(c, xscript=action.xscript)) for c in action.xscript.legal_cards()
+        ]
         p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
-        self.wf(f"{table}: {p}")
+        self.wf(f"{table}: {p} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         action = data.get("action")
