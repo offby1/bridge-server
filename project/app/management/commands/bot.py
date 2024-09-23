@@ -14,7 +14,7 @@ import bridge.card
 import requests
 import retrying  # type: ignore
 from app.models import AuctionError, HandAction, Player, Table
-from bridge.contract import Pass
+from bridge.contract import Contract, Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -35,6 +35,17 @@ def _request_ex_filter(ex):
     return rv
 
 
+# TODO -- add, somewhere in the library, a method that does this for us.  Obviously the logic is already there
+# somewhere, but it's not exposed as a callable.
+def would_beat(
+    *, candidate: bridge.card.Card, subject: bridge.card.Card, trump_suit: bridge.card.Suit | None
+) -> bool:
+    print(
+        f"Gosh, it sure is complex figuring out if {candidate=} would beat {subject} with {trump_suit=}"
+    )
+    return True
+
+
 def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
     """
     Roughly: how many opponent's cards rank higher than this one?
@@ -51,11 +62,14 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
     my_lho = t.get_lho(xscript.player)
     my_rho = t.get_lho(t.get_partner(xscript.player))
     opponents_cards = my_lho.hand.cards + my_rho.hand.cards
+    assert isinstance(xscript.auction.status, Contract)
     trump_suit = xscript.auction.status.bid.denomination  # yikes!
-    print(
-        f"Pretend I -- {xscript.player} -- am computing the trick-taking power of {c}, against {opponents_cards}, given {trump_suit=}"
-    )
-    return 0  # TODO!
+    powah = 0
+
+    for oppo in opponents_cards:
+        if would_beat(candidate=oppo, subject=c, trump_suit=trump_suit):
+            powah -= 1
+    return powah
 
 
 class Command(BaseCommand):
