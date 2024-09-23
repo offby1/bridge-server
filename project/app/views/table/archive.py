@@ -1,5 +1,6 @@
 import bridge.seat
 from bridge.auction import Contract
+from django.http import HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
@@ -12,7 +13,8 @@ def archive_view(request, pk):
     t = get_object_or_404(app.models.Table, pk=pk)
     a = t.current_auction
     c = a.status
-    assert isinstance(c, Contract)
+    if not isinstance(c, Contract):
+        return HttpResponseNotFound(f"Table {pk} has not found a contract")
     h = t.current_action
     b = h.board
     declarer_vulnerable = (
