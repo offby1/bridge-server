@@ -5,21 +5,21 @@ import contextlib
 import datetime
 import functools
 import json
+import operator
 import os
 import sys
 import time
 import typing
 
 import bridge.card
+import bridge.xscript
 import requests
 import retrying  # type: ignore
 from app.models import AuctionError, HandAction, Player, Table
+from app.models.utils import assert_type
 from bridge.contract import Contract, Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
-
-if typing.TYPE_CHECKING:
-    import bridge.xscript
 
 
 def ts(time_t=None):
@@ -35,31 +35,9 @@ def _request_ex_filter(ex):
     return rv
 
 
-# TODO -- add, somewhere in the library, a method that does this for us.  Obviously the logic is already there
-# somewhere, but it's not exposed as a callable.
-def would_beat(
-    *, candidate: bridge.card.Card, subject: bridge.card.Card, trump_suit: bridge.card.Suit | None
-) -> bool:
-    # print(f"Would {candidate=} beat {subject} with {trump_suit=} ... ", end="",)
-    if candidate.suit == subject.suit:
-        # print(f"both are the same suit, so {candidate.rank > subject.rank=}")
-        return candidate.rank > subject.rank
-
-    if candidate.suit == trump_suit:
-        # print(f"{candidate=} is {trump_suit=}, so True")
-        return True
-
-    if subject.suit == trump_suit:
-        # print(f"{subject=} is {trump_suit=}, so nah")
-        return False
-
-    # print("no trumps involved; different suits, so nah")
-    return False
-
-
 def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
     """
-    Roughly: how many opponent's cards rank higher than this one?
+    Roughly: how many opponent's cards rank higher than this one?  Only look at opponents who haven't yet played to this trick.
     Return that value, negated.  If there's a trump suit, those count too.
     Examples:
     - at notrump, opening lead is the club 2, declarer & dummy have (say) six clubs.
@@ -69,23 +47,34 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
       - our value is thus -1 * (1 for the ten of spades plus 3 for each diamond) == -4.
     - at notrump, if we play a card of whose suit we've stripped the opponents, its power is 0 (the maximum possible).
     """
+    assert_type(c, bridge.card.Card)
+
     t = xscript.table
 
     me = xscript.player
     lho = t.get_lho(me)
     rho = t.get_lho(t.get_partner(me))
 
-    cards_in_opponents_hands = lho.hand.cards + rho.hand.cards
-    opponents_cards_in_current_trick = [
-        play.card for play in xscript.tricks[-1] if play.player in (lho, rho)
-    ]
+    hidden_opponents_hands_to_consider = [lho, rho]
+
+    opponents_cards_in_current_trick: list[bridge.card.Card] = []
+    if xscript.tricks:
+        for play in xscript.tricks[-1]:
+            if play.player in (lho, rho):
+                hidden_opponents_hands_to_consider.remove(play.player)
+                opponents_cards_in_current_trick.append(play.card)
+
+    cards_in_opponents_hands: list[bridge.card.Card] = []
+    for opp in hidden_opponents_hands_to_consider:
+        cards_in_opponents_hands.extend(opp.hand.cards)
 
     assert isinstance(xscript.auction.status, Contract)
-    trump_suit = xscript.auction.status.bid.denomination  # yikes!
+
     powah = 0
 
     for oppo in cards_in_opponents_hands + opponents_cards_in_current_trick:
-        if would_beat(candidate=oppo, subject=c, trump_suit=trump_suit):
+        assert_type(oppo, bridge.card.Card)
+        if xscript.would_beat(candidate=oppo, subject=c):
             powah -= 1
     return powah
 
@@ -180,9 +169,13 @@ class Command(BaseCommand):
             order_func=functools.partial(trick_taking_power, xscript=action.xscript)
         )
 
-        ranked_options = [
-            (c, trick_taking_power(c, xscript=action.xscript)) for c in action.xscript.legal_cards()
-        ]
+        ranked_options = sorted(
+            [
+                (c, trick_taking_power(c, xscript=action.xscript))
+                for c in action.xscript.legal_cards()
+            ],
+            key=operator.itemgetter(1),
+        )
         p = action.add_play_from_player(player=action.xscript.player, card=chosen_card)
         self.wf(f"{table}: {p} out of {ranked_options=}")
 
