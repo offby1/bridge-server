@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 import contextlib
-import sys
 
 import bridge.seat
 from django.db import connection
@@ -37,11 +36,21 @@ class QueryLogger:
 def logged_queries(name=None):
     ql = QueryLogger(name=name)
     with connection.execute_wrapper(ql):
-        yield
-    categorized_calls = collections.defaultdict(list)
-    for call in ql.calls:
-        sql, params, many, context = call
-        categorized_calls[sql].append(call)
-    print(f"{len(ql.calls)=}")
-    for sql, calls in sorted(categorized_calls.items(), reverse=True, key=lambda c: len(c[1])):
-        print(f"{len(calls)=}: {sql=}")
+        try:
+            yield
+        finally:
+            categorized_calls = collections.defaultdict(list)
+            for call in ql.calls:
+                sql, params, many, context = call
+                categorized_calls[sql].append(call)
+            print(f"{len(ql.calls)=}")
+            for sql, calls in sorted(
+                categorized_calls.items(), reverse=True, key=lambda c: len(c[1])
+            ):
+                if "SAVEPOINT" in sql:  # bo-ring!
+                    continue
+                if "django_eventstream" in sql:  # also boring
+                    continue
+                print(f"{len(calls)=}: {sql:.100}")
+                params = str(collections.Counter([c[1] for c in calls]))[0:100]
+                print(f"   ... {params}")

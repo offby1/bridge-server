@@ -190,10 +190,8 @@ class Hand(models.Model):
 
     @property
     def declarer(self) -> libPlayer | None:
-        print(f"{self.auction=}")
         if not self.auction.found_contract:
             return None
-        print(f"again, {self.auction=}")
         return self.auction.declarer
 
     @property
@@ -322,12 +320,7 @@ admin.site.register(Hand)
 # then this magic will *not* trigger.  I'm not in the habit of creating objects that way, but it's a potential gotcha.
 class CallManager(models.Manager):
     def create(self, *args, **kwargs):
-        serialized, hand = kwargs["serialized"], kwargs["hand"]
-        table = hand.table
-        board = hand.board
-        logger.debug(
-            f"Hey man, someone created a call: {serialized=} {hand=} at {table=} ({board=}) ... imagine I sent an event"
-        )
+        _serialized, _hand = kwargs["serialized"], kwargs["hand"]
         return super().create(*args, **kwargs)
 
 
