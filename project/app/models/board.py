@@ -9,7 +9,7 @@ from django.contrib import admin
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
 
-from . import SEAT_CHOICES
+from .common import SEAT_CHOICES
 
 
 class BoardManager(models.Manager):
