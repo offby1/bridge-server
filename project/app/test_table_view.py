@@ -56,7 +56,7 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
     )
 
     # Make the opening lead
-    t.current_action.add_play_from_player(
+    t.current_hand.add_play_from_player(
         player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
     )
 
@@ -115,7 +115,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     )
 
     # Make the opening lead
-    t.current_action.add_play_from_player(
+    t.current_hand.add_play_from_player(
         player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
     )
 

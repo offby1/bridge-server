@@ -84,7 +84,7 @@ class Player(models.Model):
     def looking_for_partner(self):
         return self.partner is None
 
-    def _send_partnershipt_messages(self, *, action, old_partner_pk=None):
+    def _send_partnership_messages(self, *, action, old_partner_pk=None):
         if action == JOIN:
             send_event(
                 *Message.create_lobby_event_args(
@@ -128,7 +128,7 @@ class Player(models.Model):
 
             self.save()
             other.save()
-            self._send_partnershipt_messages(action=JOIN)
+            self._send_partnership_messages(action=JOIN)
 
     def break_partnership(self):
         with transaction.atomic():
@@ -152,7 +152,7 @@ class Player(models.Model):
             if table is not None and table.id is not None:
                 table.delete()
 
-        self._send_partnershipt_messages(action=SPLIT, old_partner_pk=old_partner_pk)
+        self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
     def table(self):

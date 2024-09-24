@@ -3,7 +3,7 @@
     <div>
         <div style="display: flex">
             <div style="flex-grow: 1">
-                <h1>{{ table.current_action.board }}</h1>
+                <h1>{{ table.current_hand.board }}</h1>
             </div>
             <div>
                 <h1>{{ table }}</h1>
@@ -13,7 +13,7 @@
             <div id="auction-summary">Auction: {{ table.current_auction.status }}</div>
         </h1>
         <h1>
-            <div id="hand-summary">{{ table.current_action.status }}</div>
+            <div id="hand-summary">{{ table.current_hand.status }}</div>
         </h1>
     </div>
     {% if table.hand_is_complete is True %}

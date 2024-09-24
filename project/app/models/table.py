@@ -169,7 +169,7 @@ class Table(models.Model):
         players = []
         for seat in self.seats:
             name = seat.player_name
-            hand = self.current_action.board.cards_for_direction(seat.direction)
+            hand = self.current_hand.board.cards_for_direction(seat.direction)
             players.append(
                 bridge.table.Player(
                     seat=seat.libraryThing, name=name, hand=bridge.table.Hand(cards=hand)
@@ -178,12 +178,8 @@ class Table(models.Model):
         return bridge.table.Table(players=players)
 
     @property
-    def actions(self):
-        return self.hand_set.order_by("id")
-
-    @property
     def current_auction(self) -> libAuction:
-        return self.current_action.auction
+        return self.current_hand.auction
 
     @property
     def current_auction_status(self) -> str:
@@ -201,7 +197,7 @@ class Table(models.Model):
         return str(s)
 
     @cached_property
-    def current_action(self) -> Hand:
+    def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None
         return rv
@@ -220,16 +216,16 @@ class Table(models.Model):
 
     @property
     def declarer(self) -> modelSeat | None:
-        if self.current_action.declarer is None:
+        if self.current_hand.declarer is None:
             return None
 
-        return modelSeat.objects.get(direction=self.current_action.declarer.seat.value, table=self)
+        return modelSeat.objects.get(direction=self.current_hand.declarer.seat.value, table=self)
 
     @property
     def dummy(self) -> modelSeat | None:
-        if self.current_action.dummy is None:
+        if self.current_hand.dummy is None:
             return None
-        return modelSeat.objects.get(direction=self.current_action.dummy.seat.value, table=self)
+        return modelSeat.objects.get(direction=self.current_hand.dummy.seat.value, table=self)
 
     @cached_property
     def dealt_cards_by_seat(self) -> dict[modelSeat, list[bridge.card.Card]]:
@@ -244,7 +240,7 @@ class Table(models.Model):
         return rv
 
     def display_skeleton(self, as_dealt: bool = False) -> DisplaySkeleton:
-        xscript = self.current_action.xscript
+        xscript = self.current_hand.xscript
         whose_turn_is_it = None
 
         if xscript.auction.found_contract:
@@ -293,9 +289,9 @@ class Table(models.Model):
 
         if self.current_auction.found_contract:
             model_seats_by_lib_seats = {}
-            for _index, libseat, card, _is_winner in self.current_action.annotated_plays:
+            for _index, libseat, card, _is_winner in self.current_hand.annotated_plays:
                 if libseat not in model_seats_by_lib_seats:
-                    model_seats_by_lib_seats[libseat] = self.current_action.seat_from_libseat(
+                    model_seats_by_lib_seats[libseat] = self.current_hand.seat_from_libseat(
                         libseat,
                     )
                 seat = model_seats_by_lib_seats[libseat]
@@ -306,7 +302,7 @@ class Table(models.Model):
 
     @property
     def current_board(self):
-        return self.current_action.board
+        return self.current_hand.board
 
     @property
     def players_by_direction(self):
@@ -315,7 +311,7 @@ class Table(models.Model):
     @property
     def next_seat_to_play(self) -> modelSeat | None:
         if self.current_auction.found_contract:
-            xscript = self.current_action.xscript
+            xscript = self.current_hand.xscript
             return modelSeat.objects.get(table=self, direction=xscript.player.seat.value)
 
         return None

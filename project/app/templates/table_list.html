@@ -19,7 +19,7 @@
                         <a href="{% url 'app:table-detail' table.pk %}">{{ table.pk }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_action.board }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.board }}</a>
                     </td>
                     <td>
                         <a href="{% url 'app:table-detail' table.pk %}">{{ table.playaz }}</a>
@@ -28,7 +28,7 @@
                         <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_auction_status }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_action.status }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.status }}</a>
                     </td>
                 </tr>
             {% endfor %}
