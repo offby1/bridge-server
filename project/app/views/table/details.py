@@ -223,13 +223,13 @@ def _display_and_control(
         or settings.POKEY_BOT_BUTTONS  # we're debugging
         or (as_viewed_by and seat.value == as_viewed_by.seat.direction)  # it's our hand, duuude
         or (
-            is_dummy and table.current_action and table.current_action.current_trick
+            is_dummy and table.current_hand and table.current_hand.current_trick
         )  # it's dummy, and opening lead has been made
     )
     viewer_may_control_this_seat = False
     is_this_seats_turn_to_play = (
-        table.current_action.player_who_may_play
-        and table.current_action.player_who_may_play.seat.direction == seat.value
+        table.current_hand.player_who_may_play
+        and table.current_hand.player_who_may_play.seat.direction == seat.value
     )
     if as_viewed_by is not None and display_cards and is_this_seats_turn_to_play:
         if seat.value == as_viewed_by.seat.direction:  # it's our hand, duuude
@@ -310,7 +310,7 @@ def _three_by_three_trick_display_context_for_table(
     request: HttpRequest,
     table: app.models.Table,
 ) -> dict[str, Any]:
-    h = table.current_action
+    h = table.current_hand
 
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
@@ -364,7 +364,7 @@ def _bidding_box_context_for_table(request, table):
 def hand_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=table_pk)
 
-    return HttpResponse(table.current_action.status)
+    return HttpResponse(table.current_hand.status)
 
 
 @logged_in_as_player_required()
@@ -416,7 +416,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
-        table.current_action.add_call_from_player(
+        table.current_hand.add_call_from_player(
             player=who_clicked,
             call=libCall,
         )
@@ -431,7 +431,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
-    h = seat.table.current_action
+    h = seat.table.current_hand
     if h.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
     assert whos_asking is not None

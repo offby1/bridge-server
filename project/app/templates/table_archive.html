@@ -2,7 +2,7 @@
 {% block content %}
     <div>
         <h1>Review of {{ table }}</h1>
-        <h2>{{ table.current_action.board }}</h2>
+        <h2>{{ table.current_hand.board }}</h2>
         <h2>{{ table.current_auction_status }}</h2>
         <h2>{{ score }}</h2>
         <p>{{ vars_score }}</p>
@@ -12,7 +12,7 @@
         <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
     </div>
     <div>
-        {% for t in table.current_action.xscript.tricks %}
+        {% for t in table.current_hand.xscript.tricks %}
             <div class="row">
                 {% for p in t.plays %}
                     <div class="col">

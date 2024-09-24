@@ -2,17 +2,17 @@ I got a buncha types in this project *and* the library, with similar names.  Che
 
 This django project:
 
-| module     | model      |
-|------------+------------|
-| board      | Board      |
-| handaction | Call       |
-| handaction | HandAction |
-| message    | Lobby      |
-| message    | Message    |
-| handaction | Play       |
-| player     | Player     |
-| seat       | Seat       |
-| table      | Table      |
+| module  | model   |
+|---------+---------|
+| board   | Board   |
+| hand    | Call    |
+| hand    | Hand    |
+| message | Lobby   |
+| message | Message |
+| hand    | Play    |
+| player  | Player  |
+| seat    | Seat    |
+| table   | Table   |
 
 The bridge library:
 
@@ -40,7 +40,7 @@ Let's do one example:
     AssertionError: I want a <class 'bridge.table.Table'> but you done gimme a <class 'app.models.table.Table'>
 
 model Table => library Table
-model Table has four seats, and a buncha handactions.
+model Table has four seats, and a buncha hands.
 library Table has a dict mapping library Seats to library Players.
    library Seat (int enum)
    library Player is a library Seat(!), a name (str), and a library Hand

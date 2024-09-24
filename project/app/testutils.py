@@ -5,7 +5,7 @@ from .models import Table
 
 
 def set_auction_to(bid: libBid, table: Table) -> None:
-    h = table.current_action
+    h = table.current_hand
 
     def next_caller(current_caller):
         table = h.auction.table

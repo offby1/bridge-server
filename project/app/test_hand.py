@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def test_rejects_illegal_calls(usual_setup):
     t = Table.objects.first()
 
-    h = t.current_action
+    h = t.current_hand
     caller = h.auction.allowed_caller()
 
     def next_caller(current_caller):
@@ -59,7 +59,7 @@ def test_cards_by_player(usual_setup):
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
     before = set(chain.from_iterable(t.current_cards_by_seat().values()))
-    Play.objects.create(hand=t.current_action, serialized="d2")
+    Play.objects.create(hand=t.current_hand, serialized="d2")
     t.refresh_from_db()
 
     # TODO -- check that the card was played from the correct hand.
@@ -167,7 +167,7 @@ def test_bidding_box_html(usual_setup, rf):
 
 def test_current_trick(usual_setup):
     t = Table.objects.first()
-    h = t.current_action
+    h = t.current_hand
 
     # Nobody done played nothin'
     assert not h.current_trick
@@ -198,7 +198,7 @@ def test_current_trick(usual_setup):
 
 def test_next_seat_to_play(usual_setup):
     t = Table.objects.first()
-    h = t.current_action
+    h = t.current_hand
 
     assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
 

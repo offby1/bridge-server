@@ -15,7 +15,7 @@ def archive_view(request, pk):
     c = a.status
     if not isinstance(c, Contract):
         return HttpResponseNotFound(f"Table {pk} has not found a contract")
-    h = t.current_action
+    h = t.current_hand
     b = h.board
     declarer_vulnerable = (
         b.ns_vulnerable
