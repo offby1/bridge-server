@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import contextlib
 import sys
 
@@ -28,7 +29,6 @@ class QueryLogger:
         self.calls = []
 
     def __call__(self, execute, sql, params, many, context):
-        sys.stdout.write(f"{self.prefix}{sql} {params}\n")
         self.calls.append((sql, params, many, context))
         return execute(sql, params, many, context)
 
@@ -38,5 +38,10 @@ def logged_queries(name=None):
     ql = QueryLogger(name=name)
     with connection.execute_wrapper(ql):
         yield
+    categorized_calls = collections.defaultdict(list)
+    for call in ql.calls:
+        sql, params, many, context = call
+        categorized_calls[sql].append(call)
     print(f"{len(ql.calls)=}")
-    return ql.calls
+    for sql, calls in sorted(categorized_calls.items(), reverse=True, key=lambda c: len(c[1])):
+        print(f"{len(calls)=}: {sql=}")
