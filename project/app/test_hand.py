@@ -178,6 +178,7 @@ def test_current_trick(usual_setup):
     with logged_queries():
         set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
 
+    t = Table.objects.get(pk=t.pk)
     print(f"{id(t)=}")
     with logged_queries():
         declarer = t.current_hand.declarer
