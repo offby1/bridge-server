@@ -112,7 +112,15 @@ graph: migrate
     cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
-# Run all the tests
+# Run all the tests with profiling
+[group('bs')]
+[script('bash')]
+ptest *options: makemigrations mypy
+    set -euxo pipefail
+    cd project
+    poetry run  python -m cProfile -m pytest --create-db {{ options }}
+
+## Run all the tests
 [group('bs')]
 [script('bash')]
 test *options: makemigrations mypy

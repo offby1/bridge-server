@@ -42,5 +42,11 @@ Tediously tracing through the calls (breadth-first).  I'm ultimately only intere
     - calls `table.hand_is_complete`
     - includes `"three-by-three-trick-display-partial.html#three-by-three-trick-display"`
 
+::
+
+Well, tracing (above) seems a waste of time; nothing leaps out at me.
+
+cProfile tells me that my unit test suite invoked something called `query.py:312(query)`, which is presumably deep in django's ORM mojo, *fifty thousand times*.  That seems like a lot!
+
 
 [1]: https://eric-hanchrow.sentry.io/performance/trace/aac9e12f08b94151908e45c27c7dfe41/?colorCoding=by+system+vs+application+frame&fov=0%2C1030.0002098083496&node=span-bf91bdad088f8b7f&node=txn-dde1372d1f9a4b35bf221f02aa500e0e&query=&sorting=call+order&statsPeriod=14d&tid=278112709053776&timestamp=1727145274.038647&view=top+down
