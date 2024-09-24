@@ -196,7 +196,7 @@ class Table(models.Model):
             return calls_description
         return str(s)
 
-    @cached_property
+    @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None

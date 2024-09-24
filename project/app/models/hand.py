@@ -190,8 +190,10 @@ class Hand(models.Model):
 
     @property
     def declarer(self) -> libPlayer | None:
+        print(f"{self.auction=}")
         if not self.auction.found_contract:
             return None
+        print(f"again, {self.auction=}")
         return self.auction.declarer
 
     @property

@@ -22,25 +22,24 @@ if TYPE_CHECKING:
 def test_rejects_illegal_calls(usual_setup):
     t = Table.objects.first()
 
-    h = t.current_hand
-    caller = h.auction.allowed_caller()
+    caller = t.current_hand.auction.allowed_caller()
 
     def next_caller(current_caller):
-        table = h.auction.table
+        table = t.current_hand.auction.table
         return table.get_lho(current_caller)
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
+    t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
     caller = next_caller(caller)
 
     one_notrump = libBid.deserialize("1N")
     assert one_notrump is not None
-    h.add_call_from_player(player=caller, call=one_notrump)
+    t.current_hand.add_call_from_player(player=caller, call=one_notrump)
     caller = next_caller(caller)
 
     with pytest.raises(AuctionError):
-        h.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
+        t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
+    t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
 
     assert t.hand_set.count() == 1  # we've only played one hand at this table
 
@@ -124,13 +123,13 @@ def test_bidding_box_html(usual_setup, rf):
 
     # Second case: auction in progress, only call is one diamond.
     t.hand_set.all().delete()
-    h = t.hand_set.create(board=Board.objects.first())
+    t.hand_set.create(board=Board.objects.first())
     assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
     from app.models import logged_queries
 
-    h.add_call_from_player(
-        player=h.auction.allowed_caller(),
+    t.current_hand.add_call_from_player(
+        player=t.current_hand.auction.allowed_caller(),
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
 
@@ -139,12 +138,14 @@ def test_bidding_box_html(usual_setup, rf):
 
         assert t.current_auction.allowed_caller().name == "Clint Eastwood"
 
-    disabled, enabled = _partition_button_values(t, as_seen_by=h.auction.allowed_caller(), rf=rf)
+    disabled, enabled = _partition_button_values(
+        t, as_seen_by=t.current_hand.auction.allowed_caller(), rf=rf
+    )
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
     # Third case: as above but with one more "Pass".
-    h.add_call_from_player(
-        player=h.auction.allowed_caller(),
+    t.current_hand.add_call_from_player(
+        player=t.current_hand.auction.allowed_caller(),
         call=libPass,
     )
 
@@ -152,7 +153,9 @@ def test_bidding_box_html(usual_setup, rf):
     assert t.current_auction.allowed_caller().name == "J.D. Souther"
 
     # you cannot double your own partner.
-    disabled, active = _partition_button_values(t, as_seen_by=h.auction.allowed_caller(), rf=rf)
+    disabled, active = _partition_button_values(
+        t, as_seen_by=t.current_hand.auction.allowed_caller(), rf=rf
+    )
 
     assert set(disabled) == {
         "1♣",
@@ -167,13 +170,12 @@ def test_bidding_box_html(usual_setup, rf):
 
 def test_current_trick(usual_setup):
     t = Table.objects.first()
-    h = t.current_hand
 
     # Nobody done played nothin'
-    assert not h.current_trick
+    assert not t.current_hand.current_trick
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
-    declarer = h.declarer
+    declarer = t.current_hand.declarer
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
@@ -184,15 +186,15 @@ def test_current_trick(usual_setup):
     second_players_cards = second_player.hand.cards
 
     first_card = first_players_cards[0]
-    h.add_play_from_player(player=first_player, card=first_card)
-    assert len(h.current_trick) == 1
-    which, where, what, winner = h.current_trick[-1]
+    t.current_hand.add_play_from_player(player=first_player, card=first_card)
+    assert len(t.current_hand.current_trick) == 1
+    which, where, what, winner = t.current_hand.current_trick[-1]
     assert what == first_card
 
     second_card = second_players_cards[0]
-    h.add_play_from_player(player=second_player, card=second_card)
-    assert len(h.current_trick) == 2
-    which, where, what, winner = h.current_trick[-1]
+    t.current_hand.add_play_from_player(player=second_player, card=second_card)
+    assert len(t.current_hand.current_trick) == 2
+    which, where, what, winner = t.current_hand.current_trick[-1]
     assert what == second_card
 
 
