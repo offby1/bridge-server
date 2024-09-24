@@ -301,9 +301,6 @@ class Hand(models.Model):
     def plays(self):
         return self.play_set.order_by("id")
 
-    def __str__(self):
-        return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
-
 
 admin.site.register(Hand)
 
