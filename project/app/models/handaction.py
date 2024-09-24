@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import itertools
 import logging
 from typing import TYPE_CHECKING, Iterator
 
@@ -184,7 +183,7 @@ class HandAction(models.Model):
 
         libTable = self.table.libraryThing()
         rv = libAuction(table=libTable, dealer=dealer)
-        for _index, seat, call in self.annotated_calls:
+        for seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
         return rv
@@ -227,10 +226,6 @@ class HandAction(models.Model):
         return self.call_set.order_by("-id").first()
 
     @property
-    def most_recent_annotated_call(self):
-        return self.annotated_calls[-1]  # TODO -- maybe inefficient?
-
-    @property
     def most_recent_bid(self):
         return (
             self.call_set.order_by("-id")
@@ -248,20 +243,28 @@ class HandAction(models.Model):
         return self.call_set.order_by("id")
 
     @property
-    def annotated_calls(self):
+    def _seat_cycle_starting_with_dealer(self):
         seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
 
             # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
-                break
+                return seat_cycle
+
+    @property
+    def annotated_calls(self) -> Iterator[tuple[libSeat, Call]]:
         return zip(
-            itertools.count(1),
-            seat_cycle,
+            self._seat_cycle_starting_with_dealer,
             # TODO -- might be nice to explicitly order these
             self.calls.all(),
         )
+
+    @property
+    def last_annotated_call(self) -> tuple[libSeat, Call]:
+        seat = self.call_set.order_by("-id").first()
+        assert seat is not None
+        return (next(self._seat_cycle_starting_with_dealer), seat)
 
     @property
     def tricks(self) -> Iterator[TrickTuples]:
@@ -302,7 +305,7 @@ class HandAction(models.Model):
         return self.play_set.order_by("id")
 
     def __str__(self):
-        return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
+        return f"Auction: {self.calls.count()} calls; Play: {self.plays} plays"
 
 
 admin.site.register(HandAction)
