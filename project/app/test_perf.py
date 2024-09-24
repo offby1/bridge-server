@@ -1,7 +1,7 @@
 import bridge.card
 import bridge.contract
 
-from .models import Player, Table, logged_queries
+from .models import Hand, Player, Table, logged_queries
 from .views.table.details import table_detail_view
 
 
@@ -19,7 +19,7 @@ def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> No
 
     def c(call: bridge.contract.Call) -> None:
         nonlocal caller
-        h.add_call_from_player(player=caller, call=call)
+        Hand.objects.get(pk=h.pk).add_call_from_player(player=caller, call=call)
         caller = next_caller(caller)
 
     c(bridge.contract.Pass)

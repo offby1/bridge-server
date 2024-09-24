@@ -252,7 +252,7 @@ class Hand(models.Model):
             if s.lho().value == self.board.dealer:
                 return seat_cycle
 
-    @property
+    @cached_property
     def annotated_calls(self) -> Iterator[tuple[libSeat, Call]]:
         return zip(
             self._seat_cycle_starting_with_dealer,
