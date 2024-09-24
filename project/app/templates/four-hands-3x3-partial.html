@@ -48,7 +48,7 @@ play_event_source.addEventListener('message', function (e) {
     } else if ("card" in d) {
         // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
         htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
-            htmx.ajax('GET', '{{ handaction_summary_endpoint }}', {target:'#handaction-summary', swap:'innerHTML'})
+            htmx.ajax('GET', '{{ hand_summary_endpoint }}', {target:'#hand-summary', swap:'innerHTML'})
             console.log(
                 new Date().toISOString(),
                 ": Play event listener saw play #"
@@ -57,7 +57,7 @@ play_event_source.addEventListener('message', function (e) {
                     + d.card
                     + " from "
                     + d.player
-                    + ", so it fetched {{ four_hands_partial_endpoint }} and {{ handaction_summary_endpoint }}"
+                    + ", so it fetched {{ four_hands_partial_endpoint }} and {{ hand_summary_endpoint }}"
             );
         });
 

@@ -18,7 +18,7 @@ from django_eventstream import send_event  # type: ignore
 
 from app.models import SEAT_CHOICES
 from app.models.board import Board
-from app.models.handaction import HandAction
+from app.models.hand import Hand
 from app.models.player import Player
 from app.models.seat import Seat as modelSeat
 from app.models.utils import assert_type
@@ -63,7 +63,7 @@ class TableManager(models.Manager):
             deck=deck,
         )
 
-        HandAction.objects.create(board=b, table=t)
+        Hand.objects.create(board=b, table=t)
 
         send_event(
             channel="all-tables",
@@ -150,7 +150,7 @@ class DisplaySkeleton:
 # onto each instance.
 class Table(models.Model):
     seat_set: models.Manager[modelSeat]
-    handaction_set: models.Manager[HandAction]
+    hand_set: models.Manager[Hand]
 
     objects = TableManager()
 
@@ -179,7 +179,7 @@ class Table(models.Model):
 
     @property
     def actions(self):
-        return self.handaction_set.order_by("id")
+        return self.hand_set.order_by("id")
 
     @property
     def current_auction(self) -> libAuction:
@@ -201,14 +201,14 @@ class Table(models.Model):
         return str(s)
 
     @cached_property
-    def current_action(self) -> HandAction:
-        rv = self.handaction_set.order_by("-id").first()
+    def current_action(self) -> Hand:
+        rv = self.hand_set.order_by("-id").first()
         assert rv is not None
         return rv
 
     @property
     def hand_is_complete(self) -> bool:
-        h = self.handaction_set.first()
+        h = self.hand_set.first()
         if h is None:
             return False
         # TODO -- replace the 52 with ... something?  Probably the count of cards in the current board.

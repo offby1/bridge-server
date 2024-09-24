@@ -41,7 +41,7 @@ TrickTuple = tuple[int, libSeat, libCard, bool]
 TrickTuples = list[TrickTuple]
 
 
-class HandAction(models.Model):
+class Hand(models.Model):
     """
     All the calls and plays for a given hand.
     """
@@ -305,14 +305,14 @@ class HandAction(models.Model):
         return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
 
 
-admin.site.register(HandAction)
+admin.site.register(Hand)
 
 
 # This simple mechanism might be a better way to send events -- I can rig this up for every model I care about (calls and plays in particular), and this might be cleaner than doing it however I'm currently doing it.
 
 
 # Note that if you create one of these like this
-# c = Call(hand=HandAction.objects.first(), serialized="1N")
+# c = Call(hand=Hand.objects.first(), serialized="1N")
 # c.save()
 # then this magic will *not* trigger.  I'm not in the habit of creating objects that way, but it's a potential gotcha.
 class CallManager(models.Manager):
@@ -333,7 +333,7 @@ class Call(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
-    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
+    hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
     # Now, the "what":
     # pass, bid, double, redouble
 
@@ -362,7 +362,7 @@ class Play(models.Model):
     # and the rules of bridge.  But geez.
     won_its_trick = models.BooleanField(null=True)
 
-    hand = models.ForeignKey(HandAction, on_delete=models.CASCADE)
+    hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
 
     serialized = models.CharField(  # type: ignore
         max_length=2,
