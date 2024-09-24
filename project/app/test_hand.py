@@ -42,11 +42,11 @@ def test_rejects_illegal_calls(usual_setup):
 
     h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
 
-    assert t.handaction_set.count() == 1  # we've only played one hand at this table
+    assert t.hand_set.count() == 1  # we've only played one hand at this table
 
-    the_hand_action = t.handaction_set.first()
+    the_hand = t.hand_set.first()
 
-    calls = the_hand_action.calls.all()
+    calls = the_hand.calls.all()
 
     assert "Pass" in str(calls[0])
     assert "one notrump" in str(calls[1])
@@ -123,8 +123,8 @@ def test_bidding_box_html(usual_setup, rf):
     assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.
-    t.handaction_set.all().delete()
-    h = t.handaction_set.create(board=Board.objects.first())
+    t.hand_set.all().delete()
+    h = t.hand_set.create(board=Board.objects.first())
     assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
     from app.models import logged_queries

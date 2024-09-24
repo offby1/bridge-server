@@ -11,7 +11,7 @@ SEAT_CHOICES: dict[int, str] = {v.value: k for k, v in bridge.seat.Seat.__member
 
 
 from .board import Board  # noqa
-from .handaction import AuctionError, Call, HandAction, Play  # noqa
+from .hand import AuctionError, Call, Hand, Play  # noqa
 from .message import Message  # noqa
 from .player import (  # noqa
     PartnerException,

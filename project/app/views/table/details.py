@@ -282,7 +282,7 @@ def _four_hands_context_for_table(
     return {
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
-        "handaction_summary_endpoint": reverse("app:handaction-summary-view", args=[table.pk]),
+        "hand_summary_endpoint": reverse("app:hand-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "pokey_buttons": _get_pokey_buttons(skel=skel, as_viewed_by=player, table_pk=table.pk)
         if not as_dealt
@@ -361,7 +361,7 @@ def _bidding_box_context_for_table(request, table):
     }
 
 
-def handaction_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
+def hand_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=table_pk)
 
     return HttpResponse(table.current_action.status)

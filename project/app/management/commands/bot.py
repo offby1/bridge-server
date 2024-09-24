@@ -12,7 +12,7 @@ import typing
 
 import requests
 import retrying  # type: ignore
-from app.models import AuctionError, HandAction, Player, Table
+from app.models import AuctionError, Hand, Player, Table
 from bridge.contract import Pass
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
@@ -75,7 +75,7 @@ class Command(BaseCommand):
 
         return False
 
-    def make_a_groovy_call(self, *, action: HandAction) -> None:
+    def make_a_groovy_call(self, *, action: Hand) -> None:
         table = action.table
         modplayer = action.player_who_may_call
 
@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 f"{table}: Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
-    def make_a_groovy_play(self, *, action: HandAction) -> None:
+    def make_a_groovy_play(self, *, action: Hand) -> None:
         if not action.auction.found_contract:
             return
 
