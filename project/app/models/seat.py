@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
 
-from . import SEAT_CHOICES
+from .common import SEAT_CHOICES
 
 if TYPE_CHECKING:
     from . import Player, Table  # noqa

@@ -3,23 +3,36 @@ from __future__ import annotations
 import contextlib
 import sys
 
-import bridge.seat
 from django.db import connection
 
-# {1: 'NORTH', 2: 'EAST', 3: 'SOUTH', 4: 'WEST'}
-SEAT_CHOICES: dict[int, str] = {v.value: k for k, v in bridge.seat.Seat.__members__.items()}
-
-
-from .board import Board  # noqa
-from .hand import AuctionError, Call, Hand, Play  # noqa
-from .message import Message  # noqa
-from .player import (  # noqa
+from .board import Board
+from .common import SEAT_CHOICES
+from .hand import AuctionError, Call, Hand, Play
+from .message import Message
+from .player import (
     PartnerException,
     Player,
     PlayerException,
 )
-from .seat import Seat, SeatException  # noqa
-from .table import Table, TableException  # noqa
+from .seat import Seat, SeatException
+from .table import Table, TableException
+
+__all__ = [
+    "Board",
+    "AuctionError",
+    "Call",
+    "Hand",
+    "Play",
+    "Message",
+    "PartnerException",
+    "Player",
+    "PlayerException",
+    "Seat",
+    "SeatException",
+    "Table",
+    "TableException",
+    "SEAT_CHOICES",
+]
 
 
 class QueryLogger:
