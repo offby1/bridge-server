@@ -61,7 +61,7 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
     hidden_opponents_hands_to_consider = [lho, rho]
 
     opponents_cards_in_current_trick: list[bridge.card.Card] = []
-    if xscript.tricks:
+    if xscript.tricks and not xscript.tricks[-1].is_complete():
         for play in xscript.tricks[-1]:
             if play.player in (lho, rho):
                 hidden_opponents_hands_to_consider.remove(play.player)
