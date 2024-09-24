@@ -366,6 +366,14 @@ class Play(models.Model):
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["hand", "serialized"],
+                name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
+            ),
+        ]
+
     @cached_property
     def seat(self) -> libSeat:
         for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
@@ -380,14 +388,6 @@ class Play(models.Model):
         if self.won_its_trick:
             star = "*"
         return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["hand", "serialized"],
-                name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
-            ),
-        ]
 
 
 admin.site.register(Play)
