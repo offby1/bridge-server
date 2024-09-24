@@ -1,12 +1,12 @@
 import bridge.card
 import bridge.contract
-import pytest
 
-from .models import Table, logged_queries
+from .models import Player, Table, logged_queries
+from .views.table.details import table_detail_view
 
 
-@pytest.mark.xfail(reason="God ain't done with me yet")
-def test_auction_doesnt_do_a_shitton_of_queries(usual_setup) -> None:
+# @pytest.mark.xfail(reason="God ain't done with me yet")
+def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
     t = Table.objects.first()
     assert t is not None
     h = t.current_hand
@@ -33,5 +33,10 @@ def test_auction_doesnt_do_a_shitton_of_queries(usual_setup) -> None:
     c(bridge.contract.Pass)
 
     with logged_queries():
-        h.auction
+        request = rf.get("/woteva/", data={"pk": t.pk})
+        p = Player.objects.first()
+        assert p is not None
+        request.user = p.user
+        table_detail_view(request, t.pk)
+
     assert "cat" == "dog"

@@ -25,9 +25,11 @@ from .table import Table, TableException  # noqa
 class QueryLogger:
     def __init__(self, name=None):
         self.prefix = f"{name}: " if name is not None else ""
+        self.calls = []
 
     def __call__(self, execute, sql, params, many, context):
         sys.stdout.write(f"{self.prefix}{sql} {params}\n")
+        self.calls.append((sql, params, many, context))
         return execute(sql, params, many, context)
 
 
@@ -36,3 +38,5 @@ def logged_queries(name=None):
     ql = QueryLogger(name=name)
     with connection.execute_wrapper(ql):
         yield
+    print(f"{len(ql.calls)=}")
+    return ql.calls
