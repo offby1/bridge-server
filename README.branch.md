@@ -67,4 +67,29 @@ Play.objects.first()
 Since I see lots of queries like `SELECT "app_call"."id", "app_call"."hand_id", "app_call"."serialized" FROM "app_call" WHERE "app_call"."hand_id" = %s ORDER BY "app_call"."id" ASC (23,)`, I put a `pdb.set_trace` call in the query logger, and found that those are coming from `annotated_calls` ... not surprisingly.
 
 
+Curious:
+
+```python
+t = Table.objects.get(pk=23)
+h = t.current_hand
+h.auction
+```
+
+That gets me a `libAuction` that, at least in the REPL, *looks* fully-filled out.  But
+
+```
+h.auction.found_contract
+```
+
+does a shit-ton of queries, and then incorrectly returns False.
+Both the queries, and the incorrect return value, are mysteries.
+
+Aaaand ... `t.current_hand.auction.found_contract` returns True!!
+
+Some kinda aliasing going on that I'm just too dumb to see.
+
+Also, FWIW, `h.auction` redoes the same queries every time, although I now suspect that's because of its `str` method.
+
+
+
 [1]: https://eric-hanchrow.sentry.io/performance/trace/aac9e12f08b94151908e45c27c7dfe41/?colorCoding=by+system+vs+application+frame&fov=0%2C1030.0002098083496&node=span-bf91bdad088f8b7f&node=txn-dde1372d1f9a4b35bf221f02aa500e0e&query=&sorting=call+order&statsPeriod=14d&tid=278112709053776&timestamp=1727145274.038647&view=top+down
