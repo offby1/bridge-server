@@ -139,8 +139,6 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        self.last_action_timestamps_by_table_id[table.pk] = time.time()
-
         if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
