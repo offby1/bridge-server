@@ -40,7 +40,7 @@ class PartnerException(PlayerException):
 
 
 class PlayerAdmin(admin.ModelAdmin):
-    list_filter = ["is_human"]
+    list_filter = ["allow_bot_to_play_for_me"]
 
 
 class Player(models.Model):
@@ -52,7 +52,7 @@ class Player(models.Model):
         on_delete=models.CASCADE,
     )
 
-    is_human = models.BooleanField(default=False)
+    allow_bot_to_play_for_me = models.BooleanField(default=True)
 
     # TODO -- conceptually, this oughta be a OneToOneField, no?
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
@@ -185,7 +185,7 @@ class Player(models.Model):
                     if self.name == dummy.name:
                         role = "Dummy! "
 
-        bottiness = "" if self.is_human else " (bot)"
+        bottiness = "" if self.allow_bot_to_play_for_me else " (bot)"
         return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
 
     def as_link(self, style=""):
@@ -225,7 +225,7 @@ class Player(models.Model):
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        return f"{self.name} ({'human' if self.is_human else 'bot'})"
+        return f"{self.name} ({'bot-powered' if self.allow_bot_to_play_for_me else 'independent'})"
 
 
 admin.site.register(Player, PlayerAdmin)

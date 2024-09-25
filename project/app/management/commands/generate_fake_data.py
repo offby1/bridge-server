@@ -89,7 +89,7 @@ class Command(BaseCommand):
                             username=username,
                             password=everybodys_password,
                         ),
-                        is_human=username == "bob",
+                        allow_bot_to_play_for_me=username != "bob",
                     )
 
                 try:
@@ -174,5 +174,5 @@ class Command(BaseCommand):
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     h.add_play_from_player(player=h.xscript.player, card=chosen_card)
 
-        for human in Player.objects.filter(is_human=True).all():
-            self.stdout.write(f"{human} is human!")
+        for human in Player.objects.filter(allow_bot_to_play_for_me=False).all():
+            self.stdout.write(f"{human} don't need no steenkin' bot!")

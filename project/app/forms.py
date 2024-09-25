@@ -21,12 +21,12 @@ class SignupForm(forms.Form):
                 msg,
             )
 
-    def create_user(self):
+    def create_user(self) -> None:
         u = User.objects.create_user(
             self.cleaned_data["username"],
             password=self.cleaned_data["password"],
         )
-        Player.objects.create(user=u, is_human=True)
+        Player.objects.create(user=u, allow_bot_to_play_for_me=False)
 
 
 # Does double-duty -- joins a partner, or breaks up with a partner.

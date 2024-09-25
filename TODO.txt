@@ -7,9 +7,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* Rename the "is_human" field on the Player model, and change the text of the "make me a bot" button ...  The idea isn't
-  that a player "is a bot" or "is human", but rather, that the player wants the bot to call or play for them.
-
 * In the table list view, links should go directly to the archive, if the play at the table has finished.
 
 * In the table archive view:
@@ -93,6 +90,13 @@ STILL TODO:
 
 
 DONE:
+
+* Rename the "is_human" field on the Player model, and change the text of the "make me a bot" button ...  The idea isn't
+  that a player "is a bot" or "is human", but rather, that the player wants the bot to call or play for them.
+
+  * related: I really really want a little slidey-switch widget for the "let the bot play for me" thing.  Functionally it's a check box, but standard HTML check boxes are ugly.
+
+    [bootstrap's switches](https://getbootstrap.com/docs/5.3/forms/checks-radios/#switches) are it!
 
 * After each hand has been played:
   - reveal the original cards

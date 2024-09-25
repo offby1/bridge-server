@@ -213,9 +213,9 @@ def send_player_message(request, recipient_pk):
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request, pk):
     playa = get_object_or_404(Player, pk=pk)
-    playa.is_human = not playa.is_human
+    playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
     playa.save()
-    return HttpResponse(f"OK, now you {'are' if playa.is_human else 'are not'} human")
+    return HttpResponse(f"""Hello, {playa.as_link()}""")
 
 
 def player_list_view(request):

@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 )
                 return skip_declarer
 
-        if player.is_human:
+        if player.allow_bot_to_play_for_me:
             self.wf(
                 f"{table}: They tell me {player} is human, so I will bow out",
             )
