@@ -55,15 +55,14 @@ class Command(BaseCommand):
         )
 
     def generate_some_fake_calls_and_plays_at(self, table: Table, this_tables_index: int):
-        h = table.current_hand
-
         calls_prefix = canned_calls[0:this_tables_index]
 
         for c in calls_prefix:
-            player = h.auction.allowed_caller()
+            player = table.current_hand.auction.allowed_caller()
             call = libBid.deserialize(c)
 
-            h.add_call_from_player(player=player, call=call)
+            table.current_hand.add_call_from_player(player=player, call=call)
+            table = Table.objects.get(pk=table.pk)
 
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging
@@ -166,13 +165,15 @@ class Command(BaseCommand):
             unit="t",
         ):
             for _ in range(2):
-                h = t.current_hand
-                legal_cards = h.xscript.legal_cards()
+                legal_cards = t.current_hand.xscript.legal_cards()
                 if legal_cards:
                     chosen_card = random.choice(legal_cards)
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
-                    h.add_play_from_player(player=h.xscript.player, card=chosen_card)
+                    t.current_hand.add_play_from_player(
+                        player=t.current_hand.xscript.player, card=chosen_card
+                    )
+                    t = Table.objects.get(pk=t.pk)
 
-        for human in Player.objects.filter(allow_bot_to_play_for_me=False).all():
-            self.stdout.write(f"{human} don't need no steenkin' bot!")
+        for independent_player in Player.objects.filter(allow_bot_to_play_for_me=False).all():
+            self.stdout.write(f"{independent_player} don't need no steenkin' bot!")

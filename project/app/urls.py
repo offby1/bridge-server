@@ -23,6 +23,11 @@ urlpatterns = [
     path("signup/", signup_view, name="signup"),
     path("table/", table.details.table_list_view, name="table"),
     path("table/<pk>/", table.details.table_detail_view, name="table-detail"),
+    path(
+        "table/<pk>/detail-or-archive",
+        table.details.detail_or_archive_view,
+        name="table-detail-or-archive",
+    ),
     path("table/<pk>/archive/", table.archive_view, name="table-archive"),
     path("table/<table_pk>/auction/", table.details.auction_partial_view, name="auction-partial"),
     path(

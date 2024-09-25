@@ -461,6 +461,16 @@ def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     return TemplateResponse(request, "table_detail.html", context=context)
 
 
+def detail_or_archive_view(request: HttpRequest, pk: int) -> HttpResponseRedirect:
+    """
+    Redirects to either the table detail view, if the play hasn't yet completed; or to the archive view otherwise.
+    """
+    table = get_object_or_404(app.models.Table, pk=pk)
+    viewname = "app:table-archive" if table.hand_is_complete else "app:table-detail"
+
+    return HttpResponseRedirect(reverse(viewname, args=[table.pk]))
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_table_for_two_partnerships(request, pk1, pk2):
