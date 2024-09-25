@@ -306,7 +306,11 @@ class Table(models.Model):
         return self.current_hand.board
 
     @property
-    def players_by_direction(self):
+    def player_names(self) -> str:
+        return ", ".join([p.name for p in self.players_by_direction.values()])
+
+    @property
+    def players_by_direction(self) -> dict[int, Player]:
         return {s.direction: s.player for s in self.seats}
 
     @property
