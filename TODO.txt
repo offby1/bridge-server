@@ -1,13 +1,19 @@
 IN PROGRESS:
 
+* In the table list view, links should go directly to the archive, if the play at the table has finished.
+
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
     - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
+    - maybe have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm ready for the next board"; once all four have been pushed, we get the next board.
 
 STILL TODO:
 
-* In the table list view, links should go directly to the archive, if the play at the table has finished.
+* Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
+  I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
+  <https://en.wikipedia.org/wiki/Duplicate_bridge>
+  ("Teams"? "Pairs"? "Individual"?)
 
 * In the table archive view:
 
@@ -44,11 +50,6 @@ STILL TODO:
 * Consider timestamps for important stuff, in particular calls and plays.
 
 * Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
-
-* Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
-  I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
-  <https://en.wikipedia.org/wiki/Duplicate_bridge>
-  ("Teams"? "Pairs"? "Individual"?)
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
