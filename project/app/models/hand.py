@@ -240,6 +240,10 @@ class Hand(models.Model):
 
     @property
     def calls(self):
+        """
+        All the calls in this hand, in chronological order.
+        `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
+        """
         return self.call_set.order_by("id")
 
     @property
@@ -256,7 +260,6 @@ class Hand(models.Model):
     def annotated_calls(self) -> Iterator[tuple[libSeat, Call]]:
         return zip(
             self._seat_cycle_starting_with_dealer,
-            # TODO -- might be nice to explicitly order these
             self.calls.all(),
         )
 
