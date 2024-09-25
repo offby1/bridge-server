@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import collections
-import itertools
 import logging
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -61,10 +60,10 @@ class Hand(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
-    @property
+    @cached_property
     def xscript(self) -> HandTranscript:
         rv = HandTranscript(
-            table=self.table.libraryThing(),
+            table=self.table.libraryThing,
             auction=self.table.current_auction,
         )
         # *sigh* now replay the entire hand
@@ -97,6 +96,10 @@ class Hand(models.Model):
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
+
+        # This stuff is cached, but we added a call, so we refresh 'em.
+        del self.auction
+        del self.annotated_calls
 
         from app.models import Player
 
@@ -178,13 +181,13 @@ class Hand(models.Model):
 
         return rv
 
-    @property
+    @cached_property
     def auction(self) -> libAuction:
         dealer = libSeat(self.board.dealer)
 
-        libTable = self.table.libraryThing()
+        libTable = self.table.libraryThing
         rv = libAuction(table=libTable, dealer=dealer)
-        for _index, seat, call in self.annotated_calls:
+        for seat, call in self.annotated_calls:
             player = libTable.players[seat]
             rv.append_located_call(player=player, call=call.libraryThing)
         return rv
@@ -227,10 +230,6 @@ class Hand(models.Model):
         return self.call_set.order_by("-id").first()
 
     @property
-    def most_recent_annotated_call(self):
-        return self.annotated_calls[-1]  # TODO -- maybe inefficient?
-
-    @property
     def most_recent_bid(self):
         return (
             self.call_set.order_by("-id")
@@ -245,23 +244,36 @@ class Hand(models.Model):
 
     @property
     def calls(self):
+        """
+        All the calls in this hand, in chronological order.
+        `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
+        """
         return self.call_set.order_by("id")
 
     @property
-    def annotated_calls(self):
+    def _seat_cycle_starting_with_dealer(self):
         seat_cycle = libSeat.cycle()
         while True:
             s = next(seat_cycle)
 
             # The first call is made by dealer.
             if s.lho().value == self.board.dealer:
-                break
-        return zip(
-            itertools.count(1),
-            seat_cycle,
-            # TODO -- might be nice to explicitly order these
-            self.calls.all(),
+                return seat_cycle
+
+    @cached_property
+    def annotated_calls(self) -> Iterable[tuple[libSeat, Call]]:
+        return list(
+            zip(
+                self._seat_cycle_starting_with_dealer,
+                self.calls.all(),
+            )
         )
+
+    @property
+    def last_annotated_call(self) -> tuple[libSeat, Call]:
+        seat = self.call_set.order_by("-id").first()
+        assert seat is not None
+        return (next(self._seat_cycle_starting_with_dealer), seat)
 
     @property
     def tricks(self) -> Iterator[TrickTuples]:
@@ -302,7 +314,7 @@ class Hand(models.Model):
         return self.play_set.order_by("id")
 
     def __str__(self):
-        return f"Auction: {';'.join([str(c) for c in self.calls])}\nPlay: {';'.join([str(p) for p in self.plays])}"
+        return f"Auction: {self.calls.count()} calls; Play: {self.plays.count()} plays"
 
 
 admin.site.register(Hand)
@@ -369,6 +381,14 @@ class Play(models.Model):
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["hand", "serialized"],
+                name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
+            ),
+        ]
+
     @cached_property
     def seat(self) -> libSeat:
         for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
@@ -378,19 +398,12 @@ class Play(models.Model):
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
 
-    def __str__(self) -> str:
+    @cached_property
+    def str(self) -> str:
         star = ""
         if self.won_its_trick:
             star = "*"
         return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["hand", "serialized"],
-                name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
-            ),
-        ]
 
 
 admin.site.register(Play)
