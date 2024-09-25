@@ -50,7 +50,7 @@ def logged_queries(name=None):
     ql = QueryLogger(name=name)
     with connection.execute_wrapper(ql):
         try:
-            yield
+            yield ql
         finally:
             categorized_calls = collections.defaultdict(list)
             for call in ql.calls:

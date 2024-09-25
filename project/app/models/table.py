@@ -165,6 +165,7 @@ class Table(models.Model):
     def seats(self):
         return self.seat_set.select_related("player__user").all()
 
+    @cached_property
     def libraryThing(self):
         players = []
         for seat in self.seats:
@@ -177,11 +178,11 @@ class Table(models.Model):
             )
         return bridge.table.Table(players=players)
 
-    @property
+    @cached_property
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
 
-    @property
+    @cached_property
     def current_auction_status(self) -> str:
         s = self.current_auction.status
         if s is self.current_auction.Incomplete:
@@ -196,7 +197,7 @@ class Table(models.Model):
             return calls_description
         return str(s)
 
-    @property
+    @cached_property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None

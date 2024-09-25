@@ -29,17 +29,23 @@ def test_rejects_illegal_calls(usual_setup):
         return table.get_lho(current_caller)
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
+    t = Table.objects.get(pk=t.pk)
+
     caller = next_caller(caller)
 
     one_notrump = libBid.deserialize("1N")
     assert one_notrump is not None
+
     t.current_hand.add_call_from_player(player=caller, call=one_notrump)
+    t = Table.objects.get(pk=t.pk)
+
     caller = next_caller(caller)
 
     with pytest.raises(AuctionError):
         t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
+    t = Table.objects.get(pk=t.pk)
 
     assert t.hand_set.count() == 1  # we've only played one hand at this table
 
@@ -54,12 +60,13 @@ def test_rejects_illegal_calls(usual_setup):
 
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
-    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
     before = set(chain.from_iterable(t.current_cards_by_seat().values()))
     Play.objects.create(hand=t.current_hand, serialized="d2")
-    t.refresh_from_db()
+    t = Table.objects.get(pk=t.pk)
 
     # TODO -- check that the card was played from the correct hand.
     after = set(chain.from_iterable(t.current_cards_by_seat().values()))
@@ -112,7 +119,7 @@ def test_bidding_box_html(usual_setup, rf):
     # First case: completed auction, contract is one diamond, not doubled.
     t = Table.objects.first()
 
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
     # set_auction_to has set the declarer to be the dealer.
 
     assert t.current_auction.found_contract
@@ -124,6 +131,8 @@ def test_bidding_box_html(usual_setup, rf):
     # Second case: auction in progress, only call is one diamond.
     t.hand_set.all().delete()
     t.hand_set.create(board=Board.objects.first())
+    t = Table.objects.get(pk=t.pk)
+
     assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
     from app.models import logged_queries
@@ -176,9 +185,8 @@ def test_current_trick(usual_setup):
 
     print(f"{id(t)=}")
     with logged_queries():
-        set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+        t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
 
-    t = Table.objects.get(pk=t.pk)
     print(f"{id(t)=}")
     with logged_queries():
         declarer = t.current_hand.declarer
@@ -193,12 +201,14 @@ def test_current_trick(usual_setup):
 
     first_card = first_players_cards[0]
     t.current_hand.add_play_from_player(player=first_player, card=first_card)
+    t = Table.objects.get(pk=t.pk)
     assert len(t.current_hand.current_trick) == 1
     which, where, what, winner = t.current_hand.current_trick[-1]
     assert what == first_card
 
     second_card = second_players_cards[0]
     t.current_hand.add_play_from_player(player=second_player, card=second_card)
+    t = Table.objects.get(pk=t.pk)
     assert len(t.current_hand.current_trick) == 2
     which, where, what, winner = t.current_hand.current_trick[-1]
     assert what == second_card
@@ -206,11 +216,11 @@ def test_current_trick(usual_setup):
 
 def test_next_seat_to_play(usual_setup):
     t = Table.objects.first()
-    h = t.current_hand
 
     assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
 
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    h = t.current_hand
 
     assert h.declarer.seat == libSeat.NORTH
     assert t.next_seat_to_play.named_direction == "EAST"

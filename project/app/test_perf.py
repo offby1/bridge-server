@@ -1,12 +1,10 @@
 import bridge.card
 import bridge.contract
-import pytest
 
 from .models import Hand, Player, Table, logged_queries
 from .views.table.details import table_detail_view
 
 
-@pytest.mark.xfail(reason="God ain't done with me yet")
 def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
     t = Table.objects.first()
     assert t is not None
@@ -33,11 +31,12 @@ def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> No
     c(bridge.contract.Pass)
     c(bridge.contract.Pass)
 
-    with logged_queries():
-        request = rf.get("/woteva/", data={"pk": t.pk})
-        p = Player.objects.first()
-        assert p is not None
-        request.user = p.user
+    request = rf.get("/woteva/", data={"pk": t.pk})
+    p = Player.objects.first()
+    assert p is not None
+    request.user = p.user
+
+    with logged_queries() as ql:
         table_detail_view(request, t.pk)
 
-    assert "cat" == "dog"
+    assert len(ql.calls) < 100

@@ -60,10 +60,10 @@ class Hand(models.Model):
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
     board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
 
-    @property
+    @cached_property
     def xscript(self) -> HandTranscript:
         rv = HandTranscript(
-            table=self.table.libraryThing(),
+            table=self.table.libraryThing,
             auction=self.table.current_auction,
         )
         # *sigh* now replay the entire hand
@@ -96,6 +96,10 @@ class Hand(models.Model):
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
+
+        # This stuff is cached, but we added a call, so we refresh 'em.
+        del self.auction
+        del self.annotated_calls
 
         from app.models import Player
 
@@ -177,11 +181,11 @@ class Hand(models.Model):
 
         return rv
 
-    @property
+    @cached_property
     def auction(self) -> libAuction:
         dealer = libSeat(self.board.dealer)
 
-        libTable = self.table.libraryThing()
+        libTable = self.table.libraryThing
         rv = libAuction(table=libTable, dealer=dealer)
         for seat, call in self.annotated_calls:
             player = libTable.players[seat]
