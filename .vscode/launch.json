@@ -5,11 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Django shell",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "shell_plus",
+                "--print-sql"
+                "--settings",
+                "project.dev_settings"
+            ],
+            "django": true,
+            "autoStartBrowser": false,
+            "program": "${workspaceFolder}/project/manage.py"
+        },
+        {
             "name": "Python Debugger: Django",
             "type": "debugpy",
             "request": "launch",
             "args": [
-                "runserver", "9000", "--settings", "project.dev_settings"
+                "runserver",
+                "9000",
+                "--settings",
+                "project.dev_settings"
             ],
             "django": true,
             "autoStartBrowser": false,

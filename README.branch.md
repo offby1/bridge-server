@@ -88,6 +88,8 @@ Aaaand ... `t.current_hand.auction.found_contract` returns True!!
 
 Some kinda aliasing going on that I'm just too dumb to see.
 
+I wonder if the `zip` in `annotated_calls` is an iterator that I've exhausted.
+
 Also, FWIW, `h.auction` redoes the same queries every time, although I now suspect that's because of its `str` method.
 
 
