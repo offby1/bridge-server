@@ -8,6 +8,10 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Have to bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
+
+  Maybe use the "rich" library, and have it update every row every time it takes any action at any table.  It'd look kewl.
+
 * Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
   I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
   <https://en.wikipedia.org/wiki/Duplicate_bridge>
