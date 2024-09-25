@@ -383,7 +383,8 @@ class Play(models.Model):
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
 
-    def __str__(self) -> str:
+    @cached_property
+    def str(self) -> str:
         star = ""
         if self.won_its_trick:
             star = "*"
