@@ -51,4 +51,20 @@ Well, tracing (above) seems a waste of time; nothing leaps out at me.
 cProfile tells me that my unit test suite invoked something called `query.py:312(query)`, which is presumably deep in django's ORM mojo, *fifty thousand times*.  That seems like a lot!
 
 
+On the main branch (1a761c0be12aa830fcda65996b808e3715e77d1e), in the shell, with a few tables in various states, all of these do just one query:
+
+```python
+t = Table.objects.get(pk=23)
+t.current_hand
+Hand.objects.get(pk=23)
+plays = t.current_hand.play_set.all()
+p = plays.first()
+plays.all()
+Play.objects.all()
+Play.objects.first()
+```
+
+Since I see lots of queries like `SELECT "app_call"."id", "app_call"."hand_id", "app_call"."serialized" FROM "app_call" WHERE "app_call"."hand_id" = %s ORDER BY "app_call"."id" ASC (23,)`, I put a `pdb.set_trace` call in the query logger, and found that those are coming from `annotated_calls` ... not surprisingly.
+
+
 [1]: https://eric-hanchrow.sentry.io/performance/trace/aac9e12f08b94151908e45c27c7dfe41/?colorCoding=by+system+vs+application+frame&fov=0%2C1030.0002098083496&node=span-bf91bdad088f8b7f&node=txn-dde1372d1f9a4b35bf221f02aa500e0e&query=&sorting=call+order&statsPeriod=14d&tid=278112709053776&timestamp=1727145274.038647&view=top+down
