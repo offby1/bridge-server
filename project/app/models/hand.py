@@ -308,7 +308,7 @@ class Hand(models.Model):
         return self.play_set.order_by("id")
 
     def __str__(self):
-        return f"Auction: {self.calls.count()} calls; Play: {self.plays} plays"
+        return f"Auction: {self.calls.count()} calls; Play: {self.plays.count()} plays"
 
 
 admin.site.register(Hand)
