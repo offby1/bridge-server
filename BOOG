@@ -1,0 +1,61 @@
+"just pop" seems to have played two cards from the same hand in succession:
+
+  At Table 14, playing ♣9 from [♣2, ♣3, ♣9, ♦2, ♦3, ♦7, ♦Q, ♥A, ♠5, ♠6, ♠9, ♠K, ♠A]
+  At Table 14, playing ♠6 from [♣2, ♣3, ♣9, ♦2, ♦3, ♦7, ♦Q, ♥A, ♠5, ♠6, ♠9, ♠K, ♠A]
+
+The xscript is quite reasonably attempting to remove the from the hand that *should* have played it.
+
+2024-09-25T21:07:48+0000 INFO  runserver.py(168) log_action HTTP GET /players/ 200 [0.17, 127.0.0.1:59059]
+2024-09-25T21:07:51+0000 INFO  runserver.py(168) log_action HTTP GET /table/ 200 [0.46, 127.0.0.1:59059]
+2024-09-25T21:08:04+0000 INFO  runserver.py(168) log_action HTTP GET /table/ 200 [0.40, 127.0.0.1:59059]
+2024-09-25T21:08:09+0000 INFO  runserver.py(168) log_action HTTP GET /accounts/login/ 200 [0.04, 127.0.0.1:59059]
+2024-09-25T21:08:11+0000 INFO  runserver.py(174) log_action HTTP POST /accounts/login/ 302 [0.27, 127.0.0.1:59059]
+2024-09-25T21:08:11+0000 INFO  runserver.py(168) log_action HTTP GET / 200 [0.03, 127.0.0.1:59059]
+2024-09-25T21:08:13+0000 INFO  runserver.py(168) log_action HTTP GET /player/18/ 200 [0.14, 127.0.0.1:59059]
+2024-09-25T21:08:13+0000 INFO  runserver.py(174) log_action HTTP GET /events/player/players:18_18 301 [0.03, 127.0.0.1:59076]
+2024-09-25T21:08:15+0000 ERROR log.py(248) log_response Internal Server Error: /table/14/
+Traceback (most recent call last):
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 253, in _get_response_async
+    response = await wrapped_callback(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 468, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/current_thread_executor.py", line 40, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 522, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py", line 42, in non_players_piss_off
+    return view_function(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/table/details.py", line 456, in table_detail_view
+    _four_hands_context_for_table(request, table)
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/table/details.py", line 258, in _four_hands_context_for_table
+    skel = table.display_skeleton(as_dealt=as_dealt)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py", line 244, in display_skeleton
+    xscript = self.current_hand.xscript
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py", line 73, in xscript
+    rv.add_card(libCard.deserialize(p.serialized))
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/bridge/xscript.py", line 99, in add_card
+    self.player.hand.cards.remove(card)
+ValueError: list.remove(x): x not in list
+2024-09-25T21:08:15+0000 ERROR runserver.py(181) log_action HTTP GET /table/14/ 500 [0.16, 127.0.0.1:59079]
+2024-09-25T21:08:15+0000 WARNING log.py(248) log_response Not Found: /favicon.ico
+2024-09-25T21:08:15+0000 WARNING runserver.py(176) log_action HTTP GET /favicon.ico 404 [0.05, 127.0.0.1:59079]
