@@ -175,5 +175,5 @@ class Command(BaseCommand):
                     )
                     t = Table.objects.get(pk=t.pk)
 
-        for human in Player.objects.filter(allow_bot_to_play_for_me=False).all():
-            self.stdout.write(f"{human} don't need no steenkin' bot!")
+        for independent_player in Player.objects.filter(allow_bot_to_play_for_me=False).all():
+            self.stdout.write(f"{independent_player} don't need no steenkin' bot!")
