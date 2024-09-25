@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -257,10 +257,12 @@ class Hand(models.Model):
                 return seat_cycle
 
     @cached_property
-    def annotated_calls(self) -> Iterator[tuple[libSeat, Call]]:
-        return zip(
-            self._seat_cycle_starting_with_dealer,
-            self.calls.all(),
+    def annotated_calls(self) -> Iterable[tuple[libSeat, Call]]:
+        return list(
+            zip(
+                self._seat_cycle_starting_with_dealer,
+                self.calls.all(),
+            )
         )
 
     @property
