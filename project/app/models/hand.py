@@ -329,7 +329,12 @@ admin.site.register(Hand)
 # then this magic will *not* trigger.  I'm not in the habit of creating objects that way, but it's a potential gotcha.
 class CallManager(models.Manager):
     def create(self, *args, **kwargs):
-        _serialized, _hand = kwargs["serialized"], kwargs["hand"]
+        serialized, hand = kwargs["serialized"], kwargs["hand"]
+        table = hand.table
+        board = hand.board
+        logger.debug(
+            f"Hey man, someone created a call: {serialized=} {hand=} at {table=} ({board=}) ... imagine I sent an event"
+        )
         return super().create(*args, **kwargs)
 
 

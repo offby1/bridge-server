@@ -112,23 +112,13 @@ graph: migrate
     cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
-# Run all the tests with profiling
-[group('bs')]
-[script('bash')]
-ptest *options: makemigrations mypy
-    set -euxo pipefail
-    cd project
-    poetry run  python -m cProfile -m pytest --create-db {{ options }}
-
-## Run all the tests
+# Run all the tests
 [group('bs')]
 [script('bash')]
 test *options: makemigrations mypy
     set -euxo pipefail
     cd project
     pytest_exe=$(poetry env info --path)/bin/pytest
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT
     poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
 
 # Display coverage from a test run

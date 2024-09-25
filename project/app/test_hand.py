@@ -11,7 +11,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Play, Player, Table, logged_queries
+from .models import AuctionError, Board, Play, Player, Table
 from .testutils import set_auction_to
 from .views.table import bidding_box_partial_view
 
@@ -183,13 +183,8 @@ def test_current_trick(usual_setup):
     # Nobody done played nothin'
     assert not t.current_hand.current_trick
 
-    print(f"{id(t)=}")
-    with logged_queries():
-        t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
-
-    print(f"{id(t)=}")
-    with logged_queries():
-        declarer = t.current_hand.declarer
+    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    declarer = t.current_hand.declarer
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
