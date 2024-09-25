@@ -56,24 +56,10 @@ class Command(BaseCommand):
 
         dummy_seat = table.dummy
         declarer_seat = table.declarer
-        if declarer_seat is not None:
-            if player.seat == dummy_seat:
-                skip_declarer = self.skip_player(table=table, player=declarer_seat.player)
+        if declarer_seat is not None and player.seat == dummy_seat:
+            return self.skip_player(table=table, player=declarer_seat.player)
 
-                verb = "not supposed" if skip_declarer else "supposed"
-
-                self.wf(
-                    f"{table}: Way-ul, I'm {verb} to play the declarer's hand, so I guess I'm {verb} to play dummy, too",
-                )
-                return skip_declarer
-
-        if not player.allow_bot_to_play_for_me:
-            self.wf(
-                f"{table}: They tell me {player} prefers to make their own choices, so I will bow out",
-            )
-            return True
-
-        return False
+        return bool(not player.allow_bot_to_play_for_me)
 
     def make_a_groovy_call(self, *, hand: Hand) -> None:
         table = hand.table
