@@ -124,6 +124,7 @@ class Command(BaseCommand):
         self.wf(f"{table}: {p} from {legal_cards}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
+        self.wf(f"<-- {data}")
         action = data.get("action")
 
         if "play_id" in data:
