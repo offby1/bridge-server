@@ -221,7 +221,11 @@ def _display_and_control(
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
         or settings.POKEY_BOT_BUTTONS  # we're debugging
-        or (as_viewed_by and seat.value == as_viewed_by.seat.direction)  # it's our hand, duuude
+        or (
+            as_viewed_by
+            and hasattr(as_viewed_by, "seat")
+            and seat.value == as_viewed_by.seat.direction
+        )  # it's our hand, duuude
         or (
             is_dummy and table.current_hand and table.current_hand.current_trick
         )  # it's dummy, and opening lead has been made
