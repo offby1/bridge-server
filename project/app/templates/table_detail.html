@@ -16,13 +16,6 @@
             <div id="hand-summary">{{ table.current_hand.status }}</div>
         </h1>
     </div>
-    {% if table.hand_is_complete is True %}
-        <div>
-            <h1>
-                <a href="{% url 'app:table-archive' table.pk %}">Review this hand</a>
-            </h1>
-        </div>
-    {% endif %}
     <div class="col">{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
     <div style="display: flex;">
         <div>{% include "auction-partial.html#bidding-box-partial" %}</div>

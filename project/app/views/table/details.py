@@ -456,6 +456,9 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
 def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=pk)
 
+    if table.hand_is_complete:
+        return HttpResponseRedirect(reverse("app:table-archive", args=[table.pk]))
+
     context = (
         _four_hands_context_for_table(request, table)
         | _auction_context_for_table(table)
@@ -463,16 +466,6 @@ def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     )
 
     return TemplateResponse(request, "table_detail.html", context=context)
-
-
-def detail_or_archive_view(request: HttpRequest, pk: int) -> HttpResponseRedirect:
-    """
-    Redirects to either the table detail view, if the play hasn't yet completed; or to the archive view otherwise.
-    """
-    table = get_object_or_404(app.models.Table, pk=pk)
-    viewname = "app:table-archive" if table.hand_is_complete else "app:table-detail"
-
-    return HttpResponseRedirect(reverse(viewname, args=[table.pk]))
 
 
 @require_http_methods(["POST"])

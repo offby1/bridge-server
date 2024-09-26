@@ -16,7 +16,7 @@
             {% for table in page_obj %}
                 <tr>
                     <td>
-                        <a href="{% url 'app:table-detail-or-archive' table.pk %}">
+                        <a href="{% url 'app:table-detail' table.pk %}">
                             {% if table.hand_is_complete %}
                                 ✔
                             {% else %}
@@ -25,16 +25,16 @@
                         </a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail-or-archive' table.pk %}">{{ table.current_hand.board }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.board }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail-or-archive' table.pk %}">{{ table.player_names }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.player_names }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail-or-archive' table.pk %}">{{ table.current_auction_status }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_auction_status }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail-or-archive' table.pk %}">{{ table.current_hand.status }}</a>
+                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.status }}</a>
                     </td>
                 </tr>
             {% endfor %}
