@@ -4,18 +4,37 @@ IN PROGRESS:
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
     - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
-    - maybe have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm ready for the next board"; once all four have been pushed, we get the next board.
+  - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
 
 STILL TODO:
 
-* Have to bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
+* It occurs to me that most players should *not* be allowed to see a table review.  The only ones who can are
+  - those who were at that table; or (more broadly)
+  - those who have played that board already
+  For now, since there are no movements, that means: only those who were at that table.
 
-  Maybe use the "rich" library, and have it update every row every time it takes any action at any table.  It'd look kewl.
+* Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
+
+* Set page titles, so the browser history shows something more informative than
+
+  ```
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  ```
 
 * Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
   I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
   <https://en.wikipedia.org/wiki/Duplicate_bridge>
   ("Teams"? "Pairs"? "Individual"?)
+
+  [Barometer](https://en.wikipedia.org/wiki/Duplicate_bridge_movements#Barometer_games_and_online_bridge_movements) might be the way to go.
+
+* Have the bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
+
+  Maybe use the "rich" library, and have it update every row every time it takes any action at any table.  It'd look kewl.
 
 * In the table archive view:
 

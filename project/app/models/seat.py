@@ -19,6 +19,7 @@ class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES.items(),
     )
+    # This should be a ForeignKey.  In effect, Table and Player have a many-to-many relationship, and Seat is the "through" table.
     player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
