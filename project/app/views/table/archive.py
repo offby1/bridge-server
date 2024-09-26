@@ -1,23 +1,39 @@
 import bridge.seat
 from bridge.auction import Contract
-from django.http import HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
 import app.models
+from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 from .details import _four_hands_context_for_table
 
 
-def archive_view(request, pk):
-    t = get_object_or_404(app.models.Table, pk=pk)
+@logged_in_as_player_required()
+def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+    t: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
+
+    board = t.current_board
+    player = request.user.player
+
+    assert player is not None
+
+    if not player.seat.table.hand_set.filter(board=board).exists():
+        return TemplateResponse(
+            request,
+            "403.html",
+            context={"explanation": f"You, {player.name}, have not played board {board.pk}"},
+            status=403,
+        )
+
     a = t.current_auction
     c = a.status
     if not isinstance(c, Contract):
         return HttpResponseNotFound(f"Table {pk} has not found a contract")
     h = t.current_hand
     b = h.board
-    declarer_vulnerable = (
+    declarer_vulnerable = a.declarer is not None and (
         b.ns_vulnerable
         and a.declarer.seat in (bridge.seat.Seat.NORTH, bridge.seat.Seat.SOUTH)
         or b.ew_vulnerable

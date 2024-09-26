@@ -8,11 +8,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* It occurs to me that most players should *not* be allowed to see a table review.  The only ones who can are
-  - those who were at that table; or (more broadly)
-  - those who have played that board already
-  For now, since there are no movements, that means: only those who were at that table.
-
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
 
 * Set page titles, so the browser history shows something more informative than
@@ -112,6 +107,11 @@ STILL TODO:
 
 
 DONE:
+
+* It occurs to me that most players should *not* be allowed to see a table review.  The only ones who can are
+  - those who were at that table; or (more broadly)
+  - those who have played that board already
+  For now, since there are no movements, that means: only those who were at that table.
 
 * In the table list view, links should go directly to the archive, if the play at the table has finished.
 
