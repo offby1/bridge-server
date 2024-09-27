@@ -59,9 +59,7 @@ class Hand(models.Model):
 
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
 
-    # TODO -- this should probably be a ForeignKey, since we want to allow a single board to be played at many tables.
-    # So, in effect, this Hand model is really the "through" table for a many-to-many relation between Table and Board.
-    board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
+    board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
 
     @cached_property
     def xscript(self) -> HandTranscript:
