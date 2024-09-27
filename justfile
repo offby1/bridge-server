@@ -33,7 +33,7 @@ mypy: poetry-install
 alias version := version-file
 [private]
 version-file:
-    git describe --always --dirty --tags > project/VERSION
+    echo $(git describe --always --dirty --tags) $(git log -1 --format=%cs) > project/VERSION
 
 [private]
 pre-commit:
