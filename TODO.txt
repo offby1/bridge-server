@@ -8,6 +8,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
+
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
 
 * Set page titles, so the browser history shows something more informative than
