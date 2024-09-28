@@ -301,6 +301,12 @@ class Table(models.Model):
 
         return rv
 
+    def find_unplayed_board(self) -> Board | None:
+        played_boards = Hand.objects.exclude(table=self).values_list("board_id", flat=True)
+        unplayed_boards = Board.objects.filter(pk__in=played_boards).order_by("id")
+
+        return unplayed_boards.first()
+
     @property
     def current_board(self):
         return self.current_hand.board

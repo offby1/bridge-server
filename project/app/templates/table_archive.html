@@ -2,6 +2,7 @@
 {% block content %}
     <div>
         <h1>Review of {{ table }}</h1>
+        I suppose if we were to play a new board, we'd play {{ table.find_unplayed_board }}.
         <h2>{{ table.current_hand.board }}</h2>
         <h2>{{ table.current_auction_status }}</h2>
         <h2>{{ score }}</h2>
