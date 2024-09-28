@@ -23,6 +23,12 @@ class Seat(models.Model):
     player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"{self.named_direction} at {self.table}"
+
+    def __repr__(self):
+        return f"Model seat {vars(self)}"
+
     @cached_property
     def player_name(self):
         return self.player.name
@@ -45,12 +51,6 @@ class Seat(models.Model):
     @property
     def named_direction(self):
         return SEAT_CHOICES[self.direction]
-
-    def __str__(self):
-        return f"{self.named_direction} at {self.table}"
-
-    def __repr__(self):
-        return f"Model seat {vars(self)}"
 
     def _check_table_consistency(self):
         if self.player is None:
