@@ -495,3 +495,10 @@ def new_table_for_two_partnerships(request, pk1, pk2):
         return HttpResponseForbidden(str(e))
 
     return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def new_board_view(request, pk):
+    logger.debug(f"Pretend I allocated a new board and assigned it to table {pk}.")
+    return HttpResponseRedirect(reverse("app:table-detail", args=[pk]))
