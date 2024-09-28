@@ -59,7 +59,7 @@ def _find_swinging_singles_link():
 
 def _get_text(subject, as_viewed_by):
     addendum = ""
-    if not subject.is_seated and not as_viewed_by.is_seated:
+    if subject.current_seat is None and as_viewed_by.current_seat is None:
         addendum = format_html(
             """ (<a href="{}">other unseated partnerships</a>)""",
             reverse("app:players") + "?seated=False&lookin_for_love=False&exclude_me=True",
@@ -110,9 +110,9 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
     if sender == recipient:
         return None
 
-    if recipient.is_seated:
+    if recipient.current_seat:
         return f"{recipient} is already seated"
-    if sender.is_seated:
+    if sender.current_seat:
         return "You are already seated"
 
     return None

@@ -19,7 +19,7 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     assert player is not None
 
-    if not player.seat.table.hand_set.filter(board=board).exists():
+    if not player.current_seat.table.hand_set.filter(board=board).exists():
         return TemplateResponse(
             request,
             "403.html",

@@ -223,8 +223,8 @@ def _display_and_control(
         or settings.POKEY_BOT_BUTTONS  # we're debugging
         or (
             as_viewed_by
-            and hasattr(as_viewed_by, "seat")
-            and seat.value == as_viewed_by.seat.direction
+            and as_viewed_by.current_seat
+            and seat.value == as_viewed_by.current_seat.direction
         )  # it's our hand, duuude
         or (
             is_dummy and table.current_hand and table.current_hand.current_trick
@@ -233,16 +233,16 @@ def _display_and_control(
     viewer_may_control_this_seat = False
     is_this_seats_turn_to_play = (
         table.current_hand.player_who_may_play
-        and table.current_hand.player_who_may_play.seat.direction == seat.value
+        and table.current_hand.player_who_may_play.current_seat.direction == seat.value
     )
     if as_viewed_by is not None and display_cards and is_this_seats_turn_to_play:
-        if seat.value == as_viewed_by.seat.direction:  # it's our hand, duuude
+        if seat.value == as_viewed_by.current_seat.direction:  # it's our hand, duuude
             viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
         elif table.dummy is not None and table.declarer is not None:
             the_declarer: bridge.seat.Seat = table.declarer.libraryThing
             if (
                 seat.value == table.dummy.direction
-                and the_declarer.value == as_viewed_by.seat.direction
+                and the_declarer.value == as_viewed_by.current_seat.direction
             ):
                 viewer_may_control_this_seat = True
 
@@ -272,7 +272,7 @@ def _four_hands_context_for_table(
         if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(
                 suitholdings,
-                seat_pk=this_seats_player.seat.pk,
+                seat_pk=this_seats_player.current_seat.pk,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
@@ -347,7 +347,7 @@ def _three_by_three_trick_display_context_for_table(
 
 def _bidding_box_context_for_table(request, table):
     player = request.user.player  # type: ignore
-    seat = getattr(player, "seat", None)
+    seat = player.current_seat
     display_bidding_box = table.current_auction.status == bridge.auction.Auction.Incomplete
 
     if not seat or seat.table != table:

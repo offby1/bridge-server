@@ -27,9 +27,6 @@ class PlayerManager(models.Manager):
     def get_by_name(self, name):
         return self.get(user__username=name)
 
-    def all(self, *args, **kwargs):
-        return self.select_related("partner", "seat__table", "user").all()
-
 
 class PlayerException(Exception):
     pass
@@ -68,14 +65,16 @@ class Player(models.Model):
     def libraryThing(self) -> bridge.table.Player:
         try:
             libHand = bridge.table.Hand(
-                cards=self.seat.table.current_board.cards_for_direction(self.seat.direction),
+                cards=self.current_seat.table.current_board.cards_for_direction(
+                    self.current_seat.direction
+                ),
             )
         except KeyError as e:
             msg = f"{self} just might not be seated at {self.table}"
             raise PlayerException(msg) from e
 
         return bridge.table.Player(
-            seat=self.seat.libraryThing,
+            seat=self.current_seat.libraryThing,
             name=self.name,
             hand=libHand,
         )
@@ -156,13 +155,14 @@ class Player(models.Model):
 
     @property
     def table(self):
-        if getattr(self, "seat", None) is None:
+        if self.current_seat is None:
             return None
-        return self.seat.table
+        return self.current_seat.table
 
-    @property
-    def is_seated(self):
-        return Seat.objects.filter(player=self).exists()
+    # TODO -- this seems wrong; once a player gets seated, he can never be unseated.
+    @cached_property
+    def current_seat(self):
+        return Seat.objects.filter(player=self).order_by("-id").first()
 
     @cached_property
     def name(self):
@@ -172,15 +172,15 @@ class Player(models.Model):
     def name_dir(self):
         direction = ""
         role = ""
-        if hasattr(self, "seat"):
-            direction = f" ({self.seat.named_direction})"
+        if self.current_seat:
+            direction = f" ({self.current_seat.named_direction})"
 
-            a = self.seat.table.current_auction
+            a = self.current_seat.table.current_auction
             if a.found_contract:
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
                 else:
-                    dummy = self.seat.table[a.status.declarer.seat.partner()]
+                    dummy = self.current_seat.table[a.status.declarer.seat.partner()]
 
                     if self.name == dummy.name:
                         role = "Dummy! "
@@ -195,22 +195,6 @@ class Player(models.Model):
             reverse("app:player", kwargs={"pk": self.pk}),
             str(self),
         )
-
-    def _check_partner_table_consistency(self):
-        # if we're seated, we must have a partner.
-        seat = getattr(self, "seat", None)
-
-        if seat is None:
-            return
-
-        if self.partner is None:
-            msg = f"{self} is seated at {self.seat} but has no partner!!"
-            raise PlayerException(msg)
-
-    # TODO -- see if we can do this check in a constraint
-    def save(self, *args, **kwargs):
-        self._check_partner_table_consistency()
-        return super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["user__username"]

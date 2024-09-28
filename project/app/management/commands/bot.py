@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         dummy_seat = table.dummy
         declarer_seat = table.declarer
-        if declarer_seat is not None and player.seat == dummy_seat:
+        if declarer_seat is not None and player.current_seat == dummy_seat:
             return self.skip_player(table=table, player=declarer_seat.player)
 
         return bool(not player.allow_bot_to_play_for_me)

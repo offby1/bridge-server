@@ -33,7 +33,7 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
 
     settings.POKEY_BOT_BUTTONS = False
 
-    def expect_visibility(expecation_array):
+    def expect_visibility(expectation_array):
         for seat in t.players_by_direction:
             for viewer in t.players_by_direction:
                 actual = _display_and_control(
@@ -43,7 +43,7 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
                     as_dealt=False,
                 )
                 assert (
-                    actual["display_cards"] == expecation_array[seat - 1][viewer - 1]
+                    actual["display_cards"] == expectation_array[seat - 1][viewer - 1]
                 ), f"{t.players_by_direction[viewer]} {'can' if actual['display_cards'] else 'can not'} see {seat=} "
 
     expect_visibility(
@@ -78,7 +78,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     t = Table.objects.first()
     assert t is not None
 
-    def expect_controlability(expecation_array):
+    def expect_controlability(expectation_array):
         for seat in t.players_by_direction:
             for viewer in t.players_by_direction:
                 actual = _display_and_control(
@@ -88,7 +88,8 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
                     as_dealt=False,
                 )
                 assert (
-                    actual["viewer_may_control_this_seat"] == expecation_array[seat - 1][viewer - 1]
+                    actual["viewer_may_control_this_seat"]
+                    == expectation_array[seat - 1][viewer - 1]
                 ), f"{t.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
 
     # Nobody can control any cards, since the auction isn't settled
