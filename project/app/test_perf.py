@@ -39,4 +39,4 @@ def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> No
     with logged_queries() as ql:
         table_detail_view(request, t.pk)
 
-    assert len(ql.calls) < 100
+    assert len(ql.calls) < 40
