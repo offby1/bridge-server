@@ -16,7 +16,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
-from app.models.board import Board
+from app.models.board import TOTAL_BOARDS, Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.player import Player
@@ -53,15 +53,20 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        deck = bridge.card.Card.deck()
+        b = t.find_unplayed_board()
+        if b is None:
+            if Board.objects.count == TOTAL_BOARDS:
+                msg = "No more tables! The tournament is over."
+                raise TableException(msg)
 
-        if shuffle_deck:
-            random.shuffle(deck)
+            deck = bridge.card.Card.deck()
 
-        b = Board.objects.create_from_deck_and_board_number(
-            board_number=Board.objects.count() + 1,
-            deck=deck,
-        )
+            if shuffle_deck:
+                random.shuffle(deck)
+
+            b = Board.objects.create_from_deck(
+                deck=deck,
+            )
 
         Hand.objects.create(board=b, table=t)
 
@@ -302,8 +307,11 @@ class Table(models.Model):
         return rv
 
     def find_unplayed_board(self) -> Board | None:
-        played_boards = Hand.objects.exclude(table=self).values_list("board_id", flat=True)
-        unplayed_boards = Board.objects.filter(pk__in=played_boards).order_by("id")
+        hands_played_at_this_table = Hand.objects.filter(table=self)
+        board_pks_played_at_this_table = [h.board.pk for h in hands_played_at_this_table]
+        unplayed_boards = Board.objects.exclude(pk__in=board_pks_played_at_this_table).order_by(
+            "id"
+        )
 
         return unplayed_boards.first()
 

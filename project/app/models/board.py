@@ -11,10 +11,12 @@ from django.db import models
 
 from .common import SEAT_CHOICES
 
+TOTAL_BOARDS = 16
+
 
 class BoardManager(models.Manager):
-    def create_from_deck_and_board_number(self, *, deck, board_number):
-        board_number = board_number % 16
+    def create_from_deck(self, *, deck):
+        board_number = self.count() + 1
 
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
         dealer = (board_number - 1) % 4 + 1
