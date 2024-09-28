@@ -52,6 +52,9 @@ class Player(models.Model):
     allow_bot_to_play_for_me = models.BooleanField(default=True)
 
     # TODO -- conceptually, this oughta be a OneToOneField, no?
+
+    # On the other hand -- do I need this at all?  If our player is seated, then we can deduce his partner by seeing
+    # who's sitting across from him.
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
     messages_for_me = GenericRelation(
