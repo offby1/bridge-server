@@ -500,5 +500,8 @@ def new_table_for_two_partnerships(request, pk1, pk2):
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request, pk):
-    logger.debug(f"Pretend I allocated a new board and assigned it to table {pk}.")
+    table = get_object_or_404(app.models.Table, pk=pk)
+    b = table.next_board()
+
+    logger.debug(f"I just allocated a new board {b=} and assigned it to table {pk}.")
     return HttpResponseRedirect(reverse("app:table-detail", args=[pk]))

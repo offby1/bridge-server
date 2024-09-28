@@ -53,22 +53,7 @@ class TableManager(models.Manager):
         except Exception as e:
             raise TableException from e
 
-        b = t.find_unplayed_board()
-        if b is None:
-            if Board.objects.count == TOTAL_BOARDS:
-                msg = "No more tables! The tournament is over."
-                raise TableException(msg)
-
-            deck = bridge.card.Card.deck()
-
-            if shuffle_deck:
-                random.shuffle(deck)
-
-            b = Board.objects.create_from_deck(
-                deck=deck,
-            )
-
-        Hand.objects.create(board=b, table=t)
+        t.next_board(shuffle_deck=shuffle_deck)
 
         send_event(
             channel="all-tables",
@@ -210,7 +195,7 @@ class Table(models.Model):
 
     @property
     def hand_is_complete(self) -> bool:
-        h = self.hand_set.first()
+        h = self.current_hand
         if h is None:
             return False
         # TODO -- replace the 52 with ... something?  Probably the count of cards in the current board.
@@ -314,6 +299,24 @@ class Table(models.Model):
         )
 
         return unplayed_boards.first()
+
+    def next_board(self, shuffle_deck=True) -> Board:
+        b = self.find_unplayed_board()
+        if b is None:
+            if Board.objects.count == TOTAL_BOARDS:
+                msg = "No more tables! The tournament is over."
+                raise TableException(msg)
+
+            deck = bridge.card.Card.deck()
+
+            if shuffle_deck:
+                random.shuffle(deck)
+
+            b = Board.objects.create_from_deck(
+                deck=deck,
+            )
+        Hand.objects.create(board=b, table=self)
+        return b
 
     @property
     def current_board(self):
