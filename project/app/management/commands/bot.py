@@ -125,7 +125,6 @@ class Command(BaseCommand):
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         self.wf(f"<-- {data}")
-        action = data.get("action")
 
         try:
             table = Table.objects.get(pk=data.get("table"))
@@ -133,7 +132,11 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        if action in ("just formed", "new hand") or set(data.keys()) == {"table", "player", "call"}:
+        if data.get("action") in ("just formed", "new hand") or set(data.keys()) == {
+            "table",
+            "player",
+            "call",
+        }:
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
 
