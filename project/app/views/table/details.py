@@ -456,7 +456,7 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
 def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=pk)
 
-    if table.hand_is_complete:
+    if table.hand_is_complete or table.current_auction.status is bridge.auction.Auction.PassedOut:
         return HttpResponseRedirect(reverse("app:table-archive", args=[table.pk]))
 
     context = (

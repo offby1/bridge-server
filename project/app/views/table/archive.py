@@ -1,5 +1,5 @@
 import bridge.seat
-from bridge.auction import Contract
+from bridge.auction import Auction, Contract
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -29,8 +29,22 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     a = t.current_auction
     c = a.status
-    if not isinstance(c, Contract):
+    if not isinstance(c, Contract) and c is not Auction.PassedOut:
         return HttpResponseNotFound(f"Table {pk} has not found a contract")
+
+    if c is Auction.PassedOut:
+        context = _four_hands_context_for_table(request, t, as_dealt=True)
+        context |= {
+            "score": 0,
+            "vars_score": {"passed_out": 0},
+            "show_auction_history": False,
+        }
+        return TemplateResponse(
+            request,
+            "table_archive.html",
+            context=context,
+        )
+
     h = t.current_hand
     b = h.board
     declarer_vulnerable = a.declarer is not None and (
