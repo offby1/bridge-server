@@ -16,6 +16,7 @@
             ],
             "django": true,
             "autoStartBrowser": false,
+            "justMyCode": false,
             "program": "${workspaceFolder}/project/manage.py"
         },
         {
@@ -30,6 +31,7 @@
             ],
             "django": true,
             "autoStartBrowser": false,
+            "justMyCode": false,
             "program": "${workspaceFolder}/project/manage.py"
         }
     ]
