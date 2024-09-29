@@ -39,7 +39,7 @@ class Command(BaseCommand):
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 1
+        sleep_until = previous_action_time + 0.33
 
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
@@ -140,7 +140,7 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
+        if action in ("just formed", "new hand") or set(data.keys()) == {"table", "player", "call"}:
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
 

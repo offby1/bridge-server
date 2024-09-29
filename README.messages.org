@@ -1,7 +1,9 @@
 # Inventory of django eventstream messages that I send
 
 | content                              | sender                                          | recipient channel    | notes                                            |
-|--------------------------------------|-------------------------------------------------|----------------------|--------------------------------------------------|
+|--------------------------------------+-------------------------------------------------+----------------------+--------------------------------------------------|
+| json: new-board                      | table_details view                              | table.pk             | GIMME DAT NEW BOARD                              |
+| json: board, table, action           | models.HandManager                              | all-tables           | "yo, table X just got board Y"                   |
 | json: table, final_score             | handrecord.xscript                              | table.pk             | when the last card has been played               |
 | json: table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables | at every call                                    |
 | json: table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables | only once per table                              |

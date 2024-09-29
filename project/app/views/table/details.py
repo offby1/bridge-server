@@ -504,4 +504,9 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     b = table.next_board()
 
     logger.debug(f"I just allocated a new board {b=} and assigned it to table {pk}.")
+    send_event(
+        channel=str(table.pk),
+        event_type="message",
+        data={"new-board": "and be quick about it"},
+    )
     return HttpResponseRedirect(reverse("app:table-detail", args=[pk]))

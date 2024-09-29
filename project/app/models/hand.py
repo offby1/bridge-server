@@ -40,14 +40,30 @@ TrickTuple = tuple[int, libSeat, libCard, bool]
 TrickTuples = list[TrickTuple]
 
 
+class HandManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        rv = super().create(*args, **kwargs)
+        send_event(
+            channel="all-tables",
+            event_type="message",
+            data={
+                "board": rv.board.pk,
+                "table": rv.table.pk,
+                "action": "new hand",
+            },
+        )
+
+        return rv
+
+
 class Hand(models.Model):
-    """
-    All the calls and plays for a given hand.
-    """
+    """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
+
+    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -247,6 +263,7 @@ class Hand(models.Model):
     def calls(self):
         """
         All the calls in this hand, in chronological order.
+
         `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
         """
         return self.call_set.order_by("id")

@@ -40,8 +40,10 @@ class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
-    def create_with_two_partnerships(self, p1, p2, shuffle_deck=True):
-        t = self.create()
+    def create_with_two_partnerships(
+        self, p1: Player, p2: Player, shuffle_deck: bool = True
+    ) -> Table:
+        t: Table = self.create()
         try:
             with transaction.atomic():
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
