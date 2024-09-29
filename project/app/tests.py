@@ -18,7 +18,7 @@ from .views import lobby, player, table
 
 def test_we_gots_a_home_page():
     c = Client()
-    response = c.get("/")
+    response = c.get("/", follow=True)
     assert b"Welcome" in response.content
 
 

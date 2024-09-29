@@ -2,26 +2,15 @@ import app.views.drf_views
 import django_eventstream  # type: ignore
 from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.urls import include, path
-from rest_framework import routers, serializers, viewsets  # type: ignore
-
-
-# Serializers define the API representation.
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ("url", "username", "email", "is_staff")
-
-
-# ViewSets define the view behavior.
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
+from rest_framework import routers  # type: ignore
 
 router = routers.DefaultRouter()
 router.register(r"boards", app.views.drf_views.BoardViewSet)
+router.register(r"hands", app.views.drf_views.HandViewSet)
+router.register(r"players", app.views.drf_views.PlayerViewSet)
+router.register(r"seats", app.views.drf_views.SeatViewSet)
+router.register(r"tables", app.views.drf_views.TableViewSet)
 
 urlpatterns = [
     path("", include("app.urls")),
