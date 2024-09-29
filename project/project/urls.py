@@ -1,3 +1,4 @@
+import app.views.drf_views
 import django_eventstream  # type: ignore
 from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore
 from django.contrib import admin
@@ -20,8 +21,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 router = routers.DefaultRouter()
-router.register(r"users", UserViewSet)
-
+router.register(r"boards", app.views.drf_views.BoardViewSet)
 
 urlpatterns = [
     path("", include("app.urls")),
