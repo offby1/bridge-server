@@ -166,19 +166,25 @@ class Hand(models.Model):
 
         rv = self.play_set.create(serialized=card.serialize())
 
-        if final_score := self.xscript.final_score(
+        del self.xscript  # it's cached, and we need the freshest value
+        del self.table.libraryThing
+
+        final_score = self.xscript.final_score(
             declarer_vulnerable=True  # TODO -- this is a lie half the time
-        ):
-            kwargs = {
-                "channel": str(self.table.pk),
-                "event_type": "message",
-                "data": {
-                    "table": self.table.pk,
-                    "final_score": str(final_score),
-                },
-            }
-            logger.debug(f"Sending event {kwargs=}")
-            send_event(**kwargs)
+        )
+        logger.debug(f"{final_score=}")
+        if final_score:
+            for channel in (str(self.table.pk), "all-tables"):
+                kwargs = {
+                    "channel": channel,
+                    "event_type": "message",
+                    "data": {
+                        "table": self.table.pk,
+                        "final_score": str(final_score),
+                    },
+                }
+                logger.debug(f"Sending event {kwargs=}")
+                send_event(**kwargs)
 
         from app.models import Player
 

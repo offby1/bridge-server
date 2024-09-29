@@ -152,6 +152,8 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
                 self.make_a_groovy_play(hand=table.current_hand)
+        elif "final_score" in data:
+            self.wf(f"I guess {table}'s play is done, so I should poke that GIMME NEW BOARD button")
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
