@@ -179,6 +179,10 @@ LOGGING = {
         },
     },
     "loggers": {
+        "django.channels.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "django": {
             "handlers": ["console"],
             "propagate": True,
