@@ -501,12 +501,6 @@ def new_table_for_two_partnerships(request, pk1, pk2):
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
-    b = table.next_board()
+    table.next_board()
 
-    logger.debug(f"I just allocated a new board {b=} and assigned it to table {pk}.")
-    send_event(
-        channel=str(table.pk),
-        event_type="message",
-        data={"new-board": "and be quick about it"},
-    )
     return HttpResponseRedirect(reverse("app:table-detail", args=[pk]))
