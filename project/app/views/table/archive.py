@@ -56,7 +56,7 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
     assert broken_down_score is not None
     score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
-    print(f"{score_description=}")
+
     context = _four_hands_context_for_table(request, t, as_dealt=True)
     context |= {
         "score": score_description,
