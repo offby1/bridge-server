@@ -32,6 +32,8 @@ platformdirs = "^4.2.2"
 sentry-sdk = "^2.14.0"
 docutils = "^0.21.2"
 psycopg2-binary = "^2.9.9"
+djangorestframework = "^3.15.2"
+
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^3.2.3"

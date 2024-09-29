@@ -59,11 +59,19 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "debug_toolbar",
     "django_extensions",
+    "rest_framework",
     "template_partials",
     "app",
 ]
 
-# TODO: This seems to do a lot of queries, duh; maybe we don't need it?
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
+    ]
+}
+
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
 EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
