@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets  # type: ignore
 
 from app.models import Board
 from app.serializers import BoardSerializer
