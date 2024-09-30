@@ -40,6 +40,11 @@ urlpatterns = [
         table.details.hand_summary_view,
         name="hand-summary-view",
     ),
+    path(
+        "table/<pk>/new-board-plz",
+        table.details.new_board_view,
+        name="new-board-plz",
+    ),
     path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
 ]
 

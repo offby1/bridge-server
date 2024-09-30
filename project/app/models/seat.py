@@ -19,9 +19,18 @@ class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES.items(),
     )
-    # This should be a ForeignKey.  In effect, Table and Player have a many-to-many relationship, and Seat is the "through" table.
-    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
+
+    # TODO -- consider a boolean named "currently_occupied", plus a constraint that checks
+    # * at most one table/player combo has currently_occupied True
+    # * maybe that that one occupied seat is also the newest, based I guess on various IDs
+    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.named_direction} at {self.table}"
+
+    def __repr__(self):
+        return f"Model seat {vars(self)}"
 
     @cached_property
     def player_name(self):
@@ -45,12 +54,6 @@ class Seat(models.Model):
     @property
     def named_direction(self):
         return SEAT_CHOICES[self.direction]
-
-    def __str__(self):
-        return f"{self.named_direction} at {self.table}"
-
-    def __repr__(self):
-        return f"Model seat {vars(self)}"
 
     def _check_table_consistency(self):
         if self.player is None:

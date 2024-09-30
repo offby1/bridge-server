@@ -39,7 +39,7 @@ class Command(BaseCommand):
     @contextlib.contextmanager
     def delayed_action(self, *, table):
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 1
+        sleep_until = previous_action_time + 0.33
 
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         dummy_seat = table.dummy
         declarer_seat = table.declarer
-        if declarer_seat is not None and player.seat == dummy_seat:
+        if declarer_seat is not None and player.current_seat == dummy_seat:
             return self.skip_player(table=table, player=declarer_seat.player)
 
         return bool(not player.allow_bot_to_play_for_me)
@@ -125,14 +125,6 @@ class Command(BaseCommand):
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         self.wf(f"<-- {data}")
-        action = data.get("action")
-
-        if "play_id" in data:
-            if getattr(self, "play_id_hwm", None) is None:
-                self.play_id_hwm = int(data["play_id"])
-            elif int(data["play_id"]) <= self.play_id_hwm:
-                self.stderr.write(f"Gevalt!! {int(data['play_id'])=} <= {self.play_id_hwm=}!!")
-            self.play_id_hwm = max(self.play_id_hwm, int(data["play_id"]))
 
         try:
             table = Table.objects.get(pk=data.get("table"))
@@ -140,7 +132,11 @@ class Command(BaseCommand):
             self.stderr.write(f"In {data}, table {data.get('table')=} does not exist")
             return
 
-        if action == "just formed" or set(data.keys()) == {"table", "player", "call"}:
+        if data.get("action") in ("just formed", "new hand") or set(data.keys()) == {
+            "table",
+            "player",
+            "call",
+        }:
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
 
@@ -156,6 +152,9 @@ class Command(BaseCommand):
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
                 self.make_a_groovy_play(hand=table.current_hand)
+        elif "final_score" in data:
+            self.wf(f"I guess {table}'s play is done, so I should poke that GIMME NEW BOARD button")
+            table.next_board()
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 

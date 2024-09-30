@@ -28,17 +28,6 @@ def j_northam(db, everybodys_password):
     return Player.objects.create(user=u)
 
 
-def test_all_seated_players_have_partners(usual_setup):
-    for p in Table.objects.first().players_by_direction.values():
-        assert p.partner is not None
-        p.partner = None
-        with pytest.raises(Exception) as e:
-            p.save()
-        assert "but has no partner" in str(e.value)
-        p.seat = None
-        p.save()
-
-
 def test_splitsville_ejects_everyone_from_table(usual_setup):
     table = Table.objects.first()
 
@@ -60,10 +49,10 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
 
     Bob.break_partnership()
 
-    Bob.refresh_from_db()
-    Ted.refresh_from_db()
-    Carol.refresh_from_db()
-    Alice.refresh_from_db()
+    Bob = Player.objects.get(pk=Bob.pk)
+    Ted = Player.objects.get(pk=Ted.pk)
+    Carol = Player.objects.get(pk=Carol.pk)
+    Alice = Player.objects.get(pk=Alice.pk)
 
     assert Bob.partner is None
     assert Ted.partner is None

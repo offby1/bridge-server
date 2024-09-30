@@ -843,6 +843,17 @@ qa = ["flake8 (==5.0.4)", "mypy (==0.971)", "types-setuptools (==67.2.0.1)"]
 testing = ["Django", "attrs", "colorama", "docopt", "pytest (<7.0.0)"]
 
 [[package]]
+name = "logging-tree"
+version = "1.10"
+description = "Introspect and display the logger tree inside \"logging\""
+optional = false
+python-versions = "*"
+files = [
+    {file = "logging_tree-1.10-py2.py3-none-any.whl", hash = "sha256:f0e9f4645e6476e48c563ba2b858286079f886b2d5ad8abeaffd38e536a387d8"},
+    {file = "logging_tree-1.10.tar.gz", hash = "sha256:cd78848fe0ee4aafcc64fa8a66f96f177186ff3d883619b1d7f3628564802095"},
+]
+
+[[package]]
 name = "markupsafe"
 version = "2.1.5"
 description = "Safely add untrusted strings to HTML/XML markup."
@@ -1962,4 +1973,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "57cb12327c2c99f4b8091cd98587d0c6dd8fc0df77009a8e17e1a4d4b0a5f95c"
+content-hash = "41a5c5de3914112de8c8f46fbb7c6d4b070603d3f974b37eae60708b10b55400"

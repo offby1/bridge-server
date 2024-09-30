@@ -1,3 +1,5 @@
+import logging
+
 from .base_settings import *  # noqa
 from .base_settings import TEMPLATES
 
@@ -8,3 +10,5 @@ from .base_settings import TEMPLATES
 TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 POKEY_BOT_BUTTONS = True
+
+LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore

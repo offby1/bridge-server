@@ -40,14 +40,30 @@ TrickTuple = tuple[int, libSeat, libCard, bool]
 TrickTuples = list[TrickTuple]
 
 
+class HandManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        rv = super().create(*args, **kwargs)
+        send_event(
+            channel="all-tables",
+            event_type="message",
+            data={
+                "board": rv.board.pk,
+                "table": rv.table.pk,
+                "action": "new hand",
+            },
+        )
+
+        return rv
+
+
 class Hand(models.Model):
-    """
-    All the calls and plays for a given hand.
-    """
+    """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
+
+    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -59,9 +75,7 @@ class Hand(models.Model):
 
     # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
 
-    # TODO -- this should probably be a ForeignKey, since we want to allow a single board to be played at many tables.
-    # So, in effect, this Hand model is really the "through" table for a many-to-many relation between Table and Board.
-    board = models.OneToOneField["Board"]("Board", on_delete=models.CASCADE)
+    board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
 
     @cached_property
     def xscript(self) -> HandTranscript:
@@ -152,19 +166,25 @@ class Hand(models.Model):
 
         rv = self.play_set.create(serialized=card.serialize())
 
-        if final_score := self.xscript.final_score(
+        del self.xscript  # it's cached, and we need the freshest value
+        del self.table.libraryThing
+
+        final_score = self.xscript.final_score(
             declarer_vulnerable=True  # TODO -- this is a lie half the time
-        ):
-            kwargs = {
-                "channel": str(self.table.pk),
-                "event_type": "message",
-                "data": {
-                    "table": self.table.pk,
-                    "final_score": str(final_score),
-                },
-            }
-            logger.debug(f"Sending event {kwargs=}")
-            send_event(**kwargs)
+        )
+        logger.debug(f"{final_score=}")
+        if final_score:
+            for channel in (str(self.table.pk), "all-tables"):
+                kwargs = {
+                    "channel": channel,
+                    "event_type": "message",
+                    "data": {
+                        "table": self.table.pk,
+                        "final_score": str(final_score),
+                    },
+                }
+                logger.debug(f"Sending event {kwargs=}")
+                send_event(**kwargs)
 
         from app.models import Player
 
@@ -255,6 +275,7 @@ class Hand(models.Model):
     def calls(self):
         """
         All the calls in this hand, in chronological order.
+
         `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
         """
         return self.call_set.order_by("id")
