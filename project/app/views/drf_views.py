@@ -1,4 +1,6 @@
+from django.http import HttpResponseNotFound
 from rest_framework import permissions, viewsets  # type: ignore
+from rest_framework.response import Response  # type: ignore
 
 from app.models import Board, Call, Hand, Play, Player, Seat, Table
 from app.serializers import (
@@ -11,11 +13,21 @@ from app.serializers import (
     TableSerializer,
 )
 
+# from app.views.table.details import _display_and_control
+
 
 class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+    def retrieve(self, request, pk=None):
+        as_viewed_by = request.user
+        the_board = self.queryset.first()
+        if the_board is None:
+            return HttpResponseNotFound()
+        print(f"{self.queryset=} {self=} {request=} {as_viewed_by=} {pk=} {the_board=}")
+        return Response(data="piss off, you", status=403)
 
 
 class CallViewSet(viewsets.ModelViewSet):
