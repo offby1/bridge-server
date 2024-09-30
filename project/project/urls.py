@@ -7,8 +7,10 @@ from rest_framework import routers  # type: ignore
 
 router = routers.DefaultRouter()
 router.register(r"boards", app.views.drf_views.BoardViewSet)
+router.register(r"calls", app.views.drf_views.CallViewSet)
 router.register(r"hands", app.views.drf_views.HandViewSet)
 router.register(r"players", app.views.drf_views.PlayerViewSet)
+router.register(r"plays", app.views.drf_views.PlayViewSet)
 router.register(r"seats", app.views.drf_views.SeatViewSet)
 router.register(r"tables", app.views.drf_views.TableViewSet)
 

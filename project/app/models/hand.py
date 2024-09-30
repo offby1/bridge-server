@@ -245,6 +245,12 @@ class Hand(models.Model):
         assert_type(seat, libSeat)
         return self.table.seat_set.get(direction=seat.value)
 
+    def serialized_calls(self):
+        return [c.serialized for c in self.call_set.order_by("id")]
+
+    def serialized_plays(self):
+        return [p.serialized for p in self.play_set.order_by("id")]
+
     @property
     def calls(self):
         """

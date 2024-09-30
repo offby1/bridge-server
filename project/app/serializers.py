@@ -1,11 +1,12 @@
 from rest_framework import serializers  # type: ignore
 
-from app.models import Board, Hand, Player, Seat, Table
+from app.models import Board, Call, Hand, Play, Player, Seat, Table
 
 
 class BoardSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Board
+        # TODO -- figure out how to only show those cards that belong to the caller's hand!
         fields = (
             "east_cards",
             "ew_vulnerable",
@@ -17,10 +18,22 @@ class BoardSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
+class CallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Call
+        fields = ("serialized",)
+
+
 class HandSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Hand
-        fields = ("table", "board", "pk")
+        fields = ("pk", "table", "board", "serialized_plays", "serialized_calls")
+
+
+class PlaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Play
+        fields = ("won_its_trick", "serialized")
 
 
 class PlayerSerializer(serializers.HyperlinkedModelSerializer):
