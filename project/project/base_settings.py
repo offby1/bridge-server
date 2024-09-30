@@ -75,7 +75,9 @@ REST_FRAMEWORK = {
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 SECURE_SSL_REDIRECT = True
-
+SECURE_REDIRECT_EXEMPT = [
+    r"^events/"
+]  # for the bot when it's running on the same host and connecting to localhost
 
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
