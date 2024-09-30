@@ -13,7 +13,7 @@ from app.serializers import (
     TableSerializer,
 )
 
-# from app.views.table.details import _display_and_control
+from app.views.table.details import _display_and_control
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -23,11 +23,22 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         as_viewed_by = request.user
+        as_dealt = False
+
         the_board = self.queryset.first()
         if the_board is None:
             return HttpResponseNotFound()
-        print(f"{self.queryset=} {self=} {request=} {as_viewed_by=} {pk=} {the_board=}")
-        return Response(data="piss off, you", status=403)
+        table = find_table_seat_from_board_and_player(the_board, as_viewed_by)
+        rv = {}
+        for seat in all_the_seats:
+            display_and_control = _display_and_control(seat=seat, table=table, as_viewed_by=as_viewed_by, as_dealt=as_dealt)
+            print(f"{self.queryset=} {self=} {request=} {as_viewed_by=} {pk=} {the_board=}")
+            if display_and_control["display_cards"]:
+                attribute = f"{seat}_cards"
+                rv[something(seat)] = getattr(the_board, attribute)
+            else:
+                rv[something(seat)] = "shaddap"
+        return serialize(rv)
 
 
 class CallViewSet(viewsets.ModelViewSet):
