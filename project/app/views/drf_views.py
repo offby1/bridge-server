@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import logging
+
 from django.http import HttpResponseNotFound
 from rest_framework import permissions, viewsets  # type: ignore
 from rest_framework.response import Response  # type: ignore
@@ -12,8 +16,16 @@ from app.serializers import (
     SeatSerializer,
     TableSerializer,
 )
-
 from app.views.table.details import _display_and_control
+
+logger = logging.getLogger(__name__)
+
+
+def find_table_seat_from_board_and_player(b: Board, player: Player) -> Table | None:
+    seat_tables = player.seat_set.all()
+    hand_tables = b.hand_set.all()
+    # TODO -- maybe assert there is no more than one
+    return Table.objects.filter(pk__in=hand_tables).filter(pk__in=seat_tables).first()
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -22,23 +34,26 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def retrieve(self, request, pk=None):
-        as_viewed_by = request.user
+        as_viewed_by = request.user.player
         as_dealt = False
 
         the_board = self.queryset.first()
         if the_board is None:
             return HttpResponseNotFound()
         table = find_table_seat_from_board_and_player(the_board, as_viewed_by)
+
         rv = {}
-        for seat in all_the_seats:
-            display_and_control = _display_and_control(seat=seat, table=table, as_viewed_by=as_viewed_by, as_dealt=as_dealt)
-            print(f"{self.queryset=} {self=} {request=} {as_viewed_by=} {pk=} {the_board=}")
+        for seat in table.seat_set.all():
+            display_and_control = _display_and_control(
+                seat=seat.libraryThing, table=table, as_viewed_by=as_viewed_by, as_dealt=as_dealt
+            )
+            seat_name = seat.libraryThing.name.lower()
+            attribute = f"{seat_name}_cards"
+
             if display_and_control["display_cards"]:
-                attribute = f"{seat}_cards"
-                rv[something(seat)] = getattr(the_board, attribute)
-            else:
-                rv[something(seat)] = "shaddap"
-        return serialize(rv)
+                rv[attribute] = getattr(the_board, attribute)
+
+        return Response(data=rv)
 
 
 class CallViewSet(viewsets.ModelViewSet):

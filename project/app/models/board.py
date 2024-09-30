@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
@@ -10,6 +12,11 @@ from django.contrib import admin
 from django.db import models
 
 from .common import SEAT_CHOICES
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from app.models import Hand
 
 TOTAL_BOARDS = 16
 
@@ -60,6 +67,9 @@ class BoardManager(models.Manager):
 
 
 class Board(models.Model):
+    if TYPE_CHECKING:
+        hand_set = RelatedManager[Hand]()
+
     objects = BoardManager()
 
     ns_vulnerable = models.BooleanField()

@@ -4,7 +4,7 @@ import app.models.player
 import app.views.drf_views
 
 
-def test_card_visibility(usual_setup, rf):
+def test_card_visibility(usual_setup, rf, settings):
     # fetch the four-hands-view
     # fetch the equivalent data from the API
     # ensure that some cards (i.e., those from players other than the as_viewed_by) aren't visible in the former
@@ -16,12 +16,13 @@ def test_card_visibility(usual_setup, rf):
     north = app.models.player.Player.objects.get_by_name("Jeremy Northam")
     request.user = north.user
 
-    actual_board = json.loads(v(request, pk=1).render().content)
-    actual_north_cards = actual_board["north_cards"]
-    assert actual_north_cards.startswith("♣2")
-    assert len(actual_north_cards) == 26
+    settings.POKEY_BOT_BUTTONS = False
 
-    actual_south_cards = actual_board["south_cards"]
-    assert actual_south_cards == ""
+    actual_board = json.loads(v(request, pk=1).render().content)
+
+    actual_north_cards = actual_board["north_cards"]
+    assert actual_north_cards == "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A"
+
+    assert "south_cards" not in actual_board
 
     # TODO -- make opening lead (from East), then check south cards again; this time they should be visible.

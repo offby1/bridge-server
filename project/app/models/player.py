@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import bridge.auction
 import bridge.table
@@ -12,6 +13,10 @@ from django_eventstream import send_event  # type: ignore
 
 from .message import Message
 from .seat import Seat
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,9 @@ class PlayerAdmin(admin.ModelAdmin):
 
 
 class Player(models.Model):
+    if TYPE_CHECKING:
+        seat_set = RelatedManager["Seat"]()
+
     seat: Seat
     objects = PlayerManager()
 
