@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from django.http import HttpResponseNotFound
-from rest_framework import permissions, viewsets  # type: ignore
+from rest_framework import permissions, status, viewsets  # type: ignore
 from rest_framework.response import Response  # type: ignore
 
 from app.models import Board, Call, Hand, Play, Player, Seat, Table
@@ -41,25 +40,33 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         as_viewed_by = request.user.player
-        as_dealt = False
 
-        the_board = self.queryset.first()
+        the_board = self.queryset.get(pk=pk)
+
         if the_board is None:
-            return HttpResponseNotFound()
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data_dict = {
+            attr: getattr(the_board, attr) for attr in ("ns_vulnerable", "ew_vulnerable", "dealer")
+        }
+
         table = find_table_seat_from_board_and_player(the_board, as_viewed_by)
 
-        rv = {}
-        for seat in table.seat_set.all():
-            display_and_control = _display_and_control(
-                seat=seat.libraryThing, table=table, as_viewed_by=as_viewed_by, as_dealt=as_dealt
-            )
-            seat_name = seat.libraryThing.name.lower()
-            attribute = f"{seat_name}_cards"
+        if table is not None:  # as_viewed_by has played this board
+            for seat in table.seat_set.all():
+                display_and_control = _display_and_control(
+                    seat=seat.libraryThing,
+                    table=table,
+                    as_viewed_by=as_viewed_by,
+                    as_dealt=table.hand_is_complete,
+                )
+                seat_name = seat.libraryThing.name.lower()
+                attribute = f"{seat_name}_cards"
 
-            if display_and_control["display_cards"]:
-                rv[attribute] = getattr(the_board, attribute)
+                if display_and_control["display_cards"]:
+                    data_dict[attribute] = getattr(the_board, attribute)
 
-        return Response(data=rv)
+        return Response(data=data_dict)
 
 
 class CallViewSet(viewsets.ModelViewSet):
