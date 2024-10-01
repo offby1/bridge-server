@@ -37,9 +37,11 @@ class PlaySerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(serializers.HyperlinkedModelSerializer):
+    table = serializers.HyperlinkedRelatedField(view_name="table-detail", read_only=True)
+
     class Meta:
         model = Player
-        fields = ("name", "pk", "allow_bot_to_play_for_me")
+        fields = ("name", "pk", "allow_bot_to_play_for_me", "table")
 
 
 class SeatSerializer(serializers.HyperlinkedModelSerializer):

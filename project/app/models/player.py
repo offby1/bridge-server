@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -165,14 +167,14 @@ class Player(models.Model):
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
-    def table(self):
+    def table(self) -> Table | None:
         if self.current_seat is None:
             return None
         return self.current_seat.table
 
     # TODO -- this seems wrong; once a player gets seated, he can never be unseated.
     @cached_property
-    def current_seat(self):
+    def current_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
 
     @cached_property

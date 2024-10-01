@@ -19,11 +19,11 @@ def _run_forever() -> None:
     logger.debug("Connecting to %s", host)
 
     messages = SSEClient(
-        f"{host}/events/all-tables/",
+        f"{host}/events/table/{table_pk}",
     )
-    logger.debug(f"Connected to {host}.")
+    logger.debug("Connected to %s.", host)
     for msg in messages:
-        print(vars(msg))
+        logger.debug("%s", vars(msg))
 
 
 run_forever = retrying.retry(

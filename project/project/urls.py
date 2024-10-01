@@ -12,7 +12,7 @@ router.register(r"hands", app.views.drf_views.HandViewSet)
 router.register(r"players", app.views.drf_views.PlayerViewSet)
 router.register(r"plays", app.views.drf_views.PlayViewSet)
 router.register(r"seats", app.views.drf_views.SeatViewSet)
-router.register(r"tables", app.views.drf_views.TableViewSet)
+router.register(r"tables", app.views.drf_views.TableViewSet, basename="table")
 
 urlpatterns = [
     path("", include("app.urls")),
