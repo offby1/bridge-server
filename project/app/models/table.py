@@ -146,12 +146,9 @@ class Table(models.Model):
 
     objects = TableManager()
 
-    def __getitem__(self, seat: bridge.seat.Seat) -> bridge.table.Player:
-        modelPlayer = self.players_by_direction[seat.value]
-        return modelPlayer.libraryThing
-
     def modPlayer_by_seat(self, seat: bridge.seat.Seat) -> Player:
-        return Player.objects.get_by_name(self[seat].name)
+        modelPlayer = self.players_by_direction[seat.value]
+        return Player.objects.get_by_name(modelPlayer.name)
 
     @cached_property
     def seats(self):

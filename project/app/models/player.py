@@ -191,7 +191,9 @@ class Player(models.Model):
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
                 else:
-                    dummy = self.current_seat.table[a.status.declarer.seat.partner()]
+                    dummy = self.current_seat.table.modPlayer_by_seat(
+                        a.status.declarer.seat.partner()
+                    )
 
                     if self.name == dummy.name:
                         role = "Dummy! "
