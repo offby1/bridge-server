@@ -19,3 +19,5 @@ The current bot cheats as hard as it can, by examining all four hands at a given
 How will the bot find out it's its turn to call or play, without periodically fetching the state of the hand?
 
 I wonder if it can use "long polling" or something -- it requests the hand status, but the server delays the response until it's time for the bot to do its thing.  If the server were an ordinary synchronous server, I'd worry that this would tie up a thread; but since I'm already using daphne (which is async), this seems like it should be cheap.
+
+OTOH, I've already got SSE set up, and the current bot uses it; the API bot could also use it, at the cost of requiring that it use an SSE client.
