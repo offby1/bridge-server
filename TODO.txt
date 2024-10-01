@@ -161,8 +161,6 @@ DONE:
   * If we're in a debug mode, what other cards are in the other hands?
   * Whose turn is it to play?
 
-* Display the dummy's cards with 100% opacity when we're in pokey-button mode
-
 * Customize the 404 page that it at least has a link to home.
 
   Right now it's just "NOT FOUND" "The requested resource was not found on this server."

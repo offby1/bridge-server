@@ -9,6 +9,5 @@ from .base_settings import TEMPLATES
 #   django_coverage_plugin.plugin.DjangoTemplatePluginException: Template debugging must be enabled in settings.
 TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
-POKEY_BOT_BUTTONS = True
 
 LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore

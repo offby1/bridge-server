@@ -8,7 +8,6 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 import bridge.seat
-from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
@@ -171,39 +170,6 @@ def _auction_context_for_table(table):
     }
 
 
-def _get_pokey_buttons(
-    *, skel: app.models.table.DisplaySkeleton, as_viewed_by: app.models.Player | None, table_pk: str
-) -> dict[str, SafeString]:
-    rv: dict[str, SafeString] = {}
-
-    if not settings.POKEY_BOT_BUTTONS or as_viewed_by is None:
-        return rv
-
-    for libSeat, _ in skel.items():  # noqa
-        button_value = json.dumps(
-            {
-                "direction": libSeat.value,
-                "player_id": as_viewed_by.pk,
-                "table_id": table_pk,
-            },
-        )
-
-        rv[libSeat.name] = SafeString(f"""<div class="btn-group">
-        <button
-        type="button"
-        class="btn btn-primary"
-        name="who pokes me"
-        value='{button_value}'
-        hx-post="/yo/bot/"
-        hx-swap="none"
-        >POKE ME {libSeat.name}</button>
-        </div>
-        <br/>
-        """)
-
-    return rv
-
-
 def _display_and_control(
     *,
     table: app.models.Table,
@@ -220,7 +186,6 @@ def _display_and_control(
 
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
-        or settings.POKEY_BOT_BUTTONS  # we're debugging
         or (
             as_viewed_by
             and as_viewed_by.current_seat
@@ -288,9 +253,6 @@ def _four_hands_context_for_table(
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
         "hand_summary_endpoint": reverse("app:hand-summary-view", args=[table.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
-        "pokey_buttons": _get_pokey_buttons(skel=skel, as_viewed_by=player, table_pk=table.pk)
-        if not as_dealt
-        else "",
         "table": table,
     } | _three_by_three_trick_display_context_for_table(request, table)
 

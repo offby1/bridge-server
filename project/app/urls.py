@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table
@@ -47,8 +46,3 @@ urlpatterns = [
     ),
     path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
 ]
-
-if settings.POKEY_BOT_BUTTONS:
-    urlpatterns.append(
-        path("yo/bot/", table.details.poke_de_bot, name="poke-de-bot"),
-    )

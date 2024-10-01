@@ -31,8 +31,6 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
 
     assert str(t.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
-    settings.POKEY_BOT_BUTTONS = False
-
     def expect_visibility(expectation_array):
         for seat in t.players_by_direction:
             for viewer in t.players_by_direction:

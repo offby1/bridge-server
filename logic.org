@@ -8,7 +8,6 @@ Questions for the server:
 - shall I show this hand to request.user
   - yes if it's request.user's hand.
   - yes if it's the dummy.
-  - yes if we're in pokey mode.
 - if so, shall I show this card clearly, or gauzily
   - if it's request.user's hand and his turn to play:
     - clearly if legal card, gauzy if not
@@ -23,7 +22,6 @@ Or, here's a description of the *physical* world.
 I sit at a duplicate table.  Which cards do I see?
 - mine
 - the dummy's
-- opponents, if we're in pokey mode
 Which cards can I play?
 - mine, if it's my turn and they're legal
 - the dummy's, if I "control the dummy" (that is: I am declarer, and it's dummy's turn), and they're legal
@@ -36,69 +34,53 @@ OK, so that determines which we *see*.  How are they styled?
 Hmmm ... despite my musings above, *human-ness* is irrelevant!  Well, not to the bot; but it is irrelevant to the server, trying to decide which cards to show and how to style them.
 
 
-| is request.user | pokey mode | is_declarer_human | is_dummy | is_human | is_this_seats_turn_to_play | text vs divs | clear vs gauzy | active vs disabled |
-|-----------------+------------+-------------------+----------+----------+----------------------------+--------------+----------------+--------------------|
-| n               | n          | n                 | n        | n        | n                          |              |                |                    |
-| n               | n          | n                 | n        | n        | y                          |              |                |                    |
-| n               | n          | n                 | n        | y        | n                          |              |                |                    |
-| n               | n          | n                 | n        | y        | y                          |              |                |                    |
-| n               | n          | n                 | y        | n        | n                          |              |                |                    |
-| n               | n          | n                 | y        | n        | y                          |              |                |                    |
-| n               | n          | n                 | y        | y        | n                          |              |                |                    |
-| n               | n          | n                 | y        | y        | y                          |              |                |                    |
-| n               | n          | y                 | n        | n        | n                          |              |                |                    |
-| n               | n          | y                 | n        | n        | y                          |              |                |                    |
-| n               | n          | y                 | n        | y        | n                          |              |                |                    |
-| n               | n          | y                 | n        | y        | y                          |              |                |                    |
-| n               | n          | y                 | y        | n        | n                          |              |                |                    |
-| n               | n          | y                 | y        | n        | y                          |              |                |                    |
-| n               | n          | y                 | y        | y        | n                          |              |                |                    |
-| n               | n          | y                 | y        | y        | y                          |              |                |                    |
-| n               | y          | n                 | n        | n        | n                          | divs         |                |                    |
-| n               | y          | n                 | n        | n        | y                          | divs         |                |                    |
-| n               | y          | n                 | n        | y        | n                          | divs         |                |                    |
-| n               | y          | n                 | n        | y        | y                          | divs         |                |                    |
-| n               | y          | n                 | y        | n        | n                          | divs         |                |                    |
-| n               | y          | n                 | y        | n        | y                          | divs         |                |                    |
-| n               | y          | n                 | y        | y        | n                          | divs         |                |                    |
-| n               | y          | n                 | y        | y        | y                          | divs         |                |                    |
-| n               | y          | y                 | n        | n        | n                          | divs         |                |                    |
-| n               | y          | y                 | n        | n        | y                          | divs         |                |                    |
-| n               | y          | y                 | n        | y        | n                          | divs         |                |                    |
-| n               | y          | y                 | n        | y        | y                          | divs         |                |                    |
-| n               | y          | y                 | y        | n        | n                          | divs         |                |                    |
-| n               | y          | y                 | y        | n        | y                          | divs         |                |                    |
-| n               | y          | y                 | y        | y        | n                          | divs         |                |                    |
-| n               | y          | y                 | y        | y        | y                          | divs         |                |                    |
-| y               | n          | n                 | n        | n        | n                          | divs         |                |                    |
-| y               | n          | n                 | n        | n        | y                          | divs         |                |                    |
-| y               | n          | n                 | n        | y        | n                          | divs         |                |                    |
-| y               | n          | n                 | n        | y        | y                          | divs         |                |                    |
-| y               | n          | n                 | y        | n        | n                          | divs         |                |                    |
-| y               | n          | n                 | y        | n        | y                          | divs         |                |                    |
-| y               | n          | n                 | y        | y        | n                          | divs         |                |                    |
-| y               | n          | n                 | y        | y        | y                          | divs         |                |                    |
-| y               | n          | y                 | n        | n        | n                          | divs         |                |                    |
-| y               | n          | y                 | n        | n        | y                          | divs         |                |                    |
-| y               | n          | y                 | n        | y        | n                          | divs         |                |                    |
-| y               | n          | y                 | n        | y        | y                          | divs         |                |                    |
-| y               | n          | y                 | y        | n        | n                          | divs         |                |                    |
-| y               | n          | y                 | y        | n        | y                          | divs         |                |                    |
-| y               | n          | y                 | y        | y        | n                          | divs         |                |                    |
-| y               | n          | y                 | y        | y        | y                          | divs         |                |                    |
-| y               | y          | n                 | n        | n        | n                          | divs         |                |                    |
-| y               | y          | n                 | n        | n        | y                          | divs         |                |                    |
-| y               | y          | n                 | n        | y        | n                          | divs         |                |                    |
-| y               | y          | n                 | n        | y        | y                          | divs         |                |                    |
-| y               | y          | n                 | y        | n        | n                          | divs         |                |                    |
-| y               | y          | n                 | y        | n        | y                          | divs         |                |                    |
-| y               | y          | n                 | y        | y        | n                          | divs         |                |                    |
-| y               | y          | n                 | y        | y        | y                          | divs         |                |                    |
-| y               | y          | y                 | n        | n        | n                          | divs         |                |                    |
-| y               | y          | y                 | n        | n        | y                          | divs         |                |                    |
-| y               | y          | y                 | n        | y        | n                          | divs         |                |                    |
-| y               | y          | y                 | n        | y        | y                          | divs         |                |                    |
-| y               | y          | y                 | y        | n        | n                          | divs         |                |                    |
-| y               | y          | y                 | y        | n        | y                          | divs         |                |                    |
-| y               | y          | y                 | y        | y        | n                          | divs         |                |                    |
-| y               | y          | y                 | y        | y        | y                          | divs         |                |                    |
+| is request.user | is_declarer_human | is_dummy | is_human | is_this_seats_turn_to_play | text vs divs | clear vs gauzy | active vs disabled |
+|-----------------+-------------------+----------+----------+----------------------------+--------------+----------------+--------------------|
+| n               | n                 | n        | n        | n                          |              |                |                    |
+| n               | n                 | n        | n        | n                          | divs         |                |                    |
+| n               | n                 | n        | n        | y                          |              |                |                    |
+| n               | n                 | n        | n        | y                          | divs         |                |                    |
+| n               | n                 | n        | y        | n                          |              |                |                    |
+| n               | n                 | n        | y        | n                          | divs         |                |                    |
+| n               | n                 | n        | y        | y                          |              |                |                    |
+| n               | n                 | n        | y        | y                          | divs         |                |                    |
+| n               | n                 | y        | n        | n                          |              |                |                    |
+| n               | n                 | y        | n        | n                          | divs         |                |                    |
+| n               | n                 | y        | n        | y                          |              |                |                    |
+| n               | n                 | y        | n        | y                          | divs         |                |                    |
+| n               | n                 | y        | y        | n                          |              |                |                    |
+| n               | n                 | y        | y        | n                          | divs         |                |                    |
+| n               | n                 | y        | y        | y                          |              |                |                    |
+| n               | n                 | y        | y        | y                          | divs         |                |                    |
+| n               | y                 | n        | n        | n                          |              |                |                    |
+| n               | y                 | n        | n        | n                          | divs         |                |                    |
+| n               | y                 | n        | n        | y                          |              |                |                    |
+| n               | y                 | n        | n        | y                          | divs         |                |                    |
+| n               | y                 | n        | y        | n                          |              |                |                    |
+| n               | y                 | n        | y        | n                          | divs         |                |                    |
+| n               | y                 | n        | y        | y                          |              |                |                    |
+| n               | y                 | n        | y        | y                          | divs         |                |                    |
+| n               | y                 | y        | n        | n                          |              |                |                    |
+| n               | y                 | y        | n        | n                          | divs         |                |                    |
+| n               | y                 | y        | n        | y                          |              |                |                    |
+| n               | y                 | y        | n        | y                          | divs         |                |                    |
+| n               | y                 | y        | y        | n                          |              |                |                    |
+| n               | y                 | y        | y        | n                          | divs         |                |                    |
+| n               | y                 | y        | y        | y                          |              |                |                    |
+| n               | y                 | y        | y        | y                          | divs         |                |                    |
+| y               | n                 | n        | n        | n                          | divs         |                |                    |
+| y               | n                 | n        | n        | y                          | divs         |                |                    |
+| y               | n                 | n        | y        | n                          | divs         |                |                    |
+| y               | n                 | n        | y        | y                          | divs         |                |                    |
+| y               | n                 | y        | n        | n                          | divs         |                |                    |
+| y               | n                 | y        | n        | y                          | divs         |                |                    |
+| y               | n                 | y        | y        | n                          | divs         |                |                    |
+| y               | n                 | y        | y        | y                          | divs         |                |                    |
+| y               | y                 | n        | n        | n                          | divs         |                |                    |
+| y               | y                 | n        | n        | y                          | divs         |                |                    |
+| y               | y                 | n        | y        | n                          | divs         |                |                    |
+| y               | y                 | n        | y        | y                          | divs         |                |                    |
+| y               | y                 | y        | n        | n                          | divs         |                |                    |
+| y               | y                 | y        | n        | y                          | divs         |                |                    |
+| y               | y                 | y        | y        | n                          | divs         |                |                    |
+| y               | y                 | y        | y        | y                          | divs         |                |                    |

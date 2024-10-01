@@ -10,21 +10,17 @@
      data-hand-status="{% if table.hand_is_complete is True %}It's all over now, Baby Blue{% endif %}">
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col"></div>
-        <div class="col">
-            {{ pokey_buttons.North }}{{ card_display.North.player.name_dir }}: {{ card_display.North.cards }}
-        </div>
+        <div class="col">{{ card_display.North.player.name_dir }}: {{ card_display.North.cards }}</div>
         <div class="col"></div>
     </div>
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-        <div class="col">{{ pokey_buttons.West }}{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
+        <div class="col">{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
         <div class="col">{% include "three-by-three-trick-display-partial.html#three-by-three-trick-display" %}</div>
-        <div class="col">{{ pokey_buttons.East }}{{ card_display.East.player.name_dir }}: {{ card_display.East.cards }}</div>
+        <div class="col">{{ card_display.East.player.name_dir }}: {{ card_display.East.cards }}</div>
     </div>
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col"></div>
-        <div class="col">
-            {{ pokey_buttons.South }}{{ card_display.South.player.name_dir }}: {{ card_display.South.cards }}
-        </div>
+        <div class="col">{{ card_display.South.player.name_dir }}: {{ card_display.South.cards }}</div>
         <div class="col"></div>
     </div>
 </div>

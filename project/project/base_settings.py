@@ -167,8 +167,6 @@ STATIC_ROOT = BASE_DIR / "static_root"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-POKEY_BOT_BUTTONS = False
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

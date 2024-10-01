@@ -16,8 +16,6 @@ def test_card_visibility(usual_setup, rf, settings):
     north = app.models.player.Player.objects.get_by_name("Jeremy Northam")
     request.user = north.user
 
-    settings.POKEY_BOT_BUTTONS = False
-
     actual_board = json.loads(v(request, pk=1).render().content)
 
     actual_north_cards = actual_board["north_cards"]
