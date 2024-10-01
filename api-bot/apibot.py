@@ -18,8 +18,19 @@ def _run_forever() -> None:
     host = "https://erics-work-macbook-pro.tail571dc2.ts.net/"
     logger.debug("Connecting to %s", host)
 
+    my_name = "ana"
+    all_players = requests.get(f"{host}/api/players/", auth=(my_name, ".")).json()
+    for p in all_players:
+        if p["name"] == my_name:
+            table = requests.get(p["table"], auth=(my_name, ".")).json()
+            logger.info(f"{my_name=} {table=}")
+            break
+    else:
+        msg = f"Cannot find user named {my_name=}"
+        raise Exception(msg)
+
     messages = SSEClient(
-        f"{host}/events/table/{table_pk}",
+        f"{host}/events/table/{table['pk']}",
     )
     logger.debug("Connected to %s.", host)
     for msg in messages:
@@ -32,4 +43,5 @@ run_forever = retrying.retry(
 )(_run_forever)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     run_forever()
