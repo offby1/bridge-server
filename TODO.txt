@@ -24,6 +24,10 @@ STILL TODO:
 
   I mean, the page isn't all that big! Right?
 
+  Well (without the debug toolbar) it's 17 KB which *seems* like a lot, but I dunno.
+
+  It wasn't being compressed ... adding gzip middleware brings it down to 3 KB (but, curiously, not much faster, at least when running locally).  Let's use keep using gzip.
+
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
