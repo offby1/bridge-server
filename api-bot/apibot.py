@@ -12,6 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def _request_ex_filter(ex: Exception) -> bool:
+    if isinstance(ex, requests.exceptions.HTTPError):
+        response = ex.response
+        if response.status_code < 500:
+            # not worth retrying
+            return False
+
     rv = isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
     sys.stderr.write(f"Caught {ex}; {'will' if rv else 'will not'} retry\n")
     return rv
