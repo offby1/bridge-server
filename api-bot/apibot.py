@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from typing import Any
@@ -24,7 +25,17 @@ def _request_ex_filter(ex: Exception) -> bool:
 
 
 def dispatch(msg: dict[str, Any], session: requests.Session) -> None:
-    logger.debug("%s", vars(msg))
+    if msg.data:
+        data = json.loads(msg.data)
+        if all(key in data for key in ("table", "player", "card")):
+            logger.debug(
+                "Player %s at table %s played %s",
+                data["player"],
+                data["table"],
+                data["card"],
+            )
+    else:
+        logger.debug("%s", vars(msg))
 
 
 def _run_forever() -> None:
