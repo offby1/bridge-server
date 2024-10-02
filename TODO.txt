@@ -14,6 +14,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* When I look at the table detail view, and the bot is playing all four players, and a hand gets passed out, the browser does load the "archive" page ... but then it just sits there; the bot does *not* press the "new board plz" button.
+
 * Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
 
   This happens most often when the bot is sending events faster than one per second per table, but I've seen it during normal play, too.
@@ -82,8 +84,6 @@ STILL TODO:
 * Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
-
-* If the auction is passed out, either shut down the table completely, or at least indicate that it's moribund.
 
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
