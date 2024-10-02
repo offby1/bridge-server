@@ -35,7 +35,10 @@ def _run_forever() -> None:
     session = requests.Session()
     session.auth = (my_name, ".")
 
-    all_players = session.get(f"{host}/api/players/").json()
+    response = session.get(f"{host}/api/players/")
+    response.raise_for_status()
+
+    all_players = response.json()
     for p in all_players:
         if p["name"] == my_name:
             table = session.get(p["table"]).json()
