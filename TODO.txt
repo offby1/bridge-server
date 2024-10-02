@@ -1,3 +1,9 @@
+TOP PRIORITIES:
+
+* figure out wassup with the browser missing updates
+* Get a movement working properly
+* allow proper scoring
+
 IN PROGRESS:
 
 * After each hand has been played:
