@@ -20,7 +20,7 @@
             <div class="row">
                 {% for p in t.plays %}
                     <div class="col">
-                        {{ p.player.name }} (sitting {{ p.player.current_seat }}) played <span style="color: {{ p.card.color }}">{{ p.card }}</span>
+                        {{ p.player.name }} (sitting {{ p.player.most_recent_seat }}) played <span style="color: {{ p.card.color }}">{{ p.card }}</span>
                         {% if p.wins_the_trick %}✨{% endif %}
                     </div>
                 {% endfor %}

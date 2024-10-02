@@ -4,20 +4,16 @@ import functools
 
 from django.contrib import messages as django_web_messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
 import app.models
-
-
-class UserMitPlaya(User):
-    player: app.models.Player | None
+import app.models.utils
 
 
 # See https://github.com/sbdchd/django-types?tab=readme-ov-file#httprequests-user-property
 class AuthedHttpRequest(HttpRequest):
-    user: UserMitPlaya  # type: ignore [assignment]
+    user: app.models.utils.UserMitPlaya  # type: ignore [assignment]
 
 
 # Set redirect to False for AJAX endoints.

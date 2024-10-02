@@ -188,10 +188,10 @@ def test_current_trick(usual_setup):
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t[first_players_seat]
+    first_player = t.modPlayer_by_seat(first_players_seat).libraryThing
     first_players_cards = first_player.hand.cards
 
-    second_player = t[first_players_seat.lho()]
+    second_player = t.modPlayer_by_seat(first_players_seat.lho()).libraryThing
     second_players_cards = second_player.hand.cards
 
     first_card = first_players_cards[0]

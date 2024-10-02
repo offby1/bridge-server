@@ -17,10 +17,6 @@ pg-start: orb
 
     docker compose up --wait postgres --detach
 
-# Doesn't work on MacOS, at least when running inside an orbstack machine, since the *host*'s redis is listening on 6379, and thus
-# - we cannot start our own process listening on that port, 'cuz EADDRINUSE; and
-# - we don't need it anyway
-[linux]
 [script('bash')]
 redis:
     set -euxo pipefail

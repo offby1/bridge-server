@@ -24,7 +24,7 @@ def _request_ex_filter(ex: Exception) -> bool:
     return rv
 
 
-def dispatch(msg: dict[str, Any], session: requests.Session) -> None:
+def dispatch(msg: Any, session: requests.Session) -> None:
     if msg.data:
         data = json.loads(msg.data)
         if all(key in data for key in ("table", "player", "card")):

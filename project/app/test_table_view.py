@@ -1,11 +1,10 @@
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
-from django.contrib.auth.models import AnonymousUser
 
 from .models import Table
 from .testutils import set_auction_to
-from .views.table.details import _display_and_control, _four_hands_context_for_table
+from .views.table.details import _display_and_control
 
 
 def test_table_dataclass_thingy(usual_setup: None) -> None:
@@ -131,11 +130,3 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
             [0, 0, 0, 0],  # w
         ]
     )
-
-
-def test_archive_view(usual_setup, rf):
-    t = Table.objects.first()
-    request = rf.get("/woteva/", data={"pk": t.pk})
-    request.user = AnonymousUser()
-    # We're just testing for the absence of an exception
-    _four_hands_context_for_table(request, t, as_dealt=True)

@@ -19,6 +19,7 @@ from .seat import Seat
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
+    from .table import Table
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +77,14 @@ class Player(models.Model):
 
     @property
     def libraryThing(self) -> bridge.table.Player:
+        if self.most_recent_seat is None:
+            msg = f"{self} is not seated"
+            raise PlayerException(msg)
+
         try:
             libHand = bridge.table.Hand(
-                cards=self.current_seat.table.current_board.cards_for_direction(
-                    self.current_seat.direction
+                cards=self.most_recent_seat.table.current_board.cards_for_direction(
+                    self.most_recent_seat.direction
                 ),
             )
         except KeyError as e:
@@ -87,7 +92,7 @@ class Player(models.Model):
             raise PlayerException(msg) from e
 
         return bridge.table.Player(
-            seat=self.current_seat.libraryThing,
+            seat=self.most_recent_seat.libraryThing,
             name=self.name,
             hand=libHand,
         )
@@ -168,13 +173,13 @@ class Player(models.Model):
 
     @property
     def table(self) -> Table | None:
-        if self.current_seat is None:
+        if self.most_recent_seat is None:
             return None
-        return self.current_seat.table
+        return self.most_recent_seat.table
 
-    # TODO -- this seems wrong; once a player gets seated, he can never be unseated.
+    # TODO -- what I really want is *current_seat*
     @cached_property
-    def current_seat(self) -> Seat | None:
+    def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
 
     @cached_property
@@ -185,15 +190,15 @@ class Player(models.Model):
     def name_dir(self):
         direction = ""
         role = ""
-        if self.current_seat:
-            direction = f" ({self.current_seat.named_direction})"
+        if self.most_recent_seat:
+            direction = f" ({self.most_recent_seat.named_direction})"
 
-            a = self.current_seat.table.current_auction
+            a = self.most_recent_seat.table.current_auction
             if a.found_contract:
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
                 else:
-                    dummy = self.current_seat.table.modPlayer_by_seat(
+                    dummy = self.most_recent_seat.table.modPlayer_by_seat(
                         a.status.declarer.seat.partner()
                     )
 

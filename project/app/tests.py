@@ -122,7 +122,7 @@ def test_legal_cards(usual_setup, rf, settings):
     t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
     h = t.current_hand
     declarer = h.declarer
-    leader = t[declarer.seat.lho()]
+    leader = t.modPlayer_by_seat(declarer.seat.lho()).libraryThing
 
     client = Client()
     client.login(username=leader.name, password=".")
@@ -439,7 +439,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t[first_players_seat]
+    first_player = t.modPlayer_by_seat(first_players_seat).libraryThing
     first_players_cards = first_player.hand.cards
 
     first_card = first_players_cards[0]

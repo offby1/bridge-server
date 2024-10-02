@@ -41,7 +41,7 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-start
+all-but-django-prep: version-file pre-commit poetry-install pg-start redis
 
 [group('django')]
 [private]

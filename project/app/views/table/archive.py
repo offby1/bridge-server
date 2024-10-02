@@ -1,5 +1,5 @@
 import bridge.seat
-from bridge.auction import Auction, Contract
+from bridge.auction import Auction
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -19,7 +19,17 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     assert player is not None
 
-    if not player.current_seat.table.hand_set.filter(board=board).exists():
+    if player.most_recent_seat is None:
+        return TemplateResponse(
+            request,
+            "403.html",
+            context={
+                "explanation": f"You, {player.name}, have never been seated, hence cannot look at the cards"
+            },
+            status=403,
+        )
+
+    if not player.most_recent_seat.table.hand_set.filter(board=board).exists():
         return TemplateResponse(
             request,
             "403.html",
@@ -29,7 +39,7 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     a = t.current_auction
     c = a.status
-    if not isinstance(c, Contract) and c is not Auction.PassedOut:
+    if c is Auction.Incomplete:
         return HttpResponseNotFound(f"Table {pk} has not found a contract")
 
     if c is Auction.PassedOut:
@@ -54,7 +64,11 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         and a.declarer.seat in (bridge.seat.Seat.EAST, bridge.seat.Seat.WEST)
     )
     broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
-    assert broken_down_score is not None
+    if broken_down_score is None:
+        return HttpResponseNotFound(
+            f"The hand at table {t} has not been completely played, so there is no final score"
+        )
+
     score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
 
     context = _four_hands_context_for_table(request, t, as_dealt=True)

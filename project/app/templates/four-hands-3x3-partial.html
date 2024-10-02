@@ -37,7 +37,7 @@ play_event_source.addEventListener('message', function (e) {
 
         var openingLeader = d["contract"]["opening_leader"];
 
-        if (openingLeader == {{ user.player.current_seat.direction }}) {
+        if (openingLeader == {{ user.player.most_recent_seat.direction }}) {
             // Ideally we'd just reload the one hand that changed, not all four; but oh well
             htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
         }
