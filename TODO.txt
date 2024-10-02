@@ -8,6 +8,12 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
+
+  This happens most often when the bot is sending events faster than one per second per table, but I've seen it during normal play, too.
+
+  I wonder if I've got htmx swapping the OuterHTML of something, and while that swap is happening perhaps the target element has vanished from the DOM?  In which case, perhaps always doing *inner* swapping could help, since then the target will always be present?
+
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
