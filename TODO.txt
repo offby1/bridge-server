@@ -20,6 +20,10 @@ STILL TODO:
 
   I wonder if I've got htmx swapping the OuterHTML of something, and while that swap is happening perhaps the target element has vanished from the DOM?  In which case, perhaps always doing *inner* swapping could help, since then the target will always be present?
 
+  Consider just *reloading the entire page* every time anything happens.  This will, theoretically, be less efficient than just reloading *some* of the page; but might be so much simpler -- and efficient enough -- that it's worth doing.
+
+  I mean, the page isn't all that big! Right?
+
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
