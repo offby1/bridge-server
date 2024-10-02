@@ -1,5 +1,5 @@
 import bridge.seat
-from bridge.auction import Contract
+from bridge.auction import Auction
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -29,7 +29,7 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     a = t.current_auction
     c = a.status
-    if not isinstance(c, Contract):
+    if c is Auction.Incomplete:
         return HttpResponseNotFound(f"Table {pk} has not found a contract")
     h = t.current_hand
     b = h.board
@@ -40,7 +40,12 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         and a.declarer.seat in (bridge.seat.Seat.EAST, bridge.seat.Seat.WEST)
     )
     broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
-    assert broken_down_score is not None
+
+    if broken_down_score is None:
+        return HttpResponseNotFound(
+            f"The hand at {t} has not been completely played (only {len(h.xscript.tricks)} tricks), so there is no final score"
+        )
+
     score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
     print(f"{score_description=}")
     context = _four_hands_context_for_table(request, t, as_dealt=True)
