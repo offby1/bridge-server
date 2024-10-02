@@ -34,6 +34,13 @@ def dispatch(msg: dict[str, Any], session: requests.Session) -> None:
                 data["table"],
                 data["card"],
             )
+        elif all(key in data for key in ("table", "player", "call")):
+            logger.debug(
+                "Player %s at table %s called %s",
+                data["player"],
+                data["table"],
+                data["call"],
+            )
     else:
         logger.debug("%s", vars(msg))
 
