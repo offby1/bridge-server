@@ -45,6 +45,14 @@ services:
     depends_on:
       - postgres
 
+  populated-with-fake-data:
+    <<: *django
+    command: "poetry run python manage.py generate_fake_data --players=56"
+    restart: "no"
+    ports: []
+    depends_on:
+      - django-migrated
+
   postgres:
     image: postgres:17
     environment:
