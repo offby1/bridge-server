@@ -86,7 +86,14 @@ class Command(BaseCommand):
                     break
                 self.stderr.write("Nuts, a pass! Let's try again")
             else:
-                self.stdout.write("I tried rilly rilly hard not to pass this hand out, but ... 😢")
+                self.stdout.write(
+                    "I tried rilly rilly hard not to pass this hand out, but ... 😢  I'll get a new board!"
+                )
+                # TODO -- it'd probably be cleaner to do nothing here, and instead have the server send a "the hand was
+                # passed out" event, analagous to the "contract_text" message that it currently sends when an auction
+                # has settled, and then have our "dispatch" fetch the next board.
+                table.next_board()
+                return
 
         try:
             hand.add_call_from_player(player=player_to_impersonate, call=call)
