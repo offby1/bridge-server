@@ -103,77 +103,13 @@
 {% endblock content %}
 {% block scripts %}
     <script>
-var auctionEventSource = new ReconnectingEventSource('/events/table/{{ table.pk }}');
+var tableEventSource = new ReconnectingEventSource('/events/table/{{ table.pk }}');
 
-auctionEventSource.addEventListener('message', function (e) {
-    var d = JSON.parse(e.data) ;
-    // Reload the partial only if the data indicates something about the auction.
-    if (("call" in d) || ("contract" in d)) {
-        console.log("Auction event listener saw " + e.data);
+tableEventSource.addEventListener('message', function (e) {
+    console.log("Table event listener saw " + e.data);
 
-        if ("call" in d) {
-            htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
-                console.log("Auction event listener fetched {{ auction_partial_endpoint }}");
-                htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
-                    console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
-                });
-            });
-        } else if ("contract_text" in d) {
-            htmx.swap ('#auction-summary', d.contract_text, {swapStyle:'innerHTML'});
-        }
-    }
-
+    window.location.reload();
 }, false);
 
-    </script>
-    <script>
-var play_event_source = new ReconnectingEventSource('/events/table/{{ table.pk }}');
-
-play_event_source.addEventListener('message', function (e) {
-    var d = JSON.parse(e.data) ;
-    if ("contract" in d) {
-        console.log("Opening lead event listener saw " + e.data);
-
-        var openingLeader = d["contract"]["opening_leader"];
-
-        if (openingLeader == {{ user.player.seat.direction }}) {
-            // Ideally we'd just reload the one hand that changed, not all four; but oh well
-            htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'});
-        }
-    } else if ("card" in d) {
-        // TODO: Reload the partial only if the data indicates that the viewer, or dummy's, hands have changed.
-        htmx.ajax('GET', '{{ four_hands_partial_endpoint }}', {target:'#four-hands', swap:'outerHTML'}).then(() => {
-            htmx.ajax('GET', '{{ hand_summary_endpoint }}', {target:'#hand-summary', swap:'innerHTML'})
-            console.log(
-                new Date().toISOString(),
-                ": Play event listener saw play #"
-                    + d.play_id
-                    + ", "
-                    + d.card
-                    + " from "
-                    + d.player
-                    + ", so it fetched {{ four_hands_partial_endpoint }} and {{ hand_summary_endpoint }}"
-            );
-        });
-
-    }
-}, false);
-
-htmx.on("htmx:afterSettle", function(evt) {
-    var handStatusDataset = document.querySelector("#four-hands").dataset;
-    if (handStatusDataset.handStatus) {
-        console.log("Way-ul, our DOM has settled, and the ol' clock on the wall says " +  handStatusDataset.handStatus + ", so maybe I'll forcibly reload this page");
-        auctionEventSource.close();
-        play_event_source.close();
-        window.location.reload();
-    }
-})
-
-
-    </script>
-    <script>
-htmx.on("htmx:responseError", function(evt) {
-   alert(evt.detail.xhr.response);
-});
     </script>
 {% endblock scripts %}
