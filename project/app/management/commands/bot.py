@@ -3,20 +3,27 @@ from __future__ import annotations
 import collections
 import contextlib
 import datetime
+import functools
 import json
+import operator
 import os
 import random
 import sys
 import time
 import typing
 
+import bridge.card
+import bridge.xscript
 import requests
 import retrying  # type: ignore
 from app.models import AuctionError, Hand, Player, Table
-from bridge.contract import Pass
+from app.models.utils import assert_type
+from bridge.contract import Contract, Pass
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
+
+random.seed(0)
 
 
 def ts(time_t=None):
@@ -30,6 +37,55 @@ def _request_ex_filter(ex):
     now = ts().replace(microsecond=0).isoformat()
     sys.stderr.write(f"{now} Caught {ex}; {'will' if rv else 'will not'} retry\n")
     return rv
+
+
+def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
+    """
+    Roughly: how many opponent's cards rank higher than this one?  Only look at opponents who haven't yet played to this trick.
+    Return that value, negated.  If there's a trump suit, those count too.
+    Examples:
+    - at notrump, opening lead is the club 2, declarer & dummy have (say) six clubs.
+      All six beat the club two, so our value is -6.
+    - at one diamond, halfway through the hand, someone plays the 8 of spades.
+      - opponents have (say) 2, 3, and ten of spades, and 3 diamonds.
+      - our value is thus -1 * (1 for the ten of spades plus 3 for each diamond) == -4.
+    - at notrump, if we play a card of whose suit we've stripped the opponents, its power is 0 (the maximum possible).
+    """
+    assert_type(c, bridge.card.Card)
+
+    t = xscript.table
+
+    me = xscript.player
+    lho = t.get_lho(me)
+    rho = t.get_lho(t.get_partner(me))
+
+    hidden_opponents_hands_to_consider = [lho, rho]
+
+    opponents_cards_in_current_trick: list[bridge.card.Card] = []
+    if xscript.tricks and not xscript.tricks[-1].is_complete():
+        for play in xscript.tricks[-1]:
+            if play.player in (lho, rho):
+                hidden_opponents_hands_to_consider.remove(play.player)
+                opponents_cards_in_current_trick.append(play.card)
+
+    cards_in_opponents_hands: list[bridge.card.Card] = []
+    for opp in hidden_opponents_hands_to_consider:
+        cards_in_opponents_hands.extend(opp.hand.cards)
+
+    assert isinstance(xscript.auction.status, Contract)
+
+    powah = 0
+
+    for oppo in cards_in_opponents_hands + opponents_cards_in_current_trick:
+        assert_type(oppo, bridge.card.Card)
+
+        # TODO -- this doesn't seem quite right.  If oppo is a trump card, and c is not, oppo will win *only* if either
+        # - trumps were led; or
+        # - opponents have a void in our suit, so they can legally play the trump
+        # But they cannot always play the trump, so it doesn't seem right to count it as a full minus one here.
+        if xscript.would_beat(candidate=oppo, subject=c):
+            powah -= 1
+    return powah
 
 
 class Command(BaseCommand):
@@ -119,10 +175,16 @@ class Command(BaseCommand):
             self.wf(f"{table}: No legal cards at {seat_to_impersonate}? The hand must be over.")
             return
 
-        chosen_card = random.choice(legal_cards)
+        chosen_card = hand.xscript.slightly_less_dumb_play(
+            order_func=functools.partial(trick_taking_power, xscript=hand.xscript)
+        )
 
+        ranked_options = sorted(
+            [(c, trick_taking_power(c, xscript=hand.xscript)) for c in hand.xscript.legal_cards()],
+            key=operator.itemgetter(1),
+        )
         p = hand.add_play_from_player(player=hand.xscript.player, card=chosen_card)
-        self.wf(f"{table}: {p} from {legal_cards}")
+        self.wf(f"{table}: {p} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         self.wf(f"<-- {data}")
@@ -159,6 +221,9 @@ class Command(BaseCommand):
                 self.make_a_groovy_play(hand=table.current_hand)
         else:
             self.stderr.write(f"No idea what to do with {data=}")
+
+        if table.current_hand.current_trick and len(table.current_hand.current_trick) == 4:
+            self.wf("\n")
 
     @retrying.retry(
         retry_on_exception=_request_ex_filter,
