@@ -14,6 +14,7 @@ from bridge.table import Player as libPlayer
 from .models import AuctionError, Board, Play, Player, Table
 from .testutils import set_auction_to
 from .views.table import bidding_box_partial_view
+from .views.table.details import _bidding_box_context_for_table
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
@@ -90,12 +91,10 @@ def _bidding_box_as_seen_by(t: Table, as_seen_by: Player | libPlayer, rf) -> Tem
     return response
 
 
-def _partition_button_values(t: Table, as_seen_by: Player, rf) -> tuple[list[str], list[str]]:
-    response = _bidding_box_as_seen_by(t, as_seen_by, rf)
-
+def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
     disabled_buttons: list[str] = []
     active_buttons: list[str] = []
-    bb_html_lines = response.content.decode().split("\n")
+    bb_html_lines = bb_html.split("\n")
 
     def value(html: str) -> str:
         import re
@@ -117,7 +116,7 @@ def _partition_button_values(t: Table, as_seen_by: Player, rf) -> tuple[list[str
 
 def test_bidding_box_html(usual_setup, rf):
     # First case: completed auction, contract is one diamond, not doubled.
-    t = Table.objects.first()
+    t: Table = Table.objects.first()
 
     t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
     # set_auction_to has set the declarer to be the dealer.
@@ -147,9 +146,11 @@ def test_bidding_box_html(usual_setup, rf):
 
         assert t.current_auction.allowed_caller().name == "Clint Eastwood"
 
-    disabled, enabled = _partition_button_values(
-        t, as_seen_by=t.current_hand.auction.allowed_caller(), rf=rf
-    )
+    east = Player.objects.get_by_name("Clint Eastwood")
+    request = rf.get("/woteva/")
+    request.user = east.user
+    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
+    disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
     # Third case: as above but with one more "Pass".
@@ -161,10 +162,11 @@ def test_bidding_box_html(usual_setup, rf):
     t = Table.objects.get(pk=t.pk)
     assert t.current_auction.allowed_caller().name == "J.D. Souther"
 
+    south = Player.objects.get_by_name("J.D. Souther")
+    request.user = south.user
+    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
     # you cannot double your own partner.
-    disabled, active = _partition_button_values(
-        t, as_seen_by=t.current_hand.auction.allowed_caller(), rf=rf
-    )
+    disabled, _active = _partition_button_values(bbc_html)
 
     assert set(disabled) == {
         "1♣",
@@ -172,9 +174,11 @@ def test_bidding_box_html(usual_setup, rf):
         "Double",
         "Redouble",
     }
-    esther = Player.objects.get_by_name("Clint Eastwood")
-    disabled, active = _partition_button_values(t, as_seen_by=esther, rf=rf)
-    assert len(disabled) == 38, f"{esther} shouldn't be allowed to call at all"
+    request.user = east.user
+    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
+
+    disabled, _active = _partition_button_values(bbc_html)
+    assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
 
 
 def test_current_trick(usual_setup):
