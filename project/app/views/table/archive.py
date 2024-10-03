@@ -1,8 +1,9 @@
 import bridge.seat
 from bridge.auction import Auction
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.views.decorators.gzip import gzip_page
 
 import app.models
@@ -42,7 +43,7 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     a = t.current_auction
     c = a.status
     if c is Auction.Incomplete:
-        return HttpResponseNotFound(f"Table {pk} has not found a contract")
+        return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
 
     if c is Auction.PassedOut:
         context = _four_hands_context_for_table(request, t, as_dealt=True)
