@@ -411,7 +411,10 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     if h.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
     assert whos_asking is not None
-    if h.player_who_may_play.libraryThing == h.dummy and whos_asking.libraryThing == h.declarer:
+    if (
+        h.player_who_may_play.libraryThing.seat == h.dummy.seat
+        and whos_asking.libraryThing.seat == h.declarer.seat
+    ):
         pass
     elif whos_asking != h.player_who_may_play:
         return HttpResponseForbidden(
