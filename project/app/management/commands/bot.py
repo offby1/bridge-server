@@ -98,7 +98,8 @@ class Command(BaseCommand):
                 # TODO -- it'd probably be cleaner to do nothing here, and instead have the server send a "the hand was
                 # passed out" event, analagous to the "contract_text" message that it currently sends when an auction
                 # has settled, and then have our "dispatch" fetch the next board.
-                table.next_board()
+                with self.delayed_action(table=table):
+                    table.next_board()
                 return
 
         try:
@@ -171,7 +172,8 @@ class Command(BaseCommand):
             self.log(
                 "I guess this table's play is done, so I should poke that GIMME NEW BOARD button"
             )
-            table.next_board()
+            with self.delayed_action(table=table):
+                table.next_board()
         else:
             self.stderr.write(f"No idea what to do with {data=}")
 
