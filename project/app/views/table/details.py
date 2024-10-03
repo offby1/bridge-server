@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
+from django.views.decorators.gzip import gzip_page
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
@@ -423,6 +424,7 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     return HttpResponse()
 
 
+@gzip_page
 @logged_in_as_player_required()
 def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=pk)

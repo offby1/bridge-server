@@ -14,6 +14,7 @@ import requests
 import retrying  # type: ignore
 from app.models import AuctionError, Hand, Player, Table
 from bridge.contract import Pass
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from sseclient import SSEClient  # type: ignore
 
@@ -170,6 +171,7 @@ class Command(BaseCommand):
         wait_exponential_multiplier=1000,
     )
     def run_forever(self):
+        self.wf(f"{settings.EVENTSTREAM_REDIS=}")
         django_host = os.environ.get("DJANGO_HOST", "localhost")
         self.wf(f"Connecting to {django_host}")
 
@@ -178,6 +180,7 @@ class Command(BaseCommand):
         )
         self.wf(f"Finally! Connected to {django_host}.")
         for msg in messages:
+            self.wf(str(vars(msg)))
             if msg.event != "keep-alive":
                 if msg.data:
                     data = json.loads(msg.data)

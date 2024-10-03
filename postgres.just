@@ -21,9 +21,7 @@ pg-start: orb
 redis:
     set -euxo pipefail
 
-    docker container restart redis 2> /dev/null && exit
-
-    docker run --detach --name redis --publish 6379:6379 redis
+    docker compose up --wait redis --detach
 
 [group('postgres')]
 drop: pg-start

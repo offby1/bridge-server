@@ -3,6 +3,7 @@ from bridge.auction import Auction
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.views.decorators.gzip import gzip_page
 
 import app.models
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
@@ -10,6 +11,7 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 from .details import _four_hands_context_for_table
 
 
+@gzip_page
 @logged_in_as_player_required()
 def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     t: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
@@ -64,9 +66,10 @@ def archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         and a.declarer.seat in (bridge.seat.Seat.EAST, bridge.seat.Seat.WEST)
     )
     broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
+
     if broken_down_score is None:
         return HttpResponseNotFound(
-            f"The hand at table {t} has not been completely played, so there is no final score"
+            f"The hand at {t} has not been completely played (only {len(h.xscript.tricks)} tricks), so there is no final score"
         )
 
     score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
