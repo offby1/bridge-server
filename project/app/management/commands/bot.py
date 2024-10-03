@@ -148,6 +148,10 @@ class Command(BaseCommand):
 
         self.table = table
 
+        # In a perfect world, the event on which we're dispatching would include a timestamp, and we'd use *that*
+        # instead of `time.time`.  But oh well.
+        self.last_action_timestamps_by_table_id[table.pk] = time.time()
+
         if data.get("action") in ("just formed", "new hand") or set(data.keys()) == {
             "table",
             "player",

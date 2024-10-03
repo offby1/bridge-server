@@ -14,6 +14,14 @@ IN PROGRESS:
 
 STILL TODO:
 
+* HEY! Bob can see *all* the cards at <https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/> ... I thought I fixed that :-(
+
+  ... I need to put ACLs around "list" as well as around "retrieve", it seems.
+
+* Have the bot delay, not just after *it* has made some action at a table, but after *any* action, even by humans, has happened.
+
+  Currently if the bot is sitting to the left of a human, and a human takes a while to do whatever, the bot will immediately act.
+
 * When I look at the table detail view, and the bot is playing all four players, and a hand gets passed out, the browser does load the "archive" page ... but then it just sits there; the bot does *not* press the "new board plz" button.
 
 * Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
