@@ -11,9 +11,9 @@
         <h2>{{ score }}</h2>
         <p>{{ vars_score }}</p>
     </div>
-    <div>{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
+    <div>{% include "four-hands.html" %}</div>
     <div style="display: flex;">
-        <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
+        <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
     <div>
         {% for t in table.current_hand.xscript.tricks %}

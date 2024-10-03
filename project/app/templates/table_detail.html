@@ -16,18 +16,25 @@
             <div id="hand-summary">{{ table.current_hand.status }}</div>
         </h1>
     </div>
-    <div class="col">{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
+    <div class="col">{% include "four-hands.html" %}</div>
     <div style="display: flex;">
-        <div>{% include "auction-partial.html#bidding-box-partial" %}</div>
-        <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
+        <div>
+            <div style="font-family: monospace;" id="bidding-box">
+                {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+            </div>
+        </div>
+        <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
 {% endblock content %}
 {% block scripts %}
-    {% include "auction-partial.html#auction-scripts" %}
-    {% include "four-hands-3x3-partial.html#four-hands-3x3-scripts" %}
     <script>
-htmx.on("htmx:responseError", function(evt) {
-   alert(evt.detail.xhr.response);
-});
+var tableEventSource = new ReconnectingEventSource('/events/table/{{ table.pk }}');
+
+tableEventSource.addEventListener('message', function (e) {
+    console.log("Table event listener saw " + e.data);
+
+    window.location.reload();
+}, false);
+
     </script>
 {% endblock scripts %}
