@@ -18,12 +18,73 @@
     </div>
     <div class="col">{% include "four-hands-3x3-partial.html#four-hands-3x3-partial" %}</div>
     <div style="display: flex;">
-        <div>{% include "auction-partial.html#bidding-box-partial" %}</div>
-        <div style="flex-grow: 1">{% include "auction-partial.html#auction-partial" %}</div>
+        <div>
+            <div style="font-family: monospace;" id="bidding-box">
+                {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+            </div>
+        </div>
+        <div style="flex-grow: 1">
+            {% if show_auction_history %}
+                <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
+                    <table class="table">
+                        <th>
+                            <tr>
+                                <td>
+                                    <i>West</i>
+                                </td>
+                                <td>
+                                    <i>North</i>
+                                </td>
+                                <td>
+                                    <i>East</i>
+                                </td>
+                                <td>
+                                    <i>South</i>
+                                </td>
+                            </tr>
+                        </th>
+                        <tbody>
+                            {% for row in table.current_auction.fancy_HTML_display %}
+                                <tr>
+                                    {% for call in row %}
+                                        <td>
+                                            {% if call is not None %}{{ call|safe }}{% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endblock content %}
 {% block scripts %}
-    {% include "auction-partial.html#auction-scripts" %}
+    <script>
+var auctionEventSource = new ReconnectingEventSource('/events/table/{{ table.pk }}');
+
+auctionEventSource.addEventListener('message', function (e) {
+    var d = JSON.parse(e.data) ;
+    // Reload the partial only if the data indicates something about the auction.
+    if (("call" in d) || ("contract" in d)) {
+        console.log("Auction event listener saw " + e.data);
+
+        if ("call" in d) {
+            htmx.ajax('GET', '{{ auction_partial_endpoint }}', {target:'#auction', swap:'outerHTML scroll:bottom'}).then(() => {
+                console.log("Auction event listener fetched {{ auction_partial_endpoint }}");
+                htmx.ajax('GET', '{{ bidding_box_partial_endpoint }}', {target:'#bidding-box', swap:'outerHTML'}).then(() => {
+                    console.log("Auction event listener fetched {{ bidding_box_partial_endpoint }}" );
+                });
+            });
+        } else if ("contract_text" in d) {
+            htmx.swap ('#auction-summary', d.contract_text, {swapStyle:'innerHTML'});
+        }
+    }
+
+}, false);
+
+    </script>
     {% include "four-hands-3x3-partial.html#four-hands-3x3-scripts" %}
     <script>
 htmx.on("htmx:responseError", function(evt) {
