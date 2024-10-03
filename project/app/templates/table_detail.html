@@ -33,7 +33,20 @@
             </div>
             <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
                 <div class="col">{{ pokey_buttons.West }}{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
-                <div class="col">{% include "three-by-three-trick-display-partial.html#three-by-three-trick-display" %}</div>
+                <div class="col">
+                    <div class="three-by-three-yadda-yadda">
+                        {% for row in three_by_three_trick_display.rows %}
+                            <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
+                                {% for column in row %}
+                                    <div class="col"
+                                         {% if column != " " %}style="border: 1px dotted;"{% endif %}>
+                                        {{ column|safe }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 <div class="col">{{ pokey_buttons.East }}{{ card_display.East.player.name_dir }}: {{ card_display.East.cards }}</div>
             </div>
             <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
