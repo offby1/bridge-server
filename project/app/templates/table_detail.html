@@ -16,89 +16,14 @@
             <div id="hand-summary">{{ table.current_hand.status }}</div>
         </h1>
     </div>
-    <div class="col">
-        {# North at the top as per the Bridge Writing Style Guide #}
-        <div id="four-hands"
-             style="border: 1px solid;
-                    height: 50%;
-                    font-family: monospace"
-             data-table="{{ table.pk }}"
-             data-hand-status="{% if table.hand_is_complete is True %}It's all over now, Baby Blue{% endif %}">
-            <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-                <div class="col"></div>
-                <div class="col">
-                    {{ pokey_buttons.North }}{{ card_display.North.player.name_dir }}: {{ card_display.North.cards }}
-                </div>
-                <div class="col"></div>
-            </div>
-            <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-                <div class="col">{{ pokey_buttons.West }}{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
-                <div class="col">
-                    <div class="three-by-three-yadda-yadda">
-                        {% for row in three_by_three_trick_display.rows %}
-                            <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-                                {% for column in row %}
-                                    <div class="col"
-                                         {% if column != " " %}style="border: 1px dotted;"{% endif %}>
-                                        {{ column|safe }}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="col">{{ pokey_buttons.East }}{{ card_display.East.player.name_dir }}: {{ card_display.East.cards }}</div>
-            </div>
-            <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-                <div class="col"></div>
-                <div class="col">
-                    {{ pokey_buttons.South }}{{ card_display.South.player.name_dir }}: {{ card_display.South.cards }}
-                </div>
-                <div class="col"></div>
-            </div>
-        </div>
-    </div>
+    <div class="col">{% include "four-hands.html" %}</div>
     <div style="display: flex;">
         <div>
             <div style="font-family: monospace;" id="bidding-box">
                 {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
             </div>
         </div>
-        <div style="flex-grow: 1">
-            {% if show_auction_history %}
-                <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
-                    <table class="table">
-                        <th>
-                            <tr>
-                                <td>
-                                    <i>West</i>
-                                </td>
-                                <td>
-                                    <i>North</i>
-                                </td>
-                                <td>
-                                    <i>East</i>
-                                </td>
-                                <td>
-                                    <i>South</i>
-                                </td>
-                            </tr>
-                        </th>
-                        <tbody>
-                            {% for row in table.current_auction.fancy_HTML_display %}
-                                <tr>
-                                    {% for call in row %}
-                                        <td>
-                                            {% if call is not None %}{{ call|safe }}{% endif %}
-                                        </td>
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        </div>
+        <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
 {% endblock content %}
 {% block scripts %}
