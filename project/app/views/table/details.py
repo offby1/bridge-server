@@ -475,7 +475,7 @@ def new_table_for_two_partnerships(request, pk1, pk2):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
     table.next_board()
 
