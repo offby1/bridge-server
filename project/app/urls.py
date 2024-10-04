@@ -1,12 +1,14 @@
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table
+from .views.hand import hand_list_view
 
 app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
     path("call/<table_pk>/", table.details.call_post_view, name="call-post"),
+    path("hand/", hand_list_view, name="hand-list"),
     path("hand/<pk>/archive/", table.hand_archive_view, name="hand-archive"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/<seat_pk>/", table.details.play_post_view, name="play-post"),
@@ -21,7 +23,6 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("table/", table.details.table_list_view, name="table"),
     path("table/<pk>/", table.details.table_detail_view, name="table-detail"),
     path("table/<table_pk>/auction/", table.details.auction_partial_view, name="auction-partial"),
     path(

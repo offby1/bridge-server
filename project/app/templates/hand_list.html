@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-    {% block table_list %}
-        <h1>
-            TODO -- deprecate me.  We want a <i>hand</i> list, not a <i>table</i> list.
-        </h1>
-        <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
+    {% block hand_list %}
+        <h2>Hands {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
         <table class="table">
-            {# yep, it's a table of tables #}
             <th>
                 <tr>
                     <td>Status</td>
@@ -16,11 +12,11 @@
                     <td>Trick Counts</td>
                 </tr>
             </th>
-            {% for table in page_obj %}
+            {% for hand in page_obj %}
                 <tr>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">
-                            {% if table.hand_is_complete %}
+                        <a href="{% url 'app:hand-detail' hand.pk %}">
+                            {% if hand.is_complete %}
                                 ✔
                             {% else %}
                                 …
@@ -28,20 +24,20 @@
                         </a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.board }}</a>
+                        <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.board }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.player_names }}</a>
+                        <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.table.player_names }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_auction_status }}</a>
+                        <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.table.current_auction_status }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:table-detail' table.pk %}">{{ table.current_hand.status }}</a>
+                        <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.status }}</a>
                     </td>
                 </tr>
             {% endfor %}
         </table>
         {% include "pagination-controls.html" %}
-    {% endblock table_list %}
+    {% endblock hand_list %}
 {% endblock content %}

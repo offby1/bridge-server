@@ -293,6 +293,10 @@ class Hand(models.Model):
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
+    @property
+    def is_complete(self):
+        return len(self.serialized_plays) == 52
+
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
 
