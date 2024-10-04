@@ -6,7 +6,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from .models import Player, Table
 from .testutils import set_auction_to
-from .views.table.archive import archive_view
+from .views.table.archive import hand_archive_view
 from .views.table.details import _four_hands_context_for_table
 
 
@@ -30,7 +30,7 @@ def test_final_score(usual_setup: None, rf: Any) -> None:
     request = rf.get("/woteva/", data={"pk": t.pk})
     request.user = north.user
 
-    response = archive_view(request, t.pk)
+    response = hand_archive_view(request, t.pk)
 
     assert response.status_code == 404
     assert b"not been completely played" in response.content

@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
     {% block table_list %}
+        <h1>
+            TODO -- deprecate me.  We want a <i>hand</i> list, not a <i>table</i> list.
+        </h1>
         <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
         <table class="table">
             {# yep, it's a table of tables #}

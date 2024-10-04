@@ -412,7 +412,9 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
     assert whos_asking is not None
     if (
-        h.player_who_may_play.libraryThing.seat == h.dummy.seat
+        h.dummy is not None
+        and h.player_who_may_play.libraryThing.seat == h.dummy.seat
+        and h.declarer is not None
         and whos_asking.libraryThing.seat == h.declarer.seat
     ):
         pass
@@ -433,7 +435,7 @@ def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=pk)
 
     if table.hand_is_complete or table.current_auction.status is bridge.auction.Auction.PassedOut:
-        return HttpResponseRedirect(reverse("app:table-archive", args=[table.pk]))
+        return HttpResponseRedirect(reverse("app:hand-archive", args=[table.current_hand.pk]))
 
     context = (
         _four_hands_context_for_table(request, table)
