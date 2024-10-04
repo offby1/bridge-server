@@ -106,7 +106,7 @@ class Hand(models.Model):
 
         rv = HandTranscript(
             table=lt,
-            auction=self.table.current_auction,
+            auction=self.auction,
         )
         # *sigh* now replay the entire hand
         play_pks_by_card_played = {}
@@ -295,7 +295,7 @@ class Hand(models.Model):
 
     @property
     def is_complete(self):
-        return len(self.serialized_plays) == 52
+        return len(self.serialized_plays()) == 52
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
