@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from bridge.card import Suit
@@ -39,8 +40,13 @@ def test_for_more_smoke(usual_setup, rf) -> None:
     request = rf.get("/woteva/")
     north = Player.objects.get_by_name("Jeremy Northam")
     request.user = north.user
-    print(hand_archive_view(request, t.current_hand.pk))
-    assert "cat" == "dog"
+    response = hand_archive_view(request, t.current_hand.pk).render()
+    distinct_spans = set()
+    for line in response.content.decode().split("\n"):
+        if (span := re.search(r"""played <span style=".*">..</span>""", line)) is not None:
+            distinct_spans.add(span.group(0))
+
+    assert len(distinct_spans) == 52
 
 
 def test_final_score(usual_setup: None, rf: Any) -> None:

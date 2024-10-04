@@ -11,6 +11,7 @@ from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
+from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
@@ -86,19 +87,22 @@ class Hand(models.Model):
 
         # Yes, this is insane; I need to rethink ... something or other.
 
-        # I've been thinking: why on Earth do we need the *table*, as opposed to just the *hand*, to generate a
-        # transcript?  And I think the answer is: we don't, but I've got something on the Table model that makes it easy
-        # to find the opening leader.
+        players = []
+        for direction, hand_string in self.board.hand_strings_by_direction.items():
+            seat = libSeat(direction)
+            players.append(
+                libPlayer(
+                    seat=seat,
+                    hand=libHand(
+                        cards=[
+                            libCard.deserialize(c) for c in more_itertools.sliced(hand_string, 2)
+                        ]
+                    ),
+                    name=self.table.modPlayer_by_seat(seat).name,
+                )
+            )
 
-        # 1) determine the opening leader from self.call_set
-        # 2) build up our four players, including their hands
-        # 3) pass that mess to the HandTranscript constructor
-        for _play in self.plays():
-            ...
-
-        lt = libTable()
-        for player in lt.players.values():
-            assert len(player.hand.cards) == 13
+        lt = libTable(players=players)
 
         rv = HandTranscript(
             table=lt,
