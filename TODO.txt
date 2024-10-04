@@ -14,6 +14,13 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
+  - "Table" joins "Hand" and "Seat"
+  - "Hand" joins "Call" and "Play"
+
+  Perhaps officially recognize that by rewriting the relevant models to use ManyToMany fields.
+  https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.ManyToManyField.through
+
 * Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
 
   This happens most often when the bot is sending events faster than one per second per table, but I've seen it during normal play, too.
