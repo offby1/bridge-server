@@ -172,7 +172,7 @@ class Hand(models.Model):
         final_score = self.xscript.final_score(
             declarer_vulnerable=True  # TODO -- this is a lie half the time
         )
-        logger.debug(f"{final_score=}")
+
         if final_score:
             for channel in (str(self.table.pk), "all-tables"):
                 kwargs = {
@@ -350,27 +350,7 @@ class Hand(models.Model):
 admin.site.register(Hand)
 
 
-# This simple mechanism might be a better way to send events -- I can rig this up for every model I care about (calls and plays in particular), and this might be cleaner than doing it however I'm currently doing it.
-
-
-# Note that if you create one of these like this
-# c = Call(hand=Hand.objects.first(), serialized="1N")
-# c.save()
-# then this magic will *not* trigger.  I'm not in the habit of creating objects that way, but it's a potential gotcha.
-class CallManager(models.Manager):
-    def create(self, *args, **kwargs):
-        serialized, hand = kwargs["serialized"], kwargs["hand"]
-        table = hand.table
-        board = hand.board
-        logger.debug(
-            f"Hey man, someone created a call: {serialized=} {hand=} at {table=} ({board=}) ... imagine I sent an event"
-        )
-        return super().create(*args, **kwargs)
-
-
 class Call(models.Model):
-    objects = CallManager()
-
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
