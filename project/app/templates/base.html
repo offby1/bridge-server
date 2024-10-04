@@ -1,5 +1,6 @@
 {% load static %}
 {% load partials %}
+{% load base_extras %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -20,7 +21,7 @@
         <div>
             <a href="{% url "app:home" %}">Home</a> | <a href="{% url "app:lobby" %}">Lobby</a> | <a href="{% url "app:table" %}">Tables</a>
             | <a href="{% url "app:players" %}">Players</a>
-            | version <tt>{{ VERSION }}</tt>
+            | <a href="{{ VERSION|gitlab_link }}">version <tt>{{ VERSION }}</tt></a>
             {% if debug %}<h2>| It's debugging time!!</h2>{% endif %}
         </div>
         <div class="row">
