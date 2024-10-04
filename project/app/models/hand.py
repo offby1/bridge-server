@@ -12,6 +12,7 @@ from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
+from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
@@ -79,8 +80,28 @@ class Hand(models.Model):
 
     @cached_property
     def xscript(self) -> HandTranscript:
+        # Synthesize some players.  We don't simply grab them from the table, since *those* players might have played
+        # their cards already -- and the library's "xscript" thing would then try to remove cards from those empty hands
+        # :-(
+
+        # Yes, this is insane; I need to rethink ... something or other.
+
+        # I've been thinking: why on Earth do we need the *table*, as opposed to just the *hand*, to generate a
+        # transcript?  And I think the answer is: we don't, but I've got something on the Table model that makes it easy
+        # to find the opening leader.
+
+        # 1) determine the opening leader from self.call_set
+        # 2) build up our four players, including their hands
+        # 3) pass that mess to the HandTranscript constructor
+        for _play in self.plays():
+            ...
+
+        lt = libTable()
+        for player in lt.players.values():
+            assert len(player.hand.cards) == 13
+
         rv = HandTranscript(
-            table=self.table.libraryThing,
+            table=lt,
             auction=self.table.current_auction,
         )
         # *sigh* now replay the entire hand
