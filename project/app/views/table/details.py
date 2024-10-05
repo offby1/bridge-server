@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any
 
 import bridge.auction
 import bridge.card
@@ -26,9 +25,6 @@ from django_eventstream import send_event  # type: ignore
 import app.models
 from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
-
-if TYPE_CHECKING:
-    from app.models.table import AllFourSuitHoldings, SuitHolding
 
 logger = logging.getLogger(__name__)
 
@@ -111,54 +107,6 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
 
 
-def _single_hand_as_four_divs(
-    all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
-) -> SafeString:
-    def card_button(c: bridge.card.Card) -> str:
-        return f"""<button
-        type="button"
-        class="btn btn-primary"
-        name="play" value="{c.serialize()}"
-        style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
-        hx-post="{reverse("app:play-post", args=[seat_pk])}"
-        hx-swap="none"
-        >{c}</button>"""
-
-    # Meant to look like an active button, but without any hover action.
-    def card_text(text: str, suit_color: str) -> str:
-        return f"""<span
-        class="btn btn-primary inactive-button"
-        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
-        >{text}</span>"""
-
-    def single_row_divs(suit, holding: SuitHolding):
-        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
-        active = holding.legal_now and viewer_may_control_this_seat
-
-        cols = [
-            card_button(c) if active else card_text(str(c), c.color)
-            for c in sorted(holding.cards_of_one_suit, reverse=True)
-        ]
-        if not cols:
-            # placeholder
-            return """<span
-            class="btn btn-primary inactive-button"
-            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
-            >&nbsp;</span>"""
-
-        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
-        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
-
-    row_divs = []
-    for suit, holding in sorted(all_four.items(), reverse=True):
-        row_divs.append(single_row_divs(suit, holding))
-
-    highlight_style = (
-        'style="background-color: lightgreen;"' if all_four.this_hands_turn_to_play else ""
-    )
-    return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
-
-
 def _auction_channel_for_table(table):
     return str(table.pk)
 
@@ -169,102 +117,6 @@ def _auction_context_for_table(table):
         "show_auction_history": table.current_auction.status is bridge.auction.Auction.Incomplete,
         "table": table,
     }
-
-
-def _display_and_control(
-    *,
-    table: app.models.Table,
-    seat: bridge.seat.Seat,
-    as_viewed_by: app.models.Player | None,
-    as_dealt: bool,
-) -> dict[str, bool]:
-    assert_type(table, app.models.Table)
-    assert_type(seat, bridge.seat.Seat)
-    if as_viewed_by is not None:
-        assert_type(as_viewed_by, app.models.Player)
-    assert_type(as_dealt, bool)
-    is_dummy = table.dummy and seat == table.dummy.libraryThing
-
-    display_cards = (
-        as_dealt  # hand is over and we're reviewing it
-        or (
-            as_viewed_by
-            and as_viewed_by.most_recent_seat
-            and seat.value == as_viewed_by.most_recent_seat.direction
-        )  # it's our hand, duuude
-        or (
-            is_dummy and table.current_hand and table.current_hand.current_trick
-        )  # it's dummy, and opening lead has been made
-    )
-
-    viewer_may_control_this_seat = False
-
-    is_this_seats_turn_to_play = (
-        table.current_hand.player_who_may_play is not None
-        and table.current_hand.player_who_may_play.most_recent_seat is not None
-        and table.current_hand.player_who_may_play.most_recent_seat.direction == seat.value
-    )
-    if (
-        as_viewed_by is not None
-        and display_cards
-        and as_viewed_by.most_recent_seat is not None
-        and is_this_seats_turn_to_play
-    ):
-        if seat.value == as_viewed_by.most_recent_seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
-        elif table.dummy is not None and table.declarer is not None:
-            the_declarer: bridge.seat.Seat = table.declarer.libraryThing
-            if (
-                seat.value == table.dummy.direction
-                and the_declarer.value == as_viewed_by.most_recent_seat.direction
-            ):
-                viewer_may_control_this_seat = True
-
-    return {
-        "display_cards": bool(display_cards),
-        "viewer_may_control_this_seat": bool(viewer_may_control_this_seat),
-    }
-
-
-def _four_hands_context_for_table(
-    request: AuthedHttpRequest, table: app.models.Table, as_dealt: bool = False
-) -> dict[str, Any]:
-    player = None
-    if hasattr(request.user, "player"):
-        player = request.user.player
-
-    skel = table.display_skeleton(as_dealt=as_dealt)
-
-    cards_by_direction_display = {}
-    libSeat: bridge.seat.Seat
-    for libSeat, suitholdings in skel.items():
-        this_seats_player = table.modPlayer_by_seat(libSeat)
-        assert this_seats_player.most_recent_seat is not None
-
-        visibility_and_control = _display_and_control(
-            table=table, seat=libSeat, as_viewed_by=player, as_dealt=as_dealt
-        )
-        if visibility_and_control["display_cards"]:
-            dem_cards_baby = _single_hand_as_four_divs(
-                suitholdings,
-                seat_pk=this_seats_player.most_recent_seat.pk,
-                viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
-            )
-        else:
-            dem_cards_baby = SafeString(suitholdings.textual_summary)
-
-        cards_by_direction_display[libSeat.name] = {
-            "cards": dem_cards_baby,
-            "player": this_seats_player,
-        }
-
-    return {
-        "card_display": cards_by_direction_display,
-        "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[table.pk]),
-        "hand_summary_endpoint": reverse("app:hand-summary-view", args=[table.pk]),
-        "play_event_source_endpoint": "/events/all-tables/",
-        "table": table,
-    } | _three_by_three_trick_display_context_for_table(request, table)
 
 
 def poke_de_bot(request):
@@ -280,41 +132,6 @@ def poke_de_bot(request):
         },
     )
     return HttpResponse("Pokey enough for ya??")
-
-
-def _three_by_three_trick_display_context_for_table(
-    request: HttpRequest,
-    table: app.models.Table,
-) -> dict[str, Any]:
-    h = table.current_hand
-
-    cards_by_direction_number: dict[int, bridge.card.Card] = {}
-
-    if h.current_trick:
-        for _index, libSeat, libCard, _is_winner in h.current_trick:
-            cards_by_direction_number[libSeat.value] = libCard
-
-    def c(direction: int):
-        card = cards_by_direction_number.get(direction)
-        color = "black"
-        if card is not None:
-            # TODO -- teach the library to return a color for each card
-            if card.suit in {
-                bridge.card.Suit.HEARTS,
-                bridge.card.Suit.DIAMONDS,
-            }:
-                color = "red"
-        return f"""<span style="color: {color}">{card or '__'}</span>"""
-
-    return {
-        "three_by_three_trick_display": {
-            "rows": [
-                [" ", c(bridge.seat.Seat.NORTH.value), " "],
-                [c(bridge.seat.Seat.WEST.value), " ", c(bridge.seat.Seat.EAST.value)],
-                [" ", c(bridge.seat.Seat.SOUTH.value), " "],
-            ],
-        },
-    }
 
 
 def _bidding_box_context_for_table(request, table):

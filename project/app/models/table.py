@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import collections
-import dataclasses
 import logging
 import random
 from typing import TYPE_CHECKING
@@ -21,11 +19,8 @@ from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.player import Player
 from app.models.seat import Seat as modelSeat
-from app.models.utils import assert_type
 
 if TYPE_CHECKING:
-    from typing import Iterable
-
     from bridge.auction import Auction as libAuction
 
 
@@ -77,65 +72,6 @@ they human, &c
 
 I hope they will let me greatly simplify four_hands_partial_view and _four_hands_context_for_table.
 """
-
-
-@dataclasses.dataclass
-class SuitHolding:
-    """Given the state of the play, can one of these cards be played?  "Yes" if the xscript says we're the current
-    player, and if all the cards_by_suit are "legal_cards" according to the xscript.
-
-    Note that either all our cards are legal_cards, or none are.
-
-    """
-
-    legal_now: bool
-
-    cards_of_one_suit: list[bridge.card.Card]
-
-
-@dataclasses.dataclass
-class AllFourSuitHoldings:
-    spades: SuitHolding
-    hearts: SuitHolding
-    diamonds: SuitHolding
-    clubs: SuitHolding
-
-    """The textual summary is redundant, in that it summarizes what's present in the four SuitHoldings.  It's for when
-    the view is displaying an opponent's hand -- obviously the player doesn't get to see the cards; instead they see a
-    message like "12 cards".
-
-    """
-
-    textual_summary: str
-
-    @property
-    def this_hands_turn_to_play(self) -> bool:
-        for suit_name in ("spades", "hearts", "clubs", "diamonds"):
-            holding = getattr(self, suit_name)
-
-            if holding.legal_now:
-                return True
-        return False
-
-    def from_suit(self, s: bridge.card.Suit) -> SuitHolding:
-        return getattr(self, s.name().lower())
-
-    def items(self) -> Iterable[tuple[bridge.card.Suit, SuitHolding]]:
-        for suitname, suit_value in bridge.card.Suit.__members__.items():
-            holding = getattr(self, suitname.lower())
-            yield (suit_value, holding)
-
-
-@dataclasses.dataclass
-class DisplaySkeleton:
-    holdings_by_seat: dict[bridge.seat.Seat, AllFourSuitHoldings]
-
-    def items(self) -> Iterable[tuple[bridge.seat.Seat, AllFourSuitHoldings]]:
-        return self.holdings_by_seat.items()
-
-    def __getitem__(self, seat: bridge.seat.Seat) -> AllFourSuitHoldings:
-        assert_type(seat, bridge.seat.Seat)
-        return self.holdings_by_seat[seat]
 
 
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
@@ -226,67 +162,6 @@ class Table(models.Model):
         for s in self.seats:
             if s.player is not None:
                 rv[s] = board.cards_for_direction(s.direction)
-
-        return rv
-
-    def display_skeleton(self, as_dealt: bool = False) -> DisplaySkeleton:
-        xscript = self.current_hand.xscript
-        whose_turn_is_it = None
-
-        if xscript.auction.found_contract:
-            whose_turn_is_it = xscript.next_player().seat
-
-        rv = {}
-        # xscript.legal_cards tells us which cards are legal for the current player.
-        for mSeat, cards in self.current_cards_by_seat(as_dealt=as_dealt).items():
-            seat = mSeat.libraryThing
-            assert_type(seat, bridge.seat.Seat)
-
-            cards_by_suit = collections.defaultdict(list)
-            for c in cards:
-                cards_by_suit[c.suit].append(c)
-
-            kwargs = {}
-
-            for suit in bridge.card.Suit:
-                legal_now = False
-                if seat == whose_turn_is_it:
-                    legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
-
-                kwargs[suit.name().lower()] = SuitHolding(
-                    cards_of_one_suit=cards_by_suit[suit],
-                    legal_now=legal_now,
-                )
-
-            rv[seat] = AllFourSuitHoldings(
-                **kwargs,
-                textual_summary=f"{len(cards)} cards",
-            )
-        return DisplaySkeleton(holdings_by_seat=rv)
-
-    def current_cards_by_seat(
-        self, as_dealt: bool = False
-    ) -> dict[modelSeat, set[bridge.card.Card]]:
-        rv = {}
-        for seat, cardlist in self.dealt_cards_by_seat.items():
-            assert_type(seat, modelSeat)
-            assert_type(cardlist, list)
-
-            rv[seat] = set(cardlist)
-
-        if as_dealt:
-            return rv
-
-        if self.current_auction.found_contract:
-            model_seats_by_lib_seats = {}
-            for _index, libseat, card, _is_winner in self.current_hand.annotated_plays:
-                if libseat not in model_seats_by_lib_seats:
-                    model_seats_by_lib_seats[libseat] = self.current_hand.seat_from_libseat(
-                        libseat,
-                    )
-                seat = model_seats_by_lib_seats[libseat]
-                assert_type(seat, modelSeat)
-                rv[seat].remove(card)
 
         return rv
 
