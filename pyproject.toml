@@ -42,6 +42,8 @@ django-types = "^0.19.1"
 mypy = "^1.11.2"
 types-tqdm = "^4.66.0.20240417"
 python-lsp-server = "^1.12.0"
+logging-tree = "^1.10"
+ruff = "^0.6.9"
 
 [tool.pydocstyle]
 # Disable pydocstyle entirely.
