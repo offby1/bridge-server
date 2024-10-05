@@ -1,4 +1,3 @@
-from .archive import hand_archive_view
 from .details import (
     auction_partial_view,
     bidding_box_partial_view,

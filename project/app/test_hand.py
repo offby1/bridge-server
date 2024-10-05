@@ -114,10 +114,10 @@ def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
     return disabled_buttons, active_buttons
 
 
-def test_bidding_box_html(usual_setup, rf):
+def test_bidding_box_html(usual_setup, rf) -> None:
     # First case: completed auction, contract is one diamond, not doubled.
-    t: Table = Table.objects.first()
-
+    t = Table.objects.first()
+    assert t is not None
     t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
     # set_auction_to has set the declarer to be the dealer.
 
@@ -181,8 +181,9 @@ def test_bidding_box_html(usual_setup, rf):
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
 
 
-def test_current_trick(usual_setup):
+def test_current_trick(usual_setup) -> None:
     t = Table.objects.first()
+    assert t is not None
 
     # Nobody done played nothin'
     assert not t.current_hand.current_trick
@@ -213,8 +214,9 @@ def test_current_trick(usual_setup):
     assert what == second_card
 
 
-def test_next_seat_to_play(usual_setup):
+def test_next_seat_to_play(usual_setup) -> None:
     t = Table.objects.first()
+    assert t is not None
 
     assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
 

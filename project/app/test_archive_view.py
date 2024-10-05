@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from .models import Player, Table
 from .testutils import set_auction_to
-from .views.table.archive import hand_archive_view
+from .views.hand import hand_archive_view
 from .views.table.details import _four_hands_context_for_table
 
 

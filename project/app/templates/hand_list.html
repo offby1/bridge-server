@@ -30,7 +30,7 @@
                         <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.player_names }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.current_auction_status }}</a>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.auction.status }}</a>
                     </td>
                     <td>
                         <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.status }}</a>
