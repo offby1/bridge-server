@@ -40,7 +40,9 @@ class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
-    def create_with_two_partnerships(self, p1, p2, shuffle_deck=True):
+    def create_with_two_partnerships(
+        self, p1, p2, shuffle_deck=True, crazy_shit_to_do_to_simulate_a_race=None
+    ):
         t = self.create()
         try:
             with transaction.atomic():
@@ -58,6 +60,9 @@ class TableManager(models.Manager):
         if shuffle_deck:
             random.seed(0)
             random.shuffle(deck)
+
+        if crazy_shit_to_do_to_simulate_a_race is not None:
+            crazy_shit_to_do_to_simulate_a_race()
 
         # Always use board 1, creating it if it doesn't exist
         if not Board.objects.exists():
