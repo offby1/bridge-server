@@ -9,6 +9,7 @@ from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
 from django.db import IntegrityError, transaction
 from django.test import Client
+from django.test.utils import setup_databases
 from django.urls import reverse
 
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
@@ -39,15 +40,22 @@ def test_all_seated_players_have_partners(usual_setup):
         p.save()
 
 
-@pytest.mark.xfail(reason="dunno wtf is going on")
-def test_splitsville_ejects_everyone_from_table(usual_setup):
-    def new_table():
-        player_names_by_direction = {
-            libSeat.NORTH: "North 2",
-            libSeat.EAST: "East 2",
-            libSeat.SOUTH: "Sout 2",
-            libSeat.WEST: "West 2",
-        }
+def test_splitsville_ejects_everyone_from_table(django_db_blocker) -> None:
+    def new_table(usual_names=True):
+        if usual_names:
+            player_names_by_direction = {
+                libSeat.NORTH: "J. Northam",
+                libSeat.EAST: "C. Eastwood",
+                libSeat.SOUTH: "J.D. Souther",
+                libSeat.WEST: "A. West",
+            }
+        else:
+            player_names_by_direction = {
+                libSeat.NORTH: "North 2",
+                libSeat.EAST: "East 2",
+                libSeat.SOUTH: "Sout 2",
+                libSeat.WEST: "West 2",
+            }
 
         for name in player_names_by_direction.values():
             Player.objects.create(
@@ -67,57 +75,61 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
             shuffle_deck=False,
         )
 
-    table = Table.objects.first()
+    with django_db_blocker.unblock():
+        setup_databases()
+        new_table(usual_names=True)
 
-    North = table.modPlayer_by_seat(libSeat.NORTH)
-    South = table.modPlayer_by_seat(libSeat.SOUTH)
+        table = Table.objects.first()
 
-    # duh
-    assert North.partner == South
-    assert South.partner == North
+        North = table.modPlayer_by_seat(libSeat.NORTH)
+        South = table.modPlayer_by_seat(libSeat.SOUTH)
 
-    assert North.table is not None
-    assert North.table == South.table
+        # duh
+        assert North.partner == South
+        assert South.partner == North
 
-    table_count_before = Table.objects.count()
-    assert table_count_before == 1
+        assert North.table is not None
+        assert North.table == South.table
 
-    East = table.modPlayer_by_seat(libSeat.EAST)
-    West = table.modPlayer_by_seat(libSeat.WEST)
+        table_count_before = Table.objects.count()
+        assert table_count_before == 1
 
-    print("Expect one healthy table.")
-    bogons = Table.objects.filter(hand__isnull=True)
-    assert not bogons.exists()
+        East = table.modPlayer_by_seat(libSeat.EAST)
+        West = table.modPlayer_by_seat(libSeat.WEST)
 
-    North.break_partnership()
+        print("Expect one healthy table.")
+        bogons = Table.objects.filter(hand__isnull=True)
+        assert not bogons.exists()
 
-    North.refresh_from_db()
-    South.refresh_from_db()
-    East.refresh_from_db()
-    West.refresh_from_db()
+        North.break_partnership()
 
-    assert North.partner is None
-    assert South.partner is None
-    assert West.partner == East
-    assert East.partner == West
+        North.refresh_from_db()
+        South.refresh_from_db()
+        East.refresh_from_db()
+        West.refresh_from_db()
 
-    assert Table.objects.count() == table_count_before - 1
+        assert North.partner is None
+        assert South.partner is None
+        assert West.partner == East
+        assert East.partner == West
 
-    assert North.table is None
-    assert South.table is None
-    assert East.table is None
-    assert West.table is None
+        assert Table.objects.count() == table_count_before - 1
 
-    print("Expect no tables.")
-    for t in Table.objects.all():
-        print(t.hand_set.all())
+        assert North.table is None
+        assert South.table is None
+        assert East.table is None
+        assert West.table is None
+
+        print("Expect no tables.")
+        for t in Table.objects.all():
+            print(t.hand_set.all())
 
     # Now try creating a new table with the same folks.
     North.partner_with(South)
     East.partner_with(West)
 
     def sneak_another_table_in_there():
-        new_table()
+        new_table(usual_names=False)
 
     try:
         with transaction.atomic():
