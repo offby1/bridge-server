@@ -37,6 +37,10 @@ backup: pg-start
     @echo '"just start"' > /dev/stderr
     @echo '"docker compose exec --user postgres --no-TTY postgres psql bridge < wherever-you-saved-it"' > /dev/stderr
 
+[group('postgres')]
+restore backup_file_name: pg-start drop
+    docker compose exec --user postgres --no-TTY postgres psql bridge < {{ backup_file_name }}
+
 alias stop := pg-stop
 
 [group('postgres')]
