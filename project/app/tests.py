@@ -42,40 +42,47 @@ def test_all_seated_players_have_partners(usual_setup):
 def test_splitsville_ejects_everyone_from_table(usual_setup):
     table = Table.objects.first()
 
-    Bob = table.modPlayer_by_seat(libSeat.NORTH)
-    Ted = table.modPlayer_by_seat(libSeat.SOUTH)
+    North = table.modPlayer_by_seat(libSeat.NORTH)
+    South = table.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
-    assert Bob.partner == Ted
-    assert Ted.partner == Bob
+    assert North.partner == South
+    assert South.partner == North
 
-    assert Bob.table is not None
-    assert Bob.table == Ted.table
+    assert North.table is not None
+    assert North.table == South.table
 
     table_count_before = Table.objects.count()
     assert table_count_before == 1
 
-    Carol = table.modPlayer_by_seat(libSeat.EAST)
-    Alice = table.modPlayer_by_seat(libSeat.WEST)
+    East = table.modPlayer_by_seat(libSeat.EAST)
+    West = table.modPlayer_by_seat(libSeat.WEST)
 
-    Bob.break_partnership()
+    North.break_partnership()
 
-    Bob.refresh_from_db()
-    Ted.refresh_from_db()
-    Carol.refresh_from_db()
-    Alice.refresh_from_db()
+    North.refresh_from_db()
+    South.refresh_from_db()
+    East.refresh_from_db()
+    West.refresh_from_db()
 
-    assert Bob.partner is None
-    assert Ted.partner is None
-    assert Alice.partner == Carol
-    assert Carol.partner == Alice
+    assert North.partner is None
+    assert South.partner is None
+    assert West.partner == East
+    assert East.partner == West
 
     assert Table.objects.count() == table_count_before - 1
 
-    assert Bob.table is None
-    assert Ted.table is None
-    assert Carol.table is None
-    assert Alice.table is None
+    assert North.table is None
+    assert South.table is None
+    assert East.table is None
+    assert West.table is None
+
+    # Now try creating a new table with the same folks.
+    North.partner_with(South)
+    East.partner_with(West)
+
+    table = Table.objects.create_with_two_partnerships(North, East)
+    assert North.table == South.table == East.table == West.table == table
 
 
 def test_one_partnerships_splitting_removes_table(usual_setup):
