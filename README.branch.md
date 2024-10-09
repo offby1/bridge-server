@@ -2,6 +2,18 @@
 
 Log is `log.txt`; a db snapshot taken soon after is `buggy-postgres-dump`.
 
+## the unique constraint violation is a bit older than I thought
+
+It repros at this commit (and no earlier)
+
+    3a72fc4ac8d5cb1ef7bbb12b33814c7314d9bcac
+    Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+    AuthorDate: 2024-10-03 16:29:24 -0700
+
+    Merge branch 'slightly-smarter-bot'
+
+To get it to repro, run `just drop pop`.
+
 Thoughts:
 
 ## Why do I have that assertion at models/table.py line 207?
