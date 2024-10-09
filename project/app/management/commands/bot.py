@@ -94,7 +94,13 @@ class Command(BaseCommand):
         super().__init__(*args, **kwargs)
 
     def log(self, string: str) -> None:
-        final = f"{self.table=} {string}"
+        table = self.table
+        if table is not None:
+            hand = table.current_hand
+            board = hand.board
+            final = f"{self.table} hand {hand.pk} {board=}: {string}"
+        else:
+            final = f"(no table): {string}"
         self.stdout.write(final)
         self.stdout.flush()
 
