@@ -26,3 +26,15 @@
         <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
 {% endblock content %}
+{% block scripts %}
+    <script>
+var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}');
+
+handEventSource.addEventListener('message', function (e) {
+    console.log("Hand event listener saw " + e.data);
+
+    window.location.reload();
+}, false);
+
+    </script>
+{% endblock scripts %}

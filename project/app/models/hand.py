@@ -213,7 +213,7 @@ class Hand(models.Model):
 
         modelPlayer = Player.objects.get_by_name(player.name)
         # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
-        for channel in (str(self.table.pk), "all-tables"):
+        for channel in (str(self.table.current_hand.pk), "all-tables"):
             send_event(
                 channel=channel,
                 event_type="message",
@@ -281,7 +281,7 @@ class Hand(models.Model):
 
         modelPlayer = Player.objects.get_by_name(player.name)
         # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
-        for channel in (str(self.table.pk), "all-tables"):
+        for channel in (str(self.table.current_hand.pk), "all-tables"):
             send_event(
                 channel=channel,
                 event_type="message",

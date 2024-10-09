@@ -38,7 +38,7 @@ urlpatterns = [
     ),
     # This gets a subset of table events.
     path(
-        "events/table/<channel>/",  # "channel" is an integer -- the table's primary key
+        "events/hand/<channel>/",  # "channel" is an integer -- the hand's primary key
         include(django_eventstream.urls),
     ),
     path(
