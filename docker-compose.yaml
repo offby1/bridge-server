@@ -16,6 +16,7 @@ services:
         condition: service_started
     environment:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
+      HOST_HOSTNAME: $HOSTNAME
       PGHOST: postgres
       PGPASS: postgres
     ports:
