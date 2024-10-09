@@ -17,11 +17,12 @@ from django_eventstream import send_event  # type: ignore
 from app.models.board import TOTAL_BOARDS, Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
-from app.models.player import Player
 from app.models.seat import Seat as modelSeat
 
 if TYPE_CHECKING:
     from bridge.auction import Auction as libAuction
+
+    from app.models.player import Player
 
 
 logger = logging.getLogger(__name__)
@@ -81,10 +82,6 @@ class Table(models.Model):
     hand_set: models.Manager[Hand]
 
     objects = TableManager()
-
-    def modPlayer_by_seat(self, seat: bridge.seat.Seat) -> Player:
-        modelPlayer = self.players_by_direction[seat.value]
-        return Player.objects.get_by_name(modelPlayer.name)
 
     @cached_property
     def seats(self):
@@ -203,14 +200,6 @@ class Table(models.Model):
     @property
     def current_board(self):
         return self.current_hand.board
-
-    @property
-    def player_names(self) -> str:
-        return ", ".join([p.name for p in self.players_by_direction.values()])
-
-    @property
-    def players_by_direction(self) -> dict[int, Player]:
-        return {s.direction: s.player for s in self.seats}
 
     @property
     def next_seat_to_play(self) -> modelSeat | None:

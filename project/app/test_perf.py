@@ -2,7 +2,7 @@ import bridge.card
 import bridge.contract
 
 from .models import Hand, Player, Table, logged_queries
-from .views.table.details import table_detail_view
+from .views.hand import hand_detail_view
 
 
 def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
@@ -37,6 +37,6 @@ def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> No
     request.user = p.user
 
     with logged_queries() as ql:
-        table_detail_view(request, t.pk)
+        hand_detail_view(request, t.current_hand.pk)
 
     assert len(ql.calls) < 40

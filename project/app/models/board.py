@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import more_itertools
@@ -82,7 +84,7 @@ class Board(models.Model):
         return SEAT_CHOICES[self.dealer]
 
     @property
-    def hand_strings_by_direction(self):
+    def hand_strings_by_direction(self) -> dict[int, str]:
         return {
             Seat.NORTH.value: self.north_cards,
             Seat.EAST.value: self.east_cards,

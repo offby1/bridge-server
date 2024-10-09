@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import collections
-import dataclasses
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 import bridge.seat
-import more_itertools
 from bridge.auction import Auction
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
@@ -18,6 +15,9 @@ from django.views.decorators.gzip import gzip_page
 import app.models
 from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+
+if TYPE_CHECKING:
+    from app.models.hand import AllFourSuitHoldings, SuitHolding
 
 
 def hand_list_view(request: HttpRequest) -> HttpResponse:
@@ -91,138 +91,19 @@ def hand_archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def current_cards_by_seat(
-    *, hand: app.models.Hand, as_dealt: bool = False
-) -> dict[bridge.seat.Seat, set[bridge.card.Card]]:
-    rv = {}
-    for seat, cardstring in hand.board.hand_strings_by_direction.items():
-        rv[seat] = {bridge.card.Card.deserialize(c) for c in more_itertools.sliced(cardstring, 2)}
-
-    if as_dealt:
-        return rv
-
-    if hand.auction.found_contract:
-        model_seats_by_lib_seats = {}
-        for _index, libseat, card, _is_winner in hand.annotated_plays:
-            if libseat not in model_seats_by_lib_seats:
-                model_seats_by_lib_seats[libseat] = hand.seat_from_libseat(
-                    libseat,
-                )
-            seat = model_seats_by_lib_seats[libseat]
-            assert_type(seat, bridge.seat.Seat)
-            rv[seat].remove(card)
-
-    return rv
-
-
-@dataclasses.dataclass
-class SuitHolding:
-    """Given the state of the play, can one of these cards be played?  "Yes" if the xscript says we're the current
-    player, and if all the cards_by_suit are "legal_cards" according to the xscript.
-
-    Note that either all our cards are legal_cards, or none are.
-
-    """
-
-    legal_now: bool
-
-    cards_of_one_suit: list[bridge.card.Card]
-
-
-@dataclasses.dataclass
-class AllFourSuitHoldings:
-    spades: SuitHolding
-    hearts: SuitHolding
-    diamonds: SuitHolding
-    clubs: SuitHolding
-
-    """The textual summary is redundant, in that it summarizes what's present in the four SuitHoldings.  It's for when
-    the view is displaying an opponent's hand -- obviously the player doesn't get to see the cards; instead they see a
-    message like "12 cards".
-
-    """
-
-    textual_summary: str
-
-    @property
-    def this_hands_turn_to_play(self) -> bool:
-        for suit_name in ("spades", "hearts", "clubs", "diamonds"):
-            holding = getattr(self, suit_name)
-
-            if holding.legal_now:
-                return True
-        return False
-
-    def from_suit(self, s: bridge.card.Suit) -> SuitHolding:
-        return getattr(self, s.name().lower())
-
-    def items(self) -> Iterable[tuple[bridge.card.Suit, SuitHolding]]:
-        for suitname, suit_value in bridge.card.Suit.__members__.items():
-            holding = getattr(self, suitname.lower())
-            yield (suit_value, holding)
-
-
-@dataclasses.dataclass
-class DisplaySkeleton:
-    holdings_by_seat: dict[bridge.seat.Seat, AllFourSuitHoldings]
-
-    def items(self) -> Iterable[tuple[bridge.seat.Seat, AllFourSuitHoldings]]:
-        return self.holdings_by_seat.items()
-
-    def __getitem__(self, seat: bridge.seat.Seat) -> AllFourSuitHoldings:
-        assert_type(seat, bridge.seat.Seat)
-        return self.holdings_by_seat[seat]
-
-
-def display_skeleton(*, hand: app.models.Hand, as_dealt: bool = False) -> DisplaySkeleton:
-    xscript = hand.xscript
-    whose_turn_is_it = None
-
-    if xscript.auction.found_contract:
-        whose_turn_is_it = xscript.next_player().seat
-
-    rv = {}
-    # xscript.legal_cards tells us which cards are legal for the current player.
-    for mSeat, cards in hand.current_cards_by_seat(as_dealt=as_dealt).items():
-        seat = mSeat.libraryThing
-        assert_type(seat, bridge.seat.Seat)
-
-        cards_by_suit = collections.defaultdict(list)
-        for c in cards:
-            cards_by_suit[c.suit].append(c)
-
-        kwargs = {}
-
-        for suit in bridge.card.Suit:
-            legal_now = False
-            if seat == whose_turn_is_it:
-                legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
-
-            kwargs[suit.name().lower()] = SuitHolding(
-                cards_of_one_suit=cards_by_suit[suit],
-                legal_now=legal_now,
-            )
-
-        rv[seat] = AllFourSuitHoldings(
-            **kwargs,
-            textual_summary=f"{len(cards)} cards",
-        )
-    return DisplaySkeleton(holdings_by_seat=rv)
-
-
 def _display_and_control(
     *,
-    table: app.models.Table,
+    hand: app.models.Hand,
     seat: bridge.seat.Seat,
     as_viewed_by: app.models.Player | None,
     as_dealt: bool,
 ) -> dict[str, bool]:
-    assert_type(table, app.models.Table)
+    assert_type(hand, app.models.Hand)
     assert_type(seat, bridge.seat.Seat)
     if as_viewed_by is not None:
         assert_type(as_viewed_by, app.models.Player)
     assert_type(as_dealt, bool)
-    is_dummy = table.dummy and seat == table.dummy.libraryThing
+    is_dummy = hand.dummy and seat == hand.dummy.seat
 
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
@@ -231,17 +112,15 @@ def _display_and_control(
             and as_viewed_by.most_recent_seat
             and seat.value == as_viewed_by.most_recent_seat.direction
         )  # it's our hand, duuude
-        or (
-            is_dummy and table.current_hand and table.current_hand.current_trick
-        )  # it's dummy, and opening lead has been made
+        or (is_dummy and hand and hand.current_trick)  # it's dummy, and opening lead has been made
     )
 
     viewer_may_control_this_seat = False
 
     is_this_seats_turn_to_play = (
-        table.current_hand.player_who_may_play is not None
-        and table.current_hand.player_who_may_play.most_recent_seat is not None
-        and table.current_hand.player_who_may_play.most_recent_seat.direction == seat.value
+        hand.player_who_may_play is not None
+        and hand.player_who_may_play.most_recent_seat is not None
+        and hand.player_who_may_play.most_recent_seat.direction == seat.value
     )
     if (
         as_viewed_by is not None
@@ -251,10 +130,10 @@ def _display_and_control(
     ):
         if seat.value == as_viewed_by.most_recent_seat.direction:  # it's our hand, duuude
             viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
-        elif table.dummy is not None and table.declarer is not None:
-            the_declarer: bridge.seat.Seat = table.declarer.libraryThing
+        elif hand.dummy is not None and hand.declarer is not None:
+            the_declarer: bridge.seat.Seat = hand.declarer.seat
             if (
-                seat.value == table.dummy.direction
+                seat == hand.dummy.seat
                 and the_declarer.value == as_viewed_by.most_recent_seat.direction
             ):
                 viewer_may_control_this_seat = True
@@ -313,16 +192,14 @@ def _single_hand_as_four_divs(
     return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
 
 
-def _three_by_three_trick_display_context_for_table(
+def _three_by_three_trick_display_context_for_hand(
     request: HttpRequest,
-    table: app.models.Table,
+    hand: app.models.Hand,
 ) -> dict[str, Any]:
-    h = table.current_hand
-
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
-    if h.current_trick:
-        for _index, libSeat, libCard, _is_winner in h.current_trick:
+    if hand.current_trick:
+        for _index, libSeat, libCard, _is_winner in hand.current_trick:
             cards_by_direction_number[libSeat.value] = libCard
 
     def c(direction: int):
@@ -386,4 +263,145 @@ def _four_hands_context_for_hand(
         "hand_summary_endpoint": reverse("app:hand-summary-view", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
-    } | _three_by_three_trick_display_context_for_table(request, hand)
+    } | _three_by_three_trick_display_context_for_hand(request, hand)
+
+
+@logged_in_as_player_required()
+def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
+    table = get_object_or_404(app.models.Table, pk=table_pk)
+    context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
+
+    return TemplateResponse(
+        request, "four-hands-3x3-partial.html#four-hands-3x3-partial", context=context
+    )
+
+
+@gzip_page
+@logged_in_as_player_required()
+def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+    hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    if hand.is_complete or hand.auction.status is bridge.auction.Auction.PassedOut:
+        return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
+
+    context = (
+        _four_hands_context_for_hand(request=request, hand=hand)
+        | _auction_context_for_hand(hand)
+        | _bidding_box_context_for_hand(request, hand)
+    )
+
+    return TemplateResponse(request, "hand_detail.html", context=context)
+
+
+def _auction_context_for_hand(hand) -> dict[str, Any]:
+    return {
+        "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
+        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "hand": hand,
+    }
+
+
+def _bidding_box_context_for_hand(request, hand):
+    player = request.user.player  # type: ignore
+    seat = player.most_recent_seat
+    display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
+
+    if not seat or seat.table != hand.table:
+        buttons = "No bidding box 'cuz you are not at this table"
+    else:
+        buttons = bidding_box_buttons(
+            auction=hand.auction,
+            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
+            disabled_because_out_of_turn=player.name != hand.auction.allowed_caller().name,
+        )
+    return {
+        "bidding_box_buttons": buttons,
+        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
+        "display_bidding_box": display_bidding_box,
+    }
+
+
+def bidding_box_buttons(
+    *,
+    auction: bridge.auction.Auction,
+    call_post_endpoint: str,
+    disabled_because_out_of_turn=False,
+) -> SafeString:
+    assert isinstance(auction, bridge.auction.Auction)
+
+    legal_calls = auction.legal_calls()
+
+    def buttonize(call: bridge.contract.Call, active=True):
+        class_ = "btn btn-primary"
+        text = call.str_for_bidding_box()
+
+        if disabled_because_out_of_turn:
+            text = text if active else f"<s>{text}</s>"
+            active = False
+            class_ = "btn btn-danger"
+
+        # All one line for ease of unit testing
+        return (
+            """<button type="button" """
+            + """hx-include="this" """
+            + f"""hx-post="{call_post_endpoint}" """
+            + """hx-swap="none" """
+            + f"""name="call" value="{call.serialize()}" """
+            + f"""class="{class_}" {"" if active else "disabled"}>"""
+            + text
+            + """</button>\n"""
+        )
+
+    rows = []
+    bids_by_level = [
+        [
+            bridge.contract.Bid(level=level, denomination=denomination)
+            for denomination in [*list(bridge.card.Suit), None]
+        ]
+        for level in range(1, 8)
+    ]
+
+    for bids in bids_by_level:
+        row = '<div class="btn-group">'
+
+        buttons = []
+        for b in bids:
+            active = b in legal_calls
+            buttons.append(buttonize(b, active))
+
+        row += "".join(buttons)
+
+        row += "</div><br/>"
+
+        rows.append(row)
+
+    top_button_group = """<div class="btn-group">"""
+    for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
+        active = call in legal_calls
+
+        top_button_group += buttonize(call, active)
+    top_button_group += "</div>"
+
+    joined_rows = "\n".join(rows)
+    return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
+
+
+@logged_in_as_player_required()
+def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResponse:
+    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+
+    context = _bidding_box_context_for_hand(request, hand)
+
+    return TemplateResponse(
+        request,
+        "auction.html",
+        context=context,
+    )
+
+
+@logged_in_as_player_required()
+def auction_partial_view(request, hand_pk):
+    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    context = _auction_context_for_hand(hand)
+
+    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)

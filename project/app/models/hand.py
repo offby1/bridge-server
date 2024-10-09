@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import collections
+import dataclasses
 import logging
 from typing import TYPE_CHECKING, Iterable, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
 from bridge.card import Card as libCard
+from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
@@ -20,6 +22,7 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore
 
+from .player import Player
 from .utils import assert_type
 
 if TYPE_CHECKING:
@@ -40,6 +43,65 @@ class PlayError(Exception):
 
 TrickTuple = tuple[int, libSeat, libCard, bool]
 TrickTuples = list[TrickTuple]
+
+
+@dataclasses.dataclass
+class SuitHolding:
+    """Given the state of the play, can one of these cards be played?  "Yes" if the xscript says we're the current
+    player, and if all the cards_by_suit are "legal_cards" according to the xscript.
+
+    Note that either all our cards are legal_cards, or none are.
+
+    """
+
+    legal_now: bool
+
+    cards_of_one_suit: list[libCard]
+
+
+@dataclasses.dataclass
+class AllFourSuitHoldings:
+    spades: SuitHolding
+    hearts: SuitHolding
+    diamonds: SuitHolding
+    clubs: SuitHolding
+
+    """The textual summary is redundant, in that it summarizes what's present in the four SuitHoldings.  It's for when
+    the view is displaying an opponent's hand -- obviously the player doesn't get to see the cards; instead they see a
+    message like "12 cards".
+
+    """
+
+    textual_summary: str
+
+    @property
+    def this_hands_turn_to_play(self) -> bool:
+        for suit_name in ("spades", "hearts", "clubs", "diamonds"):
+            holding = getattr(self, suit_name)
+
+            if holding.legal_now:
+                return True
+        return False
+
+    def from_suit(self, s: libSuit) -> SuitHolding:
+        return getattr(self, s.name().lower())
+
+    def items(self) -> Iterable[tuple[libSuit, SuitHolding]]:
+        for suitname, suit_value in libSuit.__members__.items():
+            holding = getattr(self, suitname.lower())
+            yield (suit_value, holding)
+
+
+@dataclasses.dataclass
+class DisplaySkeleton:
+    holdings_by_seat: dict[libSeat, AllFourSuitHoldings]
+
+    def items(self) -> Iterable[tuple[libSeat, AllFourSuitHoldings]]:
+        return self.holdings_by_seat.items()
+
+    def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
+        assert_type(seat, libSeat)
+        return self.holdings_by_seat[seat]
 
 
 class HandManager(models.Manager):
@@ -98,7 +160,7 @@ class Hand(models.Model):
                             libCard.deserialize(c) for c in more_itertools.sliced(hand_string, 2)
                         ]
                     ),
-                    name=self.table.modPlayer_by_seat(seat).name,
+                    name=self.modPlayer_by_seat(seat).name,
                 )
             )
 
@@ -272,6 +334,77 @@ class Hand(models.Model):
         libPlayer = self.xscript.players[0]
 
         return Player.objects.get_by_name(libPlayer.name)
+
+    def modPlayer_by_seat(self, seat: libSeat) -> Player:
+        modelPlayer = self.players_by_direction[seat.value]
+        return Player.objects.get_by_name(modelPlayer.name)
+
+    @property
+    def player_names(self) -> str:
+        return ", ".join([p.name for p in self.players_by_direction.values()])
+
+    @property
+    def players_by_direction(self) -> dict[int, Player]:
+        return {s.direction: s.player for s in self.table.seats}
+
+    def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
+        rv = {}
+        for direction, cardstring in self.board.hand_strings_by_direction.items():
+            seat = libSeat(direction)
+            rv[seat] = {libCard.deserialize(c) for c in more_itertools.sliced(cardstring, 2)}
+
+        if as_dealt:
+            return rv
+
+        if self.auction.found_contract:
+            model_seats_by_lib_seats = {}
+            for _index, libseat, card, _is_winner in self.annotated_plays:
+                if libseat not in model_seats_by_lib_seats:
+                    model_seats_by_lib_seats[libseat] = self.seat_from_libseat(
+                        libseat,
+                    )
+                seat = model_seats_by_lib_seats[libseat]
+                assert_type(seat, libSeat)
+                rv[seat].remove(card)
+
+        return rv
+
+    def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
+        """
+        A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view.
+        """
+        xscript = self.xscript
+        whose_turn_is_it = None
+
+        if xscript.auction.found_contract:
+            whose_turn_is_it = xscript.next_player().seat
+
+        rv = {}
+        # xscript.legal_cards tells us which cards are legal for the current player.
+        for seat, cards in self.current_cards_by_seat(as_dealt=as_dealt).items():
+            assert_type(seat, libSeat)
+
+            cards_by_suit = collections.defaultdict(list)
+            for c in cards:
+                cards_by_suit[c.suit].append(c)
+
+            kwargs = {}
+
+            for suit in libSuit:
+                legal_now = False
+                if seat == whose_turn_is_it:
+                    legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
+
+                kwargs[suit.name().lower()] = SuitHolding(
+                    cards_of_one_suit=cards_by_suit[suit],
+                    legal_now=legal_now,
+                )
+
+            rv[seat] = AllFourSuitHoldings(
+                **kwargs,
+                textual_summary=f"{len(cards)} cards",
+            )
+        return DisplaySkeleton(holdings_by_seat=rv)
 
     @property
     def most_recent_call(self):

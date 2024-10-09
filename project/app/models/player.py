@@ -187,7 +187,7 @@ class Player(models.Model):
         return self.user.username
 
     @property
-    def name_dir(self):
+    def name_dir(self) -> str:
         direction = ""
         role = ""
         if self.most_recent_seat:
@@ -195,6 +195,8 @@ class Player(models.Model):
 
             a = self.most_recent_seat.table.current_auction
             if a.found_contract:
+                assert isinstance(a.status, bridge.auction.Contract)
+                assert a.status.declarer is not None
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
                 else:

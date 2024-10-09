@@ -4,7 +4,7 @@ from bridge.seat import Seat
 
 from .models import Table
 from .testutils import set_auction_to
-from .views.table.details import _display_and_control
+from .views.hand import _display_and_control
 
 
 def test_table_dataclass_thingy(usual_setup: None) -> None:

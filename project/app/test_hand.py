@@ -13,8 +13,7 @@ from bridge.table import Player as libPlayer
 
 from .models import AuctionError, Board, Play, Player, Table
 from .testutils import set_auction_to
-from .views.table import bidding_box_partial_view
-from .views.table.details import _bidding_box_context_for_table
+from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
@@ -86,7 +85,7 @@ def _bidding_box_as_seen_by(t: Table, as_seen_by: Player | libPlayer, rf) -> Tem
     request = rf.get("/woteva/", data={"table_pk": t.pk})
     request.user = as_seen_by.user
 
-    response = bidding_box_partial_view(request, t.pk)
+    response = bidding_box_partial_view(request, t.current_hand.pk)
     response.render()
     return response
 
@@ -149,7 +148,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     east = Player.objects.get_by_name("Clint Eastwood")
     request = rf.get("/woteva/")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, t.current_hand)["bidding_box_buttons"]
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
@@ -164,7 +163,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
 
     south = Player.objects.get_by_name("J.D. Souther")
     request.user = south.user
-    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, t.current_hand)["bidding_box_buttons"]
     # you cannot double your own partner.
     disabled, _active = _partition_button_values(bbc_html)
 
@@ -175,7 +174,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
         "Redouble",
     }
     request.user = east.user
-    bbc_html = _bidding_box_context_for_table(request, t)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, t.current_hand)["bidding_box_buttons"]
 
     disabled, _active = _partition_button_values(bbc_html)
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"

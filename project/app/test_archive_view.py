@@ -7,8 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from .models import Player, Table
 from .testutils import set_auction_to
-from .views.hand import hand_archive_view
-from .views.table.details import _four_hands_context_for_table
+from .views.hand import _four_hands_context_for_hand, hand_archive_view
 
 
 def test_archive_view(usual_setup: None, rf: Any) -> None:
@@ -17,7 +16,7 @@ def test_archive_view(usual_setup: None, rf: Any) -> None:
     request = rf.get("/woteva/", data={"pk": t.pk})
     request.user = AnonymousUser()
     # We're just testing for the absence of an exception
-    _four_hands_context_for_table(request, t, as_dealt=True)
+    _four_hands_context_for_hand(request=request, hand=t.current_hand, as_dealt=True)
 
 
 def test_for_more_smoke(usual_setup, rf) -> None:

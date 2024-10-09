@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from rest_framework import permissions, status, viewsets  # type: ignore
 from rest_framework.response import Response  # type: ignore
@@ -15,7 +16,10 @@ from app.serializers import (
     SeatSerializer,
     TableSerializer,
 )
-from app.views.table.details import _display_and_control
+from app.views.hand import _display_and_control
+
+if TYPE_CHECKING:
+    from app.views.misc import AuthedHttpRequest
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +42,9 @@ class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: AuthedHttpRequest, pk=None) -> Response:
         as_viewed_by = request.user.player
+        assert as_viewed_by is not None
 
         the_board = self.queryset.get(pk=pk)
 
@@ -56,7 +61,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             for seat in table.seat_set.all():
                 display_and_control = _display_and_control(
                     seat=seat.libraryThing,
-                    table=table,
+                    hand=table.current_hand,
                     as_viewed_by=as_viewed_by,
                     as_dealt=table.hand_is_complete,
                 )

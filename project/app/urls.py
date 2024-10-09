@@ -1,7 +1,14 @@
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table
-from .views.hand import hand_archive_view, hand_list_view
+from .views.hand import (
+    auction_partial_view,
+    bidding_box_partial_view,
+    four_hands_partial_view,
+    hand_archive_view,
+    hand_detail_view,
+    hand_list_view,
+)
 
 app_name = "app"
 
@@ -23,16 +30,16 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("table/<pk>/", table.details.table_detail_view, name="table-detail"),
-    path("table/<table_pk>/auction/", table.details.auction_partial_view, name="auction-partial"),
+    path("hand/<pk>/", hand_detail_view, name="hand-detail"),
+    path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path(
-        "table/<table_pk>/bidding-box",
-        table.details.bidding_box_partial_view,
+        "hand/<hand_pk>/bidding-box",
+        bidding_box_partial_view,
         name="bidding-box-partial",
     ),
     path(
-        "table/<table_pk>/four-hands",
-        table.details.four_hands_partial_view,
+        "hand/<table_pk>/four-hands",
+        four_hands_partial_view,
         name="four-hands-partial",
     ),
     path(

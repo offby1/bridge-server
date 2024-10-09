@@ -17,8 +17,6 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.safestring import SafeString
-from django.views.decorators.gzip import gzip_page
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore
 
@@ -42,81 +40,8 @@ def table_list_view(request):
     return TemplateResponse(request, "table_list.html", context=context)
 
 
-def bidding_box_buttons(
-    *,
-    auction: bridge.auction.Auction,
-    call_post_endpoint: str,
-    disabled_because_out_of_turn=False,
-) -> SafeString:
-    assert isinstance(auction, bridge.auction.Auction)
-
-    legal_calls = auction.legal_calls()
-
-    def buttonize(call: bridge.contract.Call, active=True):
-        class_ = "btn btn-primary"
-        text = call.str_for_bidding_box()
-
-        if disabled_because_out_of_turn:
-            text = text if active else f"<s>{text}</s>"
-            active = False
-            class_ = "btn btn-danger"
-
-        # All one line for ease of unit testing
-        return (
-            """<button type="button" """
-            + """hx-include="this" """
-            + f"""hx-post="{call_post_endpoint}" """
-            + """hx-swap="none" """
-            + f"""name="call" value="{call.serialize()}" """
-            + f"""class="{class_}" {"" if active else "disabled"}>"""
-            + text
-            + """</button>\n"""
-        )
-
-    rows = []
-    bids_by_level = [
-        [
-            bridge.contract.Bid(level=level, denomination=denomination)
-            for denomination in [*list(bridge.card.Suit), None]
-        ]
-        for level in range(1, 8)
-    ]
-
-    for bids in bids_by_level:
-        row = '<div class="btn-group">'
-
-        buttons = []
-        for b in bids:
-            active = b in legal_calls
-            buttons.append(buttonize(b, active))
-
-        row += "".join(buttons)
-
-        row += "</div><br/>"
-
-        rows.append(row)
-
-    top_button_group = """<div class="btn-group">"""
-    for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
-        active = call in legal_calls
-
-        top_button_group += buttonize(call, active)
-    top_button_group += "</div>"
-
-    joined_rows = "\n".join(rows)
-    return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
-
-
 def _auction_channel_for_table(table):
     return str(table.pk)
-
-
-def _auction_context_for_table(table):
-    return {
-        "auction_partial_endpoint": reverse("app:auction-partial", args=[table.pk]),
-        "show_auction_history": table.current_auction.status is bridge.auction.Auction.Incomplete,
-        "table": table,
-    }
 
 
 def poke_de_bot(request):
@@ -134,61 +59,10 @@ def poke_de_bot(request):
     return HttpResponse("Pokey enough for ya??")
 
 
-def _bidding_box_context_for_table(request, table):
-    player = request.user.player  # type: ignore
-    seat = player.most_recent_seat
-    display_bidding_box = table.current_auction.status == bridge.auction.Auction.Incomplete
-
-    if not seat or seat.table != table:
-        buttons = "No bidding box 'cuz you are not at this table"
-    else:
-        buttons = bidding_box_buttons(
-            auction=table.current_auction,
-            call_post_endpoint=reverse("app:call-post", args=[table.pk]),
-            disabled_because_out_of_turn=player.name != table.current_auction.allowed_caller().name,
-        )
-    return {
-        "bidding_box_buttons": buttons,
-        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[table.pk]),
-        "display_bidding_box": display_bidding_box,
-    }
-
-
 def hand_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
     table = get_object_or_404(app.models.Table, pk=table_pk)
 
     return HttpResponse(table.current_hand.status)
-
-
-@logged_in_as_player_required()
-def bidding_box_partial_view(request: HttpRequest, table_pk: str) -> TemplateResponse:
-    table = get_object_or_404(app.models.Table, pk=table_pk)
-
-    context = _bidding_box_context_for_table(request, table)
-
-    return TemplateResponse(
-        request,
-        "auction.html",
-        context=context,
-    )
-
-
-@logged_in_as_player_required()
-def auction_partial_view(request, table_pk):
-    table = get_object_or_404(app.models.Table, pk=table_pk)
-    context = _auction_context_for_table(table)
-
-    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
-
-
-@logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
-    table = get_object_or_404(app.models.Table, pk=table_pk)
-    context = _four_hands_context_for_table(request, table)
-
-    return TemplateResponse(
-        request, "four-hands-3x3-partial.html#four-hands-3x3-partial", context=context
-    )
 
 
 @require_http_methods(["POST"])
@@ -244,23 +118,6 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     h.add_play_from_player(player=seat.player.libraryThing, card=card)
 
     return HttpResponse()
-
-
-@gzip_page
-@logged_in_as_player_required()
-def table_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    table = get_object_or_404(app.models.Table, pk=pk)
-
-    if table.hand_is_complete or table.current_auction.status is bridge.auction.Auction.PassedOut:
-        return HttpResponseRedirect(reverse("app:hand-archive", args=[table.current_hand.pk]))
-
-    context = (
-        _four_hands_context_for_table(request, table)
-        | _auction_context_for_table(table)
-        | _bidding_box_context_for_table(request, table)
-    )
-
-    return TemplateResponse(request, "table_detail.html", context=context)
 
 
 @require_http_methods(["POST"])
