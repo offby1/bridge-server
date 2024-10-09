@@ -119,15 +119,17 @@ description = ""
 optional = false
 python-versions = ">=3.8"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 colorama = "*"
 tabulate = "*"
 
 [package.source]
-type = "directory"
-url = "../library"
+type = "git"
+url = "https://gitlab.com/offby1/bridge.git"
+reference = "5bce16187e0080bc34ea99254fb78ce5d13d923c"
+resolved_reference = "5bce16187e0080bc34ea99254fb78ce5d13d923c"
 
 [[package]]
 name = "certifi"
@@ -1998,4 +2000,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "e75e8b1803eccf90cd141fa54e60322e3cfc7bb3054ad0f7b826de06b339a8c1"
+content-hash = "56b2bf3631551aea80a0f5de44c694416a4cc7a10a2dce521123da8c5583ba0b"
