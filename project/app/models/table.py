@@ -59,13 +59,10 @@ class TableManager(models.Manager):
             random.seed(0)
             random.shuffle(deck)
 
-        # Always use board 1, creating it if it doesn't exist
-        if not Board.objects.exists():
-            Board.objects.create_from_deck_and_board_number(
-                board_number=1,
-                deck=deck,
-            )
-        b = Board.objects.first()
+        b = Board.objects.create_from_deck_and_board_number(
+            board_number=Board.objects.count() + 1,
+            deck=deck,
+        )
 
         Hand.objects.create(board=b, table=t)
 
