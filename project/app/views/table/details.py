@@ -157,4 +157,4 @@ def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
     table.next_board()
 
-    return HttpResponseRedirect(reverse("app:table-detail", args=[pk]))
+    return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))

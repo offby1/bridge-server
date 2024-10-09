@@ -3,7 +3,7 @@
     <div>
         <h1>Review of {{ hand }}</h1>
         <button class="btn btn-primary"
-                hx-post="{% url 'app:new-board-plz' hand.pk %}"
+                hx-post="{% url 'app:new-board-plz' hand.table.pk %}"
                 hx-swap="none"
                 type="submit">NEW BOARD PLZ</button>
         <h2>{{ hand.board }}</h2>
