@@ -66,12 +66,16 @@ def _run_forever() -> None:
         msg = f"Cannot find user named {my_name=}"
         raise Exception(msg)
 
-    messages = SSEClient(
-        f"{host}/events/table/{table['pk']}",
-    )
-    logger.debug("Connected to %s.", host)
-    for msg in messages:
-        dispatch(msg, session)
+    while True:
+        current_hand = session.get(table["current_hand"]).json()
+        messages = SSEClient(
+            f"{host}/events/hand/{current_hand['pk']}",
+        )
+        logger.debug("Connected to %s.", host)
+        for msg in messages:
+            dispatch(msg, session)
+            if something_tells_me_this_hand_is_over(msg):
+                break
 
 
 run_forever = retrying.retry(

@@ -51,6 +51,8 @@ class SeatSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TableSerializer(serializers.HyperlinkedModelSerializer):
+    current_hand = serializers.HyperlinkedRelatedField(view_name="hand-detail", read_only=True)
+
     class Meta:
         model = Table
-        fields = ("seat_set", "pk")
+        fields = ("seat_set", "pk", "current_hand")
