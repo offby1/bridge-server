@@ -107,6 +107,7 @@ def _display_and_control(
 
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
+        or hand.open_access
         or (
             as_viewed_by
             and as_viewed_by.most_recent_seat
@@ -115,7 +116,7 @@ def _display_and_control(
         or (is_dummy and hand and hand.current_trick)  # it's dummy, and opening lead has been made
     )
 
-    viewer_may_control_this_seat = False
+    viewer_may_control_this_seat = hand.open_access
 
     is_this_seats_turn_to_play = (
         hand.player_who_may_play is not None
@@ -129,7 +130,7 @@ def _display_and_control(
         and is_this_seats_turn_to_play
     ):
         if seat.value == as_viewed_by.most_recent_seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat = not is_dummy  # declarer controls this hand, not dummy
+            viewer_may_control_this_seat |= not is_dummy  # declarer controls this hand, not dummy
         elif hand.dummy is not None and hand.declarer is not None:
             the_declarer: bridge.seat.Seat = hand.declarer.seat
             if (
@@ -311,8 +312,9 @@ def _bidding_box_context_for_hand(request, hand):
     else:
         buttons = bidding_box_buttons(
             auction=hand.auction,
-            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
-            disabled_because_out_of_turn=player.name != hand.auction.allowed_caller().name,
+            call_post_endpoint=reverse("app:call-post", args=[hand.table.pk]),
+            disabled_because_out_of_turn=player.name != hand.auction.allowed_caller().name
+            and not hand.open_access,
         )
     return {
         "bidding_box_buttons": buttons,

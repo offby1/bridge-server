@@ -141,6 +141,10 @@ class Hand(models.Model):
 
     board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
 
+    open_access = models.BooleanField(
+        default=False, db_comment="For debugging only! Only settable via the admin site"
+    )  # type: ignore
+
     @cached_property
     def xscript(self) -> HandTranscript:
         # Synthesize some players.  We don't simply grab them from the table, since *those* players might have played

@@ -78,13 +78,15 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
         return HttpResponseForbidden(str(e))
 
     table = get_object_or_404(app.models.Table, pk=table_pk)
-
+    hand = table.current_hand
+    from_whom = hand.player_who_may_call.libraryThing if hand.open_access else who_clicked
+    logger.debug(f"{from_whom=}; {who_clicked=}")
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
         table.current_hand.add_call_from_player(
-            player=who_clicked,
+            player=from_whom,
             call=libCall,
         )
     except Exception as e:
@@ -109,7 +111,7 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
         and whos_asking.libraryThing.seat == h.declarer.seat
     ):
         pass
-    elif whos_asking != h.player_who_may_play:
+    elif not (h.open_access or whos_asking == h.player_who_may_play):
         return HttpResponseForbidden(
             f"Hey! {whos_asking} can't play now; only {h.player_who_may_play} can"
         )
