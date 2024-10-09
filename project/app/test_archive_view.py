@@ -39,7 +39,7 @@ def test_for_more_smoke(usual_setup, rf) -> None:
     request = rf.get("/woteva/")
     north = Player.objects.get_by_name("Jeremy Northam")
     request.user = north.user
-    response = hand_archive_view(request, t.current_hand.pk).render()
+    response = hand_archive_view(request=request, pk=t.current_hand.pk).render()
     distinct_spans = set()
     for line in response.content.decode().split("\n"):
         if (span := re.search(r"""played <span style=".*">..</span>""", line)) is not None:
@@ -59,7 +59,7 @@ def test_final_score(usual_setup: None, rf: Any) -> None:
     request = rf.get("/woteva/", data={"pk": t.pk})
     request.user = north.user
 
-    response = hand_archive_view(request, t.pk)
+    response = hand_archive_view(request=request, pk=t.current_hand.pk)
 
     assert response.status_code == 404
     assert b"not been completely played" in response.content

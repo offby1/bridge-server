@@ -29,18 +29,3 @@
         {% endfor %}
     </div>
 {% endblock content %}
-{% block scripts %}
-    <script>
-var table_event_source = new ReconnectingEventSource('/events/table/{{ table.pk }}');
-
-table_event_source.addEventListener('message', function (e) {
-    var d = JSON.parse(e.data) ;
-    if ("new-board" in d) {
-        console.log("Table event listener saw " + e.data);
-        table_event_source.close();
-        window.location = "{% url 'app:table-detail' table.pk %}";
-    }
-}, false);
-
-    </script>
-{% endblock scripts %}

@@ -37,7 +37,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 
 @gzip_page
 @logged_in_as_player_required()
-def hand_archive_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     h: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     board = h.board

@@ -64,12 +64,12 @@ def test_cards_by_player(usual_setup):
 
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
-    before = set(chain.from_iterable(t.current_cards_by_seat().values()))
+    before = set(chain.from_iterable(t.current_hand.current_cards_by_seat().values()))
     Play.objects.create(hand=t.current_hand, serialized="d2")
     t = Table.objects.get(pk=t.pk)
 
     # TODO -- check that the card was played from the correct hand.
-    after = set(chain.from_iterable(t.current_cards_by_seat().values()))
+    after = set(chain.from_iterable(t.current_hand.current_cards_by_seat().values()))
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
     assert before - after == {diamond_two}
 

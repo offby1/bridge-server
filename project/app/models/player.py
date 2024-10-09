@@ -199,14 +199,7 @@ class Player(models.Model):
                 assert a.status.declarer is not None
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
-                else:
-                    dummy = self.most_recent_seat.table.modPlayer_by_seat(
-                        a.status.declarer.seat.partner()
-                    )
-
-                    if self.name == dummy.name:
-                        role = "Dummy! "
-
+                    # TODO -- set role to dummy as appropriate
         bottiness = "" if self.allow_bot_to_play_for_me else " (bot)"
         return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
 

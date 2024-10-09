@@ -66,15 +66,6 @@ class TableManager(models.Manager):
         return t
 
 
-""" These dataclasses are here to make life easy for the table view, and to be testable.  They conveniently collect most
-of the information that the view will need to display player's hands -- in fact, they collect everything *that this
-model knows about*.  Stuff that we *don't* know about, but which the view does, are: who is looking at the browser, are
-they human, &c
-
-I hope they will let me greatly simplify four_hands_partial_view and _four_hands_context_for_table.
-"""
-
-
 # What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
 # onto each instance.
 class Table(models.Model):

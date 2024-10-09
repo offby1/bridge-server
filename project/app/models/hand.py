@@ -357,15 +357,8 @@ class Hand(models.Model):
             return rv
 
         if self.auction.found_contract:
-            model_seats_by_lib_seats = {}
-            for _index, libseat, card, _is_winner in self.annotated_plays:
-                if libseat not in model_seats_by_lib_seats:
-                    model_seats_by_lib_seats[libseat] = self.seat_from_libseat(
-                        libseat,
-                    )
-                seat = model_seats_by_lib_seats[libseat]
-                assert_type(seat, libSeat)
-                rv[seat].remove(card)
+            for _index, libseat, libcard, _is_winner in self.annotated_plays:
+                rv[libseat].remove(libcard)
 
         return rv
 

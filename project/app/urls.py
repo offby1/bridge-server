@@ -16,7 +16,19 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("call/<table_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
+    path("hand/<pk>/", hand_detail_view, name="hand-detail"),
     path("hand/<pk>/archive/", hand_archive_view, name="hand-archive"),
+    path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
+    path(
+        "hand/<hand_pk>/bidding-box",
+        bidding_box_partial_view,
+        name="bidding-box-partial",
+    ),
+    path(
+        "hand/<table_pk>/four-hands",
+        four_hands_partial_view,
+        name="four-hands-partial",
+    ),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/<seat_pk>/", table.details.play_post_view, name="play-post"),
     path("player/<pk>/", player.player_detail_view, name="player"),
@@ -30,18 +42,6 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("hand/<pk>/", hand_detail_view, name="hand-detail"),
-    path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
-    path(
-        "hand/<hand_pk>/bidding-box",
-        bidding_box_partial_view,
-        name="bidding-box-partial",
-    ),
-    path(
-        "hand/<table_pk>/four-hands",
-        four_hands_partial_view,
-        name="four-hands-partial",
-    ),
     path(
         "table/<table_pk>/hand-summary-status",
         table.details.hand_summary_view,
