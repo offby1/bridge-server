@@ -21,9 +21,9 @@ if TYPE_CHECKING:
 
 
 def hand_list_view(request: HttpRequest) -> HttpResponse:
-    hand_list = (
-        app.models.Hand.objects.all()
-    )  # TODO -- filter to those that should be visible by request.user
+    hand_list = app.models.Hand.objects.order_by(
+        "id"
+    ).all()  # TODO -- filter to those that should be visible by request.user
     paginator = Paginator(hand_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -48,7 +48,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     a = h.auction
     c = a.status
     if c is Auction.Incomplete:
-        return HttpResponseRedirect(reverse("app:table-detail", args=[h.table.pk]))
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
     if c is Auction.PassedOut:
         context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)

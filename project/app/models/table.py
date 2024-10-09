@@ -203,12 +203,12 @@ class Table(models.Model):
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",
-            reverse("app:table-detail", kwargs={"pk": self.pk}),
+            reverse("app:hand-detail", kwargs={"pk": self.current_hand.pk}),
             str(self),
         )
 
     def as_tuples(self):
-        return [(SEAT_CHOICES[d], p) for d, p in self.players_by_direction.items()]
+        return [(SEAT_CHOICES[d], p) for d, p in self.current_hand.players_by_direction.items()]
 
     def is_empty(self):
         return all(p is None for p in self.players_by_direction.values())

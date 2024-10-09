@@ -13,7 +13,7 @@ from django.urls import reverse
 
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
-from .views import lobby, player, table
+from .views import hand, lobby, player, table
 
 
 def test_we_gots_a_home_page():
@@ -104,7 +104,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     client = Client()
 
     def r():
-        return client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)
+        return client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
 
     response = r()
     for c in norths_cards:
@@ -127,7 +127,7 @@ def test_legal_cards(usual_setup, rf, settings):
     client = Client()
     client.login(username=leader.name, password=".")
 
-    response = client.get(reverse("app:table-detail", kwargs={"pk": t.pk}), follow=True)
+    response = client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
@@ -149,7 +149,7 @@ def test_player_cannot_be_at_two_seats(usual_setup):
 
 def test_player_cannot_be_in_two_tables(usual_setup):
     t1 = Table.objects.first()
-    north = t1.modPlayer_by_seat(libSeat.NORTH)
+    north = t1.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
     # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     t2 = Table.objects.create()
@@ -286,7 +286,7 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
     cm = getattr(importlib.import_module(module_name), class_name)()
 
     t = Table.objects.first()
-    Bob, Ted, Carol, _ = t.players_by_direction.values()
+    Bob, Ted, Carol, _ = t.current_hand.players_by_direction.values()
 
     channel = Message.channel_name_from_players(Ted, Bob)
 
@@ -392,7 +392,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
 def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     t = Table.objects.first()
-    Bob, Carol, Ted, Alice = t.players_by_direction.values()
+    Bob, Carol, Ted, Alice = t.current_hand.players_by_direction.values()
 
     from app.models import logged_queries
 
@@ -454,7 +454,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for _index, s, modelCard, _is_winner in h.current_trick:
         expected_cards_by_direction[s.value] = modelCard.serialize()
 
-    ya = table.details._three_by_three_trick_display_context_for_table(request, t)
+    ya = hand._three_by_three_trick_display_context_for_hand(request, t.current_hand)
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows

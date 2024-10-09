@@ -146,7 +146,7 @@ def new_table_for_two_partnerships(request, pk1, pk2):
     except app.models.TableException as e:
         return HttpResponseForbidden(str(e))
 
-    return HttpResponseRedirect(reverse("app:table-detail", args=[t.pk]))
+    return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
 
 @require_http_methods(["POST"])
