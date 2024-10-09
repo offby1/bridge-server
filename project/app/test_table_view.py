@@ -13,7 +13,7 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     t = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
     assert t.current_auction.declarer.seat == Seat.NORTH
 
-    ds = t.display_skeleton()
+    ds = t.current_hand.display_skeleton()
     for dir_ in Seat:
         assert ds[dir_].textual_summary == "13 cards"
 
@@ -31,17 +31,17 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
     assert str(t.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     def expect_visibility(expectation_array):
-        for seat in t.players_by_direction:
-            for viewer in t.players_by_direction:
+        for seat in t.current_hand.players_by_direction:
+            for viewer in t.current_hand.players_by_direction:
                 actual = _display_and_control(
-                    table=t,
+                    hand=t.current_hand,
                     seat=Seat(seat),
-                    as_viewed_by=t.players_by_direction[viewer],
+                    as_viewed_by=t.current_hand.players_by_direction[viewer],
                     as_dealt=False,
                 )
                 assert (
                     actual["display_cards"] == expectation_array[seat - 1][viewer - 1]
-                ), f"{t.players_by_direction[viewer]} {'can' if actual['display_cards'] else 'can not'} see {seat=} "
+                ), f"{t.current_hand.players_by_direction[viewer]} {'can' if actual['display_cards'] else 'can not'} see {seat=} "
 
     expect_visibility(
         [
@@ -55,7 +55,8 @@ def test_hand_visibility(usual_setup: None, settings) -> None:
 
     # Make the opening lead
     t.current_hand.add_play_from_player(
-        player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
+        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
+        card=Card.deserialize("D2"),
     )
     t = Table.objects.first()
 
@@ -76,18 +77,18 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     assert t is not None
 
     def expect_controlability(expectation_array):
-        for seat in t.players_by_direction:
-            for viewer in t.players_by_direction:
+        for seat in t.current_hand.players_by_direction:
+            for viewer in t.current_hand.players_by_direction:
                 actual = _display_and_control(
-                    table=t,
+                    hand=t.current_hand,
                     seat=Seat(seat),
-                    as_viewed_by=t.players_by_direction[viewer],
+                    as_viewed_by=t.current_hand.players_by_direction[viewer],
                     as_dealt=False,
                 )
                 assert (
                     actual["viewer_may_control_this_seat"]
                     == expectation_array[seat - 1][viewer - 1]
-                ), f"{t.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                ), f"{t.current_hand.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
 
     # Nobody can control any cards, since the auction isn't settled
     expect_controlability(
@@ -101,7 +102,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     )
 
     t = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
-    assert str(t.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
+    assert str(t.current_hand.auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     # Only opening leader can control his cards
     expect_controlability(
@@ -116,7 +117,8 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
 
     # Make the opening lead
     t.current_hand.add_play_from_player(
-        player=t.players_by_direction[Seat.EAST.value].libraryThing, card=Card.deserialize("D2")
+        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
+        card=Card.deserialize("D2"),
     )
     t = Table.objects.first()
 

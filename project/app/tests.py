@@ -31,48 +31,48 @@ def j_northam(db, everybodys_password):
 def test_splitsville_ejects_everyone_from_table(usual_setup):
     table = Table.objects.first()
 
-    Bob = table.modPlayer_by_seat(libSeat.NORTH)
-    Ted = table.modPlayer_by_seat(libSeat.SOUTH)
+    north = table.current_hand.modPlayer_by_seat(libSeat.NORTH)
+    south = table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
-    assert Bob.partner == Ted
-    assert Ted.partner == Bob
+    assert north.partner == south
+    assert south.partner == north
 
-    assert Bob.table is not None
-    assert Bob.table == Ted.table
+    assert north.table is not None
+    assert north.table == south.table
 
     table_count_before = Table.objects.count()
     assert table_count_before == 1
 
-    Carol = table.modPlayer_by_seat(libSeat.EAST)
-    Alice = table.modPlayer_by_seat(libSeat.WEST)
+    east = table.current_hand.modPlayer_by_seat(libSeat.EAST)
+    west = table.current_hand.modPlayer_by_seat(libSeat.WEST)
 
-    Bob.break_partnership()
+    north.break_partnership()
 
-    Bob = Player.objects.get(pk=Bob.pk)
-    Ted = Player.objects.get(pk=Ted.pk)
-    Carol = Player.objects.get(pk=Carol.pk)
-    Alice = Player.objects.get(pk=Alice.pk)
+    north = Player.objects.get(pk=north.pk)
+    south = Player.objects.get(pk=south.pk)
+    east = Player.objects.get(pk=east.pk)
+    west = Player.objects.get(pk=west.pk)
 
-    assert Bob.partner is None
-    assert Ted.partner is None
-    assert Alice.partner == Carol
-    assert Carol.partner == Alice
+    assert north.partner is None
+    assert south.partner is None
+    assert west.partner == east
+    assert east.partner == west
 
     assert Table.objects.count() == table_count_before - 1
 
-    assert Bob.table is None
-    assert Ted.table is None
-    assert Carol.table is None
-    assert Alice.table is None
+    assert north.table is None
+    assert south.table is None
+    assert east.table is None
+    assert west.table is None
 
 
 def test_one_partnerships_splitting_removes_table(usual_setup):
     assert Table.objects.count() == 1
     t = Table.objects.first()
-    Bob = t.modPlayer_by_seat(libSeat.NORTH)
+    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
-    Bob.break_partnership()
+    north.break_partnership()
     assert Table.objects.count() == 0
 
 
@@ -98,7 +98,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
 def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
-    north = t.modPlayer_by_seat(libSeat.NORTH)
+    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
     norths_cards = north.libraryThing.hand.cards
 
     client = Client()
@@ -122,7 +122,7 @@ def test_legal_cards(usual_setup, rf, settings):
     t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
     h = t.current_hand
     declarer = h.declarer
-    leader = t.modPlayer_by_seat(declarer.seat.lho()).libraryThing
+    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing
 
     client = Client()
     client.login(username=leader.name, password=".")
@@ -143,7 +143,7 @@ def test_player_cannot_be_at_two_seats(usual_setup):
             direction=libSeat.EAST.value,
             table=t,
         ).update(
-            player=t.modPlayer_by_seat(libSeat.NORTH),
+            player=t.current_hand.modPlayer_by_seat(libSeat.NORTH),
         )
 
 
@@ -176,10 +176,10 @@ def test_cant_just_make_up_directions(j_northam, everybodys_password):
 
 def test_breaking_up_is_hard_to_do(usual_setup):
     t = Table.objects.first()
-    North = t.modPlayer_by_seat(libSeat.NORTH)
-    East = t.modPlayer_by_seat(libSeat.EAST)
-    South = t.modPlayer_by_seat(libSeat.SOUTH)
-    West = t.modPlayer_by_seat(libSeat.WEST)
+    North = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
+    East = t.current_hand.modPlayer_by_seat(libSeat.EAST)
+    South = t.current_hand.modPlayer_by_seat(libSeat.SOUTH)
+    West = t.current_hand.modPlayer_by_seat(libSeat.WEST)
 
     assert North.partner == South
     assert South.partner == North
@@ -230,13 +230,15 @@ def test_sending_lobby_messages(usual_setup, rf):
     assert response.content == b"Go away, anonymous scoundrel"
 
     t = Table.objects.first()
-    response = lobby.send_lobby_message(say_hey(user=t.modPlayer_by_seat(libSeat.NORTH).user))
+    response = lobby.send_lobby_message(
+        say_hey(user=t.current_hand.modPlayer_by_seat(libSeat.NORTH).user)
+    )
     assert response.status_code == 200
 
 
 def test_sending_player_messages(usual_setup, rf, everybodys_password):
     t = Table.objects.first()
-    north = t.modPlayer_by_seat(libSeat.NORTH)
+    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
     def hey_bob(*, target=None, sender_player=None):
         if target is None:
@@ -256,7 +258,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     assert response.status_code == 403  # client isn't authenticated
     assert response.content == b"Go away, anonymous scoundrel"
 
-    response = hey_bob(sender_player=t.modPlayer_by_seat(libSeat.SOUTH))
+    response = hey_bob(sender_player=t.current_hand.modPlayer_by_seat(libSeat.SOUTH))
     assert response.status_code == 403  # we're both at a table, so we can't talk
     assert b"already seated" in response.content
 
@@ -299,7 +301,7 @@ def test_seat_ordering(usual_setup):
 
 def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     t = Table.objects.first()
-    north = t.modPlayer_by_seat(libSeat.NORTH)
+    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
     assert north.partner is not None
 
     request = rf.post(
@@ -439,7 +441,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.modPlayer_by_seat(first_players_seat).libraryThing
+    first_player = t.current_hand.modPlayer_by_seat(first_players_seat).libraryThing
     first_players_cards = first_player.hand.cards
 
     first_card = first_players_cards[0]

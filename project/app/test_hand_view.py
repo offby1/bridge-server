@@ -26,6 +26,4 @@ def test_for_more_smoke(usual_setup, rf) -> None:
     request = rf.get("/woteva/")
     north = Player.objects.get_by_name("Jeremy Northam")
     request.user = north.user
-    response = hand_list_view(request)
-    print(response.content.decode())
-    assert "cat" == "dog"
+    hand_list_view(request)
