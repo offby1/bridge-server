@@ -146,7 +146,7 @@ def _display_and_control(
 
 
 def _single_hand_as_four_divs(
-    all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
+    *, all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
 ) -> SafeString:
     def card_button(c: bridge.card.Card) -> str:
         return f"""<button
@@ -246,7 +246,7 @@ def _four_hands_context_for_hand(
         )
         if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(
-                suitholdings,
+                all_four=suitholdings,
                 seat_pk=this_seats_player.most_recent_seat.pk,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
@@ -333,7 +333,7 @@ def bidding_box_buttons(
 
     legal_calls = auction.legal_calls()
 
-    def buttonize(call: bridge.contract.Call, active=True):
+    def buttonize(*, call: bridge.contract.Call, active=True):
         class_ = "btn btn-primary"
         text = call.str_for_bidding_box()
 
@@ -369,7 +369,7 @@ def bidding_box_buttons(
         buttons = []
         for b in bids:
             active = b in legal_calls
-            buttons.append(buttonize(b, active))
+            buttons.append(buttonize(call=b, active=active))
 
         row += "".join(buttons)
 
@@ -381,7 +381,7 @@ def bidding_box_buttons(
     for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
         active = call in legal_calls
 
-        top_button_group += buttonize(call, active)
+        top_button_group += buttonize(call=call, active=active)
     top_button_group += "</div>"
 
     joined_rows = "\n".join(rows)
