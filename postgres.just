@@ -8,7 +8,7 @@
 # `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
 
 
-alias start := pg-start
+start: pg-start redis
 
 [group('postgres')]
 [script('bash')]
