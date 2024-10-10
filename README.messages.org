@@ -1,15 +1,35 @@
 # Inventory of django eventstream messages that I send
 
-| content                              | sender                                          | recipient channel    | notes                                            |
-|--------------------------------------+-------------------------------------------------+----------------------+--------------------------------------------------|
-| json: new-board                      | table_details view                              | table.pk             | GIMME DAT NEW BOARD                              |
-| json: board, table, action           | models.HandManager                              | all-tables           | "yo, table X just got board Y"                   |
-| json: table, final_score             | handrecord.xscript                              | table.pk, all-tables | when the last card has been played               |
-| json: table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables | at every call                                    |
-| json: table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables | only once per table                              |
-| json: table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables |                                                  |
-| arbitrary html                       | models.player                                   | lobby, partnerships  | partnership created or destroyed                 |
-| json: table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables           | action is "just formed"                          |
-| arbitrary html                       | lobby.send_lobby_message                        | lobby                | I don't think anyone listens for these           |
-| arbitrary                            | player.send_player_message                      | player1:player2      | private chat                                     |
-| json: table, direction, action       | table.poke_de_bot                               | all-tables           | action is "pokey pokey"; hack to wake up the bot |
+This is getting confusing.  I should have a simple rule about which messages get sent when & where.
+
+The "When" should be: "most messages correspond to the insertion of a row in the db".
+
+New row in app_table: message, with the row's content, more or less
+New row in app_calls: "
+New row in app_plays: "
+New row in app_hands: "
+One exception: once we've determined which play won a trick, that deserves a message too, probably.
+
+Lucky for me almost all the modifications to the db are indeed inserts of new immutable rows.  The play that wins its trick is the one exception.
+
+
+| content                              | sender                                          | recipient channel    | what model is getting an insert? | notes                                            |
+|--------------------------------------+-------------------------------------------------+----------------------+----------------------------------+--------------------------------------------------|
+| json: new-board                      | Table.next_board                                | table.pk             | Hand [6]                         | GIMME DAT NEW BOARD                              |
+| json: board, table, action           | models.HandManager                              | all-tables           | Hand                             | "yo, table X just got board Y"                   |
+| json: table, final_score             | handrecord.xscript                              | table.pk, all-tables | n/a [1]                          | when the last card has been played               |
+| json: table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables | Call                             | at every call                                    |
+| json: table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables | n/a [2]                          | only once per table                              |
+| json: table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables | Play                             |                                                  |
+| arbitrary html                       | models.player                                   | lobby, partnerships  | n/a [3]                          | partnership created or destroyed                 |
+| json: table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables           | Table                            | action is "just formed"                          |
+| arbitrary html                       | lobby.send_lobby_message                        | lobby                | n/a [4]                          | I don't think anyone listens for these           |
+| arbitrary                            | player.send_player_message                      | player1:player2      | n/a [4]                          | private chat                                     |
+| json: table, direction, action       | table.poke_de_bot                               | all-tables           | n/a [5]                          | action is "pokey pokey"; hack to wake up the bot |
+
+[1] -- This is a side-effect of adding a new play (namely: the 52nd play), but doesn't *directly* correspond to an insert, in that we add lots of plays without sending this event!
+[2] -- Exactly analoagous to [1] above -- this is a side-effect of adding a new call.
+[3] -- This is tewtally differnt from [1] and [2], since it has nothing to do the with play of a particular hand.  I'll just let it be its own thang.
+[4] -- These are part of the chat system, and are thus unrelated to play-of-a-hand.
+[5] -- This is an internal thing, just for me during development, and ideally will go away at some point.
+[6] -- I suspect this is redundant: afaict, nobody listens for this, and it seems to duplicate the event sent by models.HandManager.

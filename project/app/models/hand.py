@@ -265,7 +265,7 @@ class Hand(models.Model):
         )
 
         if final_score:
-            for channel in (str(self.table.pk), "all-tables"):
+            for channel in (str(self.table.current_hand.pk), "all-tables"):
                 kwargs = {
                     "channel": channel,
                     "event_type": "message",

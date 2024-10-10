@@ -24,7 +24,7 @@ def _request_ex_filter(ex: Exception) -> bool:
     return rv
 
 
-def dispatch(msg: Any, session: requests.Session) -> None:
+def dispatch(msg: Any, session: requests.Session) -> bool:
     if msg.data:
         data = json.loads(msg.data)
         if all(key in data for key in ("table", "player", "card")):
@@ -41,8 +41,12 @@ def dispatch(msg: Any, session: requests.Session) -> None:
                 data["table"],
                 data["call"],
             )
+        elif data.get("action", None) == "just formed":
+            logger.debug("I guess the hand is over")
+            return True
     else:
         logger.debug("%s", vars(msg))
+    return False
 
 
 def _run_forever() -> None:
@@ -57,9 +61,11 @@ def _run_forever() -> None:
     response.raise_for_status()
 
     all_players = response.json()
+    my_table_url = None
     for p in all_players:
         if p["name"] == my_name:
-            table = session.get(p["table"]).json()
+            my_table_url = p["table"]
+            table = session.get(my_table_url).json()
             logger.info(f"{my_name=} {table=}")
             break
     else:
@@ -68,14 +74,18 @@ def _run_forever() -> None:
 
     while True:
         current_hand = session.get(table["current_hand"]).json()
+        logger.debug(f"{table=} {current_hand=}")
         messages = SSEClient(
             f"{host}/events/hand/{current_hand['pk']}",
         )
         logger.debug("Connected to %s.", host)
         for msg in messages:
-            dispatch(msg, session)
-            if something_tells_me_this_hand_is_over(msg):
+            if dispatch(msg, session):
+                logger.debug("Breaking from while True")
                 break
+
+        logger.debug(f"Boutta refetch {my_table_url=}")
+        table = session.get(my_table_url).json()
 
 
 run_forever = retrying.retry(
