@@ -14,19 +14,18 @@ Lucky for me almost all the modifications to the db are indeed inserts of new im
 
 ## Specific to playing a hand *or* creation of a new model instance
 
-| content                              | sender                                          | recipient channel    | what model is getting an insert? | notes                              |
-|--------------------------------------+-------------------------------------------------+----------------------+----------------------------------+------------------------------------|
-| json: new-board                      | Table.next_board                                | table.pk             | Hand [6]                         | GIMME DAT NEW BOARD                |
-| json: board, table, action           | models.HandManager                              | all-tables           | Hand                             | "yo, table X just got board Y"     |
-| json: table, final_score             | handrecord.xscript                              | table.pk, all-tables | n/a [1]                          | when the last card has been played |
-| json: table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables | Call                             | at every call                      |
-| json: table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables | n/a [2]                          | only once per table                |
-| json: table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables | Play                             |                                    |
-| json: table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables           | Table                            | action is "just formed"            |
+| content (always JSON)          | sender                                          | recipient channel                 | what model is getting an insert? | notes                              |
+|--------------------------------+-------------------------------------------------+-----------------------------------+----------------------------------+------------------------------------|
+| serialized hand                | HandManager.create                              | all-tables                        | Hand, duh                        |                                    |
+| table, final_score             | handrecord.xscript                              | table.pk, all-tables              | n/a [1]                          | when the last card has been played |
+| table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables              | Call                             |                                    |
+| table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables              | n/a [2]                          | when the auction has settled       |
+| table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables              | Play                             |                                    |
+| table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables                        | Table                            |                                    |
+| serialized board               | BoardManager.create                             | top-sekrit-board-creation-channel | Board, duh                       | not yet used                       |
 
 [1] -- This is a side-effect of adding a new play (namely: the 52nd play), but doesn't *directly* correspond to an insert, in that we add lots of plays without sending this event!
 [2] -- Exactly analoagous to [1] above -- this is a side-effect of adding a new call.
-[6] -- I suspect this is redundant: afaict, nobody listens for this, and it seems to duplicate the event sent by models.HandManager.
 
 ## Everything else
 

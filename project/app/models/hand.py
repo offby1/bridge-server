@@ -106,15 +106,13 @@ class DisplaySkeleton:
 
 class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
+        from app.serializers import NewHandSerializer
+
         rv = super().create(*args, **kwargs)
         send_event(
             channel="all-tables",
             event_type="message",
-            data={
-                "board": rv.board.pk,
-                "table": rv.table.pk,
-                "action": "new hand",
-            },
+            data={"new-hand": NewHandSerializer(rv).data},
         )
 
         return rv

@@ -182,13 +182,6 @@ class Table(models.Model):
             )
         Hand.objects.create(board=b, table=self)
 
-        logger.debug(f"I just allocated a new board {b=} and assigned it to table {self.pk}.")
-        send_event(
-            channel=str(self.pk),
-            event_type="message",
-            data={"new-board": "and be quick about it"},
-        )
-
         return b
 
     @property

@@ -30,6 +30,27 @@ class HandSerializer(serializers.HyperlinkedModelSerializer):
         fields = ("pk", "table", "board", "serialized_plays", "serialized_calls")
 
 
+class NewHandSerializer(serializers.ModelSerializer):
+    """Yes, I am a lot like HandSerializer.  But:
+
+    - I don't have the serialized_calls or serialized_plays, since I represent a *new* hand, and those would always be
+      empty;
+
+    - I don't inherit from HyperlinkedModelSerializer, since that would require that my caller pass in a request, which
+      he doesn't have.
+
+    Also:
+
+    - There's no need to make a route for me, since nobody needs to fetch me via a web service call; I am used only to
+      serialize a hand to be sent in a django-eventstream event.
+
+    """
+
+    class Meta:
+        model = Hand
+        fields = ("pk", "table", "board")
+
+
 class PlaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Play
