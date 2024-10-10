@@ -211,14 +211,15 @@ class Command(BaseCommand):
         table_pk = None
 
         # Where can we find the table primary key?  It's in different "places" in different events.
-        table_pk = data.get("table")
-        if table_pk is None:
-            new_call = data.get("new-call")
-            self.log(f"Oops, table is None; {new_call=}")
-            if new_call is not None:
-                table_pk = new_call["hand"]["table"]
-            elif (new_hand := data.get("new-hand")) is not None:
-                table_pk = new_hand["table"]
+        if (new_call := data.get("new-call")) is not None:
+            table_pk = new_call["hand"]["table"]
+        elif (new_hand := data.get("new-hand")) is not None:
+            table_pk = new_hand["table"]
+
+        if (
+            table_pk is None
+        ):  # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
+            table_pk = data.get("table")
 
         if table_pk is None:
             self.stderr.write(
