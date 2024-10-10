@@ -12,6 +12,7 @@ from django.contrib import admin
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
+from django_eventstream import send_event  # type: ignore
 
 from .common import SEAT_CHOICES
 
@@ -66,6 +67,24 @@ class BoardManager(models.Manager):
             south_cards=south_cards,
             west_cards=west_cards,
         )
+
+    def create(self, *args, **kwargs):
+        from app.serializers import BoardSerializer
+
+        rv = super().create(*args, **kwargs)
+
+        # nobody (yet) cares about the creation of a new board, but what the heck.
+        # I'm just testing out this scheme of using drf to serialize the data.
+
+        send_event(
+            channel="top-sekrit-board-creation-channel",
+            event_type="message",
+            data={
+                "new-board": BoardSerializer(rv).data,
+            },
+        )
+
+        return rv
 
 
 class Board(models.Model):
