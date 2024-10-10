@@ -165,7 +165,7 @@ class Table(models.Model):
 
         return unplayed_boards.first()
 
-    def next_board(self, shuffle_deck=True) -> Board:
+    def next_board(self, *, shuffle_deck=True) -> Board:
         b = self.find_unplayed_board()
         if b is None:
             if Board.objects.count == TOTAL_BOARDS:

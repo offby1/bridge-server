@@ -91,12 +91,12 @@ class Board(models.Model):
     if TYPE_CHECKING:
         hand_set = RelatedManager[Hand]()
 
-    objects = BoardManager()
-
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
 
     dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
+
+    objects = BoardManager()
 
     @property
     def fancy_dealer(self):
