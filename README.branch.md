@@ -20,6 +20,8 @@ The current bot cheats as hard as it can, by examining all four hands at a given
 
   Maybe have postgresql log *all* queries to stdout, so I can see if maybe my ORM usage is crazy again.
 
+  Take a look at `a-lot-to-unpack-here` -- that shows me creating a new board.  It's instantiating every existing board for some reason.  Definitely an N^2 problem (i.e., creating N new boards will take N^2 time).
+
 ## Solved Mysteries
 
 - How will the bot find out it's its turn to call or play, without periodically fetching the state of the hand?

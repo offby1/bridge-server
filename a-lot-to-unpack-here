@@ -1,0 +1,649 @@
+t1 = Table.objects.get(pk=1)
+In [21]: t1.next_board()
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."table_id" = 1
+
+Execution time: 0.006403s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000732s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 2
+ LIMIT 21
+
+Execution time: 0.000812s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 3
+ LIMIT 21
+
+Execution time: 0.001037s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 4
+ LIMIT 21
+
+Execution time: 0.000890s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 5
+ LIMIT 21
+
+Execution time: 0.000811s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 6
+ LIMIT 21
+
+Execution time: 0.000889s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 7
+ LIMIT 21
+
+Execution time: 0.000507s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 8
+ LIMIT 21
+
+Execution time: 0.000572s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 9
+ LIMIT 21
+
+Execution time: 0.000726s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 10
+ LIMIT 21
+
+Execution time: 0.000704s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 11
+ LIMIT 21
+
+Execution time: 0.000564s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 12
+ LIMIT 21
+
+Execution time: 0.000638s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 13
+ LIMIT 21
+
+Execution time: 0.000650s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 14
+ LIMIT 21
+
+Execution time: 0.000668s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 15
+ LIMIT 21
+
+Execution time: 0.000522s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 16
+ LIMIT 21
+
+Execution time: 0.000677s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 17
+ LIMIT 21
+
+Execution time: 0.000837s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 18
+ LIMIT 21
+
+Execution time: 0.001075s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 19
+ LIMIT 21
+
+Execution time: 0.000730s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 20
+ LIMIT 21
+
+Execution time: 0.000462s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 21
+ LIMIT 21
+
+Execution time: 0.000714s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 22
+ LIMIT 21
+
+Execution time: 0.000562s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 23
+ LIMIT 21
+
+Execution time: 0.000776s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 24
+ LIMIT 21
+
+Execution time: 0.000693s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 25
+ LIMIT 21
+
+Execution time: 0.000457s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 26
+ LIMIT 21
+
+Execution time: 0.000779s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 27
+ LIMIT 21
+
+Execution time: 0.000578s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 28
+ LIMIT 21
+
+Execution time: 0.000546s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 29
+ LIMIT 21
+
+Execution time: 0.000455s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 30
+ LIMIT 21
+
+Execution time: 0.000624s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 31
+ LIMIT 21
+
+Execution time: 0.000757s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 32
+ LIMIT 21
+
+Execution time: 0.001055s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 33
+ LIMIT 21
+
+Execution time: 0.000663s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 34
+ LIMIT 21
+
+Execution time: 0.000491s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 35
+ LIMIT 21
+
+Execution time: 0.000458s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 36
+ LIMIT 21
+
+Execution time: 0.000525s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 37
+ LIMIT 21
+
+Execution time: 0.000509s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 38
+ LIMIT 21
+
+Execution time: 0.000439s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 39
+ LIMIT 21
+
+Execution time: 0.000485s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 40
+ LIMIT 21
+
+Execution time: 0.000509s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 41
+ LIMIT 21
+
+Execution time: 0.000602s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE NOT ("app_board"."id" IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41))
+ ORDER BY "app_board"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001591s [Database: default]
+INSERT INTO "app_hand" ("table_id", "board_id", "open_access")
+VALUES (1, 42, false) RETURNING "app_hand"."id"
+
+Execution time: 0.012650s [Database: default]
+SELECT "django_eventstream_eventcounter"."id",
+       "django_eventstream_eventcounter"."name",
+       "django_eventstream_eventcounter"."value",
+       "django_eventstream_eventcounter"."updated"
+  FROM "django_eventstream_eventcounter"
+ WHERE "django_eventstream_eventcounter"."name" = 'all-tables'
+ LIMIT 21
+
+Execution time: 0.002382s [Database: default]
+SELECT "django_eventstream_eventcounter"."id",
+       "django_eventstream_eventcounter"."name",
+       "django_eventstream_eventcounter"."value",
+       "django_eventstream_eventcounter"."updated"
+  FROM "django_eventstream_eventcounter"
+ WHERE "django_eventstream_eventcounter"."id" = 3
+ LIMIT 21
+   FOR UPDATE
+
+Execution time: 0.001140s [Database: default]
+INSERT INTO "django_eventstream_event" ("channel", "type", "data", "eid", "created")
+VALUES ('all-tables', 'message', E'"{\\"board\\": 42, \\"table\\": 1, \\"action\\": \\"new hand\\"}"', 5943, '2024-10-10 18:38:29.578531+00:00'::timestamptz) RETURNING "django_eventstream_event"."id"
+
+Execution time: 0.014198s [Database: default]
+UPDATE "django_eventstream_eventcounter"
+   SET "name" = 'all-tables',
+       "value" = 5943,
+       "updated" = '2024-10-10 18:38:29.594111+00:00'::timestamptz
+ WHERE "django_eventstream_eventcounter"."id" = 3
+
+Execution time: 0.001822s [Database: default]
+SELECT "django_eventstream_event"."id",
+       "django_eventstream_event"."channel",
+       "django_eventstream_event"."type",
+       "django_eventstream_event"."data",
+       "django_eventstream_event"."eid",
+       "django_eventstream_event"."created"
+  FROM "django_eventstream_event"
+ WHERE "django_eventstream_event"."created" < '2024-10-09 18:38:29.600513+00:00'::timestamptz
+ LIMIT 50
+
+Execution time: 0.005597s [Database: default]
+2024-10-10T18:38:29+0000 DEBUG table.py(182) next_board I just allocated a new board b=<Board: Board #42, Neither side vulnerable, dealt by EAST> and assigned it to table 1.
+2024-10-10T18:38:29+0000 DEBUG /Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py next_board I just allocated a new board b=<Board: Board #42, Neither side vulnerable, dealt by EAST> and assigned it to table 1.
+SELECT "django_eventstream_eventcounter"."id",
+       "django_eventstream_eventcounter"."name",
+       "django_eventstream_eventcounter"."value",
+       "django_eventstream_eventcounter"."updated"
+  FROM "django_eventstream_eventcounter"
+ WHERE "django_eventstream_eventcounter"."name" = '1'
+ LIMIT 21
+
+Execution time: 0.001435s [Database: default]
+SELECT "django_eventstream_eventcounter"."id",
+       "django_eventstream_eventcounter"."name",
+       "django_eventstream_eventcounter"."value",
+       "django_eventstream_eventcounter"."updated"
+  FROM "django_eventstream_eventcounter"
+ WHERE "django_eventstream_eventcounter"."id" = 4
+ LIMIT 21
+   FOR UPDATE
+
+Execution time: 0.000997s [Database: default]
+INSERT INTO "django_eventstream_event" ("channel", "type", "data", "eid", "created")
+VALUES ('1', 'message', E'"{\\"new-board\\": \\"and be quick about it\\"}"', 101, '2024-10-10 18:38:29.647548+00:00'::timestamptz) RETURNING "django_eventstream_event"."id"
+
+Execution time: 0.009377s [Database: default]
+UPDATE "django_eventstream_eventcounter"
+   SET "name" = '1',
+       "value" = 101,
+       "updated" = '2024-10-10 18:38:29.658104+00:00'::timestamptz
+ WHERE "django_eventstream_eventcounter"."id" = 4
+
+Execution time: 0.000669s [Database: default]
+SELECT "django_eventstream_event"."id",
+       "django_eventstream_event"."channel",
+       "django_eventstream_event"."type",
+       "django_eventstream_event"."data",
+       "django_eventstream_event"."eid",
+       "django_eventstream_event"."created"
+  FROM "django_eventstream_event"
+ WHERE "django_eventstream_event"."created" < '2024-10-09 18:38:29.662494+00:00'::timestamptz
+ LIMIT 50
+
+Execution time: 0.000687s [Database: default]
+Out[21]: <Board: Board #42, Neither side vulnerable, dealt by EAST>
+
+2024-10-10T18:38:29+0000 DEBUG /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/selector_events.py __init__ Using selector: KqueueSelector
+In [22]:

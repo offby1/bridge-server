@@ -155,7 +155,10 @@ class Table(models.Model):
 
     def find_unplayed_board(self) -> Board | None:
         hands_played_at_this_table = Hand.objects.filter(table=self)
+
+        # TODO -- this does N queries where N is ... well, where N is depressingly large.
         board_pks_played_at_this_table = [h.board.pk for h in hands_played_at_this_table]
+
         unplayed_boards = Board.objects.exclude(pk__in=board_pks_played_at_this_table).order_by(
             "id"
         )
