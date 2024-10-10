@@ -9,6 +9,7 @@ import bridge.seat
 import bridge.table
 from django.contrib import admin
 from django.db import models, transaction
+from django.db.models.expressions import RawSQL
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -154,14 +155,21 @@ class Table(models.Model):
         return rv
 
     def find_unplayed_board(self) -> Board | None:
-        hands_played_at_this_table = Hand.objects.filter(table=self)
-
-        # TODO -- this does N queries where N is ... well, where N is depressingly large.
-        board_pks_played_at_this_table = [h.board.pk for h in hands_played_at_this_table]
-
-        unplayed_boards = Board.objects.exclude(pk__in=board_pks_played_at_this_table).order_by(
-            "id"
-        )
+        unplayed_boards = Board.objects.exclude(
+            pk__in=RawSQL(
+                """
+                SELECT
+                        APP_BOARD.ID
+                FROM
+                        PUBLIC.APP_TABLE
+                        JOIN PUBLIC.APP_HAND ON APP_HAND.TABLE_ID = APP_TABLE.ID
+                        JOIN PUBLIC.APP_BOARD ON APP_BOARD.ID = APP_HAND.BOARD_ID
+                WHERE
+                        APP_TABLE.ID = %s
+        """,
+                (self.pk,),
+            )
+        ).order_by("id")
 
         return unplayed_boards.first()
 

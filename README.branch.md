@@ -20,7 +20,7 @@ The current bot cheats as hard as it can, by examining all four hands at a given
 
   Maybe have postgresql log *all* queries to stdout, so I can see if maybe my ORM usage is crazy again.
 
-  Take a look at `a-lot-to-unpack-here` -- that shows me creating a new board.  It's instantiating every existing board for some reason.  Definitely an N^2 problem (i.e., creating N new boards will take N^2 time).
+  I did fix an N^2 problem in "find\_unplayed\_board" with a smarter query, but it doesn't seem noticeably faster :-(
 
 ## Solved Mysteries
 
