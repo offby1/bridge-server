@@ -4,6 +4,7 @@ import django.db.utils
 import retrying  # type: ignore
 import tqdm
 from app.models import Player, Table
+from app.models.hand import AuctionError
 from bridge.contract import Bid as libBid
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -57,12 +58,18 @@ class Command(BaseCommand):
     def generate_some_fake_calls_and_plays_at(self, table: Table, this_tables_index: int):
         calls_prefix = canned_calls[0:this_tables_index]
 
+        # TODO -- just make a legal call; forget about canned_calls
         for c in calls_prefix:
             player = table.current_hand.auction.allowed_caller()
             call = libBid.deserialize(c)
 
-            table.current_hand.add_call_from_player(player=player, call=call)
-            table = Table.objects.get(pk=table.pk)
+            try:
+                table.current_hand.add_call_from_player(player=player, call=call)
+            except AuctionError as e:
+                self.stdout.write(f"Hmm, {e}; will ignore it")
+                continue
+            else:
+                table = Table.objects.get(pk=table.pk)
 
     def handle(self, *args, **options):
         random.seed(0)  # TODO -- remove me when I'm done debugging

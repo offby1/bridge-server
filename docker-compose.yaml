@@ -10,8 +10,6 @@ services:
     depends_on:
       django-migrated:
         condition: service_completed_successfully
-      postgres:
-        condition: service_started
       redis:
         condition: service_started
     environment:
@@ -34,7 +32,8 @@ services:
     command: "poetry run python manage.py bot"
     ports: []
     depends_on:
-      - django
+      populated-with-fake-data:
+        condition: service_completed_successfully
     environment:
       DJANGO_HOST: django
 
@@ -53,6 +52,7 @@ services:
     ports: []
     depends_on:
       - django-migrated
+      - redis
 
   postgres:
     image: postgres:17
