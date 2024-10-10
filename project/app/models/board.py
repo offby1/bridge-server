@@ -24,7 +24,7 @@ TOTAL_BOARDS = 16
 
 
 class BoardManager(models.Manager):
-    def create_from_deck(self, *, deck):
+    def create_from_deck(self, *, deck: list[Card]) -> Board:
         board_number = self.count() + 1
 
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
@@ -32,23 +32,23 @@ class BoardManager(models.Manager):
         only_ns_vuln = board_number in (2, 5, 12, 15)
         only_ew_vuln = board_number in (3, 6, 9, 16)
         all_vuln = board_number in (4, 7, 10, 13)
-        kwargs = {
-            "ns_vulnerable": only_ns_vuln or all_vuln,
-            "ew_vulnerable": only_ew_vuln or all_vuln,
-            "dealer": dealer,
-            "deck": deck,
-        }
-        return self.create_with_deck(**kwargs)
+
+        return self.create_with_deck(
+            ns_vulnerable=only_ns_vuln or all_vuln,
+            ew_vulnerable=only_ew_vuln or all_vuln,
+            dealer=dealer,
+            deck=deck,
+        )
 
     def create_with_deck(
         self,
         *,
-        ns_vulnerable,
-        ew_vulnerable,
-        dealer,
-        deck,
-    ):
-        def deserialize_hand(cards):
+        ns_vulnerable: bool,
+        ew_vulnerable: bool,
+        dealer: int,
+        deck: list[Card],
+    ) -> Board:
+        def deserialize_hand(cards: list[Card]) -> str:
             # sorted only so that they look purty in the Admin site.
             return "".join([c.serialize() for c in sorted(cards)])
 
