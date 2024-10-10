@@ -27,6 +27,11 @@ urlpatterns = [
         kwargs={"channels": ["lobby"]},
     ),
     path(
+        "events/top-sekrit-board-creation-channel/",
+        include(django_eventstream.urls),
+        kwargs={"channels": ["top-sekrit-board-creation-channel"]},
+    ),
+    path(
         "events/player/<channel>/",
         include(django_eventstream.urls),
     ),

@@ -16,5 +16,9 @@ class MyChannelManager(DefaultChannelManager):
             if channel.isdigit() and user.player.most_recent_seat is not None:
                 return user.player.most_recent_seat.table.current_hand.pk == int(channel)
 
+        if channel == "top-sekrit-board-creation-channel":
+            # What, are you kidding?  It's TOP SEKRIT
+            return False
+
         # everything else is visible to everyone.
         return True
