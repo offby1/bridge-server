@@ -109,11 +109,13 @@ class HandManager(models.Manager):
         from app.serializers import NewHandSerializer
 
         rv = super().create(*args, **kwargs)
-        send_event(
-            channel="all-tables",
-            event_type="message",
-            data={"new-hand": NewHandSerializer(rv).data},
-        )
+        table = rv.table
+        for channel in (str(table.pk), "all-tables"):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={"new-hand": NewHandSerializer(rv).data},
+            )
 
         return rv
 
@@ -502,11 +504,13 @@ class CallManager(models.Manager):
         from app.serializers import CallSerializer
 
         rv = super().create(*args, **kwargs)
-        send_event(
-            channel="all-tables",
-            event_type="message",
-            data={"new-call": CallSerializer(rv).data},
-        )
+        table = rv.hand.table
+        for channel in (str(table.pk), "all-tables"):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={"new-call": CallSerializer(rv).data},
+            )
 
         return rv
 

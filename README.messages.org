@@ -16,13 +16,13 @@ Lucky for me almost all the modifications to the db are indeed inserts of new im
 
 | content (always JSON)          | sender                                          | recipient channel                 | what model is getting an insert? | notes                              |
 |--------------------------------+-------------------------------------------------+-----------------------------------+----------------------------------+------------------------------------|
-| serialized hand                | HandManager.create                              | all-tables                        | Hand, duh                        |                                    |
-| table, final_score             | hand.xscript                                    | table.pk, all-tables              | n/a [1]                          | when the last card has been played |
-| table, player, call            | hand.add_call_from_player                       | table.pk, all-tables              | Call                             |                                    |
+| "new-board": serialized board  | BoardManager.create                             | top-sekrit-board-creation-channel | Board, duh                       | not yet used                       |
+| "new-call": serialized call    | CallManager.create                              | table.pk, all-tables              | Call, duh                        |                                    |
+| "new-hand": serialized hand    | HandManager.create                              | table.pk, all-tables              | Hand, duh                        |                                    |
 | table, contract, contract_text | hand.add_call_from_player                       | table.pk, all-tables              | n/a [2]                          | when the auction has settled       |
+| table, final_score             | hand.xscript                                    | table.pk, all-tables              | n/a [1]                          | when the last card has been played |
 | table, player, card            | hand.add_play_from_player                       | table.pk, all-tables              | Play                             |                                    |
 | table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables                        | Table                            |                                    |
-| serialized board               | BoardManager.create                             | top-sekrit-board-creation-channel | Board, duh                       | not yet used                       |
 
 [1] -- This is a side-effect of adding a new play (namely: the 52nd play), but doesn't *directly* correspond to an insert, in that we add lots of plays without sending this event!
 [2] -- Exactly analoagous to [1] above -- this is a side-effect of adding a new call.
