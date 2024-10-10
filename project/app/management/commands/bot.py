@@ -220,11 +220,11 @@ class Command(BaseCommand):
         # instead of `time.time`.  But oh well.
         self.last_action_timestamps_by_table_id[table.pk] = time.time()
 
-        if data.get("action") in ("just formed", "new hand") or set(data.keys()) == {
-            "table",
-            "player",
-            "call",
-        }:
+        if (
+            data.get("action") == "just formed"
+            or set(data.keys()) == {"new-hand"}
+            or set(data.keys()) == {"new-call"}
+        ):
             with self.delayed_action(table=table):
                 self.make_a_groovy_call(hand=table.current_hand)
 

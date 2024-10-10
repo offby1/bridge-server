@@ -17,10 +17,10 @@ Lucky for me almost all the modifications to the db are indeed inserts of new im
 | content (always JSON)          | sender                                          | recipient channel                 | what model is getting an insert? | notes                              |
 |--------------------------------+-------------------------------------------------+-----------------------------------+----------------------------------+------------------------------------|
 | serialized hand                | HandManager.create                              | all-tables                        | Hand, duh                        |                                    |
-| table, final_score             | handrecord.xscript                              | table.pk, all-tables              | n/a [1]                          | when the last card has been played |
-| table, player, call            | handrecord.add_call_from_player                 | table.pk, all-tables              | Call                             |                                    |
-| table, contract, contract_text | handrecord.add_call_from_player                 | table.pk, all-tables              | n/a [2]                          | when the auction has settled       |
-| table, player, card            | handrecord.add_play_from_player                 | table.pk, all-tables              | Play                             |                                    |
+| table, final_score             | hand.xscript                                    | table.pk, all-tables              | n/a [1]                          | when the last card has been played |
+| table, player, call            | hand.add_call_from_player                       | table.pk, all-tables              | Call                             |                                    |
+| table, contract, contract_text | hand.add_call_from_player                       | table.pk, all-tables              | n/a [2]                          | when the auction has settled       |
+| table, player, card            | hand.add_play_from_player                       | table.pk, all-tables              | Play                             |                                    |
 | table, seats, action           | table.TableManager.create_with_two_partnerships | all-tables                        | Table                            |                                    |
 | serialized board               | BoardManager.create                             | top-sekrit-board-creation-channel | Board, duh                       | not yet used                       |
 

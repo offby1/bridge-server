@@ -21,7 +21,7 @@ class BoardSerializer(serializers.HyperlinkedModelSerializer):
 class CallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Call
-        fields = ("serialized",)
+        fields = ("serialized", "hand")
 
 
 class HandSerializer(serializers.HyperlinkedModelSerializer):

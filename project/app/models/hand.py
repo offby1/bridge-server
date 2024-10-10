@@ -207,18 +207,8 @@ class Hand(models.Model):
         del self.auction
         del self.annotated_calls
 
-        from app.models import Player
-
-        modelPlayer = Player.objects.get_by_name(player.name)
-        # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
-        for channel in (str(self.table.current_hand.pk), "all-tables"):
-            send_event(
-                channel=channel,
-                event_type="message",
-                data={"table": self.table.pk, "player": modelPlayer.pk, "call": call.serialize()},
-            )
-
-            if self.declarer:  # the auction just settled
+        if self.declarer:  # the auction just settled
+            for channel in (str(self.table.current_hand.pk), "all-tables"):
                 contract = self.auction.status
                 assert isinstance(contract, libContract)
                 assert contract.declarer is not None
@@ -507,7 +497,23 @@ class Hand(models.Model):
 admin.site.register(Hand)
 
 
+class CallManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        from app.serializers import CallSerializer
+
+        rv = super().create(*args, **kwargs)
+        send_event(
+            channel="all-tables",
+            event_type="message",
+            data={"new-call": CallSerializer(rv).data},
+        )
+
+        return rv
+
+
 class Call(models.Model):
+    objects = CallManager()
+
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
