@@ -22,6 +22,7 @@ class CallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Call
         fields = ("serialized", "hand")
+        depth = 1
 
 
 class HandSerializer(serializers.HyperlinkedModelSerializer):

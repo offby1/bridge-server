@@ -59,7 +59,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
         }
         return TemplateResponse(
             request,
-            "table_archive.html",
+            "hand_archive.html",
             context=context,
         )
 
