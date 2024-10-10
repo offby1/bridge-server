@@ -48,7 +48,7 @@ services:
 
   populated-with-fake-data:
     <<: *django
-    command: "poetry run python manage.py generate_fake_data --players=56"
+    command: "poetry run python manage.py generate_fake_data --players=8"
     restart: "no"
     ports: []
     depends_on:
