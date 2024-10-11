@@ -1,7 +1,5 @@
 import random
 
-import django.db.utils
-import retrying  # type: ignore
 import tqdm
 from app.models import Player, Table
 from app.models.hand import AuctionError
@@ -11,24 +9,6 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 from faker import Faker
-
-
-def is_retryable_db_error(e):
-    return isinstance(
-        e,
-        (
-            django.db.utils.OperationalError,
-            django.db.utils.DatabaseError,
-        ),
-    ) and not isinstance(e, IntegrityError)
-
-
-db_retry = retrying.retry(
-    retry_on_exception=is_retryable_db_error,
-    wait_exponential_multiplier=2,
-    wait_jitter_max=1000,
-)
-
 
 canned_calls = [
     "Pass",
@@ -88,9 +68,8 @@ class Command(BaseCommand):
                 else:
                     username = fake.unique.first_name().lower()
 
-                @db_retry
-                def create_player():
-                    return Player.objects.create(
+                try:
+                    Player.objects.create(
                         user=User.objects.create(
                             username=username,
                             password=everybodys_password,
@@ -98,10 +77,8 @@ class Command(BaseCommand):
                         allow_bot_to_play_for_me=username != "bob",
                     )
 
-                try:
-                    create_player()
-                except IntegrityError:
-                    continue
+                except IntegrityError as e:
+                    self.stdout.write(f"Hmm, {e=}; will ignore it")
 
                 progress_bar.update()
 
@@ -148,19 +125,15 @@ class Command(BaseCommand):
         while Player.objects.count() < count_before + 3:
             username = fake.unique.first_name().lower()
 
-            @db_retry
-            def create_player():
-                return Player.objects.create(
+            try:
+                Player.objects.create(
                     user=User.objects.create(
                         username=username,
                         password=everybodys_password,
                     ),
                 )
-
-            try:
-                create_player()
-            except IntegrityError:
-                continue
+            except IntegrityError as e:
+                self.stdout.write(f"Hmm, {e=}; will ignore it")
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
