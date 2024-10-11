@@ -179,16 +179,14 @@ LOGGING = {
         },
     },
     "filters": {
-        "require_debug_true": {
-            "()": "django.utils.log.RequireDebugTrue",
+        "require_debug_true_or_environment_staging": {
+            "()": "app.utils.log.RequireDebugTrueOrEnvironmentStaging",
         },
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
-            "filters": [
-                # "require_debug_true"
-            ],
+            "filters": ["require_debug_true_or_environment_staging"],
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },

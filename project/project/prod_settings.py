@@ -28,11 +28,16 @@ DEBUG = False
 ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-compose stack
 
 HOST_HOSTNAME = os.getenv("HOST_HOSTNAME", "unknown-host")
+
+SENTRY_ENVIRONMENT = (
+    "staging" if HOST_HOSTNAME.startswith("Erics-Work-MacBook-Pro") else "production"
+)
+
 sentry_sdk.init(  # type: ignore
     dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for tracing.
-    environment="staging" if HOST_HOSTNAME.startswith("Erics-Work-MacBook-Pro") else "production",
+    environment=SENTRY_ENVIRONMENT,
     traces_sample_rate=1.0,
     # Set profiles_sample_rate to 1.0 to profile 100%
     # of sampled transactions.
