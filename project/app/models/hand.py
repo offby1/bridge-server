@@ -3,7 +3,8 @@ from __future__ import annotations
 import collections
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator
+import time
+from typing import TYPE_CHECKING, Any, Iterable, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -104,18 +105,21 @@ class DisplaySkeleton:
         return self.holdings_by_seat[seat]
 
 
+def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
+    for ch in (channel, "all-tables"):
+        send_event(channel=ch, event_type="message", data=data | {"time": time.time()})
+        logger.debug(f"Sent {data=} to {ch}")
+
+
 class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
         from app.serializers import NewHandSerializer
 
         rv = super().create(*args, **kwargs)
-        table = rv.table
-        for channel in (str(table.pk), "all-tables"):
-            send_event(
-                channel=channel,
-                event_type="message",
-                data={"new-hand": NewHandSerializer(rv).data},
-            )
+
+        send_timestamped_event(
+            channel=str(rv.table.pk), data={"new-hand": NewHandSerializer(rv).data}
+        )
 
         return rv
 
@@ -210,21 +214,19 @@ class Hand(models.Model):
         del self.annotated_calls
 
         if self.declarer:  # the auction just settled
-            for channel in (str(self.table.current_hand.pk), "all-tables"):
-                contract = self.auction.status
-                assert isinstance(contract, libContract)
-                assert contract.declarer is not None
-                send_event(
-                    channel=channel,
-                    event_type="message",
-                    data={
-                        "table": self.table.pk,
-                        "contract_text": str(contract),
-                        "contract": {
-                            "opening_leader": contract.declarer.seat.lho().value,
-                        },
+            contract = self.auction.status
+            assert isinstance(contract, libContract)
+            assert contract.declarer is not None
+            send_timestamped_event(
+                channel=str(self.pk),
+                data={
+                    "table": self.table.pk,
+                    "contract_text": str(contract),
+                    "contract": {
+                        "opening_leader": contract.declarer.seat.lho().value,
                     },
-                )
+                },
+            )
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -255,31 +257,11 @@ class Hand(models.Model):
         )
 
         if final_score:
-            for channel in (str(self.table.current_hand.pk), "all-tables"):
-                kwargs = {
-                    "channel": channel,
-                    "event_type": "message",
-                    "data": {
-                        "table": self.table.pk,
-                        "final_score": str(final_score),
-                    },
-                }
-                logger.debug(f"Sending event {kwargs=}")
-                send_event(**kwargs)
-
-        from app.models import Player
-
-        modelPlayer = Player.objects.get_by_name(player.name)
-        # TODO -- this duplicates the (admittedly trivial) `_auction_channel_for_table` in views.table
-        for channel in (str(self.table.current_hand.pk), "all-tables"):
-            send_event(
-                channel=channel,
-                event_type="message",
+            send_timestamped_event(
+                channel=str(self.pk),
                 data={
                     "table": self.table.pk,
-                    "player": modelPlayer.pk,
-                    "card": card.serialize(),
-                    "play_id": rv.pk,
+                    "final_score": str(final_score),
                 },
             )
 
@@ -504,20 +486,16 @@ class CallManager(models.Manager):
         from app.serializers import CallSerializer
 
         rv = super().create(*args, **kwargs)
-        table = rv.hand.table
-        for channel in (str(table.pk), "all-tables"):
-            send_event(
-                channel=channel,
-                event_type="message",
-                data={"new-call": CallSerializer(rv).data},
-            )
+
+        send_timestamped_event(
+            channel=str(rv.hand.pk),
+            data={"new-call": CallSerializer(rv).data},
+        )
 
         return rv
 
 
 class Call(models.Model):
-    objects = CallManager()
-
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
@@ -531,6 +509,8 @@ class Call(models.Model):
         db_comment="A short string with which we can create a bridge.contract.Call object",
     )
 
+    objects = CallManager()
+
     @property
     def libraryThing(self):
         return libBid.deserialize(self.serialized)
@@ -540,6 +520,20 @@ class Call(models.Model):
 
 
 admin.site.register(Call)
+
+
+class PlayManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        from app.serializers import PlaySerializer
+
+        rv = super().create(*args, **kwargs)
+
+        send_timestamped_event(
+            channel=str(rv.hand.pk),
+            data={"new-play": PlaySerializer(rv).data},
+        )
+
+        return rv
 
 
 class Play(models.Model):
@@ -558,6 +552,8 @@ class Play(models.Model):
         db_comment="A short string with which we can create a bridge.card.Card object",
     )
 
+    objects = PlayManager()
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -575,8 +571,7 @@ class Play(models.Model):
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
 
-    @cached_property
-    def str(self) -> str:
+    def __str__(self) -> str:
         star = ""
         if self.won_its_trick:
             star = "*"

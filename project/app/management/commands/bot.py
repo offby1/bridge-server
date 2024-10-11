@@ -5,6 +5,7 @@ import contextlib
 import datetime
 import functools
 import json
+import logging
 import operator
 import os
 import random
@@ -90,36 +91,50 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
 
 class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
-        self.table = None
+        logging.getLogger().setLevel(logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
+
+        self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
+        self.action_queue = []
         super().__init__(*args, **kwargs)
 
-    def log(self, string: str) -> None:
-        table = self.table
-        if table is not None:
-            hand = table.current_hand
-            board = hand.board
-            final = f"{self.table} hand {hand.pk} {board=}: {string}"
-        else:
-            final = f"(no table): {string}"
-        self.stdout.write(final)
-        self.stdout.flush()
-
-    @contextlib.contextmanager
-    def delayed_action(self, *, table):
+    def delay_action(self, *, table: Table, func) -> None:
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 0.25
+        sleep_until = previous_action_time + 1
 
+        # Schedule the action for the future
+        self.action_queue.insert(0, (sleep_until, table.pk, func))
+
+        self.log(table=table, string=f"Queued {func=}; queue has {len(self.action_queue)} items")
+
+        del table
+        del previous_action_time
+        del sleep_until
+
+        # Do whatever action comes next
+
+        sleep_until, table_pk, func = self.action_queue.pop(-1)
+        self.log(table=None, string=f"Fetched {func=} for table {table_pk}")
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
             # imply we're falling behind.
             time.sleep(duration)
 
-        yield
-        self.last_action_timestamps_by_table_id[table.pk] = time.time()
+        func()
+        self.last_action_timestamps_by_table_id[table_pk] = time.time()
+
+    def log(self, *, table, string: str) -> None:
+        if table is not None:
+            hand = table.current_hand
+            board = hand.board
+            final = f"{table} hand {hand.pk} {board=}: {string}"
+        else:
+            final = f"(no table): {string}"
+        self.logger.info(final)
 
     def skip_player(self, *, table: Table, player: Player) -> bool:
         if player is None:
-            self.log("player is None -- auction or play must be over.")
+            self.log(table=table, string="player is None -- auction or play must be over.")
             return True
 
         dummy_seat = table.dummy
@@ -155,13 +170,14 @@ class Command(BaseCommand):
                 self.stderr.write("Nuts, a pass! Let's try again")
             else:
                 self.log(
-                    "I tried rilly rilly hard not to pass this hand out, but ... 😢  I'll get a new board!"
+                    table=table,
+                    string="I tried rilly rilly hard not to pass this hand out, but ... 😢  I'll get a new board!",
                 )
                 # TODO -- it'd probably be cleaner to do nothing here, and instead have the server send a "the hand was
                 # passed out" event, analagous to the "contract_text" message that it currently sends when an auction
                 # has settled, and then have our "dispatch" fetch the next board.
-                with self.delayed_action(table=table):
-                    table.next_board()
+                self.delay_action(table=table, func=table.next_board)
+
                 return
 
         try:
@@ -172,7 +188,8 @@ class Command(BaseCommand):
             self.stderr.write(f"Uh-oh -- {e}")
         else:
             self.log(
-                f"Just impersonated {player_to_impersonate}, and said {call} on their behalf",
+                table=table,
+                string=f"Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
     def make_a_groovy_play(self, *, hand: Hand) -> None:
@@ -191,7 +208,10 @@ class Command(BaseCommand):
 
         legal_cards = hand.xscript.legal_cards()
         if not legal_cards:
-            self.log(f"No legal cards at {seat_to_impersonate}? The hand must be over.")
+            self.log(
+                table=table,
+                string=f"No legal cards at {seat_to_impersonate}? The hand must be over.",
+            )
             return
 
         chosen_card = hand.xscript.slightly_less_dumb_play(
@@ -203,16 +223,18 @@ class Command(BaseCommand):
             key=operator.itemgetter(1),
         )
         p = hand.add_play_from_player(player=hand.xscript.player, card=chosen_card)
-        self.log(f"{p} out of {ranked_options=}")
+        self.log(table=table, string=f"{p} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
-        self.log(f"<-- {data}")
+        self.log(table=None, string=f"<-- {data}")
 
         table_pk = None
 
         # Where can we find the table primary key?  It's in different "places" in different events.
         if (new_call := data.get("new-call")) is not None:
             table_pk = new_call["hand"]["table"]
+        elif (new_play := data.get("new-play")) is not None:
+            table_pk = new_play["hand"]["table"]
         elif (new_hand := data.get("new-hand")) is not None:
             table_pk = new_hand["table"]
 
@@ -228,68 +250,70 @@ class Command(BaseCommand):
             return
 
         try:
-            self.table = Table.objects.get(pk=table_pk)
+            table = Table.objects.get(pk=table_pk)
         except Table.DoesNotExist:
             self.stderr.write(f"In {data}, table with {table_pk=} does not exist")
             return
 
-        # In a perfect world, the event on which we're dispatching would include a timestamp, and we'd use *that*
-        # instead of `time.time`.  But oh well.
-        self.last_action_timestamps_by_table_id[self.table.pk] = time.time()
+        if (when := data.get("time")) is not None:
+            self.log(table=table, string=f"Found {when=} in the data")
+            self.last_action_timestamps_by_table_id[table.pk] = when
+        elif data.get("action") != "pokey pokey":
+            msg = f"{data=} aint' got no timestamp! Fuck this."
+            raise Exception(msg)
 
         if (
             data.get("action") == "just formed"
-            or set(data.keys()) == {"new-hand"}
-            or set(data.keys()) == {"new-call"}
+            or data.get("new-hand") is not None
+            or data.get("new-call") is not None
         ):
-            with self.delayed_action(table=self.table):
-                self.make_a_groovy_call(hand=self.table.current_hand)
-
-        elif {"table", "contract"}.issubset(data.keys()) or {
-            "table",
-            "player",
-            "card",
-        }.issubset(data.keys()):
-            with self.delayed_action(table=self.table):
-                self.make_a_groovy_play(hand=self.table.current_hand)
-        elif set(data.keys()) == {"table", "direction", "action"}:
-            self.log(f"I believe I been poked: {data=}")
-            with self.delayed_action(table=self.table):
-                self.make_a_groovy_call(hand=self.table.current_hand)
-                self.make_a_groovy_play(hand=self.table.current_hand)
+            self.delay_action(
+                table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
+            )
+        elif data.get("new-play") is not None or "contract_text" in data:
+            self.delay_action(
+                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+            )
+        elif {"table", "direction", "action"}.issubset(data.keys()):
+            self.log(table=table, string=f"I believe I been poked: {data=}")
+            self.delay_action(
+                table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
+            )
+            self.delay_action(
+                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+            )
         elif "final_score" in data:
             self.log(
-                "I guess this table's play is done, so I should poke that GIMME NEW BOARD button"
+                table=table,
+                string="I guess this table's play is done, so I should poke that GIMME NEW BOARD button",
             )
-            with self.delayed_action(table=self.table):
-                self.table.next_board()
+            self.delay_action(table=table, func=table.next_board)
+
         else:
-            self.stderr.write(f"No idea what to do with {data=}")
+            self.log(table=table, string=f"No idea what to do with {data=}")
 
     @retrying.retry(
         retry_on_exception=_request_ex_filter,
         wait_exponential_multiplier=1000,
     )
     def run_forever(self):
-        self.log(f"{settings.EVENTSTREAM_REDIS=}")
+        self.log(table=None, string=f"{settings.EVENTSTREAM_REDIS=}")
         django_host = os.environ.get("DJANGO_HOST", "localhost")
-        self.log(f"Connecting to {django_host}")
+        self.log(table=None, string=f"Connecting to {django_host}")
 
         messages = SSEClient(
             f"http://{django_host}:9000/events/all-tables/",
         )
-        self.log(f"Finally! Connected to {django_host}.")
+        self.log(table=None, string=f"Finally! Connected to {django_host}.")
         for msg in messages:
-            self.log(str(vars(msg)))
+            self.log(table=None, string=str(vars(msg)))
             if msg.event != "keep-alive":
                 if msg.data:
                     data = json.loads(msg.data)
                     self.dispatch(data=data)
                 else:
-                    self.log(f"message with no data: {vars(msg)=}")
+                    self.log(table=None, string=f"message with no data: {vars(msg)=}")
 
     def handle(self, *args, **options):
-        self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
-
         with contextlib.suppress(KeyboardInterrupt):
             self.run_forever()

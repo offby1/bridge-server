@@ -29,6 +29,7 @@
 {% block scripts %}
     <script>
 var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}');
+console.log("Listening for hand events on {{ hand.pk }}");
 
 handEventSource.addEventListener('message', function (e) {
     console.log("Hand event listener saw " + e.data);

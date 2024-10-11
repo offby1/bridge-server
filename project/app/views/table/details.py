@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 
 import bridge.auction
 import bridge.card
@@ -54,6 +55,7 @@ def poke_de_bot(request):
             "table": wassup["table_id"],
             "direction": wassup["direction"],
             "action": "pokey pokey",
+            "time": time.time(),
         },
     )
     return HttpResponse("Pokey enough for ya??")

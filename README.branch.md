@@ -16,13 +16,17 @@ The current bot cheats as hard as it can, by examining all four hands at a given
 
 ## Unsolved Mysteries
 
+## Solved Mysteries
+
 - Seems awfully slow!  I've got the bot driving the usual 15 tables at once, and it only gets to a given table every couple of seconds :-|
 
   Maybe have postgresql log *all* queries to stdout, so I can see if maybe my ORM usage is crazy again.
 
   I did fix an N^2 problem in "find\_unplayed\_board" with a smarter query, but it doesn't seem noticeably faster :-(
 
-## Solved Mysteries
+  I examined the output of the bot as it runs with 15 tables, it looks like it's processing one table, waiting 1/4 second, then moving on the the next one.  I thought I'd fixed this earlier, but I guess not.  Maybe I should rethink how I'm dispatching and waiting?
+
+  I've complexified the way it determines how long to wait for what; it seems better now.
 
 - How will the bot find out it's its turn to call or play, without periodically fetching the state of the hand?
 

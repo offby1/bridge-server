@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
+import time
 from typing import TYPE_CHECKING
 
 import bridge.card
@@ -61,6 +62,7 @@ class TableManager(models.Manager):
                 "table": t.pk,
                 "seats": [s.jsonable for s in t.seat_set.all()],
                 "action": "just formed",
+                "time": time.time(),
             },
         )
 
