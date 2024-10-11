@@ -27,6 +27,13 @@ Optional but slick.
 ### libpq
 - $ `sudo apt install libpq5`
 
+## Running it
+`just runme` will start just the web server.  DEPLOYMENT_ENVIRONMENT will be `"development"`.
+`just bot` will run the bot.
+
+`just dcu` will bring up the docker-compose stack, which includes the web server, bot, and who knows what-all else.  It conflicts with `just runme` since they both try to listen on the same port.
+DEPLOYMENT_ENVIRONMENT will be `"staging"` on the laptop, and `"production"` elsewhere.  When running on the laptop, you can fool it into thinking it's production by invoking e.g. `DJANGO_SETTINGS_MODULE=project.prod_settings HOSTNAME=yeah.im.production.trustme just dcu`
+
 ## Thoughts about state
 
 So ... I never put a lot of thought into what, exactly, should live in the db; and of that stuff, what should be immutable.

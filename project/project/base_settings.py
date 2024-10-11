@@ -119,6 +119,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "app.template.context_processors.stick_that_version_in_there_daddy_O",
+                "app.template.context_processors.stick_deployment_environment_in_there_daddy_O",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -192,6 +193,9 @@ LOGGING = {
         },
     },
     "loggers": {
+        "daphne.http_protocol": {
+            "level": "INFO",
+        },
         "django.channels.server": {
             "handlers": ["console"],
             "level": "INFO",

@@ -3,7 +3,7 @@ import 'postgres.just'
 set unstable := true
 
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
-export HOSTNAME := `hostname`
+export HOSTNAME := env("HOSTNAME", `hostname`)
 
 # Keep this true as long as I occasionally use Visual Studio Code --
 # that IDE seems not to understand the world when this is false, and it confuses me to have two venvs for a single project.
@@ -80,7 +80,7 @@ daphne: test django-superuser migrate collectstatic
     cd project
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    export -n DJANGO_SETTINGS_MODULE
+    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
     set -x
     poetry run daphne                                                               \
       --verbosity                                                                   \

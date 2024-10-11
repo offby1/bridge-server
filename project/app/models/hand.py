@@ -474,6 +474,11 @@ class Hand(models.Model):
     def plays(self):
         return self.play_set.order_by("id")
 
+    def toggle_open_access(self) -> None:
+        self.open_access = not self.open_access
+        self.save()
+        send_timestamped_event(channel=str(self.pk), data={"open-access-status": self.open_access})
+
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 

@@ -11,4 +11,5 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 
 LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore
-SENTRY_ENVIRONMENT = "development"  # yeah I know we aren't using sentry in this environment
+# See notes in prod_settings
+DEPLOYMENT_ENVIRONMENT = "development"

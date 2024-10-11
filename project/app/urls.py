@@ -8,6 +8,7 @@ from .views.hand import (
     hand_archive_view,
     hand_detail_view,
     hand_list_view,
+    open_access_toggle_view,
 )
 
 app_name = "app"
@@ -24,6 +25,7 @@ urlpatterns = [
         bidding_box_partial_view,
         name="bidding-box-partial",
     ),
+    path("hand/<hand_pk>/open-access-toggle", open_access_toggle_view, name="open-access-toggle"),
     path(
         "hand/<table_pk>/four-hands",
         four_hands_partial_view,

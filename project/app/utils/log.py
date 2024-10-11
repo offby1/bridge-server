@@ -5,4 +5,4 @@ from django.conf import settings
 
 class RequireDebugTrueOrEnvironmentStaging(logging.Filter):
     def filter(self, record):
-        return settings.DEBUG or settings.SENTRY_ENVIRONMENT == "staging"
+        return settings.DEBUG or settings.DEPLOYMENT_ENVIRONMENT == "staging"

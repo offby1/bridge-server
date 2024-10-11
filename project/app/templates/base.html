@@ -47,10 +47,12 @@
                                        hx-target="#hello-user"
                                        {% if user.player.allow_bot_to_play_for_me %}checked{% endif %} />
                                 <label class="form-check-label" for="bot-plays-for-me-switch">Let the bot play for me</label>
-                            {% endif %}
-                        </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
+                {% block upper-right-column %}
+                {% endblock upper-right-column %}
             </div>
             <div class="row">
                 <div class="col">

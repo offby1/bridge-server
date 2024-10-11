@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import bridge.seat
 from bridge.auction import Auction
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -11,6 +12,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.gzip import gzip_page
+from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.utils import assert_type
@@ -313,8 +315,9 @@ def _bidding_box_context_for_hand(request, hand):
         buttons = bidding_box_buttons(
             auction=hand.auction,
             call_post_endpoint=reverse("app:call-post", args=[hand.table.pk]),
-            disabled_because_out_of_turn=player.name != hand.auction.allowed_caller().name
-            and not hand.open_access,
+            disabled_because_out_of_turn=(
+                player.name != hand.auction.allowed_caller().name and not hand.open_access
+            ),
         )
     return {
         "bidding_box_buttons": buttons,
@@ -407,3 +410,15 @@ def auction_partial_view(request, hand_pk):
     context = _auction_context_for_hand(hand)
 
     return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+    if settings.DEPLOYMENT_ENVIRONMENT == "production":
+        return HttpResponseNotFound("Geez I dunno what you're talking about")
+
+    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+
+    hand.toggle_open_access()
+    return HttpResponse()
