@@ -14,8 +14,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* The "new board plz" button appears to do nothing
-
 * HEY! Bob can see *all* the cards at <https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/> ... I thought I fixed that :-(
 
   ... I need to put ACLs around "list" as well as around "retrieve", it seems.
@@ -25,6 +23,8 @@ STILL TODO:
   Currently if the bot is sitting to the left of a human, and a human takes a while to do whatever, the bot will immediately act.
 
 * When I look at the table detail view, and the bot is playing all four players, and a hand gets passed out, the browser does load the "archive" page ... but then it just sits there; the bot does *not* press the "new board plz" button.
+
+  Not entirely sure this is a bug, tbh; I think the bot *has* pressed the button, but since the page doesn't automatically reload, we don't notice.
 
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
@@ -146,6 +146,10 @@ STILL TODO:
 
 
 DONE:
+
+* The "new board plz" button appears to do nothing
+
+  - I replaced the htmx stuff with an ordinary form
 
 * It occurs to me that most players should *not* be allowed to see a table review.  The only ones who can are
   - those who were at that table; or (more broadly)
