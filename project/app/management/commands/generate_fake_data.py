@@ -28,6 +28,13 @@ canned_calls = [
 
 
 class Command(BaseCommand):
+    def __init__(self):
+        random.seed(0)  # TODO -- remove me when I'm done debugging
+
+        # Use the same password for everybody, to speed things up :-)
+        self.everybodys_password = make_password(".")
+        super().__init__()
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--players",
@@ -51,12 +58,21 @@ class Command(BaseCommand):
             else:
                 table = Table.objects.get(pk=table.pk)
 
+    def maybe_create_player(self, username: str) -> None:
+        try:
+            user, _ = User.objects.get_or_create(
+                username=username,
+                defaults={"password": self.everybodys_password},
+            )
+            Player.objects.create(
+                user=user,
+                allow_bot_to_play_for_me=username != "bob",
+            )
+
+        except IntegrityError as e:
+            self.stdout.write(f"Hmm, {e=}; will ignore it")
+
     def handle(self, *args, **options):
-        random.seed(0)  # TODO -- remove me when I'm done debugging
-
-        # Use the same password for everybody, to speed things up :-)
-        everybodys_password = make_password(".")
-
         fake = Faker()
         Faker.seed(0)
 
@@ -68,17 +84,7 @@ class Command(BaseCommand):
                 else:
                     username = fake.unique.first_name().lower()
 
-                try:
-                    Player.objects.create(
-                        user=User.objects.create(
-                            username=username,
-                            password=everybodys_password,
-                        ),
-                        allow_bot_to_play_for_me=username != "bob",
-                    )
-
-                except IntegrityError as e:
-                    self.stdout.write(f"Hmm, {e=}; will ignore it")
+                self.maybe_create_player(username)
 
                 progress_bar.update()
 
@@ -123,17 +129,7 @@ class Command(BaseCommand):
         # Now create a couple of unseated players.
         count_before = Player.objects.count()
         while Player.objects.count() < count_before + 3:
-            username = fake.unique.first_name().lower()
-
-            try:
-                Player.objects.create(
-                    user=User.objects.create(
-                        username=username,
-                        password=everybodys_password,
-                    ),
-                )
-            except IntegrityError as e:
-                self.stdout.write(f"Hmm, {e=}; will ignore it")
+            self.maybe_create_player(fake.unique.first_name().lower())
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
