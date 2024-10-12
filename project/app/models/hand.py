@@ -146,7 +146,8 @@ class Hand(models.Model):
     board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
 
     open_access = models.BooleanField(
-        default=False, db_comment="For debugging only! Only settable via the admin site"
+        default=False,
+        db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
     @cached_property
