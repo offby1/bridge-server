@@ -13,6 +13,7 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
+    HttpResponseNotFound,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404
@@ -160,6 +161,9 @@ def new_table_for_two_partnerships(request, pk1, pk2):
 @logged_in_as_player_required()
 def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
-    table.next_board()
+    try:
+        table.next_board()
+    except Exception as e:
+        return HttpResponseNotFound(e)
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))

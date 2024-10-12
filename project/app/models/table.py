@@ -178,7 +178,7 @@ class Table(models.Model):
     def next_board(self, *, shuffle_deck=True) -> Board:
         b = self.find_unplayed_board()
         if b is None:
-            if Board.objects.count == TOTAL_BOARDS:
+            if Board.objects.count() >= TOTAL_BOARDS:
                 msg = "No more tables! The tournament is over."
                 raise TableException(msg)
 
