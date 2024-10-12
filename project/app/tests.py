@@ -11,6 +11,9 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
+from app.models.board import TOTAL_BOARDS
+from app.models.table import TableException
+
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import hand, lobby, player, table
@@ -388,6 +391,14 @@ def test_table_creation(j_northam, rf, everybodys_password):
     )
 
     assert response.status_code == 302
+
+
+def test_max_boards(usual_setup):
+    t = Table.objects.first()
+    for _ in range(TOTAL_BOARDS - 1):
+        t.next_board()
+    with pytest.raises(TableException):
+        t.next_board()
 
 
 def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
