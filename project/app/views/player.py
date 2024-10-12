@@ -14,7 +14,7 @@ from django_eventstream import send_event  # type: ignore
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 
-from .misc import logged_in_as_player_required
+from .misc import AuthedHttpRequest, logged_in_as_player_required
 
 
 def player_detail_endpoint(player):
@@ -120,9 +120,10 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
-def player_detail_view(request, pk):
+def player_detail_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     who_clicked = request.user.player
-    subject = get_object_or_404(Player, pk=pk)
+    assert who_clicked is not None
+    subject: Player = get_object_or_404(Player, pk=pk)
 
     common_context = {
         "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
@@ -172,8 +173,8 @@ def player_detail_view(request, pk):
 
 @require_http_methods(["GET"])
 @logged_in_as_player_required()
-def partnership_view(request, pk):
-    subject = get_object_or_404(Player, pk=pk)
+def partnership_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+    subject: Player = get_object_or_404(Player, pk=pk)
     context = partnership_context(subject=subject, as_viewed_by=request.user.player)
     return TemplateResponse(
         request=request,
@@ -184,9 +185,9 @@ def partnership_view(request, pk):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def send_player_message(request, recipient_pk):
+def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpResponse:
     sender = request.user.player
-    recipient = get_object_or_404(Player, pk=recipient_pk)
+    recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
     if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
         return HttpResponseForbidden(explanation)
@@ -211,8 +212,8 @@ def send_player_message(request, recipient_pk):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def bot_checkbox_view(request, pk):
-    playa = get_object_or_404(Player, pk=pk)
+def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+    playa: Player = get_object_or_404(Player, pk=pk)
     playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
     playa.save()
     return HttpResponse(f"""Hello, {playa.as_link()}""")

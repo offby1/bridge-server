@@ -276,7 +276,7 @@ def _four_hands_context_for_hand(
 
 @logged_in_as_player_required()
 def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
-    table = get_object_or_404(app.models.Table, pk=table_pk)
+    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
     context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
 
     return TemplateResponse(
@@ -287,7 +287,7 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 @gzip_page
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    hand = get_object_or_404(app.models.Hand, pk=pk)
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     if (
         hand != hand.table.current_hand
@@ -402,7 +402,7 @@ def bidding_box_buttons(
 
 @logged_in_as_player_required()
 def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResponse:
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     context = _bidding_box_context_for_hand(request, hand)
 
@@ -414,8 +414,8 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResp
 
 
 @logged_in_as_player_required()
-def auction_partial_view(request, hand_pk):
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+def auction_partial_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
     context = _auction_context_for_hand(hand)
 
     return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
@@ -427,7 +427,7 @@ def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: str) -> HttpRes
     if settings.DEPLOYMENT_ENVIRONMENT == "production":
         return HttpResponseNotFound("Geez I dunno what you're talking about")
 
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     hand.toggle_open_access()
     return HttpResponse()

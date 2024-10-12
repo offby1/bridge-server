@@ -63,7 +63,7 @@ def poke_de_bot(request):
 
 
 def hand_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
-    table = get_object_or_404(app.models.Table, pk=table_pk)
+    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
 
     return HttpResponse(table.current_hand.status)
 
@@ -80,7 +80,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     except app.models.PlayerException as e:
         return HttpResponseForbidden(str(e))
 
-    table = get_object_or_404(app.models.Table, pk=table_pk)
+    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
     hand = table.current_hand
     if hand.player_who_may_call is None:
         return HttpResponseForbidden("Oddly, nobody is allowed to call now")
@@ -104,7 +104,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
-    seat = get_object_or_404(app.models.Seat, pk=seat_pk)
+    seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
     h = seat.table.current_hand
     if h.player_who_may_play is None:
@@ -130,17 +130,17 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_table_for_two_partnerships(request, pk1, pk2):
-    p1 = get_object_or_404(app.models.Player, pk=pk1)
+def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
+    p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
         return HttpResponseForbidden(f"Hey man {p1=} doesn't have a partner")
 
-    p2 = get_object_or_404(app.models.Player, pk=pk2)
+    p2: app.models.Player = get_object_or_404(app.models.Player, pk=pk2)
     if p2.partner is None:
         return HttpResponseForbidden(f"Hey man {p2=} doesn't have a partner")
 
-    p3 = get_object_or_404(app.models.Player, pk=p1.partner.pk)
-    p4 = get_object_or_404(app.models.Player, pk=p2.partner.pk)
+    p3: app.models.Player = get_object_or_404(app.models.Player, pk=p1.partner.pk)
+    p4: app.models.Player = get_object_or_404(app.models.Player, pk=p2.partner.pk)
 
     all_four = {p1, p2, p3, p4}
     if len(all_four) != 4:
