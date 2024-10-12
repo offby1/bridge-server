@@ -23,6 +23,7 @@ from app.models.seat import Seat as modelSeat
 
 if TYPE_CHECKING:
     from bridge.auction import Auction as libAuction
+    from django.db.models.query import QuerySet
 
     from app.models.player import Player
 
@@ -156,8 +157,8 @@ class Table(models.Model):
 
         return rv
 
-    def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.exclude(
+    def played_boards(self) -> QuerySet:
+        return Board.objects.filter(
             pk__in=RawSQL(
                 """
                 SELECT
@@ -171,7 +172,10 @@ class Table(models.Model):
         """,
                 (self.pk,),
             )
-        ).order_by("id")
+        )
+
+    def find_unplayed_board(self) -> Board | None:
+        unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
 
         return unplayed_boards.first()
 

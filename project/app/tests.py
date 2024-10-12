@@ -113,7 +113,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     for c in norths_cards:
         assert c.serialize() not in response.content.decode()
 
-    client.login(username=north.name, password=".")
+    assert client.login(username=north.name, password=".")
 
     response = r()
     for c in norths_cards:

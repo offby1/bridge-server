@@ -14,6 +14,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
+
 * It will play 1,000,000 boards without stopping; nothing pays attention to
 
 * When clicking "New board plz", if the current hand is not the most recent, do nothing.

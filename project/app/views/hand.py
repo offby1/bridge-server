@@ -19,6 +19,8 @@ from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+
     from app.models.hand import AllFourSuitHoldings, SuitHolding
 
 
@@ -98,6 +100,47 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     )
 
 
+def _player_has_seen_board_at(
+    as_viewed_by: app.models.Player,
+    board: app.models.Board,
+    seat: bridge.seat.Seat,
+) -> bool:
+    # OK, so when does a player get to see some cards, under normal circumstances?
+    # - when they've been dealt to him
+    # - when they belong to a hand which is *completed* and in which he played
+    # or to rephrase
+    # - when this board has been played at a table at which he has sat AND
+    # - either
+    #   - they are his cards, or
+    #   - they are dummy's cards, and the opening lead has been made, or
+    #   - the hand has been completed
+    ive_played_it = False
+
+    seats_I_been_at: QuerySet = app.models.seat.Seat.objects.filter(player=as_viewed_by)
+
+    mSeat: app.models.seat.Seat
+    for mSeat in seats_I_been_at:
+        if board in mSeat.table.played_boards():
+            ive_played_it = True
+            if seat.value == mSeat.direction:  # his cards
+                return True
+
+    if not ive_played_it:
+        return False
+
+    mHand: app.models.Hand
+    for mHand in app.models.Hand.objects.filter(board=board):
+        if mHand.is_complete:
+            return True
+
+        if mHand.plays.count() > 0:  # opening lead has been made
+            dummy = mHand.dummy
+            if dummy is not None and dummy.seat == seat:  # this seat is the dummy
+                return True
+
+    return False
+
+
 def _display_and_control(
     *,
     hand: app.models.Hand,
@@ -115,12 +158,8 @@ def _display_and_control(
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
         or hand.open_access
-        or (
-            as_viewed_by
-            and as_viewed_by.most_recent_seat
-            and seat.value == as_viewed_by.most_recent_seat.direction
-        )  # it's our hand, duuude
-        or (is_dummy and hand and hand.current_trick)  # it's dummy, and opening lead has been made
+        or (as_viewed_by is not None)
+        and _player_has_seen_board_at(as_viewed_by, hand.board, seat)
     )
 
     viewer_may_control_this_seat = hand.open_access
