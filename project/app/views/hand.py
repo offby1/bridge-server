@@ -49,7 +49,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 
     a = h.auction
     c = a.status
-    if c is Auction.Incomplete:
+    if c is Auction.Incomplete and h.table.current_hand == h:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
     if c is Auction.PassedOut:
@@ -63,6 +63,11 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             request,
             "hand_archive.html",
             context=context,
+        )
+
+    if c is Auction.Incomplete:
+        return HttpResponseNotFound(
+            f"The hand at {h.table} has not been completely played (only {len(a.player_calls)} calls), so there is no final score"
         )
 
     declarer_vulnerable = a.declarer is not None and (
@@ -284,7 +289,11 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if hand.is_complete or hand.auction.status is bridge.auction.Auction.PassedOut:
+    if (
+        hand != hand.table.current_hand
+        or hand.is_complete
+        or hand.auction.status is bridge.auction.Auction.PassedOut
+    ):
         return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
 
     context = (
