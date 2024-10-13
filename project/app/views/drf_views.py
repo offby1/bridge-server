@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+import bridge.seat
 from rest_framework import permissions, status, viewsets  # type: ignore
 from rest_framework.response import Response  # type: ignore
 
-from app.models import Board, Call, Hand, Play, Player, Seat, Table
+from app.models import Board, Call, Hand, Play, Player, Seat, Table, logged_queries
 from app.serializers import (
     BoardSerializer,
     CallSerializer,
@@ -59,27 +60,25 @@ class BoardViewSet(viewsets.ModelViewSet):
             attr: getattr(the_board, attr) for attr in ("ns_vulnerable", "ew_vulnerable", "dealer")
         }
 
-        # BUGBUG, I think -- we want to find the *hand* on which this player met this board; the table is irrelevant
-        # (although we have to go *through* the table to find what we need)
-        table_at_which_our_viewer_played_this_board = find_table_seat_from_board_and_player(
-            the_board, as_viewed_by
-        )
+        with logged_queries():
+            hand_at_which_our_viewer_played_this_board = Hand.objects.filter(
+                board=the_board,
+                table__in=Table.objects.filter(
+                    pk__in=as_viewed_by.seat_set.values_list("table_id", flat=True).all()
+                ).all(),
+            ).first()
 
-        if (
-            table_at_which_our_viewer_played_this_board is not None
-        ):  # as_viewed_by has played this board
-            for seat in table_at_which_our_viewer_played_this_board.seat_set.all():
-                print(
-                    f"retrieve examining {table_at_which_our_viewer_played_this_board.pk=} {seat.pk=}"
-                )
-                print(f"{table_at_which_our_viewer_played_this_board.current_hand.is_complete=}")
+        if hand_at_which_our_viewer_played_this_board is not None:
+            for seat in bridge.seat.Seat:
+                print(f"retrieve examining {hand_at_which_our_viewer_played_this_board.pk=} {seat}")
+                print(f"{hand_at_which_our_viewer_played_this_board.is_complete=}")
                 display_and_control = _display_and_control(
-                    seat=seat.libraryThing,
-                    hand=table_at_which_our_viewer_played_this_board.current_hand,
+                    seat=seat,
+                    hand=hand_at_which_our_viewer_played_this_board,
                     as_viewed_by=as_viewed_by,
-                    as_dealt=table_at_which_our_viewer_played_this_board.current_hand.is_complete,
+                    as_dealt=hand_at_which_our_viewer_played_this_board.is_complete,
                 )
-                seat_name = seat.libraryThing.name.lower()
+                seat_name = seat.name.lower()
                 attribute = f"{seat_name}_cards"
 
                 if display_and_control["display_cards"]:
