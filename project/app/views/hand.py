@@ -122,6 +122,7 @@ def _player_has_seen_board_at(
     for mSeat in seats_I_been_at:
         if board in mSeat.table.played_boards():
             ive_played_it = True
+
             if seat.value == mSeat.direction:  # his cards
                 return True
 
@@ -161,7 +162,6 @@ def _display_and_control(
         or (as_viewed_by is not None)
         and _player_has_seen_board_at(as_viewed_by, hand.board, seat)
     )
-
     viewer_may_control_this_seat = hand.open_access
 
     is_this_seats_turn_to_play = (

@@ -19,6 +19,8 @@ from .seat import Seat
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
+    from .board import Board
+    from .hand import Hand
     from .table import Table
 
 logger = logging.getLogger(__name__)
@@ -88,7 +90,7 @@ class Player(models.Model):
                 ),
             )
         except KeyError as e:
-            msg = f"{self} just might not be seated at {self.table}"
+            msg = f"{self} just might not be seated at {self.current_table}"
             raise PlayerException(msg) from e
 
         return bridge.table.Player(
@@ -161,7 +163,7 @@ class Player(models.Model):
                     msg,
                 )
 
-            table = self.table
+            table = self.current_table
 
             old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
@@ -172,7 +174,7 @@ class Player(models.Model):
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
-    def table(self) -> Table | None:
+    def current_table(self) -> Table | None:
         if self.most_recent_seat is None:
             return None
         return self.most_recent_seat.table
@@ -181,6 +183,17 @@ class Player(models.Model):
     @cached_property
     def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
+
+    def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
+        from .hand import Hand
+        from .table import Table
+
+        return Hand.objects.filter(
+            board=board,
+            table__in=Table.objects.filter(
+                pk__in=self.seat_set.values_list("table_id", flat=True).all()
+            ).all(),
+        ).first()
 
     @cached_property
     def name(self):

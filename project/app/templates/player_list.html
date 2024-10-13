@@ -24,8 +24,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if player.table %}
-                                {{ player.table.as_link }}
+                            {% if player.current_table %}
+                                {{ player.current_table.as_link }}
                             {% else %}
                                 <a href="{% url 'app:lobby' %}">lobby</a>
                             {% endif %}

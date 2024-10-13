@@ -64,14 +64,14 @@ class Seat(models.Model):
             msg = f"Whoa thar friend; {self.player} has no partner!!"
             raise SeatException(msg)
 
-        if self.player.partner.table is None:
+        if self.player.partner.current_table is None:
             return
 
         if self.table is None:
             return
 
-        if self.player.partner.table != self.table:
-            msg = f"Whoa thar friend {self.player}'s partner {self.player.partner} is already seated at {self.player.partner.table} but this is {self.table}!!"
+        if self.player.partner.current_table != self.table:
+            msg = f"Whoa thar friend {self.player}'s partner {self.player.partner} is already seated at {self.player.partner.current_table} but this is {self.table}!!"
             raise SeatException(
                 msg,
             )
