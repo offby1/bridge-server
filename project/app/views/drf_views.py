@@ -25,20 +25,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def find_table_seat_from_board_and_player(b: Board, player: Player) -> Table | None:
-    players_seats = player.seat_set.all()
-    boards_hands = b.hand_set.all()
-    table_ids_from_seats = players_seats.values_list("table_id", flat=True)
-    table_ids_from_boards = boards_hands.values_list("table_id", flat=True)
-
-    # TODO -- maybe assert there is no more than one
-    return (
-        Table.objects.filter(pk__in=table_ids_from_seats)
-        .filter(pk__in=table_ids_from_boards)
-        .first()
-    )
-
-
 class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
