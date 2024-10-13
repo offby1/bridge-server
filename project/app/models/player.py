@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import bridge.auction
+import bridge.seat
 import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
@@ -194,6 +195,30 @@ class Player(models.Model):
                 pk__in=self.seat_set.values_list("table_id", flat=True).all()
             ).all(),
         ).first()
+
+    def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
+        # OK, so when does a player get to see some cards, under normal circumstances?
+        # - when this board has been played at a table at which he has sat AND either
+        #   - they are his cards; or
+        #   - they are dummy's cards, and the opening lead has been made; or
+        #   - the hand has been completed.
+
+        hand = self.hand_at_which_board_was_played(board)
+        if hand is None:
+            return False
+
+        if hand.is_complete:
+            return True
+
+        if hand.players_by_direction[seat.value] == self:
+            return True
+
+        if hand.plays.count() > 0:  # opening lead has been made
+            dummy = hand.dummy
+            if dummy is not None and dummy.seat == seat:  # this seat is the dummy
+                return True
+
+        return False
 
     @cached_property
     def name(self):

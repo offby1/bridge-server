@@ -98,35 +98,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     )
 
 
-def _player_has_seen_board_at(
-    as_viewed_by: app.models.Player,
-    board: app.models.Board,
-    seat: bridge.seat.Seat,
-) -> bool:
-    # OK, so when does a player get to see some cards, under normal circumstances?
-    # - when this board has been played at a table at which he has sat AND either
-    #   - they are his cards; or
-    #   - they are dummy's cards, and the opening lead has been made; or
-    #   - the hand has been completed.
-
-    hand = as_viewed_by.hand_at_which_board_was_played(board)
-    if hand is None:
-        return False
-
-    if hand.is_complete:
-        return True
-
-    if hand.players_by_direction[seat.value] == as_viewed_by:
-        return True
-
-    if hand.plays.count() > 0:  # opening lead has been made
-        dummy = hand.dummy
-        if dummy is not None and dummy.seat == seat:  # this seat is the dummy
-            return True
-
-    return False
-
-
 def _display_and_control(
     *,
     hand: app.models.Hand,
@@ -145,7 +116,7 @@ def _display_and_control(
         as_dealt  # hand is over and we're reviewing it
         or hand.open_access
         or (as_viewed_by is not None)
-        and _player_has_seen_board_at(as_viewed_by, hand.board, seat)
+        and as_viewed_by.has_seen_board_at(hand.board, seat)
     )
     viewer_may_control_this_seat = hand.open_access
 
