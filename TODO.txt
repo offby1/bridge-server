@@ -1,7 +1,9 @@
 TOP PRIORITIES:
 
 * figure out wassup with the browser missing updates
+  Vastly improved since `Merge branch 'just-reload-the-whole-damned-page-every-time'`, but I've seen my mobile phone miss an update or two.
 * Get a movement working properly
+  Currently I've got every board being played by every table, and things stopping after app.models.board.TOTAL_BOARDS have been played; this might be enough.
 * allow proper scoring
 
 IN PROGRESS:
