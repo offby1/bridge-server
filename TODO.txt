@@ -18,8 +18,6 @@ STILL TODO:
 
 * It will play 1,000,000 boards without stopping; nothing pays attention to
 
-* When clicking "New board plz", if the current hand is not the most recent, do nothing.
-
 * IDEA: consider storing effectively-cached information on a model instance.
 
   E.g., if I fetch a Hand object, and want to examine the associated xscript, until now I've either recomputed the xscript from scratch (which is expensive if I do it many times), or cached the whole thing (which is unreliable if I add a call or play and then later access that now-stale cache).
@@ -29,8 +27,6 @@ STILL TODO:
 * BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
 
 * It will play 1,000,000 boards without stopping; nothing pays attention to
-
-* When clicking "New board plz", if the current hand is not the most recent, do nothing.
 
 * Add a little summary like "down 2", "made the contract", or "made the contract with 1 overtrick" to the hand archive
 
@@ -553,3 +549,9 @@ DONE:
   - no interesting output in either the Unix console or the JS console
   - only clue: browser's developer tools show the POST data as
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
+
+NOT DONE:
+
+* When clicking "New board plz", if the current hand is not the most recent, do nothing.
+
+  I decided instead that it should take you to the current hand.  The idea is: if I'm just sitting back letting the bot play for me, I still need to click that button to resume viewing the action; but at least I'm not *creating* a new board that will then be abandoned.  (I'm actually not certain that was happening, but this way seems more solid).

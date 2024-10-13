@@ -161,9 +161,18 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 @logged_in_as_player_required()
 def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
+    # If this table already has an "active" hand, just redirect to that.
+    ch = table.current_hand
+    if not ch.is_complete:
+        logger.debug("Table %s has an active hand %s, so redirecting to that", table, ch)
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
+
     try:
         table.next_board()
     except Exception as e:
         return HttpResponseNotFound(e)
+
+    logger.debug('Called "next_board" on table %s', table)
+    del table.current_hand
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
