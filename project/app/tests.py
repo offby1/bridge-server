@@ -41,8 +41,8 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
     assert north.partner == south
     assert south.partner == north
 
-    assert north.table is not None
-    assert north.table == south.table
+    assert north.current_table is not None
+    assert north.current_table == south.current_table
 
     table_count_before = Table.objects.count()
     assert table_count_before == 1
@@ -64,10 +64,10 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
 
     assert Table.objects.count() == table_count_before - 1
 
-    assert north.table is None
-    assert south.table is None
-    assert east.table is None
-    assert west.table is None
+    assert north.current_table is None
+    assert south.current_table is None
+    assert east.current_table is None
+    assert west.current_table is None
 
 
 def test_one_partnerships_splitting_removes_table(usual_setup):

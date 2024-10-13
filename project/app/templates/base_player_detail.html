@@ -7,8 +7,8 @@
         {% block partnership-status-html %}
         {% endblock partnership-status-html %}
         <br />
-        {% if player.table %}
-            {{ player.table.as_link }}
+        {% if player.current_table %}
+            {{ player.current_table.as_link }}
         {% else %}
             {% if user.player == player %}
                 You

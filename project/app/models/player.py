@@ -88,7 +88,7 @@ class Player(models.Model):
                 ),
             )
         except KeyError as e:
-            msg = f"{self} just might not be seated at {self.table}"
+            msg = f"{self} just might not be seated at {self.current_table}"
             raise PlayerException(msg) from e
 
         return bridge.table.Player(
@@ -161,7 +161,7 @@ class Player(models.Model):
                     msg,
                 )
 
-            table = self.table
+            table = self.current_table
 
             old_partner_pk = self.partner.pk
             Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
@@ -172,7 +172,7 @@ class Player(models.Model):
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
-    def table(self) -> Table | None:
+    def current_table(self) -> Table | None:
         if self.most_recent_seat is None:
             return None
         return self.most_recent_seat.table
