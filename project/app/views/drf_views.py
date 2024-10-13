@@ -29,6 +29,9 @@ def find_table_seat_from_board_and_player(b: Board, player: Player) -> Table | N
     boards_hands = b.hand_set.all()
     table_ids_from_seats = players_seats.values_list("table_id", flat=True)
     table_ids_from_boards = boards_hands.values_list("table_id", flat=True)
+    print(
+        f"seats: {[s.pk for s in players_seats]} hands: {[h.pk for h in boards_hands]} {table_ids_from_seats=} {table_ids_from_boards=}"
+    )
     # TODO -- maybe assert there is no more than one
     return (
         Table.objects.filter(pk__in=table_ids_from_seats)
@@ -43,6 +46,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def retrieve(self, request: AuthedHttpRequest, pk=None) -> Response:
+        print()
         as_viewed_by = request.user.player
         assert as_viewed_by is not None
 
@@ -55,15 +59,25 @@ class BoardViewSet(viewsets.ModelViewSet):
             attr: getattr(the_board, attr) for attr in ("ns_vulnerable", "ew_vulnerable", "dealer")
         }
 
-        table = find_table_seat_from_board_and_player(the_board, as_viewed_by)
+        # BUGBUG, I think -- we want to find the *hand* on which this player met this board; the table is irrelevant
+        # (although we have to go *through* the table to find what we need)
+        table_at_which_our_viewer_played_this_board = find_table_seat_from_board_and_player(
+            the_board, as_viewed_by
+        )
 
-        if table is not None:  # as_viewed_by has played this board
-            for seat in table.seat_set.all():
+        if (
+            table_at_which_our_viewer_played_this_board is not None
+        ):  # as_viewed_by has played this board
+            for seat in table_at_which_our_viewer_played_this_board.seat_set.all():
+                print(
+                    f"retrieve examining {table_at_which_our_viewer_played_this_board.pk=} {seat.pk=}"
+                )
+                print(f"{table_at_which_our_viewer_played_this_board.current_hand.is_complete=}")
                 display_and_control = _display_and_control(
                     seat=seat.libraryThing,
-                    hand=table.current_hand,
+                    hand=table_at_which_our_viewer_played_this_board.current_hand,
                     as_viewed_by=as_viewed_by,
-                    as_dealt=table.hand_is_complete,
+                    as_dealt=table_at_which_our_viewer_played_this_board.current_hand.is_complete,
                 )
                 seat_name = seat.libraryThing.name.lower()
                 attribute = f"{seat_name}_cards"

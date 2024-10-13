@@ -398,6 +398,7 @@ class Hand(models.Model):
 
     @property
     def is_complete(self):
+        print(f"{self=} => {len(self.serialized_plays())=}")
         return len(self.serialized_plays()) == 52
 
     def serialized_plays(self):

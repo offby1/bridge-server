@@ -114,6 +114,8 @@ def _player_has_seen_board_at(
     #   - they are his cards, or
     #   - they are dummy's cards, and the opening lead has been made, or
     #   - the hand has been completed
+    print(f"Can {as_viewed_by} see {seat} of {board}?")
+
     ive_played_it = False
 
     seats_I_been_at: QuerySet = app.models.seat.Seat.objects.filter(player=as_viewed_by)
@@ -122,14 +124,19 @@ def _player_has_seen_board_at(
     for mSeat in seats_I_been_at:
         if board in mSeat.table.played_boards():
             ive_played_it = True
+            print(f"{ive_played_it=}")
+            print(f"is {seat.value=} == {mSeat.direction=}?", end=" ")
             if seat.value == mSeat.direction:  # his cards
+                print("yep")
                 return True
+            print("nope")
 
     if not ive_played_it:
         return False
 
     mHand: app.models.Hand
     for mHand in app.models.Hand.objects.filter(board=board):
+        print(f"{mHand.is_complete=}")
         if mHand.is_complete:
             return True
 
@@ -161,7 +168,7 @@ def _display_and_control(
         or (as_viewed_by is not None)
         and _player_has_seen_board_at(as_viewed_by, hand.board, seat)
     )
-
+    # print(f"{seat.name} _player_has_seen_board_at => {_player_has_seen_board_at(as_viewed_by, hand.board, seat)}")
     viewer_may_control_this_seat = hand.open_access
 
     is_this_seats_turn_to_play = (
