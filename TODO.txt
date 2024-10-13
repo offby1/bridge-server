@@ -14,6 +14,24 @@ IN PROGRESS:
 
 STILL TODO:
 
+* It will play 1,000,000 boards without stopping; nothing pays attention to
+
+* When clicking "New board plz", if the current hand is not the most recent, do nothing.
+
+* IDEA: consider storing effectively-cached information on a model instance.
+
+  E.g., if I fetch a Hand object, and want to examine the associated xscript, until now I've either recomputed the xscript from scratch (which is expensive if I do it many times), or cached the whole thing (which is unreliable if I add a call or play and then later access that now-stale cache).
+
+  But perhaps I can cache manually, and intelligently, without getting too complex.  Just store ... something as an ordinary instance attribute, and have the xscript method consult that data and then only fetch from the db those rows that are "newer" than what's in the cache.
+
+* BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
+
+* It will play 1,000,000 boards without stopping; nothing pays attention to
+
+* When clicking "New board plz", if the current hand is not the most recent, do nothing.
+
+* Add a little summary like "down 2", "made the contract", or "made the contract with 1 overtrick" to the hand archive
+
 * HEY! Bob can see *all* the cards at <https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/> ... I thought I fixed that :-(
 
   ... I need to put ACLs around "list" as well as around "retrieve", it seems.
