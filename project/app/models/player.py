@@ -19,6 +19,8 @@ from .seat import Seat
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
+    from .board import Board
+    from .hand import Hand
     from .table import Table
 
 logger = logging.getLogger(__name__)
@@ -181,6 +183,17 @@ class Player(models.Model):
     @cached_property
     def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
+
+    def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
+        from .hand import Hand
+        from .table import Table
+
+        return Hand.objects.filter(
+            board=board,
+            table__in=Table.objects.filter(
+                pk__in=self.seat_set.values_list("table_id", flat=True).all()
+            ).all(),
+        ).first()
 
     @cached_property
     def name(self):

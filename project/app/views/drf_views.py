@@ -7,7 +7,7 @@ import bridge.seat
 from rest_framework import permissions, status, viewsets  # type: ignore
 from rest_framework.response import Response  # type: ignore
 
-from app.models import Board, Call, Hand, Play, Player, Seat, Table, logged_queries
+from app.models import Board, Call, Hand, Play, Player, Seat, Table
 from app.serializers import (
     BoardSerializer,
     CallSerializer,
@@ -30,9 +30,7 @@ def find_table_seat_from_board_and_player(b: Board, player: Player) -> Table | N
     boards_hands = b.hand_set.all()
     table_ids_from_seats = players_seats.values_list("table_id", flat=True)
     table_ids_from_boards = boards_hands.values_list("table_id", flat=True)
-    print(
-        f"seats: {[s.pk for s in players_seats]} hands: {[h.pk for h in boards_hands]} {table_ids_from_seats=} {table_ids_from_boards=}"
-    )
+
     # TODO -- maybe assert there is no more than one
     return (
         Table.objects.filter(pk__in=table_ids_from_seats)
@@ -47,8 +45,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def retrieve(self, request: AuthedHttpRequest, pk=None) -> Response:
-        print()
-        as_viewed_by = request.user.player
+        as_viewed_by: Player | None = request.user.player
         assert as_viewed_by is not None
 
         the_board = self.queryset.get(pk=pk)
@@ -60,23 +57,15 @@ class BoardViewSet(viewsets.ModelViewSet):
             attr: getattr(the_board, attr) for attr in ("ns_vulnerable", "ew_vulnerable", "dealer")
         }
 
-        with logged_queries():
-            hand_at_which_our_viewer_played_this_board = Hand.objects.filter(
-                board=the_board,
-                table__in=Table.objects.filter(
-                    pk__in=as_viewed_by.seat_set.values_list("table_id", flat=True).all()
-                ).all(),
-            ).first()
+        hand = as_viewed_by.hand_at_which_board_was_played(the_board)
 
-        if hand_at_which_our_viewer_played_this_board is not None:
+        if hand is not None:
             for seat in bridge.seat.Seat:
-                print(f"retrieve examining {hand_at_which_our_viewer_played_this_board.pk=} {seat}")
-                print(f"{hand_at_which_our_viewer_played_this_board.is_complete=}")
                 display_and_control = _display_and_control(
                     seat=seat,
-                    hand=hand_at_which_our_viewer_played_this_board,
+                    hand=hand,
                     as_viewed_by=as_viewed_by,
-                    as_dealt=hand_at_which_our_viewer_played_this_board.is_complete,
+                    as_dealt=hand.is_complete,
                 )
                 seat_name = seat.name.lower()
                 attribute = f"{seat_name}_cards"
