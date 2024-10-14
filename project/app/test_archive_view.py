@@ -4,6 +4,7 @@ from typing import Any
 from bridge.card import Suit
 from bridge.contract import Bid
 from django.contrib.auth.models import AnonymousUser
+from django.urls import reverse
 
 from .models import Player, Table
 from .testutils import set_auction_to
@@ -61,5 +62,5 @@ def test_final_score(usual_setup: None, rf: Any) -> None:
 
     response = hand_archive_view(request=request, pk=t.current_hand.pk)
 
-    assert response.status_code == 404
-    assert b"not been completely played" in response.content
+    assert response.status_code == 302
+    assert response.url == reverse("app:hand-detail", args=[t.current_hand.pk])

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 import bridge.seat
@@ -20,6 +21,9 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
     from app.models.hand import AllFourSuitHoldings, SuitHolding
+
+
+logger = logging.getLogger(__name__)
 
 
 def hand_list_view(request: HttpRequest) -> HttpResponse:
@@ -49,7 +53,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 
     a = h.auction
     c = a.status
-    if c is Auction.Incomplete and h.table.current_hand == h:
+    if c is Auction.Incomplete:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
     if c is Auction.PassedOut:
@@ -65,11 +69,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             context=context,
         )
 
-    if c is Auction.Incomplete:
-        return HttpResponseNotFound(
-            f"The hand at {h.table} has not been completely played (only {len(a.player_calls)} calls), so there is no final score"
-        )
-
     declarer_vulnerable = a.declarer is not None and (
         board.ns_vulnerable
         and a.declarer.seat in (bridge.seat.Seat.NORTH, bridge.seat.Seat.SOUTH)
@@ -79,9 +78,12 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
 
     if broken_down_score is None:
-        return HttpResponseNotFound(
-            f"The hand at {h.table} has not been completely played (only {len(h.xscript.tricks)} tricks), so there is no final score"
+        logger.debug(
+            "The hand at %s has not been completely played (only %d tricks), so there is no final score",
+            h.table,
+            len(h.xscript.tricks),
         )
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
     score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
 
