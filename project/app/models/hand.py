@@ -461,7 +461,7 @@ class Hand(models.Model):
         return flattened
 
     @property
-    def status(self):
+    def status(self) -> str:
         winning_plays = self.play_set.filter(won_its_trick=True)
         wins_by_seat = collections.defaultdict(int)
         for p in winning_plays:
@@ -479,6 +479,26 @@ class Hand(models.Model):
         self.open_access = not self.open_access
         self.save()
         send_timestamped_event(channel=str(self.pk), data={"open-access-status": self.open_access})
+
+    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> str:
+        if as_viewed_by is None:
+            return "Remind me -- who are you, again?"
+
+        if not as_viewed_by.has_ever_seen_board(self.board):
+            return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so fuck you"
+
+        if not self.is_complete:
+            if self.xscript.auction.status == self.xscript.auction.Incomplete:
+                censored_auction_summary = "is incomplete"
+            elif self.xscript.auction.status == self.xscript.auction.PassedOut:
+                censored_auction_summary = "was passed out"
+            else:
+                censored_auction_summary = "is complete"
+
+            censored_play_summary = f"{len(self.plays)} cards played"
+            return f"Auction {censored_auction_summary}; {censored_play_summary}"
+
+        return f"{self.xscript.final_score()}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

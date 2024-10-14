@@ -196,15 +196,20 @@ class Player(models.Model):
             ).all(),
         ).first()
 
+    def has_ever_seen_board(self, board: Board, hand: Hand | None = None) -> bool:
+        if hand is None:
+            hand = self.hand_at_which_board_was_played(board)
+        return hand is not None
+
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         # OK, so when does a player get to see some cards, under normal circumstances?
         # - when this board has been played at a table at which he has sat AND either
         #   - they are his cards; or
         #   - they are dummy's cards, and the opening lead has been made; or
         #   - the hand has been completed.
-
         hand = self.hand_at_which_board_was_played(board)
-        if hand is None:
+
+        if not self.has_ever_seen_board(board, hand=hand):
             return False
 
         if hand.is_complete:

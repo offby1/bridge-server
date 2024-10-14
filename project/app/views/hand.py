@@ -27,12 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 def hand_list_view(request: HttpRequest) -> HttpResponse:
-    hand_list = app.models.Hand.objects.order_by(
-        "id"
-    ).all()  # TODO -- filter to those that should be visible by request.user
+    hand_list = app.models.Hand.objects.order_by("id").all()
     paginator = Paginator(hand_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    for h in page_obj.object_list:
+        h.summary_for_this_viewer = h.summary_as_viewed_by(
+            as_viewed_by=getattr(request.user, "player", None)
+        )
     context = {
         "page_obj": page_obj,
         "total_count": app.models.Hand.objects.count(),

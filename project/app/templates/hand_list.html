@@ -9,8 +9,7 @@
                     <td>Board</td>
                     <td>Table</td>
                     <td>players</td>
-                    <td>Auction</td>
-                    <td>Trick Counts</td>
+                    <td>Summary</td>
                 </tr>
             </th>
             {% for hand in page_obj %}
@@ -34,10 +33,7 @@
                         <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names }}</a>
                     </td>
                     <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.auction.status }}</a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.status }}</a>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
                     </td>
                 </tr>
             {% endfor %}
