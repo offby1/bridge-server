@@ -31,3 +31,15 @@ repos:
       entry: barf-if-pyproject-points-to-relative-path.py
       stages:
         - pre-push
+    - id: reformat-main-justfile
+      name: reformat-main-justfile
+      language: system
+      entry: "just --fmt --justfile justfile"
+      pass_filenames: false
+      verbose: true
+    - id: reformat-pg-justfile
+      name: reformat-pg-justfile
+      language: system
+      entry: "just --unstable --fmt --justfile postgres.just"
+      pass_filenames: false
+      verbose: true

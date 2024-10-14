@@ -1,12 +1,9 @@
 # Data is "visible" from Mac at ~/OrbStack/docker/volumes/pg-data/, even when the
 # container is not running.
-
 # What's the deal with e.g. `PGUSER` and `POSTGRES_USER`?
-
 # The latter is for the postgresql docker image, and (along with `POSTGRES_PASSWORD`) creates an initial user (it
 # defaults to `postgres`; the password has no default).  Without a valid password, I *think* the db won't even come up.
 # `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
-
 
 start: pg-start redis
 
@@ -44,7 +41,7 @@ pg-stop:
     docker compose down postgres
 
 orb:
-    if [ "{{os()}}" = "macos" ]; then orb start; else echo not mac I guess; fi
+    if [ "{{ os() }}" = "macos" ]; then orb start; else echo not mac I guess; fi
 
 [script('bash')]
 docker-nuke: orb
