@@ -16,9 +16,13 @@ IN PROGRESS:
 
 STILL TODO:
 
-* BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
+* The hand_list has "auction" and "trick_counts" columns.  That information shouldn't be visible to everyone; instead the deets should only be seen by people who have already played that board.  Otherwise it should be very vague:
+  - auction should either be "complete" or "incomplete"
+  - play should be number of cards played, if incomplete; or "complete"
 
-* It will play 1,000,000 boards without stopping; nothing pays attention to
+* When I'm done playing a hand, let me see other tables' scores for this board.
+
+  `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
 
 * IDEA: consider storing effectively-cached information on a model instance.
 
@@ -164,6 +168,14 @@ STILL TODO:
 
 
 DONE:
+
+* BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
+
+  I made a couple of fixes to _display_and_control, can't remember exactly which one fixed this.
+
+* It will play 1,000,000 boards without stopping; nothing pays attention to
+
+  Fixed this recently
 
 * The "new board plz" button appears to do nothing
 
