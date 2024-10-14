@@ -134,6 +134,14 @@ class Board(models.Model):
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
+        assert (
+            len(self.north_cards)
+            == len(self.south_cards)
+            == len(self.east_cards)
+            == len(self.west_cards)
+            == 26
+        ), f"why no cards {vars(self)}"
+
         return super().save(*args, **kwargs)
 
 
