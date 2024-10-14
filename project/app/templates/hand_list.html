@@ -7,6 +7,7 @@
                 <tr>
                     <td>Status</td>
                     <td>Board</td>
+                    <td>Table</td>
                     <td>players</td>
                     <td>Auction</td>
                     <td>Trick Counts</td>
@@ -24,7 +25,10 @@
                         </a>
                     </td>
                     <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board }}</a>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.pk }}</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
                     </td>
                     <td>
                         <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names }}</a>
