@@ -178,6 +178,8 @@ class Hand(models.Model):
         rv = HandTranscript(
             table=lt,
             auction=self.auction,
+            ns_vuln=self.board.ns_vulnerable,
+            ew_vuln=self.board.ew_vulnerable,
         )
         # *sigh* now replay the entire hand
         play_pks_by_card_played = {}
@@ -253,9 +255,7 @@ class Hand(models.Model):
         del self.xscript  # it's cached, and we need the freshest value
         del self.table.libraryThing
 
-        final_score = self.xscript.final_score(
-            declarer_vulnerable=True  # TODO -- this is a lie half the time
-        )
+        final_score = self.xscript.final_score()
 
         if final_score:
             send_timestamped_event(

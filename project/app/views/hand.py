@@ -46,7 +46,6 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     h: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    board = h.board
     player = request.user.player
 
     assert player is not None
@@ -69,13 +68,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             context=context,
         )
 
-    declarer_vulnerable = a.declarer is not None and (
-        board.ns_vulnerable
-        and a.declarer.seat in (bridge.seat.Seat.NORTH, bridge.seat.Seat.SOUTH)
-        or board.ew_vulnerable
-        and a.declarer.seat in (bridge.seat.Seat.EAST, bridge.seat.Seat.WEST)
-    )
-    broken_down_score = h.xscript.final_score(declarer_vulnerable=declarer_vulnerable)
+    broken_down_score = h.xscript.final_score()
 
     if broken_down_score is None:
         logger.debug(
