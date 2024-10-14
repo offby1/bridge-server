@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from typing import TYPE_CHECKING
 
 import more_itertools
@@ -19,7 +20,7 @@ from .common import SEAT_CHOICES
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Hand
+    from app.models import Hand, Player
 
 TOTAL_BOARDS = 16
 
@@ -88,6 +89,12 @@ class BoardManager(models.Manager):
 
 
 class Board(models.Model):
+    class PlayerVisibility(enum.Enum):
+        nothing = enum.auto()
+        own_hand = enum.auto()
+        dummys_hand = enum.auto()
+        everything = enum.auto()
+
     if TYPE_CHECKING:
         hand_set = RelatedManager[Hand]()
 
@@ -114,6 +121,21 @@ class Board(models.Model):
     def cards_for_direction(self, direction_integer):
         card_string = self.hand_strings_by_direction[direction_integer]
         return [Card.deserialize(c) for c in more_itertools.chunked(card_string, 2)]
+
+    def what_can_they_see(self, *, player: Player) -> PlayerVisibility:
+        hand = player.hand_at_which_board_was_played(self)
+        if hand is None:
+            return self.PlayerVisibility.nothing
+
+        rv = self.PlayerVisibility.own_hand
+
+        if hand.plays.count() > 0:
+            rv = self.PlayerVisibility.dummys_hand
+
+        if hand.is_complete:
+            rv = self.PlayerVisibility.everything
+
+        return rv
 
     north_cards = models.CharField(max_length=26)
     east_cards = models.CharField(max_length=26)

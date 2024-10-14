@@ -8,6 +8,26 @@ TOP PRIORITIES:
 
 IN PROGRESS:
 
+* Rethink access control.  I've spent the last couple of days willy-nilly adding restrictions here and there; there are probably more places that need restrictions, that I've not yet thought of.
+
+  Ideally I'd have some way of prohibiting player X from examining cards Y that works at a low level, so that I only need that logic in one place.
+
+  The models that need restricted access:
+  - Call
+  - Play
+  - Board
+
+  If each model had a "get_for_player" method (probably on the Manager), which could return an error that means "access denied", and if all the relevant views used those methods instead of the built-in ones, that might suffice.
+
+  Call and Play objects would simply check if that call or play is part of a hand that the player has played at, and return None, or raise an exception, if not.
+  Board objects would be fiddlier:
+  - default is: the player hasn't played this board, so they get nuttin'
+  - if they've played the board, but no opening lead has been made, they can see their own cards.
+  - if the opening lead has been made, they can also see dummy's cards.
+  - if the hand was completed (i.e., all 52 cards have been played), they can see everything.
+
+  Then, of course, I'd have to remember to *use* these methods everywhere appropriate.
+
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table

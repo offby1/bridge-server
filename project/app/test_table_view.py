@@ -60,7 +60,7 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
                 )
                 assert (
                     actual1["display_cards"] == expectation_array[seat - 1][viewer - 1]
-                ), f"{t1.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {seat=} "
+                ), f"{t1.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
 
                 actual2 = _display_and_control(
                     hand=t2.current_hand,

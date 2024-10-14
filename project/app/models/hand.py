@@ -108,7 +108,6 @@ class DisplaySkeleton:
 def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
     for ch in (channel, "all-tables"):
         send_event(channel=ch, event_type="message", data=data | {"time": time.time()})
-        logger.debug(f"Sent {data=} to {ch}")
 
 
 class HandManager(models.Manager):
@@ -320,6 +319,9 @@ class Hand(models.Model):
     def player_names(self) -> str:
         return ", ".join([p.name for p in self.players_by_direction.values()])
 
+    def player_can_examine(self, player: Player) -> bool:
+        return player.has_ever_seen_board(self.board)
+
     @property
     def players_by_direction(self) -> dict[int, Player]:
         return {s.direction: s.player for s in self.table.seats}
@@ -463,7 +465,7 @@ class Hand(models.Model):
     @property
     def status(self) -> str:
         winning_plays = self.play_set.filter(won_its_trick=True)
-        wins_by_seat = collections.defaultdict(int)
+        wins_by_seat: dict[libSeat, int] = collections.defaultdict(int)
         for p in winning_plays:
             wins_by_seat[p.seat] += 1
         east_west = wins_by_seat[libSeat.EAST] + wins_by_seat[libSeat.WEST]

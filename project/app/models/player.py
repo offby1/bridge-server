@@ -14,13 +14,13 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore
 
+from .board import Board
 from .message import Message
 from .seat import Seat
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from .board import Board
     from .hand import Hand
     from .table import Table
 
@@ -202,28 +202,28 @@ class Player(models.Model):
         return hand is not None
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        # OK, so when does a player get to see some cards, under normal circumstances?
-        # - when this board has been played at a table at which he has sat AND either
-        #   - they are his cards; or
-        #   - they are dummy's cards, and the opening lead has been made; or
-        #   - the hand has been completed.
-        hand = self.hand_at_which_board_was_played(board)
-
-        if not self.has_ever_seen_board(board, hand=hand):
+        what_they_can_see = board.what_can_they_see(player=self)
+        if what_they_can_see == Board.PlayerVisibility.nothing:
             return False
 
-        if hand.is_complete:
-            return True
+        hand = self.hand_at_which_board_was_played(board)
+        assert (
+            hand is not None
+        )  # what_they_can_see should have been PlayerVisibility.nothing in this case
 
-        if hand.players_by_direction[seat.value] == self:
-            return True
+        if what_they_can_see is Board.PlayerVisibility.own_hand:
+            return hand.players_by_direction[seat.value] == self
 
-        if hand.plays.count() > 0:  # opening lead has been made
-            dummy = hand.dummy
-            if dummy is not None and dummy.seat == seat:  # this seat is the dummy
+        if what_they_can_see == Board.PlayerVisibility.dummys_hand:
+            if hand.players_by_direction[seat.value] == self:
                 return True
+            dummy = hand.dummy
+            return dummy is not None and dummy.seat == seat
 
-        return False
+        assert (
+            what_they_can_see is Board.PlayerVisibility.everything
+        ), f"{what_they_can_see=} but otta be everything"
+        return True
 
     @cached_property
     def name(self):

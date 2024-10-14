@@ -7,7 +7,13 @@ import bridge.seat
 from bridge.auction import Auction
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -51,6 +57,11 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     player = request.user.player
 
     assert player is not None
+
+    if not h.player_can_examine(player):
+        return HttpResponseForbidden(
+            f"{player} is not allowed to see this hand's board because they haven't yet played it"
+        )
 
     a = h.auction
     c = a.status
@@ -202,6 +213,7 @@ def _three_by_three_trick_display_context_for_hand(
         for _index, libSeat, libCard, _is_winner in hand.current_trick:
             cards_by_direction_number[libSeat.value] = libCard
 
+    # TODO -- use _display_and_control here
     def c(direction: int):
         card = cards_by_direction_number.get(direction)
         color = "black"
@@ -280,6 +292,14 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    player = request.user.player
+    assert player is not None
+
+    if not hand.player_can_examine(player):
+        return HttpResponseForbidden(
+            f"{player} is not allowed to see this hand's board because they haven't yet played it"
+        )
 
     if (
         hand != hand.table.current_hand

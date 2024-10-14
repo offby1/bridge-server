@@ -16,6 +16,7 @@
         <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
     <div>
+        {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
         {% for t in hand.xscript.tricks %}
             <div class="row">
                 {% for p in t.plays %}
