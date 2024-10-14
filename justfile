@@ -2,6 +2,9 @@ set unstable := true
 
 import 'postgres.just'
 
+# https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
+
+export DJANGO_SECRET_FILE := config_directory() / "info.offby1.bridge/django_secret_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 
@@ -148,13 +151,7 @@ clean: die-if-poetry-active
 dcu *options: version-file orb
     set -euo pipefail
 
-    # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
-    export DJANGO_SECRET_KEY=$(cat "{{ config_directory() }}/info.offby1.bridge/django_secret_key")
-    if [ -z "${DJANGO_SECRET_KEY}" ]
-    then
-       echo "Hey man, the secret key is empty; it should be under {{ config_directory() }}"
-       exit 1
-    fi
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x

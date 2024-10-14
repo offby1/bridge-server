@@ -30,7 +30,12 @@ APP_NAME = "info.offby1.bridge"
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY: str | None = "django-insecure-d)83erqvk0gay745i(^j_l37bg$+14&zgc5=pf5o*-3w%!h$92"
+SECRET_KEY: str
+DJANGO_SECRET_FILE = os.environ.get("DJANGO_SECRET_FILE")
+
+if DJANGO_SECRET_FILE is not None:
+    with open(DJANGO_SECRET_FILE) as inf:
+        SECRET_KEY = inf.read()
 
 ALLOWED_HOSTS = [
     ".orb.local",
