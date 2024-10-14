@@ -485,7 +485,7 @@ class Hand(models.Model):
             return "Remind me -- who are you, again?"
 
         if not as_viewed_by.has_ever_seen_board(self.board):
-            return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so fuck you"
+            return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so later d00d"
 
         if not self.is_complete:
             if self.xscript.auction.status == self.xscript.auction.Incomplete:

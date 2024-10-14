@@ -244,9 +244,7 @@ class Command(BaseCommand):
             table_pk = data.get("table")
 
         if table_pk is None:
-            self.stderr.write(
-                f"In {data}, I don't have a fucking clue, Lieutenant, where the table PK is"
-            )
+            self.stderr.write(f"In {data}, I don't have a clue, Lieutenant, where the table PK is")
             return
 
         try:
@@ -259,7 +257,7 @@ class Command(BaseCommand):
             self.log(table=table, string=f"Found {when=} in the data")
             self.last_action_timestamps_by_table_id[table.pk] = when
         elif data.get("action") != "pokey pokey":
-            msg = f"{data=} aint' got no timestamp! Fuck this."
+            msg = f"{data=} aint' got no timestamp! I'm outta here."
             raise Exception(msg)
 
         if (
