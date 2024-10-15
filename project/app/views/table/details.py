@@ -86,7 +86,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
         return HttpResponseForbidden("Oddly, nobody is allowed to call now")
 
     from_whom = hand.player_who_may_call.libraryThing if hand.open_access else who_clicked
-    logger.debug(f"{from_whom=}; {who_clicked=}")
+
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 

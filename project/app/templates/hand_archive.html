@@ -4,7 +4,7 @@
         <h1>Review of {{ hand }}</h1>
         <form method="post" action="{% url 'app:new-board-plz' hand.table.pk %}">
             {% csrf_token %}
-            <button class="btn btn-primary" type="submit">NEW BOARD PLZ</button>
+            <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
         </form>
         <h2>{{ hand.board }}</h2>
         <h2>{{ hand.auction_status }}</h2>

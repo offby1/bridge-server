@@ -500,7 +500,7 @@ class Hand(models.Model):
             censored_play_summary = f"{len(self.plays)} cards played"
             return f"Auction {censored_auction_summary}; {censored_play_summary}"
 
-        return f"{self.xscript.final_score()}"
+        return f"{self.xscript.final_score().trick_summary}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

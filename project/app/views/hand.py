@@ -26,7 +26,7 @@ from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
-    from app.models.hand import AllFourSuitHoldings, SuitHolding
+    from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(hand_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    h: Hand
     for h in page_obj.object_list:
         h.summary_for_this_viewer = h.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
@@ -91,7 +92,12 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
         )
         return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
-    score_description = f"declarers got {broken_down_score.total} or I suppose you could say defenders got {-broken_down_score.total}"
+    score_description = f"{broken_down_score.trick_summary}: "
+
+    if broken_down_score.total < 0:  # defenders got points
+        score_description += f"Defenders get {-broken_down_score.total}"
+    else:
+        score_description += f"Declarer's side get {broken_down_score.total}"
 
     context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
     context |= {
