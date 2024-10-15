@@ -53,5 +53,11 @@ handEventSource.addEventListener('message', function (e) {
     window.location.reload();
 }, false);
 
+// scroll the auction div so that the most-recent calls are visible.
+addEventListener("DOMContentLoaded", (event) =>
+    {
+        document.querySelector("#auction").scroll(0, 10000)
+    });
+
     </script>
 {% endblock scripts %}
