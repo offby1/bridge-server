@@ -17,16 +17,19 @@ IN PROGRESS:
   - Play
   - Board
 
-  If each model had a "get_for_player" method (probably on the Manager), which could return an error that means "access denied", and if all the relevant views used those methods instead of the built-in ones, that might suffice.
+  ... although now that I think about it, is there any reason we'd show e.g. *some* Calls to a player, but not all of them?
 
-  Call and Play objects would simply check if that call or play is part of a hand that the player has played at, and return None, or raise an exception, if not.
-  Board objects would be fiddlier:
-  - default is: the player hasn't played this board, so they get nuttin'
-  - if they've played the board, but no opening lead has been made, they can see their own cards.
-  - if the opening lead has been made, they can also see dummy's cards.
-  - if the hand was completed (i.e., all 52 cards have been played), they can see everything.
-
-  Then, of course, I'd have to remember to *use* these methods everywhere appropriate.
+  Now to enumerate all the views that access Board, Call, or Play:
+  - drf_views.BoardViewSet
+  - drf_views.CallViewSet
+  - drf_views.PlayViewSet
+  - hand.hand_list_view
+  - hand.hand_archive_view
+  - hand.four_hands_partial_view
+  - hand.hand_detail_view
+  - hand.bidding_box_partial_view
+  - hand.auction_partial_view
+  - table.hand_summary_view (maybe?)
 
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
