@@ -17,7 +17,7 @@ import bridge.card
 import bridge.xscript
 import requests
 import retrying  # type: ignore
-from app.models import AuctionError, Hand, Player, Table
+from app.models import AuctionError, Hand, Player, Table, TableException
 from app.models.utils import assert_type
 from bridge.contract import Contract, Pass
 from django.conf import settings
@@ -285,7 +285,10 @@ class Command(BaseCommand):
                 table=table,
                 string="I guess this table's play is done, so I should poke that GIMME NEW BOARD button",
             )
-            self.delay_action(table=table, func=table.next_board)
+            try:
+                self.delay_action(table=table, func=table.next_board)
+            except TableException as e:
+                self.log(table=table, string=f"{e}; I will guess the tournament is over.")
 
         else:
             self.log(table=table, string=f"No idea what to do with {data=}")
