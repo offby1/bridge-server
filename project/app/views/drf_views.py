@@ -34,9 +34,9 @@ class BoardViewSet(viewsets.ModelViewSet):
         as_viewed_by: Player | None = request.user.player
         assert as_viewed_by is not None
 
-        the_board = self.queryset.get(pk=pk)
-
-        if the_board is None:
+        try:
+            the_board = self.queryset.get(pk=pk)
+        except Board.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         data_dict = {
