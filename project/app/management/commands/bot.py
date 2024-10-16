@@ -131,6 +131,7 @@ class Command(BaseCommand):
         else:
             final = f"(no table): {string}"
         self.logger.info(final)
+        sys.stderr.flush()  # might help when running under docker, not sure
 
     def skip_player(self, *, table: Table, player: Player) -> bool:
         if player is None:
