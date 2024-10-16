@@ -32,7 +32,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def _censored_data_dict(self, as_viewed_by: Player | None, board: Board) -> dict[str, str]:
         data_dict = {
-            attr: getattr(board, attr) for attr in ("ns_vulnerable", "ew_vulnerable", "dealer")
+            attr: getattr(board, attr)
+            for attr in ("ns_vulnerable", "ew_vulnerable", "dealer", "pk")
         }
 
         if as_viewed_by is None:
@@ -55,6 +56,15 @@ class BoardViewSet(viewsets.ModelViewSet):
                         data_dict[attribute] = getattr(board, attribute)
 
         return data_dict
+
+    def list(self, request: AuthedHttpRequest) -> Response:
+        censored_objects = []
+        for raw_object in self.queryset.order_by("id").all():
+            censored_objects.append(
+                self._censored_data_dict(as_viewed_by=request.user.player, board=raw_object)
+            )
+
+        return Response(data=censored_objects)
 
     def retrieve(self, request: AuthedHttpRequest, pk=None) -> Response:
         as_viewed_by = request.user.player
