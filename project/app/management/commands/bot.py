@@ -100,7 +100,7 @@ class Command(BaseCommand):
 
     def delay_action(self, *, table: Table, func) -> None:
         previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 1
+        sleep_until = previous_action_time + 0.25
 
         # Schedule the action for the future
         self.action_queue.insert(0, (sleep_until, table.pk, func))
