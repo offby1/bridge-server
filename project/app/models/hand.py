@@ -15,6 +15,7 @@ from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
+from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
@@ -24,7 +25,6 @@ from .player import Player
 from .utils import assert_type
 
 if TYPE_CHECKING:
-    from bridge.xscript import HandTranscript
     from django.db.models.manager import RelatedManager
 
     from . import Board, Player, Seat, Table  # noqa
@@ -152,6 +152,13 @@ class Hand(models.Model):
     _xscript: HandTranscript
 
     def get_xscript(self):
+        if not hasattr(self, "_xscript"):
+            self._xscript = HandTranscript(
+                table=self.table.libraryThing,
+                auction=self.auction,
+                ns_vuln=self.board.ns_vulnerable,
+                ew_vuln=self.board.ew_vulnerable,
+            )
         return self._xscript
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
