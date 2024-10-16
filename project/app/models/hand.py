@@ -214,6 +214,7 @@ class Hand(models.Model):
         rv = self.play_set.create(serialized=card.serialize())
 
         del self.table.libraryThing
+        self._xscript.add_card(card)
 
         final_score = self.get_xscript().final_score()
 
