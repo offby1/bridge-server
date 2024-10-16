@@ -26,6 +26,8 @@ from sseclient import SSEClient  # type: ignore
 
 random.seed(0)
 
+logger = logging.getLogger("bot")
+
 
 def ts(time_t=None):
     if time_t is None:
@@ -91,8 +93,14 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
 
 class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
+        logging.basicConfig(
+            # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
+            format="{asctime} {levelname:5} {filename} {funcName} {message}",
+            level=logging.INFO,
+            datefmt="%Y-%m-%dT%H:%M:%S%z",
+            style="{",
+        )
         logging.getLogger().setLevel(logging.DEBUG)
-        self.logger = logging.getLogger(__name__)
 
         self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
         self.action_queue = []
@@ -130,8 +138,7 @@ class Command(BaseCommand):
             final = f"{table} hand {hand.pk} {board=}: {string}"
         else:
             final = f"(no table): {string}"
-        self.logger.info(final)
-        sys.stderr.flush()  # might help when running under docker, not sure
+        logger.info(final)
 
     def skip_player(self, *, table: Table, player: Player) -> bool:
         if player is None:
@@ -164,11 +171,10 @@ class Command(BaseCommand):
         if [pc.call for pc in a.player_calls] == [Pass, Pass, Pass]:
             for _ in range(5):
                 call = a.random_legal_call()
-                self.stderr.write(f"In loop, got {call=}")
+
                 if call != Pass:
-                    self.stderr.write("Gudenov")
                     break
-                self.stderr.write("Nuts, a pass! Let's try again")
+
             else:
                 self.log(
                     table=table,
