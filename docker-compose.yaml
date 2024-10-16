@@ -51,7 +51,7 @@ services:
     restart: "no"
     ports: []
     depends_on:
-      - django-migrated
+      - django
       - redis
 
   postgres:
