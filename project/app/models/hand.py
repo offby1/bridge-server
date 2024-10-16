@@ -14,6 +14,7 @@ from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
+from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.xscript import HandTranscript
 from django.contrib import admin
@@ -192,6 +193,14 @@ class Hand(models.Model):
                 },
             )
 
+    def players_remaining_cards(self, *, player: libPlayer) -> libHand:
+        dealt_cards = set(player.hand.cards)
+        played_cards = {
+            libCard.deserialize(p.serialized) for p in self.play_set.all()
+        }  # this includes the other three player's plays, too, but it doesn't matter!
+        current_cards = dealt_cards - played_cards
+        return libHand(cards=list(current_cards))
+
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
@@ -206,7 +215,9 @@ class Hand(models.Model):
             raise PlayError(msg)
 
         # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
-        legal_cards = self.get_xscript().legal_cards()
+        legal_cards = self.get_xscript().legal_cards(
+            some_hand=self.players_remaining_cards(player=player)
+        )
         if card not in legal_cards:
             msg = f"{card} is not a legal play"
             raise PlayError(msg)
@@ -269,7 +280,7 @@ class Hand(models.Model):
         if not self.auction.found_contract:
             return None
 
-        libPlayer = self.get_xscript().players[0]
+        libPlayer = self.get_xscript().paraplegics[0]
 
         return Player.objects.get_by_name(libPlayer.name)
 

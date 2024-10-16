@@ -80,6 +80,9 @@ class Player(models.Model):
 
     @property
     def libraryThing(self) -> bridge.table.Player:
+        """
+        The returned object contains their hand *as dealt*, not necessarily their current holding.
+        """
         if self.most_recent_seat is None:
             msg = f"{self} is not seated"
             raise PlayerException(msg)

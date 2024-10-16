@@ -19,17 +19,20 @@ if TYPE_CHECKING:
     from django.template.response import TemplateResponse
 
 
-def test_keeps_accurate_transcript(usual_setup):
-    t = Table.objects.first()
+def test_keeps_accurate_transcript(usual_setup) -> None:
+    t: Table = Table.objects.first()  # type: ignore
+    assert t is not None
     t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
 
     h: Hand = t.current_hand
     assert len(h.get_xscript().tricks) == 0
 
     declarer = h.declarer
+    assert declarer is not None
     first_players_seat = declarer.seat.lho()
     first_player = h.players_by_direction[first_players_seat.value].libraryThing
     first_players_cards = first_player.hand.cards
+    print(f"{first_players_cards=}")
     first_card = first_players_cards[0]
 
     h.add_play_from_player(player=first_player, card=first_card)
@@ -39,8 +42,9 @@ def test_keeps_accurate_transcript(usual_setup):
     assert first_play.card == first_card
 
     # I don't check that the two player's *hands* are equal because the library is stupid
-    assert first_play.player.name == first_player.name
-    assert first_play.player.seat == first_player.seat
+    assert first_play.seat == first_player.seat
+    assert len(h.players_remaining_cards(player=first_player).cards) == 12
+    assert first_play.card not in h.players_remaining_cards(player=first_player).cards
 
 
 def test_rejects_illegal_calls(usual_setup):

@@ -42,7 +42,7 @@ def _request_ex_filter(ex):
     return rv
 
 
-def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTranscript) -> int:
+def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
     """
     Roughly: how many opponent's cards rank higher than this one?  Only look at opponents who haven't yet played to this trick.
     Return that value, negated.  If there's a trump suit, those count too.
@@ -56,24 +56,26 @@ def trick_taking_power(c: bridge.card.Card, *, xscript: bridge.xscript.HandTrans
     """
     assert_type(c, bridge.card.Card)
 
-    t = xscript.table
+    t = hand.table.libraryThing
 
-    me = xscript.player
-    lho = t.get_lho(me)
-    rho = t.get_lho(t.get_partner(me))
+    xscript = hand.get_xscript()
+    me = xscript.player()
+    lho = t.get_lho_seat(me.seat)
+    rho = t.get_partner_seat(lho)
 
-    hidden_opponents_hands_to_consider = [lho, rho]
+    hidden_opponents_seats_to_consider = [lho, rho]
 
     opponents_cards_in_current_trick: list[bridge.card.Card] = []
     if xscript.tricks and not xscript.tricks[-1].is_complete():
         for play in xscript.tricks[-1]:
-            if play.player in (lho, rho):
-                hidden_opponents_hands_to_consider.remove(play.player)
+            if play.seat in (lho, rho):
+                hidden_opponents_seats_to_consider.remove(play.seat)
                 opponents_cards_in_current_trick.append(play.card)
 
     cards_in_opponents_hands: list[bridge.card.Card] = []
-    for opp in hidden_opponents_hands_to_consider:
-        cards_in_opponents_hands.extend(opp.hand.cards)
+    for _opp_seat in hidden_opponents_seats_to_consider:
+        opps_hand = hand.board.cards_for_direction(_opp_seat)
+        cards_in_opponents_hands.extend(opps_hand.cards)
 
     assert isinstance(xscript.auction.status, Contract)
 
@@ -229,14 +231,11 @@ class Command(BaseCommand):
             return
 
         chosen_card = hand.get_xscript().slightly_less_dumb_play(
-            order_func=functools.partial(trick_taking_power, xscript=hand.get_xscript())
+            order_func=functools.partial(trick_taking_power, hand=hand), some_hand=hand
         )
 
         ranked_options = sorted(
-            [
-                (c, trick_taking_power(c, xscript=hand.get_xscript()))
-                for c in hand.get_xscript().legal_cards()
-            ],
+            [(c, trick_taking_power(c, hand=hand)) for c in hand.get_xscript().legal_cards()],
             key=operator.itemgetter(1),
         )
         p = hand.add_play_from_player(player=hand.get_xscript().player, card=chosen_card)
