@@ -15,12 +15,14 @@ def test_for_more_smoke(usual_setup, rf) -> None:
     # all players have just one suit, so it's easy to play all the cards
     while True:
         assert t is not None
-        legal_cards = t.current_hand.xscript.legal_cards()
+        legal_cards = t.current_hand.get_xscript().legal_cards()
         if not legal_cards:
             break
         chosen_card = legal_cards[0]
 
-        t.current_hand.add_play_from_player(player=t.current_hand.xscript.player, card=chosen_card)
+        t.current_hand.add_play_from_player(
+            player=t.current_hand.get_xscript().player, card=chosen_card
+        )
         t = Table.objects.get(pk=t.pk)
 
     request = rf.get("/woteva/")

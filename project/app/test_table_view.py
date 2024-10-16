@@ -102,13 +102,13 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
 
     # play out the hand
     while True:
-        legal_cards = t1.current_hand.xscript.legal_cards()
+        legal_cards = t1.current_hand.get_xscript().legal_cards()
         if not legal_cards:
             break
         chosen_card = legal_cards[0]
 
         t1.current_hand.add_play_from_player(
-            player=t1.current_hand.xscript.player, card=chosen_card
+            player=t1.current_hand.get_xscript().player, card=chosen_card
         )
         t1 = Table.objects.get(pk=t1.pk)
 

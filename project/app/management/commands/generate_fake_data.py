@@ -141,13 +141,13 @@ class Command(BaseCommand):
             unit="t",
         ):
             for _ in range(2):
-                legal_cards = t.current_hand.xscript.legal_cards()
+                legal_cards = t.current_hand.get_xscript().legal_cards()
                 if legal_cards:
                     chosen_card = random.choice(legal_cards)
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     t.current_hand.add_play_from_player(
-                        player=t.current_hand.xscript.player, card=chosen_card
+                        player=t.current_hand.get_xscript().player, card=chosen_card
                     )
                     t = Table.objects.get(pk=t.pk)
 

@@ -82,13 +82,13 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             context=context,
         )
 
-    broken_down_score = h.xscript.final_score()
+    broken_down_score = h.get_xscript().final_score()
 
     if broken_down_score is None:
         logger.debug(
             "The hand at %s has not been completely played (only %d tricks), so there is no final score",
             h.table,
-            len(h.xscript.tricks),
+            len(h.get_xscript().tricks),
         )
         return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 

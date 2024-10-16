@@ -221,22 +221,25 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        legal_cards = hand.xscript.legal_cards()
+        legal_cards = hand.get_xscript().legal_cards()
         if not legal_cards:
             logger.info(
                 f"No legal cards at {seat_to_impersonate}? The hand must be over.",
             )
             return
 
-        chosen_card = hand.xscript.slightly_less_dumb_play(
-            order_func=functools.partial(trick_taking_power, xscript=hand.xscript)
+        chosen_card = hand.get_xscript().slightly_less_dumb_play(
+            order_func=functools.partial(trick_taking_power, xscript=hand.get_xscript())
         )
 
         ranked_options = sorted(
-            [(c, trick_taking_power(c, xscript=hand.xscript)) for c in hand.xscript.legal_cards()],
+            [
+                (c, trick_taking_power(c, xscript=hand.get_xscript()))
+                for c in hand.get_xscript().legal_cards()
+            ],
             key=operator.itemgetter(1),
         )
-        p = hand.add_play_from_player(player=hand.xscript.player, card=chosen_card)
+        p = hand.add_play_from_player(player=hand.get_xscript().player, card=chosen_card)
         logger.info(f"{p} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
