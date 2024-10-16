@@ -11,12 +11,36 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Play, Player, Table
+from .models import AuctionError, Board, Hand, Play, Player, Table
 from .testutils import set_auction_to
 from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
+
+
+def test_keeps_accurate_transcript(usual_setup):
+    t = Table.objects.first()
+    t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+
+    h: Hand = t.current_hand
+    assert len(h.get_xscript().tricks) == 0
+
+    declarer = h.declarer
+    first_players_seat = declarer.seat.lho()
+    first_player = h.players_by_direction[first_players_seat.value].libraryThing
+    first_players_cards = first_player.hand.cards
+    first_card = first_players_cards[0]
+
+    h.add_play_from_player(player=first_player, card=first_card)
+    assert len(h.get_xscript().tricks) == 1
+    first_trick = h.get_xscript().tricks[0]
+    first_play = first_trick.plays[0]
+    assert first_play.card == first_card
+
+    # I don't check that the two player's *hands* are equal because the library is stupid
+    assert first_play.player.name == first_player.name
+    assert first_play.player.seat == first_player.seat
 
 
 def test_rejects_illegal_calls(usual_setup):
