@@ -149,6 +149,8 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    summary_for_this_viewer: str
+
     @cached_property
     def xscript(self) -> HandTranscript:
         # Synthesize some players.  We don't simply grab them from the table, since *those* players might have played
@@ -500,7 +502,9 @@ class Hand(models.Model):
             censored_play_summary = f"{len(self.plays)} cards played"
             return f"Auction {censored_auction_summary}; {censored_play_summary}"
 
-        return f"{self.xscript.final_score().trick_summary}"
+        fs = self.xscript.final_score()
+        assert fs is not None
+        return f"{fs.trick_summary}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

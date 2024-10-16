@@ -185,14 +185,17 @@ class Player(models.Model):
     def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
 
-    def has_played_hand(self, hand: Hand) -> bool:
+    @property
+    def hands_played(self) -> models.QuerySet:
         from .hand import Hand
         from .table import Table
 
         my_seats = Seat.objects.filter(player=self)
         my_tables = Table.objects.filter(seat__in=my_seats)
-        my_hands = Hand.objects.filter(table__in=my_tables)
-        return hand in my_hands.all()
+        return Hand.objects.filter(table__in=my_tables)
+
+    def has_played_hand(self, hand: Hand) -> bool:
+        return hand in self.hands_played.all()
 
     def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
         from .hand import Hand
