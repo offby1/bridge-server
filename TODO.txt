@@ -39,7 +39,10 @@ IN PROGRESS:
 
 STILL TODO:
 
-* The hand_list has "auction" and "trick_counts" columns.  That information shouldn't be visible to everyone; instead the deets should only be seen by people who have already played that board.  Otherwise it should be very vague:
+* Trivial idea: have the bot get its "tempo", not from a hard-coded constant in "delay_action", but rather from something in the database.
+  That way I could tweak it while it's running.
+
+* THE hand_list has "auction" and "trick_counts" columns.  That information shouldn't be visible to everyone; instead the deets should only be seen by people who have already played that board.  Otherwise it should be very vague:
   - auction should either be "complete" or "incomplete"
   - play should be number of cards played, if incomplete; or "complete"
 
