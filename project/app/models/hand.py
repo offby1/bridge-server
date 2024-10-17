@@ -214,7 +214,7 @@ class Hand(models.Model):
             msg = f"{card} is not a legal play"
             raise PlayError(msg)
 
-        rv = self.play_set.create(serialized=card.serialize())
+        rv = self.play_set.create(hand=self, serialized=card.serialize())
 
         del self.table.libraryThing
         self._xscript.add_card(card)
@@ -529,6 +529,9 @@ admin.site.register(Call)
 
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
+        """
+        Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
+        """
         from app.serializers import PlaySerializer
 
         rv = super().create(*args, **kwargs)
