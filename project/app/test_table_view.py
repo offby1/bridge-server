@@ -88,7 +88,6 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
         card=Card.deserialize("D2"),
     )
-    t1 = Table.objects.first()
 
     # Now the dummy (south) is visible
     expect_visibility(
@@ -116,7 +115,6 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         t1.current_hand.add_play_from_player(
             player=t1.current_hand.player_who_may_play.libraryThing, card=chosen_card
         )
-        t1 = Table.objects.get(pk=t1.pk)
 
     expect_visibility(
         [
@@ -177,7 +175,6 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
         player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
         card=Card.deserialize("D2"),
     )
-    t = Table.objects.first()
 
     # Now declarer (north) can control the dummy (south).  (TODO -- what if the dummy is a bot?)
     expect_controlability(

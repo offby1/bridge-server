@@ -173,6 +173,5 @@ def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
         return HttpResponseNotFound(e)
 
     logger.debug('Called "next_board" on table %s', table)
-    del table.current_hand
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))

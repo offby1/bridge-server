@@ -184,10 +184,6 @@ class Hand(models.Model):
 
         self.call_set.create(serialized=call.serialize())
 
-        # This stuff is cached, but we added a call, so we refresh 'em.
-        del self.auction
-        del self.annotated_calls
-
         if self.declarer:  # the auction just settled
             contract = self.auction.status
             assert isinstance(contract, libContract)
@@ -226,7 +222,6 @@ class Hand(models.Model):
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
 
-        del self.table.libraryThing
         self._xscript.add_card(card)
 
         final_score = self.get_xscript().final_score()

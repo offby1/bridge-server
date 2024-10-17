@@ -137,10 +137,6 @@ class Command(BaseCommand):
 
         logger.info(f"Queued {func=}; queue has {len(self.action_queue)} items")
 
-        del table
-        del previous_action_time
-        del sleep_until
-
         # Do whatever action comes next
 
         sleep_until, table_pk, func = self.action_queue.pop(-1)
