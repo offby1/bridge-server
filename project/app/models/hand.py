@@ -433,7 +433,7 @@ class Hand(models.Model):
         for t in self.get_xscript().tricks:
             # Who won this trick?
             for p in t.plays:
-                flattened.append((1 + len(flattened), p.player.seat, p.card, p.wins_the_trick))
+                flattened.append((1 + len(flattened), p.seat, p.card, p.wins_the_trick))
 
         return flattened
 

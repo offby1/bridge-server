@@ -11,7 +11,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Play, Player, Table
+from .models import AuctionError, Board, Hand, Player, Table
 from .testutils import set_auction_to
 from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
 
@@ -89,16 +89,18 @@ def test_rejects_illegal_calls(usual_setup):
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
     t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
-
+    east = Player.objects.get_by_name(name="Clint Eastwood")
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
-    before = set(chain.from_iterable(t.current_hand.current_cards_by_seat().values()))
-    Play.objects.create(hand=t.current_hand, serialized="d2")
+    diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
+    h = t.current_hand
+    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
+    h.add_play_from_player(player=east.libraryThing, card=diamond_two)
+
     t = Table.objects.get(pk=t.pk)
 
     # TODO -- check that the card was played from the correct hand.
-    after = set(chain.from_iterable(t.current_hand.current_cards_by_seat().values()))
-    diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
+    after = set(chain.from_iterable(h.current_cards_by_seat().values()))
     assert before - after == {diamond_two}
 
 
