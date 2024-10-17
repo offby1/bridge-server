@@ -160,6 +160,9 @@ class Hand(models.Model):
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
             )
+            print(f"OK, I just created an empty xscript {self._xscript}.")
+
+        print(f"I wonder if I should populate xscript {self._xscript} from {self.plays=}")
         return self._xscript
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
@@ -578,12 +581,6 @@ class Play(models.Model):
 
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
-
-    def __str__(self) -> str:
-        star = ""
-        if self.won_its_trick:
-            star = "*"
-        return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
 
 
 admin.site.register(Play)
