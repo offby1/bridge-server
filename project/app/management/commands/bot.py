@@ -14,6 +14,7 @@ import time
 import typing
 
 import bridge.card
+import bridge.table
 import bridge.xscript
 import requests
 import retrying  # type: ignore
@@ -59,7 +60,7 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
     t = hand.table.libraryThing
 
     xscript = hand.get_xscript()
-    me = xscript.player()
+    me = xscript.current_named_seat()
     lho = t.get_lho_seat(me.seat)
     rho = t.get_partner_seat(lho)
 
@@ -223,7 +224,10 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        legal_cards = hand.get_xscript().legal_cards()
+        some_hand = bridge.table.Hand(
+            cards=sorted(hand.current_cards_by_seat()[seat_to_impersonate.libraryThing])
+        )
+        legal_cards = hand.get_xscript().legal_cards(some_hand=some_hand)
         if not legal_cards:
             logger.info(
                 f"No legal cards at {seat_to_impersonate}? The hand must be over.",
@@ -231,14 +235,19 @@ class Command(BaseCommand):
             return
 
         chosen_card = hand.get_xscript().slightly_less_dumb_play(
-            order_func=functools.partial(trick_taking_power, hand=hand), some_hand=hand
+            order_func=functools.partial(trick_taking_power, hand=hand), some_hand=some_hand
         )
 
         ranked_options = sorted(
-            [(c, trick_taking_power(c, hand=hand)) for c in hand.get_xscript().legal_cards()],
+            [
+                (c, trick_taking_power(c, hand=hand))
+                for c in hand.get_xscript().legal_cards(some_hand=some_hand)
+            ],
             key=operator.itemgetter(1),
         )
-        p = hand.add_play_from_player(player=hand.get_xscript().player, card=chosen_card)
+        p = hand.add_play_from_player(
+            player=seat_to_impersonate.player.libraryThing, card=chosen_card
+        )
         logger.info(f"{p} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:

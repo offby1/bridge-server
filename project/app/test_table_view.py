@@ -1,3 +1,4 @@
+import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
@@ -100,15 +101,20 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         ]
     )
 
-    # play out the hand
     while True:
-        legal_cards = t1.current_hand.get_xscript().legal_cards()
+        cc_bs = t1.current_hand.current_cards_by_seat()
+        some_hand = bridge.table.Hand(
+            cards=sorted(cc_bs[t1.current_hand.get_xscript().named_seats[0].seat])
+        )
+
+        # play out the hand
+        legal_cards = t1.current_hand.get_xscript().legal_cards(some_hand=some_hand)
         if not legal_cards:
             break
         chosen_card = legal_cards[0]
 
         t1.current_hand.add_play_from_player(
-            player=t1.current_hand.get_xscript().player, card=chosen_card
+            player=t1.current_hand.player_who_may_play.libraryThing, card=chosen_card
         )
         t1 = Table.objects.get(pk=t1.pk)
 

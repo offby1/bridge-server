@@ -148,11 +148,14 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def libraryThing(self, seat: Seat) -> libHand:
+        return libHand(cards=sorted(self.current_cards_by_seat()[seat.libraryThing]))
+
     summary_for_this_viewer: str
 
     _xscript: HandTranscript
 
-    def get_xscript(self):
+    def get_xscript(self) -> HandTranscript:
         if not hasattr(self, "_xscript"):
             self._xscript = HandTranscript(
                 table=self.table.libraryThing,
@@ -160,9 +163,13 @@ class Hand(models.Model):
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
             )
-            print(f"OK, I just created an empty xscript {self._xscript}.")
 
-        print(f"I wonder if I should populate xscript {self._xscript} from {self.plays=}")
+        num_missing_plays = self.plays.count() - self._xscript.num_plays
+        if num_missing_plays > 0:
+            p: Play
+            for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
+                self._xscript.add_card(libCard.deserialize(p.serialized))
+
         return self._xscript
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
@@ -275,7 +282,7 @@ class Hand(models.Model):
         if not self.auction.found_contract:
             return None
 
-        libPlayer = self.get_xscript().paraplegics[0]
+        libPlayer = self.get_xscript().named_seats[0]
 
         return Player.objects.get_by_name(libPlayer.name)
 
@@ -327,7 +334,7 @@ class Hand(models.Model):
         whose_turn_is_it = None
 
         if xscript.auction.found_contract:
-            whose_turn_is_it = xscript.next_player().seat
+            whose_turn_is_it = xscript.next_seat()
 
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.
@@ -343,7 +350,10 @@ class Hand(models.Model):
             for suit in libSuit:
                 legal_now = False
                 if seat == whose_turn_is_it:
-                    legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
+                    legal_now = any(
+                        c in xscript.legal_cards(some_hand=libHand(cards=sorted(cards)))
+                        for c in cards_by_suit[suit]
+                    )
 
                 kwargs[suit.name().lower()] = SuitHolding(
                     cards_of_one_suit=cards_by_suit[suit],

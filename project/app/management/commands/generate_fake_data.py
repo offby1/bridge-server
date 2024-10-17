@@ -147,7 +147,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     t.current_hand.add_play_from_player(
-                        player=t.current_hand.get_xscript().player, card=chosen_card
+                        player=t.current_hand.get_xscript().current_named_seat, card=chosen_card
                     )
                     t = Table.objects.get(pk=t.pk)
 
