@@ -1,3 +1,5 @@
+import itertools
+
 import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
@@ -100,21 +102,26 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         ]
     )
 
-    while True:
+    for wat in itertools.count(0):
         cc_bs = t1.current_hand.current_cards_by_seat()
-        some_hand = bridge.table.Hand(
-            cards=sorted(cc_bs[t1.current_hand.get_xscript().named_seats[0].seat])
-        )
+
+        named_seats = t1.current_hand.get_xscript().named_seats[0]
+        print(f"{named_seats.name} plays", end="...")
+        some_hand = bridge.table.Hand(cards=sorted(cc_bs[named_seats.seat]))
 
         # play out the hand
         legal_cards = t1.current_hand.get_xscript().legal_cards(some_hand=some_hand)
+        print(f" (out of {legal_cards=})", end="...")
         if not legal_cards:
             break
         chosen_card = legal_cards[0]
+        print(f"{chosen_card=}")
+        wat += 1
 
         t1.current_hand.add_play_from_player(
             player=t1.current_hand.player_who_may_play.libraryThing, card=chosen_card
         )
+    assert wat == 52
 
     expect_visibility(
         [
