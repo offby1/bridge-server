@@ -239,7 +239,8 @@ class Hand(models.Model):
 
         return rv
 
-    @cached_property
+    # If this proves slow, we can do some manual caching similar to `get_xscript`
+    @property
     def auction(self) -> libAuction:
         dealer = libSeat(self.board.dealer)
 
@@ -409,7 +410,7 @@ class Hand(models.Model):
             if s.lho().value == self.board.dealer:
                 return seat_cycle
 
-    @cached_property
+    @property
     def annotated_calls(self) -> Iterable[tuple[libSeat, Call]]:
         return list(
             zip(

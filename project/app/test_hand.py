@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 from itertools import chain
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Player, Table
+from .models import AuctionError, Board, Hand, Player, Table, hand
 from .testutils import set_auction_to
 from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
 
@@ -254,3 +255,22 @@ def test_next_seat_to_play(usual_setup) -> None:
 
     assert h.declarer.seat == libSeat.NORTH
     assert t.next_seat_to_play.named_direction == "EAST"
+
+
+def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
+    t = Table.objects.first()
+    assert t is not None
+
+    event_counts_by_keyword: dict[str, int] = collections.defaultdict(int)
+
+    def send_event(*, channel, event_type, data):
+        for keyword in data:
+            event_counts_by_keyword[keyword] += 1
+
+    monkeypatch.setattr(hand, "send_event", send_event)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+
+    assert (
+        event_counts_by_keyword["new-call"] == 2 * 4
+    )  # "1 diamond, pass, pass, pass" sent to two different channels
+    assert event_counts_by_keyword["contract_text"] == 2
