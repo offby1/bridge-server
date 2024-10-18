@@ -17,7 +17,7 @@
     </div>
     <div>
         {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
-        {% for t in hand.get_xscript().tricks %}
+        {% for t in hand.get_xscript.tricks %}
             <div class="row">
                 {% for p in t.plays %}
                     <div class="col">
