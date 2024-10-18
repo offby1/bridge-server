@@ -109,8 +109,6 @@ STILL TODO:
 
 * Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
 
-* Pointless but perhaps fun: write a management command to backfill the (redundant) "won_its_trick" column.
-
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
@@ -193,7 +191,6 @@ DONE:
   - hand.hand_detail_view
   - hand.bidding_box_partial_view
   - hand.auction_partial_view
-  - table.hand_summary_view (maybe?)
 
 
 * BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.

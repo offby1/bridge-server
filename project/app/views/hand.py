@@ -82,13 +82,13 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             context=context,
         )
 
-    broken_down_score = h.xscript.final_score()
+    broken_down_score = h.get_xscript().final_score()
 
     if broken_down_score is None:
         logger.debug(
             "The hand at %s has not been completely played (only %d tricks), so there is no final score",
             h.table,
-            len(h.xscript.tricks),
+            len(h.get_xscript().tricks),
         )
         return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
@@ -278,7 +278,6 @@ def _four_hands_context_for_hand(
     return {
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
-        "hand_summary_endpoint": reverse("app:hand-summary-view", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
     } | _three_by_three_trick_display_context_for_hand(request, hand)

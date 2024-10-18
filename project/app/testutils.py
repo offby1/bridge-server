@@ -3,6 +3,7 @@ import bridge.contract
 import app.models
 
 
+# TODO -- this should probably refer to a *hand*, not a *table*
 def set_auction_to(bid: bridge.contract.Bid, table: app.models.Table) -> app.models.Table:
     def next_caller(current_caller):
         libTable = table.current_hand.auction.table

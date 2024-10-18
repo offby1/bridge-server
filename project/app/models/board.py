@@ -118,9 +118,9 @@ class Board(models.Model):
             Seat.WEST.value: self.west_cards,
         }
 
-    def cards_for_direction(self, direction_integer):
+    def cards_for_direction(self, direction_integer: int) -> list[Card]:
         card_string = self.hand_strings_by_direction[direction_integer]
-        return [Card.deserialize(c) for c in more_itertools.chunked(card_string, 2)]
+        return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
     def what_can_they_see(self, *, player: Player) -> PlayerVisibility:
         hand = player.hand_at_which_board_was_played(self)

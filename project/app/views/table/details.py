@@ -10,7 +10,6 @@ import bridge.contract
 import bridge.seat
 from django.core.paginator import Paginator
 from django.http import (
-    HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
     HttpResponseNotFound,
@@ -60,12 +59,6 @@ def poke_de_bot(request):
         },
     )
     return HttpResponse("Pokey enough for ya??")
-
-
-def hand_summary_view(request: HttpRequest, table_pk: str) -> HttpResponse:
-    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
-
-    return HttpResponse(table.current_hand.status)
 
 
 @require_http_methods(["POST"])
@@ -173,6 +166,5 @@ def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
         return HttpResponseNotFound(e)
 
     logger.debug('Called "next_board" on table %s', table)
-    del table.current_hand
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))

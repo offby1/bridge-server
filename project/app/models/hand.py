@@ -16,7 +16,6 @@ from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
-from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
@@ -149,57 +148,32 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def libraryThing(self, seat: Seat) -> libHand:
+        from . import Seat
+
+        assert_type(seat, Seat)
+        return libHand(cards=sorted(self.current_cards_by_seat()[seat.libraryThing]))
+
     summary_for_this_viewer: str
 
-    @cached_property
-    def xscript(self) -> HandTranscript:
-        # Synthesize some players.  We don't simply grab them from the table, since *those* players might have played
-        # their cards already -- and the library's "xscript" thing would then try to remove cards from those empty hands
-        # :-(
+    _xscript: HandTranscript
 
-        # Yes, this is insane; I need to rethink ... something or other.
-
-        players = []
-        for direction, hand_string in self.board.hand_strings_by_direction.items():
-            seat = libSeat(direction)
-            players.append(
-                libPlayer(
-                    seat=seat,
-                    hand=libHand(
-                        cards=[
-                            libCard.deserialize(c) for c in more_itertools.sliced(hand_string, 2)
-                        ]
-                    ),
-                    name=self.modPlayer_by_seat(seat).name,
-                )
+    def get_xscript(self) -> HandTranscript:
+        if not hasattr(self, "_xscript"):
+            self._xscript = HandTranscript(
+                table=self.table.libraryThing,
+                auction=self.auction,
+                ns_vuln=self.board.ns_vulnerable,
+                ew_vuln=self.board.ew_vulnerable,
             )
 
-        lt = libTable(players=players)
+        num_missing_plays = self.plays.count() - self._xscript.num_plays
+        if num_missing_plays > 0:
+            p: Play
+            for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
+                self._xscript.add_card(libCard.deserialize(p.serialized))
 
-        rv = HandTranscript(
-            table=lt,
-            auction=self.auction,
-            ns_vuln=self.board.ns_vulnerable,
-            ew_vuln=self.board.ew_vulnerable,
-        )
-        # *sigh* now replay the entire hand
-        play_pks_by_card_played = {}
-        for _index, p in enumerate(self.plays):
-            play_pks_by_card_played[p.serialized] = p.pk
-            rv.add_card(libCard.deserialize(p.serialized))
-
-        if rv.tricks:
-            last_trick = rv.tricks[-1]
-            if last_trick.is_complete():
-                winning_play = [p for p in last_trick if p.wins_the_trick]
-                assert len(winning_play) == 1
-                winning_card_str = winning_play[0].card.serialize()
-                winning_play_pk = play_pks_by_card_played[winning_card_str]
-                # TODO: I am not setting any of these to False.  I could probably set all the plays to the correct
-                # value, with a single query, by using a Django ORM annotation.
-                self.play_set.filter(pk=winning_play_pk).update(won_its_trick=True)
-
-        return rv
+        return self._xscript
 
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
         assert_type(player, libPlayer)
@@ -212,10 +186,6 @@ class Hand(models.Model):
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
-
-        # This stuff is cached, but we added a call, so we refresh 'em.
-        del self.auction
-        del self.annotated_calls
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
@@ -245,18 +215,18 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play"
             raise PlayError(msg)
 
-        # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
-        legal_cards = self.xscript.legal_cards()
+        legal_cards = self.get_xscript().legal_cards(
+            some_hand=self.players_remaining_cards(player=player)
+        )
         if card not in legal_cards:
             msg = f"{card} is not a legal play"
             raise PlayError(msg)
 
-        rv = self.play_set.create(serialized=card.serialize())
+        rv = self.play_set.create(hand=self, serialized=card.serialize())
 
-        del self.xscript  # it's cached, and we need the freshest value
-        del self.table.libraryThing
+        self._xscript.add_card(card)
 
-        final_score = self.xscript.final_score()
+        final_score = self.get_xscript().final_score()
 
         if final_score:
             send_timestamped_event(
@@ -309,7 +279,7 @@ class Hand(models.Model):
         if not self.auction.found_contract:
             return None
 
-        libPlayer = self.xscript.players[0]
+        libPlayer = self.get_xscript().named_seats[0]
 
         return Player.objects.get_by_name(libPlayer.name)
 
@@ -328,6 +298,7 @@ class Hand(models.Model):
     def players_by_direction(self) -> dict[int, Player]:
         return {s.direction: s.player for s in self.table.seats}
 
+    # TODO -- this duplicates players_remaining_cards
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
         rv = {}
         for direction, cardstring in self.board.hand_strings_by_direction.items():
@@ -343,15 +314,24 @@ class Hand(models.Model):
 
         return rv
 
+    # TODO -- this duplicates current_cards_by_seat
+    def players_remaining_cards(self, *, player: libPlayer) -> libHand:
+        dealt_cards = set(player.hand.cards)
+        played_cards = {
+            libCard.deserialize(p.serialized) for p in self.play_set.all()
+        }  # this includes the other three player's plays, too, but it doesn't matter!
+        current_cards = dealt_cards - played_cards
+        return libHand(cards=list(current_cards))
+
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
         """
         A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view.
         """
-        xscript = self.xscript
+        xscript = self.get_xscript()
         whose_turn_is_it = None
 
         if xscript.auction.found_contract:
-            whose_turn_is_it = xscript.next_player().seat
+            whose_turn_is_it = xscript.next_seat()
 
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.
@@ -367,7 +347,10 @@ class Hand(models.Model):
             for suit in libSuit:
                 legal_now = False
                 if seat == whose_turn_is_it:
-                    legal_now = any(c in xscript.legal_cards() for c in cards_by_suit[suit])
+                    legal_now = any(
+                        c in xscript.legal_cards(some_hand=libHand(cards=sorted(cards)))
+                        for c in cards_by_suit[suit]
+                    )
 
                 kwargs[suit.name().lower()] = SuitHolding(
                     cards_of_one_suit=cards_by_suit[suit],
@@ -457,23 +440,12 @@ class Hand(models.Model):
     def annotated_plays(self) -> TrickTuples:
         flattened: TrickTuples = []
 
-        for t in self.xscript.tricks:
+        for t in self.get_xscript().tricks:
             # Who won this trick?
             for p in t.plays:
-                flattened.append((1 + len(flattened), p.player.seat, p.card, p.wins_the_trick))
+                flattened.append((1 + len(flattened), p.seat, p.card, p.wins_the_trick))
 
         return flattened
-
-    @property
-    def status(self) -> str:
-        winning_plays = self.play_set.filter(won_its_trick=True)
-        wins_by_seat: dict[libSeat, int] = collections.defaultdict(int)
-        for p in winning_plays:
-            wins_by_seat[p.seat] += 1
-        east_west = wins_by_seat[libSeat.EAST] + wins_by_seat[libSeat.WEST]
-        north_south = wins_by_seat[libSeat.NORTH] + wins_by_seat[libSeat.SOUTH]
-
-        return f"{east_west=}; {north_south=}"
 
     @property
     def plays(self):
@@ -492,9 +464,9 @@ class Hand(models.Model):
             return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so later d00d"
 
         if not self.is_complete:
-            if self.xscript.auction.status == self.xscript.auction.Incomplete:
+            if self.get_xscript().auction.status == self.get_xscript().auction.Incomplete:
                 censored_auction_summary = "is incomplete"
-            elif self.xscript.auction.status == self.xscript.auction.PassedOut:
+            elif self.get_xscript().auction.status == self.get_xscript().auction.PassedOut:
                 censored_auction_summary = "was passed out"
             else:
                 censored_auction_summary = "is complete"
@@ -502,7 +474,7 @@ class Hand(models.Model):
             censored_play_summary = f"{len(self.plays)} cards played"
             return f"Auction {censored_auction_summary}; {censored_play_summary}"
 
-        fs = self.xscript.final_score()
+        fs = self.get_xscript().final_score()
         assert fs is not None
         return f"{fs.trick_summary}"
 
@@ -556,6 +528,9 @@ admin.site.register(Call)
 
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
+        """
+        Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
+        """
         from app.serializers import PlaySerializer
 
         rv = super().create(*args, **kwargs)
@@ -572,10 +547,6 @@ class Play(models.Model):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
-
-    # This is redundant -- it can in theory be computed given that we know who made the opening lead, the trump suit,
-    # and the rules of bridge.  But geez.
-    won_its_trick = models.BooleanField(null=True)
 
     hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
 
@@ -602,12 +573,6 @@ class Play(models.Model):
 
         msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
         raise Exception(msg)
-
-    def __str__(self) -> str:
-        star = ""
-        if self.won_its_trick:
-            star = "*"
-        return f"{self.seat} at {self.hand.table} played {self.serialized}{star}"
 
 
 admin.site.register(Play)

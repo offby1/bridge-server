@@ -55,7 +55,7 @@ class NewHandSerializer(serializers.ModelSerializer):
 class PlaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Play
-        fields = ("won_its_trick", "serialized", "hand")
+        fields = ("serialized", "hand")
         depth = 1
 
 

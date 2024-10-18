@@ -1,7 +1,7 @@
 import random
 
 import tqdm
-from app.models import Player, Table
+from app.models import Hand, Player, Table
 from app.models.hand import AuctionError
 from bridge.contract import Bid as libBid
 from django.contrib.auth.hashers import make_password
@@ -72,7 +72,7 @@ class Command(BaseCommand):
         except IntegrityError as e:
             self.stdout.write(f"Hmm, {e=}; will ignore it")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         fake = Faker()
         Faker.seed(0)
 
@@ -123,7 +123,8 @@ class Command(BaseCommand):
                 unseated_player_two,
             )
 
-        last_table = Table.objects.order_by("-pk").first()
+        last_table: Table | None = Table.objects.order_by("-pk").first()
+        assert last_table is not None
         self.generate_some_fake_calls_and_plays_at(last_table, Table.objects.count() - 1)
 
         # Now create a couple of unseated players.
@@ -135,19 +136,25 @@ class Command(BaseCommand):
 
         # Now find some tables with complete auctions, and play a few cards.
         playable_tables = [t for t in Table.objects.all() if t.current_auction.found_contract]
+        t: Table
         for t in tqdm.tqdm(
             playable_tables,
             desc="tables",
             unit="t",
         ):
+            h: Hand = t.current_hand
             for _ in range(2):
-                legal_cards = t.current_hand.xscript.legal_cards()
+                assert h.player_who_may_play is not None
+                assert h.player_who_may_play.most_recent_seat is not None
+                some_hand = h.libraryThing(h.player_who_may_play.most_recent_seat)
+
+                legal_cards = t.current_hand.get_xscript().legal_cards(some_hand=some_hand)
                 if legal_cards:
                     chosen_card = random.choice(legal_cards)
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     t.current_hand.add_play_from_player(
-                        player=t.current_hand.xscript.player, card=chosen_card
+                        player=h.player_who_may_play.libraryThing, card=chosen_card
                     )
                     t = Table.objects.get(pk=t.pk)
 

@@ -1,3 +1,6 @@
+import itertools
+
+import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
@@ -87,7 +90,6 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
         card=Card.deserialize("D2"),
     )
-    t1 = Table.objects.first()
 
     # Now the dummy (south) is visible
     expect_visibility(
@@ -100,17 +102,26 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         ]
     )
 
-    # play out the hand
-    while True:
-        legal_cards = t1.current_hand.xscript.legal_cards()
+    for wat in itertools.count(1):
+        cc_bs = t1.current_hand.current_cards_by_seat()
+        print(f"\nBTW, {t1.current_hand.player_who_may_play.name=}")
+        named_seats = t1.current_hand.get_xscript().named_seats[0]
+        some_hand = bridge.table.Hand(cards=sorted(cc_bs[named_seats.seat]))
+        print(f"{named_seats.name} holds {len(some_hand.cards)} cards; plays", end="...")
+
+        # play out the hand
+        legal_cards = t1.current_hand.get_xscript().legal_cards(some_hand=some_hand)
+        print(f" (out of {legal_cards=})", end="...")
         if not legal_cards:
             break
         chosen_card = legal_cards[0]
+        print(f"{chosen_card=}")
+        wat += 1
 
         t1.current_hand.add_play_from_player(
-            player=t1.current_hand.xscript.player, card=chosen_card
+            player=t1.current_hand.player_who_may_play.libraryThing, card=chosen_card
         )
-        t1 = Table.objects.get(pk=t1.pk)
+    assert wat == 52
 
     expect_visibility(
         [
@@ -171,7 +182,6 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
         player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
         card=Card.deserialize("D2"),
     )
-    t = Table.objects.first()
 
     # Now declarer (north) can control the dummy (south).  (TODO -- what if the dummy is a bot?)
     expect_controlability(
