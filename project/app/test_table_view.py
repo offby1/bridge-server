@@ -102,7 +102,7 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         ]
     )
 
-    for wat in itertools.count(0):
+    for wat in itertools.count(1):
         cc_bs = t1.current_hand.current_cards_by_seat()
         print(f"\nBTW, {t1.current_hand.player_who_may_play.name=}")
         named_seats = t1.current_hand.get_xscript().named_seats[0]
