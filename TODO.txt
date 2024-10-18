@@ -166,6 +166,13 @@ STILL TODO:
 
 DONE:
 
+* Too many redirects:
+
+    2024-10-18 17:32:42,127 INFO     "192.168.97.1" - - [18/Oct/2024:17:32:41 +0000] "GET /hand/92/ HTTP/1.1" 302 - "https://erics-work-macbook-pro.tail571dc2.ts.net/hand/?page=6" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    2024-10-18 17:32:42,150 INFO     "192.168.97.1" - - [18/Oct/2024:17:32:41 +0000] "GET /hand/92/archive/ HTTP/1.1" 302 - "https://erics-work-macbook-pro.tail571dc2.ts.net/hand/?page=6" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    2024-10-18 17:32:42,168 INFO     "192.168.97.1" - - [18/Oct/2024:17:32:41 +0000] "GET /hand/92/ HTTP/1.1" 302 - "https://erics-work-macbook-pro.tail571dc2.ts.net/hand/?page=6" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    2024-10-18 17:32:42,184 INFO     "192.168.97.1" - - [18/Oct/2024:17:32:41 +0000] "GET /hand/92/archive/ HTTP/1.1" 302 - "https://erics-work-macbook-pro.tail571dc2.ts.net/hand/?page=6" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+
 * THE hand_list has "auction" and "trick_counts" columns.  That information shouldn't be visible to everyone; instead the deets should only be seen by people who have already played that board.  Otherwise it should be very vague:
   - auction should either be "complete" or "incomplete"
   - play should be number of cards played, if incomplete; or "complete"

@@ -15,7 +15,7 @@ app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
-    path("call/<table_pk>/", table.details.call_post_view, name="call-post"),
+    path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
     path("hand/<pk>/", hand_detail_view, name="hand-detail"),
     path("hand/<pk>/archive/", hand_archive_view, name="hand-archive"),

@@ -63,7 +63,7 @@ def poke_de_bot(request):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
+def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     assert_type(request.user.player, app.models.Player)
     assert request.user is not None
     assert request.user.player is not None
@@ -73,10 +73,10 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     except app.models.PlayerException as e:
         return HttpResponseForbidden(str(e))
 
-    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
-    hand = table.current_hand
+    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+
     if hand.player_who_may_call is None:
-        return HttpResponseForbidden("Oddly, nobody is allowed to call now")
+        return HttpResponseForbidden(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 
     from_whom = hand.player_who_may_call.libraryThing if hand.open_access else who_clicked
 
@@ -84,7 +84,7 @@ def call_post_view(request: AuthedHttpRequest, table_pk: str) -> HttpResponse:
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
-        table.current_hand.add_call_from_player(
+        hand.add_call_from_player(
             player=from_whom,
             call=libCall,
         )

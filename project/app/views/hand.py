@@ -306,11 +306,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
             f"{player} is not allowed to see this hand's board because they haven't yet played it"
         )
 
-    if (
-        hand != hand.table.current_hand
-        or hand.is_complete
-        or hand.auction.status is bridge.auction.Auction.PassedOut
-    ):
+    if hand.is_complete or hand.auction.status is bridge.auction.Auction.PassedOut:
         return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
 
     context = (
@@ -340,7 +336,7 @@ def _bidding_box_context_for_hand(request, hand):
     else:
         buttons = bidding_box_buttons(
             auction=hand.auction,
-            call_post_endpoint=reverse("app:call-post", args=[hand.table.pk]),
+            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
             disabled_because_out_of_turn=(
                 player.name != hand.auction.allowed_caller().name and not hand.open_access
             ),
