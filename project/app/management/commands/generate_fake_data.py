@@ -72,7 +72,7 @@ class Command(BaseCommand):
         except IntegrityError as e:
             self.stdout.write(f"Hmm, {e=}; will ignore it")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         fake = Faker()
         Faker.seed(0)
 
@@ -123,7 +123,8 @@ class Command(BaseCommand):
                 unseated_player_two,
             )
 
-        last_table = Table.objects.order_by("-pk").first()
+        last_table: Table | None = Table.objects.order_by("-pk").first()
+        assert last_table is not None
         self.generate_some_fake_calls_and_plays_at(last_table, Table.objects.count() - 1)
 
         # Now create a couple of unseated players.
@@ -143,6 +144,8 @@ class Command(BaseCommand):
         ):
             h: Hand = t.current_hand
             for _ in range(2):
+                assert h.player_who_may_play is not None
+                assert h.player_who_may_play.most_recent_seat is not None
                 some_hand = h.libraryThing(h.player_who_may_play.most_recent_seat)
 
                 legal_cards = t.current_hand.get_xscript().legal_cards(some_hand=some_hand)
