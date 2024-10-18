@@ -8,6 +8,10 @@ TOP PRIORITIES:
 
 IN PROGRESS:
 
+* Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
+
+  Of course, switch my existing bot to use it, once it exists.
+
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
@@ -23,29 +27,7 @@ STILL TODO:
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
 
-* IDEA: consider storing effectively-cached information on a model instance.
-
-  E.g., if I fetch a Hand object, and want to examine the associated xscript, until now I've either recomputed the xscript from scratch (which is expensive if I do it many times), or cached the whole thing (which is unreliable if I add a call or play and then later access that now-stale cache).
-
-  But perhaps I can cache manually, and intelligently, without getting too complex.  Just store ... something as an ordinary instance attribute, and have the xscript method consult that data and then only fetch from the db those rows that are "newer" than what's in the cache.
-
-* BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
-
 * It will play 1,000,000 boards without stopping; nothing pays attention to
-
-* Add a little summary like "down 2", "made the contract", or "made the contract with 1 overtrick" to the hand archive
-
-* HEY! Bob can see *all* the cards at <https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/> ... I thought I fixed that :-(
-
-  ... I need to put ACLs around "list" as well as around "retrieve", it seems.
-
-* Have the bot delay, not just after *it* has made some action at a table, but after *any* action, even by humans, has happened.
-
-  Currently if the bot is sitting to the left of a human, and a human takes a while to do whatever, the bot will immediately act.
-
-* When I look at the table detail view, and the bot is playing all four players, and a hand gets passed out, the browser does load the "archive" page ... but then it just sits there; the bot does *not* press the "new board plz" button.
-
-  Not entirely sure this is a bug, tbh; I think the bot *has* pressed the button, but since the page doesn't automatically reload, we don't notice.
 
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
@@ -53,20 +35,6 @@ STILL TODO:
 
   Perhaps officially recognize that by rewriting the relevant models to use ManyToMany fields.
   https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.ManyToManyField.through
-
-* Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
-
-  This happens most often when the bot is sending events faster than one per second per table, but I've seen it during normal play, too.
-
-  I wonder if I've got htmx swapping the OuterHTML of something, and while that swap is happening perhaps the target element has vanished from the DOM?  In which case, perhaps always doing *inner* swapping could help, since then the target will always be present?
-
-  Consider just *reloading the entire page* every time anything happens.  This will, theoretically, be less efficient than just reloading *some* of the page; but might be so much simpler -- and efficient enough -- that it's worth doing.
-
-  I mean, the page isn't all that big! Right?
-
-  Well (without the debug toolbar) it's 17 KB which *seems* like a lot, but I dunno.
-
-  It wasn't being compressed ... adding gzip middleware brings it down to 3 KB (but, curiously, not much faster, at least when running locally).  Let's use keep using gzip.
 
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
@@ -81,13 +49,6 @@ STILL TODO:
   5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
   5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
   ```
-
-* Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
-  I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
-  <https://en.wikipedia.org/wiki/Duplicate_bridge>
-  ("Teams"? "Pairs"? "Individual"?)
-
-  [Barometer](https://en.wikipedia.org/wiki/Duplicate_bridge_movements#Barometer_games_and_online_bridge_movements) might be the way to go.
 
 * Have the bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
 
@@ -111,21 +72,19 @@ STILL TODO:
 
 * "Claim" and "Concede" buttons, at least if you're declarer
 
-* Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
-
 * Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
 
 * Maybe somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
-
-* Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
-
-  Of course, switch my existing bot to use it, once it exists.
 
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
 
 * Consider timestamps for important stuff, in particular calls and plays.
 
+  I'm referring to columns in the db, not just an entry in the little SSE events that we send.
+
 * Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
+
+  I seem to be slowly moving towards this; most of what was previously associated with Table is now associated with Hand.
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
@@ -137,8 +96,6 @@ STILL TODO:
   e.g player_detail_view sends "splitsville" (to the "partnerships" channel) in response to a player clicking the button, but surely only (at most) four players need to know about this *instantly*; other people can reload the page to find out who's partnered with whom.
 
   Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
-
-  Also it occurs to me that, if I want to have bot(s) to take the place of humans, they will need to know what's going on; and it might be simpler to have a single bot process that is aware of every event at every table, as opposed to lots of processes that each subscribe to just one "narrow" event channel.
 
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
 
@@ -165,6 +122,47 @@ STILL TODO:
 
 
 DONE:
+* Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
+
+* Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
+  I.e., a proper tournament, with movements and shit.  Can't really score until we do this.
+  <https://en.wikipedia.org/wiki/Duplicate_bridge>
+  ("Teams"? "Pairs"? "Individual"?)
+
+  [Barometer](https://en.wikipedia.org/wiki/Duplicate_bridge_movements#Barometer_games_and_online_bridge_movements) might be the way to go.
+
+* Still seeing occasional update problems in the browser: the browser fails to redraw after the server sends an event.
+
+  This happens most often when the bot is sending events faster than one per second per table, but I've seen it during normal play, too.
+
+  I wonder if I've got htmx swapping the OuterHTML of something, and while that swap is happening perhaps the target element has vanished from the DOM?  In which case, perhaps always doing *inner* swapping could help, since then the target will always be present?
+
+  Consider just *reloading the entire page* every time anything happens.  This will, theoretically, be less efficient than just reloading *some* of the page; but might be so much simpler -- and efficient enough -- that it's worth doing.
+
+  I mean, the page isn't all that big! Right?
+
+  Well (without the debug toolbar) it's 17 KB which *seems* like a lot, but I dunno.
+
+  It wasn't being compressed ... adding gzip middleware brings it down to 3 KB (but, curiously, not much faster, at least when running locally).  Let's use keep using gzip.
+
+* When I look at the table detail view, and the bot is playing all four players, and a hand gets passed out, the browser does load the "archive" page ... but then it just sits there; the bot does *not* press the "new board plz" button.
+
+  Not entirely sure this is a bug, tbh; I think the bot *has* pressed the button, but since the page doesn't automatically reload, we don't notice.
+
+* Have the bot delay, not just after *it* has made some action at a table, but after *any* action, even by humans, has happened.
+
+  Currently if the bot is sitting to the left of a human, and a human takes a while to do whatever, the bot will immediately act.
+
+  - done in commit 59889a54539b2f34174b31a4752d0cfd5026d447: "Greatly complexify, but also speed up, the bot"
+
+* Add a little summary like "down 2", "made the contract", or "made the contract with 1 overtrick" to the hand archive
+
+* IDEA: consider storing effectively-cached information on a model instance.
+
+  E.g., if I fetch a Hand object, and want to examine the associated xscript, until now I've either recomputed the xscript from scratch (which is expensive if I do it many times), or cached the whole thing (which is unreliable if I add a call or play and then later access that now-stale cache).
+
+  But perhaps I can cache manually, and intelligently, without getting too complex.  Just store ... something as an ordinary instance attribute, and have the xscript method consult that data and then only fetch from the db those rows that are "newer" than what's in the cache.
+
 
 * Too many redirects:
 
@@ -199,6 +197,10 @@ DONE:
   - hand.bidding_box_partial_view
   - hand.auction_partial_view
 
+
+* HEY! Bob can see *all* the cards at <https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/> ... I thought I fixed that :-(
+
+  ... I need to put ACLs around "list" as well as around "retrieve", it seems.
 
 * BUG -- `_display_and_control` is messed up.  It lets bob -- who is currently West at table 2, playing hand 22 -- see West's cards on hand 1, board 1, even though amy is sitting there, not bob.
 
