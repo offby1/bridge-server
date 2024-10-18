@@ -149,6 +149,9 @@ class Hand(models.Model):
     )  # type: ignore
 
     def libraryThing(self, seat: Seat) -> libHand:
+        from . import Seat
+
+        assert_type(seat, Seat)
         return libHand(cards=sorted(self.current_cards_by_seat()[seat.libraryThing]))
 
     summary_for_this_viewer: str

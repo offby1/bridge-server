@@ -1,7 +1,7 @@
 import random
 
 import tqdm
-from app.models import Player, Table
+from app.models import Hand, Player, Table
 from app.models.hand import AuctionError
 from bridge.contract import Bid as libBid
 from django.contrib.auth.hashers import make_password
@@ -135,19 +135,23 @@ class Command(BaseCommand):
 
         # Now find some tables with complete auctions, and play a few cards.
         playable_tables = [t for t in Table.objects.all() if t.current_auction.found_contract]
+        t: Table
         for t in tqdm.tqdm(
             playable_tables,
             desc="tables",
             unit="t",
         ):
+            h: Hand = t.current_hand
             for _ in range(2):
-                legal_cards = t.current_hand.get_xscript().legal_cards()
+                some_hand = h.libraryThing(h.player_who_may_play.most_recent_seat)
+
+                legal_cards = t.current_hand.get_xscript().legal_cards(some_hand=some_hand)
                 if legal_cards:
                     chosen_card = random.choice(legal_cards)
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     t.current_hand.add_play_from_player(
-                        player=t.current_hand.get_xscript().current_named_seat, card=chosen_card
+                        player=h.player_who_may_play.libraryThing, card=chosen_card
                     )
                     t = Table.objects.get(pk=t.pk)
 
