@@ -104,10 +104,10 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
 
     for wat in itertools.count(0):
         cc_bs = t1.current_hand.current_cards_by_seat()
-
+        print(f"\nBTW, {t1.current_hand.player_who_may_play.name=}")
         named_seats = t1.current_hand.get_xscript().named_seats[0]
-        print(f"{named_seats.name} plays", end="...")
         some_hand = bridge.table.Hand(cards=sorted(cc_bs[named_seats.seat]))
+        print(f"{named_seats.name} holds {len(some_hand.cards)} cards; plays", end="...")
 
         # play out the hand
         legal_cards = t1.current_hand.get_xscript().legal_cards(some_hand=some_hand)
