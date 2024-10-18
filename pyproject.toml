@@ -18,8 +18,8 @@ faker = "^26.0.0"
 more-itertools = "^10.3.0"
 pytest-django = "^4.7.0"
 tqdm = "^4.66.4"
-#bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "4bdeaa3adf9a4384d7c5e1d75557b44b6e4290f6" }
-bridge = {path = "../library", develop = true}
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "1aafe380451df58487f4de97f4fcf0347b3f9753" }
+#bridge = {path = "../library", develop = true}
 django-eventstream = {extras = ["drf"], version = "^5.3.0"}
 daphne = "^4.1.2"
 django-template-partials = "^24.4"
