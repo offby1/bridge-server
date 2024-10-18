@@ -57,12 +57,12 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
     """
     assert_type(c, bridge.card.Card)
 
-    t = hand.table.libraryThing
+    t: bridge.table.Table = hand.table.libraryThing
 
     xscript = hand.get_xscript()
     me = xscript.current_named_seat()
-    lho = t.get_lho_seat(me.seat)
-    rho = t.get_partner_seat(lho)
+    lho: bridge.seat.Seat = t.get_lho_seat(me.seat)
+    rho: bridge.seat.Seat = t.get_partner_seat(lho)
 
     hidden_opponents_seats_to_consider = [lho, rho]
 
@@ -75,8 +75,8 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
 
     cards_in_opponents_hands: list[bridge.card.Card] = []
     for _opp_seat in hidden_opponents_seats_to_consider:
-        opps_hand = hand.board.cards_for_direction(_opp_seat)
-        cards_in_opponents_hands.extend(opps_hand.cards)
+        opps_hand = hand.board.cards_for_direction(_opp_seat.value)
+        cards_in_opponents_hands.extend(opps_hand)
 
     assert isinstance(xscript.auction.status, Contract)
 
