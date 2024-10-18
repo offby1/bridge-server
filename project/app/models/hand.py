@@ -215,7 +215,6 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play"
             raise PlayError(msg)
 
-        # If this is the last play in a trick, `xscript` will silently go back and update the play that won it.
         legal_cards = self.get_xscript().legal_cards(
             some_hand=self.players_remaining_cards(player=player)
         )
@@ -449,17 +448,6 @@ class Hand(models.Model):
         return flattened
 
     @property
-    def status(self) -> str:
-        winning_plays = self.play_set.filter(won_its_trick=True)
-        wins_by_seat: dict[libSeat, int] = collections.defaultdict(int)
-        for p in winning_plays:
-            wins_by_seat[p.seat] += 1
-        east_west = wins_by_seat[libSeat.EAST] + wins_by_seat[libSeat.WEST]
-        north_south = wins_by_seat[libSeat.NORTH] + wins_by_seat[libSeat.SOUTH]
-
-        return f"{east_west=}; {north_south=}"
-
-    @property
     def plays(self):
         return self.play_set.order_by("id")
 
@@ -559,10 +547,6 @@ class Play(models.Model):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
-
-    # This is redundant -- it can in theory be computed given that we know who made the opening lead, the trump suit,
-    # and the rules of bridge.  But geez.
-    won_its_trick = models.BooleanField(null=True)
 
     hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
 

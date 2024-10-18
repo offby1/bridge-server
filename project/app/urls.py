@@ -45,11 +45,6 @@ urlpatterns = [
     ),
     path("signup/", signup_view, name="signup"),
     path(
-        "table/<table_pk>/hand-summary-status",
-        table.details.hand_summary_view,
-        name="hand-summary-view",
-    ),
-    path(
         "table/<pk>/new-board-plz",
         table.details.new_board_view,
         name="new-board-plz",

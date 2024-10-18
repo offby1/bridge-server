@@ -278,7 +278,6 @@ def _four_hands_context_for_hand(
     return {
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
-        "hand_summary_endpoint": reverse("app:hand-summary-view", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
     } | _three_by_three_trick_display_context_for_hand(request, hand)
