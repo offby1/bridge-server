@@ -1,30 +1,35 @@
 import bridge.contract
+import bridge.table
 
 import app.models
+from app.models.utils import assert_type
 
 
-# TODO -- this should probably refer to a *hand*, not a *table*
-def set_auction_to(bid: bridge.contract.Bid, table: app.models.Table) -> app.models.Table:
-    def next_caller(current_caller):
-        libTable = table.current_hand.auction.table
+def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.models.Hand:
+    assert_type(hand, app.models.Hand)
+
+    def next_caller(current_caller: bridge.table.Player) -> bridge.table.Player:
+        libTable = hand.auction.table
         return libTable.get_lho(current_caller)
 
-    caller = table.current_hand.auction.allowed_caller()
+    assert len(hand.auction.player_calls) == 0
 
-    table.current_hand.add_call_from_player(player=caller, call=bid)
-    table = app.models.Table.objects.get(pk=table.pk)
+    caller = hand.auction.allowed_caller()
+
+    hand.add_call_from_player(player=caller, call=bid)
+    assert len(hand.auction.player_calls) == 1
     caller = next_caller(caller)
 
-    table.current_hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    table = app.models.Table.objects.get(pk=table.pk)
+    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    assert len(hand.auction.player_calls) == 2
     caller = next_caller(caller)
 
-    table.current_hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    table = app.models.Table.objects.get(pk=table.pk)
+    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    assert len(hand.auction.player_calls) == 3
     caller = next_caller(caller)
 
-    table.current_hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    table = app.models.Table.objects.get(pk=table.pk)
-    assert table.current_auction.found_contract
+    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    assert len(hand.auction.player_calls) == 4
+    assert hand.auction.found_contract
 
-    return table
+    return hand

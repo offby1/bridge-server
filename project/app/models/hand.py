@@ -119,6 +119,7 @@ class HandManager(models.Manager):
             channel=str(rv.table.pk), data={"new-hand": NewHandSerializer(rv).data}
         )
 
+        logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
         return rv
 
 
@@ -159,13 +160,34 @@ class Hand(models.Model):
     _xscript: HandTranscript
 
     def get_xscript(self) -> HandTranscript:
+        def calls_starting_with(start: int) -> Iterator[tuple[libPlayer, libCall]]:
+            libTable = self.table.libraryThing
+            for index, (seat, call) in enumerate(self.annotated_calls):
+                if index >= start:
+                    player = libTable.players[seat]
+                    yield (player, call.libraryThing)
+
         if not hasattr(self, "_xscript"):
+            auction = libAuction(table=self.table.libraryThing, dealer=libSeat(self.board.dealer))
+
+            for player, call in calls_starting_with(0):
+                auction.append_located_call(player=player, call=call)
+
             self._xscript = HandTranscript(
                 table=self.table.libraryThing,
-                auction=self.auction,
+                auction=auction,
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
             )
+
+        num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
+
+        if num_missing_calls > 0:
+            c: Call
+            for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
+                logger.debug("Adding %s", c.serialized)
+                self._xscript.add_call(libBid.deserialize(c.serialized))
+                logger.debug("now, _xscript calls: %s", len(self._xscript.auction.player_calls))
 
         num_missing_plays = self.plays.count() - self._xscript.num_plays
         if num_missing_plays > 0:
@@ -186,6 +208,12 @@ class Hand(models.Model):
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
+
+        logger.debug(
+            "Having added %s, now %s is the allowed caller",
+            call.serialize(),
+            self.player_who_may_call,
+        )
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
@@ -212,7 +240,7 @@ class Hand(models.Model):
             raise PlayError(msg)
 
         if player.name != legit_player.name:
-            msg = f"It is not {player.name}'s turn to play"
+            msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
             raise PlayError(msg)
 
         legal_cards = self.get_xscript().legal_cards(
@@ -242,14 +270,22 @@ class Hand(models.Model):
     # If this proves slow, we can do some manual caching similar to `get_xscript`
     @property
     def auction(self) -> libAuction:
-        dealer = libSeat(self.board.dealer)
+        return self.get_xscript().auction
 
-        libTable = self.table.libraryThing
-        rv = libAuction(table=libTable, dealer=dealer)
-        for seat, call in self.annotated_calls:
-            player = libTable.players[seat]
-            rv.append_located_call(player=player, call=call.libraryThing)
-        return rv
+    @property
+    def current_auction_status(self) -> str:
+        s = self.auction.status
+        if s is self.auction.Incomplete:
+            calls = self.auction.player_calls
+            calls_description = "no calls"
+            if calls:
+                last = calls[-1]
+                plural_suffix = "" if len(calls) == 1 else "s"
+                calls_description = (
+                    f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
+                )
+            return calls_description
+        return str(s)
 
     @property
     def declarer(self) -> libPlayer | None:
@@ -332,7 +368,7 @@ class Hand(models.Model):
         whose_turn_is_it = None
 
         if xscript.auction.found_contract:
-            whose_turn_is_it = xscript.next_seat()
+            whose_turn_is_it = xscript.next_seat_to_play()
 
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.

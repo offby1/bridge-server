@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import dataclasses
+from typing import Any
 
 from django.db import connection
 
@@ -35,35 +37,23 @@ __all__ = [
 ]
 
 
+@dataclasses.dataclass
 class QueryLogger:
-    def __init__(self, name=None):
-        self.prefix = f"{name}: " if name is not None else ""
-        self.calls = []
+    calls: list[tuple[Any]] = dataclasses.field(default_factory=list)
+    counter: collections.Counter = dataclasses.field(default_factory=collections.Counter)
 
     def __call__(self, execute, sql, params, many, context):
         self.calls.append((sql, params, many, context))
+        self.counter[sql] += 1
         return execute(sql, params, many, context)
 
 
 @contextlib.contextmanager
-def logged_queries(name=None):
-    ql = QueryLogger(name=name)
+def logged_queries():
+    ql = QueryLogger()
     with connection.execute_wrapper(ql):
         try:
             yield ql
         finally:
-            categorized_calls = collections.defaultdict(list)
-            for call in ql.calls:
-                sql, params, many, context = call
-                categorized_calls[sql].append(call)
-            print(f"{len(ql.calls)=}")
-            for sql, calls in sorted(
-                categorized_calls.items(), reverse=True, key=lambda c: len(c[1])
-            ):
-                if "SAVEPOINT" in sql:  # bo-ring!
-                    continue
-                if "django_eventstream" in sql:  # also boring
-                    continue
-                print(f"{len(calls)=}: {sql:.100}")
-                params = str(collections.Counter([c[1] for c in calls]))[0:100]
-                print(f"   ... {params}")
+            import pprint
+            pprint.pprint(dict(ql.counter.most_common(3)), sort_dicts=False)

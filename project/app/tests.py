@@ -122,7 +122,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
 
 def test_legal_cards(usual_setup, rf, settings):
     t = Table.objects.first()
-    t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
     h = t.current_hand
     declarer = h.declarer
     leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing
@@ -446,7 +446,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     # Nobody done played nothin'
     assert not t.current_hand.current_trick
 
-    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
     h = t.current_hand
     declarer = h.declarer
 
