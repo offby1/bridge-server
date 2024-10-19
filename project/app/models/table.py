@@ -180,7 +180,7 @@ class Table(models.Model):
         return unplayed_boards.first()
 
     def next_board(self, *, shuffle_deck=True) -> Board:
-        if not self.hand_is_complete:
+        if self.hand_set.exists() and not self.hand_is_complete:
             # TODO -- should I allow this, or not?
             logger.warning("I dunno, man; the current hand %s isn't complete", self.current_hand)
         b = self.find_unplayed_board()

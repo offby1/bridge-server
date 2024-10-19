@@ -123,7 +123,8 @@ class Command(BaseCommand):
                 unseated_player_two,
             )
 
-        last_table: Table | None = Table.objects.order_by("-pk").first()
+        # Don't ask me how but I've seen tables without hands
+        last_table: Table | None = Table.objects.exclude(hand__isnull=True).order_by("-pk").first()
         assert last_table is not None
         self.generate_some_fake_calls_and_plays_at(last_table, Table.objects.count() - 1)
 
@@ -135,7 +136,11 @@ class Command(BaseCommand):
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
         # Now find some tables with complete auctions, and play a few cards.
-        playable_tables = [t for t in Table.objects.all() if t.current_auction.found_contract]
+        playable_tables = [
+            t
+            for t in Table.objects.exclude(hand__isnull=True).all()
+            if t.current_auction.found_contract
+        ]
         t: Table
         for t in tqdm.tqdm(
             playable_tables,
