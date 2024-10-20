@@ -422,7 +422,10 @@ class Hand(models.Model):
 
     @property
     def is_complete(self):
-        return len(self.serialized_plays()) == 52
+        return (
+            self.get_xscript().auction.status is libAuction.PassedOut
+            or len(self.serialized_plays()) == 52
+        )
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
@@ -501,15 +504,11 @@ class Hand(models.Model):
             return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so later d00d"
 
         if not self.is_complete:
-            if self.get_xscript().auction.status == self.get_xscript().auction.Incomplete:
-                censored_auction_summary = "is incomplete"
-            elif self.get_xscript().auction.status == self.get_xscript().auction.PassedOut:
-                censored_auction_summary = "was passed out"
-            else:
-                censored_auction_summary = "is complete"
-
+            censored_auction_summary = "is incomplete"
             censored_play_summary = f"{len(self.plays)} cards played"
             return f"Auction {censored_auction_summary}; {censored_play_summary}"
+        if self.get_xscript().auction.status == self.get_xscript().auction.PassedOut:
+            return "was passed out"
 
         fs = self.get_xscript().final_score()
         assert fs is not None
