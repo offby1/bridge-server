@@ -74,6 +74,10 @@
 
    in the web server's console output, whereas [the relevant board](https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/14/) shows `    "south_cards": "♣8♣T♣J♣Q♣K♦4♦5♦J♥5♥6♥K♠7♠8"`?  (NB -- the first set of cards would be correct for board 16, which is affiliated with hand 99)
 
+   Probably because `Player.libraryThing` refers to `self.most_recent_seat()`
+
+   I'm starting to think that I should hunt down and kill *most* (not all) uses of methods whose names begin with `most_recent` or `current_`.
+
 ## Oh and also
 
 In the server output (and correspondingly, in the browser's console), I see frequent errors to the effect of

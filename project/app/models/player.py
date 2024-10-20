@@ -87,6 +87,10 @@ class Player(models.Model):
             msg = f"{self} is not seated"
             raise PlayerException(msg)
 
+        logger.debug(f"{self.most_recent_seat=}")
+        logger.debug(f"{self.most_recent_seat.table=}")
+        logger.debug(f"{self.most_recent_seat.table.current_board=}")
+
         try:
             libHand = bridge.table.Hand(
                 cards=self.most_recent_seat.table.current_board.cards_for_direction(

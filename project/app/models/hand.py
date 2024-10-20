@@ -153,7 +153,9 @@ class Hand(models.Model):
         from . import Seat
 
         assert_type(seat, Seat)
-        return libHand(cards=sorted(self.current_cards_by_seat()[seat.libraryThing]))
+        cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
+        logger.debug("libraryThing: Hand %s, seat %s => %s", self.pk, seat, cards)
+        return libHand(cards=cards)
 
     summary_for_this_viewer: str
 
@@ -361,6 +363,7 @@ class Hand(models.Model):
             libCard.deserialize(p.serialized) for p in self.play_set.all()
         }  # this includes the other three player's plays, too, but it doesn't matter!
         current_cards = dealt_cards - played_cards
+        logger.debug("players_remaining_cards: Hand %s, => %s", self.pk, current_cards)
         return libHand(cards=list(current_cards))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
