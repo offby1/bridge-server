@@ -28,7 +28,15 @@ class CallSerializer(serializers.ModelSerializer):
 class HandSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Hand
-        fields = ("pk", "table", "board", "is_complete", "serialized_plays", "serialized_calls")
+        fields = (
+            "pk",
+            "table",
+            "board",
+            "is_complete",
+            "serialized_plays",
+            "serialized_calls",
+            "open_access",
+        )
 
 
 class NewHandSerializer(serializers.ModelSerializer):
