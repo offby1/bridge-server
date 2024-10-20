@@ -243,11 +243,13 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
             raise PlayError(msg)
 
+        logger.debug(f"{player}'s cards are {player.hand}")
+
         legal_cards = self.get_xscript().legal_cards(
             some_hand=self.players_remaining_cards(player=player)
         )
         if card not in legal_cards:
-            msg = f"{card} is not a legal play"
+            msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
