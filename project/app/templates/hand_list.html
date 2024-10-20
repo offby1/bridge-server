@@ -5,6 +5,7 @@
         <table class="table">
             <th>
                 <tr>
+                    <td>ID #</td>
                     <td>Status</td>
                     <td>Board</td>
                     <td>Table</td>
@@ -14,6 +15,7 @@
             </th>
             {% for hand in page_obj %}
                 <tr>
+                    <td>{{ hand.pk }}</td>
                     <td>
                         <a href="{% url 'app:hand-archive' hand.pk %}">
                             {% if hand.is_complete %}
