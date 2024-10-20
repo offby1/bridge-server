@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 def test_keeps_accurate_transcript(usual_setup) -> None:
     t: Table = Table.objects.first()  # type: ignore
     assert t is not None
-    t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
 
     h: Hand = t.current_hand
     assert len(h.get_xscript().tricks) == 0
@@ -89,7 +89,7 @@ def test_rejects_illegal_calls(usual_setup):
 
 def test_cards_by_player(usual_setup):
     t = Table.objects.first()
-    t = set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
     east = Player.objects.get_by_name(name="Clint Eastwood")
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
@@ -148,7 +148,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     # First case: completed auction, contract is one diamond, not doubled.
     t = Table.objects.first()
     assert t is not None
-    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
     # set_auction_to has set the declarer to be the dealer.
 
     assert t.current_auction.found_contract
@@ -218,7 +218,7 @@ def test_current_trick(usual_setup) -> None:
     # Nobody done played nothin'
     assert not t.current_hand.current_trick
 
-    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
     declarer = t.current_hand.declarer
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
@@ -250,10 +250,11 @@ def test_next_seat_to_play(usual_setup) -> None:
 
     assert t.next_seat_to_play is None, "There's been no auction, so nobody can play"
 
-    t = set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
     h = t.current_hand
 
     assert h.declarer.seat == libSeat.NORTH
+    assert t.next_seat_to_play is not None
     assert t.next_seat_to_play.named_direction == "EAST"
 
 
@@ -268,7 +269,7 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
             event_counts_by_keyword[keyword] += 1
 
     monkeypatch.setattr(hand, "send_event", send_event)
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
     assert (
         event_counts_by_keyword["new-call"] == 2 * 4

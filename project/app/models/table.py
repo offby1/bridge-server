@@ -95,24 +95,9 @@ class Table(models.Model):
             )
         return bridge.table.Table(players=players)
 
-    @cached_property
+    @property
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
-
-    @cached_property
-    def current_auction_status(self) -> str:
-        s = self.current_auction.status
-        if s is self.current_auction.Incomplete:
-            calls = self.current_auction.player_calls
-            calls_description = "no calls"
-            if calls:
-                last = calls[-1]
-                plural_suffix = "" if len(calls) == 1 else "s"
-                calls_description = (
-                    f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
-                )
-            return calls_description
-        return str(s)
 
     @cached_property
     def current_hand(self) -> Hand:
@@ -179,11 +164,14 @@ class Table(models.Model):
 
         return unplayed_boards.first()
 
-    def next_board(self, *, shuffle_deck=True) -> Board:
-        if not self.hand_is_complete:
+    def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
+        if self.hand_set.exists() and not self.hand_is_complete:
             # TODO -- should I allow this, or not?
             logger.warning("I dunno, man; the current hand %s isn't complete", self.current_hand)
-        b = self.find_unplayed_board()
+        if desired_board_pk is not None:
+            b = Board.objects.get(pk=desired_board_pk)
+        else:
+            b = self.find_unplayed_board()
         if b is None:
             if Board.objects.count() >= TOTAL_BOARDS:
                 msg = "No more tables! The tournament is over."
@@ -198,7 +186,6 @@ class Table(models.Model):
                 deck=deck,
             )
         Hand.objects.create(board=b, table=self)
-
         return b
 
     @property

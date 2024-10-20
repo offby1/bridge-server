@@ -6,7 +6,7 @@ from bridge.contract import Bid
 from bridge.seat import Seat
 from django.contrib import auth
 
-from .models import Player, Table
+from .models import Board, Player, Table
 from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
@@ -14,7 +14,7 @@ from .views.hand import _display_and_control
 def test_table_dataclass_thingy(usual_setup: None) -> None:
     t = Table.objects.first()
     assert t is not None
-    t = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
     assert t.current_auction.declarer.seat == Seat.NORTH
 
     ds = t.current_hand.display_skeleton()
@@ -30,7 +30,7 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
 def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
-    t1 = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1)
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
 
     assert str(t1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
@@ -49,8 +49,12 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         shuffle_deck=False,
     )
 
-    t2.next_board()
-    t2 = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2)
+    print(f"{t1.current_board} {t2.current_board}")
+    b2 = Board.objects.create_from_deck(deck=bridge.card.Card.deck())
+    t2.next_board(desired_board_pk=b2.pk)
+    del t2.current_hand  # this is normally cached
+    print(f"{t1.current_board} {t2.current_board}")
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
 
     def expect_visibility(expectation_array):
         for seat in t1.current_hand.players_by_direction:
@@ -73,7 +77,7 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
                 )
                 assert (
                     actual2["display_cards"] is False
-                ), "wtf -- player at table 1 can see cards at table 2??"
+                ), f"wtf -- player at table 1 (board {t1.current_board}) can see cards at table 2 (board {t2.current_board})??"
 
     expect_visibility(
         [
@@ -163,7 +167,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
         ]
     )
 
-    t = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
     assert str(t.current_hand.auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     # Only opening leader can control his cards

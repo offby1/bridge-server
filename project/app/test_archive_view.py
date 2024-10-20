@@ -25,7 +25,7 @@ def test_final_score(usual_setup: None, rf: Any) -> None:
     t = Table.objects.first()
     assert t is not None
 
-    t = set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t)
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
 
     request = rf.get("/woteva/", data={"pk": t.pk})
     request.user = north.user
