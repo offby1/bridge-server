@@ -192,10 +192,13 @@ class Hand(models.Model):
                 logger.debug("now, _xscript calls: %s", len(self._xscript.auction.player_calls))
 
         num_missing_plays = self.plays.count() - self._xscript.num_plays
-        assert not num_missing_plays < 0
+        assert (
+            not num_missing_plays < 0
+        ), f"{self.plays.count()=} but {self._xscript.num_plays=} -- {self._xscript.tricks=}"
         if num_missing_plays > 0:
             p: Play
             for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
+                logger.warning("Adding %s to %s", p.serialized, id(self._xscript))
                 self._xscript.add_card(libCard.deserialize(p.serialized))
 
         return self._xscript
