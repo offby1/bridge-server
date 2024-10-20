@@ -90,17 +90,18 @@ def test_rejects_illegal_calls(usual_setup):
 def test_cards_by_player(usual_setup) -> None:
     t: Table | None = Table.objects.first()
     assert t is not None
+
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
     assert t.current_auction.declarer is not None
-    east = Player.objects.get_by_name(name="Clint Eastwood")
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
-    diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
-    h = t.current_hand
-    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
-    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
+    east = Player.objects.get_by_name(name="Clint Eastwood")
 
-    t = Table.objects.get(pk=t.pk)
+    h: Hand = t.current_hand
+    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
+
+    diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
+    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
 
     # TODO -- check that the card was played from the correct hand.
     after = set(chain.from_iterable(h.current_cards_by_seat().values()))
