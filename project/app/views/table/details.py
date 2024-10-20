@@ -111,9 +111,10 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
     ):
         pass
     elif not (h.open_access or whos_asking == h.player_who_may_play):
-        return HttpResponseForbidden(
-            f"Hey! {whos_asking} can't play now; only {h.player_who_may_play} can"
-        )
+        msg = f"Hand {h.pk} says: Hey! {whos_asking} can't play now; only {h.player_who_may_play} can; {h.open_access=}"
+        logger.debug("%s", msg)
+        return HttpResponseForbidden(msg)
+
 
     card = bridge.card.Card.deserialize(request.POST["play"])
     h.add_play_from_player(player=seat.player.libraryThing, card=card)
