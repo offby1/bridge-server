@@ -5,7 +5,7 @@ from .models import Hand, Player, Table, logged_queries
 from .views.hand import hand_detail_view
 
 
-def test_table_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
+def test_hand_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
     t = Table.objects.first()
     assert t is not None
     h = t.current_hand
