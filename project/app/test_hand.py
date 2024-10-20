@@ -226,10 +226,14 @@ def test_current_trick(usual_setup) -> None:
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing
+    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing(
+        hand=t.current_hand
+    )
     first_players_cards = first_player.hand.cards
 
-    second_player = t.current_hand.players_by_direction[first_players_seat.lho().value].libraryThing
+    second_player = t.current_hand.players_by_direction[
+        first_players_seat.lho().value
+    ].libraryThing(hand=t.current_hand)
     second_players_cards = second_player.hand.cards
 
     first_card = first_players_cards[0]
