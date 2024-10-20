@@ -183,7 +183,7 @@ class Hand(models.Model):
             )
 
         num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
-
+        assert not num_missing_calls < 0
         if num_missing_calls > 0:
             c: Call
             for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
@@ -192,6 +192,7 @@ class Hand(models.Model):
                 logger.debug("now, _xscript calls: %s", len(self._xscript.auction.player_calls))
 
         num_missing_plays = self.plays.count() - self._xscript.num_plays
+        assert not num_missing_plays < 0
         if num_missing_plays > 0:
             p: Play
             for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
