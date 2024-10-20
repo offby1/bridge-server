@@ -307,6 +307,7 @@ class Hand(models.Model):
             libAllowed = self.auction.allowed_caller()
             return Player.objects.get_by_name(libAllowed.name)
 
+        logger.debug(f"{self.auction.status=}, so nobody may call.  Sorry!")
         return None
 
     @property

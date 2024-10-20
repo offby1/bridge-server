@@ -443,4 +443,4 @@ def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: str) -> HttpRes
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     hand.toggle_open_access()
-    return HttpResponse()
+    return HttpResponse(f"{hand=} {hand.open_access=}")

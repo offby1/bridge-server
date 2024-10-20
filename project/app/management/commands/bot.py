@@ -166,9 +166,11 @@ class Command(BaseCommand):
         modplayer = hand.player_who_may_call
 
         if modplayer is None:
+            logger.debug(f"{modplayer=}, so returning")
             return
 
         if self.skip_player(table=table, player=modplayer):
+            logger.debug(f"{self.skip_player(table=table, player=modplayer)=}, so returning")
             return
 
         player_to_impersonate = modplayer.libraryThing

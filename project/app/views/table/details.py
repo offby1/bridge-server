@@ -115,7 +115,6 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
         logger.debug("%s", msg)
         return HttpResponseForbidden(msg)
 
-
     card = bridge.card.Card.deserialize(request.POST["play"])
     h.add_play_from_player(player=seat.player.libraryThing, card=card)
 
