@@ -257,8 +257,6 @@ class Hand(models.Model):
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
 
-        self.get_xscript().add_card(card)
-
         final_score = self.get_xscript().final_score()
 
         if final_score:
