@@ -17,7 +17,7 @@
 
   `The field 'table' was declared on serializer PlayerSerializer, but has not been included in the 'fields' option.`
 
-## So:
+## Questions to ponder:
 
 * Why are the errors mentioning hand 99 when I asked for hand 97?
 
@@ -72,14 +72,18 @@
 
         2024-10-20T22:06:50+0000 DEBUG hand.py(246) add_play_from_player      diane, sitting South's cards are ♣5♣8♣T♣J♦7♦T♦Q♥3♠3♠6♠9♠T♠K
 
-   in the web server's console output, whereas [the relevant board](https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/14/) shows `    "south_cards": "♣8♣T♣J♣Q♣K♦4♦5♦J♥5♥6♥K♠7♠8"`?  (NB -- the first set of cards would be correct for board 16, which is affiliated with hand 99)
+   in the web server's console output, whereas [the relevant board](https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/14/) correctly shows `"south_cards": "♣8♣T♣J♣Q♣K♦4♦5♦J♥5♥6♥K♠7♠8"`?  (NB -- the first set of cards would be correct for board 16, which is affiliated with hand 99)
 
    Probably because `Player.libraryThing` refers to `self.most_recent_seat()`
 
    I'm starting to think that I should hunt down and kill *most* (not all) uses of methods whose names begin with `most_recent` or `current_`.
 
-## Oh and also
+## Possily-unrelated questions
 
 In the server output (and correspondingly, in the browser's console), I see frequent errors to the effect of
 
     2024-10-20T16:18:29+0000 WARNING runserver.py(178) log_action HTTP GET /events/hand/97/ 400 [0.05, 127.0.0.1:51947]
+## Solution
+I think the problem was that `Player.libraryThing` always used the cards from `self.most_recent_seat.table.current_board`, whereas we were (somehow) looking at a hand that was *not* the most-recently played one.  (How that happened, I dunno.)
+
+So the solution was to pass a Hand object to that method, to make explicit the Hand (and hence Board) we want.

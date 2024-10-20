@@ -173,7 +173,7 @@ class Command(BaseCommand):
             logger.debug(f"{self.skip_player(table=table, player=modplayer)=}, so returning")
             return
 
-        player_to_impersonate = modplayer.libraryThing
+        player_to_impersonate = modplayer.libraryThing(hand=hand)
         a = table.current_auction
 
         call = a.random_legal_call()
@@ -208,11 +208,11 @@ class Command(BaseCommand):
                 f"Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
-    def make_a_groovy_play(self, *, hand: Hand) -> None:
-        if not hand.auction.found_contract:
+    def make_a_groovy_play(self, *, modHand: Hand) -> None:
+        if not modHand.auction.found_contract:
             return
 
-        table = hand.table
+        table = modHand.table
 
         seat_to_impersonate = table.next_seat_to_play
 
@@ -222,29 +222,29 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        some_hand = bridge.table.Hand(
-            cards=sorted(hand.current_cards_by_seat()[seat_to_impersonate.libraryThing])
+        libHand = bridge.table.Hand(
+            cards=sorted(modHand.current_cards_by_seat()[seat_to_impersonate.libraryThing])
         )
-        legal_cards = hand.get_xscript().legal_cards(some_hand=some_hand)
+        legal_cards = modHand.get_xscript().legal_cards(some_hand=libHand)
         if not legal_cards:
             logger.info(
                 f"No legal cards at {seat_to_impersonate}? The hand must be over.",
             )
             return
 
-        chosen_card = hand.get_xscript().slightly_less_dumb_play(
-            order_func=functools.partial(trick_taking_power, hand=hand), some_hand=some_hand
+        chosen_card = modHand.get_xscript().slightly_less_dumb_play(
+            order_func=functools.partial(trick_taking_power, hand=modHand), some_hand=libHand
         )
 
         ranked_options = sorted(
             [
-                (c, trick_taking_power(c, hand=hand))
-                for c in hand.get_xscript().legal_cards(some_hand=some_hand)
+                (c, trick_taking_power(c, hand=modHand))
+                for c in modHand.get_xscript().legal_cards(some_hand=libHand)
             ],
             key=operator.itemgetter(1),
         )
-        p = hand.add_play_from_player(
-            player=seat_to_impersonate.player.libraryThing, card=chosen_card
+        p = modHand.add_play_from_player(
+            player=seat_to_impersonate.player.libraryThing(hand=modHand), card=chosen_card
         )
         logger.info(f"{p} out of {ranked_options=}")
 
@@ -295,7 +295,7 @@ class Command(BaseCommand):
             )
         elif data.get("new-play") is not None or "contract_text" in data:
             self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
             )
         elif {"table", "direction", "action"}.issubset(data.keys()):
             logger.info(f"I believe I been poked: {data=}")
@@ -303,7 +303,7 @@ class Command(BaseCommand):
                 table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
             )
             self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
             )
         elif "final_score" in data:
             logger.info(
