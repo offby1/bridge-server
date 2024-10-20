@@ -68,6 +68,12 @@
 
   Wayul, apparently that 94 is a *seat* ID, not a *hand* ID.  This is confusing, but not, strictly speaking, a bug.
 
+* Why do I see
+
+        2024-10-20T22:06:50+0000 DEBUG hand.py(246) add_play_from_player      diane, sitting South's cards are ♣5♣8♣T♣J♦7♦T♦Q♥3♠3♠6♠9♠T♠K
+
+   in the web server's console output, whereas [the relevant board](https://erics-work-macbook-pro.tail571dc2.ts.net/api/boards/14/) shows `    "south_cards": "♣8♣T♣J♣Q♣K♦4♦5♦J♥5♥6♥K♠7♠8"`?  (NB -- the first set of cards would be correct for board 16, which is affiliated with hand 99)
+
 ## Oh and also
 
 In the server output (and correspondingly, in the browser's console), I see frequent errors to the effect of
