@@ -162,7 +162,11 @@ def _display_and_control(
 
 
 def _single_hand_as_four_divs(
-    *, all_four: AllFourSuitHoldings, seat_pk: str, viewer_may_control_this_seat: bool
+    *,
+    all_four: AllFourSuitHoldings,
+    hand: app.models.Hand,
+    seat_pk: str,
+    viewer_may_control_this_seat: bool,
 ) -> SafeString:
     def card_button(c: bridge.card.Card) -> str:
         return f"""<button
@@ -170,7 +174,7 @@ def _single_hand_as_four_divs(
         class="btn btn-primary"
         name="play" value="{c.serialize()}"
         style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
-        hx-post="{reverse("app:play-post", args=[seat_pk])}"
+        hx-post="{reverse("app:play-post", kwargs={"hand_pk": hand.pk, "seat_pk": seat_pk})}"
         hx-swap="none"
         >{c}</button>"""
 
@@ -264,6 +268,7 @@ def _four_hands_context_for_hand(
         if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(
                 all_four=suitholdings,
+                hand=hand,
                 seat_pk=this_seats_player.most_recent_seat.pk,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )

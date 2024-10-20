@@ -96,10 +96,11 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
+def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
     seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
-    h = seat.table.current_hand
+    h = get_object_or_404(app.models.Hand, pk=hand_pk)
+
     if h.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
     assert whos_asking is not None
