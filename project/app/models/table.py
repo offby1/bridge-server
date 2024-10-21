@@ -107,12 +107,7 @@ class Table(models.Model):
 
     @property
     def hand_is_complete(self) -> bool:
-        h = self.current_hand
-        if h is None:
-            return False
-        # TODO -- replace the 52 with ... something?  Probably the count of cards in the current board.
-        # Or maybe ... return `self.current_hand.is_complete`? 🙄
-        return self.current_hand.play_set.count() == 52
+        return self.current_hand.is_complete
 
     @property
     def dealer(self):
