@@ -38,7 +38,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--players",
-            default=14,
+            default=40,
             type=int,
         )
 
