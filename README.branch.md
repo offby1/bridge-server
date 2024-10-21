@@ -54,7 +54,21 @@
     ...
   ```
 
-  How tf did this happen?
+  How tf did this happen?  Maaaaaybe someone clicked "Next Board Plz" on an incomplete hand, and that just went ahead and assigned a new hand to the table?
+
+  This mismatched-ness is reasonably common:
+
+  `In [7]: {h: h.table.current_hand for h in Hand.objects.all() if not h.is_complete}`
+
+  => note that 3/5 of these incomplete hands are not the `current_hand` at their table:
+
+  ```python
+  {<Hand: Hand 131: 13 calls; 4 plays>: <Hand: Hand 131: 13 calls; 4 plays>,
+   <Hand: Hand 138: 3 calls; 0 plays>: <Hand: Hand 146: 4 calls; 52 plays>,
+   <Hand: Hand 161: 3 calls; 0 plays>: <Hand: Hand 162: 19 calls; 52 plays>,
+   <Hand: Hand 154: 13 calls; 2 plays>: <Hand: Hand 154: 13 calls; 2 plays>,
+   <Hand: Hand 97: 7 calls; 0 plays>: <Hand: Hand 99: 4 calls; 52 plays>}
+  ```
 
 * Why the 403?
 
@@ -87,3 +101,8 @@ In the server output (and correspondingly, in the browser's console), I see freq
 I think the problem was that `Player.libraryThing` always used the cards from `self.most_recent_seat.table.current_board`, whereas we were (somehow) looking at a hand that was *not* the most-recently played one.  (How that happened, I dunno.)
 
 So the solution was to pass a Hand object to that method, to make explicit the Hand (and hence Board) we want.
+
+### Prevent this in the future
+Couple of ideas about incomplete hands not being a table's most-current:
+* prevent it entirely.  Hack `Table.next_board`, and anything similar, to simply refuse to abandon a hand in progress.
+* allow it, but mark the abandoned hand as "abandoned", and then ... I dunno ... have the "details" page redirect to the "archive" page; have the "archive" page clearly indicate that it's been abandoned, or something
