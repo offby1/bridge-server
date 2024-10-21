@@ -168,26 +168,27 @@ class Table(models.Model):
             msg = f"Naw, {self} isn't complete; no next board for you"
             raise TableException(msg)
 
-        if desired_board_pk is not None:
-            b = Board.objects.get(pk=desired_board_pk)
-        else:
-            b = self.find_unplayed_board()
-        if b is None:
-            if Board.objects.count() >= TOTAL_BOARDS:
-                msg = "No more tables! The tournament is over."
-                raise TableException(msg)
+        with transaction.atomic():
+            if desired_board_pk is not None:
+                b = Board.objects.get(pk=desired_board_pk)
+            else:
+                b = self.find_unplayed_board()
+            if b is None:
+                if Board.objects.count() >= TOTAL_BOARDS:
+                    msg = "No more tables! The tournament is over."
+                    raise TableException(msg)
 
-            logger.debug(f"{self}: no unplayed boards; making a new one")
-            deck = bridge.card.Card.deck()
+                logger.debug(f"{self}: no unplayed boards; making a new one")
+                deck = bridge.card.Card.deck()
 
-            if shuffle_deck:
-                random.shuffle(deck)
+                if shuffle_deck:
+                    random.shuffle(deck)
 
-            b = Board.objects.create_from_deck(
-                deck=deck,
-            )
-            logger.debug(f"{self}: that new board: {b=}")
-        h = Hand.objects.create(board=b, table=self)
+                b = Board.objects.create_from_deck(
+                    deck=deck,
+                )
+                logger.debug(f"{self}: that new board: {b=}")
+            h = Hand.objects.create(board=b, table=self)
         logger.debug(f"{self}: new hand: {h=} ({h.table.pk=}; {h.board.pk=}); returning {b=}")
         return b
 
