@@ -135,12 +135,10 @@ class Command(BaseCommand):
         # Schedule the action for the future
         self.action_queue.insert(0, (sleep_until, table.pk, func))
 
-        logger.info(f"Queued {func=}; queue has {len(self.action_queue)} items")
-
         # Do whatever action comes next
 
         sleep_until, table_pk, func = self.action_queue.pop(-1)
-        logger.info(f"Fetched {func=} for table {table_pk}")
+
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
             # imply we're falling behind.
@@ -271,7 +269,6 @@ class Command(BaseCommand):
         self.loggingFilter.table = table
 
         if (when := data.get("time")) is not None:
-            logger.info(f"Found {when=} in the data")
             self.last_action_timestamps_by_table_id[table.pk] = when
         elif data.get("action") != "pokey pokey":
             msg = f"{data=} aint' got no timestamp! I'm outta here."
@@ -324,7 +321,7 @@ class Command(BaseCommand):
         logger.info(f"Finally! Connected to {django_host}.")
         for msg in messages:
             self.loggingFilter.table = None
-            logger.info(str(vars(msg)))
+
             if msg.event != "keep-alive":
                 if msg.data:
                     data = json.loads(msg.data)

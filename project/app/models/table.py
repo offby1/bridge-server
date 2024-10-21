@@ -173,7 +173,6 @@ class Table(models.Model):
             msg = f"Naw, {self} isn't complete; no next board for you"
             raise TableException(msg)
 
-        print(f"{desired_board_pk=}")
         if desired_board_pk is not None:
             b = Board.objects.get(pk=desired_board_pk)
         else:

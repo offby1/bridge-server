@@ -187,9 +187,7 @@ class Hand(models.Model):
         if num_missing_calls > 0:
             c: Call
             for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
-                logger.debug("Adding %s", c.serialized)
                 self._xscript.add_call(libBid.deserialize(c.serialized))
-                logger.debug("now, _xscript calls: %s", len(self._xscript.auction.player_calls))
 
         num_missing_plays = self.plays.count() - self._xscript.num_plays
         assert (
@@ -198,7 +196,6 @@ class Hand(models.Model):
         if num_missing_plays > 0:
             p: Play
             for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
-                logger.warning("Adding %s to %s", p.serialized, id(self._xscript))
                 self._xscript.add_card(libCard.deserialize(p.serialized))
 
         return self._xscript
@@ -214,12 +211,6 @@ class Hand(models.Model):
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
-
-        logger.debug(
-            "Having added %s, now %s is the allowed caller",
-            call.serialize(),
-            self.player_who_may_call,
-        )
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
