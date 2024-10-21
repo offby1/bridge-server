@@ -294,9 +294,9 @@ class Command(BaseCommand):
             self.delay_action(
                 table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
             )
-        elif "final_score" in data:
+        elif "final_score" in data or {"table", "passed_out"}.issubset(data.keys()):
             logger.info(
-                "I guess this table's play is done, so I should poke that GIMME NEW BOARD button",
+                f"I guess this table's play is done ({data}), so I should poke that GIMME NEW BOARD button",
             )
             try:
                 self.delay_action(table=table, func=table.next_board)

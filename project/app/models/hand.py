@@ -226,6 +226,14 @@ class Hand(models.Model):
                     },
                 },
             )
+        elif self.get_xscript().auction.status is libAuction.PassedOut:
+            send_timestamped_event(
+                channel=str(self.pk),
+                data={
+                    "table": self.table.pk,
+                    "passed_out": "Yup, sure was",
+                },
+            )
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
