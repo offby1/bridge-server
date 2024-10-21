@@ -11,11 +11,11 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
-from app.models.board import TOTAL_BOARDS
+import app.models.board
 from app.models.table import TableException
 
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
-from .testutils import set_auction_to
+from .testutils import play_to_completion, set_auction_to
 from .views import hand, lobby, player, table
 
 
@@ -393,10 +393,15 @@ def test_table_creation(j_northam, rf, everybodys_password):
     assert response.status_code == 302
 
 
-def test_max_boards(usual_setup):
+def test_max_boards(usual_setup, monkeypatch):
     t = Table.objects.first()
-    for _ in range(TOTAL_BOARDS - 1):
+    monkeypatch.setattr(app.models.board, "TOTAL_BOARDS", 2)  # the default is too slow :-(
+    for _ in range(app.models.board.TOTAL_BOARDS - 1):
+        previous_hand = t.current_hand
+        set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
+        play_to_completion(t.current_hand)
         t.next_board()
+        assert t.current_hand != previous_hand
     with pytest.raises(TableException):
         t.next_board()
 

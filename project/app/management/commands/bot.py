@@ -187,15 +187,7 @@ class Command(BaseCommand):
                     break
 
             else:
-                logger.info(
-                    "I tried rilly rilly hard not to pass this hand out, but ... 😢  I'll get a new board!",
-                )
-                # TODO -- it'd probably be cleaner to do nothing here, and instead have the server send a "the hand was
-                # passed out" event, analagous to the "contract_text" message that it currently sends when an auction
-                # has settled, and then have our "dispatch" fetch the next board.
-                self.delay_action(table=table, func=table.next_board)
-
-                return
+                logger.info("I tried rilly rilly hard not to pass this hand out, but ... 😢")
 
         try:
             hand.add_call_from_player(player=player_to_impersonate, call=call)

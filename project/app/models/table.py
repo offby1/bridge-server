@@ -99,7 +99,7 @@ class Table(models.Model):
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
 
-    @cached_property
+    @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None
@@ -144,7 +144,7 @@ class Table(models.Model):
         return rv
 
     def played_boards(self) -> QuerySet:
-        return Board.objects.filter(
+        rv = Board.objects.filter(
             pk__in=RawSQL(
                 """
                 SELECT
@@ -159,16 +159,21 @@ class Table(models.Model):
                 (self.pk,),
             )
         )
+        logger.debug(f"{self}: played_boards {rv!r}")
+        return rv
 
     def find_unplayed_board(self) -> Board | None:
         unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
-
-        return unplayed_boards.first()
+        rv = unplayed_boards.first()
+        logger.debug(f"{self}: find_unplayed_board is returning {rv!r}")
+        return rv
 
     def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
-            # TODO -- should I allow this, or not?
-            logger.warning("I dunno, man; the current hand %s isn't complete", self.current_hand)
+            msg = f"Naw, {self} isn't complete; no next board for you"
+            raise TableException(msg)
+
+        print(f"{desired_board_pk=}")
         if desired_board_pk is not None:
             b = Board.objects.get(pk=desired_board_pk)
         else:
@@ -178,6 +183,7 @@ class Table(models.Model):
                 msg = "No more tables! The tournament is over."
                 raise TableException(msg)
 
+            logger.debug(f"{self}: no unplayed boards; making a new one")
             deck = bridge.card.Card.deck()
 
             if shuffle_deck:
@@ -186,7 +192,9 @@ class Table(models.Model):
             b = Board.objects.create_from_deck(
                 deck=deck,
             )
-        Hand.objects.create(board=b, table=self)
+            logger.debug(f"{self}: that new board: {b=}")
+        h = Hand.objects.create(board=b, table=self)
+        logger.debug(f"{self}: new hand: {h=} ({h.table.pk=}; {h.board.pk=}); returning {b=}")
         return b
 
     @property
