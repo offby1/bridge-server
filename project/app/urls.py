@@ -44,6 +44,7 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
+    path("table/", table.table_list_view, name="table-list"),
     path(
         "table/<pk>/new-board-plz",
         table.details.new_board_view,

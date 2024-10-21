@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+    {% block table_list %}
+        <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
+        <table class="table">
+            {# yep, it's a table of tables #}
+            <th>
+                <tr>
+                    <td>ID #</td>
+                    <td>Current Status</td>
+                    <td>Number of Boards played</td>
+                </tr>
+            </th>
+            {% for table in page_obj %}
+                <tr>
+                    <td>{{ table.pk }}</td>
+                    <td>
+                        <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
+                            Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.current_hand.current_auction_status }}
+                        </a>
+                    </td>
+                    <td>{{ table.played_boards.count }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% include "pagination-controls.html" %}
+    {% endblock table_list %}
+{% endblock content %}
