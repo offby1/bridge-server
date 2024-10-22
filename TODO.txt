@@ -20,8 +20,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* I see a lot of hand summaries like "Auction is incomplete; 27 cards played".  That makes no sense; if cards have been played, obviously there must be a contract.  Right?  RIGHT??
-
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
@@ -134,6 +132,8 @@ STILL TODO:
 
 
 DONE:
+* I see a lot of hand summaries like "Auction is incomplete; 27 cards played".  That makes no sense; if cards have been played, obviously there must be a contract.  Right?  RIGHT??
+
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
 
 * Think of some way to move the boards amongst the partners, so that a given board gets played more than once!

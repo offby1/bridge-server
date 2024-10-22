@@ -154,7 +154,6 @@ class Hand(models.Model):
 
         assert_type(seat, Seat)
         cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
-        logger.debug("libraryThing: Hand %s, seat %s => %s", self.pk, seat, cards)
         return libHand(cards=cards)
 
     summary_for_this_viewer: str
@@ -248,8 +247,6 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
             raise PlayError(msg)
 
-        logger.debug(f"{player}'s cards are {player.hand}")
-
         legal_cards = self.get_xscript().legal_cards(
             some_hand=self.players_remaining_cards(player=player)
         )
@@ -272,7 +269,6 @@ class Hand(models.Model):
 
         return rv
 
-    # If this proves slow, we can do some manual caching similar to `get_xscript`
     @property
     def auction(self) -> libAuction:
         return self.get_xscript().auction
@@ -312,7 +308,6 @@ class Hand(models.Model):
             libAllowed = self.auction.allowed_caller()
             return Player.objects.get_by_name(libAllowed.name)
 
-        logger.debug(f"{self.auction.status=}, so nobody may call.  Sorry!")
         return None
 
     @property
@@ -364,7 +359,7 @@ class Hand(models.Model):
             libCard.deserialize(p.serialized) for p in self.play_set.all()
         }  # this includes the other three player's plays, too, but it doesn't matter!
         current_cards = dealt_cards - played_cards
-        logger.debug("players_remaining_cards: Hand %s, => %s", self.pk, current_cards)
+
         return libHand(cards=list(current_cards))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:

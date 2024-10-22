@@ -139,7 +139,7 @@ class Table(models.Model):
         return rv
 
     def played_boards(self) -> QuerySet:
-        rv = Board.objects.filter(
+        return Board.objects.filter(
             pk__in=RawSQL(
                 """
                 SELECT
@@ -154,14 +154,10 @@ class Table(models.Model):
                 (self.pk,),
             )
         )
-        logger.debug(f"{self}: played_boards {rv!r}")
-        return rv
 
     def find_unplayed_board(self) -> Board | None:
         unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
-        rv = unplayed_boards.first()
-        logger.debug(f"{self}: find_unplayed_board is returning {rv!r}")
-        return rv
+        return unplayed_boards.first()
 
     def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
@@ -178,7 +174,6 @@ class Table(models.Model):
                     msg = "No more tables! The tournament is over."
                     raise TableException(msg)
 
-                logger.debug(f"{self}: no unplayed boards; making a new one")
                 deck = bridge.card.Card.deck()
 
                 if shuffle_deck:
@@ -187,9 +182,8 @@ class Table(models.Model):
                 b = Board.objects.create_from_deck(
                     deck=deck,
                 )
-                logger.debug(f"{self}: that new board: {b=}")
-            h = Hand.objects.create(board=b, table=self)
-        logger.debug(f"{self}: new hand: {h=} ({h.table.pk=}; {h.board.pk=}); returning {b=}")
+            Hand.objects.create(board=b, table=self)
+
         return b
 
     @property
