@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-from itertools import chain
 from typing import TYPE_CHECKING
 
 import pytest
@@ -98,14 +97,16 @@ def test_cards_by_player(usual_setup) -> None:
     east = Player.objects.get_by_name(name="Clint Eastwood")
 
     h: Hand = t.current_hand
-    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
+    before = set(h.current_cards_by_seat()[libSeat.EAST])
+    assert len(before) == 13  # just checkin' :-)
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
     h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
 
-    # TODO -- check that the card was played from the correct hand.
-    after = set(chain.from_iterable(h.current_cards_by_seat().values()))
+    after = set(h.current_cards_by_seat()[libSeat.EAST])
     assert before - after == {diamond_two}
+    for seat in (libSeat.NORTH, libSeat.SOUTH, libSeat.WEST):
+        assert len(h.current_cards_by_seat()[seat]) == 13
 
 
 def _bidding_box_as_seen_by(t: Table, as_seen_by: Player | libPlayer, rf) -> TemplateResponse:
