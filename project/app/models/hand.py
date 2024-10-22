@@ -508,18 +508,23 @@ class Hand(models.Model):
             return "Remind me -- who are you, again?"
 
         if not as_viewed_by.has_ever_seen_board(self.board):
-            return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so later d00d"
+            return f"Sorry, {as_viewed_by}, but you have never played board {self.board.pk}, so later d00d"
 
-        if not self.is_complete:
-            censored_auction_summary = "is incomplete"
-            censored_play_summary = f"{len(self.plays)} cards played"
-            return f"Auction {censored_auction_summary}; {censored_play_summary}"
-        if self.get_xscript().auction.status == self.get_xscript().auction.PassedOut:
-            return "was passed out"
+        auction_status = self.get_xscript().auction.status
+
+        if auction_status is self.auction.Incomplete:
+            return "Auction incomplete"
+
+        if auction_status is self.auction.PassedOut:
+            return "Passed Out"
+
+        if len(self.serialized_plays()) < 52:
+            return f"{auction_status}: {len(self.plays)} cards played"
 
         fs = self.get_xscript().final_score()
         assert fs is not None
-        return f"{fs.trick_summary}"
+
+        return f"{auction_status}: {fs.trick_summary}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
