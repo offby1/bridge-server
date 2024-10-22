@@ -20,6 +20,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Thread-ify the bot, in order to speed it up.  I *think* it's still basically processing a message, sleeping, processing the next, &c.
+
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
