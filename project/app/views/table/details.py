@@ -87,7 +87,6 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
         hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
     )
 
-    logger.debug(f"{from_whom=} {who_clicked=} {hand.player_who_may_call=}")
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
@@ -96,7 +95,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
             player=from_whom,
             call=libCall,
         )
-    except Exception as e:
+    except bridge.auction.AuctionException as e:
         return HttpResponseForbidden(str(e))
 
     return HttpResponse()

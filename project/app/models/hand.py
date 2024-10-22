@@ -204,11 +204,11 @@ class Hand(models.Model):
         assert_type(call, libCall)
 
         auction = self.auction
-        try:
-            auction.raise_if_illegal_call(player=player, call=call)
-        except Exception as e:
-            raise AuctionError(str(e)) from e
 
+        auction.raise_if_illegal_call(player=player, call=call)
+
+        msg = "OK, that's a surprise"
+        raise AssertionError(msg)
         self.call_set.create(serialized=call.serialize())
 
         if self.declarer:  # the auction just settled
