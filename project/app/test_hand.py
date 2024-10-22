@@ -5,7 +5,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 import pytest
-from bridge.card import Card
+from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
@@ -31,7 +31,7 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     declarer = h.declarer
     assert declarer is not None
     first_players_seat = declarer.seat.lho()
-    first_player = h.players_by_direction[first_players_seat.value].libraryThing
+    first_player = h.players_by_direction[first_players_seat.value].libraryThing(hand=h)
     first_players_cards = first_player.hand.cards
     print(f"{first_players_cards=}")
     first_card = first_players_cards[0]
@@ -87,18 +87,21 @@ def test_rejects_illegal_calls(usual_setup):
     assert "Double" in str(calls[2])
 
 
-def test_cards_by_player(usual_setup):
-    t = Table.objects.first()
+def test_cards_by_player(usual_setup) -> None:
+    t: Table | None = Table.objects.first()
+    assert t is not None
+
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
-    east = Player.objects.get_by_name(name="Clint Eastwood")
+    assert t.current_auction.declarer is not None
     assert t.current_auction.declarer.seat == libSeat.NORTH
 
-    diamond_two = Card(suit=libSuit.DIAMONDS, rank=2)
-    h = t.current_hand
-    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
-    h.add_play_from_player(player=east.libraryThing, card=diamond_two)
+    east = Player.objects.get_by_name(name="Clint Eastwood")
 
-    t = Table.objects.get(pk=t.pk)
+    h: Hand = t.current_hand
+    before = set(chain.from_iterable(h.current_cards_by_seat().values()))
+
+    diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
+    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
 
     # TODO -- check that the card was played from the correct hand.
     after = set(chain.from_iterable(h.current_cards_by_seat().values()))
@@ -223,10 +226,14 @@ def test_current_trick(usual_setup) -> None:
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing
+    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing(
+        hand=t.current_hand
+    )
     first_players_cards = first_player.hand.cards
 
-    second_player = t.current_hand.players_by_direction[first_players_seat.lho().value].libraryThing
+    second_player = t.current_hand.players_by_direction[
+        first_players_seat.lho().value
+    ].libraryThing(hand=t.current_hand)
     second_players_cards = second_player.hand.cards
 
     first_card = first_players_cards[0]

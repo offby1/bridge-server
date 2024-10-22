@@ -1,5 +1,3 @@
-import itertools
-
 import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
@@ -7,7 +5,7 @@ from bridge.seat import Seat
 from django.contrib import auth
 
 from .models import Board, Player, Table
-from .testutils import set_auction_to
+from .testutils import play_to_completion, set_auction_to
 from .views.hand import _display_and_control
 
 
@@ -48,11 +46,13 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         p2=Player.objects.get_by_name("e2"),
         shuffle_deck=False,
     )
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
+    play_to_completion(t2.current_hand)
 
     print(f"{t1.current_board} {t2.current_board}")
     b2 = Board.objects.create_from_deck(deck=bridge.card.Card.deck())
     t2.next_board(desired_board_pk=b2.pk)
-    del t2.current_hand  # this is normally cached
+
     print(f"{t1.current_board} {t2.current_board}")
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
 
@@ -91,7 +91,9 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
 
     # Make the opening lead
     t1.current_hand.add_play_from_player(
-        player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
+        player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing(
+            hand=t1.current_hand
+        ),
         card=Card.deserialize("D2"),
     )
 
@@ -106,26 +108,7 @@ def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> No
         ]
     )
 
-    for wat in itertools.count(1):
-        cc_bs = t1.current_hand.current_cards_by_seat()
-        print(f"\nBTW, {t1.current_hand.player_who_may_play.name=}")
-        named_seats = t1.current_hand.get_xscript().named_seats[0]
-        some_hand = bridge.table.Hand(cards=sorted(cc_bs[named_seats.seat]))
-        print(f"{named_seats.name} holds {len(some_hand.cards)} cards; plays", end="...")
-
-        # play out the hand
-        legal_cards = t1.current_hand.get_xscript().legal_cards(some_hand=some_hand)
-        print(f" (out of {legal_cards=})", end="...")
-        if not legal_cards:
-            break
-        chosen_card = legal_cards[0]
-        print(f"{chosen_card=}")
-        wat += 1
-
-        t1.current_hand.add_play_from_player(
-            player=t1.current_hand.player_who_may_play.libraryThing, card=chosen_card
-        )
-    assert wat == 52
+    play_to_completion(t1.current_hand)
 
     expect_visibility(
         [
@@ -183,7 +166,9 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
 
     # Make the opening lead
     t.current_hand.add_play_from_player(
-        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing,
+        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing(
+            hand=t.current_hand
+        ),
         card=Card.deserialize("D2"),
     )
 

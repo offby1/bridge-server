@@ -72,7 +72,7 @@ class PlayerSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Player
-        fields = ("name", "pk", "allow_bot_to_play_for_me")
+        fields = ("name", "pk", "allow_bot_to_play_for_me", "table")
 
 
 class SeatSerializer(serializers.HyperlinkedModelSerializer):

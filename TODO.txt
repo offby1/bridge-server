@@ -132,6 +132,8 @@ STILL TODO:
 
 
 DONE:
+* I see a lot of hand summaries like "Auction is incomplete; 27 cards played".  That makes no sense; if cards have been played, obviously there must be a contract.  Right?  RIGHT??
+
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
 
 * Think of some way to move the boards amongst the partners, so that a given board gets played more than once!

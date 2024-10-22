@@ -38,7 +38,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--players",
-            default=14,
+            default=40,
             type=int,
         )
 
@@ -159,7 +159,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"At {t}, playing {chosen_card} from {legal_cards}")
                     t.current_hand.add_play_from_player(
-                        player=h.player_who_may_play.libraryThing, card=chosen_card
+                        player=h.player_who_may_play.libraryThing(hand=h), card=chosen_card
                     )
                     t = Table.objects.get(pk=t.pk)
 

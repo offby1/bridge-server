@@ -78,27 +78,17 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
-    @property
-    def libraryThing(self) -> bridge.table.Player:
+    def libraryThing(self, *, hand: Hand) -> bridge.table.Player:
         """
         The returned object contains their hand *as dealt*, not necessarily their current holding.
         """
-        if self.most_recent_seat is None:
-            msg = f"{self} is not seated"
-            raise PlayerException(msg)
 
-        try:
-            libHand = bridge.table.Hand(
-                cards=self.most_recent_seat.table.current_board.cards_for_direction(
-                    self.most_recent_seat.direction
-                ),
-            )
-        except KeyError as e:
-            msg = f"{self} just might not be seated at {self.current_table}"
-            raise PlayerException(msg) from e
+        seat = Seat.objects.get(player=self, table=hand.table)
+
+        libHand = hand.libraryThing(seat)
 
         return bridge.table.Player(
-            seat=self.most_recent_seat.libraryThing,
+            seat=seat.libraryThing,
             name=self.name,
             hand=libHand,
         )

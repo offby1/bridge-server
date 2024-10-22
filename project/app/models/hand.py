@@ -153,7 +153,8 @@ class Hand(models.Model):
         from . import Seat
 
         assert_type(seat, Seat)
-        return libHand(cards=sorted(self.current_cards_by_seat()[seat.libraryThing]))
+        cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
+        return libHand(cards=cards)
 
     summary_for_this_viewer: str
 
@@ -181,15 +182,16 @@ class Hand(models.Model):
             )
 
         num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
-
+        assert not num_missing_calls < 0
         if num_missing_calls > 0:
             c: Call
             for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
-                logger.debug("Adding %s", c.serialized)
                 self._xscript.add_call(libBid.deserialize(c.serialized))
-                logger.debug("now, _xscript calls: %s", len(self._xscript.auction.player_calls))
 
         num_missing_plays = self.plays.count() - self._xscript.num_plays
+        assert (
+            not num_missing_plays < 0
+        ), f"{self.plays.count()=} but {self._xscript.num_plays=} -- {self._xscript.tricks=}"
         if num_missing_plays > 0:
             p: Play
             for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
@@ -209,12 +211,6 @@ class Hand(models.Model):
 
         self.call_set.create(serialized=call.serialize())
 
-        logger.debug(
-            "Having added %s, now %s is the allowed caller",
-            call.serialize(),
-            self.player_who_may_call,
-        )
-
         if self.declarer:  # the auction just settled
             contract = self.auction.status
             assert isinstance(contract, libContract)
@@ -227,6 +223,14 @@ class Hand(models.Model):
                     "contract": {
                         "opening_leader": contract.declarer.seat.lho().value,
                     },
+                },
+            )
+        elif self.get_xscript().auction.status is libAuction.PassedOut:
+            send_timestamped_event(
+                channel=str(self.pk),
+                data={
+                    "table": self.table.pk,
+                    "passed_out": "Yup, sure was",
                 },
             )
 
@@ -247,12 +251,10 @@ class Hand(models.Model):
             some_hand=self.players_remaining_cards(player=player)
         )
         if card not in legal_cards:
-            msg = f"{card} is not a legal play"
+            msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
-
-        self._xscript.add_card(card)
 
         final_score = self.get_xscript().final_score()
 
@@ -267,7 +269,6 @@ class Hand(models.Model):
 
         return rv
 
-    # If this proves slow, we can do some manual caching similar to `get_xscript`
     @property
     def auction(self) -> libAuction:
         return self.get_xscript().auction
@@ -358,6 +359,7 @@ class Hand(models.Model):
             libCard.deserialize(p.serialized) for p in self.play_set.all()
         }  # this includes the other three player's plays, too, but it doesn't matter!
         current_cards = dealt_cards - played_cards
+
         return libHand(cards=list(current_cards))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
@@ -501,18 +503,23 @@ class Hand(models.Model):
             return "Remind me -- who are you, again?"
 
         if not as_viewed_by.has_ever_seen_board(self.board):
-            return f"Sorry, {as_viewed_by}, but you have never played {self.board}, so later d00d"
+            return f"Sorry, {as_viewed_by}, but you have never played board {self.board.pk}, so later d00d"
 
-        if not self.is_complete:
-            censored_auction_summary = "is incomplete"
-            censored_play_summary = f"{len(self.plays)} cards played"
-            return f"Auction {censored_auction_summary}; {censored_play_summary}"
-        if self.get_xscript().auction.status == self.get_xscript().auction.PassedOut:
-            return "was passed out"
+        auction_status = self.get_xscript().auction.status
+
+        if auction_status is self.auction.Incomplete:
+            return "Auction incomplete"
+
+        if auction_status is self.auction.PassedOut:
+            return "Passed Out"
+
+        if len(self.serialized_plays()) < 52:
+            return f"{auction_status}: {len(self.plays)} cards played"
 
         fs = self.get_xscript().final_score()
         assert fs is not None
-        return f"{fs.trick_summary}"
+
+        return f"{auction_status}: {fs.trick_summary}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

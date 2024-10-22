@@ -11,11 +11,11 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
-from app.models.board import TOTAL_BOARDS
+import app.models.board
 from app.models.table import TableException
 
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
-from .testutils import set_auction_to
+from .testutils import play_to_completion, set_auction_to
 from .views import hand, lobby, player, table
 
 
@@ -102,7 +102,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    norths_cards = north.libraryThing.hand.cards
+    norths_cards = north.libraryThing(hand=t.current_hand).hand.cards
 
     client = Client()
 
@@ -125,7 +125,7 @@ def test_legal_cards(usual_setup, rf, settings):
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
     h = t.current_hand
     declarer = h.declarer
-    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing
+    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing(hand=h)
 
     client = Client()
     client.login(username=leader.name, password=".")
@@ -393,10 +393,15 @@ def test_table_creation(j_northam, rf, everybodys_password):
     assert response.status_code == 302
 
 
-def test_max_boards(usual_setup):
+def test_max_boards(usual_setup, monkeypatch):
     t = Table.objects.first()
-    for _ in range(TOTAL_BOARDS - 1):
+    monkeypatch.setattr(app.models.board, "TOTAL_BOARDS", 2)  # the default is too slow :-(
+    for _ in range(app.models.board.TOTAL_BOARDS - 1):
+        previous_hand = t.current_hand
+        set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
+        play_to_completion(t.current_hand)
         t.next_board()
+        assert t.current_hand != previous_hand
     with pytest.raises(TableException):
         t.next_board()
 
@@ -452,7 +457,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.modPlayer_by_seat(first_players_seat).libraryThing
+    first_player = t.current_hand.modPlayer_by_seat(first_players_seat).libraryThing(hand=h)
     first_players_cards = first_player.hand.cards
 
     first_card = first_players_cards[0]

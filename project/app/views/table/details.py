@@ -68,17 +68,19 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     assert request.user is not None
     assert request.user.player is not None
 
+    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+
     try:
-        who_clicked = request.user.player.libraryThing  # type: ignore
+        who_clicked = request.user.player.libraryThing(hand=hand)  # type: ignore
     except app.models.PlayerException as e:
         return HttpResponseForbidden(str(e))
-
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     if hand.player_who_may_call is None:
         return HttpResponseForbidden(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 
-    from_whom = hand.player_who_may_call.libraryThing if hand.open_access else who_clicked
+    from_whom = (
+        hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
+    )
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
@@ -96,18 +98,19 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
+def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
     seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
     whos_asking = request.user.player
-    h = seat.table.current_hand
+    h = get_object_or_404(app.models.Hand, pk=hand_pk)
+
     if h.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
     assert whos_asking is not None
     if (
         h.dummy is not None
-        and h.player_who_may_play.libraryThing.seat == h.dummy.seat
+        and h.player_who_may_play.libraryThing(hand=h).seat == h.dummy.seat
         and h.declarer is not None
-        and whos_asking.libraryThing.seat == h.declarer.seat
+        and whos_asking.libraryThing(hand=h).seat == h.declarer.seat
     ):
         pass
     elif not (h.open_access or whos_asking == h.player_who_may_play):
@@ -115,9 +118,8 @@ def play_post_view(request: AuthedHttpRequest, seat_pk: str) -> HttpResponse:
         logger.debug("%s", msg)
         return HttpResponseForbidden(msg)
 
-
     card = bridge.card.Card.deserialize(request.POST["play"])
-    h.add_play_from_player(player=seat.player.libraryThing, card=card)
+    h.add_play_from_player(player=seat.player.libraryThing(hand=h), card=card)
 
     return HttpResponse()
 

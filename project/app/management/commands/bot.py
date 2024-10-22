@@ -135,12 +135,10 @@ class Command(BaseCommand):
         # Schedule the action for the future
         self.action_queue.insert(0, (sleep_until, table.pk, func))
 
-        logger.info(f"Queued {func=}; queue has {len(self.action_queue)} items")
-
         # Do whatever action comes next
 
         sleep_until, table_pk, func = self.action_queue.pop(-1)
-        logger.info(f"Fetched {func=} for table {table_pk}")
+
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
             # imply we're falling behind.
@@ -166,12 +164,14 @@ class Command(BaseCommand):
         modplayer = hand.player_who_may_call
 
         if modplayer is None:
+            logger.debug(f"{modplayer=}, so returning")
             return
 
         if self.skip_player(table=table, player=modplayer):
+            logger.debug(f"{self.skip_player(table=table, player=modplayer)=}, so returning")
             return
 
-        player_to_impersonate = modplayer.libraryThing
+        player_to_impersonate = modplayer.libraryThing(hand=hand)
         a = table.current_auction
 
         call = a.random_legal_call()
@@ -185,15 +185,7 @@ class Command(BaseCommand):
                     break
 
             else:
-                logger.info(
-                    "I tried rilly rilly hard not to pass this hand out, but ... 😢  I'll get a new board!",
-                )
-                # TODO -- it'd probably be cleaner to do nothing here, and instead have the server send a "the hand was
-                # passed out" event, analagous to the "contract_text" message that it currently sends when an auction
-                # has settled, and then have our "dispatch" fetch the next board.
-                self.delay_action(table=table, func=table.next_board)
-
-                return
+                logger.info("I tried rilly rilly hard not to pass this hand out, but ... 😢")
 
         try:
             hand.add_call_from_player(player=player_to_impersonate, call=call)
@@ -206,11 +198,11 @@ class Command(BaseCommand):
                 f"Just impersonated {player_to_impersonate}, and said {call} on their behalf",
             )
 
-    def make_a_groovy_play(self, *, hand: Hand) -> None:
-        if not hand.auction.found_contract:
+    def make_a_groovy_play(self, *, modHand: Hand) -> None:
+        if not modHand.auction.found_contract:
             return
 
-        table = hand.table
+        table = modHand.table
 
         seat_to_impersonate = table.next_seat_to_play
 
@@ -220,29 +212,29 @@ class Command(BaseCommand):
         if self.skip_player(table=table, player=seat_to_impersonate.player):
             return
 
-        some_hand = bridge.table.Hand(
-            cards=sorted(hand.current_cards_by_seat()[seat_to_impersonate.libraryThing])
+        libHand = bridge.table.Hand(
+            cards=sorted(modHand.current_cards_by_seat()[seat_to_impersonate.libraryThing])
         )
-        legal_cards = hand.get_xscript().legal_cards(some_hand=some_hand)
+        legal_cards = modHand.get_xscript().legal_cards(some_hand=libHand)
         if not legal_cards:
             logger.info(
                 f"No legal cards at {seat_to_impersonate}? The hand must be over.",
             )
             return
 
-        chosen_card = hand.get_xscript().slightly_less_dumb_play(
-            order_func=functools.partial(trick_taking_power, hand=hand), some_hand=some_hand
+        chosen_card = modHand.get_xscript().slightly_less_dumb_play(
+            order_func=functools.partial(trick_taking_power, hand=modHand), some_hand=libHand
         )
 
         ranked_options = sorted(
             [
-                (c, trick_taking_power(c, hand=hand))
-                for c in hand.get_xscript().legal_cards(some_hand=some_hand)
+                (c, trick_taking_power(c, hand=modHand))
+                for c in modHand.get_xscript().legal_cards(some_hand=libHand)
             ],
             key=operator.itemgetter(1),
         )
-        p = hand.add_play_from_player(
-            player=seat_to_impersonate.player.libraryThing, card=chosen_card
+        p = modHand.add_play_from_player(
+            player=seat_to_impersonate.player.libraryThing(hand=modHand), card=chosen_card
         )
         logger.info(f"{p} out of {ranked_options=}")
 
@@ -277,7 +269,6 @@ class Command(BaseCommand):
         self.loggingFilter.table = table
 
         if (when := data.get("time")) is not None:
-            logger.info(f"Found {when=} in the data")
             self.last_action_timestamps_by_table_id[table.pk] = when
         elif data.get("action") != "pokey pokey":
             msg = f"{data=} aint' got no timestamp! I'm outta here."
@@ -293,7 +284,7 @@ class Command(BaseCommand):
             )
         elif data.get("new-play") is not None or "contract_text" in data:
             self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
             )
         elif {"table", "direction", "action"}.issubset(data.keys()):
             logger.info(f"I believe I been poked: {data=}")
@@ -301,11 +292,11 @@ class Command(BaseCommand):
                 table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
             )
             self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(hand=table.current_hand)
+                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
             )
-        elif "final_score" in data:
+        elif "final_score" in data or {"table", "passed_out"}.issubset(data.keys()):
             logger.info(
-                "I guess this table's play is done, so I should poke that GIMME NEW BOARD button",
+                f"I guess this table's play is done ({data}), so I should poke that GIMME NEW BOARD button",
             )
             try:
                 self.delay_action(table=table, func=table.next_board)
@@ -330,7 +321,7 @@ class Command(BaseCommand):
         logger.info(f"Finally! Connected to {django_host}.")
         for msg in messages:
             self.loggingFilter.table = None
-            logger.info(str(vars(msg)))
+
             if msg.event != "keep-alive":
                 if msg.data:
                     data = json.loads(msg.data)

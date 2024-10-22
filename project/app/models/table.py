@@ -99,7 +99,7 @@ class Table(models.Model):
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
 
-    @cached_property
+    @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None
@@ -107,11 +107,7 @@ class Table(models.Model):
 
     @property
     def hand_is_complete(self) -> bool:
-        h = self.current_hand
-        if h is None:
-            return False
-        # TODO -- replace the 52 with ... something?  Probably the count of cards in the current board.
-        return self.current_hand.play_set.count() == 52
+        return self.current_hand.is_complete
 
     @property
     def dealer(self):
@@ -161,31 +157,33 @@ class Table(models.Model):
 
     def find_unplayed_board(self) -> Board | None:
         unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
-
         return unplayed_boards.first()
 
     def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
-            # TODO -- should I allow this, or not?
-            logger.warning("I dunno, man; the current hand %s isn't complete", self.current_hand)
-        if desired_board_pk is not None:
-            b = Board.objects.get(pk=desired_board_pk)
-        else:
-            b = self.find_unplayed_board()
-        if b is None:
-            if Board.objects.count() >= TOTAL_BOARDS:
-                msg = "No more tables! The tournament is over."
-                raise TableException(msg)
+            msg = f"Naw, {self} isn't complete; no next board for you"
+            raise TableException(msg)
 
-            deck = bridge.card.Card.deck()
+        with transaction.atomic():
+            if desired_board_pk is not None:
+                b = Board.objects.get(pk=desired_board_pk)
+            else:
+                b = self.find_unplayed_board()
+            if b is None:
+                if Board.objects.count() >= TOTAL_BOARDS:
+                    msg = "No more tables! The tournament is over."
+                    raise TableException(msg)
 
-            if shuffle_deck:
-                random.shuffle(deck)
+                deck = bridge.card.Card.deck()
 
-            b = Board.objects.create_from_deck(
-                deck=deck,
-            )
-        Hand.objects.create(board=b, table=self)
+                if shuffle_deck:
+                    random.shuffle(deck)
+
+                b = Board.objects.create_from_deck(
+                    deck=deck,
+                )
+            Hand.objects.create(board=b, table=self)
+
         return b
 
     @property
