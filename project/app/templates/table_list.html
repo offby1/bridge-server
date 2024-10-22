@@ -6,7 +6,7 @@
             {# yep, it's a table of tables #}
             <th>
                 <tr>
-                    <td>ID #</td>
+                    <td>Table #</td>
                     <td>Current Status</td>
                     <td>Number of Boards played</td>
                 </tr>
@@ -16,7 +16,7 @@
                     <td>{{ table.pk }}</td>
                     <td>
                         <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
-                            Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.current_hand.current_auction_status }}
+                            Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.summary_for_this_viewer }}
                         </a>
                     </td>
                     <td>{{ table.played_boards.count }}</td>

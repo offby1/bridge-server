@@ -78,6 +78,8 @@ class Table(models.Model):
 
     objects = TableManager()
 
+    summary_for_this_viewer: str
+
     @cached_property
     def seats(self):
         return self.seat_set.select_related("player__user").all()

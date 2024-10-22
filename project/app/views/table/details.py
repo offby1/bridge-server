@@ -33,6 +33,11 @@ def table_list_view(request):
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    t: Table
+    for t in page_obj.object_list:
+        t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
+            as_viewed_by=getattr(request.user, "player", None)
+        )
     context = {
         "page_obj": page_obj,
         "total_count": app.models.Table.objects.count(),
