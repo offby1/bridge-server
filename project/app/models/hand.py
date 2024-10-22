@@ -117,9 +117,7 @@ class HandManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
-        send_timestamped_event(
-            channel=str(rv.table.pk), data={"new-hand": NewHandSerializer(rv).data}
-        )
+        send_timestamped_event(channel=str(rv.pk), data={"new-hand": NewHandSerializer(rv).data})
 
         logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
         return rv
