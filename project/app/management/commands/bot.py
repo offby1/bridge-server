@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import contextlib
 import datetime
 import functools
@@ -99,25 +98,28 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
 class PerTableConsumer:
     def __init__(self, *, table_pk: int, stderr: OutputWrapper):
         self.table_pk = table_pk
+        self.table = None
         self.stderr = stderr
         self.queue: queue.SimpleQueue = queue.SimpleQueue()
-        self.thread = threading.Thread(target=self.thread_body)
+        self.thread = threading.Thread(target=self.thread_body, name=f"Table {table_pk}")
+        self.thread.start()
 
     def wait(self):
-        return self.thread.wait()
+        return self.thread.join()
 
     def thread_body(self):
         try:
-            table = Table.objects.get(pk=self.table_pk)
+            self.table = Table.objects.get(pk=self.table_pk)
         except Table.DoesNotExist:
             self.stderr.write(f"Table with {self.table_pk=} does not exist")
             return
 
         while True:
             data = self.queue.get()
+            logger.debug("Got %r", data)
 
             if (when := data.get("time")) is not None:
-                duration = when - time.time()
+                duration = (when + 0.25) - time.time()
                 if duration > 0:
                     time.sleep(duration)
 
@@ -130,81 +132,37 @@ class PerTableConsumer:
                 or data.get("new-hand") is not None
                 or data.get("new-call") is not None
             ):
-                self.make_a_groovy_call(hand=table.current_hand)
+                self.make_a_groovy_call(hand=self.table.current_hand)
             elif data.get("new-play") is not None or "contract_text" in data:
-                self.make_a_groovy_play(modHand=table.current_hand)
+                self.make_a_groovy_play(modHand=self.table.current_hand)
             elif {"table", "direction", "action"}.issubset(data.keys()):
                 logger.info(f"I believe I been poked: {data=}")
-                self.make_a_groovy_call(hand=table.current_hand)
-                self.make_a_groovy_play(modHand=table.current_hand)
+                self.make_a_groovy_call(hand=self.table.current_hand)
+                self.make_a_groovy_play(modHand=self.table.current_hand)
             elif "final_score" in data or {"table", "passed_out"}.issubset(data.keys()):
                 logger.info(
                     f"I guess this table's play is done ({data}), so I should poke that GIMME NEW BOARD button",
                 )
                 try:
-                    table.next_board()
+                    self.table.next_board()
                 except TableException as e:
                     logger.info(f"{e}; I will guess the tournament is over.")
 
             else:
                 logger.info(f"No idea what to do with {data=}")
 
-
-class Command(BaseCommand):
-    _threads_by_table_pk: dict[int, PerTableConsumer]
-
-    # https://docs.python.org/3.12/howto/logging-cookbook.html#filters-contextual
-    class ContextFilter:
-        def __init__(self, table: Table) -> None:
-            self.table = table
-
-        def filter(self, record: logging.LogRecord) -> bool:
-            if self.table is not None:
-                hand = self.table.current_hand
-                board = hand.board
-                record.msg = f"{self.table} hand {hand.pk} board {board.pk}: {record.msg}"
-            else:
-                record.msg = f"(no table): {record.msg}"
-
-            return True
-
-    def __init__(self, *args, **kwargs):
-        logging.basicConfig(
-            # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
-            format="{asctime} {levelname:5} {filename} {lineno} {message}",
-            level=logging.INFO,
-            datefmt="%Y-%m-%dT%H:%M:%S%z",
-            style="{",
-        )
-
-        logger.setLevel(logging.DEBUG)
-
-        self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
-        self.action_queue = []
-        super().__init__(*args, **kwargs)
-
-    def skip_player(self, *, table: Table, player: Player) -> bool:
-        if player is None:
-            logger.info("player is None -- auction or play must be over.")
-            return True
-
-        dummy_seat = table.dummy
-        declarer_seat = table.declarer
-        if declarer_seat is not None and player.most_recent_seat == dummy_seat:
-            return self.skip_player(table=table, player=declarer_seat.player)
-
-        return bool(not player.allow_bot_to_play_for_me)
-
     def make_a_groovy_call(self, *, hand: Hand) -> None:
-        table = hand.table
+        table = self.table
+        assert table == hand.table
+
         modplayer = hand.player_who_may_call
 
         if modplayer is None:
             logger.debug(f"{modplayer=}, so returning")
             return
 
-        if self.skip_player(table=table, player=modplayer):
-            logger.debug(f"{self.skip_player(table=table, player=modplayer)=}, so returning")
+        if self.skip_player(player=modplayer):
+            logger.debug(f"{self.skip_player(player=modplayer)=}, so returning")
             return
 
         player_to_impersonate = modplayer.libraryThing(hand=hand)
@@ -238,14 +196,14 @@ class Command(BaseCommand):
         if not modHand.auction.found_contract:
             return
 
-        table = modHand.table
+        assert modHand.table == self.table
 
-        seat_to_impersonate = table.next_seat_to_play
+        seat_to_impersonate = self.table.next_seat_to_play
 
         if seat_to_impersonate is None:
             return
 
-        if self.skip_player(table=table, player=seat_to_impersonate.player):
+        if self.skip_player(player=seat_to_impersonate.player):
             return
 
         libHand = bridge.table.Hand(
@@ -274,6 +232,31 @@ class Command(BaseCommand):
         )
         logger.info(f"{p} out of {ranked_options=}")
 
+    def skip_player(self, *, player: Player) -> bool:
+        if player is None:
+            logger.info("player is None -- auction or play must be over.")
+            return True
+
+        dummy_seat = self.table.dummy
+        declarer_seat = self.table.declarer
+        if declarer_seat is not None and player.most_recent_seat == dummy_seat:
+            return self.skip_player(player=declarer_seat.player)
+
+        return bool(not player.allow_bot_to_play_for_me)
+
+
+class Command(BaseCommand):
+    def __init__(self, *args, **kwargs):
+        logging.basicConfig(
+            # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
+            format="{asctime} {threadName} {levelname:5} {filename} {lineno} {message}",
+            level=logging.DEBUG,
+            datefmt="%Y-%m-%dT%H:%M:%S%z",
+            style="{",
+        )
+        self._threads_by_table_pk: dict[int, PerTableConsumer] = {}
+        super().__init__(*args, **kwargs)
+
     def _get_table_pk_from_message(self, *, data):
         # Where can we find the table primary key?  It's in different "places" in different events.
         if (new_call := data.get("new-call")) is not None:
@@ -285,12 +268,8 @@ class Command(BaseCommand):
         if (new_hand := data.get("new-hand")) is not None:
             return new_hand["table"]
 
-        if (
-            table_pk is None
-        ):  # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
-            return data.get("table")
-
-        return None
+        # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
+        return data.get("table")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         logger.info(f"<-- {data}")
@@ -305,9 +284,7 @@ class Command(BaseCommand):
             self._threads_by_table_pk[table_pk] = PerTableConsumer(
                 table_pk=table_pk, stderr=self.stderr
             )
-
-        for consumer in self._threads_by_table_pk.values():
-            consumer.wait()
+        self._threads_by_table_pk[table_pk].queue.put(data)
 
     @retrying.retry(
         retry_on_exception=_request_ex_filter,
@@ -333,3 +310,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with contextlib.suppress(KeyboardInterrupt):
             self.run_forever()
+
+            # probably pointless :-)
+            for consumer in self._threads_by_table_pk.values():
+                consumer.wait()
