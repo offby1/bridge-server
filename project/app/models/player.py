@@ -241,13 +241,16 @@ class Player(models.Model):
         if self.most_recent_seat:
             direction = f" ({self.most_recent_seat.named_direction})"
 
+            a: bridge.auction.Auction
             a = self.most_recent_seat.table.current_auction
             if a.found_contract:
                 assert isinstance(a.status, bridge.auction.Contract)
-                assert a.status.declarer is not None
-                if self.name == a.status.declarer.name:
+                assert a.declarer is not None
+                assert a.dummy is not None
+                if self.name == a.declarer.name:
                     role = "Declarer! "
-                    # TODO -- set role to dummy as appropriate
+                elif self.name == a.dummy.name:
+                    role = "Dummy "
         bottiness = "" if self.allow_bot_to_play_for_me else " (bot)"
         return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
 
