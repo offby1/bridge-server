@@ -116,10 +116,9 @@ class PerTableConsumer:
 
         while True:
             data = self.queue.get()
-            logger.debug("Got %r", data)
 
             if (when := data.get("time")) is not None:
-                duration = (when + 0.25) - time.time()
+                duration = (when + 1) - time.time()
                 if duration > 0:
                     time.sleep(duration)
 
