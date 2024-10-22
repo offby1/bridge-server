@@ -84,19 +84,6 @@ class Table(models.Model):
     def seats(self):
         return self.seat_set.select_related("player__user").all()
 
-    @cached_property
-    def libraryThing(self):
-        players = []
-        for seat in self.seats:
-            name = seat.player_name
-            hand = self.current_hand.board.cards_for_direction(seat.direction)
-            players.append(
-                bridge.table.Player(
-                    seat=seat.libraryThing, name=name, hand=bridge.table.Hand(cards=hand)
-                ),
-            )
-        return bridge.table.Table(players=players)
-
     @property
     def current_auction(self) -> libAuction:
         return self.current_hand.auction

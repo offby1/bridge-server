@@ -1,3 +1,4 @@
+after doing `just restore < backup.sql`
 logged in as bob
 at https://teensy-info.tail571dc2.ts.net/hand/76/
 I clicked "1C" from the bidding box (`/call/76/`)
@@ -20,4 +21,3 @@ ka-ching
 The other hand is either board #1 or board #16
 
 > boards 1 and 16 are identical! how tf did that happen?!  Maybe I generated boards 1-15 all in one go, then later generated 16 on demand and did `random.seed(0)` both times.
-

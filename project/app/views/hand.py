@@ -331,6 +331,8 @@ def _bidding_box_context_for_hand(request, hand):
     seat = player.most_recent_seat
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
 
+    logger.debug(f"Rendering bidding box for {hand.pk}")
+
     if not seat or seat.table != hand.table:
         buttons = "No bidding box 'cuz you are not at this table"
     else:

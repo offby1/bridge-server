@@ -28,12 +28,12 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def table_list_view(request):
+def table_list_view(request) -> HttpResponse:
     table_list = app.models.Table.objects.all()
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    t: Table
+    t: app.models.Table
     for t in page_obj.object_list:
         t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
@@ -87,6 +87,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
         hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
     )
 
+    logger.debug(f"{who_clicked=}\n{from_whom=}\n{hand.player_who_may_call=}")
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
