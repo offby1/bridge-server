@@ -142,6 +142,7 @@ class Command(BaseCommand):
         if (duration := sleep_until - time.time()) > 0:
             # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
             # imply we're falling behind.
+            # Also TODO -- this might be a good number to emit to prometheus, if we used prometheus.
             time.sleep(duration)
 
         func()

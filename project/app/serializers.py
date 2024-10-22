@@ -6,7 +6,6 @@ from app.models import Board, Call, Hand, Play, Player, Seat, Table
 class BoardSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Board
-        # TODO -- figure out how to only show those cards that belong to the caller's hand!
         fields = (
             "east_cards",
             "ew_vulnerable",

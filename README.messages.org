@@ -1,5 +1,7 @@
 # Inventory of django eventstream messages that I send
 
+WARNING: I find I do not keep this up to date :-|
+
 This is getting confusing.  I should have a simple rule about which messages get sent when & where.
 
 The "When" should be: "most messages correspond to the insertion of a row in the db".

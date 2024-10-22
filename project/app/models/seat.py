@@ -20,9 +20,6 @@ class Seat(models.Model):
         choices=SEAT_CHOICES.items(),
     )
 
-    # TODO -- consider a boolean named "currently_occupied", plus a constraint that checks
-    # * at most one table/player combo has currently_occupied True
-    # * maybe that that one occupied seat is also the newest, based I guess on various IDs
     player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 

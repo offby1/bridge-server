@@ -172,7 +172,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
         card=Card.deserialize("D2"),
     )
 
-    # Now declarer (north) can control the dummy (south).  (TODO -- what if the dummy is a bot?)
+    # Now declarer (north) can control the dummy (south).
     expect_controlability(
         [
             # n, e, s, w <-- viewers

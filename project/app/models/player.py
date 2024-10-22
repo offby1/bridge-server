@@ -68,7 +68,7 @@ class Player(models.Model):
     # TODO -- conceptually, this oughta be a OneToOneField, no?
 
     # On the other hand -- do I need this at all?  If our player is seated, then we can deduce his partner by seeing
-    # who's sitting across from him.
+    # who's sitting across from him.  But then if the partnership isn't seated, I'm outta luck.
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
     messages_for_me = GenericRelation(
@@ -173,7 +173,8 @@ class Player(models.Model):
             return None
         return self.most_recent_seat.table
 
-    # TODO -- what I really want is *current_seat*
+    # TODO -- what I really want is *current_seat*.  What's the difference?  As long as we cannot have a player at two
+    # tables at the same time, this should be OK.
     @cached_property
     def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
