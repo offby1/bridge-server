@@ -57,7 +57,7 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
     """
     assert_type(c, bridge.card.Card)
 
-    t: bridge.table.Table = hand.table.libraryThing
+    t: bridge.table.Table = hand.lib_table_with_cards_as_dealt
 
     xscript = hand.get_xscript()
     me = xscript.current_named_seat()

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Iterator
 
 import more_itertools
 from bridge.auction import Auction as libAuction
+from bridge.auction import AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
@@ -16,6 +17,7 @@ from bridge.contract import Contract as libContract
 from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
+from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
@@ -160,22 +162,42 @@ class Hand(models.Model):
 
     _xscript: HandTranscript
 
+    @cached_property
+    def libPlayers_by_seat(self) -> dict[libSeat, libPlayer]:
+        rv: dict[libSeat, libPlayer] = {}
+        seats = self.table.seats
+        for direction_int in self.board.hand_strings_by_direction:
+            lib_hand = libHand(cards=self.board.cards_for_direction(direction_int))
+            lib_seat = libSeat(direction_int)
+            seat = seats.filter(direction=direction_int).first()
+            assert seat is not None
+            name = seat.player_name
+            rv[lib_seat] = libPlayer(seat=lib_seat, hand=lib_hand, name=name)
+        return rv
+
+    @cached_property
+    def lib_table_with_cards_as_dealt(self) -> libTable:
+        players = list(self.libPlayers_by_seat.values())
+        for p in players:
+            assert_type(p, libPlayer)
+        return libTable(players=players)
+
     def get_xscript(self) -> HandTranscript:
         def calls_starting_with(start: int) -> Iterator[tuple[libPlayer, libCall]]:
-            libTable = self.table.libraryThing
             for index, (seat, call) in enumerate(self.annotated_calls):
                 if index >= start:
-                    player = libTable.players[seat]
+                    player = self.libPlayers_by_seat[seat]
                     yield (player, call.libraryThing)
 
         if not hasattr(self, "_xscript"):
-            auction = libAuction(table=self.table.libraryThing, dealer=libSeat(self.board.dealer))
+            lib_table = self.lib_table_with_cards_as_dealt
+            auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
 
             for player, call in calls_starting_with(0):
                 auction.append_located_call(player=player, call=call)
 
             self._xscript = HandTranscript(
-                table=self.table.libraryThing,
+                table=lib_table,
                 auction=auction,
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
@@ -206,7 +228,7 @@ class Hand(models.Model):
         auction = self.auction
         try:
             auction.raise_if_illegal_call(player=player, call=call)
-        except Exception as e:
+        except AuctionException as e:
             raise AuctionError(str(e)) from e
 
         self.call_set.create(serialized=call.serialize())
@@ -317,9 +339,8 @@ class Hand(models.Model):
         if not self.auction.found_contract:
             return None
 
-        libPlayer = self.get_xscript().named_seats[0]
-
-        return Player.objects.get_by_name(libPlayer.name)
+        named_seat_who_may_play = self.get_xscript().named_seats[0]
+        return Player.objects.get_by_name(named_seat_who_may_play.name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:
         modelPlayer = self.players_by_direction[seat.value]

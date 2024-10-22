@@ -28,12 +28,12 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def table_list_view(request):
+def table_list_view(request) -> HttpResponse:
     table_list = app.models.Table.objects.all()
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    t: Table
+    t: app.models.Table
     for t in page_obj.object_list:
         t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
@@ -73,7 +73,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     assert request.user is not None
     assert request.user.player is not None
 
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     try:
         who_clicked = request.user.player.libraryThing(hand=hand)  # type: ignore
@@ -95,7 +95,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
             player=from_whom,
             call=libCall,
         )
-    except Exception as e:
+    except bridge.auction.AuctionException as e:
         return HttpResponseForbidden(str(e))
 
     return HttpResponse()
