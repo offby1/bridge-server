@@ -234,10 +234,10 @@ class Command(BaseCommand):
             ],
             key=operator.itemgetter(1),
         )
-        p = modHand.add_play_from_player(
+        modHand.add_play_from_player(
             player=seat_to_impersonate.player.libraryThing(hand=modHand), card=chosen_card
         )
-        logger.info(f"{p} out of {ranked_options=}")
+        logger.info(f"{chosen_card} out of {ranked_options=}")
 
     def dispatch(self, *, data: dict[str, typing.Any]) -> None:
         logger.info(f"<-- {data}")
