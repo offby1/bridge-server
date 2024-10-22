@@ -340,7 +340,6 @@ class Hand(models.Model):
             return None
 
         named_seat_who_may_play = self.get_xscript().named_seats[0]
-        logger.debug(f"{named_seat_who_may_play=}")
         return Player.objects.get_by_name(named_seat_who_may_play.name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:

@@ -87,7 +87,6 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
         hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
     )
 
-    logger.debug(f"{who_clicked=}\n{from_whom=}\n{hand.player_who_may_call=}")
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
