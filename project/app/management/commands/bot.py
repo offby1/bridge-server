@@ -8,8 +8,10 @@ import json
 import logging
 import operator
 import os
+import queue
 import random
 import sys
+import threading
 import time
 import typing
 
@@ -22,7 +24,7 @@ from app.models import AuctionError, Hand, Player, Table, TableException
 from app.models.utils import assert_type
 from bridge.contract import Contract, Pass
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, OutputWrapper
 from sseclient import SSEClient  # type: ignore
 
 random.seed(0)
@@ -94,7 +96,63 @@ def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
     return powah
 
 
+class PerTableConsumer:
+    def __init__(self, *, table_pk: int, stderr: OutputWrapper):
+        self.table_pk = table_pk
+        self.stderr = stderr
+        self.queue: queue.SimpleQueue = queue.SimpleQueue()
+        self.thread = threading.Thread(target=self.thread_body)
+
+    def wait(self):
+        return self.thread.wait()
+
+    def thread_body(self):
+        try:
+            table = Table.objects.get(pk=self.table_pk)
+        except Table.DoesNotExist:
+            self.stderr.write(f"Table with {self.table_pk=} does not exist")
+            return
+
+        while True:
+            data = self.queue.get()
+
+            if (when := data.get("time")) is not None:
+                duration = when - time.time()
+                if duration > 0:
+                    time.sleep(duration)
+
+            elif data.get("action") != "pokey pokey":
+                msg = f"{data=} aint' got no timestamp! I'm outta here."
+                raise Exception(msg)
+
+            if (
+                data.get("action") == "just formed"
+                or data.get("new-hand") is not None
+                or data.get("new-call") is not None
+            ):
+                self.make_a_groovy_call(hand=table.current_hand)
+            elif data.get("new-play") is not None or "contract_text" in data:
+                self.make_a_groovy_play(modHand=table.current_hand)
+            elif {"table", "direction", "action"}.issubset(data.keys()):
+                logger.info(f"I believe I been poked: {data=}")
+                self.make_a_groovy_call(hand=table.current_hand)
+                self.make_a_groovy_play(modHand=table.current_hand)
+            elif "final_score" in data or {"table", "passed_out"}.issubset(data.keys()):
+                logger.info(
+                    f"I guess this table's play is done ({data}), so I should poke that GIMME NEW BOARD button",
+                )
+                try:
+                    table.next_board()
+                except TableException as e:
+                    logger.info(f"{e}; I will guess the tournament is over.")
+
+            else:
+                logger.info(f"No idea what to do with {data=}")
+
+
 class Command(BaseCommand):
+    _threads_by_table_pk: dict[int, PerTableConsumer]
+
     # https://docs.python.org/3.12/howto/logging-cookbook.html#filters-contextual
     class ContextFilter:
         def __init__(self, table: Table) -> None:
@@ -121,32 +179,9 @@ class Command(BaseCommand):
 
         logger.setLevel(logging.DEBUG)
 
-        self.loggingFilter = self.ContextFilter(None)
-        logger.addFilter(self.loggingFilter)
-
         self.last_action_timestamps_by_table_id = collections.defaultdict(lambda: 0)
         self.action_queue = []
         super().__init__(*args, **kwargs)
-
-    def delay_action(self, *, table: Table, func) -> None:
-        previous_action_time = self.last_action_timestamps_by_table_id[table.pk]
-        sleep_until = previous_action_time + 0.25
-
-        # Schedule the action for the future
-        self.action_queue.insert(0, (sleep_until, table.pk, func))
-
-        # Do whatever action comes next
-
-        sleep_until, table_pk, func = self.action_queue.pop(-1)
-
-        if (duration := sleep_until - time.time()) > 0:
-            # TODO -- if duration is zero, log a message somewhere?  Or, if it's zero *a lot*, log that, since it would
-            # imply we're falling behind.
-            # Also TODO -- this might be a good number to emit to prometheus, if we used prometheus.
-            time.sleep(duration)
-
-        func()
-        self.last_action_timestamps_by_table_id[table_pk] = time.time()
 
     def skip_player(self, *, table: Table, player: Player) -> bool:
         if player is None:
@@ -239,73 +274,40 @@ class Command(BaseCommand):
         )
         logger.info(f"{p} out of {ranked_options=}")
 
-    def dispatch(self, *, data: dict[str, typing.Any]) -> None:
-        logger.info(f"<-- {data}")
-
-        table_pk = None
-
+    def _get_table_pk_from_message(self, *, data):
         # Where can we find the table primary key?  It's in different "places" in different events.
         if (new_call := data.get("new-call")) is not None:
-            table_pk = new_call["hand"]["table"]
-        elif (new_play := data.get("new-play")) is not None:
-            table_pk = new_play["hand"]["table"]
-        elif (new_hand := data.get("new-hand")) is not None:
-            table_pk = new_hand["table"]
+            return new_call["hand"]["table"]
+
+        if (new_play := data.get("new-play")) is not None:
+            return new_play["hand"]["table"]
+
+        if (new_hand := data.get("new-hand")) is not None:
+            return new_hand["table"]
 
         if (
             table_pk is None
         ):  # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
-            table_pk = data.get("table")
+            return data.get("table")
+
+        return None
+
+    def dispatch(self, *, data: dict[str, typing.Any]) -> None:
+        logger.info(f"<-- {data}")
+
+        table_pk = self._get_table_pk_from_message(data=data)
 
         if table_pk is None:
             self.stderr.write(f"In {data}, I don't have a clue, Lieutenant, where the table PK is")
             return
 
-        try:
-            table = Table.objects.get(pk=table_pk)
-        except Table.DoesNotExist:
-            self.stderr.write(f"In {data}, table with {table_pk=} does not exist")
-            return
+        if table_pk not in self._threads_by_table_pk:
+            self._threads_by_table_pk[table_pk] = PerTableConsumer(
+                table_pk=table_pk, stderr=self.stderr
+            )
 
-        self.loggingFilter.table = table
-
-        if (when := data.get("time")) is not None:
-            self.last_action_timestamps_by_table_id[table.pk] = when
-        elif data.get("action") != "pokey pokey":
-            msg = f"{data=} aint' got no timestamp! I'm outta here."
-            raise Exception(msg)
-
-        if (
-            data.get("action") == "just formed"
-            or data.get("new-hand") is not None
-            or data.get("new-call") is not None
-        ):
-            self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
-            )
-        elif data.get("new-play") is not None or "contract_text" in data:
-            self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
-            )
-        elif {"table", "direction", "action"}.issubset(data.keys()):
-            logger.info(f"I believe I been poked: {data=}")
-            self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_call(hand=table.current_hand)
-            )
-            self.delay_action(
-                table=table, func=lambda: self.make_a_groovy_play(modHand=table.current_hand)
-            )
-        elif "final_score" in data or {"table", "passed_out"}.issubset(data.keys()):
-            logger.info(
-                f"I guess this table's play is done ({data}), so I should poke that GIMME NEW BOARD button",
-            )
-            try:
-                self.delay_action(table=table, func=table.next_board)
-            except TableException as e:
-                logger.info(f"{e}; I will guess the tournament is over.")
-
-        else:
-            logger.info(f"No idea what to do with {data=}")
+        for consumer in self._threads_by_table_pk.values():
+            consumer.wait()
 
     @retrying.retry(
         retry_on_exception=_request_ex_filter,
@@ -321,8 +323,6 @@ class Command(BaseCommand):
         )
         logger.info(f"Finally! Connected to {django_host}.")
         for msg in messages:
-            self.loggingFilter.table = None
-
             if msg.event != "keep-alive":
                 if msg.data:
                     data = json.loads(msg.data)
