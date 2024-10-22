@@ -12,7 +12,6 @@
             {% endblock title %}
         </title>
         <link href="{% static "app/bootstrap-5.3.3-dist/css/bootstrap.min.css" %}" rel="stylesheet">
-        <link href="{% static "app/datatables.css" %}" rel="stylesheet">
         <link href="{% static "app/bridge.css" %}" rel="stylesheet">
         <link rel="icon" type="image/png" href="{% static "app/spadesuit.png" %}" />
     </head>
@@ -86,8 +85,7 @@
         <script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.js' %}"></script>
         <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
         <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
-        <script src="{% static 'app/datatables.js' %}"></script>
-        <script src="{% static 'app/htmx.js' %}"></script>
+        <script src="{% static 'app/htmx.min.js' %}"></script>
         <script src="{% static 'app/sse.js' %}"></script>
         {% block scripts %}
         {% endblock scripts %}
