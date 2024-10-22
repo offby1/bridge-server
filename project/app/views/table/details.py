@@ -73,7 +73,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     assert request.user is not None
     assert request.user.player is not None
 
-    hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     try:
         who_clicked = request.user.player.libraryThing(hand=hand)  # type: ignore
@@ -87,6 +87,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
         hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
     )
 
+    logger.debug(f"{from_whom=} {who_clicked=} {hand.player_who_may_call=}")
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
