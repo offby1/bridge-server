@@ -336,7 +336,6 @@ class Hand(models.Model):
     def players_by_direction(self) -> dict[int, Player]:
         return {s.direction: s.player for s in self.table.seats}
 
-    # TODO -- this duplicates players_remaining_cards
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
         rv = {}
         for direction, cardstring in self.board.hand_strings_by_direction.items():
@@ -352,15 +351,9 @@ class Hand(models.Model):
 
         return rv
 
-    # TODO -- this duplicates current_cards_by_seat
     def players_remaining_cards(self, *, player: libPlayer) -> libHand:
-        dealt_cards = set(player.hand.cards)
-        played_cards = {
-            libCard.deserialize(p.serialized) for p in self.play_set.all()
-        }  # this includes the other three player's plays, too, but it doesn't matter!
-        current_cards = dealt_cards - played_cards
-
-        return libHand(cards=list(current_cards))
+        ccbs = self.current_cards_by_seat()
+        return libHand(cards=list(ccbs[player.seat]))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
         """
