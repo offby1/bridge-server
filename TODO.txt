@@ -20,7 +20,11 @@ IN PROGRESS:
 
 STILL TODO:
 
-* Thread-ify the bot, in order to speed it up.  I *think* it's still basically processing a message, sleeping, processing the next, &c.
+* Couple problems with the hand archive:
+  - The layout of that play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
+    - I should have a column for the trick number *and* the compass direction of the leader;
+    - The column headers should be "Trick", "Lead", "2nd", "3rd", "4th";
+    - The 2nd, 3rd, 4th columns should omit the suit symbol if it's the same as the led suit
 
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
@@ -68,7 +72,6 @@ STILL TODO:
 
 * In the table archive view:
 
-  - put a trick number at the left of the hand record -- there are currently 13 rows with four columns, so add a fifth column on the left, and a header line.
   - Maybe have a thingy which, when I hover over one of the cards in the hand, it points to the trick in which that card was played?
   - Or have it be a link instead of a tooltip?  And the destination -- the row in the 13-row table -- should also have a link to take you back to the hand, so you don't have to scroll around to get back.
 
@@ -134,6 +137,10 @@ STILL TODO:
 
 
 DONE:
+* Couple problems with the hand archive:
+  - At https://erics-work-macbook-pro.tail571dc2.ts.net/hand/81/archive/, the play record has entries like `(sitting ) played ♣2 (sitting ) played ♣3`.  That is: the player's names and compass directions are missing.
+    This is probably fallout out from commit 3c5ddc67a8870c6193909ee6584b7da076bed5d9 in the library.
+
 * I see a lot of hand summaries like "Auction is incomplete; 27 cards played".  That makes no sense; if cards have been played, obviously there must be a contract.  Right?  RIGHT??
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
