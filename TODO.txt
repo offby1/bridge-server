@@ -26,6 +26,8 @@ STILL TODO:
     - The column headers should be "Trick", "Lead", "2nd", "3rd", "4th";
     - The 2nd, 3rd, 4th columns should omit the suit symbol if it's the same as the led suit
 
+* Speaking of the hand archive: I should get rid of the three_by_three_trick_display when the hand has been completely played; it's distracting
+
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
