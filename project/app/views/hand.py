@@ -26,6 +26,10 @@ from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
+    from typing import Iterable
+
+    from bridge.xscript import HandTranscript
+
     from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
 
 
@@ -242,6 +246,24 @@ def _three_by_three_trick_display_context_for_hand(
     }
 
 
+def _annotate_tricks(xscript: HandTranscript) -> Iterable[list[dict[str, Any]]]:
+    """
+    Alas, the library's transcript doesn't give us the name of the player who played each card, so we reconstruct that here.
+    """
+    for t in xscript.tricks:
+        one_trick = []
+        for p in t.plays:
+            one_trick.append(
+                {
+                    "name": xscript.table.players[p.seat].name,
+                    "seat": p.seat.name,
+                    "card": p.card,
+                    "wins_the_trick": p.wins_the_trick,
+                }
+            )
+        yield one_trick
+
+
 def _four_hands_context_for_hand(
     *, request: AuthedHttpRequest, hand: app.models.Hand, as_dealt: bool = False
 ) -> dict[str, Any]:
@@ -276,6 +298,7 @@ def _four_hands_context_for_hand(
         }
 
     return {
+        "annotated_tricks": list(_annotate_tricks(hand.get_xscript())),
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
