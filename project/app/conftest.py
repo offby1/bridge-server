@@ -5,6 +5,15 @@ from django.contrib import auth
 from .models import Player, Table
 
 
+# Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
+@pytest.fixture(autouse=True)
+def shaddap_complaints_about_missing_staticfiles_manifest_entries(settings):
+    # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#django.contrib.staticfiles.storage.ManifestStaticFilesStorage.manifest_strict
+    settings.STORAGES["staticfiles"]["BACKEND"] = (
+        "django.contrib.staticfiles.storage.StaticFilesStorage"
+    )
+
+
 @pytest.fixture(scope="session", autouse=True)
 def everybodys_password():
     return (
