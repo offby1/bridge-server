@@ -52,8 +52,4 @@ class QueryLogger:
 def logged_queries():
     ql = QueryLogger()
     with connection.execute_wrapper(ql):
-        try:
-            yield ql
-        finally:
-            import pprint
-            pprint.pprint(dict(ql.counter.most_common(3)), sort_dicts=False)
+        yield ql
