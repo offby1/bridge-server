@@ -153,6 +153,7 @@ class PerTableConsumer:
     def make_a_groovy_call(self, *, hand: Hand) -> None:
         table = self.table
         assert table == hand.table
+        assert table is not None
 
         modplayer = hand.player_who_may_call
 
@@ -197,6 +198,7 @@ class PerTableConsumer:
 
         assert modHand.table == self.table
 
+        assert self.table is not None
         seat_to_impersonate = self.table.next_seat_to_play
 
         if seat_to_impersonate is None:
@@ -236,6 +238,7 @@ class PerTableConsumer:
             logger.info("player is None -- auction or play must be over.")
             return True
 
+        assert self.table is not None
         dummy_seat = self.table.dummy
         declarer_seat = self.table.declarer
         if declarer_seat is not None and player.most_recent_seat == dummy_seat:
