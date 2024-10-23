@@ -21,7 +21,7 @@ IN PROGRESS:
 STILL TODO:
 
 * Couple problems with the hand archive:
-  - The layout of that play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
+  - The layout of the play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
     - I should have a column for the trick number *and* the compass direction of the leader;
     - The column headers should be "Trick", "Lead", "2nd", "3rd", "4th";
     - The 2nd, 3rd, 4th columns should omit the suit symbol if it's the same as the led suit
