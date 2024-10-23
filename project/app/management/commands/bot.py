@@ -248,7 +248,7 @@ class PerTableConsumer:
 
 
 class Command(BaseCommand):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         logging.basicConfig(
             # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
             format="{asctime} {threadName} {levelname:5} {filename} {lineno} {message}",
