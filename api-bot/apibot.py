@@ -30,20 +30,21 @@ def dispatch(msg: Any, session: requests.Session) -> bool:
         data = json.loads(msg.data)
         if all(key in data for key in ["new-play"]):
             logger.debug(
-                "Someone at table %s played %s",
+                "Seat %s at table %s played %s",
+                data["new-play"]["seat_pk"],
                 data["new-play"]["hand"]["table"],
                 data["new-play"]["serialized"],
             )
         elif all(key in data for key in ["new-call"]):
             logger.debug(
-                "Someone at table %s called %s",
+                "Seat %s at table %s called %s",
+                data["new-call"]["seat_pk"],
                 data["new-call"]["hand"]["table"],
                 data["new-call"]["serialized"],
             )
-        elif all(key in data for key in ["table", "final_score"]):
-            logger.debug(
-                "I guess the hand is over, but I'll wait for some event whose presence guarantees that a new hand has been assigned"
-            )
+        elif all(key in data for key in ["new-hand"]):
+            logger.debug("Ah! The hand is over.")
+            return True
 
         else:
             logger.warning("OK, I have no idea what to do with %s", data)

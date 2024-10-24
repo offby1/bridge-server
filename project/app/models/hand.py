@@ -117,7 +117,7 @@ class HandManager(models.Manager):
         rv: Hand = super().create(*args, **kwargs)
 
         serialized_hand = NewHandSerializer(rv).data
-        rv.send_event_to_players_and_hand(data=serialized_hand)
+        rv.send_event_to_players_and_hand(data={"new-hand": serialized_hand})
         logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
         return rv
 
