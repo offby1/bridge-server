@@ -1,4 +1,4 @@
-# Inventory of django eventstream messages that I send
+# Inventory of django eventstream events that I send
 
 WARNING: I find I do not keep this up to date :-|
 
@@ -37,3 +37,26 @@ Lucky for me almost all the modifications to the db are indeed inserts of new im
 | arbitrary html                 | lobby.send_lobby_message   | lobby               | I don't think anyone listens for these           |
 | arbitrary                      | player.send_player_message | player1:player2     | private chat                                     |
 | json: table, direction, action | table.poke_de_bot          | all-tables          | action is "pokey pokey"; hack to wake up the bot |
+
+# Thoughts about a new per-player event channel
+Surprise! There already is one, for chat only: "events/player/<channel>/"
+For player-to-player chat, the channel name is basically the two player's primary keys: https://gitlab.com/offby1/bridge-server/blob/main/project/app/models/message.py#L78
+
+e.g.
+
+    : DEBUG channelmanager.py(14) get_channels_for_request (<ASGIRequest: GET '/events/player/players:1_44/'>, {'channel': 'players:1_44'}) {}
+
+I suppose I could introduce a new channel with a name like {'channel': 'system:player:1'}, which would be for messages *from* the system *to* player 1.
+
+The intended recipients are: the new API bot.  Maaaaaaybe browsers.
+
+Note that I doubt I can teach the bot to listen on more than one channel at a time -- that'd require something like "select" for HTTP, and I can't think of any such thing offhand -- so I imagine I'm gonna have to have the bot listen *only* to this new, per-player, channel.
+
+So, what events would we send on that channel?  Answer: anything of any possible interest to an API bot logged in as that player.  E.g.:
+* those same player-to-player chat messages, maybe
+* chat messages sent to the lobby, if I am indeed in the lobby
+* anything of interest to the table at which I'm sitting:
+** chat messages sent to the table at which I'm sitting, if I am indeed sitting at a table
+** issuance of a new hand
+** calls and plays
+** score for the previous hand
