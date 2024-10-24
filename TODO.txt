@@ -141,11 +141,14 @@ STILL TODO:
 
 
 DONE:
+
 * Couple problems with the hand archive:
   - At https://erics-work-macbook-pro.tail571dc2.ts.net/hand/81/archive/, the play record has entries like `(sitting ) played ♣2 (sitting ) played ♣3`.  That is: the player's names and compass directions are missing.
     This is probably fallout out from commit 3c5ddc67a8870c6193909ee6584b7da076bed5d9 in the library.
 
 * I see a lot of hand summaries like "Auction is incomplete; 27 cards played".  That makes no sense; if cards have been played, obviously there must be a contract.  Right?  RIGHT??
+
+* https://erics-work-macbook-pro.tail571dc2.ts.net/hand/69/ shows `322:swabhiman_das (bot)` and yet [the admin page](https://erics-work-macbook-pro.tail571dc2.ts.net/admin/app/player/322/change/) shows (correctly) that the "Allow bot to play for me" box is unchecked.
 
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
 
