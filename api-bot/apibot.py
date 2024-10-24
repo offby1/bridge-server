@@ -27,12 +27,11 @@ def _request_ex_filter(ex: Exception) -> bool:
 def dispatch(msg: Any, session: requests.Session) -> bool:
     if msg.data:
         data = json.loads(msg.data)
-        if all(key in data for key in ("table", "player", "card")):
+        if all(key in data for key in ["new-play"]):
             logger.debug(
-                "Player %s at table %s played %s",
-                data["player"],
-                data["table"],
-                data["card"],
+                "Someone at table %s played %s",
+                data["new-play"]["hand"]["table"],
+                data["new-play"]["serialized"],
             )
         elif all(key in data for key in ("table", "player", "call")):
             logger.debug(
@@ -44,6 +43,9 @@ def dispatch(msg: Any, session: requests.Session) -> bool:
         elif data.get("action", None) == "just formed":
             logger.debug("I guess the hand is over")
             return True
+        else:
+            logger.warning("OK, I have no idea what to do with %s", data)
+            return False
     else:
         logger.debug("%s", vars(msg))
     return False
