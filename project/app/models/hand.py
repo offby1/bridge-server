@@ -115,9 +115,15 @@ class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
         from app.serializers import NewHandSerializer
 
-        rv = super().create(*args, **kwargs)
+        rv: Hand = super().create(*args, **kwargs)
 
-        send_timestamped_event(channel=str(rv.pk), data={"new-hand": NewHandSerializer(rv).data})
+        serialized_hand = NewHandSerializer(rv).data
+        send_timestamped_event(channel=str(rv.pk), data={"new-hand": serialized_hand})
+        for seat in rv.table.seats:
+            player = seat.player
+            send_timestamped_event(
+                channel=f"system:player:{player.pk}", data={"new-hand": serialized_hand}
+            )
 
         logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
         return rv
