@@ -12,12 +12,6 @@ IN PROGRESS:
 
   Of course, switch my existing bot to use it, once it exists.
 
-* After each hand has been played:
-  - Before the table vanishes, maybe the players can chat with each other?
-  - I guess let any player break up the table
-    - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
-  - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
-
 STILL TODO:
 
 * Couple problems with the hand archive:
@@ -136,6 +130,12 @@ STILL TODO:
 
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
+
+* After each hand has been played:
+  - Before the table vanishes, maybe the players can chat with each other?
+  - I guess let any player break up the table
+    - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
+  - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
 
 
 DONE:
