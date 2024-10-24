@@ -16,6 +16,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.
+
 * Couple problems with the hand archive:
   - The layout of the play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
     - I should have a column for the trick number *and* the compass direction of the leader;
