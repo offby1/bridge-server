@@ -64,7 +64,7 @@ def _run_forever() -> None:
     my_table_url = None
     for p in all_players:
         if p["name"] == my_name:
-            my_table_url = p["table"]
+            my_table_url = p["current_table"]
             table = session.get(my_table_url).json()
             logger.info(f"{my_name=} {table=}")
             break
