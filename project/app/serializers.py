@@ -18,9 +18,11 @@ class BoardSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class CallSerializer(serializers.ModelSerializer):
+    seat_pk = serializers.IntegerField()
+
     class Meta:
         model = Call
-        fields = ("serialized", "hand")
+        fields = ("serialized", "hand", "seat_pk")
         depth = 1
 
 
@@ -60,9 +62,11 @@ class NewHandSerializer(serializers.ModelSerializer):
 
 
 class PlaySerializer(serializers.ModelSerializer):
+    seat_pk = serializers.IntegerField()
+
     class Meta:
         model = Play
-        fields = ("serialized", "hand")
+        fields = ("serialized", "hand", "seat_pk")
         depth = 1
 
 

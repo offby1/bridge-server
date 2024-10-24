@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class MyChannelManager(DefaultChannelManager):
+    def get_channels_for_request(self, *args, **kwargs):
+        logger.debug("%s %s", args, kwargs)
+        return super().get_channels_for_request(*args, **kwargs)
+
     def can_read_channel(self, user: UserMitPlaya, channel: str) -> bool:
         if user is not None and user.player is not None:
             # player-to-player messages are private.
