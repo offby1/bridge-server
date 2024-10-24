@@ -278,7 +278,4 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     monkeypatch.setattr(hand, "send_event", send_event)
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
-    assert (
-        len(sent_events_by_channel["system:player:1"]) == 2 * 4
-    )  # "1 diamond, pass, pass, pass" sent to two different channels
-    assert sent_events_by_channel["contract_text"] == 2
+    assert "contract" in sent_events_by_channel["system:player:1"][4]

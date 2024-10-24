@@ -574,6 +574,14 @@ class Call(models.Model):
 
     objects = CallManager()
 
+    @cached_property
+    def seat_pk(self) -> int | None:
+        for pc in self.hand.get_xscript().auction.player_calls:
+            if pc.call.serialize() == self.serialized:
+                return self.hand.table.seats.get(direction=pc.player.seat.value).pk
+
+        return None
+
     @property
     def libraryThing(self):
         return libBid.deserialize(self.serialized)
@@ -594,8 +602,10 @@ class PlayManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
+        cereal = PlaySerializer(rv)
+        logger.debug("%r -- %r", cereal, cereal.data)
         rv.hand.send_event_to_players_and_hand(
-            data={"new-play": PlaySerializer(rv).data},
+            data={"new-play": cereal.data},
         )
 
         return rv
@@ -622,6 +632,14 @@ class Play(models.Model):
                 name="%(app_label)s_%(class)s_a_card_can_be_played_only_once",
             ),
         ]
+
+    @cached_property
+    def seat_pk(self) -> int | None:
+        for t in self.hand.get_xscript().tricks:
+            for p in t.plays:
+                if p.card.serialize() == self.serialized:
+                    return self.hand.table.seats.get(direction=p.seat.value).pk
+        return None
 
     @cached_property
     def seat(self) -> libSeat:
