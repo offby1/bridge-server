@@ -273,9 +273,6 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     sent_events_by_channel: dict[str, list[Any]] = collections.defaultdict(list)
 
     def send_event(*, channel, event_type, data):
-        keyword = "new-call"
-        if keyword in data and channel.startswith("system:player:"):
-            print(channel, data)
         sent_events_by_channel[channel].append(data)
 
     monkeypatch.setattr(hand, "send_event", send_event)

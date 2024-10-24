@@ -107,8 +107,7 @@ class DisplaySkeleton:
 
 
 def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
-    for ch in (channel, "all-tables"):
-        send_event(channel=ch, event_type="message", data=data | {"time": time.time()})
+    send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
 
 
 class HandManager(models.Manager):
@@ -153,7 +152,7 @@ class Hand(models.Model):
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
         player_channels = [f"system:player:{seat.player.pk}" for seat in self.table.seats]
-        all_channels = [hand_channel, *player_channels]
+        all_channels = [hand_channel, "all-tables", *player_channels]
 
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data)
