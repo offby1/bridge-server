@@ -258,7 +258,7 @@ class Player(models.Model):
                 if self.name == a.status.declarer.name:
                     role = "Declarer! "
                     # TODO -- set role to dummy as appropriate
-        bottiness = "" if self.allow_bot_to_play_for_me else " (bot)"
+        bottiness = " (bot)" if self.allow_bot_to_play_for_me else ""
         return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
 
     def as_link(self, style=""):

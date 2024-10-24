@@ -31,6 +31,20 @@ def j_northam(db, everybodys_password):
     return Player.objects.create(user=u)
 
 
+# You'd think the code-under-test would be simple enough to not warrant its own test.
+# And yet I managed to screw it up.
+def test_bottiness_text(usual_setup) -> None:
+    for p in Player.objects.all():
+        assert p.allow_bot_to_play_for_me is True
+        assert "(bot)" in p.name_dir
+
+    p1 = Player.objects.first()
+    assert p1 is not None
+    p1.allow_bot_to_play_for_me = False
+    p1.save()
+    assert "(bot)" not in p1.name_dir
+
+
 def test_splitsville_ejects_everyone_from_table(usual_setup):
     table = Table.objects.first()
 

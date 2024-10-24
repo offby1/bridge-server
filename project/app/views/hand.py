@@ -246,9 +246,9 @@ def _three_by_three_trick_display_context_for_hand(
 def _four_hands_context_for_hand(
     *, request: AuthedHttpRequest, hand: app.models.Hand, as_dealt: bool = False
 ) -> dict[str, Any]:
-    player = None
+    as_viewed_by = None
     if hasattr(request.user, "player"):
-        player = request.user.player
+        as_viewed_by = request.user.player
 
     skel = hand.display_skeleton(as_dealt=as_dealt)
 
@@ -259,7 +259,7 @@ def _four_hands_context_for_hand(
         assert this_seats_player.most_recent_seat is not None
 
         visibility_and_control = _display_and_control(
-            hand=hand, seat=libSeat, as_viewed_by=player, as_dealt=as_dealt
+            hand=hand, seat=libSeat, as_viewed_by=as_viewed_by, as_dealt=as_dealt
         )
         if visibility_and_control["display_cards"]:
             dem_cards_baby = _single_hand_as_four_divs(

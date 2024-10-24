@@ -20,8 +20,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* https://erics-work-macbook-pro.tail571dc2.ts.net/hand/69/ shows `322:swabhiman_das (bot)` and yet the admin page shows (correctly) `swabhiman_das (independent)`
-
 * The SSE events for "a call was made at table X" and "a play was made at table X" should go to *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
@@ -128,6 +126,8 @@ STILL TODO:
 
 
 DONE:
+* https://erics-work-macbook-pro.tail571dc2.ts.net/hand/69/ shows `322:swabhiman_das (bot)` and yet [the admin page](https://erics-work-macbook-pro.tail571dc2.ts.net/admin/app/player/322/change/) shows (correctly) that the "Allow bot to play for me" box is unchecked.
+
 * Maybe teach the bot to play just a *little* less stupidly?  Second-hand-low, third-hand-high, e.g.?
 
 * Think of some way to move the boards amongst the partners, so that a given board gets played more than once!
