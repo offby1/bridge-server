@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from bridge.card import Card, Rank
@@ -270,16 +270,18 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     t = Table.objects.first()
     assert t is not None
 
-    event_counts_by_keyword: dict[str, int] = collections.defaultdict(int)
+    sent_events_by_channel: dict[str, list[Any]] = collections.defaultdict(list)
 
     def send_event(*, channel, event_type, data):
-        for keyword in data:
-            event_counts_by_keyword[keyword] += 1
+        keyword = "new-call"
+        if keyword in data and channel.startswith("system:player:"):
+            print(channel, data)
+        sent_events_by_channel[channel].append(data)
 
     monkeypatch.setattr(hand, "send_event", send_event)
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
     assert (
-        event_counts_by_keyword["new-call"] == 2 * 4
+        len(sent_events_by_channel["system:player:1"]) == 2 * 4
     )  # "1 diamond, pass, pass, pass" sent to two different channels
-    assert event_counts_by_keyword["contract_text"] == 2
+    assert sent_events_by_channel["contract_text"] == 2

@@ -118,13 +118,7 @@ class HandManager(models.Manager):
         rv: Hand = super().create(*args, **kwargs)
 
         serialized_hand = NewHandSerializer(rv).data
-        send_timestamped_event(channel=str(rv.pk), data={"new-hand": serialized_hand})
-        for seat in rv.table.seats:
-            player = seat.player
-            send_timestamped_event(
-                channel=f"system:player:{player.pk}", data={"new-hand": serialized_hand}
-            )
-
+        rv.send_event_to_players_and_hand(data=serialized_hand)
         logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
         return rv
 
@@ -154,6 +148,15 @@ class Hand(models.Model):
         default=False,
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
+
+    # At some point we will probably not bother sending to the "hand" channel, but for now ...
+    def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
+        hand_channel = str(self.pk)
+        player_channels = [f"system:player:{seat.player.pk}" for seat in self.table.seats]
+        all_channels = [hand_channel, *player_channels]
+
+        for channel in all_channels:
+            send_timestamped_event(channel=channel, data=data)
 
     def libraryThing(self, seat: Seat) -> libHand:
         from . import Seat
@@ -241,8 +244,7 @@ class Hand(models.Model):
             contract = self.auction.status
             assert isinstance(contract, libContract)
             assert contract.declarer is not None
-            send_timestamped_event(
-                channel=str(self.pk),
+            self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
                     "contract_text": str(contract),
@@ -252,8 +254,7 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().auction.status is libAuction.PassedOut:
-            send_timestamped_event(
-                channel=str(self.pk),
+            self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
                     "passed_out": "Yup, sure was",
@@ -285,8 +286,7 @@ class Hand(models.Model):
         final_score = self.get_xscript().final_score()
 
         if final_score:
-            send_timestamped_event(
-                channel=str(self.pk),
+            self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
                     "final_score": str(final_score),
@@ -514,7 +514,7 @@ class Hand(models.Model):
     def toggle_open_access(self) -> None:
         self.open_access = not self.open_access
         self.save()
-        send_timestamped_event(channel=str(self.pk), data={"open-access-status": self.open_access})
+        self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
     def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> str:
         if as_viewed_by is None:
@@ -552,8 +552,7 @@ class CallManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
-        send_timestamped_event(
-            channel=str(rv.hand.pk),
+        rv.hand.send_event_to_players_and_hand(
             data={"new-call": CallSerializer(rv).data},
         )
 
@@ -596,8 +595,7 @@ class PlayManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
-        send_timestamped_event(
-            channel=str(rv.hand.pk),
+        rv.hand.send_event_to_players_and_hand(
             data={"new-play": PlaySerializer(rv).data},
         )
 
@@ -609,7 +607,7 @@ class Play(models.Model):
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
 
-    hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
+    hand = models.ForeignKey["Hand"](Hand, on_delete=models.CASCADE)
 
     serialized = models.CharField(  # type: ignore
         max_length=2,
