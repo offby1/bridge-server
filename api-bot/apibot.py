@@ -24,6 +24,7 @@ def _request_ex_filter(ex: Exception) -> bool:
     return rv
 
 
+# a return of True means "this hand is over; time to listen for events from a new one"
 def dispatch(msg: Any, session: requests.Session) -> bool:
     if msg.data:
         data = json.loads(msg.data)
@@ -33,21 +34,23 @@ def dispatch(msg: Any, session: requests.Session) -> bool:
                 data["new-play"]["hand"]["table"],
                 data["new-play"]["serialized"],
             )
-        elif all(key in data for key in ("table", "player", "call")):
+        elif all(key in data for key in ["new-call"]):
             logger.debug(
-                "Player %s at table %s called %s",
-                data["player"],
-                data["table"],
-                data["call"],
+                "Someone at table %s called %s",
+                data["new-call"]["hand"]["table"],
+                data["new-call"]["serialized"],
             )
-        elif data.get("action", None) == "just formed":
-            logger.debug("I guess the hand is over")
-            return True
+        elif all(key in data for key in ["table", "final_score"]):
+            logger.debug(
+                "I guess the hand is over, but I'll wait for some event whose presence guarantees that a new hand has been assigned"
+            )
+
         else:
             logger.warning("OK, I have no idea what to do with %s", data)
-            return False
+
     else:
-        logger.debug("%s", vars(msg))
+        logger.debug("No data in %s?", vars(msg))
+
     return False
 
 
@@ -67,27 +70,23 @@ def _run_forever() -> None:
     for p in all_players:
         if p["name"] == my_name:
             my_table_url = p["current_table"]
-            table = session.get(my_table_url).json()
-            logger.info(f"{my_name=} {table=}")
             break
     else:
         msg = f"Cannot find user named {my_name=}"
         raise Exception(msg)
 
     while True:
-        current_hand = session.get(table["current_hand"]).json()
-        logger.debug(f"{table=} {current_hand=}")
-        messages = SSEClient(
-            f"{host}/events/hand/{current_hand['pk']}",
-        )
-        logger.debug("Connected to %s.", host)
+        table = session.get(my_table_url).json()
+        logger.info(f"{my_name=} {table=}")
+        current_hand_url = table["current_hand"]
+        current_hand_pk = session.get(current_hand_url).json()["pk"]
+        events_url = f"{host}/events/hand/{current_hand_pk}"
+        logger.info(f"{current_hand_url=} {current_hand_pk=}; fetching events from {events_url}")
+        messages = SSEClient(events_url)
+
         for msg in messages:
             if dispatch(msg, session):
-                logger.debug("Breaking from while True")
                 break
-
-        logger.debug(f"Boutta refetch {my_table_url=}")
-        table = session.get(my_table_url).json()
 
 
 run_forever = retrying.retry(
