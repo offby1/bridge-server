@@ -12,6 +12,8 @@ IN PROGRESS:
 
   Of course, switch my existing bot to use it, once it exists.
 
+  - Idea -- when stuff happens at a hand, or table, send the event to the relevant *players*, as well as to the table and hand.
+
 STILL TODO:
 
 * Couple problems with the hand archive:
