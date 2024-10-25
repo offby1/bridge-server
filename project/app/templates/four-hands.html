@@ -13,7 +13,7 @@
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col">{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
         <div class="col">
-            <div class="three-by-three-yadda-yadda">
+            <div>
                 {% for row in three_by_three_trick_display.rows %}
                     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
                         {% for column in row %}

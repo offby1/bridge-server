@@ -241,15 +241,15 @@ def test_current_trick(usual_setup) -> None:
     t.current_hand.add_play_from_player(player=first_player, card=first_card)
     t = Table.objects.get(pk=t.pk)
     assert len(t.current_hand.current_trick) == 1
-    which, where, what, winner = t.current_hand.current_trick[-1]
-    assert what == first_card
+    tt = t.current_hand.current_trick[-1]
+    assert tt.card == first_card
 
     second_card = second_players_cards[0]
     t.current_hand.add_play_from_player(player=second_player, card=second_card)
     t = Table.objects.get(pk=t.pk)
     assert len(t.current_hand.current_trick) == 2
-    which, where, what, winner = t.current_hand.current_trick[-1]
-    assert what == second_card
+    tt = t.current_hand.current_trick[-1]
+    assert tt.card == second_card
 
 
 def test_next_seat_to_play(usual_setup) -> None:
@@ -278,4 +278,7 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     monkeypatch.setattr(hand, "send_event", send_event)
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
-    assert "contract" in sent_events_by_channel["system:player:1"][4]
+    print(f"{sent_events_by_channel=}")
+    first_player = Player.objects.first()
+    assert first_player is not None
+    assert "contract" in sent_events_by_channel[f"system:player:{first_player.pk}"][4]

@@ -481,8 +481,8 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     h = t.current_hand
 
     expected_cards_by_direction = {dir_.value: "__" for dir_ in libSeat}
-    for _index, s, modelCard, _is_winner in h.current_trick:
-        expected_cards_by_direction[s.value] = modelCard.serialize()
+    for tt in h.current_trick:
+        expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
     ya = hand._three_by_three_trick_display_context_for_hand(request, t.current_hand)
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]

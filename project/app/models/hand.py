@@ -43,7 +43,13 @@ class PlayError(Exception):
     pass
 
 
-TrickTuple = tuple[int, libSeat, libCard, bool]
+@dataclasses.dataclass
+class TrickTuple:
+    seat: libSeat
+    card: libCard
+    winner: bool
+
+
 TrickTuples = list[TrickTuple]
 
 
@@ -370,8 +376,8 @@ class Hand(models.Model):
             return rv
 
         if self.auction.found_contract:
-            for _index, libseat, libcard, _is_winner in self.annotated_plays:
-                rv[libseat].remove(libcard)
+            for tt in self.annotated_plays:
+                rv[tt.seat].remove(tt.card)
 
         return rv
 
@@ -502,7 +508,7 @@ class Hand(models.Model):
         for t in self.get_xscript().tricks:
             # Who won this trick?
             for p in t.plays:
-                flattened.append((1 + len(flattened), p.seat, p.card, p.wins_the_trick))
+                flattened.append(TrickTuple(seat=p.seat, card=p.card, winner=p.wins_the_trick))
 
         return flattened
 
@@ -603,7 +609,7 @@ class PlayManager(models.Manager):
         rv = super().create(*args, **kwargs)
 
         cereal = PlaySerializer(rv)
-        logger.debug("%r -- %r", cereal, cereal.data)
+
         rv.hand.send_event_to_players_and_hand(
             data={"new-play": cereal.data},
         )
@@ -643,11 +649,11 @@ class Play(models.Model):
 
     @cached_property
     def seat(self) -> libSeat:
-        for _index, seat, candidate, _is_winner in self.hand.annotated_plays:
-            if self.serialized == candidate.serialize():
-                return seat
+        for tt in self.hand.annotated_plays:
+            if self.serialized == tt.card.serialize():
+                return tt.seat
 
-        msg = f"Internal error, cannot find {self.serialized} in {[p[2] for p in self.hand.annotated_plays]}"
+        msg = f"Internal error, cannot find {self.serialized} in {[p.card for p in self.hand.annotated_plays]}"
         raise Exception(msg)
 
 

@@ -223,9 +223,21 @@ def _three_by_three_trick_display_context_for_hand(
 ) -> dict[str, Any]:
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
+    lead_came_from: bridge.seat.Seat | None = None
+    xscript = hand.get_xscript()
+
+    winning_direction = None
+
     if hand.current_trick:
-        for _index, libSeat, libCard, _is_winner in hand.current_trick:
-            cards_by_direction_number[libSeat.value] = libCard
+        tt: app.models.hand.TrickTuple
+        for index, tt in enumerate(hand.current_trick):
+            if index == 0:
+                lead_came_from = tt.seat
+            cards_by_direction_number[tt.seat.value] = tt.card
+            if tt.winner:
+                winning_direction = tt.seat.value
+    elif isinstance(xscript.auction.status, bridge.contract.Contract):
+        lead_came_from = xscript.next_seat_to_play()
 
     # TODO -- use _display_and_control here
     def c(direction: int):
@@ -233,13 +245,24 @@ def _three_by_three_trick_display_context_for_hand(
         color = "black"
         if card is not None:
             color = card.color
-        return f"""<span style="color: {color}">{card or '__'}</span>"""
+        sparkles = ""
+        if direction == winning_direction:
+            sparkles = " ✨"
+        return f"""<span style="color: {color}">{card or '__'}{sparkles}</span>"""
+
+    arrow = ""
+    if lead_came_from is not None:
+        arrow = {1: "↑", 2: "→", 3: "↓", 4: "←"}[lead_came_from.value]
 
     return {
         "three_by_three_trick_display": {
             "rows": [
                 [" ", c(bridge.seat.Seat.NORTH.value), " "],
-                [c(bridge.seat.Seat.WEST.value), " ", c(bridge.seat.Seat.EAST.value)],
+                [
+                    c(bridge.seat.Seat.WEST.value),
+                    arrow,
+                    c(bridge.seat.Seat.EAST.value),
+                ],
                 [" ", c(bridge.seat.Seat.SOUTH.value), " "],
             ],
         },
