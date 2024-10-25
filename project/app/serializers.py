@@ -62,7 +62,7 @@ class NewHandSerializer(serializers.ModelSerializer):
 
 
 class PlaySerializer(serializers.ModelSerializer):
-    seat_pk = serializers.IntegerField()
+    seat_pk = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Play
