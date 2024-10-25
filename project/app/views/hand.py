@@ -212,7 +212,9 @@ def _single_hand_as_four_divs(
         row_divs.append(single_row_divs(suit, holding))
 
     highlight_style = (
-        'style="background-color: lightgreen;"' if all_four.this_hands_turn_to_play else ""
+        'style="background-color: lightgreen;"'
+        if all_four.this_hands_turn_to_play and not hand.is_complete
+        else ""
     )
     return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
 
