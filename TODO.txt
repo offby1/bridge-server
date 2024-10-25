@@ -45,8 +45,6 @@ STILL TODO:
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
 
-* It will play 1,000,000 boards without stopping; nothing pays attention to
-
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
   - "Hand" joins "Call" and "Play"
@@ -57,16 +55,6 @@ STILL TODO:
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
-
-* Set page titles, so the browser history shows something more informative than
-
-  ```
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  ```
 
 * Have the bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
 
@@ -145,6 +133,15 @@ STILL TODO:
 
 
 DONE:
+* Set page titles, so the browser history shows something more informative than
+
+  ```
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  ```
 
 * The layout of the play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
   - I should have a column for the trick number *and* the compass direction of the leader;
