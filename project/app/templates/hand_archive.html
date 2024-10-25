@@ -17,16 +17,30 @@
     </div>
     <div>
         {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
-        {% for t in annotated_tricks %}
-            <div class="row">
-                {% for p in t %}
-                    <div class="col">
-                        {{ p.name }} (sitting {{ p.seat }}) played <span style="color: {{ p.card.color }}">{{ p.card }}</span>
-                        {% if p.wins_the_trick %}✨{% endif %}
-                    </div>
+        <table class="table">
+            <th>
+                <tr>
+                    <td>Trick</td>
+                    <td>Lead</td>
+                    <td>2nd</td>
+                    <td>3rd</td>
+                    <td>4th</td>
+                </tr>
+            </th>
+            <tbody>
+                {% for t in annotated_tricks %}
+                    <tr>
+                        <td>{{ t.number }} {{ t.seat }}</td>
+                        {% for p in t.plays %}
+                            <td>
+                                <span style="color: {{ p.card.color }}">{{ p.card }}
+                                    {% if p.wins_the_trick %}✨{% endif %}
+                                </span>
+                            </td>
+                        {% endfor %}
+                    </tr>
                 {% endfor %}
-            </div>
-            {% if not forloop.last %}<hr />{% endif %}
-        {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% endblock content %}

@@ -269,22 +269,20 @@ def _three_by_three_trick_display_context_for_hand(
     }
 
 
-def _annotate_tricks(xscript: HandTranscript) -> Iterable[list[dict[str, Any]]]:
-    """
-    Alas, the library's transcript doesn't give us the name of the player who played each card, so we reconstruct that here.
-    """
-    for t in xscript.tricks:
-        one_trick = []
-        for p in t.plays:
-            one_trick.append(
+def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
+    # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
+    for t_index, t in enumerate(xscript.tricks):
+        plays = []
+        for p_index, p in enumerate(t.plays):
+            if p_index == 0:
+                led_suit = p.card.suit
+            plays.append(
                 {
-                    "name": xscript.table.players[p.seat].name,
-                    "seat": p.seat.name,
-                    "card": p.card,
+                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
                     "wins_the_trick": p.wins_the_trick,
                 }
             )
-        yield one_trick
+        yield {"seat": p.seat.name[0], "number": t_index + 1, "plays": plays}
 
 
 def _four_hands_context_for_hand(
