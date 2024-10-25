@@ -13,8 +13,20 @@ IN PROGRESS:
   Of course, switch my existing bot to use it, once it exists.
 
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
+  This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
 STILL TODO:
+
+* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
+
+* The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
+
+      8966431144c039092231ff33a5ae4013695bca24
+      Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+      AuthorDate: 2024-10-22 16:51:47 -0700
+      Static files speedups:
+
+  Maybe I can, in effect, cache the `static_root` directory by having docker mount that as a volume, so that it persists from one container to the next.
 
 * Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.
 
