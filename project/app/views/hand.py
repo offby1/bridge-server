@@ -136,7 +136,7 @@ def _display_and_control(
         or (as_viewed_by is not None)
         and as_viewed_by.has_seen_board_at(hand.board, seat)
     )
-    viewer_may_control_this_seat = hand.open_access
+    viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
     is_this_seats_turn_to_play = (
         hand.player_who_may_play is not None
