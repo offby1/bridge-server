@@ -34,8 +34,6 @@ STILL TODO:
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
 
-* https://erics-work-macbook-pro.tail571dc2.ts.net/hand/69/ shows `322:swabhiman_das (bot)` and yet the admin page shows (correctly) `swabhiman_das (independent)`
-
 * The SSE events for "a call was made at table X" and "a play was made at table X" should go to *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
