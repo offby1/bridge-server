@@ -235,15 +235,15 @@ class Player(models.Model):
     def name(self):
         return self.user.username
 
-    @property
-    def name_dir(self) -> str:
+    def name_dir(self, *, hand: Hand) -> str:
         direction = ""
         role = ""
-        if self.most_recent_seat:
-            direction = f" ({self.most_recent_seat.named_direction})"
+        if self.has_played_hand(hand):
+            seat = hand.table.seats.get(player=self)
+            direction = f" ({seat.named_direction})"
 
             a: bridge.auction.Auction
-            a = self.most_recent_seat.table.current_auction
+            a = hand.get_xscript().auction
             if a.found_contract:
                 assert isinstance(a.status, bridge.auction.Contract)
                 assert a.declarer is not None
