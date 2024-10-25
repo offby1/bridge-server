@@ -17,8 +17,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
-
 * The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
 
       8966431144c039092231ff33a5ae4013695bca24
@@ -27,6 +25,8 @@ STILL TODO:
       Static files speedups:
 
   Maybe I can, in effect, cache the `static_root` directory by having docker mount that as a volume, so that it persists from one container to the next.
+
+  I tried "collectfasta", in a branch of that name, but it didn't do anything.
 
 * Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.
 
@@ -640,6 +640,9 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+
+* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
+  At least some are not obsolete -- the chat system still uses them
 
 * When clicking "New board plz", if the current hand is not the most recent, do nothing.
 
