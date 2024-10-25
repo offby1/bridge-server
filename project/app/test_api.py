@@ -61,11 +61,19 @@ def test_play_post(usual_setup) -> None:
 
     diamond_two = Card(suit=Suit.DIAMONDS, rank=Rank(2))
     factory = APIRequestFactory()
-    request = factory.post("/api/plays/", {"serialized": diamond_two.serialize()}, format="json")
+    request = factory.post(
+        "/api/plays/", {"serialized": diamond_two.serialize(), "hand_id": h.pk}, format="json"
+    )
     force_authenticate(request, user=east.user)
     view = app.views.drf_views.PlayViewSet.as_view(actions={"post": "create"})
 
     response = view(request)
-    assert response == "ok I played your card, Boss"
-    # TODO
-    # - check the hand's transcript to ensure the play is present
+    assert response.status_code == 201
+    xs = h.get_xscript()
+    assert len(xs.tricks) == 1
+    first_trick = xs.tricks[0]
+    assert len(first_trick) == 1
+    first_play = first_trick[0]
+
+    assert first_play.seat.name == "East"
+    assert first_play.card == diamond_two

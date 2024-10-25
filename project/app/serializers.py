@@ -63,11 +63,11 @@ class NewHandSerializer(serializers.ModelSerializer):
 
 class PlaySerializer(serializers.ModelSerializer):
     seat_pk = serializers.IntegerField(read_only=True)
+    hand_id = serializers.IntegerField()
 
     class Meta:
         model = Play
-        fields = ("serialized", "hand", "seat_pk")
-        depth = 1
+        fields = ("serialized", "hand_id", "seat_pk")
 
 
 class PlayerSerializer(serializers.HyperlinkedModelSerializer):
