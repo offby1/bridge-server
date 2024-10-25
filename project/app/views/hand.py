@@ -278,13 +278,14 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
         for p_index, p in enumerate(t.plays):
             if p_index == 0:
                 led_suit = p.card.suit
+                leading_seat = p.seat
             plays.append(
                 {
                     "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
                     "wins_the_trick": p.wins_the_trick,
                 }
             )
-        yield {"seat": p.seat.name[0], "number": t_index + 1, "plays": plays}
+        yield {"seat": leading_seat.name[0], "number": t_index + 1, "plays": plays}
 
 
 def _four_hands_context_for_hand(
