@@ -320,13 +320,16 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
-    return {
+    always = {
         "annotated_tricks": list(_annotate_tricks(hand.get_xscript())),
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
-    } | _three_by_three_trick_display_context_for_hand(request, hand)
+    }
+    if not hand.is_complete:
+        return always | _three_by_three_trick_display_context_for_hand(request, hand)
+    return always
 
 
 @logged_in_as_player_required()
