@@ -31,7 +31,11 @@ APP_NAME = "info.offby1.bridge"
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY: str
-DJANGO_SECRET_FILE = os.environ.get("DJANGO_SECRET_FILE")
+DJANGO_SECRET_FILE = os.environ.get(
+    "DJANGO_SECRET_FILE",
+    # This default works on my laptop, and nowhere else; it's here just to make it easier for me to run Visual Studio Code.
+    "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_secret_key",
+)
 
 if DJANGO_SECRET_FILE is not None:
     with open(DJANGO_SECRET_FILE) as inf:
