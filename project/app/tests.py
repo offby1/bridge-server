@@ -316,7 +316,7 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
 
 def test_seat_ordering(usual_setup):
     t = Table.objects.first()
-    assert " ".join([t[0] for t in t.as_tuples()]) == "NORTH EAST SOUTH WEST"
+    assert " ".join([t[0] for t in t.as_tuples()]) == "North East South West"
 
 
 def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
