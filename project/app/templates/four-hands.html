@@ -7,11 +7,11 @@
     {# North at the top as per the Bridge Writing Style Guide #}
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col"></div>
-        <div class="col">{{ card_display.North.player.name_dir }}: {{ card_display.North.cards }}</div>
+        <div class="col">{{ card_display.North.player.display_name }}: {{ card_display.North.cards }}</div>
         <div class="col"></div>
     </div>
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-        <div class="col">{{ card_display.West.player.name_dir }}: {{ card_display.West.cards }}</div>
+        <div class="col">{{ card_display.West.player.display_name }}: {{ card_display.West.cards }}</div>
         <div class="col">
             <div>
                 {% for row in three_by_three_trick_display.rows %}
@@ -24,11 +24,11 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="col">{{ card_display.East.player.name_dir }}: {{ card_display.East.cards }}</div>
+        <div class="col">{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
     </div>
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr">
         <div class="col"></div>
-        <div class="col">{{ card_display.South.player.name_dir }}: {{ card_display.South.cards }}</div>
+        <div class="col">{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
         <div class="col"></div>
     </div>
 </div>
