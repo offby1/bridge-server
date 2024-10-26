@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block title %}
+    Tables {{ page_obj.start_index }} through {{ page_obj.end_index }}
+{% endblock title %}
 {% block content %}
     {% block table_list %}
         <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>

@@ -17,8 +17,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
-
 * The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
 
       8966431144c039092231ff33a5ae4013695bca24
@@ -28,21 +26,13 @@ STILL TODO:
 
   Maybe I can, in effect, cache the `static_root` directory by having docker mount that as a volume, so that it persists from one container to the next.
 
+  I tried "collectfasta", in a branch of that name, but it didn't do anything.
+
 * Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.
-
-* Couple problems with the hand archive:
-  - The layout of the play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
-    - I should have a column for the trick number *and* the compass direction of the leader;
-    - The column headers should be "Trick", "Lead", "2nd", "3rd", "4th";
-    - The 2nd, 3rd, 4th columns should omit the suit symbol if it's the same as the led suit
-
-* Speaking of the hand archive: I should get rid of the three_by_three_trick_display when the hand has been completely played; it's distracting
 
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
-
-* https://erics-work-macbook-pro.tail571dc2.ts.net/hand/69/ shows `322:swabhiman_das (bot)` and yet the admin page shows (correctly) `swabhiman_das (independent)`
 
 * The SSE events for "a call was made at table X" and "a play was made at table X" should go to *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand.
 
@@ -55,8 +45,6 @@ STILL TODO:
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
 
-* It will play 1,000,000 boards without stopping; nothing pays attention to
-
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
   - "Hand" joins "Call" and "Play"
@@ -67,16 +55,6 @@ STILL TODO:
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
-
-* Set page titles, so the browser history shows something more informative than
-
-  ```
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
-  ```
 
 * Have the bot display a live-updating tableau where each row represents a table, and shows something like the remaining time before the bot will act, and/or the last thing it did, or something.
 
@@ -155,6 +133,22 @@ STILL TODO:
 
 
 DONE:
+* Set page titles, so the browser history shows something more informative than
+
+  ```
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:06 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  5:05 PM Bridge erics-work-macbook-pro.tail571dc2.ts.net
+  ```
+
+* The layout of the play record doesn't quite conform to what [the style guide](Bridge Writing Style Guide by Richard Pavlicek.pdf) (page 5) says:
+  - I should have a column for the trick number *and* the compass direction of the leader;
+  - The column headers should be "Trick", "Lead", "2nd", "3rd", "4th";
+  - The 2nd, 3rd, 4th columns should omit the suit symbol if it's the same as the led suit
+
+* Speaking of the hand archive: I should get rid of the three_by_three_trick_display when the hand has been completely played; it's distracting
 
 * Couple problems with the hand archive:
   - At https://erics-work-macbook-pro.tail571dc2.ts.net/hand/81/archive/, the play record has entries like `(sitting ) played ♣2 (sitting ) played ♣3`.  That is: the player's names and compass directions are missing.
@@ -640,6 +634,9 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+
+* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
+  At least some are not obsolete -- the chat system still uses them
 
 * When clicking "New board plz", if the current hand is not the most recent, do nothing.
 

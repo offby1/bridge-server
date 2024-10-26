@@ -136,7 +136,7 @@ def _display_and_control(
         or (as_viewed_by is not None)
         and as_viewed_by.has_seen_board_at(hand.board, seat)
     )
-    viewer_may_control_this_seat = hand.open_access
+    viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
     is_this_seats_turn_to_play = (
         hand.player_who_may_play is not None
@@ -212,7 +212,9 @@ def _single_hand_as_four_divs(
         row_divs.append(single_row_divs(suit, holding))
 
     highlight_style = (
-        'style="background-color: lightgreen;"' if all_four.this_hands_turn_to_play else ""
+        'style="background-color: lightgreen;"'
+        if all_four.this_hands_turn_to_play and not hand.is_complete
+        else ""
     )
     return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
 
@@ -269,22 +271,21 @@ def _three_by_three_trick_display_context_for_hand(
     }
 
 
-def _annotate_tricks(xscript: HandTranscript) -> Iterable[list[dict[str, Any]]]:
-    """
-    Alas, the library's transcript doesn't give us the name of the player who played each card, so we reconstruct that here.
-    """
-    for t in xscript.tricks:
-        one_trick = []
-        for p in t.plays:
-            one_trick.append(
+def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
+    # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
+    for t_index, t in enumerate(xscript.tricks):
+        plays = []
+        for p_index, p in enumerate(t.plays):
+            if p_index == 0:
+                led_suit = p.card.suit
+                leading_seat = p.seat
+            plays.append(
                 {
-                    "name": xscript.table.players[p.seat].name,
-                    "seat": p.seat.name,
-                    "card": p.card,
+                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
                     "wins_the_trick": p.wins_the_trick,
                 }
             )
-        yield one_trick
+        yield {"seat": leading_seat.name[0], "number": t_index + 1, "plays": plays}
 
 
 def _four_hands_context_for_hand(
@@ -300,6 +301,7 @@ def _four_hands_context_for_hand(
     libSeat: bridge.seat.Seat
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
+        this_seats_player.display_name = this_seats_player.name_dir(hand=hand)
         assert this_seats_player.most_recent_seat is not None
 
         visibility_and_control = _display_and_control(
@@ -320,13 +322,16 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
-    return {
+    always = {
         "annotated_tricks": list(_annotate_tricks(hand.get_xscript())),
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
-    } | _three_by_three_trick_display_context_for_hand(request, hand)
+    }
+    if not hand.is_complete:
+        return always | _three_by_three_trick_display_context_for_hand(request, hand)
+    return always
 
 
 @logged_in_as_player_required()

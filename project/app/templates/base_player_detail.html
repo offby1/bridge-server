@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load player_extras %}
 {% load partials %}
+{% block title %}
+    {{ player }}
+{% endblock title %}
 {% block content %}
     <div>
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}

@@ -34,15 +34,18 @@ def j_northam(db, everybodys_password):
 # You'd think the code-under-test would be simple enough to not warrant its own test.
 # And yet I managed to screw it up.
 def test_bottiness_text(usual_setup) -> None:
+    t = Table.objects.first()
+    assert t is not None
+    h = t.current_hand
     for p in Player.objects.all():
         assert p.allow_bot_to_play_for_me is True
-        assert "(bot)" in p.name_dir
+        assert "(bot)" in p.name_dir(hand=h)
 
     p1 = Player.objects.first()
     assert p1 is not None
     p1.allow_bot_to_play_for_me = False
     p1.save()
-    assert "(bot)" not in p1.name_dir
+    assert "(bot)" not in p1.name_dir(hand=h)
 
 
 def test_splitsville_ejects_everyone_from_table(usual_setup):
@@ -313,7 +316,7 @@ def test_only_recipient_can_read_messages(usual_setup, settings):
 
 def test_seat_ordering(usual_setup):
     t = Table.objects.first()
-    assert " ".join([t[0] for t in t.as_tuples()]) == "NORTH EAST SOUTH WEST"
+    assert " ".join([t[0] for t in t.as_tuples()]) == "North East South West"
 
 
 def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):

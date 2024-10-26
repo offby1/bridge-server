@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% load player_extras %}
+{% block title %}
+    Players {{ page_obj.start_index }} through {{ page_obj.end_index }}
+{% endblock title %}
 {% block content %}
     {% block player_list %}
         <h2>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</h2>
