@@ -553,12 +553,12 @@ admin.site.register(Hand)
 
 class CallManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
-        from app.serializers import CallSerializer
+        from app.serializers import ReadOnlyCallSerializer
 
         rv = super().create(*args, **kwargs)
 
         rv.hand.send_event_to_players_and_hand(
-            data={"new-call": CallSerializer(rv).data},
+            data={"new-call": ReadOnlyCallSerializer(rv).data},
         )
 
         return rv
@@ -604,11 +604,11 @@ class PlayManager(models.Manager):
         """
         Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
         """
-        from app.serializers import PlaySerializer
+        from app.serializers import ReadOnlyPlaySerializer
 
         rv = super().create(*args, **kwargs)
 
-        cereal = PlaySerializer(rv)
+        cereal = ReadOnlyPlaySerializer(rv)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-play": cereal.data},
