@@ -10,6 +10,7 @@ import requests
 import retrying  # type: ignore
 from bridge.auction import Auction
 from bridge.card import Card
+from bridge.contract import Bid
 from bridge.seat import Seat
 from bridge.table import Hand, Player, Table
 from bridge.xscript import HandTranscript
@@ -64,6 +65,8 @@ def dispatch_hand_action(
                 data["new-play"]["hand"]["table"],
                 data["new-play"]["serialized"],
             )
+            if current_xscript is not None:
+                current_xscript.add_card(Card.deserialize(data["new-play"]["serialized"]))
             return None
         if all(key in data for key in ["new-call"]):
             logger.debug(
@@ -72,8 +75,12 @@ def dispatch_hand_action(
                 data["new-call"]["hand"]["table"],
                 data["new-call"]["serialized"],
             )
+            if current_xscript is not None:
+                current_xscript.add_call(Bid.deserialize(data["new-call"]["serialized"]))
             return None
         if (new_hand := data.get("new-hand")) is not None:
+            if current_xscript is not None:
+                logger.info(current_xscript.final_score())
             logger.debug("Ah! The hand is over; here's the new hand %s", new_hand)
             board = new_hand["board"]
 
