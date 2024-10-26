@@ -3,14 +3,17 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import Any, Iterable
 
+import more_itertools
 import requests
 import retrying  # type: ignore
+from bridge.auction import Auction
+from bridge.card import Card
+from bridge.seat import Seat
+from bridge.table import Hand, Player, Table
+from bridge.xscript import HandTranscript
 from sseclient import SSEClient  # type: ignore
-
-if TYPE_CHECKING:
-    from bridge.xscript import HandTranscript
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +35,23 @@ def _request_ex_filter(ex: Exception) -> bool:
 current_xscript: HandTranscript | None = None
 
 
-# a return of True means "this hand is over; time to listen for events from a new one"
-def dispatch_hand_action(*, msg: Any, session: requests.Session, current_seat_pk: int) -> bool:
+def players_from_board(board: Blob) -> Iterable[Player]:
+    # do we really care what the player's names are?  We might, but for now let's just avoid another API call and make shit up.
+    for index, name in enumerate(["north", "east", "south", "west"]):
+        seat = Seat(index + 1)
+        hand = Hand(
+            cards=[
+                Card.deserialize("".join(c))
+                for c in more_itertools.chunked(board[f"{name}_cards"], 2)
+            ]
+        )
+        yield Player(name=name, hand=hand, seat=seat)
+
+
+# an integer return value means "this hand is over; here's the pk of the new one, so you can listen for events from it"
+def dispatch_hand_action(
+    *, msg: Any, session: requests.Session, current_seat_pk: int
+) -> int | None:
     global current_xscript
 
     if msg.data:
@@ -46,35 +64,34 @@ def dispatch_hand_action(*, msg: Any, session: requests.Session, current_seat_pk
                 data["new-play"]["hand"]["table"],
                 data["new-play"]["serialized"],
             )
-        elif all(key in data for key in ["new-call"]):
+            return None
+        if all(key in data for key in ["new-call"]):
             logger.debug(
                 "Seat %s at table %s called %s",
                 data["new-call"]["seat_pk"],
                 data["new-call"]["hand"]["table"],
                 data["new-call"]["serialized"],
             )
-        elif (new_hand := data.get("new-hand")) is not None:
+            return None
+        if (new_hand := data.get("new-hand")) is not None:
             logger.debug("Ah! The hand is over; here's the new hand %s", new_hand)
-            # example_hand = {"pk": 1, "table": 1, "board": 1}
-            # example_board = {
-            #     "east_cards": "♣Q♣K♦3♦4♦6♦9♥5♥T♥J♠2♠5♠7♠A",
-            #     "ew_vulnerable": False,
-            #     "north_cards": "♣2♣3♣6♣7♣9♣A♥4♥9♥Q♥A♠4♠8♠Q",
-            #     "ns_vulnerable": False,
-            #     "pk": 1,
-            #     "south_cards": "♣5♣8♣T♣J♦7♦T♦Q♥3♠3♠6♠9♠T♠K",
-            #     "west_cards": "♣4♦2♦5♦8♦J♦K♦A♥2♥6♥7♥8♥K♠J",
-            # }
-            # current_xscript = HandTranscript(table=..., auction=..., ns_vuln=..., ew_vuln=...)
-            return True
+            board = new_hand["board"]
 
-        else:
-            logger.warning("OK, I have no idea what to do with %s", data)
+            table = Table(players=list(players_from_board(board)))
+            auction = Auction(table=table, dealer=Seat(board["dealer"]))
+            current_xscript = HandTranscript(
+                table=table,
+                auction=auction,
+                ns_vuln=board["ns_vulnerable"],
+                ew_vuln=board["ew_vulnerable"],
+            )
+            return new_hand["pk"]
 
-    else:
-        logger.debug("No data in %s?", vars(msg))
+        logger.warning("OK, I have no idea what to do with %s", data)
+        return None
 
-    return False
+    logger.debug("No data in %s?", vars(msg))
+    return None
 
 
 # TODO -- write some API call that simply fetches a player by name.
@@ -118,20 +135,24 @@ def _run_forever() -> None:
     )  # n.b. https://www.youtube.com/watch?v=g2Xk_dTn2x4&t=27s
     my_table_url = p["current_table"]
 
+    table = session.get(my_table_url).json()
+    logger.info(f"{my_name=} {table=}")
+
+    current_hand_pk = session.get(table["current_hand"]).json()["pk"]
+    current_seat_pk = find_my_seat_pk(session=session, player=p, table=table)
+
     while True:
-        table = session.get(
-            my_table_url
-        ).json()  # we keep fetching this because it changes with each new hand
-        logger.info(f"{my_name=} {table=}")
-        current_hand_url = table["current_hand"]
-        current_hand_pk = session.get(current_hand_url).json()["pk"]
-        current_seat_pk = find_my_seat_pk(session=session, player=p, table=table)
         events_url = f"{host}/events/player/system:player:{p['pk']}/"
-        logger.info(f"{current_hand_url=} {current_hand_pk=}; fetching events from {events_url}")
+        logger.info(f"{current_hand_pk=}; fetching events from {events_url}")
         messages = SSEClient(events_url)
 
         for msg in messages:
-            if dispatch_hand_action(msg=msg, session=session, current_seat_pk=current_seat_pk):
+            if (
+                new_hand_pk := dispatch_hand_action(
+                    msg=msg, session=session, current_seat_pk=current_seat_pk
+                )
+            ) is not None:
+                current_hand_pk = new_hand_pk
                 break
 
 
@@ -148,4 +169,5 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%dT%H:%M:%S%z",
         style="{",
     )
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.INFO)
     run_forever()
