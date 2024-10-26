@@ -43,6 +43,21 @@
                 <label class="form-check-label" for="god-mode-switch">✨GOD MODE🦄</label>
             </div>
         </div>
+        <div class="col">
+            {% if hand.open_access %}
+                <label for="tempo-input" class="form-label">Tempo in Seconds</label>
+                <input type="number"
+                       id="tempo-input"
+                       name="tempo-seconds"
+                       hx-post="{% url 'app:set-table-tempo' hand.table.pk %}"
+                       min="0"
+                       max="10"
+                       placeholder="tempo in seconds"
+                       value="{{ hand.table.tempo_seconds }}">
+            {% else %}
+                <span>The bot waits {{ hand.table.tempo_seconds }} seconds before calling or playing.</span>
+            {% endif %}
+        </div>
     {% endif %}
 {% endblock upper-right-column %}
 {% block scripts %}

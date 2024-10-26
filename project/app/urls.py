@@ -10,6 +10,7 @@ from .views.hand import (
     hand_list_view,
     open_access_toggle_view,
 )
+from .views.table import set_table_tempo_view
 
 app_name = "app"
 
@@ -50,5 +51,6 @@ urlpatterns = [
         table.details.new_board_view,
         name="new-board-plz",
     ),
+    path("table/<table_pk>/set-table-tempo", set_table_tempo_view, name="set-table-tempo"),
     path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
 ]

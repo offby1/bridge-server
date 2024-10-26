@@ -89,4 +89,4 @@ class TableSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Table
-        fields = ("seat_set", "pk", "current_hand")
+        fields = ("seat_set", "pk", "current_hand", "tempo_seconds")

@@ -78,7 +78,17 @@ class Table(models.Model):
 
     objects = TableManager()
 
+    tempo_seconds = models.FloatField(
+        default=1.0,
+        db_comment="Time, in seconds, that the bot will wait before making a call or play",
+    )  # type: ignore
+
     summary_for_this_viewer: str
+
+    def gimme_dat_fresh_tempo(self):
+        if hasattr(self, "tempo_seconds"):
+            del self.tempo_seconds
+        return self.tempo_seconds
 
     @cached_property
     def seats(self):

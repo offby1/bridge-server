@@ -45,9 +45,6 @@ STILL TODO:
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
 
-* Trivial idea: have the bot get its "tempo", not from a hard-coded constant in "delay_action", but rather from something in the database.
-  That way I could tweak it while it's running.
-
 * When I'm done playing a hand, let me see other tables' scores for this board.
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
@@ -140,6 +137,11 @@ STILL TODO:
 
 
 DONE:
+* Trivial idea: have the bot get its "tempo", not from a hard-coded constant in "delay_action", but rather from something in the database.
+  That way I could tweak it while it's running.
+
+  Maybe I should attach this number to the table, instead of the hand.
+
 * Set page titles, so the browser history shows something more informative than
 
   ```
