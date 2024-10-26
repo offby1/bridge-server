@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+Blob = dict[str, Any]  # the type of the stuff we get from the API
+
 
 def _request_ex_filter(ex: Exception) -> bool:
     if isinstance(ex, requests.exceptions.HTTPError):
@@ -31,7 +33,7 @@ current_xscript: HandTranscript | None = None
 
 
 # a return of True means "this hand is over; time to listen for events from a new one"
-def dispatch_hand_action(msg: Any, session: requests.Session) -> bool:
+def dispatch_hand_action(*, msg: Any, session: requests.Session, current_seat_pk: int) -> bool:
     global current_xscript
 
     if msg.data:
@@ -75,18 +77,30 @@ def dispatch_hand_action(msg: Any, session: requests.Session) -> bool:
 
 
 # TODO -- write some API call that simply fetches a player by name.
-def find_my_player_json_thingy(
-    *, session: requests.Session, host: str, my_name: str
-) -> dict[str, str]:
-    url = f"{host}/api/players/"
+def find_my_player_json_thingy(*, session: requests.Session, host: str, my_name: str) -> Blob:
+    url = f"{host}api/players/"  # TODO -- all this building-URLs-by-manipulating-strings is brittle
+
     response = session.get(url)
     response.raise_for_status()
 
     all_players = response.json()
-    for p in all_players:
+    for p in all_players["results"]:
         if p["name"] == my_name:
+            p["url"] = url + str(p["pk"]) + "/"
             return p
     msg = f"er, uh, I can't find {my_name} in the output from {url}"
+    raise Exception(msg)
+
+
+def find_my_seat_pk(*, session: requests.Session, player: Blob, table: Blob) -> int:
+    for seat_url in table["seat_set"]:
+        seat: Blob = session.get(seat_url).json()
+        one_player_url: str = seat["player"]
+        if one_player_url == player["url"]:
+            logger.debug("Player %s is at seat %s", player, seat["pk"])
+            return seat["pk"]
+
+    msg = f"Cannot find a player with our url ({player['url']}) in response from {seat_url}"
     raise Exception(msg)
 
 
@@ -110,17 +124,13 @@ def _run_forever() -> None:
         logger.info(f"{my_name=} {table=}")
         current_hand_url = table["current_hand"]
         current_hand_pk = session.get(current_hand_url).json()["pk"]
-        # how tf do I know what seat I'm at?
-        # - we've already fetched player data; it's in `p`
-        # - check "seat_set"; that's a list of URLs
-        # - each seat has a player URL
-        # - could probably cheat and not fetch the player URL, and instead compare it to the one we already fetched
+        current_seat_pk = find_my_seat_pk(session=session, player=p, table=table)
         events_url = f"{host}/events/player/system:player:{p['pk']}/"
         logger.info(f"{current_hand_url=} {current_hand_pk=}; fetching events from {events_url}")
         messages = SSEClient(events_url)
 
         for msg in messages:
-            if dispatch_hand_action(msg, session):
+            if dispatch_hand_action(msg=msg, session=session, current_seat_pk=current_seat_pk):
                 break
 
 
