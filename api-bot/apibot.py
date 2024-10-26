@@ -38,6 +38,7 @@ def dispatch_hand_action(*, msg: Any, session: requests.Session, current_seat_pk
 
     if msg.data:
         data = json.loads(msg.data)
+        logger.debug("<-- %r", data)
         if all(key in data for key in ["new-play"]):
             logger.debug(
                 "Seat %s at table %s played %s",
