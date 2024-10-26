@@ -17,6 +17,10 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
+
+* The hand, while we're playing, does not show a running total of tricks taken by each side.
+
 * The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
 
       8966431144c039092231ff33a5ae4013695bca24
