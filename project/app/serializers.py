@@ -26,6 +26,13 @@ class CallSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+class ReadOnlyCallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Call
+        fields = ("serialized", "hand", "seat_pk")
+        depth = 1
+
+
 class HandSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Hand
@@ -61,6 +68,7 @@ class NewHandSerializer(serializers.ModelSerializer):
         fields = ("pk", "table", "board")
 
 
+# The bot uses this to create plays
 class PlaySerializer(serializers.ModelSerializer):
     seat_pk = serializers.IntegerField(read_only=True)
     hand_id = serializers.IntegerField()
@@ -68,6 +76,14 @@ class PlaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Play
         fields = ("serialized", "hand_id", "seat_pk")
+
+
+# Anyone can use this to examine a play.  I haven't figured out how to combine the two serializers that does both things.
+class ReadOnlyPlaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Play
+        fields = ("serialized", "hand", "seat_pk")
+        depth = 1
 
 
 class PlayerSerializer(serializers.HyperlinkedModelSerializer):
