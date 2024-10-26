@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import requests
 import retrying  # type: ignore
 from sseclient import SSEClient  # type: ignore
+
+if TYPE_CHECKING:
+    from bridge.xscript import HandTranscript
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,13 @@ def _request_ex_filter(ex: Exception) -> bool:
     return rv
 
 
+current_xscript: HandTranscript | None = None
+
+
 # a return of True means "this hand is over; time to listen for events from a new one"
-def dispatch(msg: Any, session: requests.Session) -> bool:
+def dispatch_hand_action(msg: Any, session: requests.Session) -> bool:
+    global current_xscript
+
     if msg.data:
         data = json.loads(msg.data)
         if all(key in data for key in ["new-play"]):
@@ -42,8 +50,19 @@ def dispatch(msg: Any, session: requests.Session) -> bool:
                 data["new-call"]["hand"]["table"],
                 data["new-call"]["serialized"],
             )
-        elif all(key in data for key in ["new-hand"]):
-            logger.debug("Ah! The hand is over.")
+        elif (new_hand := data.get("new-hand")) is not None:
+            logger.debug("Ah! The hand is over; here's the new hand %s", new_hand)
+            # example_hand = {"pk": 1, "table": 1, "board": 1}
+            # example_board = {
+            #     "east_cards": "♣Q♣K♦3♦4♦6♦9♥5♥T♥J♠2♠5♠7♠A",
+            #     "ew_vulnerable": False,
+            #     "north_cards": "♣2♣3♣6♣7♣9♣A♥4♥9♥Q♥A♠4♠8♠Q",
+            #     "ns_vulnerable": False,
+            #     "pk": 1,
+            #     "south_cards": "♣5♣8♣T♣J♦7♦T♦Q♥3♠3♠6♠9♠T♠K",
+            #     "west_cards": "♣4♦2♦5♦8♦J♦K♦A♥2♥6♥7♥8♥K♠J",
+            # }
+            # current_xscript = HandTranscript(table=..., auction=..., ns_vuln=..., ew_vuln=...)
             return True
 
         else:
@@ -55,6 +74,7 @@ def dispatch(msg: Any, session: requests.Session) -> bool:
     return False
 
 
+# TODO -- write some API call that simply fetches a player by name.
 def find_my_player_json_thingy(
     *, session: requests.Session, host: str, my_name: str
 ) -> dict[str, str]:
@@ -90,12 +110,17 @@ def _run_forever() -> None:
         logger.info(f"{my_name=} {table=}")
         current_hand_url = table["current_hand"]
         current_hand_pk = session.get(current_hand_url).json()["pk"]
+        # how tf do I know what seat I'm at?
+        # - we've already fetched player data; it's in `p`
+        # - check "seat_set"; that's a list of URLs
+        # - each seat has a player URL
+        # - could probably cheat and not fetch the player URL, and instead compare it to the one we already fetched
         events_url = f"{host}/events/player/system:player:{p['pk']}/"
         logger.info(f"{current_hand_url=} {current_hand_pk=}; fetching events from {events_url}")
         messages = SSEClient(events_url)
 
         for msg in messages:
-            if dispatch(msg, session):
+            if dispatch_hand_action(msg, session):
                 break
 
 

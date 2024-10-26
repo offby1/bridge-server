@@ -60,6 +60,7 @@ class NewHandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hand
         fields = ("pk", "table", "board")
+        depth = 1
 
 
 class PlaySerializer(serializers.ModelSerializer):
