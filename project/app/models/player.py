@@ -55,6 +55,7 @@ class Player(models.Model):
     if TYPE_CHECKING:
         seat_set = RelatedManager["Seat"]()
 
+    display_name: str  # set by a view, from name_dir
     seat: Seat
     objects = PlayerManager()
 
