@@ -18,11 +18,12 @@ class BoardSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class CallSerializer(serializers.ModelSerializer):
-    seat_pk = serializers.IntegerField()
+    seat_pk = serializers.IntegerField(read_only=True)
+    hand_id = serializers.IntegerField()
 
     class Meta:
         model = Call
-        fields = ("serialized", "hand", "seat_pk")
+        fields = ("serialized", "hand_id", "seat_pk")
         depth = 1
 
 

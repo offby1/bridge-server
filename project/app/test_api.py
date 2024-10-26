@@ -49,6 +49,38 @@ def test_card_visibility(usual_setup, rf) -> None:
     assert len(actual_south_cards) == 26
 
 
+def test_call_post(usual_setup) -> None:
+    t = Table.objects.first()
+    assert t is not None
+    h = t.current_hand
+    assert h is not None
+
+    north = h.player_who_may_call
+    assert north.name == "Jeremy Northam"
+
+    three_notrump = Bid(denomination=None, level=3)
+    factory = APIRequestFactory()
+    request = factory.post(
+        "/api/calls/", {"serialized": three_notrump.serialize(), "hand_id": h.pk}, format="json"
+    )
+    force_authenticate(request, user=north.user)
+    view = app.views.drf_views.CallViewSet.as_view(actions={"post": "create"})
+
+    response = view(request)
+
+    assert response.status_code == 201
+    xs = h.get_xscript()
+    a = xs.auction
+
+    assert len(a.player_calls) == 1
+    first_player_call = a.player_calls[0]
+
+    assert first_player_call.player.name == "Jeremy Northam"
+
+    assert first_player_call.call.level == 3
+    assert first_player_call.call.denomination is None
+
+
 def test_play_post(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
