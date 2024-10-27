@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 from typing import Any, Iterable
 
 import more_itertools
@@ -16,7 +15,7 @@ from bridge.table import Hand, Player, Table
 from bridge.xscript import HandTranscript
 from sseclient import SSEClient  # type: ignore
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("apibot")
 
 Blob = dict[str, Any]  # the type of the stuff we get from the API
 
@@ -28,9 +27,7 @@ def _request_ex_filter(ex: Exception) -> bool:
             # not worth retrying
             return False
 
-    rv = isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
-    sys.stderr.write(f"Caught {ex}; {'will' if rv else 'will not'} retry\n")
-    return rv
+    return isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
 
 
 current_xscript: HandTranscript | None = None
@@ -129,7 +126,14 @@ def find_my_seat_pk(*, session: requests.Session, player: Blob, table: Blob) -> 
     raise Exception(msg)
 
 
-def _run_forever() -> None:
+@retrying.retry(
+    retry_on_exception=_request_ex_filter,
+    wait_exponential_multiplier=1000,
+    after_attempts=lambda attempt_number: logger.warning(
+        "Attempt number %d failed; will retry", attempt_number
+    ),
+)
+def run_forever() -> None:
     host = "https://erics-work-macbook-pro.tail571dc2.ts.net/"
     logger.debug("Connecting to %s", host)
 
@@ -162,11 +166,6 @@ def _run_forever() -> None:
                 current_hand_pk = new_hand_pk
                 break
 
-
-run_forever = retrying.retry(
-    retry_on_exception=_request_ex_filter,
-    wait_exponential_multiplier=1000,
-)(_run_forever)
 
 if __name__ == "__main__":
     logging.basicConfig(
