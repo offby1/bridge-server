@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def table_list_view(request) -> HttpResponse:
-    table_list = app.models.Table.objects.all()
+    table_list = app.models.Table.objects.order_by("id").all()
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
