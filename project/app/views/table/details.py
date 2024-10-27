@@ -8,9 +8,11 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 import bridge.seat
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import (
     HttpResponse,
+    HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
     HttpResponseRedirect,
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def table_list_view(request) -> HttpResponse:
-    table_list = app.models.Table.objects.all()
+    table_list = app.models.Table.objects.order_by("id").all()
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -176,3 +178,26 @@ def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     logger.debug('Called "next_board" on table %s', table)
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def set_table_tempo_view(
+    request: AuthedHttpRequest,
+    table_pk: str,
+) -> HttpResponse:
+    logger.debug("%s %s", table_pk, request.POST)
+    if settings.DEPLOYMENT_ENVIRONMENT == "production":
+        return HttpResponseNotFound("Geez I dunno what you're talking about")
+
+    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
+    payload = request.POST.get("tempo-seconds")
+    if payload is None:
+        return HttpResponseBadRequest("request is missing a value")
+    tempo_seconds: float = float(payload)
+
+    table.tempo_seconds = tempo_seconds
+    table.save()
+    response_text = f"{table=} {table.tempo_seconds=}"
+    logger.debug("Returning %s", response_text)
+    return HttpResponse(response_text)
