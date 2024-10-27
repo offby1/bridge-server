@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import urllib.parse
 from typing import Any, Iterable
 
 import more_itertools
@@ -98,31 +99,33 @@ def dispatch_hand_action(
     return None
 
 
-# TODO -- write some API call that simply fetches a player by name.
 def find_my_player_json_thingy(*, session: requests.Session, host: str, my_name: str) -> Blob:
-    url = f"{host}api/players/"  # TODO -- all this building-URLs-by-manipulating-strings is brittle
+    url = urllib.parse.urlparse(host)
+    url = url._replace(path="/api/players/", query=urllib.parse.urlencode({"name": my_name}))
 
-    response = session.get(url)
+    response = session.get(urllib.parse.urlunparse(url))
+
     response.raise_for_status()
 
-    all_players = response.json()
-    for p in all_players["results"]:
-        if p["name"] == my_name:
-            p["url"] = url + str(p["pk"]) + "/"
-            return p
-    msg = f"er, uh, I can't find {my_name} in the output from {url}"
-    raise Exception(msg)
+    return response.json()["results"][0]
 
 
+# TODO, maybe: replace me with a call to the API that queries for the seat, once such a call exists.
 def find_my_seat_pk(*, session: requests.Session, player: Blob, table: Blob) -> int:
     for seat_url in table["seat_set"]:
         seat: Blob = session.get(seat_url).json()
-        one_player_url: str = seat["player"]
-        if one_player_url == player["url"]:
+        one_player_url = urllib.parse.urlparse(seat["player"])
+
+        components = one_player_url.path.rsplit("/", maxsplit=2)
+        if not components[-1]:
+            components.pop(-1)
+
+        candidate_last_component = components[-1]
+        if candidate_last_component == str(player["pk"]):
             logger.debug("Player %s is at seat %s", player, seat["pk"])
             return seat["pk"]
 
-    msg = f"Cannot find a player with our url ({player['url']}) in response from {seat_url}"
+    msg = f"Cannot find a player with pk ({player['pk']}) in response from {seat_url}"
     raise Exception(msg)
 
 
