@@ -96,10 +96,17 @@ class PlayViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
 
+# https://www.django-rest-framework.org/api-guide/filtering/#filtering-against-query-parameters
 class PlayerViewSet(viewsets.ModelViewSet):
-    queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = Player.objects.all()
+        name = self.request.query_params.get("name")
+        if name is not None:
+            queryset = queryset.filter(user__username=name)
+        return queryset
 
 
 class SeatViewSet(viewsets.ModelViewSet):

@@ -6,7 +6,7 @@ from rest_framework.test import APIRequestFactory, force_authenticate  # type: i
 
 import app.models.player
 import app.views.drf_views
-from app.models import Board, Hand, Table
+from app.models import Board, Hand, Player, Table
 
 from .testutils import set_auction_to
 
@@ -109,3 +109,24 @@ def test_play_post(usual_setup) -> None:
 
     assert first_play.seat.name == "East"
     assert first_play.card == diamond_two
+
+
+def test_player_query(usual_setup, rf):
+    player_one = Player.objects.first()
+    assert player_one is not None
+
+    v = app.views.drf_views.PlayerViewSet.as_view({"get": "list"})
+
+    request = rf.get(path="/woteva/")
+    request.user = player_one.user
+    response = v(request).render()
+
+    # assert that the response contains four users, including player_one
+    assert response.data["count"] == 4
+    assert player_one.name in {result["name"] for result in response.data["results"]}
+
+    request = rf.get(path=f"/woteva/?name={player_one.name}")
+    request.user = player_one.user
+    response = v(request).render()
+    assert response.data["count"] == 1
+    assert player_one.name in {result["name"] for result in response.data["results"]}
