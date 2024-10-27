@@ -17,6 +17,18 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Read about django-eventstream, in particular: how does it ensure that events get delivered?  Picture this:
+  - server sends event "foo".
+  - nobody is around to listen for it.
+  - it's effectively lost; the next time someone listens for it, they won't see it.
+  - also, perhaps related: consider what happens if the server stops and restarts while the old bot is running.  I suspect it won't resume playing ... but then I'm getting close to deprecating that old bot, so maybe I don't care.
+  - [the readme][1] says "Events can be persisted to your database, so clients can recover if they get disconnected.".  What does that even mean?  How would a client tell the server "please send me events from the past"?
+    Apparently every event ever sent gets persisted to a table named `django_eventstream_event`, along with a timestamp; I wonder if anything ever trims old stuff off that table?
+  - [the "stream-reset" event][2] seems relevant
+  - https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events doesn't clear anything up
+  - kinda looks like the client needs to keep track of the event IDs that it's seen, and pass the largest to the server, in effect saying "don't just show me events from now on; but rather, show me events since this here number from the past".
+    [Here](https://github.com/valberg/django-sse/commit/7af129efd87241bdffbd9abb46256074362161bc) is an example of how the server might handle this.
+
 * Maybe prevent someone from playing the same board twice?  Or at least, don't keep any but the first score.
   I've gone to a fair amount of effort preventing disclosure of boards that a player hasn't yet seen; this is sort of the opposite.
 
@@ -35,13 +47,13 @@ STILL TODO:
 
   I tried "collectfasta", in a branch of that name, but it didn't do anything.
 
-* Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.
+* Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.  Otherwise they'll have an awkward encounter if the server refuses to let p1 play a board he's already played, even though p2 hasn't yet played it.
 
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
 
-* The SSE events for "a call was made at table X" and "a play was made at table X" should go to *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand.
+* The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
 
@@ -137,6 +149,17 @@ STILL TODO:
 
 
 DONE:
+* brandon (player ID 806) is logged in, and is looking at [heidi](https://teensy-info.tail571dc2.ts.net/api/players/805/).  It sure looks like he can toggle the "let bot play for me" switch :-|
+
+  I guess the policy should be: only player X gets to modify player X's stuff.
+
+  What other stuff is leaking out?
+
+  Ugh, https://www.django-rest-framework.org/api-guide/permissions/#djangoobjectpermissions suggests that I need a 3rd-party backend to provide object-level permissions.
+
+  - https://django-guardian.readthedocs.io/en/stable/userguide/index.html probably tries to solve this, but the docs are disappointingly sloppy and not-written-by-Native-english-speaker-y.
+  - https://github.com/dfunckt/django-rules looks sane.
+
 * Trivial idea: have the bot get its "tempo", not from a hard-coded constant in "delay_action", but rather from something in the database.
   That way I could tweak it while it's running.
 
@@ -650,3 +673,6 @@ NOT DONE:
 * When clicking "New board plz", if the current hand is not the most recent, do nothing.
 
   I decided instead that it should take you to the current hand.  The idea is: if I'm just sitting back letting the bot play for me, I still need to click that button to resume viewing the action; but at least I'm not *creating* a new board that will then be abandoned.  (I'm actually not certain that was happening, but this way seems more solid).
+
+[1] : https://github.com/fanout/django-eventstream?tab=readme-ov-file#django-eventstream
+[2] : https://github.com/fanout/django-eventstream?tab=readme-ov-file#receiving-in-the-browser

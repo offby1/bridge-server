@@ -101,6 +101,19 @@ class PlayerViewSet(viewsets.ModelViewSet):
     serializer_class = PlayerSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+    def update(self, request, *args, **kwargs):
+        try:
+            target_pk = int(kwargs.get("pk"))
+        except ValueError:
+            logger.info("Got bogus value for pk: %r", kwargs.get("pk"))
+            target_pk = None
+        requester_pk = self.request.user.player.pk
+        logger.debug(f"{target_pk=} {requester_pk=}")
+        if target_pk != requester_pk:
+            msg = f"You, {requester_pk=}, may not futz with player {target_pk=}"
+            return Response(msg, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = Player.objects.all()
         name = self.request.query_params.get("name")

@@ -130,3 +130,40 @@ def test_player_query(usual_setup, rf):
     response = v(request).render()
     assert response.data["count"] == 1
     assert player_one.name in {result["name"] for result in response.data["results"]}
+
+
+def test_player_permissions(usual_setup):
+    player_one = Player.objects.first()
+    assert player_one is not None
+    assert player_one.allow_bot_to_play_for_me is True
+
+    v = app.views.drf_views.PlayerViewSet.as_view({"put": "update"})
+    factory = APIRequestFactory()
+    request = factory.put(
+        path="it always surprises me that this path doesn't matter",
+        data={"allow_bot_to_play_for_me": False},
+        format="json",
+    )
+    force_authenticate(request, user=player_one.user)
+
+    response = v(request, pk=player_one.pk).render()
+    assert 200 <= response.status_code < 400
+    assert response.data["allow_bot_to_play_for_me"] is False
+
+    player_two = Player.objects.exclude(pk=player_one.pk).first()
+    assert player_two is not None
+    request = factory.put(
+        path="it always surprises me that this path doesn't matter",
+        data={"allow_bot_to_play_for_me": True},
+        format="json",
+    )
+    force_authenticate(request, user=player_two.user)
+    response = v(request, pk=player_one.pk).render()
+
+    assert response.status_code > 400
+    assert (
+        json.loads(response.content)
+        == f"You, requester_pk={player_two.user.pk}, may not futz with player target_pk={player_one.user.pk}"
+    )
+    player_one.refresh_from_db()
+    assert player_one.allow_bot_to_play_for_me is False
