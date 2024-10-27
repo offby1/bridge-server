@@ -170,7 +170,7 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
             if b is None:
                 if Board.objects.count() >= TOTAL_BOARDS:
-                    msg = "No more tables! The tournament is over."
+                    msg = "No more boards! You've played them all."
                     raise TableException(msg)
 
                 deck = bridge.card.Card.deck()
