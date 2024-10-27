@@ -9,7 +9,6 @@ import operator
 import os
 import queue
 import random
-import sys
 import threading
 import time
 import typing
@@ -35,13 +34,6 @@ def ts(time_t=None):
     if time_t is None:
         time_t = time.time()
     return datetime.datetime.fromtimestamp(time_t, tz=datetime.timezone.utc)
-
-
-def _request_ex_filter(ex):
-    rv = isinstance(ex, (requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
-    now = ts().replace(microsecond=0).isoformat()
-    sys.stderr.write(f"{now} Caught {ex}; {'will' if rv else 'will not'} retry\n")
-    return rv
 
 
 def trick_taking_power(c: bridge.card.Card, *, hand: Hand) -> int:
@@ -290,8 +282,11 @@ class Command(BaseCommand):
         self._threads_by_table_pk[table_pk].queue.put(data)
 
     @retrying.retry(
-        retry_on_exception=_request_ex_filter,
+        retry_on_exception=(requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
         wait_exponential_multiplier=1000,
+        after_attempts=lambda attempt_number: logger.warning(
+            "Attempt number %d failed; will retry", attempt_number
+        ),
     )
     def run_forever(self):
         logger.info(f"{settings.EVENTSTREAM_REDIS=}")
