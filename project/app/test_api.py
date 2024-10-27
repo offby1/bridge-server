@@ -5,12 +5,12 @@ from bridge.contract import Bid
 
 import app.models.player
 import app.views.drf_views
-from app.models import Board, Hand
+from app.models import Board, Hand, Player
 
 from .testutils import set_auction_to
 
 
-def test_card_visibility(usual_setup, rf, settings):
+def test_card_visibility(usual_setup, rf):
     # fetch the four-hands-view
     # fetch the equivalent data from the API
     # ensure that some cards (i.e., those from players other than the as_viewed_by) aren't visible in the former
@@ -44,3 +44,24 @@ def test_card_visibility(usual_setup, rf, settings):
 
     # Yay, now we can see the dummy
     assert len(actual_south_cards) == 26
+
+
+def test_player_query(usual_setup, rf):
+    player_one = Player.objects.first()
+    assert player_one is not None
+
+    v = app.views.drf_views.PlayerViewSet.as_view({"get": "list"})
+
+    request = rf.get(path="/woteva/")
+    request.user = player_one.user
+    response = v(request).render()
+
+    # assert that the response contains four users, including player_one
+    assert response.data["count"] == 4
+    assert player_one.name in {result["name"] for result in response.data["results"]}
+
+    request = rf.get(path=f"/woteva/?name={player_one.name}")
+    request.user = player_one.user
+    response = v(request).render()
+    assert response.data["count"] == 1
+    assert player_one.name in {result["name"] for result in response.data["results"]}
