@@ -21,7 +21,10 @@ STILL TODO:
   - server sends event "foo".
   - nobody is around to listen for it.
   - it's effectively lost; the next time someone listens for it, they won't see it.
-  - also, perhaps related: consider what happens if the server stops and restarts while the old bot is running.  I suspect it won't resume playing ... but then I'm getting close to deprecating that old bot, so maybe I don't care.
+  - also, perhaps related: consider what happens if the server stops and restarts while the old bot is running.  I suspect it won't resume playing; I often connect to the "prod" instance and find that a few tables are blocked on the bot making a call or a play.
+    The new API bot might eventually solve this, if I use it instead of the old bot, and somehow ensure that
+    - it always comes up after stopping (i.e., make it a service)
+    - it learns how to ask for events that it might have missed when it was dead, or at least ask "hey is it my turn" as soon as it comes up
   - [the readme][1] says "Events can be persisted to your database, so clients can recover if they get disconnected.".  What does that even mean?  How would a client tell the server "please send me events from the past"?
     Apparently every event ever sent gets persisted to a table named `django_eventstream_event`, along with a timestamp; I wonder if anything ever trims old stuff off that table?
   - [the "stream-reset" event][2] seems relevant
