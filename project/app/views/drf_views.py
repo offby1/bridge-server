@@ -25,7 +25,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BoardViewSet(viewsets.ModelViewSet):
+class NoUpdateViewSet(viewsets.ModelViewSet):
+    def update(self, request, *args, **kwargs):
+        name = getattr(getattr(getattr(self, "queryset", {}), "model", {}), "__name__", "?")
+        return Response(f"{name} objects are read-only", status=status.HTTP_403_FORBIDDEN)
+
+
+class BoardViewSet(NoUpdateViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -78,19 +84,19 @@ class BoardViewSet(viewsets.ModelViewSet):
         return Response(data=self._censored_data_dict(as_viewed_by=as_viewed_by, board=the_board))
 
 
-class CallViewSet(viewsets.ModelViewSet):
+class CallViewSet(NoUpdateViewSet):
     queryset = Call.objects.all()
     serializer_class = CallSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class HandViewSet(viewsets.ModelViewSet):
+class HandViewSet(NoUpdateViewSet):
     queryset = Hand.objects.all()
     serializer_class = HandSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class PlayViewSet(viewsets.ModelViewSet):
+class PlayViewSet(NoUpdateViewSet):
     queryset = Play.objects.all()
     serializer_class = PlaySerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -122,13 +128,13 @@ class PlayerViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class SeatViewSet(viewsets.ModelViewSet):
+class SeatViewSet(NoUpdateViewSet):
     queryset = Seat.objects.all()
     serializer_class = SeatSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class TableViewSet(viewsets.ModelViewSet):
+class TableViewSet(NoUpdateViewSet):
     queryset = Table.objects.all()
     serializer_class = TableSerializer
     permission_classes = (permissions.IsAuthenticated,)
