@@ -103,6 +103,11 @@ class Board(models.Model):
 
     dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
 
+    north_cards = models.CharField(max_length=26)
+    east_cards = models.CharField(max_length=26)
+    south_cards = models.CharField(max_length=26)
+    west_cards = models.CharField(max_length=26)
+
     objects = BoardManager()
 
     @property
@@ -136,11 +141,6 @@ class Board(models.Model):
             rv = self.PlayerVisibility.everything
 
         return rv
-
-    north_cards = models.CharField(max_length=26)
-    east_cards = models.CharField(max_length=26)
-    south_cards = models.CharField(max_length=26)
-    west_cards = models.CharField(max_length=26)
 
     def __str__(self):
         if self.ns_vulnerable and self.ew_vulnerable:
