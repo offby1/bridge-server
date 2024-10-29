@@ -7,7 +7,7 @@ Maybe one "list" page that links to summary pages.  The entries would display on
 Each summary page:
 
 - is something like a 403 if the viewer has never played that board; or else
-- a list of tables that have played it, and the outcome for each
+- a list of hands that have played it, and the outcome for each
 - each entry would of course be a link to the corresponding hand archive page
 - perhaps order this list by the scores of the players at the same seat as the viewer.  That is:
   - we've already determined that the viewer has already played this board; so
