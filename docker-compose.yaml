@@ -14,7 +14,7 @@ services:
         condition: service_started
     environment:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
-      HOST_HOSTNAME: $HOSTNAME
+      HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
       PGHOST: postgres
       PGPASS: postgres
     ports:
@@ -37,6 +37,7 @@ services:
     environment:
       DJANGO_HOST: django
       DJANGO_SECRET_FILE: /run/secrets/django_secret
+      HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
 
   django-migrated:
     <<: *django
