@@ -1,1 +1,26 @@
-Hello Cleveland
+{% extends "base.html" %}
+{% block title %}
+    Boards {{ page_obj.start_index }} through {{ page_obj.end_index }}
+{% endblock title %}
+{% block content %}
+    {% block board_list %}
+        <h2>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
+        <table class="table">
+            <th>
+                <tr>
+                    <td>Board #</td>
+                    <td>Summary</td>
+                </tr>
+            </th>
+            {% for board in page_obj %}
+                <tr>
+                    <td>{{ board.pk }}</td>
+                    <td>
+                        <a href="{% url 'app:board-archive' board.pk %}">Board {{ board }} mumble mumble</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% include "pagination-controls.html" %}
+    {% endblock board_list %}
+{% endblock content %}
