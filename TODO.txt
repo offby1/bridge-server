@@ -17,6 +17,10 @@ IN PROGRESS:
 
 STILL TODO:
 
+* When I'm done playing a hand, let me see other tables' scores for this board.
+
+  `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
+
 * Read about django-eventstream, in particular: how does it ensure that events get delivered?  Picture this:
   - server sends event "foo".
   - nobody is around to listen for it.
@@ -59,10 +63,6 @@ STILL TODO:
 * The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
-
-* When I'm done playing a hand, let me see other tables' scores for this board.
-
-  `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
 
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
