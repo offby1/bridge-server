@@ -1,5 +1,5 @@
-from django.http import HttpResponse
+from django.template.response import TemplateResponse
 
 
 def board_list_view(request, *args, **kwargs):
-    return HttpResponse("Imagine a nice list of boards here")
+    return TemplateResponse(request=request, template="board_list.html")
