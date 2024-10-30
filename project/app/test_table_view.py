@@ -2,9 +2,8 @@ import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
-from django.contrib import auth
 
-from .models import Board, Player, Table
+from .models import Board, Table
 from .testutils import play_to_completion, set_auction_to
 from .views.hand import _display_and_control
 
@@ -25,27 +24,14 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     assert not ds[Seat.WEST].this_hands_turn_to_play
 
 
-def test_hand_visibility(usual_setup: None, settings, everybodys_password) -> None:
+def test_hand_visibility(usual_setup: None, second_setup) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
 
     assert str(t1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
-    new_player_names = ["n2", "e2", "s2", "w2"]
-    for name in new_player_names:
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-
-    Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
-    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-
-    t2 = Table.objects.create_with_two_partnerships(
-        p1=Player.objects.get_by_name("n2"),
-        p2=Player.objects.get_by_name("e2"),
-        shuffle_deck=False,
-    )
+    t2 = second_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
     play_to_completion(t2.current_hand)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import enum
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -10,10 +11,16 @@ from bridge.contract import Bid as libBid
 from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
+from django.contrib import auth
 
 from .models import AuctionError, Board, Hand, Player, Table, hand
-from .testutils import set_auction_to
-from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
+from .testutils import play_to_completion, set_auction_to
+from .views.hand import (
+    _bidding_box_context_for_hand,
+    bidding_box_partial_view,
+    hand_archive_view,
+    hand_detail_view,
+)
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
@@ -282,3 +289,120 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     first_player = Player.objects.first()
     assert first_player is not None
     assert "contract" in sent_events_by_channel[f"system:player:{first_player.pk}"][4]
+
+
+class HandStatus(enum.Enum):
+    incomplete = 0
+    complete = 1
+
+
+class WhosLooking(enum.Enum):
+    already_played = 0
+    never_seen_it = 1
+
+
+class RequestedPage(enum.Enum):
+    detail = 0
+    archive = 1
+
+
+@pytest.fixture
+def complete_hand(usual_setup):
+    t = usual_setup
+    assert t is not None
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
+    play_to_completion(t.current_hand)
+    return t.current_hand
+
+
+@pytest.fixture
+def incomplete_hand(usual_setup, second_setup):
+    assert second_setup is not None
+    assert second_setup.current_hand.board == usual_setup.current_hand.board
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), second_setup.current_hand)
+    return second_setup.current_hand
+
+
+@pytest.fixture
+def never_played_anything(db, everybodys_password) -> Player:
+    return Player.objects.create(
+        user=auth.models.User.objects.create(
+            username="never played nothin", password=everybodys_password
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("hand_status", "whos_looking", "requested_page", "expected_response_status_code"),
+    [
+        (
+            HandStatus.incomplete,
+            WhosLooking.already_played,
+            RequestedPage.detail,
+            200,
+        ),
+        (
+            HandStatus.incomplete,
+            WhosLooking.already_played,
+            RequestedPage.archive,
+            302,
+        ),
+        (
+            HandStatus.incomplete,
+            WhosLooking.never_seen_it,
+            RequestedPage.detail,
+            403,
+        ),
+        (
+            HandStatus.incomplete,
+            WhosLooking.never_seen_it,
+            RequestedPage.archive,
+            403,
+        ),
+        (
+            HandStatus.complete,
+            WhosLooking.already_played,
+            RequestedPage.detail,
+            302,
+        ),
+        (
+            HandStatus.complete,
+            WhosLooking.already_played,
+            RequestedPage.archive,
+            200,
+        ),
+        (
+            HandStatus.complete,
+            WhosLooking.never_seen_it,
+            RequestedPage.detail,
+            403,
+        ),
+        (
+            HandStatus.complete,
+            WhosLooking.never_seen_it,
+            RequestedPage.archive,
+            403,
+        ),
+    ],
+)
+def test_exhaustive_archive_and_detail_redirection(
+    rf,
+    incomplete_hand,
+    complete_hand,
+    never_played_anything,
+    hand_status,
+    whos_looking,
+    requested_page,
+    expected_response_status_code,
+):
+    hand = [incomplete_hand, complete_hand][hand_status.value]
+    player = (
+        Player.objects.first()
+        if whos_looking == WhosLooking.already_played
+        else never_played_anything
+    )
+    view_func = hand_detail_view if requested_page == RequestedPage.detail else hand_archive_view
+    request = rf.get("/woteva/", pk=hand.pk)
+    request.user = player.user
+    actual_response = view_func(request, pk=hand.pk)
+    assert actual_response.status_code == expected_response_status_code
