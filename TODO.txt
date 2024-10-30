@@ -17,6 +17,18 @@ IN PROGRESS:
 
 STILL TODO:
 
+* A legend! The hand detail should explain that
+  - the little downarrow is the trick's led card
+  - the sparkles indicate the winning card in the trick
+  - the green glow indicates the player whose turn it is to play a card.
+
+  Maybe hovertext, and maybe an actual map-like legend box in a corner near the top.
+
+* Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
+  - also somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
+
+  https://www.perplexity.ai/search/using-css-or-bootstrap-how-can-A5U0WSQKTdS172ms6crEdQ
+
 * When I'm done playing a hand, let me see other tables' scores for this board.
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
@@ -38,8 +50,6 @@ STILL TODO:
 
 * Maybe prevent someone from playing the same board twice?  Or at least, don't keep any but the first score.
   I've gone to a fair amount of effort preventing disclosure of boards that a player hasn't yet seen; this is sort of the opposite.
-
-* Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
 
 * The hand, while we're playing, does not show a running total of tricks taken by each side.
 
@@ -97,8 +107,6 @@ STILL TODO:
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
-
-* Maybe somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
 
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
 
