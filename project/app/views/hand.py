@@ -247,10 +247,10 @@ def _three_by_three_trick_display_context_for_hand(
         color = "black"
         if card is not None:
             color = card.color
-        sparkles = ""
+        throb = ""
         if direction == winning_direction:
-            sparkles = " ✨"
-        return f"""<span style="color: {color}">{card or '__'}{sparkles}</span>"""
+            throb = " class=throb-div"
+        return f"""<div{throb}><span style="color: {color}">{card or '__'}</span></div>"""
 
     arrow = ""
     if lead_came_from is not None:

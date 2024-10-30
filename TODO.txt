@@ -24,8 +24,7 @@ STILL TODO:
 
   Maybe hovertext, and maybe an actual map-like legend box in a corner near the top.
 
-* Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
-  - also somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
+* Somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
 
   https://www.perplexity.ai/search/using-css-or-bootstrap-how-can-A5U0WSQKTdS172ms6crEdQ
 
@@ -160,6 +159,8 @@ STILL TODO:
 
 
 DONE:
+* Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
+
 * brandon (player ID 806) is logged in, and is looking at [heidi](https://teensy-info.tail571dc2.ts.net/api/players/805/).  It sure looks like he can toggle the "let bot play for me" switch :-|
 
   I guess the policy should be: only player X gets to modify player X's stuff.
