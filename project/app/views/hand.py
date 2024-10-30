@@ -63,7 +63,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 
     assert player is not None
 
-    logger.debug(f"{h.board.what_can_they_see(player=player)=}")
     match h.board.what_can_they_see(player=player):
         case h.board.PlayerVisibility.everything:
             pass
@@ -358,12 +357,6 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    if not player.has_ever_seen_even_a_single_card_from_board(hand.board):
-        return HttpResponseForbidden(
-            f"{player} is not allowed to see this hand's board because they haven't even started to play it"
-        )
-
-    logger.debug(f"{hand.board.what_can_they_see(player=player)=}")
     match hand.board.what_can_they_see(player=player):
         case hand.board.PlayerVisibility.nothing:
             return HttpResponseForbidden(

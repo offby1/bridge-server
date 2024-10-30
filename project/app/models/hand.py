@@ -524,7 +524,7 @@ class Hand(models.Model):
         if as_viewed_by is None:
             return "Remind me -- who are you, again?"
 
-        if not as_viewed_by.has_ever_seen_even_a_single_card_from_board(self.board):
+        if self.board.what_can_they_see(player=as_viewed_by) == self.board.PlayerVisibility.nothing:
             return f"Sorry, {as_viewed_by}, but you have never played board {self.board.pk}, so later d00d"
 
         auction_status = self.get_xscript().auction.status
@@ -535,7 +535,10 @@ class Hand(models.Model):
         if auction_status is self.auction.PassedOut:
             return "Passed Out"
 
-        if len(self.serialized_plays()) < 52:
+        if (
+            self.board.what_can_they_see(player=as_viewed_by)
+            != self.board.PlayerVisibility.everything
+        ):
             return f"{auction_status}: {len(self.plays)} cards played"
 
         fs = self.get_xscript().final_score()
