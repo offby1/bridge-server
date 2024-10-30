@@ -63,10 +63,16 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 
     assert player is not None
 
-    if not h.player_can_examine(player):
-        return HttpResponseForbidden(
-            f"{player} is not allowed to see this hand's board because they haven't yet played it"
-        )
+    logger.debug(f"{h.board.what_can_they_see(player=player)=}")
+    match h.board.what_can_they_see(player=player):
+        case h.board.PlayerVisibility.everything:
+            pass
+        case h.board.PlayerVisibility.nothing:
+            return HttpResponseForbidden(
+                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
+            )
+        case h.board.PlayerVisibility.dummys_hand | h.board.PlayerVisibility.own_hand:
+            return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
 
     a = h.auction
     c = a.status
@@ -352,13 +358,26 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    if not hand.player_can_examine(player):
+    if not player.has_ever_seen_even_a_single_card_from_board(hand.board):
         return HttpResponseForbidden(
-            f"{player} is not allowed to see this hand's board because they haven't yet played it"
+            f"{player} is not allowed to see this hand's board because they haven't even started to play it"
         )
 
-    if hand.is_complete or hand.auction.status is bridge.auction.Auction.PassedOut:
-        return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
+    logger.debug(f"{hand.board.what_can_they_see(player=player)=}")
+    match hand.board.what_can_they_see(player=player):
+        case hand.board.PlayerVisibility.nothing:
+            return HttpResponseForbidden(
+                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
+            )
+
+        case hand.board.PlayerVisibility.dummys_hand | hand.board.PlayerVisibility.own_hand:
+            if not hand.table.seats.filter(player=player).exists():
+                return HttpResponseForbidden(
+                    f"You, {player.name}, are not at table {hand.table}; and you haven't completely played {hand.board}"
+                )
+
+        case hand.board.PlayerVisibility.everything:
+            return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
 
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)

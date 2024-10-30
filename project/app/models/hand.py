@@ -361,9 +361,6 @@ class Hand(models.Model):
     def player_names(self) -> str:
         return ", ".join([p.name for p in self.players_by_direction.values()])
 
-    def player_can_examine(self, player: Player) -> bool:
-        return player.has_ever_seen_board(self.board)
-
     @property
     def players_by_direction(self) -> dict[int, Player]:
         return {s.direction: s.player for s in self.table.seats}
@@ -527,7 +524,7 @@ class Hand(models.Model):
         if as_viewed_by is None:
             return "Remind me -- who are you, again?"
 
-        if not as_viewed_by.has_ever_seen_board(self.board):
+        if not as_viewed_by.has_ever_seen_even_a_single_card_from_board(self.board):
             return f"Sorry, {as_viewed_by}, but you have never played board {self.board.pk}, so later d00d"
 
         auction_status = self.get_xscript().auction.status

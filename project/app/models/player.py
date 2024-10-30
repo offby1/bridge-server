@@ -203,7 +203,9 @@ class Player(models.Model):
             ).all(),
         ).first()
 
-    def has_ever_seen_board(self, board: Board, hand: Hand | None = None) -> bool:
+    def has_ever_seen_even_a_single_card_from_board(
+        self, board: Board, hand: Hand | None = None
+    ) -> bool:
         if hand is None:
             hand = self.hand_at_which_board_was_played(board)
         return hand is not None
