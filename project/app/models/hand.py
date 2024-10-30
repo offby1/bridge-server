@@ -524,8 +524,11 @@ class Hand(models.Model):
         if as_viewed_by is None:
             return "Remind me -- who are you, again?"
 
-        if self.board.what_can_they_see(player=as_viewed_by) == self.board.PlayerVisibility.nothing:
-            return f"Sorry, {as_viewed_by}, but you have never played board {self.board.pk}, so later d00d"
+        if (
+            self.board.what_can_they_see(player=as_viewed_by)
+            != self.board.PlayerVisibility.everything
+        ):
+            return f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d"
 
         auction_status = self.get_xscript().auction.status
 
@@ -535,16 +538,10 @@ class Hand(models.Model):
         if auction_status is self.auction.PassedOut:
             return "Passed Out"
 
-        if (
-            self.board.what_can_they_see(player=as_viewed_by)
-            != self.board.PlayerVisibility.everything
-        ):
-            return f"{auction_status}: {len(self.plays)} cards played"
-
         fs = self.get_xscript().final_score()
-        assert fs is not None
+        trick_summary = "still being played" if fs is None else fs.trick_summary
 
-        return f"{auction_status}: {fs.trick_summary}"
+        return f"{auction_status}: {trick_summary}"
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

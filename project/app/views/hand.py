@@ -36,89 +36,34 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def hand_list_view(request: HttpRequest) -> HttpResponse:
-    hand_list = app.models.Hand.objects.order_by("id").all()
-    paginator = Paginator(hand_list, 15)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-    h: Hand
-    for h in page_obj.object_list:
-        h.summary_for_this_viewer = h.summary_as_viewed_by(
-            as_viewed_by=getattr(request.user, "player", None)
-        )
-    context = {
-        "page_obj": page_obj,
-        "total_count": app.models.Hand.objects.count(),
+def _auction_context_for_hand(hand) -> dict[str, Any]:
+    return {
+        "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
+        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "hand": hand,
     }
 
-    return render(request, "hand_list.html", context=context)
 
+def _bidding_box_context_for_hand(request, hand):
+    player = request.user.player  # type: ignore
+    seat = player.most_recent_seat
+    display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
 
-@gzip_page
-@logged_in_as_player_required()
-def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
-    h: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
-    player = request.user.player
-
-    assert player is not None
-
-    match h.board.what_can_they_see(player=player):
-        case h.board.PlayerVisibility.everything:
-            pass
-        case h.board.PlayerVisibility.nothing:
-            return HttpResponseForbidden(
-                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
-            )
-        case h.board.PlayerVisibility.dummys_hand | h.board.PlayerVisibility.own_hand:
-            return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
-
-    a = h.auction
-    c = a.status
-    if c is Auction.Incomplete:
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
-
-    if c is Auction.PassedOut:
-        context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
-        context |= {
-            "score": 0,
-            "vars_score": {"passed_out": 0},
-            "show_auction_history": False,
-        }
-        return TemplateResponse(
-            request,
-            "hand_archive.html",
-            context=context,
-        )
-
-    broken_down_score = h.get_xscript().final_score()
-
-    if broken_down_score is None:
-        logger.debug(
-            "The hand at %s has not been completely played (only %d tricks), so there is no final score",
-            h.table,
-            len(h.get_xscript().tricks),
-        )
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
-
-    score_description = f"{broken_down_score.trick_summary}: "
-
-    if broken_down_score.total < 0:  # defenders got points
-        score_description += f"Defenders get {-broken_down_score.total}"
+    if not seat or seat.table != hand.table:
+        buttons = "No bidding box 'cuz you are not at this table"
     else:
-        score_description += f"Declarer's side get {broken_down_score.total}"
-
-    context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
-    context |= {
-        "score": score_description,
-        "vars_score": vars(broken_down_score),
-        "show_auction_history": True,
+        buttons = bidding_box_buttons(
+            auction=hand.auction,
+            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
+            disabled_because_out_of_turn=(
+                player.name != hand.auction.allowed_caller().name and not hand.open_access
+            ),
+        )
+    return {
+        "bidding_box_buttons": buttons,
+        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
+        "display_bidding_box": display_bidding_box,
     }
-    return TemplateResponse(
-        request,
-        "hand_archive.html",
-        context=context,
-    )
 
 
 def _display_and_control(
@@ -340,75 +285,11 @@ def _four_hands_context_for_hand(
 
 
 @logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
-    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
-    context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
+def auction_partial_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    context = _auction_context_for_hand(hand)
 
-    return TemplateResponse(
-        request, "four-hands-3x3-partial.html#four-hands-3x3-partial", context=context
-    )
-
-
-@gzip_page
-@logged_in_as_player_required()
-def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
-    player = request.user.player
-    assert player is not None
-
-    match hand.board.what_can_they_see(player=player):
-        case hand.board.PlayerVisibility.nothing:
-            return HttpResponseForbidden(
-                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
-            )
-
-        case hand.board.PlayerVisibility.dummys_hand | hand.board.PlayerVisibility.own_hand:
-            if not hand.table.seats.filter(player=player).exists():
-                return HttpResponseForbidden(
-                    f"You, {player.name}, are not at table {hand.table}; and you haven't completely played {hand.board}"
-                )
-
-        case hand.board.PlayerVisibility.everything:
-            return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
-
-    context = (
-        _four_hands_context_for_hand(request=request, hand=hand)
-        | _auction_context_for_hand(hand)
-        | _bidding_box_context_for_hand(request, hand)
-    )
-
-    return TemplateResponse(request, "hand_detail.html", context=context)
-
-
-def _auction_context_for_hand(hand) -> dict[str, Any]:
-    return {
-        "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
-        "hand": hand,
-    }
-
-
-def _bidding_box_context_for_hand(request, hand):
-    player = request.user.player  # type: ignore
-    seat = player.most_recent_seat
-    display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
-
-    if not seat or seat.table != hand.table:
-        buttons = "No bidding box 'cuz you are not at this table"
-    else:
-        buttons = bidding_box_buttons(
-            auction=hand.auction,
-            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
-            disabled_because_out_of_turn=(
-                player.name != hand.auction.allowed_caller().name and not hand.open_access
-            ),
-        )
-    return {
-        "bidding_box_buttons": buttons,
-        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
-        "display_bidding_box": display_bidding_box,
-    }
+    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
 
 
 def bidding_box_buttons(
@@ -490,11 +371,132 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResp
 
 
 @logged_in_as_player_required()
-def auction_partial_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
-    context = _auction_context_for_hand(hand)
+def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
+    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
+    context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
 
-    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
+    return TemplateResponse(
+        request, "four-hands-3x3-partial.html#four-hands-3x3-partial", context=context
+    )
+
+
+@gzip_page
+@logged_in_as_player_required()
+def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
+    h: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    player = request.user.player
+
+    assert player is not None
+
+    match h.board.what_can_they_see(player=player):
+        case h.board.PlayerVisibility.everything:
+            pass
+        case h.board.PlayerVisibility.nothing:
+            return HttpResponseForbidden(
+                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
+            )
+        case h.board.PlayerVisibility.dummys_hand | h.board.PlayerVisibility.own_hand:
+            return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
+
+    a = h.auction
+    c = a.status
+    if c is Auction.Incomplete:
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
+
+    if c is Auction.PassedOut:
+        context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
+        context |= {
+            "score": 0,
+            "vars_score": {"passed_out": 0},
+            "show_auction_history": False,
+        }
+        return TemplateResponse(
+            request,
+            "hand_archive.html",
+            context=context,
+        )
+
+    broken_down_score = h.get_xscript().final_score()
+
+    if broken_down_score is None:
+        logger.debug(
+            "The hand at %s has not been completely played (only %d tricks), so there is no final score",
+            h.table,
+            len(h.get_xscript().tricks),
+        )
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))
+
+    score_description = f"{broken_down_score.trick_summary}: "
+
+    if broken_down_score.total < 0:  # defenders got points
+        score_description += f"Defenders get {-broken_down_score.total}"
+    else:
+        score_description += f"Declarer's side get {broken_down_score.total}"
+
+    context = _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
+    context |= {
+        "score": score_description,
+        "vars_score": vars(broken_down_score),
+        "show_auction_history": True,
+    }
+    return TemplateResponse(
+        request,
+        "hand_archive.html",
+        context=context,
+    )
+
+
+@gzip_page
+@logged_in_as_player_required()
+def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    player = request.user.player
+    assert player is not None
+
+    match hand.board.what_can_they_see(player=player):
+        case hand.board.PlayerVisibility.nothing:
+            return HttpResponseForbidden(
+                f"You, {player.name}, are not allowed to see neither squat, zip, nada, nor bupkis"
+            )
+
+        case hand.board.PlayerVisibility.dummys_hand | hand.board.PlayerVisibility.own_hand:
+            if not hand.table.seats.filter(player=player).exists():
+                return HttpResponseForbidden(
+                    f"You, {player.name}, are not at table {hand.table}; and you haven't completely played {hand.board}"
+                )
+
+        case hand.board.PlayerVisibility.everything:
+            if hand.is_complete:
+                return HttpResponseRedirect(reverse("app:hand-archive", args=[hand.pk]))
+
+    context = (
+        _four_hands_context_for_hand(request=request, hand=hand)
+        | _auction_context_for_hand(hand)
+        | _bidding_box_context_for_hand(request, hand)
+    )
+
+    return TemplateResponse(request, "hand_detail.html", context=context)
+
+
+@logged_in_as_player_required()
+def hand_list_view(request: HttpRequest) -> HttpResponse:
+    hand_list = app.models.Hand.objects.order_by("id").all()
+    paginator = Paginator(hand_list, 15)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    h: Hand
+    for h in page_obj.object_list:
+        h.summary_for_this_viewer = h.summary_as_viewed_by(
+            as_viewed_by=getattr(request.user, "player", None)
+        )
+    context = {
+        "page_obj": page_obj,
+        "total_count": app.models.Hand.objects.count(),
+    }
+
+    return render(request, "hand_list.html", context=context)
 
 
 @require_http_methods(["POST"])
