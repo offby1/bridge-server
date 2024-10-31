@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import enum
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -13,7 +14,11 @@ from bridge.table import Player as libPlayer
 
 from .models import AuctionError, Board, Hand, Player, Table, hand
 from .testutils import set_auction_to
-from .views.hand import _bidding_box_context_for_hand, bidding_box_partial_view
+from .views.hand import (
+    _bidding_box_context_for_hand,
+    _maybe_redirect_or_error,
+    bidding_box_partial_view,
+)
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
@@ -282,3 +287,85 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     first_player = Player.objects.first()
     assert first_player is not None
     assert "contract" in sent_events_by_channel[f"system:player:{first_player.pk}"][4]
+
+
+class HandIsComplete(enum.Enum):
+    incomplete = 0
+    complete = 1
+
+
+class RequestedPage(enum.StrEnum):
+    detail = "app:hand-detail"
+    archive = "app:hand-archive"
+
+
+@pytest.mark.parametrize(
+    ("hand_is_complete", "player_visibility", "requested_page", "expected_result"),
+    [
+        (
+            HandIsComplete.incomplete,
+            Board.PlayerVisibility.everything,
+            RequestedPage.detail,
+            None,
+        ),
+        (
+            HandIsComplete.incomplete,
+            Board.PlayerVisibility.everything,
+            RequestedPage.archive,
+            302,
+        ),
+        (
+            HandIsComplete.incomplete,
+            Board.PlayerVisibility.nothing,
+            RequestedPage.detail,
+            403,
+        ),
+        (
+            HandIsComplete.incomplete,
+            Board.PlayerVisibility.nothing,
+            RequestedPage.archive,
+            403,
+        ),
+        (
+            HandIsComplete.complete,
+            Board.PlayerVisibility.everything,
+            RequestedPage.detail,
+            302,
+        ),
+        (
+            HandIsComplete.complete,
+            Board.PlayerVisibility.everything,
+            RequestedPage.archive,
+            None,
+        ),
+        (
+            HandIsComplete.complete,
+            Board.PlayerVisibility.nothing,
+            RequestedPage.detail,
+            403,
+        ),
+        (
+            HandIsComplete.complete,
+            Board.PlayerVisibility.nothing,
+            RequestedPage.archive,
+            403,
+        ),
+    ],
+)
+def test_exhaustive_archive_and_detail_redirection(
+    rf,
+    hand_is_complete,
+    player_visibility,
+    requested_page,
+    expected_result,
+):
+    actual_result = _maybe_redirect_or_error(
+        hand_is_complete=hand_is_complete.value,
+        hand_pk=123,
+        player_visibility=player_visibility,
+        request_viewname=requested_page.value,
+    )
+    if actual_result is None:
+        assert expected_result is None
+    else:
+        assert actual_result.status_code == expected_result

@@ -1,8 +1,9 @@
+import bridge.card
 import pytest
 from bridge.seat import Seat
 from django.contrib import auth
 
-from .models import Player, Table
+from .models import Board, Hand, Player, Table
 
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
@@ -45,8 +46,31 @@ def usual_setup(db, everybodys_password):
         Player.objects.get_by_name(player_names_by_direction[Seat.WEST])
     )
 
-    Table.objects.create_with_two_partnerships(
+    return Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name(player_names_by_direction[Seat.NORTH]),
         p2=Player.objects.get_by_name(player_names_by_direction[Seat.EAST]),
         shuffle_deck=False,
     )
+
+
+@pytest.fixture
+def second_setup(usual_setup):
+    new_player_names = ["n2", "e2", "s2", "w2"]
+    for name in new_player_names:
+        Player.objects.create(
+            user=auth.models.User.objects.create(username=name, password=everybodys_password),
+        )
+
+    Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
+    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
+    Board.objects.create_from_deck(deck=bridge.card.Card.deck())
+
+    rv = Table.objects.create_with_two_partnerships(
+        p1=Player.objects.get_by_name("n2"),
+        p2=Player.objects.get_by_name("e2"),
+        shuffle_deck=False,
+    )
+    print(f"{Board.objects.all()=}")
+    print(f"{Hand.objects.all()=}")
+    print(f"{Table.objects.all()=}")
+    return rv

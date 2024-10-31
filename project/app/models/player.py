@@ -196,17 +196,15 @@ class Player(models.Model):
         from .hand import Hand
         from .table import Table
 
-        return Hand.objects.filter(
+        qs = Hand.objects.filter(
             board=board,
             table__in=Table.objects.filter(
                 pk__in=self.seat_set.values_list("table_id", flat=True).all()
             ).all(),
-        ).first()
-
-    def has_ever_seen_board(self, board: Board, hand: Hand | None = None) -> bool:
-        if hand is None:
-            hand = self.hand_at_which_board_was_played(board)
-        return hand is not None
+        ).all()
+        logger.debug("At which hand did %s play %s?", self, board)
+        logger.debug("One of these, presumably %s; returning the first", qs)
+        return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         what_they_can_see = board.what_can_they_see(player=self)

@@ -1,0 +1,27 @@
+hand completeness:
+* not all cards played
+* all
+
+player has "seen" (at least some of) the board:
+* already or currently played that board
+* none of the above
+
+requested page:
+* detail
+* archive
+
+possible outcomes:
+* stay where you are
+* redirect to other page
+* HttpResponseForbidden
+
+| hand status | who's looking | rqeuested page | outcome                     |
+|-------------+---------------+----------------+-----------------------------|
+| incomplete  | already       | detail         | 200 (detail)                |
+| incomplete  | already       | archive        | 302 (detail)                |
+| incomplete  | nota          | detail         | 403 (HttpResponseForbidden) |
+| incomplete  | nota          | archive        | 403 (HttpResponseForbidden) |
+| complete    | already       | detail         | 302 (archive)               |
+| complete    | already       | archive        | 200 (archive)               |
+| complete    | nota          | detail         | 403 (HttpResponseForbidden) |
+| complete    | nota          | archive        | 403 (HttpResponseForbidden) |

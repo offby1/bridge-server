@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}
+    Review of {{ hand }}
+{% endblock title %}
+{% block content %}
+    <div>
+        <h1>Review of {{ board }}</h1>
+    </div>
+    <div>
+        <table class="table">
+            <th>
+                <tr>
+                    <td>Hand</td>
+                    <td>Table</td>
+                    <td>Summary</td>
+                </tr>
+            </th>
+            <tbody>
+                {% for h in annotated_hands %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.pk }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.table }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.summary_for_this_viewer }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}
