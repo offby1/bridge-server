@@ -1,8 +1,8 @@
-hand statuses:
+hand completeness:
 * not all cards played
 * all
 
-who's looking:
+player has "seen" (at least some of) the board:
 * already or currently played that board
 * none of the above
 

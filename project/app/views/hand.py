@@ -382,15 +382,17 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 
 def _maybe_redirect_or_error(
     *,
-    request_viewname: str,
-    player_visibility: app.models.Board.PlayerVisibility,
-    player_has_played_this_hand: bool,
-    hand_pk: int,
     hand_is_complete: bool,
+    hand_pk: int,
+    player_visibility: app.models.Board.PlayerVisibility,
+    request_viewname: str,
 ) -> HttpResponse | None:
-    logger.debug(
-        f"{request_viewname=} {player_visibility=} {player_has_played_this_hand=} {hand_pk=}"
-    )
+    logger.debug(f"{hand_is_complete=} {hand_pk=} {player_visibility=} {request_viewname=} ")
+
+    def redirect_or_none(destination_viewname: str) -> HttpResponseRedirect | None:
+        if destination_viewname == request_viewname:
+            return None
+        return HttpResponseRedirect(reverse(destination_viewname, args=[hand_pk]))
 
     match player_visibility:
         case app.models.Board.PlayerVisibility.nothing:
@@ -402,39 +404,27 @@ def _maybe_redirect_or_error(
             app.models.Board.PlayerVisibility.dummys_hand
             | app.models.Board.PlayerVisibility.own_hand
         ):
-            if not player_has_played_this_hand:
-                msg = "You are not at that table; and you haven't completely played the board"
-                logger.warning(msg)
-                return HttpResponseForbidden(msg)
             logger.info(
-                "You seem to be at that table, and the hand isn't complete, so you should wind up at hand-detail, whether or not that requires a redirection."
+                "You seem to be at that table, and the hand isn't complete, so you should"
+                " wind up at hand-detail, whether or not that requires a redirection."
             )
+            if (response := redirect_or_none("app:hand-detail")) is not None:
+                return response
 
         case app.models.Board.PlayerVisibility.everything:
-            if request_viewname == "app:hand-archive":
-                if hand_is_complete:
-                    logger.info(
-                        "You've fully played this board, the hand is complete, you asked for %s, so that's what you're gonna get",
-                        request_viewname,
-                    )
-                else:
-                    logger.info(
-                        "You've fully played this board, the hand is not complete, you asked for %s, so we redirect to the detail view",
-                        request_viewname,
-                    )
-                    return HttpResponseRedirect(reverse("app:hand-detail", args=[hand_pk]))
-            elif hand_is_complete:
+            if hand_is_complete:
                 logger.info(
-                    "You've fully played this board, the hand is complete, and you asked for %s, so we'll redirect you to %s",
-                    request_viewname,
-                    "app:hand-archive",
+                    "You've fully played this board, the hand is complete, so you're gettin' the archive",
                 )
-                return HttpResponseRedirect(reverse("app:hand-archive", args=[hand_pk]))
+                if (response := redirect_or_none("app:hand-archive")) is not None:
+                    return response
+
             else:
                 logger.info(
-                    "You've fully played this board, the hand is not complete, and you asked for %s, so that's what you'll get",
-                    request_viewname,
+                    "You've fully played this board, the hand is not complete, so you get the detail",
                 )
+                if (response := redirect_or_none("app:hand-detail")) is not None:
+                    return response
 
     logger.info("I guess you're gonna get %s", request_viewname)
     return None
@@ -452,7 +442,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     response = _maybe_redirect_or_error(
         hand_is_complete=hand.is_complete,
         hand_pk=hand.pk,
-        player_has_played_this_hand=hand.table.seats.filter(player=player).exists(),
         player_visibility=hand.board.what_can_they_see(player=player),
         request_viewname="app:hand-archive",
     )
@@ -517,15 +506,12 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     logger.debug(f"{hand.pk=} {hand.board.pk=} {player.name=}")
 
-    kwargs = {
-        "hand_pk": hand.pk,
-        "hand_is_complete": hand.is_complete,
-        "player_has_played_this_hand": hand.table.seats.filter(player=player).exists(),
-        "player_visibility": hand.board.what_can_they_see(player=player),
-        "request_viewname": "app:hand-detail",
-    }
-    logger.debug(f"{kwargs=}")
-    response = _maybe_redirect_or_error(**kwargs)
+    response = _maybe_redirect_or_error(
+        hand_pk=hand.pk,
+        hand_is_complete=hand.is_complete,
+        player_visibility=hand.board.what_can_they_see(player=player),
+        request_viewname="app:hand-detail",
+    )
     logger.debug(f"{response=}")
     if response is not None:
         return response
