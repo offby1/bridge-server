@@ -724,6 +724,19 @@ files = [
 Django = ">=3.2"
 
 [[package]]
+name = "django-fastdev"
+version = "1.12.0"
+description = "Django-fastdev is an app that makes it faster and more fun to develop Django apps"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_fastdev-1.12.0.tar.gz", hash = "sha256:83a44d5cc1e8f72afb361caf9f6dbb0617587653837c213f32f4fab13f90acdb"},
+]
+
+[package.dependencies]
+Django = ">=2.0"
+
+[[package]]
 name = "django-grip"
 version = "3.5.0"
 description = "Django GRIP library"
@@ -2188,4 +2201,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "dcc6d88892f4c2cb7f6791da54aeced1f917d13c48c4bd6366b8d5197a69bbe7"
+content-hash = "faded9edcdbe914112d1c1359cc8b668b99dfb2d36b6dfaba14e9b1eed43ffb9"

@@ -3,6 +3,8 @@ import logging
 from .base_settings import *  # noqa
 from .base_settings import TEMPLATES
 
+INSTALLED_APPS.append("django_fastdev")
+
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
 # but that seems not to be the case, so we set it explicitly to avoid an exception from coverage
