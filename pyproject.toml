@@ -68,3 +68,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE="project.dev_settings"
 python_files = ["tests.py", "test_*.py", "*_test.py", "testing/python/*.py"]
+log_format = "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(funcName)s %(message)s"
