@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import logging
 from typing import TYPE_CHECKING
 
 import more_itertools
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
     from app.models import Hand, Player
 
 TOTAL_BOARDS = 16
+
+logger = logging.getLogger(__name__)
 
 
 class BoardManager(models.Manager):
@@ -130,14 +133,24 @@ class Board(models.Model):
     def what_can_they_see(self, *, player: Player) -> PlayerVisibility:
         hand = player.hand_at_which_board_was_played(self)
         if hand is None:
+            logger.debug("%s never played %s at all; returning 'nothing'", player, self)
             return self.PlayerVisibility.nothing
 
+        logger.debug(f"{player.name=} played {self.pk=} at {hand.pk=}")
+
         rv = self.PlayerVisibility.own_hand
+        logger.debug("We'll start by assuming the player can see their own hand.")
 
         if hand.plays.count() > 0:
+            logger.debug(
+                "Ah, %s cards have been played in %s, so the dummy is also visible",
+                hand,
+                hand.plays.count(),
+            )
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:
+            logger.debug("Oh, %s is complete, so everything is visible", hand)
             rv = self.PlayerVisibility.everything
 
         return rv

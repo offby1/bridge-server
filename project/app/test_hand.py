@@ -312,14 +312,17 @@ def complete_hand(usual_setup):
     assert t is not None
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
     play_to_completion(t.current_hand)
+    print(f"{t.current_hand=} is the complete one")
     return t.current_hand
 
 
 @pytest.fixture
 def incomplete_hand(usual_setup, second_setup):
     assert second_setup is not None
+    assert second_setup.current_hand != usual_setup.current_hand
     assert second_setup.current_hand.board == usual_setup.current_hand.board
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), second_setup.current_hand)
+    print(f"{second_setup.current_hand=} is the incomplete one")
     return second_setup.current_hand
 
 
@@ -396,6 +399,7 @@ def test_exhaustive_archive_and_detail_redirection(
     expected_response_status_code,
 ):
     hand = [incomplete_hand, complete_hand][hand_status.value]
+    print(f"{hand_status=} {hand=}")
     player = (
         Player.objects.first()
         if whos_looking == WhosLooking.already_played
