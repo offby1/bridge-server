@@ -1,4 +1,5 @@
 import json
+from argparse import ArgumentParser
 
 from app.models import Table
 from app.views.table import details
@@ -7,7 +8,16 @@ from django.test.client import RequestFactory
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--tempo",
+            type=float,
+        )
+
+    def handle(self, *args, **options) -> None:
+        if options["tempo"] is not None:
+            Table.objects.all().update(tempo_seconds=options["tempo"])
+
         rf = RequestFactory()
         for table_id in Table.objects.values_list(flat=True).all():
             request = rf.post(
