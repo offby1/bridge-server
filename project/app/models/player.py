@@ -202,8 +202,6 @@ class Player(models.Model):
                 pk__in=self.seat_set.values_list("table_id", flat=True).all()
             ).all(),
         ).all()
-        logger.debug("At which hand did %s play %s?", self, board)
-        logger.debug("One of these, presumably %s; returning the first", qs)
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:

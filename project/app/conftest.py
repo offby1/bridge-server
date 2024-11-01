@@ -3,7 +3,7 @@ import pytest
 from bridge.seat import Seat
 from django.contrib import auth
 
-from .models import Board, Hand, Player, Table
+from .models import Board, Player, Table
 
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
@@ -65,12 +65,8 @@ def second_setup(usual_setup):
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
     Board.objects.create_from_deck(deck=bridge.card.Card.deck())
 
-    rv = Table.objects.create_with_two_partnerships(
+    return Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
         shuffle_deck=False,
     )
-    print(f"{Board.objects.all()=}")
-    print(f"{Hand.objects.all()=}")
-    print(f"{Table.objects.all()=}")
-    return rv

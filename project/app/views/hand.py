@@ -387,8 +387,6 @@ def _maybe_redirect_or_error(
     player_visibility: app.models.Board.PlayerVisibility,
     request_viewname: str,
 ) -> HttpResponse | None:
-    logger.debug(f"{hand_is_complete=} {hand_pk=} {player_visibility=} {request_viewname=} ")
-
     def redirect_or_none(destination_viewname: str) -> HttpResponseRedirect | None:
         if destination_viewname == request_viewname:
             return None
@@ -396,37 +394,25 @@ def _maybe_redirect_or_error(
 
     match player_visibility:
         case app.models.Board.PlayerVisibility.nothing:
-            msg = "You are not allowed to see neither squat, zip, nada, nor bupkis"
-            logger.warning("%s", msg)
-            return HttpResponseForbidden(msg)
+            return HttpResponseForbidden(
+                "You are not allowed to see neither squat, zip, nada, nor bupkis"
+            )
 
         case (
             app.models.Board.PlayerVisibility.dummys_hand
             | app.models.Board.PlayerVisibility.own_hand
         ):
-            logger.info(
-                "You seem to be at that table, and the hand isn't complete, so you should"
-                " wind up at hand-detail, whether or not that requires a redirection."
-            )
             if (response := redirect_or_none("app:hand-detail")) is not None:
                 return response
 
         case app.models.Board.PlayerVisibility.everything:
             if hand_is_complete:
-                logger.info(
-                    "You've fully played this board, the hand is complete, so you're gettin' the archive",
-                )
                 if (response := redirect_or_none("app:hand-archive")) is not None:
                     return response
 
-            else:
-                logger.info(
-                    "You've fully played this board, the hand is not complete, so you get the detail",
-                )
-                if (response := redirect_or_none("app:hand-detail")) is not None:
-                    return response
+            elif (response := redirect_or_none("app:hand-detail")) is not None:
+                return response
 
-    logger.info("I guess you're gonna get %s", request_viewname)
     return None
 
 
@@ -469,11 +455,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     broken_down_score = hand.get_xscript().final_score()
 
     if broken_down_score is None:
-        logger.debug(
-            "The hand at %s has not been completely played (only %d tricks), so there is no final score",
-            hand.table,
-            len(hand.get_xscript().tricks),
-        )
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
 
     score_description = f"{broken_down_score.trick_summary}: "
@@ -499,12 +480,9 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 @gzip_page
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    logger.debug(f"{pk=}")
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
     player = request.user.player
     assert player is not None
-
-    logger.debug(f"{hand.pk=} {hand.board.pk=} {player.name=}")
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,
@@ -512,7 +490,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         player_visibility=hand.board.what_can_they_see(player=player),
         request_viewname="app:hand-detail",
     )
-    logger.debug(f"{response=}")
+
     if response is not None:
         return response
 

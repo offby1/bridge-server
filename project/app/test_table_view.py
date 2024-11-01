@@ -35,11 +35,9 @@ def test_hand_visibility(usual_setup: None, second_setup) -> None:
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
     play_to_completion(t2.current_hand)
 
-    print(f"{t1.current_board} {t2.current_board}")
     b2 = Board.objects.create_from_deck(deck=bridge.card.Card.deck())
     t2.next_board(desired_board_pk=b2.pk)
 
-    print(f"{t1.current_board} {t2.current_board}")
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
 
     def expect_visibility(expectation_array):
