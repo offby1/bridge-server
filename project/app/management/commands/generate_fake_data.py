@@ -3,7 +3,6 @@ from app.models import Player, Table
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError
 from faker import Faker
 
 
@@ -21,18 +20,14 @@ class Command(BaseCommand):
         )
 
     def maybe_create_player(self, username: str) -> None:
-        try:
-            user, _ = User.objects.get_or_create(
-                username=username,
-                defaults={"password": self.everybodys_password},
-            )
-            Player.objects.create(
-                user=user,
-                allow_bot_to_play_for_me=username != "bob",
-            )
-
-        except IntegrityError as e:
-            self.stdout.write(f"Hmm, {e=}; will ignore it")
+        user, _ = User.objects.get_or_create(
+            username=username,
+            defaults={"password": self.everybodys_password},
+        )
+        Player.objects.get_or_create(
+            user=user,
+            allow_bot_to_play_for_me=True,
+        )
 
     def handle(self, *args, **options) -> None:
         fake = Faker()
