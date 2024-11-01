@@ -310,21 +310,6 @@ class Hand(models.Model):
     def auction(self) -> libAuction:
         return self.get_xscript().auction
 
-    @property
-    def current_auction_status(self) -> str:
-        s = self.auction.status
-        if s is self.auction.Incomplete:
-            calls = self.auction.player_calls
-            calls_description = "no calls"
-            if calls:
-                last = calls[-1]
-                plural_suffix = "" if len(calls) == 1 else "s"
-                calls_description = (
-                    f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
-                )
-            return calls_description
-        return str(s)
-
     def role(self, player: Player) -> str | None:
         if not player.has_played_hand(self):
             return None
