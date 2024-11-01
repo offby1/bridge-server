@@ -511,7 +511,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     page_obj = paginator.get_page(page_number)
     h: Hand
     for h in page_obj.object_list:
-        h.summary_for_this_viewer = h.summary_as_viewed_by(
+        h.summary_for_this_viewer, h.score_for_this_viewer = h.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
         )
     context = {

@@ -172,7 +172,11 @@ class Hand(models.Model):
         cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
         return libHand(cards=cards)
 
+    # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
+    # this because it's not possible to the template to invoke a method that requires an argument.
+    role_for_this_viewer: str | None
     summary_for_this_viewer: str
+    score_for_this_viewer: str | int
 
     _xscript: HandTranscript
 
@@ -320,6 +324,18 @@ class Hand(models.Model):
                 )
             return calls_description
         return str(s)
+
+    def role(self, player: Player) -> str | None:
+        if not player.has_played_hand(self):
+            return None
+
+        if self.declarer is None or self.dummy is None:
+            return None
+
+        if player.name in {self.declarer.name, self.dummy.name}:
+            return "declarer"
+
+        return "defender"
 
     @property
     def declarer(self) -> libPlayer | None:
@@ -520,28 +536,43 @@ class Hand(models.Model):
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
-    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> str:
+    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
         if as_viewed_by is None:
-            return "Remind me -- who are you, again?"
+            return "Remind me -- who are you, again?", "-"
 
         if (
             self.board.what_can_they_see(player=as_viewed_by)
             != self.board.PlayerVisibility.everything
         ):
-            return f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d"
+            return (
+                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d",
+                "-",
+            )
 
         auction_status = self.get_xscript().auction.status
 
         if auction_status is self.auction.Incomplete:
-            return "Auction incomplete"
+            return "Auction incomplete", "-"
 
         if auction_status is self.auction.PassedOut:
-            return "Passed Out"
+            return "Passed Out", "-"
 
         fs = self.get_xscript().final_score()
         trick_summary = "still being played" if fs is None else fs.trick_summary
 
-        return f"{auction_status}: {trick_summary}"
+        total_score: int | str
+        if fs is not None:
+            total_score = fs.total
+
+            # The transcript always gives us the *declarer's* score, but if as_viewed_by is a defender, we want to show
+            # *their* score.
+            if self.role(as_viewed_by) == "defender":
+                total_score *= -1
+
+        else:
+            total_score = "-"
+
+        return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

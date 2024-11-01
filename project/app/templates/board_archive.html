@@ -13,11 +13,13 @@
                     <td>Hand</td>
                     <td>Table</td>
                     <td>Summary</td>
+                    <td>Your Role</td>
+                    <td>Your Side's Score</td>
                 </tr>
             </th>
             <tbody>
                 {% for h in annotated_hands %}
-                    <tr>
+                    <tr {% if h.pk == my_hand_pk %}class="table-warning"{% endif %}>
                         <td>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.pk }}</a>
                         </td>
@@ -26,6 +28,12 @@
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.summary_for_this_viewer }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.role_for_this_viewer }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.score_for_this_viewer }}</a>
                         </td>
                     </tr>
                 {% endfor %}

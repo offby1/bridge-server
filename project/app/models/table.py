@@ -83,7 +83,7 @@ class Table(models.Model):
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
-    summary_for_this_viewer: str
+    summary_for_this_viewer: tuple[str, str | int]
 
     def gimme_dat_fresh_tempo(self):
         if hasattr(self, "tempo_seconds"):

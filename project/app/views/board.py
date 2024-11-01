@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import operator
+
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -9,19 +13,37 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 @logged_in_as_player_required()
 def board_archive_view(request: AuthedHttpRequest, board_pk: str) -> TemplateResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=board_pk)
+    player = request.user.player
+    assert player is not None
+    my_hand = player.hand_at_which_board_was_played(board)
 
     annotated_hands: list[app.models.Hand] = []
 
     h: app.models.Hand
     for h in board.hand_set.all():
-        h.summary_for_this_viewer = h.summary_as_viewed_by(
+        h.summary_for_this_viewer, h.score_for_this_viewer = h.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
         )
+        h.role_for_this_viewer = h.role(player)
         annotated_hands.append(h)
+
+    def numberify_score(s: int | str) -> float:
+        if isinstance(s, str):
+            return float("-inf")
+        return s
+
     return TemplateResponse(
         request=request,
         template="board_archive.html",
-        context={"board": board, "annotated_hands": annotated_hands},
+        context={
+            "board": board,
+            "my_hand_pk": my_hand.pk if my_hand is not None else None,
+            "annotated_hands": sorted(
+                annotated_hands,
+                key=lambda s: numberify_score(operator.attrgetter("score_for_this_viewer")(s)),
+                reverse=True,
+            ),
+        },
     )
 
 
