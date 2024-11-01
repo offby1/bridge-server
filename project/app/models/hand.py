@@ -174,7 +174,6 @@ class Hand(models.Model):
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible to the template to invoke a method that requires an argument.
-    role_for_this_viewer: str | None
     summary_for_this_viewer: str
     score_for_this_viewer: str | int
 
@@ -309,18 +308,6 @@ class Hand(models.Model):
     @property
     def auction(self) -> libAuction:
         return self.get_xscript().auction
-
-    def role(self, player: Player) -> str | None:
-        if not player.has_played_hand(self):
-            return None
-
-        if self.declarer is None or self.dummy is None:
-            return None
-
-        if player.name in {self.declarer.name, self.dummy.name}:
-            return "declarer"
-
-        return "defender"
 
     @property
     def declarer(self) -> libPlayer | None:
@@ -542,20 +529,22 @@ class Hand(models.Model):
         if auction_status is self.auction.PassedOut:
             return "Passed Out", "-"
 
-        fs = self.get_xscript().final_score()
-        trick_summary = "still being played" if fs is None else fs.trick_summary
-
         total_score: int | str
-        if fs is not None:
-            total_score = fs.total
 
-            # The transcript always gives us the *declarer's* score, but if as_viewed_by is a defender, we want to show
-            # *their* score.
-            if self.role(as_viewed_by) == "defender":
-                total_score *= -1
+        my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
+        my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
+        fs = self.get_xscript().final_score()
 
-        else:
+        if fs is None or my_seat is None:
             total_score = "-"
+            trick_summary = "still being played"
+        else:
+            my_seat_direction = my_seat.direction
+            if my_seat_direction in {1, 3}:  # north/south
+                total_score = fs.north_south_points or -fs.east_west_points
+            else:
+                total_score = fs.east_west_points or -fs.north_south_points
+            trick_summary = fs.trick_summary
 
         return (f"{auction_status}: {trick_summary}", total_score)
 

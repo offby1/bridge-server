@@ -24,7 +24,6 @@ def board_archive_view(request: AuthedHttpRequest, board_pk: str) -> TemplateRes
         h.summary_for_this_viewer, h.score_for_this_viewer = h.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
         )
-        h.role_for_this_viewer = h.role(player)
         annotated_hands.append(h)
 
     def numberify_score(s: int | str) -> float:

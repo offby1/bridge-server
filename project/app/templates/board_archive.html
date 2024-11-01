@@ -13,7 +13,6 @@
                     <td>Hand</td>
                     <td>Table</td>
                     <td>Summary</td>
-                    <td>Your Role</td>
                     <td>Your Side's Score</td>
                 </tr>
             </th>
@@ -28,9 +27,6 @@
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.summary_for_this_viewer }}</a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-archive' h.pk %}">{{ h.role_for_this_viewer }}</a>
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.score_for_this_viewer }}</a>
