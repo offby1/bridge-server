@@ -15,4 +15,6 @@ https://docs.sentry.io/concepts/key-terms/key-terms/ seems like it should define
 - transaction
   > A transaction represents a single instance of a service being called to support an operation you want to measure or track, like a page load, page navigation, or asynchronous task.
 
-It's quite expensive, too, although there's supposedly a way to [self-host](https://develop.sentry.dev/self-hosted/).
+The commercial license is quite expensive, but there's a developer setup which appears to be free forever.
+
+There's also a way to [self-host](https://develop.sentry.dev/self-hosted/) too; never tried it.
