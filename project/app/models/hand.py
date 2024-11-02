@@ -531,8 +531,10 @@ class Hand(models.Model):
 
         total_score: int | str
 
+        my_seat = None
         my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
-        my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
+        if my_hand_for_this_board is not None:
+            my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
         fs = self.get_xscript().final_score()
 
         if fs is None or my_seat is None:
