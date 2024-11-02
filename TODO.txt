@@ -131,12 +131,16 @@ STILL TODO:
   Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
 
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
+  In particular: I should make this like every other website with built-in chat:
+  - some icon-y thing in the upper-right that gets a red dot if there's an unread notification
+  - that icon-y thing is a link that takes you to a page that looks like every other chat:
+    * column at left with a list of "rooms"
+    * one of those rooms would be messages from the system that include "someone yoinked you into a partnership" or "your partner dumped you" or whatever
+    * main area is the list of messages to the selected room, newest last
 
 * chat log should scroll to bottom on page load, the way the auction log does.
 
   Otherwise, if it's got a lotta crap in it, I wind up looking at the oldest (i.e., least-interesting) stuff.
-
-* splitsville for someone seated needs to update the table detail that shows at the bottom of the page.
 
 * django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog.
 
