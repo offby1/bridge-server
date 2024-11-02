@@ -17,13 +17,11 @@
         </h1>
     </div>
     <div class="col">{% include "four-hands.html" %}</div>
-    <div style="display: flex;">
-        <div>
-            <div style="font-family: monospace;" id="bidding-box">
-                {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
-            </div>
+    <div>
+        <div style="font-family: monospace;" id="bidding-box">
+            {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
         </div>
-        <div style="flex-grow: 1">{% include "auction.html" %}</div>
+        <div>{% include "auction.html" %}</div>
     </div>
 {% endblock content %}
 {% block upper-right-column %}
