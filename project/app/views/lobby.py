@@ -2,7 +2,7 @@ import json
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from app.models import Message, Player
 

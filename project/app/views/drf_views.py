@@ -4,8 +4,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import bridge.seat
-from rest_framework import permissions, status, viewsets  # type: ignore
-from rest_framework.response import Response  # type: ignore
+from rest_framework import permissions, status, viewsets  # type: ignore [import-untyped]
+from rest_framework.response import Response  # type: ignore [import-untyped]
 
 from app.models import Board, Call, Hand, Play, Player, Seat, Table
 from app.serializers import (

@@ -9,7 +9,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT

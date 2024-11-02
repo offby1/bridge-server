@@ -22,7 +22,7 @@ from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .player import Player
 from .utils import assert_type

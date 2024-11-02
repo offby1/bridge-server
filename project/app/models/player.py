@@ -12,7 +12,7 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .board import Board
 from .message import Message

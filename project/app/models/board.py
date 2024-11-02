@@ -14,7 +14,7 @@ from django.contrib import admin
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .common import SEAT_CHOICES
 

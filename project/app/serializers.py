@@ -1,4 +1,4 @@
-from rest_framework import serializers  # type: ignore
+from rest_framework import serializers  # type: ignore [import-untyped]
 
 from app.models import Board, Call, Hand, Play, Player, Seat, Table
 

@@ -2,7 +2,10 @@ import json
 
 from bridge.card import Card, Rank, Suit
 from bridge.contract import Bid
-from rest_framework.test import APIRequestFactory, force_authenticate  # type: ignore
+from rest_framework.test import (  # type: ignore [import-untyped]
+    APIRequestFactory,
+    force_authenticate,
+)
 
 import app.models.player
 import app.views.drf_views

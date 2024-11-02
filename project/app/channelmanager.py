@@ -1,6 +1,6 @@
 import logging
 
-from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore
+from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore [import-untyped]
 
 from app.models.utils import UserMitPlaya
 

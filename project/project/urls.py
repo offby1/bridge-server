@@ -1,9 +1,9 @@
 import app.views.drf_views
-import django_eventstream  # type: ignore
-from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore
+import django_eventstream  # type: ignore [import-untyped]
+from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore [import-untyped]
 from django.contrib import admin
 from django.urls import include, path
-from rest_framework import routers  # type: ignore
+from rest_framework import routers  # type: ignore [import-untyped]
 
 router = routers.DefaultRouter()
 router.register(r"boards", app.views.drf_views.BoardViewSet)
