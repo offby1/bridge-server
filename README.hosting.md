@@ -63,6 +63,10 @@ Mentions uvicorn, which *might* work for me.
 ### Roll my own with [caddy](https://hub.docker.com/_/caddy)
 I otta be able to make a simple docker-compose that includes a caddy image, and a django image (and well ok maybe also a postgresql image if I feel like using that).
 
+### [Traefik](https://doc.traefik.io/traefik/https/overview/)
+I think this is a reverse-proxy-and-lets-encrypt-client rolled into one.  I doubt they offer hosting.
+"theepic.dev" on Discord (visible as Pat in the Django server) uses it.
+
 ### ✘[Fly.io](https://fly.io/docs/django/getting-started/existing/)
 
 Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
