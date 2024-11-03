@@ -1,0 +1,1973 @@
+In [3]: import django.test
+   ...: from app.views.hand import hand_detail_view
+   ...:
+   ...: bob = Player.objects.get_by_name("bob")
+   ...: h1 = Hand.objects.first()
+   ...: rf = django.test.RequestFactory()
+   ...: request = rf.get("/woteva/", data={"pk": h1.pk})
+   ...: request.user = bob.user
+   ...: print("OK, ignore everything above this")
+   ...: hand_detail_view(request, h1.pk)
+
+OK, ignore everything above this
+
+SELECT "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id"
+  FROM "app_player"
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "auth_user"."username" = 'bob'
+ ORDER BY "auth_user"."username" ASC
+ LIMIT 1
+
+Execution time: 0.001060s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000594s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000521s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000430s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000568s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000822s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000765s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000795s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000388s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000345s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.000589s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000344s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000269s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000357s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000543s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001144s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000491s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001119s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000735s [Database: default]
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 492
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 492
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
+
+
+SELECT COUNT(*) AS "__count"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+
+Execution time: 0.000692s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000636s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000675s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "app_seat"."table_id" = 1
+ ORDER BY "app_seat"."direction" ASC
+
+Execution time: 0.001348s [Database: default]
+SELECT "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id"
+  FROM "app_player"
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "auth_user"."username" = 'aaron'
+ LIMIT 21
+
+Execution time: 0.001030s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."table_id" IN (
+        SELECT V0."id"
+          FROM "app_table" V0
+         INNER JOIN "app_seat" V1
+            ON (V0."id" = V1."table_id")
+         WHERE V1."id" IN (
+                SELECT U0."id"
+                  FROM "app_seat" U0
+                 WHERE U0."player_id" = 38
+               )
+       )
+
+Execution time: 0.001370s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."player_id" = 38)
+ LIMIT 21
+
+Execution time: 0.001108s [Database: default]
+SELECT "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "auth_user"
+ WHERE "auth_user"."id" = 39
+ LIMIT 21
+
+Execution time: 0.000735s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id"
+  FROM "app_seat"
+ WHERE "app_seat"."player_id" = 38
+ ORDER BY "app_seat"."id" DESC
+ LIMIT 1
+
+Execution time: 0.000670s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001072s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000641s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000605s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000662s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001149s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001249s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001154s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001210s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000759s [Database: default]
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
+
+
+SELECT COUNT(*) AS "__count"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+
+Execution time: 0.000693s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000751s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000825s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001778s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000711s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "app_seat"."table_id" = 1
+ ORDER BY "app_seat"."direction" ASC
+
+Execution time: 0.001393s [Database: default]
+SELECT "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id"
+  FROM "app_player"
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "auth_user"."username" = 'ana'
+ LIMIT 21
+
+Execution time: 0.001004s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."table_id" IN (
+        SELECT V0."id"
+          FROM "app_table" V0
+         INNER JOIN "app_seat" V1
+            ON (V0."id" = V1."table_id")
+         WHERE V1."id" IN (
+                SELECT U0."id"
+                  FROM "app_seat" U0
+                 WHERE U0."player_id" = 32
+               )
+       )
+
+Execution time: 0.001342s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."player_id" = 32)
+ LIMIT 21
+
+Execution time: 0.000988s [Database: default]
+SELECT "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "auth_user"
+ WHERE "auth_user"."id" = 33
+ LIMIT 21
+
+Execution time: 0.000673s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id"
+  FROM "app_seat"
+ WHERE "app_seat"."player_id" = 32
+ ORDER BY "app_seat"."id" DESC
+ LIMIT 1
+
+Execution time: 0.000695s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001249s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000677s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000602s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000647s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001135s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001058s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001197s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001110s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000688s [Database: default]
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
+
+
+SELECT COUNT(*) AS "__count"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+
+Execution time: 0.000665s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000595s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000634s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001293s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000600s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "app_seat"."table_id" = 1
+ ORDER BY "app_seat"."direction" ASC
+
+Execution time: 0.001229s [Database: default]
+SELECT "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id"
+  FROM "app_player"
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "auth_user"."username" = 'alexis'
+ LIMIT 21
+
+Execution time: 0.000927s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."table_id" IN (
+        SELECT V0."id"
+          FROM "app_table" V0
+         INNER JOIN "app_seat" V1
+            ON (V0."id" = V1."table_id")
+         WHERE V1."id" IN (
+                SELECT U0."id"
+                  FROM "app_seat" U0
+                 WHERE U0."player_id" = 33
+               )
+       )
+
+Execution time: 0.001310s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."player_id" = 33)
+ LIMIT 21
+
+Execution time: 0.001078s [Database: default]
+SELECT "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "auth_user"
+ WHERE "auth_user"."id" = 34
+ LIMIT 21
+
+Execution time: 0.000791s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id"
+  FROM "app_seat"
+ WHERE "app_seat"."player_id" = 33
+ ORDER BY "app_seat"."id" DESC
+ LIMIT 1
+
+Execution time: 0.000696s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.001107s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000771s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000662s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000616s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001124s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001158s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001061s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.001093s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000304s [Database: default]
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
+
+
+SELECT COUNT(*) AS "__count"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+
+Execution time: 0.000290s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000297s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000276s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.000481s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000259s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "app_seat"."table_id" = 1
+ ORDER BY "app_seat"."direction" ASC
+
+Execution time: 0.000693s [Database: default]
+SELECT "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id"
+  FROM "app_player"
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "auth_user"."username" = 'bob'
+ LIMIT 21
+
+Execution time: 0.000554s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE "app_hand"."table_id" IN (
+        SELECT V0."id"
+          FROM "app_table" V0
+         INNER JOIN "app_seat" V1
+            ON (V0."id" = V1."table_id")
+         WHERE V1."id" IN (
+                SELECT U0."id"
+                  FROM "app_seat" U0
+                 WHERE U0."player_id" = 1
+               )
+       )
+
+Execution time: 0.000541s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."player_id" = 1)
+ LIMIT 21
+
+Execution time: 0.000462s [Database: default]
+SELECT "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "auth_user"
+ WHERE "auth_user"."id" = 2
+ LIMIT 21
+
+Execution time: 0.000649s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id"
+  FROM "app_seat"
+ WHERE "app_seat"."player_id" = 1
+ ORDER BY "app_seat"."id" DESC
+ LIMIT 1
+
+Execution time: 0.000364s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.000543s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000304s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000282s [Database: default]
+SELECT "app_board"."id",
+       "app_board"."ns_vulnerable",
+       "app_board"."ew_vulnerable",
+       "app_board"."dealer",
+       "app_board"."north_cards",
+       "app_board"."east_cards",
+       "app_board"."south_cards",
+       "app_board"."west_cards"
+  FROM "app_board"
+ WHERE "app_board"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000304s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 1)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000514s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 2)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000489s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 3)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000545s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE ("app_seat"."table_id" = 1 AND "app_seat"."direction" = 4)
+ ORDER BY "app_seat"."direction" ASC
+ LIMIT 1
+
+Execution time: 0.000489s [Database: default]
+SELECT "app_call"."id",
+       "app_call"."hand_id",
+       "app_call"."serialized"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+ ORDER BY "app_call"."id" ASC
+
+Execution time: 0.000794s [Database: default]
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
+2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
+2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
+
+
+SELECT COUNT(*) AS "__count"
+  FROM "app_call"
+ WHERE "app_call"."hand_id" = 1
+
+Execution time: 0.000384s [Database: default]
+SELECT COUNT(*) AS "__count"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+
+Execution time: 0.000302s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000318s [Database: default]
+SELECT "app_hand"."id",
+       "app_hand"."table_id",
+       "app_hand"."board_id",
+       "app_hand"."open_access"
+  FROM "app_hand"
+ WHERE ("app_hand"."board_id" = 1 AND "app_hand"."table_id" IN (SELECT V0."id" FROM "app_table" V0 WHERE V0."id" IN (SELECT U0."table_id" FROM "app_seat" U0 WHERE U0."player_id" = 1)))
+ ORDER BY "app_hand"."id" ASC
+ LIMIT 1
+
+Execution time: 0.000580s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000322s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id",
+       "app_player"."id",
+       "app_player"."user_id",
+       "app_player"."allow_bot_to_play_for_me",
+       "app_player"."partner_id",
+       "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+  FROM "app_seat"
+ INNER JOIN "app_player"
+    ON ("app_seat"."player_id" = "app_player"."id")
+ INNER JOIN "auth_user"
+    ON ("app_player"."user_id" = "auth_user"."id")
+ WHERE "app_seat"."table_id" = 1
+ ORDER BY "app_seat"."direction" ASC
+
+Execution time: 0.000589s [Database: default]
+SELECT "app_seat"."id",
+       "app_seat"."direction",
+       "app_seat"."player_id",
+       "app_seat"."table_id"
+  FROM "app_seat"
+ WHERE "app_seat"."player_id" = 1
+ ORDER BY "app_seat"."id" DESC
+ LIMIT 1
+
+Execution time: 0.000304s [Database: default]
+SELECT "app_play"."id",
+       "app_play"."hand_id",
+       "app_play"."serialized"
+  FROM "app_play"
+ WHERE "app_play"."hand_id" = 1
+ ORDER BY "app_play"."id" ASC
+
+Execution time: 0.000317s [Database: default]
+SELECT "app_table"."id",
+       "app_table"."tempo_seconds"
+  FROM "app_table"
+ WHERE "app_table"."id" = 1
+ LIMIT 21
+
+Execution time: 0.000291s [Database: default]
+Out[3]: <TemplateResponse status_code=200, "text/html; charset=utf-8">
+
+In [4]:
