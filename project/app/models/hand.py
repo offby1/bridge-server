@@ -154,6 +154,9 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    # Views can set this to True to save time
+    quit_updating_the_damned_xscript = False
+
     # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
@@ -219,6 +222,9 @@ class Hand(models.Model):
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
             )
+
+        if self.quit_updating_the_damned_xscript:
+            return self._xscript
 
         import sys
         import traceback
