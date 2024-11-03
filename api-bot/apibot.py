@@ -7,14 +7,14 @@ from typing import Any, Iterable
 
 import more_itertools
 import requests
-import retrying  # type: ignore
+import retrying  # type: ignore [import-untyped]
 from bridge.auction import Auction
 from bridge.card import Card
 from bridge.contract import Bid
 from bridge.seat import Seat
 from bridge.table import Hand, Player, Table
 from bridge.xscript import HandTranscript
-from sseclient import SSEClient  # type: ignore
+from sseclient import SSEClient  # type: ignore [import-untyped]
 
 logger = logging.getLogger("apibot")
 

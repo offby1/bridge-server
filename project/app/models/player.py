@@ -12,7 +12,7 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .board import Board
 from .message import Message
@@ -202,8 +202,6 @@ class Player(models.Model):
                 pk__in=self.seat_set.values_list("table_id", flat=True).all()
             ).all(),
         ).all()
-        logger.debug("At which hand did %s play %s?", self, board)
-        logger.debug("One of these, presumably %s; returning the first", qs)
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:

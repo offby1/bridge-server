@@ -1,5 +1,7 @@
 # Perf notes
 
+## pytest-profiling
+Just run `just t --profile-svg`, and it'll run the tests and collect profile data; then you can open an SVG page (whose path will be displayed) to see a complex graph that shows who calls whom and how long it takes, &c.
 ## py-spy
 
 I once managed to get py-spy working (it wasn't easy); I have not been able to reproduce this success.

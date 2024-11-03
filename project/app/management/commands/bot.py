@@ -17,13 +17,13 @@ import bridge.card
 import bridge.table
 import bridge.xscript
 import requests
-import retrying  # type: ignore
+import retrying  # type: ignore [import-untyped]
 from app.models import AuctionError, Hand, Player, Table, TableException
 from app.models.utils import assert_type
 from bridge.contract import Contract, Pass
 from django.conf import settings
 from django.core.management.base import BaseCommand, OutputWrapper
-from sseclient import SSEClient  # type: ignore
+from sseclient import SSEClient  # type: ignore [import-untyped]
 
 random.seed(0)
 

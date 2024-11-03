@@ -22,7 +22,7 @@ from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.db import models
 from django.utils.functional import cached_property
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .player import Player
 from .utils import assert_type
@@ -172,7 +172,10 @@ class Hand(models.Model):
         cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
         return libHand(cards=cards)
 
+    # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
+    # this because it's not possible to the template to invoke a method that requires an argument.
     summary_for_this_viewer: str
+    score_for_this_viewer: str | int
 
     _xscript: HandTranscript
 
@@ -305,21 +308,6 @@ class Hand(models.Model):
     @property
     def auction(self) -> libAuction:
         return self.get_xscript().auction
-
-    @property
-    def current_auction_status(self) -> str:
-        s = self.auction.status
-        if s is self.auction.Incomplete:
-            calls = self.auction.player_calls
-            calls_description = "no calls"
-            if calls:
-                last = calls[-1]
-                plural_suffix = "" if len(calls) == 1 else "s"
-                calls_description = (
-                    f"{len(calls)} call{plural_suffix}; last was {last.call} by {last.player}"
-                )
-            return calls_description
-        return str(s)
 
     @property
     def declarer(self) -> libPlayer | None:
@@ -520,28 +508,47 @@ class Hand(models.Model):
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
-    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> str:
+    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
         if as_viewed_by is None:
-            return "Remind me -- who are you, again?"
+            return "Remind me -- who are you, again?", "-"
 
         if (
             self.board.what_can_they_see(player=as_viewed_by)
             != self.board.PlayerVisibility.everything
         ):
-            return f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d"
+            return (
+                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d",
+                "-",
+            )
 
         auction_status = self.get_xscript().auction.status
 
         if auction_status is self.auction.Incomplete:
-            return "Auction incomplete"
+            return "Auction incomplete", "-"
 
         if auction_status is self.auction.PassedOut:
-            return "Passed Out"
+            return "Passed Out", "-"
 
+        total_score: int | str
+
+        my_seat = None
+        my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
+        if my_hand_for_this_board is not None:
+            my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
         fs = self.get_xscript().final_score()
-        trick_summary = "still being played" if fs is None else fs.trick_summary
 
-        return f"{auction_status}: {trick_summary}"
+        if fs is None or my_seat is None:
+            total_score = "-"
+            trick_summary = "still being played"
+        else:
+            my_seat_direction = my_seat.direction
+            if my_seat_direction in {1, 3}:  # north/south
+                total_score = fs.north_south_points or -fs.east_west_points
+            else:
+                total_score = fs.east_west_points or -fs.north_south_points
+            trick_summary = fs.trick_summary
+
+        return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"

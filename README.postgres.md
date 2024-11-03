@@ -1,6 +1,10 @@
 # Running it on MacOS
 
-## enterprisedb
+## Just use docker
+
+Don't bother installing postgres at all; the docker-compose stack needs it anyway, so just use that.
+
+## enterprisedb 👎
 
 On MacOS, I'm running postgres from # https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
 
@@ -20,7 +24,7 @@ After doing the setup, it says
 
 By default it listens on AF_INET, which means the command-line things require that I type a password :-(
 
-## postgres.app
+## postgres.app 👎
 
 Previously I'd used https://postgresapp.com/ which was a bit confusing, but had the benefit of listening on an AF_UNIX socket by default.
 

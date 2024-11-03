@@ -1,3 +1,4 @@
+{% load fastdev %}
 {% load static %}
 {% load partials %}
 {% load base_extras %}
@@ -16,7 +17,7 @@
         <link rel="icon" type="image/png" href="{% static "app/spadesuit.png" %}" />
     </head>
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-          data-viewer="{{ user.player }}">
+          {% if user.is_authenticated %}data-viewer="{{ user.player }}"{% endif %}>
         <div>
             <a href="{% url "app:home" %}">Home</a>
             | <a href="{% url "app:lobby" %}">Lobby</a>
@@ -25,70 +26,72 @@
             | <a href="{% url "app:table-list" %}">Tables</a>
             | <a href="{% url "app:players" %}">Players</a>
             | <a href="{{ VERSION|gitlab_link }}">version <tt>{{ VERSION }}</tt></a>
-            {% if debug %}<h2>| It's debugging time!!</h2>{% endif %}
+            {% ifexists debug %}
+            <h2>| It's debugging time!!</h2>
+        {% endifexists %}
+    </div>
+    <div class="row">
+        <div class="col">
+            <div id="hello-user">
+                {% if user.is_authenticated %}
+                    Hello,
+                    {% if user.player %}
+                        {{ user.player.as_link }}.
+                    {% else %}
+                        {{ user }}.
+                    {% endif %}
+                </div>
+                <div>
+                    {# TODO -- reload the whole page, or somehow update the "Hello" message, which includes whether we're a bot or not #}
+                    {% if user.player %}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   role="switch"
+                                   id="bot-plays-for-me-switch"
+                                   hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
+                                   hx-target="#hello-user"
+                                   {% if user.player.allow_bot_to_play_for_me %}checked{% endif %} />
+                            <label class="form-check-label" for="bot-plays-for-me-switch">Let the bot play for me</label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% block upper-right-column %}
+            {% endblock upper-right-column %}
         </div>
         <div class="row">
             <div class="col">
-                <div id="hello-user">
-                    {% if user.is_authenticated %}
-                        Hello,
-                        {% if user.player %}
-                            {{ user.player.as_link }}.
-                        {% else %}
-                            {{ user }}.
-                        {% endif %}
-                    </div>
-                    <div>
-                        {# TODO -- reload the whole page, or somehow update the "Hello" message, which includes whether we're a bot or not #}
-                        {% if user.player %}
-                            <div class="form-check form-switch">
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       role="switch"
-                                       id="bot-plays-for-me-switch"
-                                       hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
-                                       hx-target="#hello-user"
-                                       {% if user.player.allow_bot_to_play_for_me %}checked{% endif %} />
-                                <label class="form-check-label" for="bot-plays-for-me-switch">Let the bot play for me</label>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% block upper-right-column %}
-                {% endblock upper-right-column %}
-            </div>
-            <div class="row">
-                <div class="col">
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <input type="submit" value="logout" />
-                        <input type="hidden" name="next" value="/" />
-                    </form>
-                {% else %}
-                    <a href="{% url 'app:signup' %}">Sign Up</a>
-                    |<a href="{% url 'login' %}">Login</a>
-                {% endif %}
-            </div>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <input type="submit" value="logout" />
+                    <input type="hidden" name="next" value="/" />
+                </form>
+            {% else %}
+                <a href="{% url 'app:signup' %}">Sign Up</a>
+                |<a href="{% url 'login' %}">Login</a>
+            {% endif %}
         </div>
-        {% if messages %}
-            <div>
-                <ul class="messages">
-                    {% for message in messages %}
-                        <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        <div id="content" class="container">
-            {% block content %}
-            {% endblock content %}
+    </div>
+    {% if messages %}
+        <div>
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
         </div>
-        <script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.js' %}"></script>
-        <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
-        <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
-        <script src="{% static 'app/htmx.min.js' %}"></script>
-        <script src="{% static 'app/sse.js' %}"></script>
-        {% block scripts %}
-        {% endblock scripts %}
-    </body>
+    {% endif %}
+    <div id="content" class="container">
+        {% block content %}
+        {% endblock content %}
+    </div>
+    <script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
+    <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+    <script src="{% static 'app/htmx.min.js' %}"></script>
+    <script src="{% static 'app/sse.js' %}"></script>
+    {% block scripts %}
+    {% endblock scripts %}
+</body>
 </html>

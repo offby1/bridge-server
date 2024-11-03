@@ -14,7 +14,7 @@ from django.contrib import admin
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .common import SEAT_CHOICES
 
@@ -133,24 +133,14 @@ class Board(models.Model):
     def what_can_they_see(self, *, player: Player) -> PlayerVisibility:
         hand = player.hand_at_which_board_was_played(self)
         if hand is None:
-            logger.debug("%s never played %s at all; returning 'nothing'", player, self)
             return self.PlayerVisibility.nothing
 
-        logger.debug(f"{player.name=} played {self.pk=} at {hand.pk=}")
-
         rv = self.PlayerVisibility.own_hand
-        logger.debug("We'll start by assuming the player can see their own hand.")
 
         if hand.plays.count() > 0:
-            logger.debug(
-                "Ah, %s cards have been played in %s, so the dummy is also visible",
-                hand,
-                hand.plays.count(),
-            )
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:
-            logger.debug("Oh, %s is complete, so everything is visible", hand)
             rv = self.PlayerVisibility.everything
 
         return rv

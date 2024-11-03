@@ -14,7 +14,7 @@ from django.db.models.expressions import RawSQL
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
-from django_eventstream import send_event  # type: ignore
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from app.models.board import TOTAL_BOARDS, Board
 from app.models.common import SEAT_CHOICES
@@ -83,7 +83,7 @@ class Table(models.Model):
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
-    summary_for_this_viewer: str
+    summary_for_this_viewer: tuple[str, str | int]
 
     def gimme_dat_fresh_tempo(self):
         if hasattr(self, "tempo_seconds"):

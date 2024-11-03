@@ -36,9 +36,9 @@
                         <td>{{ t.number }} {{ t.seat }}</td>
                         {% for p in t.plays %}
                             <td>
-                                <span style="color: {{ p.card.color }}">{{ p.card }}
-                                    {% if p.wins_the_trick %}✨{% endif %}
-                                </span>
+                                <div {% if p.wins_the_trick %}class="throb-div"{% endif %}>
+                                    <span {% if p.card.color %}style="color: {{ p.card.color }}"{% endif %}>{{ p.card }}</span>
+                                </div>
                             </td>
                         {% endfor %}
                     </tr>

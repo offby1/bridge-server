@@ -128,6 +128,7 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
     pytest_exe=$(poetry env info --path)/bin/pytest
+    echo "pass --profile-svg" to profile code during tests!
     poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
 
 # Display coverage from a test run
