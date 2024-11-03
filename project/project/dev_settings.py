@@ -1,12 +1,10 @@
 import logging
-import os
 
 from .base_settings import *  # noqa
 from .base_settings import TEMPLATES
 
-# Alas, django_fastdev breaks a t est and I'm too lazy to figure out why
-if os.environ.get("PYTEST_VERSION") is None:
-    INSTALLED_APPS.append("django_fastdev")
+INSTALLED_APPS.append("django_fastdev")
+FASTDEV_STRICT_IF = True
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
