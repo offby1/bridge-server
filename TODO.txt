@@ -23,6 +23,8 @@ STILL TODO:
 
 * Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
 
+* The frequent "count" calls in `hand.Hand.get_xscript` are slow -- the output of pytest-profile, says that we called "query:609:count" almost six thousand times in test_hand_visibility!
+
 * A legend! The hand detail should explain that
   - the little downarrow is the trick's led card
   - the sparkles indicate the winning card in the trick

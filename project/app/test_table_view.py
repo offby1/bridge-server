@@ -3,6 +3,8 @@ from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
 
+import app.models.hand
+
 from .models import Board, Table
 from .testutils import play_to_completion, set_auction_to
 from .views.hand import _display_and_control
@@ -24,7 +26,11 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     assert not ds[Seat.WEST].this_hands_turn_to_play
 
 
-def test_hand_visibility(usual_setup: None, second_setup) -> None:
+def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
+    monkeypatch.setattr(
+        app.models.hand.Hand, "send_event_to_players_and_hand", lambda *args, **kwargs: True
+    )  # it's mighty slow
+
     t1 = Table.objects.first()
     assert t1 is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
