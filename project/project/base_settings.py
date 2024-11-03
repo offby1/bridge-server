@@ -58,6 +58,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 INSTALLED_APPS = [
     "daphne",
+    "django_fastdev",
     "django_eventstream",
     "django.contrib.admin",
     "django.contrib.admindocs",
@@ -72,6 +73,8 @@ INSTALLED_APPS = [
     "template_partials",
     "app",
 ]
+
+FASTDEV_STRICT_IF = True
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
