@@ -344,66 +344,15 @@ SELECT "app_call"."id",
 
 Execution time: 0.000735s [Database: default]
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 492
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 492
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
-
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript who dareth invoke me
+
 
 SELECT COUNT(*) AS "__count"
   FROM "app_call"
@@ -694,72 +643,18 @@ SELECT "app_call"."id",
 
 Execution time: 0.000759s [Database: default]
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
-
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript who dareth invoke me
+
 
 SELECT COUNT(*) AS "__count"
   FROM "app_call"
@@ -1067,72 +962,18 @@ SELECT "app_call"."id",
 
 Execution time: 0.000688s [Database: default]
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
-
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript who dareth invoke me
+
 
 SELECT COUNT(*) AS "__count"
   FROM "app_call"
@@ -1440,72 +1281,18 @@ SELECT "app_call"."id",
 
 Execution time: 0.000304s [Database: default]
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
-
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript who dareth invoke me
+
 
 SELECT COUNT(*) AS "__count"
   FROM "app_call"
@@ -1813,72 +1600,18 @@ SELECT "app_call"."id",
 
 Execution time: 0.000794s [Database: default]
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 26
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/manage.py: 22
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 442
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/__init__.py: 436
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 125
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 413
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/management/base.py: 459
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/utils.py: 62
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 582
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_extensions/management/commands/shell_plus.py: 404
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/__init__.py: 130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/traitlets/config/application.py: 1075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/ipapp.py: 317
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 917
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/terminal/interactiveshell.py: 910
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3075
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3130
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/async_helpers.py: 128
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3334
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3517
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/IPython/core/interactiveshell.py: 3577
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript <ipython-input-3-8da8801cf343>: 10
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/utils/decorators.py: 186
-2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py: 60
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py: 38
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 500
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 257
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/views/hand.py: 87
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/player.py: 208
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/board.py: 143
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 453
 2024-11-03T21:25:19+0000 WARNING hand.py(234) get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript /Users/not-workme/git-repositories/me/bridge/server/project/app/models/hand.py: 232
-2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript Who dareth invoke me
-2024-11-03T21:25:19+0000 WARNING hand.py get_xscript Who dareth invoke me
-
+2024-11-03T21:25:19+0000 WARNING hand.py(235) get_xscript who dareth invoke me
+
 
 SELECT COUNT(*) AS "__count"
   FROM "app_call"
