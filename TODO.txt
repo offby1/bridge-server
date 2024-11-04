@@ -52,17 +52,6 @@ STILL TODO:
 
 * The hand, while we're playing, does not show a running total of tricks taken by each side.
 
-* The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
-
-      8966431144c039092231ff33a5ae4013695bca24
-      Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
-      AuthorDate: 2024-10-22 16:51:47 -0700
-      Static files speedups:
-
-  Maybe I can, in effect, cache the `static_root` directory by having docker mount that as a volume, so that it persists from one container to the next.
-
-  I tried "collectfasta", in a branch of that name, but it didn't do anything.
-
 * Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.  Otherwise they'll have an awkward encounter if the server refuses to let p1 play a board he's already played, even though p2 hasn't yet played it.
 
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
@@ -160,6 +149,19 @@ STILL TODO:
 
 
 DONE:
+* The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
+
+      8966431144c039092231ff33a5ae4013695bca24
+      Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+      AuthorDate: 2024-10-22 16:51:47 -0700
+      Static files speedups:
+
+  Maybe I can, in effect, cache the `static_root` directory by having docker mount that as a volume, so that it persists from one container to the next.
+
+  I tried "collectfasta", in a branch of that name, but it didn't do anything.
+
+  Maybe I'm only using three of the static files, but am processing 200 of them (actual numbers may vary), in which case, just nuke the ones I'm not using.
+
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
 
