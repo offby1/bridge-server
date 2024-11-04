@@ -67,6 +67,8 @@ I otta be able to make a simple docker-compose that includes a caddy image, and 
 I think this is a reverse-proxy-and-lets-encrypt-client rolled into one.  I doubt they offer hosting.
 "theepic.dev" on Discord (visible as Pat in the Django server) uses it.
 
+[Cookiecutter Django](https://cookiecutter-django.readthedocs.io/en/latest/3-deployment/deployment-with-docker.html#understanding-the-docker-compose-setup) uses it.
+
 ### ✘[Fly.io](https://fly.io/docs/django/getting-started/existing/)
 
 Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
