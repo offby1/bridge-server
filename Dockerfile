@@ -23,4 +23,5 @@ WORKDIR /bridge/project
 ENV PGHOST=postgres
 ENV REDIS_HOST=redis
 
-CMD ["bash", "-c", "poetry run python manage.py collectstatic --no-input && poetry run python manage.py migrate && poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application"]
+# Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
+CMD ["bash", "-c", "poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application"]

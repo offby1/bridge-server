@@ -1,4 +1,5 @@
 volumes:
+  django_static_root: {}
   postgres_data: {}
 
 services:
@@ -9,6 +10,8 @@ services:
 
     depends_on:
       django-migrated:
+        condition: service_completed_successfully
+      django-collected-static:
         condition: service_completed_successfully
       redis:
         condition: service_started
@@ -21,6 +24,8 @@ services:
       - "9000:9000"
     secrets:
       - django_secret
+    volumes:
+      - django_static_root:/bridge/project/static_root
 
     # mount the work tree into the image, so we can edit normally, and those edits are immediately visible in the container
     # Note that you'll still have to manually restart daphne, though.
@@ -38,6 +43,13 @@ services:
       DJANGO_HOST: django
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
+
+  django-collected-static:
+    <<: *django
+    command: "poetry run python manage.py collectstatic --no-input"
+    restart: "no"
+    ports: []
+    depends_on: []
 
   django-migrated:
     <<: *django
