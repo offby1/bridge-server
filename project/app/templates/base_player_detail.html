@@ -7,19 +7,27 @@
 {% block content %}
     <div>
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
-        {% block partnership-status-html %}
-        {% endblock partnership-status-html %}
-        <br />
-        {% if player.current_table %}
-            {{ player.current_table.as_link }}
-        {% else %}
-            {% if user.player == player %}
-                You
-            {% else %}
-                They
-            {% endif %}
-            are in <a href="{% url 'app:lobby' %}">the lobby</a>.
-        {% endif %}
+        <div class="row">
+            {% block partnership-status-html %}
+            {% endblock partnership-status-html %}
+        </div>
+        <div class="row">
+            <div class="col">
+                {% if player.current_table %}
+                    {{ player.current_table.as_link }}
+                {% else %}
+                    {% if user.player == player %}
+                        You
+                    {% else %}
+                        They
+                    {% endif %}
+                    are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+                {% endif %}
+            </div>
+            <div class="col">
+                <a href="{% url 'app:hand-list' %}?played_by={{ player.pk }}">Hands {{ player }} has played</a>
+            </div>
+        </div>
     </div>
     {% include "chat-partial.html#chat-html-partial" %}
 {% endblock content %}

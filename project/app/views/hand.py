@@ -481,6 +481,8 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+    hand.quit_updating_the_damned_xscript = True
+
     player = request.user.player
     assert player is not None
 
@@ -505,7 +507,15 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
 @logged_in_as_player_required()
 def hand_list_view(request: HttpRequest) -> HttpResponse:
-    hand_list = app.models.Hand.objects.order_by("id").all()
+    player_pk = request.GET.get("played_by")
+    player: app.models.Player | None = None
+
+    if player_pk is not None:
+        player = get_object_or_404(app.models.Player, pk=player_pk)
+        hand_list = player.hands_played
+    else:
+        hand_list = app.models.Hand.objects.order_by("id").all()
+
     paginator = Paginator(hand_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -516,7 +526,8 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
         )
     context = {
         "page_obj": page_obj,
-        "total_count": app.models.Hand.objects.count(),
+        "played_by": player,
+        "total_count": paginator.count,
     }
 
     return render(request, "hand_list.html", context=context)
