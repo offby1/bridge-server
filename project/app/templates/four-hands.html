@@ -1,3 +1,4 @@
+{% load fastdev %}
 <div id="four-hands"
      style="border: 1px solid;
             height: 50%;
@@ -11,26 +12,24 @@
     <div class="row">
         <div class="col">{{ card_display.West.player.display_name }}: {{ card_display.West.cards }}</div>
         <div class="col">
-            {% if three_by_three_trick_display %}
-                <div>
-                    {% for row in three_by_three_trick_display.rows %}
-                        <div class="row">
-                            {% for column in row %}
-                                <div class="col"
-                                     {% if column != " " %}style="border: 1px dotted;"{% endif %}>
-                                    {{ column|safe }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        <div class="col">{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
+            {% ifexists three_by_three_trick_display %}
+            <div>
+                {% for row in three_by_three_trick_display.rows %}
+                    <div class="row">
+                        {% for column in row %}
+                            <div class="col"
+                                 {% if column != " " %}style="border: 1px dotted;"{% endif %}>{{ column|safe }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endifexists %}
     </div>
-    <div class="row">
-        <div class="col"></div>
-        <div class="col">{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
-        <div class="col"></div>
-    </div>
+    <div class="col">{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
+</div>
+<div class="row">
+    <div class="col"></div>
+    <div class="col">{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
+    <div class="col"></div>
+</div>
 </div>

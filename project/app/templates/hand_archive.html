@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fastdev %}
 {% block title %}
     Review of {{ hand }}
 {% endblock title %}
@@ -9,7 +10,9 @@
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
         </form>
-        <h2>{{ hand.board }}</h2>
+        <h2>
+            <a href="{% url 'app:board-archive' hand.board.pk %}">{{ hand.board }}</a>
+        </h2>
         <h2>{{ hand.auction.status }}</h2>
         <h2>{{ score }}</h2>
         <p>{{ vars_score }}</p>
@@ -37,7 +40,7 @@
                         {% for p in t.plays %}
                             <td>
                                 <div {% if p.wins_the_trick %}class="throb-div"{% endif %}>
-                                    <span {% if p.card.color %}style="color: {{ p.card.color }}"{% endif %}>{{ p.card }}</span>
+                                    <span {% ifexists p.card.color %}style="color: {{ p.card.color }}"{% endifexists %}>{{ p.card }}</span>
                                 </div>
                             </td>
                         {% endfor %}

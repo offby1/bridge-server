@@ -23,7 +23,7 @@ services:
       - django_secret
 
     # mount the work tree into the image, so we can edit normally, and those edits are immediately visible in the container
-    # Note that daphne won't automatically restart though
+    # Note that you'll still have to manually restart daphne, though.
     # volumes:
     #   - ./project:/bridge/project
 

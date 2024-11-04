@@ -15,10 +15,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-* When I'm done playing a hand, let me see other tables' scores for this board.
-
-  `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
-
 STILL TODO:
 
 * Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
@@ -167,6 +163,10 @@ STILL TODO:
 
 
 DONE:
+* When I'm done playing a hand, let me see other tables' scores for this board.
+
+  `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`
+
 * Indicate the winning trick with some sort of effect, like glowing or pulsing, rather than a sparkly emoji -- those take up space and thus mess up the layout.
 
 * brandon (player ID 806) is logged in, and is looking at [heidi](https://teensy-info.tail571dc2.ts.net/api/players/805/).  It sure looks like he can toggle the "let bot play for me" switch :-|
