@@ -152,9 +152,6 @@ STILL TODO:
 
   It's not obvious how to tell if a player is logged in.  There's a `django_sessions` table which appears to hold, I guess, cookie data; but it's not obvious how I can connect that to a Player.
 
-* Provide a view or two that shows what a player has done in the past.
-  In particular, what tables they played at, and who else was at those tables.
-
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
   - I guess let any player break up the table
@@ -163,6 +160,9 @@ STILL TODO:
 
 
 DONE:
+* Provide a view or two that shows what a player has done in the past.
+  In particular, what tables they played at, and who else was at those tables.
+
 * When I'm done playing a hand, let me see other tables' scores for this board.
 
   `[h.xscript.final_score() for h in b1.hand_set.all() if h.is_complete]`

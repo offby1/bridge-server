@@ -4,7 +4,11 @@
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
-        <h2>Hands {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
+        <h2>
+            Hands
+            {% if played_by %}played by {{ played_by }},{% endif %}
+            {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
+        </h2>
         <table class="table">
             <th>
                 <tr>
