@@ -10,7 +10,9 @@
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
         </form>
-        <h2>{{ hand.board }}</h2>
+        <h2>
+            <a href="{% url 'app:board-archive' hand.board.pk %}">{{ hand.board }}</a>
+        </h2>
         <h2>{{ hand.auction.status }}</h2>
         <h2>{{ score }}</h2>
         <p>{{ vars_score }}</p>
