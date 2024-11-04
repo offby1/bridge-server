@@ -481,7 +481,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-    hand.quit_updating_the_damned_xscript = True
 
     player = request.user.player
     assert player is not None
