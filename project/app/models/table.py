@@ -221,4 +221,6 @@ class Table(models.Model):
         return f"Table {self.id}"
 
 
-admin.site.register(Table)
+@admin.register(Table)
+class TableAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "tempo_seconds"]
