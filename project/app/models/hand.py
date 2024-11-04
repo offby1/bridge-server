@@ -220,15 +220,6 @@ class Hand(models.Model):
                 ew_vuln=self.board.ew_vulnerable,
             )
 
-        import sys
-        import traceback
-
-        frames = traceback.extract_stack()
-        for f in frames:
-            logger.warning(f"{f.filename}: {f.lineno}")
-        logger.warning("Who dareth invoke me")
-        sys.stderr.write("\f\n")
-
         num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
         assert not num_missing_calls < 0
         if num_missing_calls > 0:

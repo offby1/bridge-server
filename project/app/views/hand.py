@@ -515,7 +515,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     else:
         hand_list = app.models.Hand.objects.order_by("id").all()
 
-    paginator = Paginator(hand_list, 15)
+    paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     h: Hand
