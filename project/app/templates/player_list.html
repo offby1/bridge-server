@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fastdev %}
 {% load player_extras %}
 {% block title %}
     Players {{ page_obj.start_index }} through {{ page_obj.end_index }}
@@ -34,19 +35,19 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if player.maybe_a_link %}
-                                <form method="post"
-                                      action="{% url 'app:new-table' player.pk user.player.pk %}">
-                                    {% csrf_token %}
-                                    <input type="submit" value="Table up with these dudes">
-                                </input>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% include "pagination-controls.html" %}
+                            {% ifexists player.maybe_a_link %}
+                            <form method="post"
+                                  action="{% url 'app:new-table' player.pk user.player.pk %}">
+                                {% csrf_token %}
+                                <input type="submit" value="Table up with these dudes">
+                            </input>
+                        </form>
+                    {% endifexists %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
