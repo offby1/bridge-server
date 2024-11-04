@@ -1,0 +1,7 @@
+Logged in as allison
+
+https://teensy-info.tail571dc2.ts.net/hand/590/
+
+I click on a card, and get a 500 error:
+
+app.models.hand.PlayError: Hand 590: 4 calls; 49 plays, Board #15, North/South vulnerable, dealt by South: ♦2 is not a legal play fe
