@@ -62,7 +62,6 @@ def test_rejects_illegal_calls(usual_setup):
         return table.get_lho(current_caller)
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
-    t = Table.objects.get(pk=t.pk)
 
     caller = next_caller(caller)
 
@@ -70,7 +69,6 @@ def test_rejects_illegal_calls(usual_setup):
     assert one_notrump is not None
 
     t.current_hand.add_call_from_player(player=caller, call=one_notrump)
-    t = Table.objects.get(pk=t.pk)
 
     caller = next_caller(caller)
 
@@ -78,7 +76,6 @@ def test_rejects_illegal_calls(usual_setup):
         t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
-    t = Table.objects.get(pk=t.pk)
 
     assert t.hand_set.count() == 1  # we've only played one hand at this table
 
