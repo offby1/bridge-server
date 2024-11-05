@@ -17,6 +17,20 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Think hard about transactions, and come up with a way to avoid this problem:
+  - somehow, two client processes logged in as player one are participating in the auction (a web browser and a bot, say)
+  - one of them makes an apparently-valid call:
+    - it does a "select" of all the existing calls, sees that it's its turn
+    - it does an "insert" of the new call
+  - meanwhile, the other one does the same select at more or less the same time
+    - and does its own "insert" of its own call
+  I am not convinced that this will not wind up with both clients inserting calls, thereby robbing the next player of their opportunity to call.
+  What I *want* to happen is: last writer loses.  I.e., the second client to *attempt to* insert gets some sort of exception, and the database only persists the first insert.
+
+  Does django do this out of the box? Beats me.  Would I need to sprinkle some "atomic" fairy dust around certain chunks of code? Beats me.  Would I need to ask postgresql to use a fancy level of "transaction isolation"?  Beats me.
+
+  Only way to know for sure is to come up with some sort of test case.
+
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
 * Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
