@@ -63,8 +63,13 @@ def dispatch_hand_action(
                 data["new-play"]["hand"]["table"],
                 data["new-play"]["serialized"],
             )
-            if current_xscript is not None:
-                current_xscript.add_card(Card.deserialize(data["new-play"]["serialized"]))
+
+            # TODO -- This can happen if we missed notifications :-(
+            assert current_xscript is not None
+
+            current_xscript.add_card(Card.deserialize(data["new-play"]["serialized"]))
+            if izzit_my_turn(current_xscript):
+                make_a_play()
             return None
         if all(key in data for key in ["new-call"]):
             logger.debug(
@@ -73,8 +78,10 @@ def dispatch_hand_action(
                 data["new-call"]["hand"]["table"],
                 data["new-call"]["serialized"],
             )
-            if current_xscript is not None:
-                current_xscript.add_call(Bid.deserialize(data["new-call"]["serialized"]))
+            assert current_xscript is not None
+            current_xscript.add_call(Bid.deserialize(data["new-call"]["serialized"]))
+            if izzit_my_turn(current_xscript):
+                make_a_call()
             return None
         if (new_hand := data.get("new-hand")) is not None:
             if current_xscript is not None:
@@ -83,6 +90,7 @@ def dispatch_hand_action(
             board = new_hand["board"]
 
             table = Table(players=list(players_from_board(board)))
+            print(f"OK, I know {current_seat_pk=} and {table=}; how do I link 'em up")
             auction = Auction(table=table, dealer=Seat(board["dealer"]))
             current_xscript = HandTranscript(
                 table=table,
