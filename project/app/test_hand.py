@@ -62,7 +62,6 @@ def test_rejects_illegal_calls(usual_setup):
         return table.get_lho(current_caller)
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
-    t = Table.objects.get(pk=t.pk)
 
     caller = next_caller(caller)
 
@@ -70,7 +69,6 @@ def test_rejects_illegal_calls(usual_setup):
     assert one_notrump is not None
 
     t.current_hand.add_call_from_player(player=caller, call=one_notrump)
-    t = Table.objects.get(pk=t.pk)
 
     caller = next_caller(caller)
 
@@ -78,7 +76,6 @@ def test_rejects_illegal_calls(usual_setup):
         t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
 
     t.current_hand.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
-    t = Table.objects.get(pk=t.pk)
 
     assert t.hand_set.count() == 1  # we've only played one hand at this table
 
@@ -169,7 +166,6 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     # Second case: auction in progress, only call is one diamond.
     t.hand_set.all().delete()
     t.hand_set.create(board=Board.objects.first())
-    t = Table.objects.get(pk=t.pk)
 
     assert t.current_auction.allowed_caller().name == "Jeremy Northam"
 
@@ -181,8 +177,6 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     )
 
     with logged_queries():
-        t = Table.objects.get(pk=t.pk)  # like refresh_from_db, but updates all the relations too
-
         assert t.current_auction.allowed_caller().name == "Clint Eastwood"
 
     east = Player.objects.get_by_name("Clint Eastwood")
@@ -198,7 +192,6 @@ def test_bidding_box_html(usual_setup, rf) -> None:
         call=libPass,
     )
 
-    t = Table.objects.get(pk=t.pk)
     assert t.current_auction.allowed_caller().name == "J.D. Souther"
 
     south = Player.objects.get_by_name("J.D. Souther")
@@ -244,14 +237,14 @@ def test_current_trick(usual_setup) -> None:
 
     first_card = first_players_cards[0]
     t.current_hand.add_play_from_player(player=first_player, card=first_card)
-    t = Table.objects.get(pk=t.pk)
+
     assert len(t.current_hand.current_trick) == 1
     tt = t.current_hand.current_trick[-1]
     assert tt.card == first_card
 
     second_card = second_players_cards[0]
     t.current_hand.add_play_from_player(player=second_player, card=second_card)
-    t = Table.objects.get(pk=t.pk)
+
     assert len(t.current_hand.current_trick) == 2
     tt = t.current_hand.current_trick[-1]
     assert tt.card == second_card
