@@ -36,6 +36,7 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> Non
     assert p is not None
     request.user = p.user
 
+    # Note: I could also use https://pytest-django.readthedocs.io/en/latest/helpers.html#django-assert-max-num-queries
     with logged_queries() as ql:
         hand_detail_view(request, t.current_hand.pk)
 
