@@ -1,7 +1,7 @@
 import bridge.card
 import pytest
-from bridge.seat import Seat
 from django.contrib import auth
+from django.core.management import call_command
 
 from .models import Board, Player, Table
 
@@ -27,30 +27,7 @@ def everybodys_password():
 
 @pytest.fixture
 def usual_setup(db, everybodys_password):
-    player_names_by_direction = {
-        Seat.NORTH: "Jeremy Northam",
-        Seat.EAST: "Clint Eastwood",
-        Seat.SOUTH: "J.D. Souther",
-        Seat.WEST: "Adam West",
-    }
-
-    for name in player_names_by_direction.values():
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-
-    Player.objects.get_by_name(player_names_by_direction[Seat.NORTH]).partner_with(
-        Player.objects.get_by_name(player_names_by_direction[Seat.SOUTH])
-    )
-    Player.objects.get_by_name(player_names_by_direction[Seat.EAST]).partner_with(
-        Player.objects.get_by_name(player_names_by_direction[Seat.WEST])
-    )
-
-    return Table.objects.create_with_two_partnerships(
-        p1=Player.objects.get_by_name(player_names_by_direction[Seat.NORTH]),
-        p2=Player.objects.get_by_name(player_names_by_direction[Seat.EAST]),
-        shuffle_deck=False,
-    )
+    call_command("loaddata", "usual_setup")
 
 
 @pytest.fixture
