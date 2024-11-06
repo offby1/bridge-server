@@ -99,6 +99,10 @@ def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
     )
 
     play_to_completion(t1.current_hand)
+    from django.core.management import call_command
+
+    with open("/tmp/played-to-completion.json", "w") as outf:
+        call_command("dumpdata", "app", stdout=outf)
 
     expect_visibility(
         [

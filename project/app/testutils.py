@@ -40,8 +40,8 @@ def play_to_completion(h: app.models.Hand) -> None:
         cc_bs = h.current_cards_by_seat()
         x = h.get_xscript()
 
-        legal_cards = x.legal_cards(
-            some_hand=bridge.table.Hand(cards=list(cc_bs[x.named_seats[0].seat]))
+        legal_cards = sorted(
+            x.legal_cards(some_hand=bridge.table.Hand(cards=list(cc_bs[x.named_seats[0].seat])))
         )
 
         if not legal_cards:
