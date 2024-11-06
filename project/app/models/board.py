@@ -14,6 +14,7 @@ from django.contrib import admin
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.db import models
+from django.db.models.aggregates import Max
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .common import SEAT_CHOICES
@@ -30,7 +31,10 @@ logger = logging.getLogger(__name__)
 
 class BoardManager(models.Manager):
     def create_from_deck(self, *, deck: list[Card]) -> Board:
-        board_number = self.count() + 1
+        # Max seems safer than just using "count", since in the unlikely event that we ever delete a board, "count"
+        # would return a duplicate value, whereas Max should not.
+        max_number = self.aggregate(max_id=Max("id"))["max_id"]
+        board_number = 1 if max_number is None else max_number + 1
 
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
         dealer = (board_number - 1) % 4 + 1
@@ -43,6 +47,7 @@ class BoardManager(models.Manager):
             ew_vulnerable=only_ew_vuln or all_vuln,
             dealer=dealer,
             deck=deck,
+            number=board_number,
         )
 
     def create_with_deck(
@@ -52,6 +57,7 @@ class BoardManager(models.Manager):
         ew_vulnerable: bool,
         dealer: int,
         deck: list[Card],
+        number=int,
     ) -> Board:
         def deserialize_hand(cards: list[Card]) -> str:
             # sorted only so that they look purty in the Admin site.
@@ -66,6 +72,7 @@ class BoardManager(models.Manager):
             ns_vulnerable=ns_vulnerable,
             ew_vulnerable=ew_vulnerable,
             dealer=dealer,
+            number=number,
             north_cards=north_cards,
             east_cards=east_cards,
             south_cards=south_cards,
@@ -111,6 +118,7 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
+    number = models.SmallIntegerField(unique=True)
     objects = BoardManager()
 
     @property
@@ -155,7 +163,7 @@ class Board(models.Model):
         else:
             vuln = "East/West"
 
-        return f"Board #{self.id}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
+        return f"Board #{self.number}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
