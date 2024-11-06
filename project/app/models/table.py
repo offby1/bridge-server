@@ -42,19 +42,19 @@ class TableManager(models.Manager):
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, shuffle_deck: bool = True, desired_board_pk: int | None = None
     ) -> Table:
-        t: Table = self.create()
         try:
             with transaction.atomic():
+                t: Table = self.create()
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                     modelSeat.objects.create(
                         direction=seat,
                         player=player,
                         table=t,
                     )
+
+                t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
         except Exception as e:
             raise TableException(str(e)) from e
-
-        t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
 
         send_event(
             channel="all-tables",
