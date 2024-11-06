@@ -26,8 +26,13 @@ def everybodys_password():
 
 
 @pytest.fixture
-def usual_setup(db, everybodys_password):
+def usual_setup(db):
     call_command("loaddata", "usual_setup")
+
+
+@pytest.fixture
+def played_to_completion(db):
+    call_command("loaddata", "played_to_completion")
 
 
 @pytest.fixture
