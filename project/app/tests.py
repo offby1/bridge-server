@@ -423,6 +423,19 @@ def test_max_boards(usual_setup, monkeypatch):
         t.next_board()
 
 
+def test_no_bogus_tables(usual_setup):
+    count_before = Table.objects.count()
+    with pytest.raises(TableException):
+        Table.objects.create_with_two_partnerships(
+            p1=Player.objects.get_by_name("Jeremy Northam"),
+            p2=Player.objects.get_by_name("Clint Eastwood"),
+            shuffle_deck=False,
+        )
+    count_after = Table.objects.count()
+
+    assert count_after == count_before
+
+
 def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     t = Table.objects.first()
     Bob, Carol, Ted, Alice = t.current_hand.players_by_direction.values()

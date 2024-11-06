@@ -52,7 +52,7 @@ class TableManager(models.Manager):
                         table=t,
                     )
         except Exception as e:
-            raise TableException from e
+            raise TableException(str(e)) from e
 
         t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
 
