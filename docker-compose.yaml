@@ -32,18 +32,6 @@ services:
     # volumes:
     #   - ./project:/bridge/project
 
-  bot:
-    <<: *django
-    command: "poetry run python manage.py bot"
-    ports: []
-    depends_on:
-      populated-with-fake-data:
-        condition: service_completed_successfully
-    environment:
-      DJANGO_HOST: django
-      DJANGO_SECRET_FILE: /run/secrets/django_secret
-      HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
-
   django-collected-static:
     <<: *django
     command: "poetry run python manage.py collectstatic --no-input"

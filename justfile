@@ -100,13 +100,6 @@ daphne: test django-superuser migrate collectstatic
 [group('bs')]
 pop: django-superuser migrate (manage "generate_fake_data --players=40")
 
-# Run the little bids-and-plays bot
-[group('bs')]
-bot *options: migrate
-    cd project && poetry run python manage.py bot {{ options }}
-
-poke: migrate (manage "pokey-party")
-
 [group('django')]
 [private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
