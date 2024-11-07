@@ -14,9 +14,9 @@
             </th>
             {% for board in page_obj %}
                 <tr>
-                    <td>{{ board.pk }}</td>
+                    <td>{{ board.number }}</td>
                     <td>
-                        <a href="{% url 'app:board-archive' board.pk %}">Board {{ board }} mumble mumble</a>
+                        <a href="{% url 'app:board-archive' number=board.number %}">{{ board }}</a>
                     </td>
                 </tr>
             {% endfor %}

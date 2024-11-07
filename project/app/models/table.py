@@ -42,19 +42,19 @@ class TableManager(models.Manager):
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, shuffle_deck: bool = True, desired_board_pk: int | None = None
     ) -> Table:
-        t: Table = self.create()
         try:
             with transaction.atomic():
+                t: Table = self.create()
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                     modelSeat.objects.create(
                         direction=seat,
                         player=player,
                         table=t,
                     )
-        except Exception as e:
-            raise TableException from e
 
-        t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
+                t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
+        except Exception as e:
+            raise TableException(str(e)) from e
 
         send_event(
             channel="all-tables",
@@ -158,8 +158,8 @@ class Table(models.Model):
         unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
         return unplayed_boards.first()
 
-    # TODO -- the semantics are wrong.  Currently this does "get the next board that hasn't been played at this table",
-    # but it'd be more useful to do "get the next board that none of this table's players have played".
+    # BUGBUG -- the semantics are wrong.  Currently this does "get the next board that hasn't been played at this table",
+    # but it should do "get the next board that none of this table's players have played".
     def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
             msg = f"Naw, {self} isn't complete; no next board for you"

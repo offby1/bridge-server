@@ -11,8 +11,8 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 
 @logged_in_as_player_required()
-def board_archive_view(request: AuthedHttpRequest, board_pk: str) -> TemplateResponse:
-    board: app.models.Board = get_object_or_404(app.models.Board, pk=board_pk)
+def board_archive_view(request: AuthedHttpRequest, number: int) -> TemplateResponse:
+    board: app.models.Board = get_object_or_404(app.models.Board, number=number)
     player = request.user.player
     assert player is not None
     my_hand = player.hand_at_which_board_was_played(board)

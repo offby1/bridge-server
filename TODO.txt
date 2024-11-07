@@ -31,6 +31,9 @@ STILL TODO:
 
   Only way to know for sure is to come up with some sort of test case.
 
+* It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
+  See the BUGBUG comment at Table.next_board
+
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
 * Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
@@ -110,8 +113,6 @@ STILL TODO:
 
 * "Claim" and "Concede" buttons, at least if you're declarer
 
-* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
-
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
 
 * Consider timestamps for important stuff, in particular calls and plays.
@@ -180,6 +181,8 @@ DONE:
 
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
+
+* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
 
 * When I'm done playing a hand, let me see other tables' scores for this board.
 

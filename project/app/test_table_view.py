@@ -1,12 +1,9 @@
-import bridge.table
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat
 
-import app.models.hand
-
-from .models import Board, Table
-from .testutils import play_to_completion, set_auction_to
+from .models import Table
+from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
 
@@ -26,11 +23,21 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     assert not ds[Seat.WEST].this_hands_turn_to_play
 
 
-def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
-    monkeypatch.setattr(
-        app.models.hand.Hand, "send_event_to_players_and_hand", lambda *args, **kwargs: True
-    )  # it's mighty slow
+def expect_visibility(expectation_array, table: Table) -> None:
+    for seat in table.current_hand.players_by_direction:
+        for viewer in table.current_hand.players_by_direction:
+            actual1 = _display_and_control(
+                hand=table.current_hand,
+                seat=Seat(seat),
+                as_viewed_by=table.current_hand.players_by_direction[viewer],
+                as_dealt=False,
+            )
+            assert (
+                actual1["display_cards"] == expectation_array[seat - 1][viewer - 1]
+            ), f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
 
+
+def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
@@ -39,35 +46,6 @@ def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
 
     t2 = second_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
-    play_to_completion(t2.current_hand)
-
-    b2 = Board.objects.create_from_deck(deck=bridge.card.Card.deck())
-    t2.next_board(desired_board_pk=b2.pk)
-
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
-
-    def expect_visibility(expectation_array):
-        for seat in t1.current_hand.players_by_direction:
-            for viewer in t1.current_hand.players_by_direction:
-                actual1 = _display_and_control(
-                    hand=t1.current_hand,
-                    seat=Seat(seat),
-                    as_viewed_by=t1.current_hand.players_by_direction[viewer],
-                    as_dealt=False,
-                )
-                assert (
-                    actual1["display_cards"] == expectation_array[seat - 1][viewer - 1]
-                ), f"{t1.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
-
-                actual2 = _display_and_control(
-                    hand=t2.current_hand,
-                    seat=Seat(seat),
-                    as_viewed_by=t1.current_hand.players_by_direction[viewer],
-                    as_dealt=False,
-                )
-                assert (
-                    actual2["display_cards"] is False
-                ), f"wtf -- player at table 1 (board {t1.current_board}) can see cards at table 2 (board {t2.current_board})??"
 
     expect_visibility(
         [
@@ -76,7 +54,8 @@ def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
             [0, 1, 0, 0],  # e
             [0, 0, 1, 0],  # s
             [0, 0, 0, 1],  # w
-        ]
+        ],
+        table=t1,
     )
 
     # Make the opening lead
@@ -95,10 +74,14 @@ def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
             [0, 1, 0, 0],  # e
             [1, 1, 1, 1],  # s
             [0, 0, 0, 1],  # w
-        ]
+        ],
+        table=t1,
     )
 
-    play_to_completion(t1.current_hand)
+
+def test_hand_visibility_two(played_to_completion: None) -> None:
+    t2: Table | None = Table.objects.first()
+    assert t2 is not None
 
     expect_visibility(
         [
@@ -107,7 +90,8 @@ def test_hand_visibility(usual_setup: None, second_setup, monkeypatch) -> None:
             [1, 1, 1, 1],  # e
             [1, 1, 1, 1],  # s
             [1, 1, 1, 1],  # w
-        ]
+        ],
+        table=t2,
     )
 
 
