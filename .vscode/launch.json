@@ -27,7 +27,9 @@
                 "runserver",
                 "9000",
                 "--settings",
-                "project.dev_settings"
+                "project.dev_settings",
+                "--noreload",
+                "--nothreading"
             ],
             "django": true,
             "autoStartBrowser": false,
