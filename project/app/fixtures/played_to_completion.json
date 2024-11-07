@@ -1,0 +1,629 @@
+[
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.402Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Jeremy Northam"
+    },
+    "model": "auth.user",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.373Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2024-11-06T15:27:39.341Z",
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Clint Eastwood"
+    },
+    "model": "auth.user",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.389Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "J.D. Souther"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.396Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Adam West"
+    },
+    "model": "auth.user",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "dealer": 1,
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "ew_vulnerable": false,
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": false,
+      "number": 1,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
+    },
+    "model": "app.board",
+    "pk": 1
+  },
+  {
+    "fields": {},
+    "model": "app.lobby",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "direction": 1,
+      "player": 1,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "direction": 2,
+      "player": 2,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "direction": 3,
+      "player": 3,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "direction": 4,
+      "player": 4,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "partner": 3,
+      "user": 1
+    },
+    "model": "app.player",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "partner": 4,
+      "user": 2
+    },
+    "model": "app.player",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "partner": 1,
+      "user": 3
+    },
+    "model": "app.player",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "partner": 2,
+      "user": 4
+    },
+    "model": "app.player",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "board": 1,
+      "open_access": false,
+      "table": 1
+    },
+    "model": "app.hand",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "tempo_seconds": 1.0
+    },
+    "model": "app.table",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "1♣"
+    },
+    "model": "app.call",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 45
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 46
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 47
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 48
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 49
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 50
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 51
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 52
+  }
+]

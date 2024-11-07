@@ -17,6 +17,9 @@ IN PROGRESS:
 
 STILL TODO:
 
+* It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
+  See the BUGBUG comment at Table.next_board
+
 * Think hard about transactions, and come up with a way to avoid this problem:
   - somehow, two client processes logged in as player one are participating in the auction (a web browser and a bot, say)
   - one of them makes an apparently-valid call:
@@ -110,8 +113,6 @@ STILL TODO:
 
 * "Claim" and "Concede" buttons, at least if you're declarer
 
-* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
-
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
 
 * Consider timestamps for important stuff, in particular calls and plays.
@@ -180,6 +181,8 @@ DONE:
 
 * Provide a view or two that shows what a player has done in the past.
   In particular, what tables they played at, and who else was at those tables.
+
+* Add a view for examining what you've done in the past -- what tables you've been at, and the associated transcripts.
 
 * When I'm done playing a hand, let me see other tables' scores for this board.
 
