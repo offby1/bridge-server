@@ -96,11 +96,7 @@ SECURE_REDIRECT_EXEMPT = [
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
 EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
-EVENTSTREAM_REDIS = {
-    "host": os.environ.get("REDIS_HOST", "localhost"),
-    "port": 6379,
-    "db": 0,
-}
+
 
 MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
