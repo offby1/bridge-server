@@ -17,6 +17,10 @@ IN PROGRESS:
 
 STILL TODO:
 
+* The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
+
+* Also those events have zero auth -- anyone can receive any of them
+
 * It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
   See the BUGBUG comment at Table.next_board
 
