@@ -15,8 +15,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-* The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
-
 STILL TODO:
 
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
@@ -173,6 +171,8 @@ STILL TODO:
 
 
 DONE:
+* The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
+
 * The hand, while we're playing, does not show a running total of tricks taken by each side.
 
 * The server is taking maybe 30 seconds to start via docker-compose -- I suspect the time is in "collectstatic", due to my recently having actually gotten that config right, and perhaps because I'm asking for compression.
