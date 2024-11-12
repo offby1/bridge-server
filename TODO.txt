@@ -15,9 +15,11 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
+* The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
+
 STILL TODO:
 
-* The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
+* The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
 * Also those events have zero auth -- anyone can receive any of them
 

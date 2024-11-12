@@ -1,0 +1,71 @@
+from __future__ import annotations
+
+import collections
+from typing import Any
+
+import bridge.card
+import bridge.contract
+
+from .models import Table
+from .testutils import set_auction_to
+
+
+def test_auction_settled_messages(usual_setup, monkeypatch) -> None:
+    t = Table.objects.first()
+    assert t is not None
+    h = t.current_hand
+
+    sent_events = []
+
+    def send_event_to_players_and_hand(*, data: dict[str, Any]) -> None:
+        sent_events.append(data)
+
+    monkeypatch.setattr(h, "send_event_to_players_and_hand", send_event_to_players_and_hand)
+
+    set_auction_to(bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS), h)
+
+    event_counts_by_top_level_keys: collections.Counter[str] = collections.Counter()
+    for e in sent_events:
+        for k in e:
+            event_counts_by_top_level_keys[k] += 1
+
+    assert event_counts_by_top_level_keys["new-call"] == 4
+    assert event_counts_by_top_level_keys["contract"] == 1
+
+
+def test_new_hand_messages(played_to_completion, monkeypatch) -> None:
+    t = Table.objects.first()
+    assert t is not None
+
+    sent_events_by_channel: collections.defaultdict[str, list[dict[str, Any]]] = (
+        collections.defaultdict(list)
+    )
+
+    def send_timestamped_event(channel: str, data: dict[str, Any]) -> None:
+        sent_events_by_channel[channel].append(data)
+
+    from .models import hand
+
+    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
+
+    t.next_board()
+
+    def num_visible_cards(unpacked_events=list[dict[str, Any]]) -> int:
+        rv = 0
+        for e in unpacked_events:
+            match e:
+                case {"new-hand": {"board": board_guts}}:
+                    for dir_ in ("north", "east", "south", "west"):
+                        key = f"{dir_}_cards"
+                        rv += len(board_guts.get(key, "")) // 2
+        return rv
+
+    for channel, events in sent_events_by_channel.items():
+        if channel.startswith("system:player:"):
+            assert (
+                num_visible_cards(events) == 13
+            ), f"{channel=} {num_visible_cards(events)} should be 13"
+        else:
+            assert (
+                num_visible_cards(events) == 0
+            ), f"{channel=} {num_visible_cards(events)} should be 0"
