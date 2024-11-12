@@ -499,6 +499,14 @@ class Hand(models.Model):
 
         return flattened
 
+    def trick_counts_by_direction(self) -> dict[str, int]:
+        return {
+            "N/S" if north_or_east == 1 else "E/W": count
+            for north_or_east, count in collections.Counter(
+                p.seat.value % 2 for p in self.annotated_plays if p.winner
+            ).items()
+        }
+
     @property
     def plays(self):
         return self.play_set.order_by("id")
