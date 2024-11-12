@@ -67,7 +67,6 @@ class NewHandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hand
         fields = ("pk", "table", "board")
-        depth = 1
 
 
 # The bot uses this to create plays
