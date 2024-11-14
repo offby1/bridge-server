@@ -238,6 +238,9 @@ class Hand(models.Model):
 
         return self._xscript
 
+    def serializable_xscript(self) -> Any:
+        return self.get_xscript().serializable()
+
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
         assert_type(player, libPlayer)
         assert_type(call, libCall)

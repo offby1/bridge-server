@@ -42,8 +42,7 @@ class HandSerializer(serializers.HyperlinkedModelSerializer):
             "table",
             "board",
             "is_complete",
-            "serialized_plays",
-            "serialized_calls",
+            "serializable_xscript",
             "open_access",
         )
 
