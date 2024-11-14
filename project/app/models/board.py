@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import enum
+import hashlib
 import logging
+import random
 from typing import TYPE_CHECKING
 
 import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
-from django.contrib import admin
 
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
 # https://en.wikipedia.org/wiki/Board_(bridge)
 # One of the four slots says "dealer" next to it.
 # In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
+from django.conf import settings
+from django.contrib import admin
 from django.db import models
 from django.db.models.aggregates import Max
 from django_eventstream import send_event  # type: ignore [import-untyped]
@@ -34,12 +37,24 @@ class Tournament(models.Model):
         return f"tournament {self.pk}"
 
 
+def get_rng_for_board(*seed_args: int) -> random.Random:
+    rv = random.Random()
+    h = hashlib.sha256()
+    for arg in seed_args:
+        h.update(arg.to_bytes())
+    h.update(settings.SECRET_KEY.encode())
+    rv.seed(int.from_bytes(h.digest()))
+    return rv
+
+
 class BoardManager(models.Manager):
-    def create_from_deck(self, *, deck: list[Card]) -> Board:
+    def create_from_deck(self, *, deck: list[Card], shuffle_deck: bool = False) -> Board:
         # Max seems safer than just using "count", since in the unlikely event that we ever delete a board, "count"
         # would return a duplicate value, whereas Max should not.
         max_number = self.aggregate(max_id=Max("id"))["max_id"]
-        board_number = 1 if max_number is None else max_number + 1
+        if max_number is None:
+            max_number = 0
+        board_number = max_number + 1
 
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
         dealer = (board_number - 1) % 4 + 1
@@ -53,6 +68,7 @@ class BoardManager(models.Manager):
             dealer=dealer,
             deck=deck,
             number=board_number,
+            shuffle_deck=shuffle_deck,
         )
 
     def create_with_deck(
@@ -63,10 +79,15 @@ class BoardManager(models.Manager):
         dealer: int,
         deck: list[Card],
         number=int,
+        shuffle_deck: bool = False,
     ) -> Board:
         def deserialize_hand(cards: list[Card]) -> str:
             # sorted only so that they look purty in the Admin site.
             return "".join([c.serialize() for c in sorted(cards)])
+
+        if shuffle_deck:
+            rng = get_rng_for_board(number, self.count() // TOTAL_BOARDS)
+            rng.shuffle(deck)
 
         north_cards = deserialize_hand(deck[0:13])
         east_cards = deserialize_hand(deck[13:26])
