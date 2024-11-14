@@ -29,6 +29,11 @@ TOTAL_BOARDS = 16
 logger = logging.getLogger(__name__)
 
 
+class Tournament(models.Model):
+    def __str__(self) -> str:
+        return f"tournament {self.pk}"
+
+
 class BoardManager(models.Manager):
     def create_from_deck(self, *, deck: list[Card]) -> Board:
         # Max seems safer than just using "count", since in the unlikely event that we ever delete a board, "count"
@@ -82,6 +87,12 @@ class BoardManager(models.Manager):
     def create(self, *args, **kwargs):
         from app.serializers import BoardSerializer
 
+        # Which tournament is this board part of?
+        if (tournament := kwargs.get("tournament")) is None:
+            tournament_number = self.count() // TOTAL_BOARDS
+            tournament, _ = Tournament.objects.get_or_create(pk=tournament_number)
+            kwargs["tournament"] = tournament
+
         rv = super().create(*args, **kwargs)
 
         # nobody (yet) cares about the creation of a new board, but what the heck.
@@ -119,6 +130,8 @@ class Board(models.Model):
     west_cards = models.CharField(max_length=26)
 
     number = models.SmallIntegerField(unique=True)
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, null=True)
+
     objects = BoardManager()
 
     @property
