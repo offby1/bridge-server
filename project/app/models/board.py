@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from app.models import Hand, Player
 
-TOTAL_BOARDS = 16
+BOARDS_PER_TOURNAMENT = 16
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class BoardManager(models.Manager):
             return "".join([c.serialize() for c in sorted(cards)])
 
         if shuffle_deck:
-            rng = get_rng_for_board(number, self.count() // TOTAL_BOARDS)
+            rng = get_rng_for_board(number, self.count() // BOARDS_PER_TOURNAMENT)
             rng.shuffle(deck)
 
         north_cards = deserialize_hand(deck[0:13])
@@ -110,7 +110,7 @@ class BoardManager(models.Manager):
 
         # Which tournament is this board part of?
         if (tournament := kwargs.get("tournament")) is None:
-            tournament_number = self.count() // TOTAL_BOARDS
+            tournament_number = self.count() // BOARDS_PER_TOURNAMENT
             tournament, _ = Tournament.objects.get_or_create(pk=tournament_number)
             kwargs["tournament"] = tournament
 
@@ -208,7 +208,7 @@ class Board(models.Model):
             == len(self.west_cards)
             == 26
         ), f"why no cards {vars(self)}"
-
+        assert Board.objects.count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
 
 

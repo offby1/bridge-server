@@ -15,7 +15,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import TOTAL_BOARDS, Board
+from app.models.board import Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
@@ -170,10 +170,6 @@ class Table(models.Model):
             else:
                 b = self.find_unplayed_board()
             if b is None:
-                if Board.objects.count() >= TOTAL_BOARDS:
-                    msg = "No more boards! You've played them all."
-                    raise TableException(msg)
-
                 deck = bridge.card.Card.deck()
 
                 b = Board.objects.create_from_deck(

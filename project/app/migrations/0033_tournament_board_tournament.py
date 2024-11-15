@@ -2,14 +2,14 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
-from app.models.board import TOTAL_BOARDS
+from app.models.board import BOARDS_PER_TOURNAMENT
 
 def create_needed_tournaments(apps, schema_editor):
     Board = apps.get_model("app", "Board")
     Tournament = apps.get_model("app", "Tournament")
 
     for index, board in enumerate(Board.objects.order_by("id").all()):
-        tournament_number = Board.objects.count() // TOTAL_BOARDS
+        tournament_number = Board.objects.count() // BOARDS_PER_TOURNAMENT
         t, _ = Tournament.objects.get_or_create(pk=tournament_number)
 
 
@@ -18,7 +18,7 @@ def update_tournament_field(apps, schema_editor):
     Tournament = apps.get_model("app", "Tournament")
 
     for index, board in enumerate(Board.objects.order_by("id").all()):
-        tournament_number = Board.objects.count() // TOTAL_BOARDS
+        tournament_number = Board.objects.count() // BOARDS_PER_TOURNAMENT
         t, _ = Tournament.objects.get_or_create(pk=tournament_number)
         board.tournament = t
         board.save()

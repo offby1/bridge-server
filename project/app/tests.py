@@ -411,11 +411,14 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
 
 def test_max_boards(played_to_completion, monkeypatch):
-    monkeypatch.setattr(app.models.table, "TOTAL_BOARDS", 1)
+    monkeypatch.setattr(app.models.table, "BOARDS_PER_TOURNAMENT", 1)
     t = Table.objects.first()
 
-    with pytest.raises(TableException):
-        t.next_board()
+    t.next_board()
+
+    assert app.models.board.Board.objects.count() == 2
+    assert app.models.board.Board.objects.filter(tournament=0).count() == 1
+    assert app.models.board.Board.objects.filter(tournament=1).count() == 1
 
 
 def test_no_bogus_tables(usual_setup):
