@@ -107,6 +107,9 @@ class BoardManager(models.Manager):
     def create(self, *args, **kwargs):
         from app.serializers import BoardSerializer
 
+        kwargs = kwargs.copy()
+        kwargs["number"] = kwargs["number"] % BOARDS_PER_TOURNAMENT
+
         # Which tournament is this board part of?
         if (tournament := kwargs.get("tournament")) is None:
             tournament_number = (self.count() + 1) // BOARDS_PER_TOURNAMENT
@@ -186,18 +189,6 @@ class Board(models.Model):
 
         return rv
 
-    def __str__(self):
-        if self.ns_vulnerable and self.ew_vulnerable:
-            vuln = "Both sides"
-        elif not self.ns_vulnerable and not self.ew_vulnerable:
-            vuln = "Neither side"
-        elif self.ns_vulnerable:
-            vuln = "North/South"
-        else:
-            vuln = "East/West"
-
-        return f"Board #{self.number}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
-
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         assert (
@@ -209,6 +200,26 @@ class Board(models.Model):
         ), f"why no cards {vars(self)}"
         assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.ns_vulnerable and self.ew_vulnerable:
+            vuln = "Both sides"
+        elif not self.ns_vulnerable and not self.ew_vulnerable:
+            vuln = "Neither side"
+        elif self.ns_vulnerable:
+            vuln = "North/South"
+        else:
+            vuln = "East/West"
+
+        return f"Board #{self.number} ({self.tournament}), {vuln} vulnerable, dealt by {self.fancy_dealer}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["number", "tournament"],
+                name="%(app_label)s_%(class)s_combination_of_board_number_and_tournament_number",
+            ),
+        ]
 
 
 admin.site.register(Board)
