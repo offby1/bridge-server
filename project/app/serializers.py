@@ -51,7 +51,7 @@ class HandSerializer(serializers.HyperlinkedModelSerializer):
 class ShallowTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = ("seat_set", "id", "current_hand", "tempo_seconds")
+        fields = ("seat_set", "id", "current_hand_pk", "tempo_seconds")
 
 
 class NewHandSerializer(serializers.ModelSerializer):

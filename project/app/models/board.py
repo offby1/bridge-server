@@ -10,10 +10,9 @@ import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
 
-# A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
-# https://en.wikipedia.org/wiki/Board_(bridge)
-# One of the four slots says "dealer" next to it.
-# In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
+# A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
+# indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
+# says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
@@ -110,7 +109,7 @@ class BoardManager(models.Manager):
 
         # Which tournament is this board part of?
         if (tournament := kwargs.get("tournament")) is None:
-            tournament_number = self.count() // BOARDS_PER_TOURNAMENT
+            tournament_number = (self.count() + 1) // BOARDS_PER_TOURNAMENT
             tournament, _ = Tournament.objects.get_or_create(pk=tournament_number)
             kwargs["tournament"] = tournament
 
@@ -208,7 +207,7 @@ class Board(models.Model):
             == len(self.west_cards)
             == 26
         ), f"why no cards {vars(self)}"
-        assert Board.objects.count() < BOARDS_PER_TOURNAMENT
+        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
 
 

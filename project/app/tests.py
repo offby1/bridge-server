@@ -1,3 +1,4 @@
+import collections
 import importlib
 import json
 
@@ -411,14 +412,16 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
 
 def test_max_boards(played_to_completion, monkeypatch):
-    monkeypatch.setattr(app.models.table, "BOARDS_PER_TOURNAMENT", 1)
+    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
     t = Table.objects.first()
 
     t.next_board()
 
-    assert app.models.board.Board.objects.count() == 2
-    assert app.models.board.Board.objects.filter(tournament=0).count() == 1
-    assert app.models.board.Board.objects.filter(tournament=1).count() == 1
+    board_counts_by_tournament_pk = collections.defaultdict(int)
+    for b in app.models.board.Board.objects.all():
+        board_counts_by_tournament_pk[b.pk] += 1
+
+    assert dict(board_counts_by_tournament_pk) == {1: 1, 2: 1}
 
 
 def test_no_bogus_tables(usual_setup):

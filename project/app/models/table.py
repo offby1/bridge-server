@@ -103,6 +103,10 @@ class Table(models.Model):
         assert rv is not None
         return rv
 
+    # Seems dumb, but I don't know how else to get this information into a DRF serializer
+    def current_hand_pk(self) -> int:
+        return self.current_hand.pk
+
     @property
     def hand_is_complete(self) -> bool:
         return self.current_hand.is_complete
