@@ -12,7 +12,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Player, Table, hand
+from .models import AuctionError, Board, Hand, Player, Table, board, hand
 from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
@@ -365,33 +365,19 @@ def test_exhaustive_archive_and_detail_redirection(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("SECRET_KEY", "east_cards"),
-    [
-        (
-            "!",
-            "♣9♣J♣K♦5♦6♦J♥5♥8♥A♠4♠7♠8♠9",
-        ),
-        (
-            "it's a sekrit, all right",
-            "♣9♣Q♣A♦5♦8♦9♦K♥3♥7♥8♠6♠8♠K",
-        ),
-    ],
-)
-def test_predictable_shuffles(SECRET_KEY, east_cards, settings):
-    settings.SECRET_KEY = SECRET_KEY
+def test_predictable_shuffles():
+    attrs1_empty = board.board_attributes_from_board_number(board_number=1, rng_seeds=[])
+    attrs2_empty = board.board_attributes_from_board_number(board_number=2, rng_seeds=[])
 
-    b1, _ = Board.objects.get_or_create_from_deck(
-        deck=Card.deck(),
-        shuffle_deck=True,
-    )
-    print(f"{b1=}")
-    assert b1.east_cards == east_cards
+    # Same  'cuz we used the same random seeds
+    for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
+        assert attrs1_empty[k] == attrs2_empty[k]
 
-    b2, _ = Board.objects.get_or_create_from_deck(
-        deck=Card.deck(),
-        shuffle_deck=True,
-    )
-    print(f"{b2=}")
-    # Different because there are two boards
-    assert b2.east_cards != east_cards
+    attrs1_golly = board.board_attributes_from_board_number(board_number=1, rng_seeds=[b"golly"])
+
+    for k in ("ns_vulnerable", "ew_vulnerable", "dealer"):
+        assert attrs1_empty[k] == attrs1_golly[k]
+
+    # Cards are different
+    for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
+        assert attrs1_empty[k] != attrs1_golly[k]

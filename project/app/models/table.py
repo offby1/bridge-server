@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 import bridge.card
 import bridge.seat
-import bridge.table
 from django.contrib import admin
 from django.db import models, transaction
 from django.db.models.expressions import RawSQL
@@ -15,12 +14,13 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import Board
+from app.models.board import Board, Tournament
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
 
 if TYPE_CHECKING:
+    import bridge.table
     from bridge.auction import Auction as libAuction
     from django.db.models.query import QuerySet
 
@@ -158,8 +158,11 @@ class Table(models.Model):
         )
 
     def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
-        return unplayed_boards.first()
+        qs = Board.objects.exclude(pk__in=self.played_boards())
+        logger.debug(
+            f"In case anyone cares, there are {Board.objects.count()} boards, and {qs.count()} of those are unplayed by {self}"
+        )
+        return qs.order_by("id").first()
 
     # BUGBUG -- the semantics are wrong.  Currently this does "get the next board that hasn't been played at this table",
     # but it should do "get the next board that none of this table's players have played".
@@ -173,13 +176,12 @@ class Table(models.Model):
                 b = Board.objects.get(pk=desired_board_pk)
             else:
                 b = self.find_unplayed_board()
-            if b is None:
-                deck = bridge.card.Card.deck()
 
-                b, _ = Board.objects.get_or_create_from_deck(
-                    deck=deck,
-                    shuffle_deck=shuffle_deck,
-                )
+            if b is None:
+                Tournament.objects.create()
+                b = self.find_unplayed_board()
+                assert b is not None
+
             Hand.objects.create(board=b, table=self)
 
         return b

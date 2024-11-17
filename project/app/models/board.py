@@ -4,7 +4,7 @@ import enum
 import hashlib
 import logging
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 from bridge.card import Card
@@ -15,137 +15,99 @@ from bridge.seat import Seat
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.conf import settings
 from django.contrib import admin
-from django.db import models
-from django.db.models.aggregates import Max
-from django_eventstream import send_event  # type: ignore [import-untyped]
+from django.db import models, transaction
 
 from .common import SEAT_CHOICES
 
 if TYPE_CHECKING:
-    from app.models import Hand, Player
     from django.db.models.manager import RelatedManager
+
+    from app.models import Hand, Player
 
 BOARDS_PER_TOURNAMENT = 2
 
 logger = logging.getLogger(__name__)
 
 
+def get_rng_from_seeds(*seed_args: bytes) -> random.Random:
+    rv = random.Random()
+    h = hashlib.sha256()
+    for arg in seed_args:
+        h.update(arg)
+
+    rv.seed(int.from_bytes(h.digest()))
+    return rv
+
+
+def board_attributes_from_board_number(
+    *, board_number: int, rng_seeds: list[bytes]
+) -> dict[str, Any]:
+    assert (
+        0 < board_number <= BOARDS_PER_TOURNAMENT
+    ), f"{board_number=} gotta be < {BOARDS_PER_TOURNAMENT=}"
+
+    board_number = (board_number - 1) % 16
+
+    dealer = (board_number - 1) % 4 + 1
+    only_ns_vuln = board_number in (2, 5, 12, 15)
+    only_ew_vuln = board_number in (3, 6, 9, 16)
+    all_vuln = board_number in (4, 7, 10, 13)
+
+    def deserialize_hand(cards: list[Card]) -> str:
+        # sorted only so that they look purty in the Admin site.
+        return "".join([c.serialize() for c in sorted(cards)])
+
+    rng = get_rng_from_seeds(*rng_seeds)
+    deck = Card.deck()
+    rng.shuffle(deck)
+
+    north_cards = deserialize_hand(deck[0:13])
+    east_cards = deserialize_hand(deck[13:26])
+    south_cards = deserialize_hand(deck[26:39])
+    west_cards = deserialize_hand(deck[39:52])
+
+    return {
+        "ns_vulnerable": only_ns_vuln or all_vuln,
+        "ew_vulnerable": only_ew_vuln or all_vuln,
+        "dealer": dealer,
+        "north_cards": north_cards,
+        "east_cards": east_cards,
+        "south_cards": south_cards,
+        "west_cards": west_cards,
+    }
+
+
+class TournamentManager(models.Manager):
+    # When should we call this?
+    # Whenever there are no more unplayed boards.
+    def create(self, *args, **kwargs):
+        with transaction.atomic():
+            t = super().create(*args, **kwargs)
+            # create all the boards ahead of time.
+            for board_number in range(1, BOARDS_PER_TOURNAMENT + 1):
+                board_attributes = board_attributes_from_board_number(
+                    board_number=board_number,
+                    rng_seeds=[
+                        str(board_number).encode(),
+                        str(t.pk).encode(),
+                        settings.SECRET_KEY.encode(),
+                    ],
+                )
+                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
+
+
 class Tournament(models.Model):
+    objects = TournamentManager()
+
     def __str__(self) -> str:
         return f"tournament {self.pk}"
 
 
-def get_rng_for_board(*seed_args: int) -> random.Random:
-    print(f"get_rng_for_board: {seed_args=}")
-    rv = random.Random()
-    h = hashlib.sha256()
-    for arg in seed_args:
-        h.update(arg.to_bytes())
-        print(f"Updated with {arg.to_bytes()!r}")
-    h.update(settings.SECRET_KEY.encode())
-    seed = int.from_bytes(h.digest())
-    print(f"Updated with {settings.SECRET_KEY.encode()=}; {seed=}")
-    rv.seed(seed)
-    return rv
-
-
 class BoardManager(models.Manager):
-    def get_or_create_from_deck(
-        self,
-        *,
-        deck: list[Card],
-        shuffle_deck: bool = False,
-    ) -> tuple[Board, bool]:
-        # Max seems safer than just using "count", since in the unlikely event that we ever delete a board, "count"
-        # would return a duplicate value, whereas Max should not.
-        max_number = self.aggregate(max_id=Max("id"))["max_id"]
-        if max_number is None:
-            max_number = 0
-        board_number = max_number + 1
-
+    def create_from_attributes(self, *, attributes, tournament) -> Board:
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-        dealer = (board_number - 1) % 4 + 1
-        only_ns_vuln = board_number in (2, 5, 12, 15)
-        only_ew_vuln = board_number in (3, 6, 9, 16)
-        all_vuln = board_number in (4, 7, 10, 13)
 
-        return self.get_or_create_with_deck(
-            ns_vulnerable=only_ns_vuln or all_vuln,
-            ew_vulnerable=only_ew_vuln or all_vuln,
-            dealer=dealer,
-            deck=deck,
-            number=board_number,
-            shuffle_deck=shuffle_deck,
-        )
-
-    def get_or_create_with_deck(
-        self,
-        *,
-        ns_vulnerable: bool,
-        ew_vulnerable: bool,
-        dealer: int,
-        deck: list[Card],
-        number=int,
-        shuffle_deck: bool = False,
-    ) -> tuple[Board, bool]:
-        def deserialize_hand(cards: list[Card]) -> str:
-            # sorted only so that they look purty in the Admin site.
-            return "".join([c.serialize() for c in sorted(cards)])
-
-        if shuffle_deck:
-            rng = get_rng_for_board(number, self.count() // BOARDS_PER_TOURNAMENT)
-            rng.shuffle(deck)
-            print(f"{deck[13:26]=}")
-
-        north_cards = deserialize_hand(deck[0:13])
-        east_cards = deserialize_hand(deck[13:26])
-        south_cards = deserialize_hand(deck[26:39])
-        west_cards = deserialize_hand(deck[39:52])
-
-        return self.get_or_create(
-            defaults={
-                "ns_vulnerable": ns_vulnerable,
-                "ew_vulnerable": ew_vulnerable,
-                "dealer": dealer,
-                "north_cards": north_cards,
-                "east_cards": east_cards,
-                "south_cards": south_cards,
-                "west_cards": west_cards,
-            },
-            number=number,
-        )
-
-    def get_or_create(self, *args, **kwargs):
-        from app.serializers import BoardSerializer
-
-        kwargs = kwargs.copy()
-
-        kwargs["number"] = kwargs["number"] % BOARDS_PER_TOURNAMENT
-
-        # Which tournament is this board part of?
-        if (tournament := kwargs.get("tournament")) is None:
-            print(f"{self.count()=}")
-            tournament_number = 1 + (self.count() // BOARDS_PER_TOURNAMENT)
-            print(f"{tournament_number=}")
-            tournament, _ = Tournament.objects.get_or_create(pk=tournament_number)
-            kwargs["tournament"] = tournament
-
-        print(f"{kwargs['tournament']=}")
-
-        new_board, created = super().get_or_create(*args, **kwargs)
-
-        # nobody (yet) cares about the creation of a new board, but what the heck.
-        # I'm just testing out this scheme of using drf to serialize the data.
-
-        send_event(
-            channel="top-sekrit-board-creation-channel",
-            event_type="message",
-            data={
-                "new-board": BoardSerializer(new_board).data,
-            },
-        )
-
-        return new_board, created
+        return self.create(**attributes, tournament=tournament)
 
 
 class Board(models.Model):
@@ -168,7 +130,10 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
-    number = models.SmallIntegerField()
+    @property
+    def number(self):
+        return self.pk
+
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
     objects = BoardManager()
