@@ -40,7 +40,9 @@ def get_rng_from_seeds(*seed_args: bytes) -> random.Random:
 
 
 def board_attributes_from_board_number(
-    *, board_number: int, rng_seeds: list[bytes]
+    *,
+    board_number: int,
+    rng_seeds: list[bytes],
 ) -> dict[str, Any]:
     assert (
         0 < board_number <= BOARDS_PER_TOURNAMENT
@@ -80,7 +82,7 @@ def board_attributes_from_board_number(
 class TournamentManager(models.Manager):
     # When should we call this?
     # Whenever there are no more unplayed boards.
-    def create(self, *args, **kwargs):
+    def create(self, *args, **kwargs) -> None:
         with transaction.atomic():
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
@@ -193,14 +195,6 @@ class Board(models.Model):
             vuln = "East/West"
 
         return f"Board #{self.number} ({self.tournament}), {vuln} vulnerable, dealt by {self.fancy_dealer}"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["number", "tournament"],
-                name="%(app_label)s_%(class)s_combination_of_board_number_and_tournament_number",
-            ),
-        ]
 
 
 admin.site.register(Board)
