@@ -9,6 +9,7 @@ import bridge.seat
 from django.contrib import admin
 from django.db import models, transaction
 from django.db.models.expressions import RawSQL
+from django.db.utils import IntegrityError
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -178,7 +179,12 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                Tournament.objects.create()
+                try:
+                    Tournament.objects.create()
+                except (
+                    IntegrityError
+                ) as e:  # another thread may have already created a new tournament for us
+                    logger.info(f"Ignoring {e} from our attempt to create a new tournament")
                 b = self.find_unplayed_board()
                 assert b is not None
 
