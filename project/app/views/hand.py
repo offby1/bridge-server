@@ -513,7 +513,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
         player = get_object_or_404(app.models.Player, pk=player_pk)
         hand_list = player.hands_played
     else:
-        hand_list = app.models.Hand.objects.order_by("id").all()
+        hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "id").all()
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")

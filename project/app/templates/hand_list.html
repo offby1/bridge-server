@@ -14,6 +14,7 @@
                 <tr>
                     <td>ID #</td>
                     <td>Status</td>
+                    <td>Tournament</td>
                     <td>Board</td>
                     <td>Table</td>
                     <td>players</td>
@@ -33,7 +34,10 @@
                         </a>
                     </td>
                     <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.number }}</a>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.pk }}</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.pk }}</a>
                     </td>
                     <td>
                         <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
