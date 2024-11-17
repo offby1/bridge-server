@@ -11,8 +11,8 @@ from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 
 @logged_in_as_player_required()
-def board_archive_view(request: AuthedHttpRequest, number: int) -> TemplateResponse:
-    board: app.models.Board = get_object_or_404(app.models.Board, number=number)
+def board_archive_view(request: AuthedHttpRequest, pk: int) -> TemplateResponse:
+    board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
     player = request.user.player
     assert player is not None
     my_hand = player.hand_at_which_board_was_played(board)
@@ -48,7 +48,7 @@ def board_archive_view(request: AuthedHttpRequest, number: int) -> TemplateRespo
 
 @logged_in_as_player_required()
 def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
-    board_list = app.models.Board.objects.order_by("id").all()
+    board_list = app.models.Board.objects.order_by("tournament__pk", "number").all()
     paginator = Paginator(board_list, 16)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)

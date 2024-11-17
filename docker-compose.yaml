@@ -29,8 +29,7 @@ services:
 
     # mount the work tree into the image, so we can edit normally, and those edits are immediately visible in the container
     # Note that you'll still have to manually restart daphne, though.
-    # volumes:
-    #   - ./project:/bridge/project
+      - ./project:/bridge/project
 
   bot:
     <<: *django
@@ -61,7 +60,7 @@ services:
 
   populated-with-fake-data:
     <<: *django
-    command: "poetry run python manage.py generate_fake_data --players=40"
+    command: "poetry run python manage.py generate_fake_data --players=8"
     restart: "no"
     ports: []
     depends_on:

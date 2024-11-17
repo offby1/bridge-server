@@ -176,7 +176,7 @@ class Table(models.Model):
             if b is None:
                 deck = bridge.card.Card.deck()
 
-                b = Board.objects.create_from_deck(
+                b, _ = Board.objects.get_or_create_from_deck(
                     deck=deck,
                     shuffle_deck=shuffle_deck,
                 )

@@ -380,16 +380,18 @@ def test_exhaustive_archive_and_detail_redirection(
 )
 def test_predictable_shuffles(SECRET_KEY, east_cards, settings):
     settings.SECRET_KEY = SECRET_KEY
-    deck = Card.deck()
-    b1 = Board.objects.create_from_deck(
-        deck=deck,
+
+    b1, _ = Board.objects.get_or_create_from_deck(
+        deck=Card.deck(),
         shuffle_deck=True,
     )
+    print(f"{b1=}")
     assert b1.east_cards == east_cards
 
-    b2 = Board.objects.create_from_deck(
-        deck=deck,
+    b2, _ = Board.objects.get_or_create_from_deck(
+        deck=Card.deck(),
         shuffle_deck=True,
     )
+    print(f"{b2=}")
     # Different because there are two boards
     assert b2.east_cards != east_cards
