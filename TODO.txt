@@ -15,9 +15,9 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-STILL TODO:
-
 * Bob (player 1) played a zillion hands, but then did "splitsville", and now https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows 0 hands :-(
+
+STILL TODO:
 
 * More than one tournament!
 
