@@ -9,8 +9,15 @@ def backfill_tournaments(apps, schema_editor) -> None:
     Tournament = apps.get_model("app", "Tournament")
 
     for index, board in enumerate(Board.objects.order_by("id").all()):
-        desired_tournement_pk = index // BOARDS_PER_TOURNAMENT
-        t, _ = Tournament.objects.get_or_create(pk=desired_tournement_pk)
+        needed_number_of_tournaments = 1 + (index // BOARDS_PER_TOURNAMENT)
+        if Tournament.objects.count() < needed_number_of_tournaments:
+            # Rather than create a tournament with a specific primary key, we allow django and postgres to choose a
+            # default primary key.  This avoids the surprising behavior documented at
+            # https://code.djangoproject.com/ticket/35916
+            t = Tournament.objects.create()
+        else:
+            t = Tournament.objects.order_by("-id").first()
+
         board.tournament = t
         board.save()
 
