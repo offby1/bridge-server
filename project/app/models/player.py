@@ -72,12 +72,31 @@ class Player(models.Model):
     # who's sitting across from him.  But then if the partnership isn't seated, I'm outta luck.
     partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
 
+    # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
+    # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
+    # those seats are historical, and I've since left my last table, and not chosen a new one.
+    currently_seated = models.BooleanField(default=False)
+
     messages_for_me = GenericRelation(
         Message,
         related_query_name="player_recipient",
         content_type_field="recipient_content_type",
         object_id_field="recipient_object_id",
     )
+
+    def _check_current_seat(self) -> None:
+        if not self.currently_seated:
+            return
+
+        my_seats = Seat.objects.filter(player=self)
+
+        assert (
+            my_seats.exists()
+        ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
+
+    def save(self, *args, **kwargs) -> None:
+        self._check_current_seat()
+        super().save(*args, **kwargs)
 
     def libraryThing(self, *, hand: Hand) -> bridge.table.Player:
         """
