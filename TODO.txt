@@ -15,8 +15,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-STILL TODO:
-
 * More than one tournament!
 
   This should solve the problem whereby "you've already played all 16 boards".  A tournament is, roughly, 16 boards.
@@ -24,6 +22,10 @@ STILL TODO:
   Every board should have both a number, as it currently does; plus a tournament ID.
 
   Also: be nice if the shuffle were entirely determined by those IDs -- maybe for each deal, seed the random number generator with a hash of the django secret, the board id, and the tournament ID.  It says [here](https://docs.python.org/3.12/library/random.html#random.Random) you can instantiate your own rng.
+
+STILL TODO:
+
+* Bob (player 1) played a zillion hands, but then did "splitsville", and now https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows 0 hands :-(
 
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
