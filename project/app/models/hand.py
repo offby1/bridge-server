@@ -525,7 +525,7 @@ class Hand(models.Model):
             != self.board.PlayerVisibility.everything
         ):
             return (
-                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d",
+                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
                 "-",
             )
 

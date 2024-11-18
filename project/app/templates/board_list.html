@@ -16,7 +16,7 @@
             {% for board in page_obj %}
                 <tr>
                     <td>{{ board.tournament.pk }}</td>
-                    <td>{{ board.number }}</td>
+                    <td>{{ board.short_string }}</td>
                     <td>
                         <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
                     </td>

@@ -184,6 +184,9 @@ class Board(models.Model):
         assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
 
+    def short_string(self) -> str:
+        return f"Board #{1 + (self.number % BOARDS_PER_TOURNAMENT)} ({self.tournament})"
+
     def __str__(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:
             vuln = "Both sides"
@@ -194,7 +197,7 @@ class Board(models.Model):
         else:
             vuln = "East/West"
 
-        return f"Board #{self.number} ({self.tournament}), {vuln} vulnerable, dealt by {self.fancy_dealer}"
+        return f"{self.short_string()}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
 
 
 admin.site.register(Board)
