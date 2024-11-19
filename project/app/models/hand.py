@@ -535,7 +535,7 @@ class Hand(models.Model):
             return "Auction incomplete", "-"
 
         if auction_status is self.auction.PassedOut:
-            return "Passed Out", "-"
+            return "Passed Out", 0
 
         total_score: int | str
 
