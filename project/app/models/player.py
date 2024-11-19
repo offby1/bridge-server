@@ -177,16 +177,12 @@ class Player(models.Model):
                     msg,
                 )
 
-            logger.debug(f"{self.name=} breaking partnership with {self.partner.name=}")
             old_partner_pk = self.partner.pk
 
             self.partner.partner = None
             self.partner.currently_seated = False
 
-            from app.models import logged_queries
-
-            with logged_queries():
-                self.partner.save(update_fields=["partner", "currently_seated"])
+            self.partner.save(update_fields=["partner", "currently_seated"])
 
             self.partner = None
             self.currently_seated = False

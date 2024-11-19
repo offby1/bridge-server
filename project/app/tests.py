@@ -418,7 +418,7 @@ def test_no_bogus_tables(usual_setup):
     assert count_after == count_before
 
 
-def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password, monkeypatch):
+def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     number_of_tables_before = Table.objects.count()
 
     t = Table.objects.first()
@@ -426,8 +426,6 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password, m
     North, East, South, West = t.current_hand.players_by_direction.values()
 
     assert {North.current_table, East.current_table, South.current_table, West.current_table} == {t}
-
-    monkeypatch.setattr(app.models.player, "send_event", lambda *args, **kwargs: None)
 
     North.break_partnership()
     South.refresh_from_db()
@@ -445,11 +443,11 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password, m
     assert East.current_table is None
     assert West.current_table is None
 
-    # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in existence.
+    # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in
+    # existence.
     assert Table.objects.count() == number_of_tables_before
 
-    # OK now we got four players ready to sit at a table.
-
+    # OK, now we've got four players ready to sit at a table.
     RandomDude = Player.objects.create(
         user=auth.models.User.objects.create(
             username="J.Random Hacker",
