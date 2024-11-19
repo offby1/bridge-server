@@ -50,9 +50,9 @@ class QueryLogger:
         self.calls.append((sql, params, many, context))
         self.counter[sql] += 1
 
-        rv = execute(sql, params, many, context)
-        logger.info(f"{sql=} {params=} => {rv=}")
-        return rv
+        logger.info(f"{sql} {params=}")
+
+        return execute(sql, params, many, context)
 
 
 @contextlib.contextmanager

@@ -511,3 +511,42 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for direction, actual_html in actual_cards_by_direction.items():
         expected_html = expected_cards_by_direction[direction]
         assert expected_html in actual_html
+
+
+def test_find_unplayed_board(played_to_completion) -> None:
+    t1 = Table.objects.first()
+    assert t1 is not None
+
+    t1.next_board()
+
+    North, East, South, West = [s.player for s in t1.seats]
+
+    # now we splitsville
+    North.break_partnership()
+    East.break_partnership()
+
+    South.refresh_from_db()
+    West.refresh_from_db()
+
+    assert not North.currently_seated
+    assert not East.currently_seated
+    assert not South.currently_seated
+    assert not West.currently_seated
+
+    North.partner_with(South)
+    East.partner_with(West)
+
+    South.refresh_from_db()
+    West.refresh_from_db()
+
+    assert not North.currently_seated
+    assert not East.currently_seated
+    assert not South.currently_seated
+    assert not West.currently_seated
+
+    # now we re-partner, creating a new table
+    t2 = Table.objects.create_with_two_partnerships(North, East)
+
+    # now ask for an unplayed board
+    b = t2.find_unplayed_board()
+    assert b is None

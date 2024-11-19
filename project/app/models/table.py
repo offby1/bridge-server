@@ -155,11 +155,12 @@ class Table(models.Model):
         )
 
     def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
+        unplayed_boards = Board.objects.all()
+        for seat in self.seats:
+            unplayed_boards = unplayed_boards.exclude(id__in=seat.player.boards_played)
+
         return unplayed_boards.first()
 
-    # BUGBUG -- the semantics are wrong.  Currently this does "get the next board that hasn't been played at this table",
-    # but it should do "get the next board that none of this table's players have played".
     def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
             msg = f"Naw, {self} isn't complete; no next board for you"
