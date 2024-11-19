@@ -85,10 +85,6 @@ class Seat(models.Model):
                 condition=models.Q(direction__in=SEAT_CHOICES),
             ),
             models.UniqueConstraint(
-                fields=["player"],
-                name="%(app_label)s_%(class)s_no_more_than_one_seat_per_player",
-            ),
-            models.UniqueConstraint(
                 fields=["direction", "table"],
                 name="%(app_label)s_%(class)s_no_more_than_four_directions_per_table",
             ),

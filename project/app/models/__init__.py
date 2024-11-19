@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import contextlib
 import dataclasses
+import logging
 from typing import Any
 
 from django.db import connection
@@ -38,6 +39,9 @@ __all__ = [
 ]
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclasses.dataclass
 class QueryLogger:
     calls: list[tuple[Any]] = dataclasses.field(default_factory=list)
@@ -46,7 +50,10 @@ class QueryLogger:
     def __call__(self, execute, sql, params, many, context):
         self.calls.append((sql, params, many, context))
         self.counter[sql] += 1
-        return execute(sql, params, many, context)
+
+        rv = execute(sql, params, many, context)
+        logger.info(f"{sql=} {params=} => {rv=}")
+        return rv
 
 
 @contextlib.contextmanager
