@@ -17,8 +17,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* Bob (player 1) played a zillion hands, but then did "splitsville", and now https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows 0 hands :-(
-
 * More than one tournament!
 
   This should solve the problem whereby "you've already played all 16 boards".  A tournament is, roughly, 16 boards.
@@ -178,6 +176,8 @@ STILL TODO:
 
 
 DONE:
+* Bob (player 1) played a zillion hands, but then did "splitsville", and now https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows 0 hands :-(
+
 * The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦
 
 * The hand, while we're playing, does not show a running total of tricks taken by each side.

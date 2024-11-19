@@ -129,6 +129,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
+      "currently_seated": true,
       "partner": 3,
       "user": 1
     },
@@ -138,6 +139,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
+      "currently_seated": true,
       "partner": 4,
       "user": 2
     },
@@ -147,6 +149,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
+      "currently_seated": true,
       "partner": 1,
       "user": 3
     },
@@ -156,6 +159,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
+      "currently_seated": true,
       "partner": 2,
       "user": 4
     },
