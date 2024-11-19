@@ -48,7 +48,8 @@ class PartnerException(PlayerException):
 
 
 class PlayerAdmin(admin.ModelAdmin):
-    list_filter = ["allow_bot_to_play_for_me"]
+    list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
+    list_filter = ["allow_bot_to_play_for_me", "currently_seated"]
 
 
 class Player(models.Model):
