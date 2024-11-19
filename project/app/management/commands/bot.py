@@ -261,7 +261,7 @@ class Command(BaseCommand):
             return new_play["hand"]["table"]
 
         if (new_hand := data.get("new-hand")) is not None:
-            return new_hand["table"]["id"]
+            return new_hand["table"]
 
         # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
         return data.get("table")
