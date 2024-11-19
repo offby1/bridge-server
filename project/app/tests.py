@@ -11,7 +11,6 @@ from django.test import Client
 from django.urls import reverse
 
 import app.models.board
-from app.models import logged_queries
 from app.models.table import TableException
 
 from .models import Message, Player, PlayerException, Seat, SeatException, Table
@@ -431,18 +430,19 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password, m
     monkeypatch.setattr(app.models.player, "send_event", lambda *args, **kwargs: None)
 
     North.break_partnership()
+    South.refresh_from_db()
     North.partner_with(South)
+    North.refresh_from_db()
 
     assert North.current_table is None
-    with logged_queries():
-        South.refresh_from_db()
-        assert South.current_table is None
+    assert South.current_table is None
 
     East.break_partnership()
+    West.refresh_from_db()
     East.partner_with(West)
+    East.refresh_from_db()
 
     assert East.current_table is None
-    West.refresh_from_db()
     assert West.current_table is None
 
     # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in existence.
@@ -468,7 +468,6 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password, m
     assert b"isn't one of" in response.content
 
     response = seat_em_dano(North)
-    print(response.content)
     assert response.status_code == 302
 
     assert Table.objects.count() == number_of_tables_before + 1
