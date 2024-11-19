@@ -84,6 +84,10 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    def save(self, *args, **kwargs) -> None:
+        self._check_current_seat()
+        super().save(*args, **kwargs)
+
     def _check_current_seat(self) -> None:
         if not self.currently_seated:
             return
@@ -93,10 +97,6 @@ class Player(models.Model):
         assert (
             my_seats.exists()
         ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
-
-    def save(self, *args, **kwargs) -> None:
-        self._check_current_seat()
-        super().save(*args, **kwargs)
 
     def libraryThing(self, *, hand: Hand) -> bridge.table.Player:
         """
@@ -177,25 +177,36 @@ class Player(models.Model):
                     msg,
                 )
 
-            table = self.current_table
-
+            logger.debug(f"{self.name=} breaking partnership with {self.partner.name=}")
             old_partner_pk = self.partner.pk
-            Player.objects.filter(pk__in={self.pk, self.partner.pk}).update(partner=None)
 
-            if table is not None and table.id is not None:
-                table.delete()
+            self.partner.partner = None
+            self.partner.currently_seated = False
+
+            from app.models import logged_queries
+
+            with logged_queries():
+                self.partner.save(update_fields=["partner", "currently_seated"])
+
+            self.partner = None
+            self.currently_seated = False
+            self.save(update_fields=["partner", "currently_seated"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
     @property
     def current_table(self) -> Table | None:
+        if not self.currently_seated:
+            return None
+
         if self.most_recent_seat is None:
             return None
+
         return self.most_recent_seat.table
 
     # TODO -- what I really want is *current_seat*.  What's the difference?  As long as we cannot have a player at two
     # tables at the same time, this should be OK.
-    @cached_property
+    @property
     def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
 
