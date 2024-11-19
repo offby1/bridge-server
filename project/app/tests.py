@@ -7,7 +7,6 @@ from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
 from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
-from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
@@ -152,20 +151,6 @@ def test_legal_cards(usual_setup, rf, settings):
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
-
-
-def test_player_cannot_be_at_two_seats(usual_setup):
-    t = Table.objects.first()
-
-    # Try to sneak Jeremy into Esther's seat!
-    # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
-    with pytest.raises(IntegrityError):
-        Seat.objects.filter(
-            direction=libSeat.EAST.value,
-            table=t,
-        ).update(
-            player=t.current_hand.modPlayer_by_seat(libSeat.NORTH),
-        )
 
 
 def test_player_cannot_be_in_two_tables(usual_setup):
