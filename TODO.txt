@@ -1,11 +1,3 @@
-TOP PRIORITIES:
-
-* figure out wassup with the browser missing updates
-  Vastly improved since `Merge branch 'just-reload-the-whole-damned-page-every-time'`, but I've seen my mobile phone miss an update or two.
-* Get a movement working properly
-  Currently I've got every board being played by every table, and things stopping after app.models.board.TOTAL_BOARDS have been played; this might be enough.
-* allow proper scoring
-
 IN PROGRESS:
 
 * Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
@@ -17,7 +9,7 @@ IN PROGRESS:
 
 STILL TODO:
 
-* More than one tournament!
+* More than one tournament! [new-tournament-model]
 
   This should solve the problem whereby "you've already played all 16 boards".  A tournament is, roughly, 16 boards.
 
