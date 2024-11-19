@@ -1,11 +1,3 @@
-TOP PRIORITIES:
-
-* figure out wassup with the browser missing updates
-  Vastly improved since `Merge branch 'just-reload-the-whole-damned-page-every-time'`, but I've seen my mobile phone miss an update or two.
-* Get a movement working properly
-  Currently I've got every board being played by every table, and things stopping after app.models.board.TOTAL_BOARDS have been played; this might be enough.
-* allow proper scoring
-
 IN PROGRESS:
 
 * Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
@@ -17,12 +9,6 @@ IN PROGRESS:
 
 * More than one tournament!
 
-  This should solve the problem whereby "you've already played all 16 boards".  A tournament is, roughly, 16 boards.
-
-  Every board should have both a number, as it currently does; plus a tournament ID.
-
-  Also: be nice if the shuffle were entirely determined by those IDs -- maybe for each deal, seed the random number generator with a hash of the django secret, the board id, and the tournament ID.  It says [here](https://docs.python.org/3.12/library/random.html#random.Random) you can instantiate your own rng.
-
 STILL TODO:
 
 * https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
@@ -30,9 +16,6 @@ STILL TODO:
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
 * Also those events have zero auth -- anyone can receive any of them
-
-* It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
-  See the BUGBUG comment at Table.next_board
 
 * Think hard about transactions, and come up with a way to avoid this problem:
   - somehow, two client processes logged in as player one are participating in the auction (a web browser and a bot, say)
@@ -178,6 +161,9 @@ STILL TODO:
 
 
 DONE:
+* It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
+  See the BUGBUG comment at Table.next_board
+
 * Bob (player 1) played a zillion hands, but then did "splitsville", and now https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows 0 hands :-(
 
 * The "new-hand" event includes ALL THE CARDS FOR ALL THE PLAYERS 🤦

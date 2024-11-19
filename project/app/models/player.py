@@ -215,6 +215,10 @@ class Player(models.Model):
         my_tables = Table.objects.filter(seat__in=my_seats)
         return Hand.objects.filter(table__in=my_tables)
 
+    @property
+    def boards_played(self):
+        return self.hands_played.values_list("board", flat=True)
+
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
