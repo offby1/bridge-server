@@ -261,7 +261,13 @@ class Command(BaseCommand):
             return new_play["hand"]["table"]
 
         if (new_hand := data.get("new-hand")) is not None:
-            return new_hand["table"]["id"]
+            table_blob = new_hand["table"]
+
+            if not isinstance(table_blob, dict):
+                logger.warning("OK, why is this happening %r", data)
+                return None
+
+            return table_blob["id"]
 
         # fallback; to be deleted once I 'rationalize' all the events that come from db inserts
         return data.get("table")
