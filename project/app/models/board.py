@@ -106,6 +106,9 @@ class Tournament(models.Model):
 
 
 class BoardManager(models.Manager):
+    def nicely_ordered(self) -> models.QuerySet:
+        return self.order_by("tournament", 1 + (models.F("pk") % BOARDS_PER_TOURNAMENT))
+
     def create_from_attributes(self, *, attributes, tournament) -> Board:
         # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
 
@@ -131,10 +134,6 @@ class Board(models.Model):
     east_cards = models.CharField(max_length=26)
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
-
-    @property
-    def number(self):
-        return self.pk
 
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
@@ -184,8 +183,12 @@ class Board(models.Model):
         assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
 
+    @property
+    def number(self) -> int:
+        return 1 + (self.pk % BOARDS_PER_TOURNAMENT)
+
     def short_string(self) -> str:
-        return f"Board #{1 + (self.number % BOARDS_PER_TOURNAMENT)} ({self.tournament})"
+        return f"Board #{self.number} ({self.tournament})"
 
     def __str__(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:

@@ -161,6 +161,8 @@ STILL TODO:
 
 
 DONE:
+* https://erics-work-mbp.tail571dc2.ts.net/board/ sorts boards by their primary key, not by their "number"
+
 * It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
   See the BUGBUG comment at Table.next_board
 
