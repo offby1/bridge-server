@@ -14,7 +14,7 @@ from django.urls import reverse
 import app.models.board
 from app.models.table import TableException
 
-from .models import Message, Player, PlayerException, Seat, SeatException, Table
+from .models import Board, Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import hand, lobby, player, table
 
@@ -523,6 +523,8 @@ def test_find_unplayed_board(played_to_completion) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
 
+    all_known_boards_before_splitsville = {b.pk for b in Board.objects.all()}
+
     t1.next_board()
 
     North, East, South, West = [s.player for s in t1.seats]
@@ -555,4 +557,5 @@ def test_find_unplayed_board(played_to_completion) -> None:
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
-    assert b is None
+    assert b is not None
+    assert b.pk not in all_known_boards_before_splitsville
