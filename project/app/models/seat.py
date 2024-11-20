@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import bridge.seat
 from django.contrib import admin
-from django.db import models
+from django.db import models, transaction
 from django.utils.functional import cached_property
 
 from .common import SEAT_CHOICES
@@ -74,8 +74,11 @@ class Seat(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        self._check_table_consistency()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            self._check_table_consistency()
+            super().save(*args, **kwargs)
+            self.player.currently_seated = True
+            self.player.save()
 
     class Meta:
         ordering = ["direction"]
