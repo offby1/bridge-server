@@ -417,7 +417,6 @@ def test_no_bogus_tables(usual_setup):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),
-            shuffle_deck=False,
         )
     count_after = Table.objects.count()
 

@@ -39,7 +39,7 @@ class TableManager(models.Manager):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
     def create_with_two_partnerships(
-        self, p1: Player, p2: Player, shuffle_deck: bool = True, desired_board_pk: int | None = None
+        self, p1: Player, p2: Player, desired_board_pk: int | None = None
     ) -> Table:
         try:
             with transaction.atomic():
@@ -51,7 +51,7 @@ class TableManager(models.Manager):
                         table=t,
                     )
 
-                t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
+                t.next_board(desired_board_pk=desired_board_pk)
         except Exception as e:
             raise TableException(str(e)) from e
 
@@ -157,6 +157,7 @@ class Table(models.Model):
             )
         )
 
+    # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
         unplayed_boards = Board.objects.all()
         for seat in self.seats:
@@ -164,7 +165,8 @@ class Table(models.Model):
 
         return unplayed_boards.first()
 
-    def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
+    # TODO -- limit this to the "current" tournament?
+    def next_board(self, *, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
             msg = f"Naw, {self} isn't complete; no next board for you"
             raise TableException(msg)

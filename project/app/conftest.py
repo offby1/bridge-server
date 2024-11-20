@@ -59,5 +59,4 @@ def second_setup(usual_setup):
     return Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
-        shuffle_deck=False,
     )
