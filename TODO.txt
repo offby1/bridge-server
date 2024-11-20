@@ -11,6 +11,10 @@ IN PROGRESS:
 
 STILL TODO:
 
+* It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
+
+  Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
+
 * The bot still occasionally crashes because it receives an event like this
 
     MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': 1, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107423.441545}
