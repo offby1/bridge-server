@@ -511,7 +511,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        hand_list = player.hands_played
+        hand_list = player.hands_played.order_by("id")
     else:
         hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "id").all()
 
