@@ -6,16 +6,16 @@ Some existing play-bridge-online services:
   I have an account.  They offer ACBL points, which I have no interest in doing.
 
 * [Bridgeclub Live](https://www.bridgeclublive.com/)
-  Unclear if it's web-based
+  Appears to be web-based.
 
 * [Funbridge](https://www.funbridge.com/)
-  Wikipedia says it's all robots, which sounds similar to what I'm doing.
+  Wikipedia says it's all robots, which sounds similar to what I'm doing.  Requires signup, which I haven't done.
 
 * [OK Bridge](https://www.okbridge.com/new/login.php)
-  Sounds familiar. I don't have an account.
+  Sounds familiar.  Requires signup, which I haven't done.
 
 * [Realbridge](https://realbridge.online/)
-  "Real Bridge with Real People", also similar to what I'm doing
+  "Real Bridge with Real People".  Oddly local (Cambridge UK).  From the splash pages, appears to be bridge-over-Zoom.
 
 * [Shark Bridge](https://www.thesharkbridgecompany.com/)
   Web site has "app downloads", but Wikipedia suggests it's online 🤷
