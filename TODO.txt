@@ -11,6 +11,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Logged in as player 1, <https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1> shows "Sorry, bob (bot-powered), but you have not completely played board Board #6 (tournament 1), so later d00d".  But when I click that link, it (correctly) shows me the hand in progress.
+
 * https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
 
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
