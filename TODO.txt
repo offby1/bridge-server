@@ -7,8 +7,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-* More than one tournament!
-
 STILL TODO:
 
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
@@ -186,6 +184,8 @@ STILL TODO:
 
 
 DONE:
+* More than one tournament!
+
 * $ just restore < prod.sql  && just migrate && just shell -c "'Tournament.objects.create()'"
 
   reliably causes
