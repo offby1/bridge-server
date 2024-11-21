@@ -8,15 +8,17 @@
         <table class="table">
             <th>
                 <tr>
+                    <td>Tournament #</td>
                     <td>Board #</td>
                     <td>Summary</td>
                 </tr>
             </th>
             {% for board in page_obj %}
                 <tr>
-                    <td>{{ board.number }}</td>
+                    <td>{{ board.tournament.pk }}</td>
+                    <td>{{ board.short_string }}</td>
                     <td>
-                        <a href="{% url 'app:board-archive' number=board.number %}">{{ board }}</a>
+                        <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
                     </td>
                 </tr>
             {% endfor %}

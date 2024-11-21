@@ -1,9 +1,9 @@
-import bridge.card
 import pytest
 from django.contrib import auth
 from django.core.management import call_command
 
-from .models import Board, Player, Table
+from .models import Board, Player, Table, Tournament
+from .models.board import board_attributes_from_board_number
 
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
@@ -23,6 +23,12 @@ def everybodys_password():
         # Out[2]: 'pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU='
         "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
     )
+
+
+# Just to prevent tests from displaying the actual secret key if they fail
+@pytest.fixture(autouse=True)
+def innocuous_secret_key(settings):
+    settings.SECRET_KEY = "gabba gabba hey"
 
 
 @pytest.fixture
@@ -45,10 +51,12 @@ def second_setup(usual_setup):
 
     Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-    Board.objects.create_from_deck(deck=bridge.card.Card.deck())
+    Board.objects.create_from_attributes(
+        attributes=board_attributes_from_board_number(board_number=2, rng_seeds=[]),
+        tournament=Tournament.objects.first(),
+    )
 
     return Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
-        shuffle_deck=False,
     )

@@ -8,7 +8,7 @@ from typing import Any
 
 from django.db import connection
 
-from .board import Board
+from .board import Board, Tournament
 from .common import SEAT_CHOICES
 from .hand import AuctionError, Call, Hand, Play
 from .message import Message
@@ -34,6 +34,7 @@ __all__ = [
     "SeatException",
     "Table",
     "TableException",
+    "Tournament",
     "SEAT_CHOICES",
 ]
 

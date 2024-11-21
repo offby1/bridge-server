@@ -113,6 +113,9 @@ class DisplaySkeleton:
 
 
 def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
+    match data:
+        case {"new-hand": {"table": table}}:
+            assert isinstance(table, dict), f"gotcha mofo {data=}"
     send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
 
 
@@ -525,7 +528,7 @@ class Hand(models.Model):
             != self.board.PlayerVisibility.everything
         ):
             return (
-                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.pk}, so later d00d",
+                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
                 "-",
             )
 

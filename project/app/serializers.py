@@ -48,6 +48,12 @@ class HandSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
+class ShallowTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Table
+        fields = ("seat_set", "id", "current_hand_pk", "tempo_seconds")
+
+
 class NewHandSerializer(serializers.ModelSerializer):
     """Yes, I am a lot like HandSerializer.  But:
 
@@ -63,6 +69,8 @@ class NewHandSerializer(serializers.ModelSerializer):
       serialize a hand to be sent in a django-eventstream event.
 
     """
+
+    table = ShallowTableSerializer()
 
     class Meta:
         model = Hand

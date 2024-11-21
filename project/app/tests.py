@@ -1,3 +1,4 @@
+import collections
 import importlib
 import json
 
@@ -13,7 +14,7 @@ from django.urls import reverse
 import app.models.board
 from app.models.table import TableException
 
-from .models import Message, Player, PlayerException, Seat, SeatException, Table
+from .models import Board, Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import hand, lobby, player, table
 
@@ -398,11 +399,16 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
 
 def test_max_boards(played_to_completion, monkeypatch):
-    monkeypatch.setattr(app.models.table, "TOTAL_BOARDS", 1)
+    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
     t = Table.objects.first()
 
-    with pytest.raises(TableException):
-        t.next_board()
+    t.next_board()
+
+    board_counts_by_tournament_pk = collections.defaultdict(int)
+    for b in app.models.board.Board.objects.all():
+        board_counts_by_tournament_pk[b.pk] += 1
+
+    assert dict(board_counts_by_tournament_pk) == {1: 1, 2: 1}
 
 
 def test_no_bogus_tables(usual_setup):
@@ -411,7 +417,6 @@ def test_no_bogus_tables(usual_setup):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),
-            shuffle_deck=False,
         )
     count_after = Table.objects.count()
 
@@ -517,6 +522,8 @@ def test_find_unplayed_board(played_to_completion) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
 
+    all_known_boards_before_splitsville = {b.pk for b in Board.objects.all()}
+
     t1.next_board()
 
     North, East, South, West = [s.player for s in t1.seats]
@@ -549,4 +556,5 @@ def test_find_unplayed_board(played_to_completion) -> None:
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
-    assert b is None
+    assert b is not None
+    assert b.pk not in all_known_boards_before_splitsville
