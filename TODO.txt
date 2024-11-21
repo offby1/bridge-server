@@ -186,6 +186,15 @@ STILL TODO:
 
 
 DONE:
+* $ just restore < prod.sql  && just migrate && just shell -c "'Tournament.objects.create()'"
+
+  reliably causes
+
+    django.db.utils.IntegrityError: duplicate key value violates unique constraint "app_tournament_pkey"
+    DETAIL:  Key (id)=(1) already exists.
+
+  This was due to [this](https://docs.djangoproject.com/en/5.1/ref/databases/#manually-specifying-values-of-auto-incrementing-primary-keys), which I never stumbled upon until after I opened [a bug complaining about it](https://code.djangoproject.com/ticket/35916).
+
 * https://erics-work-mbp.tail571dc2.ts.net/board/ sorts boards by their primary key, not by their "number"
 
 * It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
