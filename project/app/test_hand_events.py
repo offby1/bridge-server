@@ -6,7 +6,7 @@ from typing import Any
 import bridge.card
 import bridge.contract
 
-from .models import Table
+from .models import Player, Table
 from .testutils import set_auction_to
 
 
@@ -31,6 +31,14 @@ def test_auction_settled_messages(usual_setup, monkeypatch) -> None:
 
     assert event_counts_by_top_level_keys["new-call"] == 4
     assert event_counts_by_top_level_keys["contract"] == 1
+
+
+def test_player_can_always_see_played_hands(played_to_completion) -> None:
+    p1 = Player.objects.get(pk=1)
+    hand_count_before = p1.hands_played.count()
+    assert hand_count_before > 0
+    p1.break_partnership()
+    assert p1.hands_played.count() == hand_count_before
 
 
 def test_new_hand_messages(played_to_completion, monkeypatch) -> None:

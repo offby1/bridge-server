@@ -12,7 +12,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Player, Table, hand
+from .models import AuctionError, Board, Hand, Player, Table, board, hand
 from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
@@ -362,3 +362,22 @@ def test_exhaustive_archive_and_detail_redirection(
         assert expected_result is None
     else:
         assert actual_result.status_code == expected_result
+
+
+@pytest.mark.django_db
+def test_predictable_shuffles():
+    attrs1_empty = board.board_attributes_from_board_number(board_number=1, rng_seeds=[])
+    attrs2_empty = board.board_attributes_from_board_number(board_number=2, rng_seeds=[])
+
+    # Same  'cuz we used the same random seeds
+    for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
+        assert attrs1_empty[k] == attrs2_empty[k]
+
+    attrs1_golly = board.board_attributes_from_board_number(board_number=1, rng_seeds=[b"golly"])
+
+    for k in ("ns_vulnerable", "ew_vulnerable", "dealer"):
+        assert attrs1_empty[k] == attrs1_golly[k]
+
+    # Cards are different
+    for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
+        assert attrs1_empty[k] != attrs1_golly[k]

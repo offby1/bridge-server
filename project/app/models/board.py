@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import enum
+import hashlib
 import logging
-from typing import TYPE_CHECKING
+import random
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 from bridge.card import Card
 from bridge.seat import Seat
-from django.contrib import admin
 
-# A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red, indicating that that pair is vulnerable; or not.
-# https://en.wikipedia.org/wiki/Board_(bridge)
-# One of the four slots says "dealer" next to it.
-# In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
-from django.db import models
-from django.db.models.aggregates import Max
-from django_eventstream import send_event  # type: ignore [import-untyped]
+# A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
+# indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
+# says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
+from django.conf import settings
+from django.contrib import admin
+from django.db import models, transaction
 
 from .common import SEAT_CHOICES
 
@@ -24,78 +24,94 @@ if TYPE_CHECKING:
 
     from app.models import Hand, Player
 
-TOTAL_BOARDS = 16
+BOARDS_PER_TOURNAMENT = 16
 
 logger = logging.getLogger(__name__)
 
 
+def get_rng_from_seeds(*seed_args: bytes) -> random.Random:
+    rv = random.Random()
+    h = hashlib.sha256()
+    for arg in seed_args:
+        h.update(arg)
+
+    rv.seed(int.from_bytes(h.digest()))
+    return rv
+
+
+def board_attributes_from_board_number(
+    *,
+    board_number: int,
+    rng_seeds: list[bytes],
+) -> dict[str, Any]:
+    assert (
+        0 < board_number <= BOARDS_PER_TOURNAMENT
+    ), f"{board_number=} gotta be < {BOARDS_PER_TOURNAMENT=}"
+
+    board_number = (board_number - 1) % 16
+
+    # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
+    dealer = (board_number - 1) % 4 + 1
+    only_ns_vuln = board_number in (2, 5, 12, 15)
+    only_ew_vuln = board_number in (3, 6, 9, 16)
+    all_vuln = board_number in (4, 7, 10, 13)
+
+    def deserialize_hand(cards: list[Card]) -> str:
+        # sorted only so that they look purty in the Admin site.
+        return "".join([c.serialize() for c in sorted(cards)])
+
+    rng = get_rng_from_seeds(*rng_seeds)
+    deck = Card.deck()
+    rng.shuffle(deck)
+
+    north_cards = deserialize_hand(deck[0:13])
+    east_cards = deserialize_hand(deck[13:26])
+    south_cards = deserialize_hand(deck[26:39])
+    west_cards = deserialize_hand(deck[39:52])
+
+    return {
+        "ns_vulnerable": only_ns_vuln or all_vuln,
+        "ew_vulnerable": only_ew_vuln or all_vuln,
+        "dealer": dealer,
+        "north_cards": north_cards,
+        "east_cards": east_cards,
+        "south_cards": south_cards,
+        "west_cards": west_cards,
+    }
+
+
+class TournamentManager(models.Manager):
+    # When should we call this?
+    # Whenever there are no more unplayed boards.
+    def create(self, *args, **kwargs) -> None:
+        with transaction.atomic():
+            t = super().create(*args, **kwargs)
+            # create all the boards ahead of time.
+            for board_number in range(1, BOARDS_PER_TOURNAMENT + 1):
+                board_attributes = board_attributes_from_board_number(
+                    board_number=board_number,
+                    rng_seeds=[
+                        str(board_number).encode(),
+                        str(t.pk).encode(),
+                        settings.SECRET_KEY.encode(),
+                    ],
+                )
+                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
+
+
+class Tournament(models.Model):
+    objects = TournamentManager()
+
+    def __str__(self) -> str:
+        return f"tournament {self.pk}"
+
+
 class BoardManager(models.Manager):
-    def create_from_deck(self, *, deck: list[Card]) -> Board:
-        # Max seems safer than just using "count", since in the unlikely event that we ever delete a board, "count"
-        # would return a duplicate value, whereas Max should not.
-        max_number = self.aggregate(max_id=Max("id"))["max_id"]
-        board_number = 1 if max_number is None else max_number + 1
+    def nicely_ordered(self) -> models.QuerySet:
+        return self.order_by("tournament", 1 + (models.F("pk") % BOARDS_PER_TOURNAMENT))
 
-        # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-        dealer = (board_number - 1) % 4 + 1
-        only_ns_vuln = board_number in (2, 5, 12, 15)
-        only_ew_vuln = board_number in (3, 6, 9, 16)
-        all_vuln = board_number in (4, 7, 10, 13)
-
-        return self.create_with_deck(
-            ns_vulnerable=only_ns_vuln or all_vuln,
-            ew_vulnerable=only_ew_vuln or all_vuln,
-            dealer=dealer,
-            deck=deck,
-            number=board_number,
-        )
-
-    def create_with_deck(
-        self,
-        *,
-        ns_vulnerable: bool,
-        ew_vulnerable: bool,
-        dealer: int,
-        deck: list[Card],
-        number=int,
-    ) -> Board:
-        def deserialize_hand(cards: list[Card]) -> str:
-            # sorted only so that they look purty in the Admin site.
-            return "".join([c.serialize() for c in sorted(cards)])
-
-        north_cards = deserialize_hand(deck[0:13])
-        east_cards = deserialize_hand(deck[13:26])
-        south_cards = deserialize_hand(deck[26:39])
-        west_cards = deserialize_hand(deck[39:52])
-
-        return self.create(
-            ns_vulnerable=ns_vulnerable,
-            ew_vulnerable=ew_vulnerable,
-            dealer=dealer,
-            number=number,
-            north_cards=north_cards,
-            east_cards=east_cards,
-            south_cards=south_cards,
-            west_cards=west_cards,
-        )
-
-    def create(self, *args, **kwargs):
-        from app.serializers import BoardSerializer
-
-        rv = super().create(*args, **kwargs)
-
-        # nobody (yet) cares about the creation of a new board, but what the heck.
-        # I'm just testing out this scheme of using drf to serialize the data.
-
-        send_event(
-            channel="top-sekrit-board-creation-channel",
-            event_type="message",
-            data={
-                "new-board": BoardSerializer(rv).data,
-            },
-        )
-
-        return rv
+    def create_from_attributes(self, *, attributes, tournament) -> Board:
+        return self.create(**attributes, tournament=tournament)
 
 
 class Board(models.Model):
@@ -118,7 +134,8 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
-    number = models.SmallIntegerField(unique=True)
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+
     objects = BoardManager()
 
     @property
@@ -153,18 +170,6 @@ class Board(models.Model):
 
         return rv
 
-    def __str__(self):
-        if self.ns_vulnerable and self.ew_vulnerable:
-            vuln = "Both sides"
-        elif not self.ns_vulnerable and not self.ew_vulnerable:
-            vuln = "Neither side"
-        elif self.ns_vulnerable:
-            vuln = "North/South"
-        else:
-            vuln = "East/West"
-
-        return f"Board #{self.number}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
-
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         assert (
@@ -174,8 +179,27 @@ class Board(models.Model):
             == len(self.west_cards)
             == 26
         ), f"why no cards {vars(self)}"
-
+        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
+
+    @property
+    def number(self) -> int:
+        return 1 + (self.pk % BOARDS_PER_TOURNAMENT)
+
+    def short_string(self) -> str:
+        return f"Board #{self.number} ({self.tournament})"
+
+    def __str__(self) -> str:
+        if self.ns_vulnerable and self.ew_vulnerable:
+            vuln = "Both sides"
+        elif not self.ns_vulnerable and not self.ew_vulnerable:
+            vuln = "Neither side"
+        elif self.ns_vulnerable:
+            vuln = "North/South"
+        else:
+            vuln = "East/West"
+
+        return f"{self.short_string()}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
 
 
 admin.site.register(Board)

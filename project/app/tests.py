@@ -1,3 +1,4 @@
+import collections
 import importlib
 import json
 
@@ -7,14 +8,13 @@ from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
 from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
-from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 
 import app.models.board
 from app.models.table import TableException
 
-from .models import Message, Player, PlayerException, Seat, SeatException, Table
+from .models import Board, Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import hand, lobby, player, table
 
@@ -48,7 +48,7 @@ def test_bottiness_text(usual_setup) -> None:
     assert "(bot)" not in p1.name_dir(hand=h)
 
 
-def test_splitsville_ejects_everyone_from_table(usual_setup):
+def test_splitsville_ejects_that_partnership_from_table(usual_setup):
     table = Table.objects.first()
 
     north = table.current_hand.modPlayer_by_seat(libSeat.NORTH)
@@ -69,31 +69,31 @@ def test_splitsville_ejects_everyone_from_table(usual_setup):
 
     north.break_partnership()
 
-    north = Player.objects.get(pk=north.pk)
-    south = Player.objects.get(pk=south.pk)
-    east = Player.objects.get(pk=east.pk)
-    west = Player.objects.get(pk=west.pk)
+    north.refresh_from_db()
+    south.refresh_from_db()
+    east.refresh_from_db()
+    west.refresh_from_db()
 
     assert north.partner is None
     assert south.partner is None
     assert west.partner == east
     assert east.partner == west
 
-    assert Table.objects.count() == table_count_before - 1
+    assert Table.objects.count() == table_count_before
 
     assert north.current_table is None
     assert south.current_table is None
-    assert east.current_table is None
-    assert west.current_table is None
+    assert east.current_table == table
+    assert west.current_table == table
 
 
-def test_one_partnerships_splitting_removes_table(usual_setup):
+def test_one_partnerships_splitting_does_not_remove_table(usual_setup):
     assert Table.objects.count() == 1
     t = Table.objects.first()
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
     north.break_partnership()
-    assert Table.objects.count() == 0
+    assert Table.objects.count() == 1
 
 
 def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
@@ -151,20 +151,6 @@ def test_legal_cards(usual_setup, rf, settings):
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
-
-
-def test_player_cannot_be_at_two_seats(usual_setup):
-    t = Table.objects.first()
-
-    # Try to sneak Jeremy into Esther's seat!
-    # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
-    with pytest.raises(IntegrityError):
-        Seat.objects.filter(
-            direction=libSeat.EAST.value,
-            table=t,
-        ).update(
-            player=t.current_hand.modPlayer_by_seat(libSeat.NORTH),
-        )
 
 
 def test_player_cannot_be_in_two_tables(usual_setup):
@@ -323,6 +309,8 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     t = Table.objects.first()
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
     assert north.partner is not None
+    north_pk = north.pk
+    north_partner_pk = north.partner.pk
 
     request = rf.post(
         "/player_detail_endpoint_whatever_tf_it_is HEY IT TURNS OUT THIS DOESN'T MATTER, WHO KNEW??/",
@@ -347,7 +335,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert the_kwargs["channel"] == "partnerships"
     assert the_kwargs["data"]["joined"] == []
 
-    assert set(the_kwargs["data"]["split"]) == {north.pk, north.partner.pk}
+    assert set(the_kwargs["data"]["split"]) == {north_pk, north_partner_pk}
 
     assert response.status_code == 200
 
@@ -411,11 +399,16 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
 
 def test_max_boards(played_to_completion, monkeypatch):
-    monkeypatch.setattr(app.models.table, "TOTAL_BOARDS", 1)
+    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
     t = Table.objects.first()
 
-    with pytest.raises(TableException):
-        t.next_board()
+    t.next_board()
+
+    board_counts_by_tournament_pk = collections.defaultdict(int)
+    for b in app.models.board.Board.objects.all():
+        board_counts_by_tournament_pk[b.pk] += 1
+
+    assert dict(board_counts_by_tournament_pk) == {1: 1, 2: 1}
 
 
 def test_no_bogus_tables(usual_setup):
@@ -424,7 +417,6 @@ def test_no_bogus_tables(usual_setup):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),
-            shuffle_deck=False,
         )
     count_after = Table.objects.count()
 
@@ -432,22 +424,35 @@ def test_no_bogus_tables(usual_setup):
 
 
 def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
+    number_of_tables_before = Table.objects.count()
+
     t = Table.objects.first()
-    Bob, Carol, Ted, Alice = t.current_hand.players_by_direction.values()
 
-    from app.models import logged_queries
+    North, East, South, West = t.current_hand.players_by_direction.values()
 
-    with logged_queries():
-        Bob.break_partnership()
-    Bob.partner_with(Ted)
+    assert {North.current_table, East.current_table, South.current_table, West.current_table} == {t}
 
-    Carol.break_partnership()
-    Carol.partner_with(Alice)
+    North.break_partnership()
+    South.refresh_from_db()
+    North.partner_with(South)
+    North.refresh_from_db()
 
-    assert Table.objects.count() == 0
+    assert North.current_table is None
+    assert South.current_table is None
 
-    # OK now we got four players ready to sit at a table.
+    East.break_partnership()
+    West.refresh_from_db()
+    East.partner_with(West)
+    East.refresh_from_db()
 
+    assert East.current_table is None
+    assert West.current_table is None
+
+    # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in
+    # existence.
+    assert Table.objects.count() == number_of_tables_before
+
+    # OK, now we've got four players ready to sit at a table.
     RandomDude = Player.objects.create(
         user=auth.models.User.objects.create(
             username="J.Random Hacker",
@@ -459,14 +464,16 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
         request = rf.post("/woteva/")
 
         request.user = player.user
-        return table.details.new_table_for_two_partnerships(request, Bob.pk, Carol.pk)
+        return table.details.new_table_for_two_partnerships(request, North.pk, East.pk)
 
     response = seat_em_dano(RandomDude)
     assert response.status_code == 403
     assert b"isn't one of" in response.content
 
-    response = seat_em_dano(Bob)
+    response = seat_em_dano(North)
     assert response.status_code == 302
+
+    assert Table.objects.count() == number_of_tables_before + 1
 
 
 def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
@@ -509,3 +516,45 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for direction, actual_html in actual_cards_by_direction.items():
         expected_html = expected_cards_by_direction[direction]
         assert expected_html in actual_html
+
+
+def test_find_unplayed_board(played_to_completion) -> None:
+    t1 = Table.objects.first()
+    assert t1 is not None
+
+    all_known_boards_before_splitsville = {b.pk for b in Board.objects.all()}
+
+    t1.next_board()
+
+    North, East, South, West = [s.player for s in t1.seats]
+
+    # now we splitsville
+    North.break_partnership()
+    East.break_partnership()
+
+    South.refresh_from_db()
+    West.refresh_from_db()
+
+    assert not North.currently_seated
+    assert not East.currently_seated
+    assert not South.currently_seated
+    assert not West.currently_seated
+
+    North.partner_with(South)
+    East.partner_with(West)
+
+    South.refresh_from_db()
+    West.refresh_from_db()
+
+    assert not North.currently_seated
+    assert not East.currently_seated
+    assert not South.currently_seated
+    assert not West.currently_seated
+
+    # now we re-partner, creating a new table
+    t2 = Table.objects.create_with_two_partnerships(North, East)
+
+    # now ask for an unplayed board
+    b = t2.find_unplayed_board()
+    assert b is not None
+    assert b.pk not in all_known_boards_before_splitsville

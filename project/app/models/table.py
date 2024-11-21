@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import logging
-import random
 import time
 from typing import TYPE_CHECKING
 
 import bridge.card
 import bridge.seat
-import bridge.table
 from django.contrib import admin
 from django.db import models, transaction
 from django.db.models.expressions import RawSQL
@@ -16,12 +14,13 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import TOTAL_BOARDS, Board
+from app.models.board import Board, Tournament
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
 
 if TYPE_CHECKING:
+    import bridge.table
     from bridge.auction import Auction as libAuction
     from django.db.models.query import QuerySet
 
@@ -40,7 +39,7 @@ class TableManager(models.Manager):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
     def create_with_two_partnerships(
-        self, p1: Player, p2: Player, shuffle_deck: bool = True, desired_board_pk: int | None = None
+        self, p1: Player, p2: Player, desired_board_pk: int | None = None
     ) -> Table:
         try:
             with transaction.atomic():
@@ -52,7 +51,7 @@ class TableManager(models.Manager):
                         table=t,
                     )
 
-                t.next_board(shuffle_deck=shuffle_deck, desired_board_pk=desired_board_pk)
+                t.next_board(desired_board_pk=desired_board_pk)
         except Exception as e:
             raise TableException(str(e)) from e
 
@@ -104,6 +103,10 @@ class Table(models.Model):
         assert rv is not None
         return rv
 
+    # Seems dumb, but I don't know how else to get this information into a DRF serializer
+    def current_hand_pk(self) -> int:
+        return self.current_hand.pk
+
     @property
     def hand_is_complete(self) -> bool:
         return self.current_hand.is_complete
@@ -154,13 +157,16 @@ class Table(models.Model):
             )
         )
 
+    # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.exclude(pk__in=self.played_boards()).order_by("id")
+        unplayed_boards = Board.objects.all()
+        for seat in self.seats:
+            unplayed_boards = unplayed_boards.exclude(id__in=seat.player.boards_played)
+
         return unplayed_boards.first()
 
-    # BUGBUG -- the semantics are wrong.  Currently this does "get the next board that hasn't been played at this table",
-    # but it should do "get the next board that none of this table's players have played".
-    def next_board(self, *, shuffle_deck=True, desired_board_pk: int | None = None) -> Board:
+    # TODO -- limit this to the "current" tournament?
+    def next_board(self, *, desired_board_pk: int | None = None) -> Board:
         if self.hand_set.exists() and not self.hand_is_complete:
             msg = f"Naw, {self} isn't complete; no next board for you"
             raise TableException(msg)
@@ -170,19 +176,13 @@ class Table(models.Model):
                 b = Board.objects.get(pk=desired_board_pk)
             else:
                 b = self.find_unplayed_board()
+
             if b is None:
-                if Board.objects.count() >= TOTAL_BOARDS:
-                    msg = "No more boards! You've played them all."
-                    raise TableException(msg)
+                # This seems wrong; players ought to explicitly request to join a tournament.
+                Tournament.objects.create()
+                b = self.find_unplayed_board()
+                assert b is not None
 
-                deck = bridge.card.Card.deck()
-
-                if shuffle_deck:
-                    random.shuffle(deck)
-
-                b = Board.objects.create_from_deck(
-                    deck=deck,
-                )
             Hand.objects.create(board=b, table=self)
 
         return b

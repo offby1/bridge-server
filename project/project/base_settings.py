@@ -210,6 +210,9 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
+        "django_eventstream.views": {
+            "level": "WARNING",
+        },
         "django": {
             "handlers": ["console"],
             "propagate": True,

@@ -3,11 +3,12 @@ from __future__ import annotations
 import collections
 import contextlib
 import dataclasses
+import logging
 from typing import Any
 
 from django.db import connection
 
-from .board import Board
+from .board import Board, Tournament
 from .common import SEAT_CHOICES
 from .hand import AuctionError, Call, Hand, Play
 from .message import Message
@@ -33,8 +34,12 @@ __all__ = [
     "SeatException",
     "Table",
     "TableException",
+    "Tournament",
     "SEAT_CHOICES",
 ]
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -45,6 +50,9 @@ class QueryLogger:
     def __call__(self, execute, sql, params, many, context):
         self.calls.append((sql, params, many, context))
         self.counter[sql] += 1
+
+        logger.info(f"{sql} {params=}")
+
         return execute(sql, params, many, context)
 
 
