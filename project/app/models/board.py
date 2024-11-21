@@ -50,6 +50,7 @@ def board_attributes_from_board_number(
 
     board_number = (board_number - 1) % 16
 
+    # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
     dealer = (board_number - 1) % 4 + 1
     only_ns_vuln = board_number in (2, 5, 12, 15)
     only_ew_vuln = board_number in (3, 6, 9, 16)
@@ -110,8 +111,6 @@ class BoardManager(models.Manager):
         return self.order_by("tournament", 1 + (models.F("pk") % BOARDS_PER_TOURNAMENT))
 
     def create_from_attributes(self, *, attributes, tournament) -> Board:
-        # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-
         return self.create(**attributes, tournament=tournament)
 
 

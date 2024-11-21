@@ -178,6 +178,7 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
+                # This seems wrong; players ought to explicitly request to join a tournament.
                 Tournament.objects.create()
                 b = self.find_unplayed_board()
                 assert b is not None
