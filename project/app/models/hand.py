@@ -176,7 +176,7 @@ class Hand(models.Model):
         return libHand(cards=cards)
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
-    # this because it's not possible to the template to invoke a method that requires an argument.
+    # this because it's not possible for the template to invoke a method that requires an argument.
     summary_for_this_viewer: str
     score_for_this_viewer: str | int
 

@@ -1,8 +1,9 @@
 IN PROGRESS:
 
 * Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
+  Note: django-rest-framework has proven quite fiddly; I'm currently moving away from it, and replacing it with dirt-simple written-by-hand serialization in the library.
 
-  Of course, switch my existing bot to use it, once it exists.
+  Of course, switch the API bot to use it, once it exists.
 
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
