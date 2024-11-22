@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 VERSION = "unknown"
 try:
     with open(BASE_DIR / "VERSION") as inf:
-        VERSION = inf.read()
+        VERSION = inf.read().rstrip()
 except FileNotFoundError:
     pass
 
@@ -103,6 +103,7 @@ EVENTSTREAM_REDIS = {
 }
 
 MIDDLEWARE = [
+    "app.middleware.add_git_commit_hash.AddVersionHeaderMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
