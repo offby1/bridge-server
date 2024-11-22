@@ -159,7 +159,7 @@ class Table(models.Model):
 
     # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.all()
+        unplayed_boards = Board.objects.nicely_ordered().all()
         for seat in self.seats:
             unplayed_boards = unplayed_boards.exclude(id__in=seat.player.boards_played)
 
