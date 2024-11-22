@@ -18,7 +18,14 @@ In the below, ✘ means "this sucks; no need to investigate further"
 [The obvious search](https://duckduckgo.com/?q=django+hosting).  As expected, most of the results look scammy.
 
 ### [Tailscale](https://login.tailscale.com/admin/machines)
-They don't *host*, but they do have a dead-easy TLS-doing reverse proxy, which [I'm using now](https://teensy-info.tail571dc2.ts.net/).
+They don't *host*, but they do have a dead-easy [TLS-doing reverse proxy](https://tailscale.com/kb/1223/funnel#establishing-an-encrypted-proxy), which [I'm using now](https://teensy-info.tail571dc2.ts.net/) (and also [here](https://laptop.tail571dc2.ts.net/)).
+
+I'd feel a little better about their reverse proxy if they charged me money for using it.  The blurb about it says
+
+* it's in beta
+* > Traffic sent over a Funnel is subject to non-configurable bandwidth limits.
+
+
 ### digital ocean
 
 [Use an Existing Domain](https://docs.digitalocean.com/products/networking/load-balancers/how-to/ssl-termination/#use-an-existing-domain) says
@@ -29,7 +36,7 @@ They don't *host*, but they do have a dead-easy TLS-doing reverse proxy, which [
 Clearly intends to do *something* like what I want.
 I tried it once many years ago, and fled in terror; but maybe it's better now (or I'm smarter).
 
-### [AWS Elastic Container Store]()
+### [AWS Elastic Container Service](https://aws.amazon.com/ecs/)
 [Here](https://www.docker.com/blog/docker-compose-from-local-to-amazon-ecs/) is a shockingly-badly written overview of how to use ECS as a docker context.
 
 The docker docs to which it points are "retired" :-(
