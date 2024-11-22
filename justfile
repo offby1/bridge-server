@@ -144,7 +144,7 @@ cover: test
 [script('bash')]
 clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
-    git clean -dx --interactive --exclude='*.sqlite3'
+    git clean -dx --interactive
 
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
