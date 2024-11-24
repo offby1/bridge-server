@@ -15,6 +15,7 @@ from app.serializers import (
     PlayerSerializer,
     PlaySerializer,
     SeatSerializer,
+    ShallowTableSerializer,
     TableSerializer,
 )
 from app.views.hand import _display_and_control
@@ -131,6 +132,12 @@ class PlayerViewSet(viewsets.ModelViewSet):
 class SeatViewSet(NoUpdateViewSet):
     queryset = Seat.objects.all()
     serializer_class = SeatSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class ShallowTableViewSet(NoUpdateViewSet):
+    queryset = Table.objects.all()
+    serializer_class = ShallowTableSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 

@@ -51,6 +51,7 @@ class ShallowTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
         fields = ("seat_set", "id", "current_hand_pk", "tempo_seconds")
+        depth = 1
 
 
 class NewHandSerializer(serializers.ModelSerializer):
@@ -61,11 +62,6 @@ class NewHandSerializer(serializers.ModelSerializer):
 
     - I don't inherit from HyperlinkedModelSerializer, since that would require that my caller pass in a request, which
       he doesn't have.
-
-    Also:
-
-    - There's no need to make a route for me, since nobody needs to fetch me via a web service call; I am used only to
-      serialize a hand to be sent in a django-eventstream event.
 
     """
 
