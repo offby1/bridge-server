@@ -191,6 +191,12 @@ class Player(models.Model):
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
+    def current_table_pk(self) -> int | None:
+        ct = self.current_table
+        if ct is None:
+            return None
+        return ct.pk
+
     @property
     def current_table(self) -> Table | None:
         if not self.currently_seated:

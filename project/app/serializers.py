@@ -3,7 +3,7 @@ from rest_framework import serializers  # type: ignore [import-untyped]
 from app.models import Board, Call, Hand, Play, Player, Seat, Table
 
 
-class BoardSerializer(serializers.HyperlinkedModelSerializer):
+class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = (
@@ -34,12 +34,13 @@ class ReadOnlyCallSerializer(serializers.ModelSerializer):
         depth = 1
 
 
-class HandSerializer(serializers.HyperlinkedModelSerializer):
+class HandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hand
+
+        # We don't need the "table" field, since the xscript includes a complete description of the table
         fields = (
             "pk",
-            "table",
             "board",
             "is_complete",
             "serializable_xscript",
@@ -90,23 +91,19 @@ class ReadOnlyPlaySerializer(serializers.ModelSerializer):
         depth = 1
 
 
-class PlayerSerializer(serializers.HyperlinkedModelSerializer):
-    current_table = serializers.HyperlinkedRelatedField(view_name="table-detail", read_only=True)
-
+class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = ("name", "pk", "allow_bot_to_play_for_me", "current_table")
+        fields = ("name", "pk", "allow_bot_to_play_for_me", "current_table_pk")
 
 
-class SeatSerializer(serializers.HyperlinkedModelSerializer):
+class SeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seat
         fields = ("direction", "player", "table", "pk")
 
 
-class TableSerializer(serializers.HyperlinkedModelSerializer):
-    current_hand = serializers.HyperlinkedRelatedField(view_name="hand-detail", read_only=True)
-
+class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = ("seat_set", "pk", "current_hand", "tempo_seconds")
+        fields = ("seat_set", "pk", "current_hand_pk", "tempo_seconds")
