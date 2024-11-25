@@ -4,3 +4,4 @@ from .details import (
     set_table_tempo_view,
     table_list_view,
 )
+from .misc import table_json_view

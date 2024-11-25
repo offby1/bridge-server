@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import base64
+import json
 import logging
 from typing import TYPE_CHECKING, Any
 
 import bridge.seat
+import django.contrib.auth
 from bridge.auction import Auction
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -502,6 +505,45 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     )
 
     return TemplateResponse(request, "hand_detail.html", context=context)
+
+
+def _authed(request: HttpRequest) -> bool:
+    if "HTTP_AUTHORIZATION" not in request.META:
+        logger.debug("HTTP_AUTHORIZATION not present in header")
+        return False
+
+    auth = request.META["HTTP_AUTHORIZATION"].split()
+    if len(auth) != 2:
+        logger.debug("HTTP_AUTHORIZATION doesn't have exactly one colon; outta here")
+        return False
+
+    if auth[0].lower() != "basic":
+        logger.debug("First field of HTTP_AUTHORIZATION isn't 'basic'; outta here")
+        return False
+
+    uname, passwd = base64.b64decode(auth[1]).decode("utf-8").split(":", 1)
+    user = django.contrib.auth.authenticate(username=uname, password=passwd)
+    if user is None:
+        logger.debug("authenticating %s got us nuttin'; outta here", uname)
+        return False
+
+    if not user.is_active:
+        logger.debug("User %s isn't active; outta here", user)
+        return False
+
+    return True
+
+
+def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+    if not _authed(request):
+        return HttpResponseForbidden()
+
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    # TODO -- censor the hands
+    return HttpResponse(
+        json.dumps(hand.get_xscript().serializable()), headers={"Content-Type": "text/json"}
+    )
 
 
 @logged_in_as_player_required()

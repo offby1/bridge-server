@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
+
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -217,6 +219,17 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
     playa.save()
     return HttpResponse(f"""Hello, {playa.as_link()}""")
+
+
+def by_name_view(request: HttpRequest, name: str) -> HttpResponse:
+    p = Player.objects.filter(user__username=name).first()
+
+    if p is None:
+        return HttpResponseNotFound()
+
+    payload = {"pk": p.pk, "current_table_pk": p.current_table_pk()}
+
+    return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
 def player_list_view(request):
