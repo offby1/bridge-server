@@ -25,6 +25,7 @@ I'd feel a little better about their reverse proxy if they charged me money for 
 * it's in beta
 * > Traffic sent over a Funnel is subject to non-configurable bandwidth limits.
 
+Something I read somewhere suggested that the reverse proxy is *not* doing crypto stuff, which is good -- that means it's not working as hard as I'd feared, and thus is likely to *keep* working :-)
 
 ### digital ocean
 
