@@ -507,7 +507,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
-def _authed(request: HttpRequest) -> bool:
+def _basic_authed(request: HttpRequest) -> bool:
     if "HTTP_AUTHORIZATION" not in request.META:
         logger.debug("HTTP_AUTHORIZATION not present in header")
         return False
@@ -535,10 +535,20 @@ def _authed(request: HttpRequest) -> bool:
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
-    if not _authed(request):
-        return HttpResponseForbidden()
-
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    ok = False
+
+    logger.debug(f"{request.user=} {request.user.is_authenticated=}")
+    if request.user.is_authenticated:
+        player = request.user.player
+        if player in hand.players_by_direction.values():
+            ok = True
+        else:
+            logger.debug(f"{player.name=} not in {hand.players_by_direction.values()=}")
+
+    if not ok and not _basic_authed(request):
+        return HttpResponseForbidden()
 
     # TODO -- censor the hands
     return HttpResponse(
