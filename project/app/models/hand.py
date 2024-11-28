@@ -291,7 +291,7 @@ class Hand(models.Model):
             raise PlayError(msg)
 
         legal_cards = self.get_xscript().legal_cards(
-            some_hand=self.players_remaining_cards(player=player)
+            some_cards=self.players_remaining_cards(player=player).cards
         )
         if card not in legal_cards:
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
@@ -403,7 +403,7 @@ class Hand(models.Model):
                 legal_now = False
                 if seat == whose_turn_is_it:
                     legal_now = any(
-                        c in xscript.legal_cards(some_hand=libHand(cards=sorted(cards)))
+                        c in xscript.legal_cards(some_cards=list(cards))
                         for c in cards_by_suit[suit]
                     )
 

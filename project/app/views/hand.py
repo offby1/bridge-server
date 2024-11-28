@@ -545,7 +545,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         if player in hand.players_by_direction.values():
             ok = True
         else:
-            logger.debug(f"{player.name=} not in {hand.players_by_direction.values()=}")
+            logger.debug(f"{player=} not in {hand.players_by_direction.values()=}")
 
     if not ok and not _basic_authed(request):
         return HttpResponseForbidden()
