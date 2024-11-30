@@ -1,8 +1,9 @@
 IN PROGRESS:
 
 * Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
+  Note: django-rest-framework has proven quite fiddly; I'm currently moving away from it, and replacing it with dirt-simple written-by-hand serialization in the library.
 
-  Of course, switch my existing bot to use it, once it exists.
+  Of course, switch the API bot to use it, once it exists.
 
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
@@ -33,8 +34,6 @@ STILL TODO:
     2024-11-20T12:56:36+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107396.893606}
 
 * Logged in as player 1, <https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1> shows "Sorry, bob (bot-powered), but you have not completely played board Board #6 (tournament 1), so later d00d".  But when I click that link, it (correctly) shows me the hand in progress.
-
-* https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
 
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
@@ -184,6 +183,8 @@ STILL TODO:
 
 
 DONE:
+* https://laptop.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
+
 * More than one tournament!
 
 * $ just restore < prod.sql  && just migrate && just shell -c "'Tournament.objects.create()'"
