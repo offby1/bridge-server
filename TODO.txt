@@ -8,8 +8,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-* https://laptop.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
-
 STILL TODO:
 
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
@@ -185,6 +183,8 @@ STILL TODO:
 
 
 DONE:
+* https://laptop.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
+
 * More than one tournament!
 
 * $ just restore < prod.sql  && just migrate && just shell -c "'Tournament.objects.create()'"

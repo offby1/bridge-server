@@ -511,9 +511,8 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        hand_list = player.hands_played.order_by("id")
-    else:
-        hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "id").all()
+
+    hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "id").all()
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")
@@ -525,7 +524,8 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
         )
     context = {
         "page_obj": page_obj,
-        "played_by": player,
+        "player_name": "" if player is None else player.name,
+        "played_by": "" if player is None else f"played_by={player.pk}",
         "total_count": paginator.count,
     }
 
