@@ -204,8 +204,16 @@ LOGGING = {
         },
     },
     "loggers": {
+        "app": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
         "daphne.http_protocol": {
             "level": "INFO",
+        },
+        "django": {
+            "handlers": ["console"],
+            "propagate": True,
         },
         "django.channels.server": {
             "handlers": ["console"],
@@ -214,13 +222,8 @@ LOGGING = {
         "django_eventstream.views": {
             "level": "WARNING",
         },
-        "django": {
-            "handlers": ["console"],
-            "propagate": True,
-        },
-        "app": {
-            "handlers": ["console"],
-            "level": "DEBUG",
+        "urllib3.connectionpool": {
+            "level": "INFO",
         },
     },
 }

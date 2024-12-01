@@ -24,4 +24,4 @@ ENV PGHOST=postgres
 ENV REDIS_HOST=redis
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
-CMD ["bash", "-c", "poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application"]
+CMD ["bash", "-c", "poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application --log-fmt=\"%(asctime)sZ %(levelname)s %(name)s %(filename)s %(funcName)s %(message)s\""]
