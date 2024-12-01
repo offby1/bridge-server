@@ -27,7 +27,22 @@ class CallSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+class SlimHandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hand
+
+        # We don't need the "table" field, since the xscript includes a complete description of the table
+        fields = (
+            "id",
+            "table",
+            "board",
+            "xscript_hwms",
+        )
+
+
 class ReadOnlyCallSerializer(serializers.ModelSerializer):
+    hand = SlimHandSerializer()
+
     class Meta:
         model = Call
         fields = ("serialized", "hand", "seat_pk")
@@ -85,6 +100,8 @@ class PlaySerializer(serializers.ModelSerializer):
 
 # Anyone can use this to examine a play.  I haven't figured out how to combine the two serializers that does both things.
 class ReadOnlyPlaySerializer(serializers.ModelSerializer):
+    hand = SlimHandSerializer()
+
     class Meta:
         model = Play
         fields = ("serialized", "hand", "seat_pk")

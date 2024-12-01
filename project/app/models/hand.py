@@ -244,6 +244,10 @@ class Hand(models.Model):
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
 
+    def xscript_hwms(self) -> dict[str, Any]:
+        xs = self.get_xscript()
+        return {"calls": len(xs.auction.player_calls), "plays": xs.num_plays}
+
     def add_call_from_player(self, *, player: libPlayer, call: libCall):
         assert_type(player, libPlayer)
         assert_type(call, libCall)
