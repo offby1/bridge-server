@@ -10,6 +10,7 @@ from .views.hand import (
     hand_detail_view,
     hand_list_view,
     hand_serialized_view,
+    hand_xscript_updates_view,
     open_access_toggle_view,
 )
 from .views.table import set_table_tempo_view
@@ -23,6 +24,11 @@ urlpatterns = [
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
     path("hand/<pk>/", hand_detail_view, name="hand-detail"),
+    path(
+        "hand/<pk>/updates/<int:calls>/<int:plays>/",
+        hand_xscript_updates_view,
+        name="hand-xscript-updates",
+    ),
     path("serialized/hand/<pk>/", hand_serialized_view, name="serialized-hand-detail"),
     path("hand/<pk>/archive/", hand_archive_view, name="hand-archive"),
     path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),

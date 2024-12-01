@@ -584,6 +584,14 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     return render(request, "hand_list.html", context=context)
 
 
+@logged_in_as_player_required()
+def hand_xscript_updates_view(self, pk: int, calls: int, plays: int) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
+    return HttpResponse(json.dumps(whats_new), headers={"Content-Type": "text/json"})
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
