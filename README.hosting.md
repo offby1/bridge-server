@@ -77,9 +77,13 @@ I think this is a reverse-proxy-and-lets-encrypt-client rolled into one.  I doub
 
 [Cookiecutter Django](https://cookiecutter-django.readthedocs.io/en/latest/3-deployment/deployment-with-docker.html#understanding-the-docker-compose-setup) uses it.
 
-### ✘[Fly.io](https://fly.io/docs/django/getting-started/existing/)
+### [Fly.io](https://fly.io/docs/django/getting-started/existing/)
 
-Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
+I originally ruled it out because
+> Doesn't mention ASGI; that term doesn't appear in their search, nor does "uvicorn" nor "daphne".
+
+but on second thought, they do [deploy from an existing Dockerfile](https://fly.io/docs/languages-and-frameworks/dockerfile/), and offer postgres and redis as services; so they might be able to handle this.
+
 ### [google cloud run](https://cloud.google.com/run/docs/overview/what-is-cloud-run)
 
 No persistent state; you gotta use one of their other services for that.
