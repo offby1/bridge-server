@@ -25,6 +25,7 @@ from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .player import Player
+from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
@@ -157,11 +158,44 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def players_current_seats(self):
+        return Seat.objects.raw(
+            """
+        SELECT
+            MAX(APP_SEAT.ID) AS ID
+        FROM
+            APP_SEAT
+            JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
+        WHERE
+            APP_PLAYER.ID IN (
+                SELECT
+                    APP_PLAYER.ID AS PLAYER_ID
+                FROM
+                    PUBLIC.APP_HAND
+                    JOIN PUBLIC.APP_TABLE ON APP_TABLE.ID = APP_HAND.TABLE_ID
+                    JOIN PUBLIC.APP_SEAT ON APP_SEAT.TABLE_ID = APP_TABLE.ID
+                    JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
+                WHERE
+                    APP_HAND.ID = %s
+            )
+        GROUP BY
+            APP_SEAT.PLAYER_ID
+        """,
+            [self.pk],
+        )
+
     def is_abandoned(self) -> bool:
         if self.is_complete:
             return False
-        # TODO -- do this in a single query, not four
-        return any(s != s.player.current_seat for s in self.table.seats)
+        if not all(s.player.currently_seated for s in self.table.seats):
+            return True
+
+        # Clearer, but less efficient
+        # return any(s != s.player.current_seat for s in self.table.seats)
+
+        return (
+            self.table.seats.filter(pk__in={s.pk for s in self.players_current_seats()}).count() < 4
+        )
 
     # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
