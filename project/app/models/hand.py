@@ -158,6 +158,8 @@ class Hand(models.Model):
     )  # type: ignore
 
     def is_abandoned(self) -> bool:
+        if self.is_complete:
+            return False
         # TODO -- do this in a single query, not four
         return any(s != s.player.current_seat for s in self.table.seats)
 
@@ -456,8 +458,8 @@ class Hand(models.Model):
     @property
     def is_complete(self):
         return (
-            self.get_xscript().auction.status is libAuction.PassedOut
-            or len(self.serialized_plays()) == 52
+            # Counting the play set does far fewer queries than examining the auction status, so we do it first.
+            self.play_set.count() == 52 or self.get_xscript().auction.status is libAuction.PassedOut
         )
 
     def serialized_plays(self):
