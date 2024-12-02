@@ -184,6 +184,7 @@ class Hand(models.Model):
             [self.pk],
         )
 
+    @admin.display(boolean=True)
     def is_abandoned(self) -> bool:
         if self.is_complete:
             return False
@@ -622,7 +623,10 @@ class Hand(models.Model):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 
 
-admin.site.register(Hand)
+@admin.register(Hand)
+class HandAdmin(admin.ModelAdmin):
+    list_display = ["table", "board", "open_access", "is_abandoned"]
+    list_filter = ["open_access"]
 
 
 class CallManager(models.Manager):
