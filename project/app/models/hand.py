@@ -157,6 +157,10 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def is_abandoned(self) -> bool:
+        # TODO -- do this in a single query, not four
+        return any(s != s.player.current_seat for s in self.table.seats)
+
     # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
@@ -245,6 +249,10 @@ class Hand(models.Model):
         assert_type(player, libPlayer)
         assert_type(call, libCall)
 
+        if self.is_abandoned():
+            msg = f"Hand {self} is abandoned"
+            raise AuctionError(msg)
+
         auction = self.auction
         try:
             auction.raise_if_illegal_call(player=player, call=call)
@@ -277,6 +285,10 @@ class Hand(models.Model):
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
+
+        if self.is_abandoned():
+            msg = f"Hand {self} is abandoned"
+            raise PlayError(msg)
 
         legit_player = self.player_who_may_play
         if legit_player is None:
@@ -328,6 +340,9 @@ class Hand(models.Model):
     def player_who_may_call(self) -> Player | None:
         from . import Player
 
+        if self.is_abandoned():
+            return None
+
         if self.auction.status is libAuction.Incomplete:
             libAllowed = self.auction.allowed_caller()
             return Player.objects.get_by_name(libAllowed.name)
@@ -337,6 +352,9 @@ class Hand(models.Model):
     @property
     def player_who_may_play(self) -> Player | None:
         from . import Player
+
+        if self.is_abandoned():
+            return None
 
         if not self.auction.found_contract:
             return None
@@ -515,6 +533,9 @@ class Hand(models.Model):
         return self.play_set.order_by("id")
 
     def toggle_open_access(self) -> None:
+        if self.is_abandoned():
+            return
+
         self.open_access = not self.open_access
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
