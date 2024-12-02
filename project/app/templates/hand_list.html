@@ -6,7 +6,7 @@
     {% block hand_list %}
         <h2>
             Hands
-            {% if player_name %}played by {{ player_name }},{% endif %}
+            {% if player %}played by {{ player.name }},{% endif %}
             {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
         </h2>
         <table class="table">
