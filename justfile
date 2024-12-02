@@ -156,6 +156,7 @@ dcu *options: version-file orb
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x
+    export GIT_VERSION="$(cat project/VERSION)"
     docker compose up --build {{ options }}
 
 # Kill it all.  Kill it all, with fire.
