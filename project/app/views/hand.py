@@ -46,7 +46,7 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
 
 def _bidding_box_context_for_hand(request, hand):
     player = request.user.player  # type: ignore
-    seat = player.most_recent_seat
+    seat = player.current_seat
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
 
     if not seat or seat.table != hand.table:
@@ -90,22 +90,22 @@ def _display_and_control(
 
     is_this_seats_turn_to_play = (
         hand.player_who_may_play is not None
-        and hand.player_who_may_play.most_recent_seat is not None
-        and hand.player_who_may_play.most_recent_seat.direction == seat.value
+        and hand.player_who_may_play.current_seat is not None
+        and hand.player_who_may_play.current_seat.direction == seat.value
     )
     if (
         as_viewed_by is not None
         and display_cards
-        and as_viewed_by.most_recent_seat is not None
+        and as_viewed_by.current_seat is not None
         and is_this_seats_turn_to_play
     ):
-        if seat.value == as_viewed_by.most_recent_seat.direction:  # it's our hand, duuude
+        if seat.value == as_viewed_by.current_seat.direction:  # it's our hand, duuude
             viewer_may_control_this_seat |= not is_dummy  # declarer controls this hand, not dummy
         elif hand.dummy is not None and hand.declarer is not None:
             the_declarer: bridge.seat.Seat = hand.declarer.seat
             if (
                 seat == hand.dummy.seat
-                and the_declarer.value == as_viewed_by.most_recent_seat.direction
+                and the_declarer.value == as_viewed_by.current_seat.direction
             ):
                 viewer_may_control_this_seat = True
 
@@ -252,7 +252,7 @@ def _four_hands_context_for_hand(
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
         this_seats_player.display_name = this_seats_player.name_dir(hand=hand)
-        assert this_seats_player.most_recent_seat is not None
+        assert this_seats_player.current_seat is not None
 
         visibility_and_control = _display_and_control(
             hand=hand, seat=libSeat, as_viewed_by=as_viewed_by, as_dealt=as_dealt
@@ -261,7 +261,7 @@ def _four_hands_context_for_hand(
             dem_cards_baby = _single_hand_as_four_divs(
                 all_four=suitholdings,
                 hand=hand,
-                seat_pk=this_seats_player.most_recent_seat.pk,
+                seat_pk=this_seats_player.current_seat.pk,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
