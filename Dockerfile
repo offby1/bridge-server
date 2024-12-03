@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bullseye AS python
+FROM python:3.13-slim-bullseye AS python
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1
 
