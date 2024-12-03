@@ -58,8 +58,6 @@ STILL TODO:
 
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
-* Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
-
 * The frequent "count" calls in `hand.Hand.get_xscript` are slow -- the output of pytest-profile, says that we called "query:609:count" almost six thousand times in test_hand_visibility!
 
 * A legend! The hand detail should explain that
@@ -186,6 +184,8 @@ STILL TODO:
 
 
 DONE:
+* Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
+
 * https://laptop.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(
 
 * More than one tournament!

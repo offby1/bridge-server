@@ -76,6 +76,9 @@ class Player(models.Model):
     # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
     # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
     # those seats are historical, and I've since left my last table, and not chosen a new one.
+
+    # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
+    # partnership splits up.
     currently_seated = models.BooleanField(default=False)
 
     messages_for_me = GenericRelation(
@@ -199,18 +202,16 @@ class Player(models.Model):
 
     @property
     def current_table(self) -> Table | None:
+        if self.current_seat is None:
+            return None
+
+        return self.current_seat.table
+
+    @property
+    def current_seat(self) -> Seat | None:
         if not self.currently_seated:
             return None
 
-        if self.most_recent_seat is None:
-            return None
-
-        return self.most_recent_seat.table
-
-    # TODO -- what I really want is *current_seat*.  What's the difference?  As long as we cannot have a player at two
-    # tables at the same time, this should be OK.
-    @property
-    def most_recent_seat(self) -> Seat | None:
         return Seat.objects.filter(player=self).order_by("-id").first()
 
     @property

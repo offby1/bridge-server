@@ -25,6 +25,7 @@ from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .player import Player
+from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
@@ -157,6 +158,46 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def players_current_seats(self):
+        return Seat.objects.raw(
+            """
+        SELECT
+            MAX(APP_SEAT.ID) AS ID
+        FROM
+            APP_SEAT
+            JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
+        WHERE
+            APP_PLAYER.ID IN (
+                SELECT
+                    APP_PLAYER.ID AS PLAYER_ID
+                FROM
+                    PUBLIC.APP_HAND
+                    JOIN PUBLIC.APP_TABLE ON APP_TABLE.ID = APP_HAND.TABLE_ID
+                    JOIN PUBLIC.APP_SEAT ON APP_SEAT.TABLE_ID = APP_TABLE.ID
+                    JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
+                WHERE
+                    APP_HAND.ID = %s
+            )
+        GROUP BY
+            APP_SEAT.PLAYER_ID
+        """,
+            [self.pk],
+        )
+
+    @admin.display(boolean=True)
+    def is_abandoned(self) -> bool:
+        if self.is_complete:
+            return False
+        if not all(s.player.currently_seated for s in self.table.seats):
+            return True
+
+        # Clearer, but less efficient
+        # return any(s != s.player.current_seat for s in self.table.seats)
+
+        return (
+            self.table.seats.filter(pk__in={s.pk for s in self.players_current_seats()}).count() < 4
+        )
+
     # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
@@ -252,6 +293,10 @@ class Hand(models.Model):
         assert_type(player, libPlayer)
         assert_type(call, libCall)
 
+        if self.is_abandoned():
+            msg = f"Hand {self} is abandoned"
+            raise AuctionError(msg)
+
         auction = self.auction
         try:
             auction.raise_if_illegal_call(player=player, call=call)
@@ -284,6 +329,10 @@ class Hand(models.Model):
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
+
+        if self.is_abandoned():
+            msg = f"Hand {self} is abandoned"
+            raise PlayError(msg)
 
         legit_player = self.player_who_may_play
         if legit_player is None:
@@ -335,6 +384,9 @@ class Hand(models.Model):
     def player_who_may_call(self) -> Player | None:
         from . import Player
 
+        if self.is_abandoned():
+            return None
+
         if self.auction.status is libAuction.Incomplete:
             libAllowed = self.auction.allowed_caller()
             return Player.objects.get_by_name(libAllowed.name)
@@ -344,6 +396,9 @@ class Hand(models.Model):
     @property
     def player_who_may_play(self) -> Player | None:
         from . import Player
+
+        if self.is_abandoned():
+            return None
 
         if not self.auction.found_contract:
             return None
@@ -445,8 +500,8 @@ class Hand(models.Model):
     @property
     def is_complete(self):
         return (
-            self.get_xscript().auction.status is libAuction.PassedOut
-            or len(self.serialized_plays()) == 52
+            # Counting the play set does far fewer queries than examining the auction status, so we do it first.
+            self.play_set.count() == 52 or self.get_xscript().auction.status is libAuction.PassedOut
         )
 
     def serialized_plays(self):
@@ -522,6 +577,9 @@ class Hand(models.Model):
         return self.play_set.order_by("id")
 
     def toggle_open_access(self) -> None:
+        if self.is_abandoned():
+            return
+
         self.open_access = not self.open_access
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
@@ -572,7 +630,10 @@ class Hand(models.Model):
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 
 
-admin.site.register(Hand)
+@admin.register(Hand)
+class HandAdmin(admin.ModelAdmin):
+    list_display = ["table", "board", "open_access", "is_abandoned"]
+    list_filter = ["open_access"]
 
 
 class CallManager(models.Manager):
