@@ -252,7 +252,6 @@ def _four_hands_context_for_hand(
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
         this_seats_player.display_name = this_seats_player.name_dir(hand=hand)
-        assert this_seats_player.current_seat is not None
 
         visibility_and_control = _display_and_control(
             hand=hand, seat=libSeat, as_viewed_by=as_viewed_by, as_dealt=as_dealt
@@ -261,7 +260,7 @@ def _four_hands_context_for_hand(
             dem_cards_baby = _single_hand_as_four_divs(
                 all_four=suitholdings,
                 hand=hand,
-                seat_pk=this_seats_player.current_seat.pk,
+                seat_pk=hand.table.seat_set.get(direction=libSeat.value),
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
