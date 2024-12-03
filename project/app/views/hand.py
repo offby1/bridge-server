@@ -260,7 +260,7 @@ def _four_hands_context_for_hand(
             dem_cards_baby = _single_hand_as_four_divs(
                 all_four=suitholdings,
                 hand=hand,
-                seat_pk=hand.table.seat_set.get(direction=libSeat.value),
+                seat_pk=hand.table.seat_set.get(direction=libSeat.value).pk,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
