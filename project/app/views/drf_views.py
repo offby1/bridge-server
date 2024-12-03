@@ -65,11 +65,10 @@ class BoardViewSet(NoUpdateViewSet):
         return data_dict
 
     def list(self, request: AuthedHttpRequest) -> Response:
-        censored_objects = []
-        for raw_object in self.queryset.order_by("id").all():
-            censored_objects.append(
-                self._censored_data_dict(as_viewed_by=request.user.player, board=raw_object)
-            )
+        censored_objects = [
+            self._censored_data_dict(as_viewed_by=request.user.player, board=raw_object)
+            for raw_object in self.queryset.order_by("id").all()
+        ]
 
         return Response(data=censored_objects)
 
