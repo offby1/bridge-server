@@ -53,9 +53,6 @@ STILL TODO:
 
   Only way to know for sure is to come up with some sort of test case.
 
-* It seems that if I've played all 16 boards, and then do splitsville, partnerup, and sit at a new table ... I get board #1 again.
-  See the BUGBUG comment at Table.next_board
-
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
 * The frequent "count" calls in `hand.Hand.get_xscript` are slow -- the output of pytest-profile, says that we called "query:609:count" almost six thousand times in test_hand_visibility!
