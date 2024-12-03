@@ -29,7 +29,7 @@ drop: pg-start
 
 [group('postgres')]
 backup: pg-start
-    docker compose exec --user postgres postgres pg_dump bridge
+    docker compose exec --user postgres postgres pg_dump bridge > {{ datetime_utc("%FT%T%z") }}.sql
 
 [group('postgres')]
 restore *options: drop pg-start
