@@ -19,8 +19,8 @@ class MyChannelManager(DefaultChannelManager):
 
             # per-hand channels can only be listened to by players playing that hand
             # TODO -- this is probably wrong, at least if that the events don't disclose the contents of the board.
-            if channel.isdigit() and user.player.most_recent_seat is not None:
-                return user.player.most_recent_seat.table.current_hand.pk == int(channel)
+            if channel.isdigit() and user.player.current_seat is not None:
+                return user.player.current_seat.table.current_hand.pk == int(channel)
 
         if channel == "top-sekrit-board-creation-channel":
             # What, are you kidding?  It's TOP SEKRIT

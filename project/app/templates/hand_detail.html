@@ -4,24 +4,31 @@
 {% endblock title %}
 {% block content %}
     <div>
-        <div class="row">
-            <div class="col">
-                <h1>{{ hand.board }}</h1>
+        <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
+            <div class="row">
+                <div class="col">
+                    <h1>{{ hand.board }}</h1>
+                </div>
+                <div class="col">
+                    <h1>Table {{ hand.table.pk }}, {{ hand }}</h1>
+                </div>
             </div>
-            <div class="col">
-                <h1>Table {{ hand.table.pk }}, {{ hand }}</h1>
+            <div class="row">
+                <div class="col">
+                    <h1>
+                        <div id="auction-summary">Auction: {{ hand.auction.status }}</div>
+                    </h1>
+                </div>
+                <div class="col">
+                    <h1>{{ hand.trick_counts_by_direction }}</h1>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <h1>
-                    <div id="auction-summary">Auction: {{ hand.auction.status }}</div>
-                </h1>
+        {% if hand.is_abandoned %}
+            <div>
+                <h1 style="text-align: center; color: red">This hand was abandoned.</h1>
             </div>
-            <div class="col">
-                <h1>{{ hand.trick_counts_by_direction }}</h1>
-            </div>
-        </div>
+        {% endif %}
     </div>
     <div class="col">{% include "four-hands.html" %}</div>
     <div>

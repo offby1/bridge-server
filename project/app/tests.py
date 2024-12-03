@@ -14,7 +14,7 @@ from django.urls import reverse
 import app.models.board
 from app.models.table import TableException
 
-from .models import Board, Message, Player, PlayerException, Seat, SeatException, Table
+from .models import Board, Hand, Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
 from .views import hand, lobby, player, table
 
@@ -350,6 +350,19 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
     assert b"partner" in response.content.lower()
 
     assert len(send_event_kwargs_log) == 0
+
+
+def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
+    t = Table.objects.first()
+    assert t is not None
+
+    h: Hand = t.current_hand
+    assert h.player_who_may_call is not None
+    north = h.modPlayer_by_seat(libSeat.NORTH)
+    north.break_partnership()
+    h.refresh_from_db()
+    assert h.player_who_may_call is None
+    assert h.player_who_may_play is None
 
 
 def test_table_creation(j_northam, rf, everybodys_password):

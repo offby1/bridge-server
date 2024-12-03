@@ -234,7 +234,7 @@ class PerTableConsumer:
         assert self.table is not None
         dummy_seat = self.table.dummy
         declarer_seat = self.table.declarer
-        if declarer_seat is not None and player.most_recent_seat == dummy_seat:
+        if declarer_seat is not None and player.current_seat == dummy_seat:
             return self.skip_player(player=declarer_seat.player)
 
         return bool(not player.allow_bot_to_play_for_me)
