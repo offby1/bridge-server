@@ -14,7 +14,7 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.prod_settings")
 print(f'{os.environ["DJANGO_SETTINGS_MODULE"]=}')
-print(f"{settings.DEPLOYMENT_ENVIRONMENT=}")
+print(f"{settings.DEPLOYMENT_ENVIRONMENT=} {settings.SECURE_SSL_REDIRECT=}")
 print(f"{settings.VERSION=}")
 sys.stdout.flush()
 
