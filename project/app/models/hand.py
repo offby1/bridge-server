@@ -343,9 +343,12 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
             raise PlayError(msg)
 
-        legal_cards = self.get_xscript().legal_cards(
-            some_cards=self.players_remaining_cards(player=player).cards
-        )
+        remaining_cards = self.players_remaining_cards(player=player).cards
+        if remaining_cards is None:
+            msg = f"Cannot play a card from {libPlayer.name} because I don't know what cards they hold"
+            raise PlayError(msg)
+
+        legal_cards = self.get_xscript().legal_cards(some_cards=remaining_cards)
         if card not in legal_cards:
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)

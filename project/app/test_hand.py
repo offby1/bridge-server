@@ -36,7 +36,7 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     assert declarer is not None
     first_players_seat = declarer.seat.lho()
     first_player = h.players_by_direction[first_players_seat.value].libraryThing(hand=h)
-    first_players_cards = first_player.hand.cards
+    first_players_cards = h.board.cards_for_direction(declarer.seat.lho().value)
     print(f"{first_players_cards=}")
     first_card = first_players_cards[0]
 
@@ -48,8 +48,10 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
 
     # I don't check that the two player's *hands* are equal because the library is stupid
     assert first_play.seat == first_player.seat
-    assert len(h.players_remaining_cards(player=first_player).cards) == 12
-    assert first_play.card not in h.players_remaining_cards(player=first_player).cards
+    players_remaining_cards = h.players_remaining_cards(player=first_player).cards
+    assert players_remaining_cards is not None
+    assert len(players_remaining_cards) == 12
+    assert first_play.card not in players_remaining_cards
 
 
 def test_rejects_illegal_calls(usual_setup):
