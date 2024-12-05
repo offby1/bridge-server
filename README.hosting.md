@@ -27,11 +27,19 @@ I'd feel a little better about their reverse proxy if they charged me money for 
 
 Something I read somewhere suggested that the reverse proxy is *not* doing crypto stuff, which is good -- that means it's not working as hard as I'd feared, and thus is likely to *keep* working :-)
 
-### digital ocean
+### ✘ digital ocean
+
+The signup process *looks* slick, but kept refusing to accept my SSH public key.  Finally I gave up and switched to "log in with a password" ... then found out that it had created *four* "droplets" and *four* postgres databases (which would charge me $80/month total) without telling me (i.e., my attempts to add my ssh public key might have succeeded even though the UI said they'd fail?). Overwhelmingly untrustworthy.  I had to spend a fair amount of time individually deleting the droplets and databases, and shutting down my account.
+
+I opened [a ticket](https://cloudsupport.digitalocean.com/s/case/500QP00000SwqJ3YAJ/please-delete-my-account-asap) begging them to delete my account.  Now I'm 100% at their mercy (I cannot find a way to detach my billing info from the account; I used Google Pay)
+
+I got an email with some links; following one of them I was able to delete my account.  *Phew*
 
 [Use an Existing Domain](https://docs.digitalocean.com/products/networking/load-balancers/how-to/ssl-termination/#use-an-existing-domain) says
 
 > If you manage your domain with DigitalOcean DNS, you can choose the Let’s Encrypt option to create a new, fully-managed SSL certificate. We create and automatically renew this certificate for you.
+
+[This page full of marketing blather](https://www.digitalocean.com/products/app-platform) suggests they target Django.
 
 ### [AWS Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/Welcome.html)
 Clearly intends to do *something* like what I want.
