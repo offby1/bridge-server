@@ -207,6 +207,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": "DEBUG",
         },
+        "bridge": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
         "daphne.http_protocol": {
             "level": "INFO",
         },
