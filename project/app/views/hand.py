@@ -565,9 +565,15 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     if not _player_can_view_hand(request, hand):
         return HttpResponseForbidden()
 
+    assert request.user.player is not None
+
     # Note that this response doesn't contain the players' holdings, which is good, since otherwise the viewer could cheat!
     return HttpResponse(
-        json.dumps(hand.get_xscript().serializable()),
+        json.dumps(
+            hand.get_xscript()
+            .as_viewed_by(request.user.player.libraryThing(hand=hand))
+            .serializable()
+        ),
         headers={"Content-Type": "text/json"},
     )
 
