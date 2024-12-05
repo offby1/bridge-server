@@ -514,7 +514,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
-def _player_can_view_hand(request: HttpRequest, hand: Hand) -> bool:
+def _player_who_can_view_hand(request: HttpRequest, hand: Hand) -> Player | None:
     """Allows either cookie-based auth, which is what most Django web pages use; *or* HTTP Basic Auth, which is what
     machine clients use.
 
@@ -524,55 +524,52 @@ def _player_can_view_hand(request: HttpRequest, hand: Hand) -> bool:
         player = getattr(request.user, "player", None)
         if player is not None:
             if player in hand.players_by_direction.values():
-                return True
+                return player
 
             logger.debug(f"{player=} not in {hand.players_by_direction.values()=}")
 
     if "HTTP_AUTHORIZATION" not in request.META:
         logger.debug("HTTP_AUTHORIZATION not present in header")
-        return False
+        return None
 
     auth = request.META["HTTP_AUTHORIZATION"].split()
     if len(auth) != 2:
         logger.debug("HTTP_AUTHORIZATION doesn't have exactly one colon; outta here")
-        return False
+        return None
 
     if auth[0].lower() != "basic":
         logger.debug("First field of HTTP_AUTHORIZATION isn't 'basic'; outta here")
-        return False
+        return None
 
     uname, passwd = base64.b64decode(auth[1]).decode("utf-8").split(":", 1)
     user = django.contrib.auth.authenticate(username=uname, password=passwd)
     if user is None:
         logger.debug("authenticating %s got us nuttin'; outta here", uname)
-        return False
+        return None
 
     if not user.is_active:
         logger.debug("User %s isn't active; outta here", user)
-        return False
+        return None
 
     player = Player.objects.filter(user=user).first()
     if player is None:
         logger.debug("No player corresponds to user %s; outta here", user)
-        return False
+        return None
 
-    return player in hand.players_by_direction.values()
+    if player in hand.players_by_direction.values():
+        return player
+
+    return None
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if not _player_can_view_hand(request, hand):
+    if (player := _player_who_can_view_hand(request, hand)) is None:
         return HttpResponseForbidden()
 
-    assert request.user.player is not None
-
     return HttpResponse(
-        json.dumps(
-            hand.get_xscript()
-            .as_viewed_by(request.user.player.libraryThing(hand=hand))
-            .serializable()
-        ),
+        json.dumps(hand.get_xscript().as_viewed_by(player.libraryThing(hand=hand)).serializable()),
         headers={"Content-Type": "text/json"},
     )
 
@@ -611,7 +608,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 def hand_xscript_updates_view(request, pk: int, calls: int, plays: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if not _player_can_view_hand(request, hand):
+    if not _player_who_can_view_hand(request, hand):
         return HttpResponseForbidden()
 
     whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
