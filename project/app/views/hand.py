@@ -567,7 +567,6 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     assert request.user.player is not None
 
-    # Note that this response doesn't contain the players' holdings, which is good, since otherwise the viewer could cheat!
     return HttpResponse(
         json.dumps(
             hand.get_xscript()
