@@ -2,6 +2,11 @@
 
 ## Getting prerequistes &c
 
+For Ubuntu "24.10 (Oracular Oriole)", this gets everything except "just" (for which, see the next section):
+`$ sudo apt install git python3-poetry docker-compose-v2`
+... somehow add your userID to the "docker" group, then log out and log back in (hint: `sudo vigr`)
+`$ (d=~/.config/info.offby1.bridge; mkdir -vp ${d} && echo "yadda yadda whatever" > "${d}/django_secret_key")`
+
 ### just
 - $ `curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin`
   $ `PATH=$PATH:$HOME/.local/bin`
