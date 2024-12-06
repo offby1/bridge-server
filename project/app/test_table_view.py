@@ -60,9 +60,7 @@ def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
 
     # Make the opening lead
     t1.current_hand.add_play_from_player(
-        player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing(
-            hand=t1.current_hand
-        ),
+        player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 
@@ -140,9 +138,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
 
     # Make the opening lead
     t.current_hand.add_play_from_player(
-        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing(
-            hand=t.current_hand
-        ),
+        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 

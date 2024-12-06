@@ -35,20 +35,20 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     declarer = h.declarer
     assert declarer is not None
     first_players_seat = declarer.seat.lho()
-    first_player = h.players_by_direction[first_players_seat.value].libraryThing(hand=h)
-    first_players_cards = h.board.cards_for_direction(declarer.seat.lho().value)
+    first_player = h.players_by_direction[first_players_seat.value]
+    first_players_cards = first_player.dealt_cards()
     print(f"{first_players_cards=}")
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player, card=first_card)
+    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
     assert len(h.get_xscript().tricks) == 1
     first_trick = h.get_xscript().tricks[0]
     first_play = first_trick.plays[0]
     assert first_play.card == first_card
 
     # I don't check that the two player's *hands* are equal because the library is stupid
-    assert first_play.seat == first_player.seat
-    players_remaining_cards = h.players_remaining_cards(player=first_player).cards
+    assert first_play.seat == first_player.libraryThing().seat
+    players_remaining_cards = h.players_remaining_cards(player=first_player.libraryThing()).cards
     assert players_remaining_cards is not None
     assert len(players_remaining_cards) == 12
     assert first_play.card not in players_remaining_cards
@@ -105,7 +105,7 @@ def test_cards_by_player(usual_setup) -> None:
     assert len(before) == 13  # just checkin' :-)
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
-    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
+    h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
 
     after = set(h.current_cards_by_seat()[libSeat.EAST])
     assert before - after == {diamond_two}
@@ -227,25 +227,21 @@ def test_current_trick(usual_setup) -> None:
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing(
-        hand=t.current_hand
-    )
-    first_players_cards = first_player.hand.cards
+    first_player = t.current_hand.players_by_direction[first_players_seat.value]
+    first_players_cards = first_player.dealt_cards()
 
-    second_player = t.current_hand.players_by_direction[
-        first_players_seat.lho().value
-    ].libraryThing(hand=t.current_hand)
-    second_players_cards = second_player.hand.cards
+    second_player = t.current_hand.players_by_direction[first_players_seat.lho().value]
+    second_players_cards = second_player.dealt_cards()
 
     first_card = first_players_cards[0]
-    t.current_hand.add_play_from_player(player=first_player, card=first_card)
+    t.current_hand.add_play_from_player(player=first_player.libraryThing(), card=first_card)
 
     assert len(t.current_hand.current_trick) == 1
     tt = t.current_hand.current_trick[-1]
     assert tt.card == first_card
 
     second_card = second_players_cards[0]
-    t.current_hand.add_play_from_player(player=second_player, card=second_card)
+    t.current_hand.add_play_from_player(player=second_player.libraryThing(), card=second_card)
 
     assert len(t.current_hand.current_trick) == 2
     tt = t.current_hand.current_trick[-1]

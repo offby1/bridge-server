@@ -112,7 +112,7 @@ description = ""
 optional = false
 python-versions = ">=3.8"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 colorama = "*"
@@ -120,8 +120,10 @@ more-itertools = "^10.5.0"
 tabulate = "*"
 
 [package.source]
-type = "directory"
-url = "../library"
+type = "git"
+url = "https://gitlab.com/offby1/bridge.git"
+reference = "5959e0b908b6dcbbdf50a72e98d49091637e2896"
+resolved_reference = "5959e0b908b6dcbbdf50a72e98d49091637e2896"
 
 [[package]]
 name = "brotli"
@@ -2262,4 +2264,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "73ded29dcced482c33c1a1b21e9755e8776003c17795405c40421093ea6c3d3a"
+content-hash = "26a6f44b059a23a6e7d38b319f2cc6703231996bb870c860eca9e294af0bb415"

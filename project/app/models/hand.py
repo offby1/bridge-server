@@ -228,12 +228,11 @@ class Hand(models.Model):
         rv: dict[libSeat, libPlayer] = {}
         seats = self.table.seats
         for direction_int in self.board.hand_strings_by_direction:
-            lib_hand = libHand(cards=self.board.cards_for_direction(direction_int))
             lib_seat = libSeat(direction_int)
             seat = seats.filter(direction=direction_int).first()
             assert seat is not None
             name = seat.player_name
-            rv[lib_seat] = libPlayer(seat=lib_seat, hand=lib_hand, name=name)
+            rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
         return rv
 
     @cached_property
@@ -253,6 +252,10 @@ class Hand(models.Model):
         if not hasattr(self, "_xscript"):
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
+            dealt_cards_by_seat = {
+                libSeat(direction): self.board.cards_for_direction(direction)
+                for direction in (1, 2, 3, 4)
+            }
 
             for player, call in calls_starting_with(0):
                 auction.append_located_call(player=player, call=call)
@@ -262,6 +265,7 @@ class Hand(models.Model):
                 auction=auction,
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
+                dealt_cards_by_seat=dealt_cards_by_seat,
             )
 
         num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
@@ -406,8 +410,9 @@ class Hand(models.Model):
         if not self.auction.found_contract:
             return None
 
-        named_seat_who_may_play = self.get_xscript().named_seats[0]
-        return Player.objects.get_by_name(named_seat_who_may_play.name)
+        seat_who_may_play = self.get_xscript().next_seat_to_play()
+        pbs = self.libPlayers_by_seat
+        return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:
         modelPlayer = self.players_by_direction[seat.value]

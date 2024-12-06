@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import bridge.auction
+import bridge.card
 import bridge.seat
 import bridge.table
 from django.contrib import admin, auth
@@ -102,19 +103,14 @@ class Player(models.Model):
             my_seats.exists()
         ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
 
-    def libraryThing(self, *, hand: Hand) -> bridge.table.Player:
-        """
-        The returned object contains their hand *as dealt*, not necessarily their current holding.
-        """
+    def libraryThing(self) -> bridge.table.Player:
+        seat = self.current_seat
 
-        seat = Seat.objects.get(player=self, table=hand.table)
-
-        libHand = hand.libraryThing(seat)
+        assert seat is not None
 
         return bridge.table.Player(
             seat=seat.libraryThing,
             name=self.name,
-            hand=libHand,
         )
 
     @property
@@ -213,6 +209,11 @@ class Player(models.Model):
             return None
 
         return Seat.objects.filter(player=self).order_by("-id").first()
+
+    def dealt_cards(self) -> list[bridge.card.Card]:
+        seat = self.current_seat
+        assert seat is not None
+        return seat.table.current_hand.board.cards_for_direction(seat.direction)
 
     @property
     def hands_played(self) -> models.QuerySet:

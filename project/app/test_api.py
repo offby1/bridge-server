@@ -42,7 +42,7 @@ def test_card_visibility(usual_setup, rf) -> None:
     assert h is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
     diamond_two = Card(suit=Suit.DIAMONDS, rank=Rank(2))
-    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
+    h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
 
     # check south cards again; this time they should be visible.
     actual_serialized_board = json.loads(v(request, pk=expected_model_board.pk).render().content)

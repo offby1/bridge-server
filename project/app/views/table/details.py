@@ -85,9 +85,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     if hand.player_who_may_call is None:
         return HttpResponseForbidden(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 
-    from_whom = (
-        hand.player_who_may_call.libraryThing(hand=hand) if hand.open_access else who_clicked
-    )
+    from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
@@ -115,9 +113,9 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> Ht
     assert whos_asking is not None
     if (
         h.dummy is not None
-        and h.player_who_may_play.libraryThing(hand=h).seat == h.dummy.seat
+        and h.player_who_may_play.libraryThing().seat == h.dummy.seat
         and h.declarer is not None
-        and whos_asking.libraryThing(hand=h).seat == h.declarer.seat
+        and whos_asking.libraryThing().seat == h.declarer.seat
     ):
         pass
     elif not (h.open_access or whos_asking == h.player_who_may_play):
@@ -127,7 +125,7 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> Ht
 
     card = bridge.card.Card.deserialize(request.POST["play"])
     try:
-        h.add_play_from_player(player=seat.player.libraryThing(hand=h), card=card)
+        h.add_play_from_player(player=seat.player.libraryThing(), card=card)
     except app.models.hand.PlayError as e:
         return HttpResponseForbidden(str(e))
 

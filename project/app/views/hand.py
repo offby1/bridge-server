@@ -569,7 +569,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         return HttpResponseForbidden()
 
     return HttpResponse(
-        json.dumps(hand.get_xscript().as_viewed_by(player.libraryThing(hand=hand)).serializable()),
+        json.dumps(hand.get_xscript().as_viewed_by(player.libraryThing()).serializable()),
         headers={"Content-Type": "text/json"},
     )
 
