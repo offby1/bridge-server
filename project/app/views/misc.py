@@ -57,7 +57,6 @@ def player_who_can_view_hand(
     machine clients use.
 
     """
-    logger.debug(f"{request.user=} {request.user.is_authenticated=}")
     if request.user.is_authenticated:
         player = getattr(request.user, "player", None)
         if player is not None:
