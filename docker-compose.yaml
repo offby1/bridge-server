@@ -15,8 +15,6 @@ services:
         condition: service_completed_successfully
       django-collected-static:
         condition: service_completed_successfully
-      redis:
-        condition: service_started
     environment:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
@@ -56,7 +54,6 @@ services:
     ports: []
     depends_on:
       - django
-      - redis
 
   postgres:
     image: postgres:17
@@ -82,11 +79,6 @@ services:
       # stopping after 10 seconds, or if the test succeeds, whichever comes first.
       start_period: 10s
       start_interval: 1s
-
-  redis:
-    image: redis:6
-    ports:
-      - "6379:6379"
 
 secrets:
   django_secret:

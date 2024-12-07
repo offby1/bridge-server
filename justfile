@@ -29,8 +29,11 @@ die-if-poetry-active:
     fi
 
 [group('virtualenv')]
-poetry-install: die-if-poetry-active
+lock: die-if-poetry-active
     poetry lock --no-update
+
+[group('virtualenv')]
+poetry-install: die-if-poetry-active lock
     poetry install
 
 mypy: poetry-install
@@ -48,7 +51,7 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-start redis
+all-but-django-prep: version-file pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
