@@ -69,7 +69,7 @@ migrate: makemigrations (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: test django-superuser migrate
+runme *options: t django-superuser migrate
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
