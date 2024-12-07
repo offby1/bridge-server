@@ -227,7 +227,12 @@ def by_name_view(request: HttpRequest, name: str) -> HttpResponse:
     if p is None:
         return HttpResponseNotFound()
 
-    payload = {"pk": p.pk, "current_table_pk": p.current_table_pk(), "name": name}
+    payload = {
+        "pk": p.pk,
+        "current_table_pk": p.current_table_pk(),
+        "current_seat_pk": p.current_seat.pk,
+        "name": name,
+    }
 
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
