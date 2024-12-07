@@ -20,12 +20,18 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 import app.models
 from app.models.utils import assert_type
-from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+from app.views.misc import (
+    AuthedHttpRequest,
+    HttpRequest,
+    logged_in_as_player_required,
+    player_who_can_view_hand,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,17 +74,19 @@ def poke_de_bot(request):
     return HttpResponse("Pokey enough for ya??")
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
-@logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
-    assert_type(request.user.player, app.models.Player)
-    assert request.user is not None
-    assert request.user.player is not None
-
+def call_post_view(request: HttpRequest, hand_pk: str) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
+    if not (player := player_who_can_view_hand(request, hand)):
+        return HttpResponseForbidden()
+
+    assert_type(player, app.models.Player)
+    assert player is not None
+
     try:
-        who_clicked = request.user.player.libraryThing(hand=hand)  # type: ignore
+        who_clicked = player.libraryThing()
     except app.models.PlayerException as e:
         return HttpResponseForbidden(str(e))
 
@@ -101,31 +109,36 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     return HttpResponse()
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
-@logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
-    seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
-    whos_asking = request.user.player
-    h = get_object_or_404(app.models.Hand, pk=hand_pk)
+def play_post_view(request: HttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
-    if h.player_who_may_play is None:
+    if not (who_clicked := player_who_can_view_hand(request, hand)):
+        return HttpResponseForbidden()
+
+    if hand.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
-    assert whos_asking is not None
+
+    seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
+
+    assert who_clicked is not None
+
     if (
-        h.dummy is not None
-        and h.player_who_may_play.libraryThing().seat == h.dummy.seat
-        and h.declarer is not None
-        and whos_asking.libraryThing().seat == h.declarer.seat
+        hand.dummy is not None
+        and hand.player_who_may_play.libraryThing().seat == hand.dummy.seat
+        and hand.declarer is not None
+        and who_clicked.libraryThing().seat == hand.declarer.seat
     ):
         pass
-    elif not (h.open_access or whos_asking == h.player_who_may_play):
-        msg = f"Hand {h.pk} says: Hey! {whos_asking} can't play now; only {h.player_who_may_play} can; {h.open_access=}"
+    elif not (hand.open_access or who_clicked == hand.player_who_may_play):
+        msg = f"Hand {hand.pk} says: Hey! {who_clicked} can't play now; only {hand.player_who_may_play} can; {hand.open_access=}"
         logger.debug("%s", msg)
         return HttpResponseForbidden(msg)
 
-    card = bridge.card.Card.deserialize(request.POST["play"])
+    card = bridge.card.Card.deserialize(request.POST["card"])
     try:
-        h.add_play_from_player(player=seat.player.libraryThing(), card=card)
+        hand.add_play_from_player(player=seat.player.libraryThing(), card=card)
     except app.models.hand.PlayError as e:
         return HttpResponseForbidden(str(e))
 
