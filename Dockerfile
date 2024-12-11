@@ -13,14 +13,16 @@ RUN poetry install
 FROM python AS app
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
-  libpq5 \
+  daemontools \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=poetry-install /bridge/ /bridge/
 COPY /project /bridge/project/
-WORKDIR /bridge/project
-ENV PGHOST=postgres
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
-CMD ["bash", "-c", "poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application --log-fmt=\"%(asctime)sZ %(levelname)s %(name)s %(filename)s %(funcName)s %(message)s\""]
+COPY /start-daphne.sh /service/daphne/run
+
+WORKDIR /bridge/project
+
+CMD ["bash", "-c", "cd /service && svscan"]
