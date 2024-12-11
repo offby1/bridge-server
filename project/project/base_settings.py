@@ -29,17 +29,31 @@ APP_NAME = "info.offby1.bridge"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+
+def from_env_var_file(env_varname: str, fallback_filename: str) -> str | None:
+    filename = os.environ.get(
+        env_varname,
+        fallback_filename,
+    )
+
+    if filename is None:
+        return None
+
+    with open(filename) as inf:
+        return inf.read()
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY: str
-DJANGO_SECRET_FILE = os.environ.get(
+SECRET_KEY = from_env_var_file(
     "DJANGO_SECRET_FILE",
     # This default works on my laptop, and nowhere else; it's here just to make it easier for me to run Visual Studio Code.
     "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_secret_key",
 )
 
-if DJANGO_SECRET_FILE is not None:
-    with open(DJANGO_SECRET_FILE) as inf:
-        SECRET_KEY = inf.read()
+API_SKELETON_KEY = from_env_var_file(
+    "DJANGO_SKELETON_KEY_FILE",
+    "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_skeleton_key",
+)
 
 ALLOWED_HOSTS = [
     ".orb.local",
@@ -110,6 +124,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "app.auth.backends.SkeletonKeyBackend",
+]
+
 
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 

@@ -17,6 +17,7 @@ services:
         condition: service_completed_successfully
     environment:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
+      DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
       HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
       PGHOST: postgres
       PGPASS: postgres
@@ -24,6 +25,7 @@ services:
       - "9000:9000"
     secrets:
       - django_secret
+      - django_skeleton_key
     volumes:
       - django_static_root:/bridge/project/static_root
 
@@ -83,3 +85,5 @@ services:
 secrets:
   django_secret:
     environment: "DJANGO_SECRET_KEY"
+  django_skeleton_key:
+    environment: "DJANGO_SKELETON_KEY"

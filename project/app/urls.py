@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import home_view, lobby, misc, player, signup_view, table
+from .views import home_view, lobby, player, signup_view, table
 from .views.board import board_archive_view, board_list_view
 from .views.hand import (
     auction_partial_view,
@@ -19,7 +19,6 @@ app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
-    path("basic-auth-login/", misc.basic_auth_login_view, name="basic-auth-login"),
     path("board/", board_list_view, name="board-list"),
     path("board/<pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),

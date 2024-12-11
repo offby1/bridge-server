@@ -5,6 +5,7 @@ import 'postgres.just'
 # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
 
 export DJANGO_SECRET_FILE := config_directory() / "info.offby1.bridge/django_secret_key"
+export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/django_skeleton_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 
@@ -16,6 +17,16 @@ export POETRY_VIRTUALENVS_IN_PROJECT := "true"
 [private]
 default:
     just --list
+
+[private]
+[script('bash')]
+create-skeleton-key:
+    set -euxo pipefail
+    touch "{{ DJANGO_SKELETON_KEY_FILE }}"
+    if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
+    then
+    cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
+    fi
 
 [private]
 [script('bash')]
@@ -72,7 +83,7 @@ migrate: makemigrations (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: t django-superuser migrate
+runme *options: t django-superuser migrate create-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
@@ -83,7 +94,7 @@ alias runserver := runme
 # For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate collectstatic
+daphne: test django-superuser migrate collectstatic create-skeleton-key
     set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
@@ -145,10 +156,11 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb poetry-install
+dcu *options: version-file orb poetry-install create-skeleton-key
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x

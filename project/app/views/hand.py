@@ -24,7 +24,7 @@ from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.utils import assert_type
-from app.views.misc import AuthedHttpRequest, logged_in_as_player_required, player_who_can_view_hand
+from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -511,10 +511,14 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
+@logged_in_as_player_required(redirect=False)
 def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if (player := player_who_can_view_hand(request, hand)) is None:
+    player = request.user.player
+    assert player is not None
+
+    if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
     return HttpResponse(
@@ -554,10 +558,14 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     return render(request, "hand_list.html", context=context)
 
 
+@logged_in_as_player_required(redirect=False)
 def hand_xscript_updates_view(request, pk: int, calls: int, plays: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if not player_who_can_view_hand(request, hand):
+    player = request.user.player
+    assert player is not None
+
+    if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
     whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
