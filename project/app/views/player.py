@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import pathlib
+import subprocess
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
@@ -212,12 +214,52 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
     )
 
 
+# https://cr.yp.to/daemontools/svc.html
+def control_bot_for_player(player: Player):
+    def svc(flag: str) -> None:
+        # might not want to block here, who knows how long it'll take
+        subprocess.run(
+            [
+                "svc",
+                flag,
+                str(player.pk),
+            ],
+            cwd="/service",
+            check=False,
+        )
+
+    if player.allow_bot_to_play_for_me:
+        shell_script_text = """#!/bin/bash
+
+# wrapper script for [daemontools](https://cr.yp.to/daemontools/)
+
+set -euxo pipefail
+
+cd /api-bot
+
+exec poetry run  python3 apibot.py
+"""
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(player.pk))
+        run_file = run_dir / "run.notyet"
+        run_file.parent.mkdir(parents=True, exist_ok=True)
+        run_file.write_text(shell_script_text)
+        run_file.chmod(0o755)
+        run_file.rename(run_dir / "run")
+
+        # up, then continue.  Neither alone seems to suffice in every case.
+        for flag in ("-u", "-c"):
+            svc(flag)
+    else:
+        svc("-p")
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
     playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
     playa.save()
+    control_bot_for_player(playa)
     return HttpResponse(f"""Hello, {playa.as_link()}""")
 
 
