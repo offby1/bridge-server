@@ -28,7 +28,6 @@ print(f"prod_settings: {HOST_HOSTNAME=}")
 # "staging": running on my laptop with docker
 # "production": running on my EC2 box or some other cloud server, with docker
 DEPLOYMENT_ENVIRONMENT = "production" if HOST_HOSTNAME == "ip-10-0-0-174" else "staging"
-SECURE_SSL_REDIRECT = True
 
 sentry_sdk.init(  # type: ignore
     dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
