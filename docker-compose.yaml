@@ -5,8 +5,8 @@ volumes:
 services:
   django: &django
     build:
-      context: .
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./server/Dockerfile
       labels:
          info.offby1.bridge.git-version: ${GIT_VERSION:-}
 

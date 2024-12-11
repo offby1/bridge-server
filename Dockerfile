@@ -6,7 +6,7 @@ RUN pip install -U pip setuptools; pip install poetry
 
 FROM python AS poetry-install
 
-COPY poetry.lock pyproject.toml /bridge/
+COPY server/poetry.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
 RUN poetry install
 
@@ -18,10 +18,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=poetry-install /bridge/ /bridge/
-COPY /project /bridge/project/
+COPY /server/project /bridge/project/
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
-COPY /start-daphne.sh /service/daphne/run
+COPY /server/start-daphne.sh /service/daphne/run
 
 WORKDIR /bridge/project
 
