@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import json
+import logging
 import pathlib
 import subprocess
 
@@ -19,6 +21,8 @@ from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 
 from .misc import AuthedHttpRequest, logged_in_as_player_required
+
+logger = logging.getLogger(__name__)
 
 
 def player_detail_endpoint(player):
@@ -263,17 +267,24 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     return HttpResponse(f"""Hello, {playa.as_link()}""")
 
 
-def by_name_view(request: HttpRequest, name: str) -> HttpResponse:
-    p = Player.objects.filter(user__username=name).first()
+def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
+    p = Player.objects.filter(user__username=name_or_pk).first()
 
     if p is None:
-        return HttpResponseNotFound()
+        logger.debug(f"Nuttin' from user__username={name_or_pk=}")
+
+        with contextlib.suppress(ValueError):
+            p = Player.objects.filter(pk=name_or_pk).first()
+
+        if p is None:
+            logger.debug(f"Nuttin' from pk={name_or_pk=}")
+            return HttpResponseNotFound()
 
     payload = {
         "pk": p.pk,
         "current_table_pk": p.current_table_pk(),
         "current_seat_pk": p.current_seat.pk,
-        "name": name,
+        "name": p.name,
     }
 
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
