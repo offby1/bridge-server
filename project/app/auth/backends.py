@@ -17,7 +17,7 @@ class SkeletonKeyBackend(BaseBackend):
         if u is None:
             logger.warning("No user named %s; returning None", username)
 
-        p = credentials.get("password")
+        p = credentials.get("password").rstrip()
         if p != settings.API_SKELETON_KEY:
             logger.warning("Password isn't the sekret API_SKELETON_KEY; returning None")
             return None
