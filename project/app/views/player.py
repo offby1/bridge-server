@@ -220,19 +220,25 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
 
 # https://cr.yp.to/daemontools/svc.html
 def control_bot_for_player(player: Player):
+    def run_in_slash_service(command: list[str]) -> None:
+        subprocess.run(
+            command,
+            cwd="/service",
+            check=True,
+            capture_output=True,
+        )
+
     def svc(flag: str) -> None:
         # might not want to block here, who knows how long it'll take
-        subprocess.run(
+        run_in_slash_service(
             [
                 "svc",
                 flag,
                 str(player.pk),
-            ],
-            cwd="/service",
-            check=False,
+            ]
         )
 
-    if player.allow_bot_to_play_for_me:
+    if player.allow_bot_to_play_for_me and player.currently_seated:
         shell_script_text = """#!/bin/bash
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
@@ -246,9 +252,10 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file.parent.mkdir(parents=True, exist_ok=True)
         run_file.write_text(shell_script_text)
         run_file.chmod(0o755)
-        run_file.rename(run_dir / "run")
+        run_file = run_file.rename(run_dir / "run")
 
         # up, then continue.  Neither alone seems to suffice in every case.
+        # Might need to wait until svscan starts the service :-|
         for flag in ("-u", "-c"):
             svc(flag)
     else:
@@ -281,7 +288,7 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     payload = {
         "pk": p.pk,
         "current_table_pk": p.current_table_pk(),
-        "current_seat_pk": p.current_seat.pk,
+        "current_seat_pk": p.current_seat.pk if p.current_seat is not None else None,
         "name": p.name,
     }
 
