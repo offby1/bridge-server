@@ -239,9 +239,7 @@ def control_bot_for_player(player: Player):
 
 set -euxo pipefail
 
-cd /api-bot
-
-exec poetry run  python3 apibot.py
+exec /api-bot/.venv/bin/python /api-bot/apibot.py
 """
         run_dir = pathlib.Path("/service") / pathlib.Path(str(player.pk))
         run_file = run_dir / "run.notyet"
