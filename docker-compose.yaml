@@ -26,6 +26,7 @@ services:
       - "9000:9000"
     secrets:
       - django_secret
+    init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
 
