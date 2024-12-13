@@ -13,6 +13,8 @@ IN PROGRESS:
   * maybe clean up log messages about "cannot control service 1 because no such directory", when disabling the bot and the directory hasn't yet been created
 STILL TODO:
 
+* Investigate https://django-request-id.readthedocs.io/en/latest/. Looks slick, and I always want this.
+
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
 
   Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?

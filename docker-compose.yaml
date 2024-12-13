@@ -26,6 +26,7 @@ services:
     secrets:
       - django_secret
       - django_skeleton_key
+    init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
 
