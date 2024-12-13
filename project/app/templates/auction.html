@@ -1,34 +1,34 @@
 {% load fastdev %}
-{% ifexists show_auction_history %}
-<div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
-    <table class="table">
-        <th>
-            <tr>
-                <td>
-                    <i>West</i>
-                </td>
-                <td>
-                    <i>North</i>
-                </td>
-                <td>
-                    <i>East</i>
-                </td>
-                <td>
-                    <i>South</i>
-                </td>
-            </tr>
-        </th>
-        <tbody>
-            {% for row in hand.auction.fancy_HTML_display %}
+{% if show_auction_history %}
+    <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
+        <table class="table">
+            <th>
                 <tr>
-                    {% for call in row %}
-                        <td>
-                            {% if call is not None %}{{ call|safe }}{% endif %}
-                        </td>
-                    {% endfor %}
+                    <td>
+                        <i>West</i>
+                    </td>
+                    <td>
+                        <i>North</i>
+                    </td>
+                    <td>
+                        <i>East</i>
+                    </td>
+                    <td>
+                        <i>South</i>
+                    </td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endifexists %}
+            </th>
+            <tbody>
+                {% for row in hand.auction.fancy_HTML_display %}
+                    <tr>
+                        {% for call in row %}
+                            <td>
+                                {% if call is not None %}{{ call|safe }}{% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
