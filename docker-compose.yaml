@@ -11,7 +11,7 @@ services:
          info.offby1.bridge.git-version: ${GIT_VERSION:-}
 
     depends_on:
-      django-migrated:
+      populated-with-fake-data:
         condition: service_completed_successfully
       django-collected-static:
         condition: service_completed_successfully
@@ -55,7 +55,8 @@ services:
     restart: "no"
     ports: []
     depends_on:
-      - django
+      django-migrated:
+        condition: service_completed_successfully
 
   postgres:
     image: postgres:17
