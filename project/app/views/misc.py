@@ -52,9 +52,7 @@ def authenticate_from_basic_auth(request: AuthedHttpRequest) -> AbstractBaseUser
         logger.info(f"{decoded[0:100]=} => {e}")
         return None
 
-    rv = authenticate(request, username=u, password=p)
-    logger.debug(f"{u=} **** => {rv=}")
-    return rv
+    return authenticate(request, username=u, password=p)
 
 
 # Set redirect to False for AJAX endoints.
@@ -95,11 +93,9 @@ def logged_in_as_player_required(*, redirect=True):
 def get_credentials_from_post_body(request: HttpRequest) -> tuple[str, str] | None:
     username = request.POST.get("username")
     if username is None:
-        logger.debug("No username in POST body")
         return None
     password = request.POST.get("password")
     if password is None:
-        logger.debug("No password in POST body")
         return None
 
     logger.debug("Found %s, %s in POST body", username, "shush it's a secret")

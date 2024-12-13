@@ -22,5 +22,4 @@ class SkeletonKeyBackend(BaseBackend):
             logger.warning("Password isn't the sekret API_SKELETON_KEY; returning None")
             return None
 
-        logger.info("Yay, logging in %s with sekret API_SKELETON_KEY", u)
         return u
