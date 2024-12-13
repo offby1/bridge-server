@@ -14,9 +14,10 @@ package-mode = false
 python = ">=3.10,<4.0"
 
 django = "^5.0.1"
+django-debug-toolbar = "^4.4.6"
+django-extensions = "^3.2.3"
 faker = "^26.0.0"
 more-itertools = "^10.3.0"
-pytest-django = "^4.7.0"
 tqdm = "^4.66.4"
 bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "2b0e778bf3cfb32a3e31ffbba48033b7cd1ecadd" }
 #bridge = {path = "../library", develop = true}
@@ -37,8 +38,6 @@ psycopg = {extras = ["binary"], version = "^3.2.3"}
 
 
 [tool.poetry.group.dev.dependencies]
-django-extensions = "^3.2.3"
-django-debug-toolbar = "^4.4.6"
 ipython = "^8.26.0"
 django-coverage-plugin = "^3.1.0"
 django-types = "^0.19.1"
@@ -48,6 +47,7 @@ python-lsp-server = {extras = ["autopep8", "flake8", "mccabe", "pyflakes", "pyli
 logging-tree = "^1.10"
 ruff = "*"
 ipdb = "^0.13.13"
+pytest-django = "^4.7.0"
 pytest-profiling = "^1.7.0"
 pylsp-mypy = "^0.6.9"
 python-lsp-black = "^2.0.0"

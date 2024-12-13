@@ -31,7 +31,7 @@ die-if-poetry-active:
 [group('virtualenv')]
 poetry-install: die-if-poetry-active
     poetry lock --no-update
-    poetry install
+    poetry install --without=dev
 
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/

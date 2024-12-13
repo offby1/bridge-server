@@ -8,7 +8,7 @@ FROM python AS poetry-install
 
 COPY poetry.lock pyproject.toml /bridge/
 WORKDIR /bridge
-RUN poetry install
+RUN poetry install --without=dev
 
 FROM python AS app
 
