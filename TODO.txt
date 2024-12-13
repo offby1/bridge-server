@@ -8,9 +8,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-  TODOs for this item:
-  * something -- probably a one-shot docker container -- to start bots according to "Player.allow_bot_to_play_for_me" when the server comes up
-  * maybe clean up log messages about "cannot control service 1 because no such directory", when disabling the bot and the directory hasn't yet been created
 STILL TODO:
 
 * Investigate https://django-request-id.readthedocs.io/en/latest/. Looks slick, and I always want this.
