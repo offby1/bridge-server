@@ -8,7 +8,7 @@ FROM python AS poetry-install-django
 
 COPY server/poetry.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
-RUN poetry install
+RUN poetry install --without=dev
 
 FROM python AS poetry-install-apibot
 

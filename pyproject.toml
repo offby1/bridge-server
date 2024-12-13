@@ -14,9 +14,10 @@ package-mode = false
 python = ">=3.10,<4.0"
 
 django = "^5.0.1"
+django-debug-toolbar = "^4.4.6"
+django-extensions = "^3.2.3"
 faker = "^26.0.0"
 more-itertools = "^10.3.0"
-pytest-django = "^4.7.0"
 tqdm = "^4.66.4"
 bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "16a9783982ce8ef7bbfc24ecc7474b2f4270269a" }
 #bridge = {path = "../library", develop = true}
@@ -36,18 +37,22 @@ psycopg = {extras = ["binary"], version = "^3.2.3"}
 
 
 [tool.poetry.group.dev.dependencies]
-django-extensions = "^3.2.3"
-django-debug-toolbar = "^4.4.6"
 ipython = "^8.26.0"
 django-coverage-plugin = "^3.1.0"
 django-types = "^0.19.1"
 mypy = "^1.11.2"
 types-tqdm = "^4.66.0.20240417"
-python-lsp-server = "^1.12.0"
+python-lsp-server = {extras = ["autopep8", "flake8", "mccabe", "pyflakes", "pylint", "rope", "test", "websockets", "yapf"], version = "*"}
 logging-tree = "^1.10"
-ruff = "^0.6.9"
+ruff = "*"
 ipdb = "^0.13.13"
+pytest-django = "^4.7.0"
 pytest-profiling = "^1.7.0"
+pylsp-mypy = "^0.6.9"
+python-lsp-black = "^2.0.0"
+pyls-memestra = "^0.0.16"
+pylsp-rope = "^0.1.17"
+python-lsp-ruff = "^2.2.2"
 
 [tool.pydocstyle]
 # Disable pydocstyle entirely.
