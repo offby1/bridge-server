@@ -44,11 +44,16 @@ django-coverage-plugin = "^3.1.0"
 django-types = "^0.19.1"
 mypy = "^1.11.2"
 types-tqdm = "^4.66.0.20240417"
-python-lsp-server = "^1.12.0"
+python-lsp-server = {extras = ["autopep8", "flake8", "mccabe", "pyflakes", "pylint", "rope", "test", "websockets", "yapf"], version = "*"}
 logging-tree = "^1.10"
-ruff = "^0.6.9"
+ruff = "*"
 ipdb = "^0.13.13"
 pytest-profiling = "^1.7.0"
+pylsp-mypy = "^0.6.9"
+python-lsp-black = "^2.0.0"
+pyls-memestra = "^0.0.16"
+pylsp-rope = "^0.1.17"
+python-lsp-ruff = "^2.2.2"
 
 [tool.pydocstyle]
 # Disable pydocstyle entirely.
