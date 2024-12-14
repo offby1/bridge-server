@@ -2,12 +2,14 @@
 
 Yes, I got <https://teensy.info> working on my own, but it was a pain in the ass.  And yes, I could probably more or less duplicate what it does.  But surely there's something easier and more out-of-the box out there somewhere?
 
-In particular, I'm grumpy about getting an SSL certificate and rigging up the HTTP reverse proxy to use it.  Surely there are hosting providers that
+In particular, I'm grumpy about getting an SSL/TLS certificate and rigging up the HTTP reverse proxy to use it.  Surely there are hosting providers that
 
 * make this easy
 * specialize in Django
 
 ## Random ideas
+
+- It might be that, if my web server is based on Twisted (as this server indeed is), all I need is to put a few magic characters on the command line, and the web server will magically grab certificates for me?  https://txacme.readthedocs.io/en/stable/using.html
 
 - Now that I've gotten this reasonably containerized, maybe I should read about those "run your container" services -- pretty sure AWS and Azure have those.  E.g., in a perfect world, I'd sign up for the service, they'd give me some sort of credential and URL; I'd type "docker context mumble something credential URL", and then just "docker compose up" should push the containers onto their hosting and Bob's my uncle.
 

@@ -10,7 +10,7 @@ IN PROGRESS:
 
 STILL TODO:
 
-* Investigate https://django-request-id.readthedocs.io/en/latest/. Looks slick, and I always want this.
+* Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
 
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
 
@@ -183,6 +183,13 @@ STILL TODO:
 
 
 DONE:
+* Take another crack at request IDs, using [this](https://github.com/dabapps/django-log-request-id) -- it appears very similar to django-request-id (middleware plus a log filter) but is not moribund, and [explicitly suppports ASGI](https://github.com/dabapps/django-log-request-id/issues/74) (which I suspect django-request-id does not).
+
+* Investigate https://django-request-id.readthedocs.io/en/latest/. Looks slick, and I always want this.
+  Couldn't get it to do anything, and it seems so old and unmaintained that I hesistate to hack on it.
+
+  Might not be hard to simply redo it -- all you need is a middleware and a logging filter, I think.
+
 * Consider speeding up test_table_view by using a Django fixture to install a completed hand, rather than building it up one call and one play at a time.
 
 * https://laptop.tail571dc2.ts.net/hand/?played_by=1 shows "Page 1 of 7" at the bottom ... but the "next" and "last" links don't include the `?played_by=1` query thing :-(

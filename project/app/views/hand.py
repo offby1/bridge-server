@@ -64,6 +64,7 @@ def _bidding_box_context_for_hand(request, hand):
         "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
         "display_bidding_box": display_bidding_box,
+        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
     }
 
 
