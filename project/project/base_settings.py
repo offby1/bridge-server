@@ -103,6 +103,7 @@ EVENTSTREAM_REDIS = {
 }
 
 MIDDLEWARE = [
+    "log_request_id.middleware.RequestIDMiddleware",
     "app.middleware.add_git_commit_hash.AddVersionHeaderMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -189,7 +190,7 @@ LOGGING = {
     "formatters": {
         "verbose": {
             # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
-            "format": "{asctime} {levelname:5} {filename}({lineno}) {funcName} {message}",
+            "format": "{asctime} {levelname:5} request_id={request_id} {filename}({lineno}) {funcName} {message}",
             "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             "style": "{",
         },
@@ -198,29 +199,27 @@ LOGGING = {
         "require_debug_true_or_environment_staging": {
             "()": "app.utils.log.RequireDebugTrueOrEnvironmentStaging",
         },
+        "request_id": {"()": "log_request_id.filters.RequestIDFilter"},
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
-            "filters": ["require_debug_true_or_environment_staging"],
+            "filters": ["require_debug_true_or_environment_staging", "request_id"],
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
     },
+    "root": {
+        "handlers": ["console"],
+    },
     "loggers": {
         "app": {
-            "handlers": ["console"],
             "level": "DEBUG",
         },
         "daphne.http_protocol": {
             "level": "INFO",
         },
-        "django": {
-            "handlers": ["console"],
-            "propagate": True,
-        },
         "django.channels.server": {
-            "handlers": ["console"],
             "level": "INFO",
         },
         "django_eventstream.views": {

@@ -1055,6 +1055,20 @@ six = ">=1.10,<2"
 Werkzeug = ">=1.0,<4"
 
 [[package]]
+name = "django-log-request-id"
+version = "2.1.0"
+description = "Django middleware and log filter to attach a unique ID to every log message generated as part of a request"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-log-request-id-2.1.0.tar.gz", hash = "sha256:b11fc821774b54b820ef2e732dbaa52304711de8d5c4f9031ca48578f6121ab6"},
+    {file = "django_log_request_id-2.1.0-py3-none-any.whl", hash = "sha256:c0793c030cfe9f673eff3f89667711f65c39509c016d85e436f9d48507ee778c"},
+]
+
+[package.dependencies]
+django = ">=1.8"
+
+[[package]]
 name = "django-template-partials"
 version = "24.4"
 description = "django-template-partials"
@@ -4303,4 +4317,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "c62295e4f2bbc6cff97a5d5079782e17703feb0050d5850dc009feab77fc23e7"
+content-hash = "745d2fcd6dba521206e9922ca3c51061c877dd53beed1e003eb286299a880b56"
