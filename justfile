@@ -45,7 +45,7 @@ lock: die-if-poetry-active
 
 [group('virtualenv')]
 poetry-install: die-if-poetry-active lock
-    poetry install --without=dev
+    poetry install
 
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
