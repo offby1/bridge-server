@@ -10,34 +10,6 @@ IN PROGRESS:
 
 STILL TODO:
 
-* generate_fake_data seems to add players and tables every time it runs:
-
-    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
-
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    2024-12-14T23:44:19+0000 DEBUG request_id=none hand.py(131) create Just created Hand 118: 0 calls; 0 plays; dealer is South
-    73 players at 17 tables.
-    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
-
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    2024-12-15T00:19:21+0000 DEBUG request_id=none hand.py(131) create Just created Hand 125: 0 calls; 0 plays; dealer is South
-    76 players at 18 tables.
-    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
-
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    2024-12-15T00:19:23+0000 DEBUG request_id=none hand.py(131) create Just created Hand 126: 0 calls; 0 plays; dealer is South
-    79 players at 19 tables.
-    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
-
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    players:   0%|          | 0/20 [00:00<?, ?p/s]
-    82 players at 19 tables.
-
-  It should instead merely *ensure* that the requested number of players (typically 40) exists, and do nothing if so.
-
 * Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
 
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
@@ -211,6 +183,34 @@ STILL TODO:
 
 
 DONE:
+* generate_fake_data seems to add players and tables every time it runs:
+
+    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
+
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    2024-12-14T23:44:19+0000 DEBUG request_id=none hand.py(131) create Just created Hand 118: 0 calls; 0 plays; dealer is South
+    73 players at 17 tables.
+    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
+
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    2024-12-15T00:19:21+0000 DEBUG request_id=none hand.py(131) create Just created Hand 125: 0 calls; 0 plays; dealer is South
+    76 players at 18 tables.
+    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
+
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    2024-12-15T00:19:23+0000 DEBUG request_id=none hand.py(131) create Just created Hand 126: 0 calls; 0 plays; dealer is South
+    79 players at 19 tables.
+    prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'
+
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    players:   0%|          | 0/20 [00:00<?, ?p/s]
+    82 players at 19 tables.
+
+  It should instead merely *ensure* that the requested number of players (typically 40) exists, and do nothing if so.
+
 * Add "tournaments" to the list of links in `app/templates/base.html`.  It'd just go to `/board/` with a query string narrowing the board list to that particular tournament.
 
 * Take another crack at request IDs, using [this](https://github.com/dabapps/django-log-request-id) -- it appears very similar to django-request-id (middleware plus a log filter) but is not moribund, and [explicitly suppports ASGI](https://github.com/dabapps/django-log-request-id/issues/74) (which I suspect django-request-id does not).

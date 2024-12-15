@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tqdm
 from app.models import Player, Table
 from django.contrib.auth.hashers import make_password
@@ -7,24 +9,24 @@ from faker import Faker
 
 
 class Command(BaseCommand):
-    def __init__(self):
+    def __init__(self) -> None:
         # Use the same password for everybody, to speed things up :-)
         self.everybodys_password = make_password(".")
         super().__init__()
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--players",
             default=40,
             type=int,
         )
 
-    def maybe_create_player(self, username: str) -> None:
+    def maybe_create_player(self, username: str) -> tuple[Player, bool]:
         user, _ = User.objects.get_or_create(
             username=username,
             defaults={"password": self.everybodys_password},
         )
-        Player.objects.get_or_create(
+        return Player.objects.get_or_create(
             user=user,
             allow_bot_to_play_for_me=True,
         )
@@ -86,9 +88,12 @@ class Command(BaseCommand):
         assert last_table is not None
 
         # Now create a couple of unseated players.
-        count_before = Player.objects.count()
-        while Player.objects.count() < count_before + 3:
-            self.maybe_create_player(fake.unique.first_name().lower())
+        while True:
+            count = Player.objects.filter(seat__isnull=True).count()
+            if count >= 3:
+                break
+            player, created = self.maybe_create_player(fake.unique.first_name().lower())
+            self.stdout.write(f"{player} {created=}")
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
