@@ -64,3 +64,12 @@ def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     }
 
     return TemplateResponse(request=request, template="board_list.html", context=context)
+
+
+@logged_in_as_player_required()
+def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
+    tournament_list = app.models.Tournament.objects.order_by("pk")
+
+    context = {"tournament_list": tournament_list}
+
+    return TemplateResponse(request=request, template="tournament_list.html", context=context)
