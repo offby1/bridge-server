@@ -49,7 +49,9 @@ def board_archive_view(request: AuthedHttpRequest, pk: int) -> TemplateResponse:
 @logged_in_as_player_required()
 def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     board_list = app.models.Board.objects.nicely_ordered().all()
-    paginator = Paginator(board_list, 16)
+    print(f"{request.GET=}")
+    per_page = request.GET.get("per_page", 16)
+    paginator = Paginator(board_list, per_page)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
