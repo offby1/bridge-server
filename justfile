@@ -40,11 +40,15 @@ die-if-poetry-active:
     fi
 
 [group('virtualenv')]
-lock: die-if-poetry-active
+lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
     poetry lock --no-update
 
 [group('virtualenv')]
-poetry-install: die-if-poetry-active lock
+poetry-install: poetry-install-no-dev
+    poetry install
+
+[group('virtualenv')]
+poetry-install-no-dev: die-if-poetry-active lock
     poetry install --without=dev
 
 mypy: poetry-install
