@@ -14,7 +14,7 @@
             {% for tournament in tournament_list %}
                 <tr>
                     <td>
-                        <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">{{ tournament }}</a>
+                        <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
                     </td>
                 </tr>
             {% endfor %}

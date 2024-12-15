@@ -52,7 +52,7 @@ def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     tournament = request.GET.get("tournament")
     if tournament is not None:
         board_list = board_list.filter(tournament=tournament)
-    print(f"{request.GET=}")
+
     per_page = request.GET.get("per_page", 16)
     paginator = Paginator(board_list, per_page)
     page_number = request.GET.get("page")
@@ -62,6 +62,8 @@ def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
         "page_obj": page_obj,
         "total_count": app.models.Board.objects.count(),
     }
+    if tournament is not None:
+        context |= {"tournament": tournament}
 
     return TemplateResponse(request=request, template="board_list.html", context=context)
 
