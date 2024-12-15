@@ -8,8 +8,6 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
-* Add "tournaments" to the list of links in `app/templates/base.html`.  It'd just go to `/board/` with a query string narrowing the board list to that particular tournament.
-
 STILL TODO:
 
 * generate_fake_data seems to add players and tables every time it runs:
@@ -213,6 +211,8 @@ STILL TODO:
 
 
 DONE:
+* Add "tournaments" to the list of links in `app/templates/base.html`.  It'd just go to `/board/` with a query string narrowing the board list to that particular tournament.
+
 * Take another crack at request IDs, using [this](https://github.com/dabapps/django-log-request-id) -- it appears very similar to django-request-id (middleware plus a log filter) but is not moribund, and [explicitly suppports ASGI](https://github.com/dabapps/django-log-request-id/issues/74) (which I suspect django-request-id does not).
 
 * Investigate https://django-request-id.readthedocs.io/en/latest/. Looks slick, and I always want this.
