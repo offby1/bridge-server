@@ -35,8 +35,6 @@ STILL TODO:
     2024-11-20T12:52:35+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 3, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 3, 'tempo_seconds': 1.0}, 'board': 3}, 'tempo_seconds': 1.0, 'time': 1732107155.066463}
     2024-11-20T12:56:36+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107396.893606}
 
-* Logged in as player 1, <https://erics-work-mbp.tail571dc2.ts.net/hand/?played_by=1> shows "Sorry, bob (bot-powered), but you have not completely played board Board #6 (tournament 1), so later d00d".  But when I click that link, it (correctly) shows me the hand in progress.
-
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
 * Also those events have zero auth -- anyone can receive any of them
@@ -183,6 +181,8 @@ STILL TODO:
 
 
 DONE:
+* Logged in as player 1, <https://laptop.tail571dc2.ts.net/hand/?played_by=1> shows "Sorry, bob (bot-powered), but you have not completely played board Board #6 (tournament 1), so later d00d".  But when I click that link, it (correctly) shows me the hand in progress.
+
 * generate_fake_data seems to add players and tables every time it runs:
 
     prod_settings: HOST_HOSTNAME='Erics-Work-MacBook-Pro.local'

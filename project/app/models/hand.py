@@ -584,6 +584,7 @@ class Hand(models.Model):
         if (
             self.board.what_can_they_see(player=as_viewed_by)
             != self.board.PlayerVisibility.everything
+            and as_viewed_by.name not in self.player_names
         ):
             return (
                 f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",

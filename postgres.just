@@ -35,6 +35,15 @@ backup: pg-start
 restore *options: drop pg-start
     docker compose exec --user postgres --no-TTY postgres psql bridge {{ options }}
 
+[group('postgres')]
+grab-prod-backups:
+    rsync --times --partial --progress --recursive --links teensy.info:/home/ubuntu/git-repos/me/bridge/server/*.sql .
+
+# Fetch, and restore from, the latest prod backup.
+[group('postgres')]
+r: grab-prod-backups
+    just restore < $(ls -t1 *.sql | head -1)
+
 alias stop := pg-stop
 
 [group('postgres')]
