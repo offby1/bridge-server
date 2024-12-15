@@ -48,8 +48,13 @@ def board_archive_view(request: AuthedHttpRequest, pk: int) -> TemplateResponse:
 
 @logged_in_as_player_required()
 def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
-    board_list = app.models.Board.objects.nicely_ordered().all()
-    paginator = Paginator(board_list, 16)
+    board_list = app.models.Board.objects.nicely_ordered()
+    tournament = request.GET.get("tournament")
+    if tournament is not None:
+        board_list = board_list.filter(tournament=tournament)
+    print(f"{request.GET=}")
+    per_page = request.GET.get("per_page", 16)
+    paginator = Paginator(board_list, per_page)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -59,3 +64,12 @@ def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     }
 
     return TemplateResponse(request=request, template="board_list.html", context=context)
+
+
+@logged_in_as_player_required()
+def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
+    tournament_list = app.models.Tournament.objects.order_by("pk")
+
+    context = {"tournament_list": tournament_list}
+
+    return TemplateResponse(request=request, template="tournament_list.html", context=context)

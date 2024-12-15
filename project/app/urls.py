@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table
-from .views.board import board_archive_view, board_list_view
+from .views.board import board_archive_view, board_list_view, tournament_list_view
 from .views.hand import (
     auction_partial_view,
     bidding_box_partial_view,
@@ -56,4 +56,5 @@ urlpatterns = [
     ),
     path("table/<table_pk>/set-table-tempo", set_table_tempo_view, name="set-table-tempo"),
     path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
+    path("tournament/", tournament_list_view, name="tournament-list"),
 ]
