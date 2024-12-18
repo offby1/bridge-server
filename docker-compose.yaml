@@ -10,6 +10,10 @@ services:
       labels:
          info.offby1.bridge.git-version: ${GIT_VERSION:-}
 
+    # So I can run e.g. `py-spy top --pid 21` in a shell in the container
+    cap_add:                    # for [py-spy](https://github.com/benfred/py-spy?tab=readme-ov-file#how-do-i-run-py-spy-in-kubernetes)
+      - SYS_PTRACE
+
     depends_on:
       populated-with-fake-data:
         condition: service_completed_successfully
