@@ -15,7 +15,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     user = getattr(request, "user", None)
 
     if user and user.is_authenticated:
-        msg = f"{user=} is authenticated -- welcome"
+        msg = f"{user=} is already authenticated -- welcome"
         logger.info(msg)
         return HttpResponse(escape(msg))
 
@@ -59,7 +59,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
                 return HttpResponse(escape(f"Oh look, {user=} used the skeleton key"))
 
     elif (user := authenticate(username=username_or_pk, password=password)) is None:
-        msg = f"{username_or_pk=} {password=} just doesn't cut it, sorry"
+        msg = f"{username_or_pk=} with that password just doesn't cut it, sorry"
         logger.info(msg)
         return HttpResponseForbidden(escape(msg))
 
