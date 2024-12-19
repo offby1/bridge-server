@@ -28,9 +28,7 @@ import app.models
 from app.models.utils import assert_type
 from app.views.misc import (
     AuthedHttpRequest,
-    HttpRequest,
     logged_in_as_player_required,
-    player_who_can_view_hand,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,14 +74,13 @@ def poke_de_bot(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def call_post_view(request: HttpRequest, hand_pk: str) -> HttpResponse:
+@logged_in_as_player_required()
+def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
-    if not (player := player_who_can_view_hand(request, hand)):
-        return HttpResponseForbidden()
-
-    assert_type(player, app.models.Player)
+    player = request.user.player
     assert player is not None
+    assert_type(player, app.models.Player)
 
     try:
         who_clicked = player.libraryThing()
@@ -111,11 +108,13 @@ def call_post_view(request: HttpRequest, hand_pk: str) -> HttpResponse:
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def play_post_view(request: HttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
+@logged_in_as_player_required()
+def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
-    if not (who_clicked := player_who_can_view_hand(request, hand)):
-        return HttpResponseForbidden()
+    who_clicked = request.user.player
+    assert who_clicked is not None
+    assert_type(who_clicked, app.models.Player)
 
     if hand.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
