@@ -81,14 +81,8 @@ def logged_in_as_player_required(*, redirect=True):
             return view_function(request, *args, **kwargs)
 
         if redirect:
-            logger.debug(
-                f'{redirect=}, so returning {view_function=} wrapped with "login_required"'
-            )
             return login_required(non_players_piss_off)
 
-        logger.debug(
-            f'{redirect=}, so returning {view_function=} without wrapping with "login_required"'
-        )
         return non_players_piss_off
 
     return inner_wozzit

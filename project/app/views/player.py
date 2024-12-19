@@ -276,8 +276,6 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     p = Player.objects.filter(user__username=name_or_pk).first()
 
     if p is None:
-        logger.debug(f"Nuttin' from user__username={name_or_pk=}")
-
         with contextlib.suppress(ValueError):
             p = Player.objects.filter(pk=name_or_pk).first()
 
