@@ -63,19 +63,32 @@ def logged_in_as_player_required(*, redirect=True):
         ) -> HttpResponseRedirect | HttpResponseForbidden:
             user = request.user
             player = app.models.Player.objects.filter(user__username=user.username).first()
+            logger.debug(f"{user=} {player=}")
             if player is None:
                 django_web_messages.add_message(
                     request,
                     django_web_messages.INFO,
                     f"You ({user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
                 )
-                return HttpResponseRedirect(reverse("app:home"))
+                if redirect:
+                    home = reverse("app:home")
+                    logger.debug(f"{player=}, and {redirect=}, so redirecting to {home=}")
+                    return HttpResponseRedirect(home)
+                logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
+                return HttpResponseForbidden("Go away, anonymous scoundrel")
 
+            logger.debug(f"Invoking {view_function=}")
             return view_function(request, *args, **kwargs)
 
         if redirect:
+            logger.debug(
+                f'{redirect=}, so returning {view_function=} wrapped with "login_required"'
+            )
             return login_required(non_players_piss_off)
 
+        logger.debug(
+            f'{redirect=}, so returning {view_function=} without wrapping with "login_required"'
+        )
         return non_players_piss_off
 
     return inner_wozzit
