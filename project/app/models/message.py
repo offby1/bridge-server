@@ -85,6 +85,8 @@ class Message(models.Model):
     def player_pks_from_channel_name(channel_name: str) -> set[int] | None:
         if ":" not in channel_name:
             return None
+        if "_" not in channel_name:
+            return None
         try:
             _, pk_underscore_string = channel_name.split(":")
             return {int(p) for p in pk_underscore_string.split("_")}
