@@ -28,7 +28,6 @@ class Command(BaseCommand):
         )
         return Player.objects.get_or_create(
             user=user,
-            allow_bot_to_play_for_me=True,
         )
 
     def handle(self, *args, **options) -> None:
@@ -46,6 +45,12 @@ class Command(BaseCommand):
                 self.maybe_create_player(username)
 
                 progress_bar.update()
+
+        # Enable bots for the first few players.
+        Player.objects.update(allow_bot_to_play_for_me=False)
+        for p in Player.objects.all()[0:10]:
+            p.allow_bot_to_play_for_me = True
+            p.save()
 
         # Now partner 'em up
         while True:

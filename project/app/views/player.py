@@ -270,6 +270,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         # "-u" means "up"; "-c" means "continue".  Neither alone seems to suffice in every case.  Might need to wait
         # until svscan starts the service :-|
         svc("-uc")
+        logger.info("Started bot for %s", player)
     else:
         # "-p" means "pause".
         svc("-p")
