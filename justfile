@@ -78,10 +78,14 @@ die-if-virtualenv-remarkably-hosed:
 die-if-poetry-active:
     if [[ -n "${POETRY_ACTIVE:-}" || -n "${VIRTUAL_ENV:-}" ]]
     then
-      echo Hey man some environment variables suggest that a virtualenv is active
-      env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
+      if [[ -n "${VSCODE_ENV_REPLACE:-}" ]]
+         then echo "I guess this is VSC; let's soldier on and see what happens"
+      else
+        echo Hey man some environment variables suggest that a virtualenv is active
+        env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
 
-      false
+        false
+      fi
     fi
 
 [group('virtualenv')]

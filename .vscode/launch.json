@@ -10,14 +10,15 @@
             "request": "launch",
             "args": [
                 "shell_plus",
-                "--print-sql"
+                "--print-sql",
                 "--settings",
                 "project.dev_settings"
             ],
             "django": true,
             "autoStartBrowser": false,
             "justMyCode": false,
-            "program": "${workspaceFolder}/project/manage.py"
+            "program": "${workspaceFolder}/project/manage.py",
+            "preLaunchTask": "just build it damn it"
         },
         {
             "name": "Python Debugger: Django",
@@ -34,15 +35,17 @@
             "django": true,
             "autoStartBrowser": false,
             "justMyCode": false,
-            "program": "${workspaceFolder}/project/manage.py"
+            "program": "${workspaceFolder}/project/manage.py",
+            "preLaunchTask": "just build it damn it"
         },
         {
             "name": "Python: Debug Tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "purpose": ["debug-test"],
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "preLaunchTask": "just build it damn it"
         }
     ]
 }
