@@ -90,7 +90,7 @@ def test_username_and_password(usual_setup) -> None:
     assert "sessionid" in response.cookies
 
 
-def test_user_primary_key_and_skeleton_key(usual_setup, settings) -> None:
+def test_user_primary_key_and_skeleton_key(usual_setup, settings, no_pbkdf2) -> None:
     c = Client()
 
     response = c.get(
