@@ -22,6 +22,7 @@ default:
 [script('bash')]
 create-skeleton-key:
     set -euxo pipefail
+    mkdir -vp "$(dirname {{ DJANGO_SKELETON_KEY_FILE }})"
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
