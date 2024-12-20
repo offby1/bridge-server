@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import app.views.player
 import tqdm
 from app.models import Player, Table
 from django.contrib.auth.hashers import make_password
@@ -48,7 +49,7 @@ class Command(BaseCommand):
 
         # Enable bots for the first few players.
         Player.objects.update(allow_bot_to_play_for_me=False)
-        for p in Player.objects.all()[0:10]:
+        for p in Player.objects.all()[0 : app.views.player.MAX_BOT_PROCESSES]:
             p.allow_bot_to_play_for_me = True
             p.save()
 

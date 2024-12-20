@@ -24,6 +24,8 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 
 logger = logging.getLogger(__name__)
 
+MAX_BOT_PROCESSES = 10
+
 
 def player_detail_endpoint(player):
     return reverse("app:player", args=[player.id])
@@ -37,7 +39,7 @@ def player_link(player):
     )
 
 
-def partnership_status_channel_name(*, viewer, subject):
+def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
 
@@ -240,15 +242,17 @@ def control_bot_for_player(player: Player) -> None:
                 "svc",
                 flags,
                 str(player.pk),
-            ]
+            ],
         )
 
     if player.allow_bot_to_play_for_me and player.currently_seated:
         # This is a desperate attempt to not lock up the server ... my typical t2.micro EC2 box cannot handle more than
         # about 10 bot clients before it just slows to a crawl.
-        if (c := Player.objects.filter(allow_bot_to_play_for_me=True).count()) > 10:
+        if (c := Player.objects.filter(allow_bot_to_play_for_me=True).count()) > MAX_BOT_PROCESSES:
             logger.warning(
-                "Not starting bot for %s because there are already %s botty players", player, c
+                "Not starting bot for %s because there are already %s botty players",
+                player,
+                c,
             )
             return
 
