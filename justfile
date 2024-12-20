@@ -9,11 +9,6 @@ export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/djan
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 
-# Keep this true as long as I occasionally use Visual Studio Code --
-# that IDE seems not to understand the world when this is false, and it confuses me to have two venvs for a single project.
-
-export POETRY_VIRTUALENVS_IN_PROJECT := "true"
-
 [private]
 default:
     just --list
