@@ -10,6 +10,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
+
 * Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
 
 * The bot replays *all* messages for its player when it starts, but it'd make more sense for it to only replay the messages from the most-recent hand.
@@ -162,6 +164,9 @@ STILL TODO:
     - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
   - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
 
+
+MAYBE TODO:
+* Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
 * Logged in as player 1, <https://laptop.tail571dc2.ts.net/hand/?played_by=1> shows "Sorry, bob (bot-powered), but you have not completely played board Board #6 (tournament 1), so later d00d".  But when I click that link, it (correctly) shows me the hand in progress.
