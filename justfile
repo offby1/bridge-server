@@ -29,6 +29,40 @@ create-skeleton-key:
     cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
 
+# Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
+[private]
+[script('bash')]
+die-if-virtualenv-remarkably-hosed:
+    set -euo pipefail
+
+    # I suspect the below craziness only pertains to MacOS.
+    if [ "{{ os() }}" != "macos" ]
+    then
+    exit 0
+    fi
+
+    # If it don't exist, it can't be hosed :-)
+    if [ ! -d .venv ]
+    then
+    exit 0
+    fi
+
+    p=.venv/bin/python
+    if [ ! -h ${p} ]
+    then
+    echo "How come you don't have a symlink named ${p}"
+    exit 1
+    fi
+
+    case $(/bin/realpath -q ${p}) in
+       ""|/usr/bin/python*)
+        echo oh noes! your virtualenv python is bogus
+        ls -l ${p}
+        echo I bet you were running an orb machine
+        echo 'May I recommend "just clean"?'
+        exit 1
+    esac
+
 [private]
 [script('bash')]
 die-if-poetry-active:
@@ -41,7 +75,7 @@ die-if-poetry-active:
     fi
 
 [group('virtualenv')]
-lock: die-if-poetry-active
+lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
     poetry lock --no-update
 
 [group('virtualenv')]
