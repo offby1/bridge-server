@@ -44,8 +44,12 @@ lock: die-if-poetry-active
     poetry lock --no-update
 
 [group('virtualenv')]
-poetry-install: die-if-poetry-active lock
+poetry-install: poetry-install-no-dev
     poetry install
+
+[group('virtualenv')]
+poetry-install-no-dev: die-if-poetry-active lock
+    poetry install --without=dev
 
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
@@ -156,7 +160,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb poetry-install create-skeleton-key
+dcu *options: version-file orb poetry-install-no-dev create-skeleton-key
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
