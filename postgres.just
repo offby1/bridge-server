@@ -41,11 +41,17 @@ r: grab-prod-backups
 alias stop := pg-stop
 
 [group('postgres')]
-pg-stop:
+pg-stop: orb
     docker compose down postgres
+
+[group('docker')]
+[private]
+dump-docker-context:
+    @docker context inspect --format json | jq '.[].Endpoints.docker.Host'
 
 orb:
     if [ "{{ os() }}" = "macos" ]; then orb start; else echo not mac I guess; fi
+    just dump-docker-context
 
 [script('bash')]
 docker-nuke: orb

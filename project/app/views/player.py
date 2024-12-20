@@ -219,26 +219,39 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
 
 
 # https://cr.yp.to/daemontools/svc.html
-def control_bot_for_player(player: Player):
+def control_bot_for_player(player: Player) -> None:
+    service_directory = pathlib.Path("/service")
+    if not service_directory.is_dir():
+        logger.warning("Hmm, %s is not a directory; no bots for you", service_directory)
+        return
+
     def run_in_slash_service(command: list[str]) -> None:
         subprocess.run(
             command,
-            cwd="/service",
-            check=True,
+            cwd=service_directory,
+            check=False,
             capture_output=True,
         )
 
-    def svc(flag: str) -> None:
+    def svc(flags: str) -> None:
         # might not want to block here, who knows how long it'll take
         run_in_slash_service(
             [
                 "svc",
-                flag,
+                flags,
                 str(player.pk),
             ]
         )
 
     if player.allow_bot_to_play_for_me and player.currently_seated:
+        # This is a desperate attempt to not lock up the server ... my typical t2.micro EC2 box cannot handle more than
+        # about 10 bot clients before it just slows to a crawl.
+        if (c := Player.objects.filter(allow_bot_to_play_for_me=True).count()) > 10:
+            logger.warning(
+                "Not starting bot for %s because there are already %s botty players", player, c
+            )
+            return
+
         shell_script_text = """#!/bin/bash
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
@@ -254,11 +267,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file.chmod(0o755)
         run_file = run_file.rename(run_dir / "run")
 
-        # up, then continue.  Neither alone seems to suffice in every case.
-        # Might need to wait until svscan starts the service :-|
-        for flag in ("-u", "-c"):
-            svc(flag)
+        # "-u" means "up"; "-c" means "continue".  Neither alone seems to suffice in every case.  Might need to wait
+        # until svscan starts the service :-|
+        svc("-uc")
     else:
+        # "-p" means "pause".
         svc("-p")
 
 
@@ -276,8 +289,6 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     p = Player.objects.filter(user__username=name_or_pk).first()
 
     if p is None:
-        logger.debug(f"Nuttin' from user__username={name_or_pk=}")
-
         with contextlib.suppress(ValueError):
             p = Player.objects.filter(pk=name_or_pk).first()
 

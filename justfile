@@ -9,34 +9,83 @@ export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/djan
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 
-# Keep this true as long as I occasionally use Visual Studio Code --
-# that IDE seems not to understand the world when this is false, and it confuses me to have two venvs for a single project.
-
-export POETRY_VIRTUALENVS_IN_PROJECT := "true"
-
 [private]
 default:
     just --list
 
 [private]
 [script('bash')]
-create-skeleton-key:
-    set -euxo pipefail
+ensure-django-secret:
+    set -euo pipefail
+    mkdir -vp "$(dirname {{ DJANGO_SECRET_FILE }})"
+    touch "{{ DJANGO_SECRET_FILE }}"
+    if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
+    then
+    python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
+    else
+    echo "Looks like you've already got a reasonable django secret already: "; ls -l "{{ DJANGO_SECRET_FILE }}"
+    fi
+
+[private]
+[script('bash')]
+ensure-skeleton-key: poetry-install
+    set -euo pipefail
+    mkdir -vp "$(dirname {{ DJANGO_SKELETON_KEY_FILE }})"
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
     cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
+    else
+    echo "Looks like you've already got a reasonable skeleton key already: "; ls -l "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
+
+# Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
+[private]
+[script('bash')]
+die-if-virtualenv-remarkably-hosed:
+    set -euo pipefail
+
+    # I suspect the below craziness only pertains to MacOS.
+    if [ "{{ os() }}" != "macos" ]
+    then
+    exit 0
+    fi
+
+    # If it don't exist, it can't be hosed :-)
+    if [ ! -d .venv ]
+    then
+    exit 0
+    fi
+
+    p=.venv/bin/python
+    if [ ! -h ${p} ]
+    then
+    echo "How come you don't have a symlink named ${p}"
+    exit 1
+    fi
+
+    case $(/bin/realpath -q ${p}) in
+       ""|/usr/bin/python*)
+        echo oh noes! your virtualenv python is bogus
+        ls -l ${p}
+        echo I bet you were running an orb machine
+        echo 'May I recommend "just clean"?'
+        exit 1
+    esac
 
 [private]
 [script('bash')]
 die-if-poetry-active:
     if [[ -n "${POETRY_ACTIVE:-}" || -n "${VIRTUAL_ENV:-}" ]]
     then
-      echo Hey man some environment variables suggest that a virtualenv is active
-      env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
+      if [[ -n "${VSCODE_ENV_REPLACE:-}" ]]
+         then echo "I guess this is VSC; let's soldier on and see what happens"
+      else
+        echo Hey man some environment variables suggest that a virtualenv is active
+        env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
 
-      false
+        false
+      fi
     fi
 
 [group('virtualenv')]
@@ -70,7 +119,7 @@ all-but-django-prep: version-file pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
-manage *options: all-but-django-prep
+manage *options: all-but-django-prep ensure-django-secret
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
@@ -87,7 +136,7 @@ migrate: makemigrations (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: t django-superuser migrate create-skeleton-key
+runme *options: t django-superuser migrate ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
@@ -98,7 +147,7 @@ alias runserver := runme
 # For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate collectstatic create-skeleton-key
+daphne: test django-superuser migrate collectstatic ensure-skeleton-key
     set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
@@ -160,7 +209,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb poetry-install create-skeleton-key
+dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")

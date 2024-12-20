@@ -87,6 +87,44 @@
         {% block content %}
         {% endblock content %}
     </div>
+    <!-- see https://docs.sentry.io/platforms/javascript/ -->
+    <script src="https://js.sentry-cdn.com/de80d9ce8c1912a65a6ba2f9e7f6e98c.min.js"
+            crossorigin="anonymous"></script>
+    <script>
+      window.sentryOnLoad = function () {
+        Sentry.init({
+          dsn: "https://de80d9ce8c1912a65a6ba2f9e7f6e98c@o4507936352501760.ingest.us.sentry.io/4507936354205696",
+
+          // Alternatively, use `process.env.npm_package_version` for a dynamic release version
+          // if your build tool supports it.
+          release: "bridge-server@{{ VERSION }}",
+          integrations: [
+            Sentry.browserTracingIntegration(),
+            Sentry.replayIntegration(),
+          ],
+
+          // Set tracesSampleRate to 1.0 to capture 100%
+          // of transactions for tracing.
+          // We recommend adjusting this value in production
+          // Learn more at
+          // https://docs.sentry.io/platforms/javascript/configuration/options/#traces-sample-rate
+          tracesSampleRate: 1.0,
+
+          // Set `tracePropagationTargets` to control for which URLs trace propagation should be enabled
+          tracePropagationTargets: [
+            "localhost",
+            /^https:\/\/tail571dc2\.ts\.net/,
+          ],
+
+          // Capture Replay for 10% of all sessions,
+          // plus for 100% of sessions with an error
+          // Learn more at
+          // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#general-integration-configuration
+          replaysSessionSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1.0,
+        });
+      };
+    </script>
     <script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
     <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
