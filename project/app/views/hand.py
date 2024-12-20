@@ -19,7 +19,6 @@ from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
-from django.views.decorators.gzip import gzip_page
 from django.views.decorators.http import require_http_methods
 
 import app.models
@@ -424,7 +423,6 @@ def _maybe_redirect_or_error(
     return None
 
 
-@gzip_page
 @logged_in_as_player_required()
 def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
@@ -485,7 +483,6 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     )
 
 
-@gzip_page
 @logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
