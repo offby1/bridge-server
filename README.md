@@ -3,11 +3,16 @@
 ## Getting prerequistes &c
 
 For Ubuntu "24.10 (Oracular Oriole)", this gets everything except "just" (for which, see the next section):
-`$ sudo apt install git python3-poetry docker-compose-v2`
+`$ sudo apt install git python3-poetry docker-compose-v2 jq`
 ... somehow add your userID to the "docker" group, then log out and log back in (hint: `sudo vigr`)
 `$ (d=~/.config/info.offby1.bridge; mkdir -vp ${d} && echo "yadda yadda whatever" > "${d}/django_secret_key")`
 
+sudo apt install snapd
+sudo snap install --edge --classic just
+
 ### just
+- On recent Ubuntu, `sudo apt install snapd && sudo snap install --edge --classic just` should do it.
+Failing that:
 - $ `curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin`
   $ `PATH=$PATH:$HOME/.local/bin`
   Yeah, I hate `curl | sh` too, but there doesn't seem to be any other foolproof way.
@@ -17,7 +22,7 @@ For Ubuntu "24.10 (Oracular Oriole)", this gets everything except "just" (for wh
 - $ `sudo apt install git`
 
 ### docker
-- $ `sudo apt install docker.io`
+- $ `sudo apt install docker-compose-v2`
 - add yourself to the docker group: "sudo vigr" and then "sudo vigr -s"
 
 ### pre-commit
