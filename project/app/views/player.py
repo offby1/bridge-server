@@ -220,11 +220,16 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
 
 # https://cr.yp.to/daemontools/svc.html
 def control_bot_for_player(player: Player) -> None:
+    service_directory = pathlib.Path("/service")
+    if not service_directory.is_dir():
+        logger.warning("Hmm, %s is not a directory; no bots for you", service_directory)
+        return
+
     def run_in_slash_service(command: list[str]) -> None:
         subprocess.run(
             command,
-            cwd="/service",
-            check=True,
+            cwd=service_directory,
+            check=False,
             capture_output=True,
         )
 
