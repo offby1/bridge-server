@@ -380,7 +380,7 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
     assert h.player_who_may_call is not None
     north = h.modPlayer_by_seat(libSeat.NORTH)
     north.break_partnership()
-    h.refresh_from_db()
+    h = Hand.objects.get(pk=h.pk)
     assert h.player_who_may_call is None
     assert h.player_who_may_play is None
 

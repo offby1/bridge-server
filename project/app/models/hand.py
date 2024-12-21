@@ -4,7 +4,7 @@ import collections
 import dataclasses
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Iterable, Iterator
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -29,6 +29,8 @@ from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
     from django.db.models.manager import RelatedManager
 
     from . import Board, Player, Seat, Table  # noqa
@@ -185,6 +187,7 @@ class Hand(models.Model):
         )
 
     @admin.display(boolean=True)
+    @cached_property
     def is_abandoned(self) -> bool:
         if self.is_complete:
             return False
@@ -243,11 +246,10 @@ class Hand(models.Model):
         return libTable(players=players)
 
     def get_xscript(self) -> HandTranscript:
-        def calls_starting_with(start: int) -> Iterator[tuple[libPlayer, libCall]]:
-            for index, (seat, call) in enumerate(self.annotated_calls):
-                if index >= start:
-                    player = self.libPlayers_by_seat[seat]
-                    yield (player, call.libraryThing)
+        def calls() -> Iterator[tuple[libPlayer, libCall]]:
+            for seat, call in self.annotated_calls:
+                player = self.libPlayers_by_seat[seat]
+                yield (player, call.libraryThing)
 
         if not hasattr(self, "_xscript"):
             lib_table = self.lib_table_with_cards_as_dealt
@@ -257,7 +259,7 @@ class Hand(models.Model):
                 for direction in (1, 2, 3, 4)
             }
 
-            for player, call in calls_starting_with(0):
+            for player, call in calls():
                 auction.append_located_call(player=player, call=call)
 
             self._xscript = HandTranscript(
@@ -268,21 +270,8 @@ class Hand(models.Model):
                 dealt_cards_by_seat=dealt_cards_by_seat,
             )
 
-        num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
-        assert not num_missing_calls < 0
-        if num_missing_calls > 0:
-            c: Call
-            for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
-                self._xscript.add_call(libBid.deserialize(c.serialized))
-
-        num_missing_plays = self.plays.count() - self._xscript.num_plays
-        assert (
-            not num_missing_plays < 0
-        ), f"{self.plays.count()=} but {self._xscript.num_plays=} -- {self._xscript.tricks=}"
-        if num_missing_plays > 0:
-            p: Play
-            for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
-                self._xscript.add_card(libCard.deserialize(p.serialized))
+            for play in self.plays:
+                self._xscript.add_card(libCard.deserialize(play.serialized))
 
         return self._xscript
 
@@ -293,11 +282,11 @@ class Hand(models.Model):
         xs = self.get_xscript()
         return {"calls": len(xs.auction.player_calls), "plays": xs.num_plays}
 
-    def add_call_from_player(self, *, player: libPlayer, call: libCall):
+    def add_call_from_player(self, *, player: libPlayer, call: libCall) -> None:
         assert_type(player, libPlayer)
         assert_type(call, libCall)
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             msg = f"Hand {self} is abandoned"
             raise AuctionError(msg)
 
@@ -309,6 +298,7 @@ class Hand(models.Model):
 
         self.call_set.create(serialized=call.serialize())
 
+        del self._xscript
         if self.declarer:  # the auction just settled
             contract = self.auction.status
             assert isinstance(contract, libContract)
@@ -334,7 +324,7 @@ class Hand(models.Model):
         assert_type(player, libPlayer)
         assert_type(card, libCard)
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             msg = f"Hand {self} is abandoned"
             raise PlayError(msg)
 
@@ -391,7 +381,7 @@ class Hand(models.Model):
     def player_who_may_call(self) -> Player | None:
         from . import Player
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             return None
 
         if self.auction.status is libAuction.Incomplete:
@@ -404,7 +394,7 @@ class Hand(models.Model):
     def player_who_may_play(self) -> Player | None:
         from . import Player
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             return None
 
         if not self.auction.found_contract:
@@ -446,9 +436,7 @@ class Hand(models.Model):
         return libHand(cards=list(ccbs[player.seat]))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
-        """
-        A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view.
-        """
+        """A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view."""
         xscript = self.get_xscript()
         whose_turn_is_it = None
 
@@ -485,7 +473,7 @@ class Hand(models.Model):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-    @property
+    @cached_property
     def most_recent_call(self):
         return self.call_set.order_by("-id").first()
 
@@ -505,20 +493,16 @@ class Hand(models.Model):
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
-    @property
+    @cached_property
     def is_complete(self):
-        return (
-            # Counting the play set does far fewer queries than examining the auction status, so we do it first.
-            self.play_set.count() == 52 or self.get_xscript().auction.status is libAuction.PassedOut
-        )
+        return len(self.plays) == 52 or self.get_xscript().auction.status is libAuction.PassedOut
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
 
     @property
     def calls(self):
-        """
-        All the calls in this hand, in chronological order.
+        """All the calls in this hand, in chronological order.
 
         `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
         """
@@ -540,7 +524,7 @@ class Hand(models.Model):
             zip(
                 self._seat_cycle_starting_with_dealer,
                 self.calls.all(),
-            )
+            ),
         )
 
     @property
@@ -580,12 +564,12 @@ class Hand(models.Model):
             ).items()
         }
 
-    @property
+    @cached_property
     def plays(self):
         return self.play_set.order_by("id")
 
     def toggle_open_access(self) -> None:
-        if self.is_abandoned():
+        if self.is_abandoned:
             return
 
         self.open_access = not self.open_access
@@ -635,7 +619,7 @@ class Hand(models.Model):
 
         return (f"{auction_status}: {trick_summary}", total_score)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 
 
@@ -686,7 +670,7 @@ class Call(models.Model):
     def libraryThing(self):
         return libBid.deserialize(self.serialized)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.libraryThing)
 
 
@@ -695,9 +679,7 @@ admin.site.register(Call)
 
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
-        """
-        Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
-        """
+        """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
         from app.serializers import ReadOnlyPlaySerializer
 
         rv = super().create(*args, **kwargs)

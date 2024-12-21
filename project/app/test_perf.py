@@ -43,4 +43,4 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> Non
     # Omit "select count" in the hope that those are somehow less expensive
     filtered_calls = [c for c in ql.calls if not c[0].startswith("SELECT COUNT(*)")]
 
-    assert len(filtered_calls) <= 95
+    assert len(filtered_calls) <= 90

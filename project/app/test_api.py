@@ -66,6 +66,7 @@ def test_call_post(usual_setup) -> None:
     request = factory.post(
         "/api/calls/", {"serialized": three_notrump.serialize(), "hand_id": h.pk}, format="json"
     )
+    del h._xscript
     force_authenticate(request, user=north.user)
     view = app.views.drf_views.CallViewSet.as_view(actions={"post": "create"})
 
@@ -104,6 +105,7 @@ def test_play_post(usual_setup) -> None:
 
     response = view(request)
     assert response.status_code == 201
+    h = Hand.objects.get(pk=h.pk)
     xs = h.get_xscript()
     assert len(xs.tricks) == 1
     first_trick = xs.tricks[0]

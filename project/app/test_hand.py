@@ -41,6 +41,7 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     first_card = first_players_cards[0]
 
     h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h = Hand.objects.get(pk=h.pk)
     assert len(h.get_xscript().tricks) == 1
     first_trick = h.get_xscript().tricks[0]
     first_play = first_trick.plays[0]
@@ -106,6 +107,7 @@ def test_cards_by_player(usual_setup) -> None:
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
     h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
+    h = Hand.objects.get(pk=h.pk)
 
     after = set(h.current_cards_by_seat()[libSeat.EAST])
     assert before - after == {diamond_two}
