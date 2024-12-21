@@ -24,7 +24,7 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 
 logger = logging.getLogger(__name__)
 
-MAX_BOT_PROCESSES = 10
+MAX_BOT_PROCESSES = 100
 
 
 def player_detail_endpoint(player):

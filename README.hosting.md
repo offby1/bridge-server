@@ -13,6 +13,8 @@ In particular, I'm grumpy about getting an SSL/TLS certificate and rigging up th
 
 - Now that I've gotten this reasonably containerized, maybe I should read about those "run your container" services -- pretty sure AWS and Azure have those.  E.g., in a perfect world, I'd sign up for the service, they'd give me some sort of credential and URL; I'd type "docker context mumble something credential URL", and then just "docker compose up" should push the containers onto their hosting and Bob's my uncle.
 
+  I dimly recall investigating, and finding that there are exactly no services like this.  But a simple Unix box with docker and ssh might be all I need (I can deploy to it with a remote docker context, and I'd need ssh for installing tailscale, and perhaps monitoring via e.g. htop)
+
 In the below, ✘ means "this sucks; no need to investigate further"
 
 ## Research I've done
@@ -26,6 +28,8 @@ I'd feel a little better about their reverse proxy if they charged me money for 
 
 * it's in beta
 * > Traffic sent over a Funnel is subject to non-configurable bandwidth limits.
+
+They also say something like "funnel is meant for transient, off-the-cuff sharing", which is also not great, but ... it's been fine so far (I've been using it since Oct 30 2024).
 
 Something I read somewhere suggested that the reverse proxy is *not* doing crypto stuff, which is good -- that means it's not working as hard as I'd feared, and thus is likely to *keep* working :-)
 
