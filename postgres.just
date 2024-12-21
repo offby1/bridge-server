@@ -60,7 +60,7 @@ docker-nuke: orb
     echo "Killing containers!"
     docker ps -aq | xargs --no-run-if-empty docker rm -f
     # echo "Killing volumes!"
-    echo Not doing docker volume prune --all --force
+    docker volume prune --all --force
     echo "Removing plugins!"
     docker plugin ls --quiet | xargs --no-run-if-empty docker plugin rm
     echo "Done!"
