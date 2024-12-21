@@ -509,11 +509,12 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     assert Table.objects.count() == number_of_tables_before + 1
 
 
-def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
+def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> None:
     request = rf.get("/woteva/")
     t = Table.objects.first()
 
     # Nobody done played nothin'
+    assert t is not None
     assert not t.current_hand.current_trick
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
@@ -535,7 +536,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for tt in h.current_trick:
         expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
-    ya = hand._three_by_three_trick_display_context_for_hand(request, t.current_hand)
+    ya = hand._three_by_three_trick_display_context_for_hand(request, h, xscript=h.get_xscript())
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows

@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import bridge.seat
+import bridge.xscript
 from bridge.auction import Auction
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -172,11 +173,11 @@ def _single_hand_as_four_divs(
 def _three_by_three_trick_display_context_for_hand(
     request: HttpRequest,
     hand: app.models.Hand,
+    xscript: bridge.xscript.HandTranscript,
 ) -> dict[str, Any]:
     cards_by_direction_number: dict[int, bridge.card.Card] = {}
 
     lead_came_from: bridge.seat.Seat | None = None
-    xscript = hand.get_xscript()
 
     winning_direction = None
 
@@ -242,6 +243,7 @@ def _four_hands_context_for_hand(
     *,
     request: AuthedHttpRequest,
     hand: app.models.Hand,
+    xscript: bridge.xscript.HandTranscript | None = None,
     as_dealt: bool = False,
 ) -> dict[str, Any]:
     as_viewed_by = None
@@ -277,15 +279,21 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
+    if xscript is None:
+        logger.warning("Hey man, I gotta fetch the transcript, which is like really expensive")
+        xscript = hand.get_xscript()
+
     always = {
-        "annotated_tricks": list(_annotate_tricks(hand.get_xscript())),
+        "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
     }
     if not hand.is_complete:
-        return always | _three_by_three_trick_display_context_for_hand(request, hand)
+        return always | _three_by_three_trick_display_context_for_hand(
+            request, hand, xscript=xscript
+        )
     return always
 
 
@@ -440,7 +448,8 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     if response is not None:
         return response
 
-    a = hand.auction
+    xscript = hand.get_xscript()
+    a = xscript.auction
     c = a.status
     if c is Auction.Incomplete:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
@@ -458,7 +467,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
             context=context,
         )
 
-    broken_down_score = hand.get_xscript().final_score()
+    broken_down_score = xscript.final_score()
 
     if broken_down_score is None:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))

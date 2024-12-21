@@ -173,6 +173,7 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
     return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
 
+# TODO -- restrict this view to just those players who are, you know, actually seated at the table.
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
