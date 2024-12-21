@@ -37,7 +37,7 @@ urlpatterns = [
         bidding_box_partial_view,
         name="bidding-box-partial",
     ),
-    path("hand/<hand_pk>/open-access-toggle", open_access_toggle_view, name="open-access-toggle"),
+    path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path(
         "hand/<table_pk>/four-hands",
         four_hands_partial_view,
@@ -64,11 +64,11 @@ urlpatterns = [
     path("table/", table.table_list_view, name="table-list"),
     path("table/<pk>/", table.table_json_view, name="table-json"),
     path(
-        "table/<pk>/new-board-plz",
+        "table/<pk>/new-board-plz/",
         table.details.new_board_view,
         name="new-board-plz",
     ),
-    path("table/<table_pk>/set-table-tempo", set_table_tempo_view, name="set-table-tempo"),
+    path("table/<table_pk>/set-table-tempo/", set_table_tempo_view, name="set-table-tempo"),
     path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
