@@ -10,6 +10,8 @@ IN PROGRESS:
 
 STILL TODO:
 
+* At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
+
 * Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
 
 * Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
