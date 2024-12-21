@@ -61,6 +61,7 @@ ALLOWED_HOSTS = [
     ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
     "192.168.4.39",  # laptop at home
+    "5.78.70.72",  # hetzner cheapie
     "localhost",
     "offby1.info",
 ]
