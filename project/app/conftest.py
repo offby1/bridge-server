@@ -2,7 +2,7 @@ import pytest
 from django.contrib import auth
 from django.core.management import call_command
 
-from .models import Board, Player, Table, Tournament
+from .models import Board, Hand, Play, Player, Table, Tournament
 from .models.board import board_attributes_from_board_number
 
 
@@ -37,8 +37,14 @@ def usual_setup(db: None) -> None:
 
 
 @pytest.fixture
-def played_to_completion(db: None) -> None:
-    call_command("loaddata", "played_to_completion")
+def played_almost_to_completion(db: None) -> None:
+    call_command("loaddata", "played_almost_to_completion")
+
+
+@pytest.fixture
+def played_to_completion(played_almost_to_completion) -> None:
+    h1 = Hand.objects.get(pk=1)
+    Play.objects.create(hand=h1, serialized="♠A")
 
 
 @pytest.fixture

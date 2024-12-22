@@ -627,13 +627,5 @@
     },
     "model": "app.play",
     "pk": 51
-  },
-  {
-    "fields": {
-      "hand": 1,
-      "serialized": "♠A"
-    },
-    "model": "app.play",
-    "pk": 52
   }
 ]

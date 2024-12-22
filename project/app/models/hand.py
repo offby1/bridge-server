@@ -349,6 +349,7 @@ class Hand(models.Model):
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
 
+        # TODO -- I probably need to bust the cache before calling get_xscript here
         final_score = self.get_xscript().final_score()
 
         if final_score:
