@@ -5,6 +5,7 @@ from typing import Any
 
 import bridge.card
 import bridge.contract
+import pytest
 
 from .models import Player, Table
 from .testutils import set_auction_to
@@ -71,3 +72,25 @@ def test_new_hand_messages(played_to_completion, monkeypatch) -> None:
 
     for channel, events in sent_events_by_channel.items():
         assert num_visible_cards(events) == 0, f"{channel=} {num_visible_cards(events)} should be 0"
+
+
+@pytest.mark.usefixtures("played_almost_to_completion")
+def test_sends_final_score(monkeypatch) -> None:
+    sent_events = []
+
+    def send_timestamped_event(channel: str, data: dict[str, Any]) -> None:
+        sent_events.append(data)
+
+    from .models import Hand, hand
+
+    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
+    h1 = Hand.objects.get(pk=1)
+    libPlayer = h1.player_who_may_play.libraryThing()
+    libCard = bridge.card.Card.deserialize("♠A")
+
+    h1.add_play_from_player(player=libPlayer, card=libCard)
+
+    def sought(datum):
+        return "final_score" in datum and "table" in datum
+
+    assert any(sought(d) for d in sent_events)
