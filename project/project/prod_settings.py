@@ -1,4 +1,3 @@
-import contextlib
 import os
 
 import sentry_sdk
@@ -6,16 +5,6 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base_settings import *  # noqa
 from .base_settings import ALLOWED_HOSTS, VERSION
-
-
-@contextlib.contextmanager
-def temp_umask(new_umask):
-    old_umask = os.umask(new_umask)
-    try:
-        yield
-    finally:
-        os.umask(old_umask)
-
 
 DEBUG = False
 
