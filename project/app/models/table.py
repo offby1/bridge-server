@@ -78,7 +78,7 @@ class Table(models.Model):
     objects = TableManager()
 
     tempo_seconds = models.FloatField(
-        default=1.0,
+        default=10.0,  # leisurely, and won't stress the server too much
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
