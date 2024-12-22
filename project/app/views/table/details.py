@@ -20,7 +20,6 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -72,7 +71,6 @@ def poke_de_bot(request):
     return HttpResponse("Pokey enough for ya??")
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
@@ -106,7 +104,6 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     return HttpResponse()
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
