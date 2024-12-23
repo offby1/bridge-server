@@ -36,7 +36,6 @@ class SlimHandSerializer(serializers.ModelSerializer):
             "id",
             "table",
             "board",
-            "xscript_hwms",
         )
 
 
