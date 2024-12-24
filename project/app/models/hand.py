@@ -116,9 +116,6 @@ class DisplaySkeleton:
 
 
 def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
-    match data:
-        case {"new-hand": {"table": table}}:
-            assert isinstance(table, dict), f"gotcha mofo {data=}"
     send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
 
 
