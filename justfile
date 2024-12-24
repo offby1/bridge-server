@@ -167,8 +167,10 @@ daphne: test django-superuser migrate collectstatic ensure-skeleton-key
 [group('bs')]
 pop: django-superuser migrate (manage "generate_fake_data --players=40")
 
+alias createsuperuser := django-superuser
+alias superuser := django-superuser
+
 [group('django')]
-[private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
 
 # Run tests with --exitfirst and --failed-first
