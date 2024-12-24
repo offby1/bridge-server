@@ -242,13 +242,6 @@ class PerTableConsumer:
 
 class Command(BaseCommand):
     def __init__(self, *args, **kwargs) -> None:
-        logging.basicConfig(
-            # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
-            format="{asctime} {threadName} {levelname:5} {filename} {lineno} {message}",
-            level=logging.DEBUG,
-            datefmt="%Y-%m-%dT%H:%M:%S%z",
-            style="{",
-        )
         self._threads_by_table_pk: dict[int, PerTableConsumer] = {}
         super().__init__(*args, **kwargs)
 

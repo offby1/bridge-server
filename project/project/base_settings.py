@@ -216,6 +216,9 @@ LOGGING = {
         "app": {
             "level": "DEBUG",
         },
+        "bot": {
+            "level": "DEBUG",
+        },
         "daphne.http_protocol": {
             "level": "INFO",
         },
