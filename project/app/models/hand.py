@@ -207,8 +207,6 @@ class Hand(models.Model):
         ]
         all_channels = [hand_channel, "all-tables", *player_channels]
 
-        data = data.copy()
-        data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data)
 

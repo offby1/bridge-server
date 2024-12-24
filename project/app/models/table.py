@@ -84,11 +84,6 @@ class Table(models.Model):
 
     summary_for_this_viewer: tuple[str, str | int]
 
-    def gimme_dat_fresh_tempo(self):
-        if hasattr(self, "tempo_seconds"):
-            del self.tempo_seconds
-        return self.tempo_seconds
-
     @cached_property
     def seats(self):
         return self.seat_set.select_related("player__user").all()
