@@ -9,7 +9,8 @@ from rest_framework.test import (  # type: ignore [import-untyped]
 
 import app.models.player
 import app.views.drf_views
-from app.models import Board, Hand, Player, Table
+from app.models import Board, Call, Hand, Play, Player, Table
+from app.serializers import ReadOnlyCallSerializer, ReadOnlyPlaySerializer
 
 from .testutils import set_auction_to
 
@@ -172,3 +173,21 @@ def test_player_permissions(usual_setup):
     )
     player_one.refresh_from_db()
     assert player_one.allow_bot_to_play_for_me is False
+
+
+def test_serialized_call(played_to_completion) -> None:
+    c1 = Call.objects.first()
+    data = ReadOnlyCallSerializer(c1).data
+    assert data == {"serialized": "1♣", "hand": {"id": 1, "table": 1, "board": 1}, "seat_pk": 1}
+
+
+def test_serialized_play(played_almost_to_completion) -> None:
+    p1 = Play.objects.first()
+    assert p1 is not None
+
+    data = ReadOnlyPlaySerializer(p1).data
+    assert data == {"serialized": "♦2", "hand": {"id": 1, "table": 1, "board": 1}, "seat_pk": 2}
+
+    p52 = Play.objects.create(hand=p1.hand, serialized="♠A")
+    data = ReadOnlyPlaySerializer(p52).data
+    assert data == {"serialized": "♠A", "hand": {"id": 1, "table": 1, "board": 1}, "seat_pk": 4}
