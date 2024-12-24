@@ -136,7 +136,7 @@ migrate: makemigrations (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: t django-superuser migrate ensure-skeleton-key
+runme *options: t django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
@@ -144,10 +144,12 @@ runme *options: t django-superuser migrate ensure-skeleton-key
 
 alias runserver := runme
 
+create-cache: (manage "createcachetable")
+
 # For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate collectstatic ensure-skeleton-key
+daphne: test django-superuser migrate create-cache collectstatic ensure-skeleton-key
     set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
