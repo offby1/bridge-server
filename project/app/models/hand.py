@@ -248,6 +248,10 @@ class Hand(models.Model):
                 player = self.libPlayers_by_seat[seat]
                 yield (player, call.libraryThing)
 
+        # TODO -- consider keeping this cached transcript, not on this hand instance, but instead, in [Django's own
+        # caching system](https://docs.djangoproject.com/en/5.1/topics/cache/).  That way, it should be available to any
+        # client who tries to read it, as opposed to just the client that created it (and each hand typically has four
+        # interested parties).
         if not hasattr(self, "_xscript"):
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
