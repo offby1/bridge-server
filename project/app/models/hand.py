@@ -633,12 +633,13 @@ class HandAdmin(admin.ModelAdmin):
 
 class CallManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
-        from app.serializers import ReadOnlyCallSerializer
-
         rv = super().create(*args, **kwargs)
 
+        # We're assuming that this call is valid, which is indeed the case if we're invoked by Hand.add_call_from_player
+        serialized = kwargs["serialized"]
+
         rv.hand.send_event_to_players_and_hand(
-            data={"new-call": ReadOnlyCallSerializer(rv).data},
+            data={"new-call": serialized},
         )
 
         return rv
@@ -684,14 +685,13 @@ class PlayManager(models.Manager):
         """
         Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
         """
-        from app.serializers import ReadOnlyPlaySerializer
 
         rv = super().create(*args, **kwargs)
 
-        cereal = ReadOnlyPlaySerializer(rv)
+        serialized = kwargs["serialized"]
 
         rv.hand.send_event_to_players_and_hand(
-            data={"new-play": cereal.data},
+            data={"new-play": serialized},
         )
 
         return rv
