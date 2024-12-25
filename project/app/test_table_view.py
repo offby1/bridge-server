@@ -1,8 +1,9 @@
+import pytest
 from bridge.card import Card, Suit
-from bridge.contract import Bid
+from bridge.contract import Bid, Pass
 from bridge.seat import Seat
 
-from .models import Table
+from .models import Player, Table
 from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
@@ -152,3 +153,14 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
             [0, 0, 0, 0],  # w
         ]
     )
+
+
+def test_rejects_calls_after_auction_is_settled(usual_setup) -> None:
+    t = Table.objects.first()
+    assert t is not None
+
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
+
+    # Not legal because the auction is over
+    with pytest.raises(Exception):
+        t.current_had.add_call_from_player(player=Player.objects.first(), call=Pass)

@@ -17,23 +17,20 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
     caller = hand.auction.allowed_caller()
 
     hand.add_call_from_player(player=caller, call=bid)
-    hand.bust_cache()
-    assert len(hand.auction.player_calls) == 1
+    assert len(hand.auction.player_calls) == hand.call_set.count() == 1
     caller = next_caller(caller)
 
     hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    hand.bust_cache()
-    assert len(hand.auction.player_calls) == 2
+    assert len(hand.auction.player_calls) == hand.call_set.count() == 2
     caller = next_caller(caller)
 
     hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    hand.bust_cache()
-    assert len(hand.auction.player_calls) == 3
+    assert len(hand.auction.player_calls) == hand.call_set.count() == 3
     caller = next_caller(caller)
 
     hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
-    hand.bust_cache()
-    assert len(hand.auction.player_calls) == 4
+    assert len(hand.auction.player_calls) == hand.call_set.count() == 4
+    print(f"{hand.auction.player_calls=}")
     assert hand.auction.found_contract
 
     return hand

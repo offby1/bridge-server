@@ -63,7 +63,6 @@ def logged_in_as_player_required(*, redirect=True):
         ) -> HttpResponseRedirect | HttpResponseForbidden:
             user = request.user
             player = app.models.Player.objects.filter(user__username=user.username).first()
-            logger.debug(f"{user=} {player=}")
             if player is None:
                 django_web_messages.add_message(
                     request,
@@ -77,7 +76,6 @@ def logged_in_as_player_required(*, redirect=True):
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
                 return HttpResponseForbidden("Go away, anonymous scoundrel")
 
-            logger.debug(f"Invoking {view_function=}")
             return view_function(request, *args, **kwargs)
 
         if redirect:
