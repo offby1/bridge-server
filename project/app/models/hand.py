@@ -577,7 +577,7 @@ class Hand(models.Model):
             ).items()
         }
 
-    @cached_property
+    @property
     def plays(self):
         rv = self.play_set.order_by("id")
         logger.debug(f"{len(rv)=}")
