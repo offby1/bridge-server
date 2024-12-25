@@ -508,7 +508,8 @@ class Hand(models.Model):
 
     @cached_property
     def is_complete(self):
-        return len(self.plays) == 52 or self.get_xscript().auction.status is libAuction.PassedOut
+        x = self.get_xscript()
+        return x.num_plays == 52 or x.auction.status is libAuction.PassedOut
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
@@ -577,6 +578,7 @@ class Hand(models.Model):
             ).items()
         }
 
+    # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
     def plays(self):
         rv = self.play_set.order_by("id")
