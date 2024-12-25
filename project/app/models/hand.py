@@ -20,6 +20,7 @@ from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
+from django.core.cache import cache
 from django.db import models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
@@ -221,8 +222,6 @@ class Hand(models.Model):
     summary_for_this_viewer: str
     score_for_this_viewer: str | int
 
-    _xscript: HandTranscript
-
     @cached_property
     def libPlayers_by_seat(self) -> dict[libSeat, libPlayer]:
         rv: dict[libSeat, libPlayer] = {}
@@ -242,17 +241,29 @@ class Hand(models.Model):
             assert_type(p, libPlayer)
         return libTable(players=players)
 
+    def bust_cache(self) -> None:
+        logger.debug("Deleting cache entry for hand %s", self.pk)
+        cache.delete(self.pk)
+
+    def cache(self, value) -> None:
+        original = value.serializable()
+        cache.set(self.pk, value)
+        roundtripped = cache.get(self.pk).serializable()
+        assert original == roundtripped
+
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
             for seat, call in self.annotated_calls:
                 player = self.libPlayers_by_seat[seat]
                 yield (player, call.libraryThing)
 
-        # TODO -- consider keeping this cached transcript, not on this hand instance, but instead, in [Django's own
-        # caching system](https://docs.djangoproject.com/en/5.1/topics/cache/).  That way, it should be available to any
-        # client who tries to read it, as opposed to just the client that created it (and each hand typically has four
-        # interested parties).
-        if not hasattr(self, "_xscript"):
+        if (_xscript := cache.get(self.pk)) is None:
+            logger.debug(
+                "Did not find xscript for hand %s; recreating it from %s calls and %s plays",
+                self.play_set.count(),
+                len(self.plays),
+                self.pk,
+            )
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
             dealt_cards_by_seat = {
@@ -263,7 +274,7 @@ class Hand(models.Model):
             for player, call in calls():
                 auction.append_located_call(player=player, call=call)
 
-            self._xscript = HandTranscript(
+            _xscript = HandTranscript(
                 table=lib_table,
                 auction=auction,
                 ns_vuln=self.board.ns_vulnerable,
@@ -272,9 +283,15 @@ class Hand(models.Model):
             )
 
             for play in self.plays:
-                self._xscript.add_card(libCard.deserialize(play.serialized))
+                _xscript.add_card(libCard.deserialize(play.serialized))
+                logger.debug("Added card %s to xscript", play.serialized)
 
-        return self._xscript
+            logger.debug("Caching xscript %s for hand %s", _xscript, self.pk)
+            self.cache(_xscript)
+        else:
+            logger.debug("Found xscript for hand %s: %s", self.pk, _xscript)
+
+        return _xscript
 
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
@@ -295,7 +312,6 @@ class Hand(models.Model):
 
         self.call_set.create(serialized=call.serialize())
 
-        del self._xscript
         if self.declarer:  # the auction just settled
             contract = self.auction.status
             assert isinstance(contract, libContract)
@@ -346,10 +362,6 @@ class Hand(models.Model):
 
         rv = self.play_set.create(hand=self, serialized=card.serialize())
 
-        # Bust the cache just a little to see if this is the last play
-        del self.plays
-        if len(self.plays) == 52:
-            del self._xscript
         final_score = self.get_xscript().final_score()
 
         if final_score:
@@ -567,7 +579,9 @@ class Hand(models.Model):
 
     @cached_property
     def plays(self):
-        return self.play_set.order_by("id")
+        rv = self.play_set.order_by("id")
+        logger.debug(f"{len(rv)=}")
+        return rv
 
     def toggle_open_access(self) -> None:
         if self.is_abandoned:
@@ -631,10 +645,13 @@ class HandAdmin(admin.ModelAdmin):
 
 
 class CallManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
+    def create(self, *args, **kwargs) -> Call:
         from app.serializers import ReadOnlyCallSerializer
 
         rv = super().create(*args, **kwargs)
+
+        # TODO -- *add* the call to the xscript, rather than forcing us to recreate it from scratch
+        rv.hand.bust_cache()
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-call": ReadOnlyCallSerializer(rv).data},
@@ -659,7 +676,7 @@ class Call(models.Model):
 
     objects = CallManager()
 
-    @cached_property
+    @property
     def seat_pk(self) -> int | None:
         for pc in self.hand.get_xscript().auction.player_calls:
             if pc.call.serialize() == self.serialized:
@@ -679,16 +696,19 @@ admin.site.register(Call)
 
 
 class PlayManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
+    def create(self, *args, **kwargs) -> Play:
         """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
         from app.serializers import ReadOnlyPlaySerializer
 
         rv = super().create(*args, **kwargs)
 
-        cereal = ReadOnlyPlaySerializer(rv)
+        # See corresponding TODO in CallManager
+        logger.debug("About to bust cache on %s; btw kwargs is %s", rv.hand, kwargs)
+        logger.debug("There are %s plays for hand %s", rv.hand.plays.count(), rv.hand.pk)
+        rv.hand.bust_cache()
 
         rv.hand.send_event_to_players_and_hand(
-            data={"new-play": cereal.data},
+            data={"new-play": ReadOnlyPlaySerializer(rv).data},
         )
 
         return rv
@@ -716,9 +736,11 @@ class Play(models.Model):
             ),
         ]
 
-    @cached_property
+    @property
     def seat_pk(self) -> int | None:
-        for t in self.hand.get_xscript().tricks:
+        x = self.hand.get_xscript()
+        logger.debug("xscript %s", x)
+        for t in x.tricks:
             for p in t.plays:
                 if p.card.serialize() == self.serialized:
                     return self.hand.table.seats.get(direction=p.seat.value).pk

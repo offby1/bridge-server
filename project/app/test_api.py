@@ -1,4 +1,5 @@
 import json
+import logging
 
 from bridge.card import Card, Rank, Suit
 from bridge.contract import Bid
@@ -9,7 +10,7 @@ from rest_framework.test import (  # type: ignore [import-untyped]
 
 import app.models.player
 import app.views.drf_views
-from app.models import Board, Call, Hand, Play, Player, Table
+from app.models import Board, Call, Hand, Play, Player, Table, logged_queries
 from app.serializers import ReadOnlyCallSerializer, ReadOnlyPlaySerializer
 
 from .testutils import set_auction_to
@@ -67,7 +68,7 @@ def test_call_post(usual_setup) -> None:
     request = factory.post(
         "/api/calls/", {"serialized": three_notrump.serialize(), "hand_id": h.pk}, format="json"
     )
-    del h._xscript
+    h.bust_cache()
     force_authenticate(request, user=north.user)
     view = app.views.drf_views.CallViewSet.as_view(actions={"post": "create"})
 
@@ -188,6 +189,9 @@ def test_serialized_play(played_almost_to_completion) -> None:
     data = ReadOnlyPlaySerializer(p1).data
     assert data == {"serialized": "♦2", "hand": {"id": 1, "table": 1, "board": 1}, "seat_pk": 2}
 
-    p52 = Play.objects.create(hand=p1.hand, serialized="♠A")
+    with logged_queries():
+        p52 = Play.objects.create(hand=p1.hand, serialized="♠A")
+    logger = logging.getLogger("app")
+    logger.debug(f"test just created {p52.serialized}")
     data = ReadOnlyPlaySerializer(p52).data
     assert data == {"serialized": "♠A", "hand": {"id": 1, "table": 1, "board": 1}, "seat_pk": 4}

@@ -54,6 +54,7 @@ class QueryLogger:
         start_time = time.time()
         try:
             rv = execute(sql, params, many, context)
+            logger.debug("%s %s => %s", sql, params, rv)
         finally:
             stop_time = time.time()
 

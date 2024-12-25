@@ -237,6 +237,9 @@ LOGGING = {
         "django.channels.server": {
             "level": "INFO",
         },
+        "django.core.cache": {
+            "level": "DEBUG",
+        },
         "django_eventstream.views": {
             "level": "WARNING",
         },
