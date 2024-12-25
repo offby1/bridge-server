@@ -132,7 +132,7 @@ shell *options: migrate (manage "shell_plus --print-sql " + options)
 makemigrations *options: (manage "makemigrations " + options)
 
 [group('django')]
-migrate: makemigrations (manage "migrate")
+migrate: makemigrations create-cache (manage "migrate")
 
 [group('bs')]
 [script('bash')]
