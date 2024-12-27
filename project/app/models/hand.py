@@ -650,10 +650,23 @@ class CallManager(models.Manager):
     def create(self, *args, **kwargs) -> Call:
         from app.serializers import ReadOnlyCallSerializer
 
-        rv = super().create(*args, **kwargs)
+        if "hand_id" in kwargs:
+            h = Hand.objects.get(pk=kwargs["hand_id"])
+        elif "hand" in kwargs:
+            h = kwargs["hand"]
+        else:
+            msg = f"wtf: {kwargs=}"
+            raise Exception(msg)
 
-        # TODO -- *add* the call to the xscript, rather than forcing us to recreate it from scratch
-        rv.hand.bust_cache()
+        x = h.get_xscript()
+
+        rv = super().create(*args, **kwargs)
+        logger.debug(f"created {kwargs=} => {rv=}")
+
+        c = libBid.deserialize(kwargs["serialized"])
+        logger.debug("Creating call for hand %s: %s (%s)", h, kwargs["serialized"], c)
+        x.add_call(c)
+        rv.hand.cache(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-call": ReadOnlyCallSerializer(rv).data},
@@ -702,12 +715,22 @@ class PlayManager(models.Manager):
         """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
         from app.serializers import ReadOnlyPlaySerializer
 
+        # Apparently I call this both ways :shrug:
+        if "hand_id" in kwargs:
+            h = Hand.objects.get(pk=kwargs["hand_id"])
+        elif "hand" in kwargs:
+            h = kwargs["hand"]
+        else:
+            msg = f"wtf: {kwargs=}"
+            raise Exception(msg)
+        logger.debug("Creating play for hand %s: %s", h, kwargs["serialized"])
+        x = h.get_xscript()
+
         rv = super().create(*args, **kwargs)
 
         # See corresponding TODO in CallManager
-        logger.debug("About to bust cache on %s; btw kwargs is %s", rv.hand, kwargs)
-        logger.debug("There are %s plays for hand %s", rv.hand.plays.count(), rv.hand.pk)
-        rv.hand.bust_cache()
+        x.add_card(libCard.deserialize(kwargs["serialized"]))
+        rv.hand.cache(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-play": ReadOnlyPlaySerializer(rv).data},
