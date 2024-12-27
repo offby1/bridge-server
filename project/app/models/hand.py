@@ -242,10 +242,7 @@ class Hand(models.Model):
         return libTable(players=players)
 
     def cache(self, value) -> None:
-        original = value.serializable()
         cache.set(self.pk, value)
-        roundtripped = cache.get(self.pk).serializable()
-        assert original == roundtripped
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -280,12 +277,8 @@ class Hand(models.Model):
 
             for play in self.plays:
                 _xscript.add_card(libCard.deserialize(play.serialized))
-                logger.debug("Added card %s to xscript", play.serialized)
 
-            logger.debug("Caching xscript %s for hand %s", _xscript, self.pk)
             self.cache(_xscript)
-        else:
-            logger.debug("Found xscript for hand %s: %s", self.pk, _xscript)
 
         return _xscript
 
@@ -577,9 +570,7 @@ class Hand(models.Model):
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
     def plays(self):
-        rv = self.play_set.order_by("id")
-        logger.debug(f"{len(rv)=}")
-        return rv
+        return self.play_set.order_by("id")
 
     def toggle_open_access(self) -> None:
         if self.is_abandoned:
@@ -657,10 +648,9 @@ class CallManager(models.Manager):
         x = h.get_xscript()
 
         rv = super().create(*args, **kwargs)
-        logger.debug(f"created {kwargs=} => {rv=}")
 
         c = libBid.deserialize(kwargs["serialized"])
-        logger.debug("Creating call for hand %s: %s (%s)", h, kwargs["serialized"], c)
+
         x.add_call(c)
         rv.hand.cache(x)
 
@@ -719,7 +709,7 @@ class PlayManager(models.Manager):
         else:
             msg = f"wtf: {kwargs=}"
             raise Exception(msg)
-        logger.debug("Creating play for hand %s: %s", h, kwargs["serialized"])
+
         x = h.get_xscript()
 
         rv = super().create(*args, **kwargs)
@@ -759,9 +749,7 @@ class Play(models.Model):
 
     @property
     def seat_pk(self) -> int | None:
-        x = self.hand.get_xscript()
-        logger.debug("xscript %s", x)
-        for t in x.tricks:
+        for t in self.hand.get_xscript().tricks:
             for p in t.plays:
                 if p.card.serialize() == self.serialized:
                     return self.hand.table.seats.get(direction=p.seat.value).pk
