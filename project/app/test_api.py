@@ -68,7 +68,7 @@ def test_call_post(usual_setup) -> None:
     request = factory.post(
         "/api/calls/", {"serialized": three_notrump.serialize(), "hand_id": h.pk}, format="json"
     )
-    h.bust_cache()
+
     force_authenticate(request, user=north.user)
     view = app.views.drf_views.CallViewSet.as_view(actions={"post": "create"})
 

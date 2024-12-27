@@ -241,10 +241,6 @@ class Hand(models.Model):
             assert_type(p, libPlayer)
         return libTable(players=players)
 
-    def bust_cache(self) -> None:
-        logger.debug("Deleting cache entry for hand %s", self.pk)
-        cache.delete(self.pk)
-
     def cache(self, value) -> None:
         original = value.serializable()
         cache.set(self.pk, value)
