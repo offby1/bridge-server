@@ -241,7 +241,7 @@ class Hand(models.Model):
             assert_type(p, libPlayer)
         return libTable(players=players)
 
-    def cache(self, value) -> None:
+    def _cache(self, value) -> None:
         cache.set(self.pk, value)
 
     def get_xscript(self) -> HandTranscript:
@@ -278,7 +278,7 @@ class Hand(models.Model):
             for play in self.plays:
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
-            self.cache(_xscript)
+            self._cache(_xscript)
 
         return _xscript
 
@@ -652,7 +652,7 @@ class CallManager(models.Manager):
         c = libBid.deserialize(kwargs["serialized"])
 
         x.add_call(c)
-        rv.hand.cache(x)
+        rv.hand._cache(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-call": ReadOnlyCallSerializer(rv).data},
@@ -716,7 +716,7 @@ class PlayManager(models.Manager):
 
         # See corresponding TODO in CallManager
         x.add_card(libCard.deserialize(kwargs["serialized"]))
-        rv.hand.cache(x)
+        rv.hand._cache(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-play": ReadOnlyPlaySerializer(rv).data},
