@@ -279,9 +279,7 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
-    if xscript is None:
-        logger.warning("Hey man, I gotta fetch the transcript, which is like really expensive")
-        xscript = hand.get_xscript()
+    xscript = hand.get_xscript()
 
     always = {
         "annotated_tricks": list(_annotate_tricks(xscript)),

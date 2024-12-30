@@ -243,8 +243,30 @@ class Hand(models.Model):
             assert_type(p, libPlayer)
         return libTable(players=players)
 
-    def _cache(self, value) -> None:
-        cache.set(self.pk, value)
+    def _cache_key(self) -> str:
+        return self.pk
+
+    def _cache_meta_key(self) -> str:
+        return f"{self._cache_key()}_meta"
+
+    def _cache_set(self, value: str) -> None:
+        cache.set(self._cache_key, value)
+
+    def _cache_get(self) -> str:
+        return cache.get(self._cache_key)
+
+    def _cache_note_hit(self) -> None:
+        key = f"{self._cache_meta_key()}_hit"
+        old = cache.get(key, default=0)
+        cache.set(key, old + 1)
+        logger.debug(f"Cache hits ({self._cache_key()}): %s", old + 1)
+
+    def _cache_note_miss(self) -> None:
+        key = f"{self._cache_meta_key()}_miss"
+        key = self._cache_meta_key()
+        old = cache.get(key, default=0)
+        cache.set(key, old + 1)
+        logger.debug(f"Cache misses ({self._cache_key()}): %s", old + 1)
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -252,7 +274,8 @@ class Hand(models.Model):
                 player = self.libPlayers_by_seat[seat]
                 yield (player, call.libraryThing)
 
-        if (_xscript := cache.get(self.pk)) is None:
+        if (_xscript := self._cache_get()) is None:
+            self._cache_note_miss()
             logger.debug(
                 "Did not find xscript for hand %s; recreating it from %s calls and %s plays",
                 self.pk,
@@ -280,7 +303,9 @@ class Hand(models.Model):
             for play in self.plays:
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
-            self._cache(_xscript)
+            self._cache_set(_xscript)
+        else:
+            self._cache_note_hit()
 
         return _xscript
 
