@@ -255,9 +255,9 @@ class Hand(models.Model):
         if (_xscript := cache.get(self.pk)) is None:
             logger.debug(
                 "Did not find xscript for hand %s; recreating it from %s calls and %s plays",
-                self.play_set.count(),
-                len(self.plays),
                 self.pk,
+                self.call_set.count(),
+                self.play_set.count(),
             )
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
