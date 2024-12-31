@@ -1,9 +1,15 @@
 import pytest
 from django.contrib import auth
+from django.core.cache import cache
 from django.core.management import call_command
 
 from .models import Board, Hand, Play, Player, Table, Tournament
 from .models.board import board_attributes_from_board_number
+
+
+@pytest.fixture(autouse=True)
+def dump_django_cache():
+    cache.clear()
 
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.

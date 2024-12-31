@@ -252,7 +252,7 @@ class Hand(models.Model):
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
 
-    def _cache_get(self) -> str:
+    def _cache_get(self) -> Any:
         return cache.get(self._cache_key())
 
     def _cache_note_hit(self) -> None:
@@ -304,6 +304,7 @@ class Hand(models.Model):
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
             self._cache_set(_xscript)
+            logger.debug("Cached %s", _xscript)
         else:
             self._cache_note_hit()
 
