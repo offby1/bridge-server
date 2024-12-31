@@ -8,6 +8,10 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
+* It occurs to me that the events pertaining to a hand should be *public* -- just the "new-hand", "someone made a call", and "someone made a play" events.  And maybe I can force the event IDs to be: zero for the "new-hand" event, 1, 2, 3 &c for the calls; and num-calls, num-calls + 1, ... num-calls + 52 for the plays.  That should make it easier for clients to "sync" up; or at least, when I see the event ID in a log message, it should be easier to tell what it's for.
+
+  Per-player events, if we need them at all, would pertain to "here's your hand", although the transcript provides that, so ...
+                                                                                                                                       
 STILL TODO:
 
 * At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
