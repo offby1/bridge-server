@@ -250,10 +250,10 @@ class Hand(models.Model):
         return f"{self._cache_key()}_meta"
 
     def _cache_set(self, value: str) -> None:
-        cache.set(self._cache_key, value)
+        cache.set(self._cache_key(), value)
 
     def _cache_get(self) -> str:
-        return cache.get(self._cache_key)
+        return cache.get(self._cache_key())
 
     def _cache_note_hit(self) -> None:
         key = f"{self._cache_meta_key()}_hit"
@@ -379,7 +379,7 @@ class Hand(models.Model):
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
-            raise PlayError from e
+            raise PlayError(str(e)) from e
 
         final_score = self.get_xscript().final_score()
 
@@ -682,7 +682,7 @@ class CallManager(models.Manager):
         c = libBid.deserialize(kwargs["serialized"])
 
         x.add_call(c)
-        rv.hand._cache(x)
+        rv.hand._cache_set(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-call": ReadOnlyCallSerializer(rv).data},
@@ -746,7 +746,7 @@ class PlayManager(models.Manager):
 
         # See corresponding TODO in CallManager
         x.add_card(libCard.deserialize(kwargs["serialized"]))
-        rv.hand._cache(x)
+        rv.hand._cache_set(x)
 
         rv.hand.send_event_to_players_and_hand(
             data={"new-play": ReadOnlyPlaySerializer(rv).data},
