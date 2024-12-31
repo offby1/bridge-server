@@ -246,8 +246,12 @@ class Hand(models.Model):
     def _cache_key(self) -> str:
         return self.pk
 
-    def _cache_meta_key(self) -> str:
-        return f"{self._cache_key()}_meta"
+    @property
+    def _cache_stats_keys(self) -> str:
+        return {
+            "hits": f"{self._cache_key()}_stats_hits",
+            "misses": f"{self._cache_key()}_stats_misses",
+        }
 
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
@@ -255,18 +259,20 @@ class Hand(models.Model):
     def _cache_get(self) -> Any:
         return cache.get(self._cache_key())
 
+    def _cache_log_stats(self) -> None:
+        keys = self._cache_stats_keys
+        logger.debug(f"{cache.get(keys['hits'])=} {cache.get(keys['misses'])=} ")
+
     def _cache_note_hit(self) -> None:
-        key = f"{self._cache_meta_key()}_hit"
+        key = self._cache_stats_keys["hits"]
         old = cache.get(key, default=0)
         cache.set(key, old + 1)
-        logger.debug(f"Cache hits ({self._cache_key()}): %s", old + 1)
 
     def _cache_note_miss(self) -> None:
-        key = f"{self._cache_meta_key()}_miss"
-        key = self._cache_meta_key()
+        key = self._cache_stats_keys["misses"]
         old = cache.get(key, default=0)
         cache.set(key, old + 1)
-        logger.debug(f"Cache misses ({self._cache_key()}): %s", old + 1)
+        self._cache_log_stats()
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
