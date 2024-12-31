@@ -21,7 +21,7 @@ from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
-from django.db import models
+from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -376,7 +376,10 @@ class Hand(models.Model):
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
-        rv = self.play_set.create(hand=self, serialized=card.serialize())
+        try:
+            rv = self.play_set.create(hand=self, serialized=card.serialize())
+        except Error as e:
+            raise PlayError from e
 
         final_score = self.get_xscript().final_score()
 
