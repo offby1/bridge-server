@@ -19,7 +19,7 @@ django-extensions = "^3.2.3"
 faker = "^26.0.0"
 more-itertools = "^10.3.0"
 tqdm = "^4.66.4"
-bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "b235511ce420ebbcea7f06d5452fe016b7156fa0" }
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "93165ef0ba8fbb63a4dcfeb37c73d668ee087576" }
 #bridge = {path = "../library", develop = true}
 django-eventstream = {extras = ["drf"], version = "^5.3.0"}
 daphne = "^4.1.2"
