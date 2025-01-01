@@ -21,6 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
+from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
 
 import app.models
 from app.models.utils import assert_type
@@ -526,8 +527,10 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
+    xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+    current_event_id = get_current_event_id([str(hand.pk)])
     return HttpResponse(
-        json.dumps(hand.get_xscript().as_viewed_by(player.libraryThing()).serializable()),
+        json.dumps({"xscript": xscript.serializable(), "current_event_id": current_event_id}),
         headers={"Content-Type": "text/json"},
     )
 

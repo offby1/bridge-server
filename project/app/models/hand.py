@@ -247,7 +247,7 @@ class Hand(models.Model):
         return self.pk
 
     @property
-    def _cache_stats_keys(self) -> str:
+    def _cache_stats_keys(self) -> dict[str, str]:
         return {
             "hits": f"{self._cache_key()}_stats_hits",
             "misses": f"{self._cache_key()}_stats_misses",
