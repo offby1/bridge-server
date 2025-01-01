@@ -106,7 +106,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> HttpResponse:
+def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     who_clicked = request.user.player
@@ -115,8 +115,6 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> Ht
 
     if hand.player_who_may_play is None:
         return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
-
-    seat: app.models.Seat = get_object_or_404(app.models.Seat, pk=seat_pk)
 
     assert who_clicked is not None
 
@@ -134,7 +132,7 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str, seat_pk: str) -> Ht
 
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:
-        hand.add_play_from_player(player=seat.player.libraryThing(), card=card)
+        hand.add_play_from_player(player=hand.player_who_may_play.libraryThing(), card=card)
     except app.models.hand.PlayError as e:
         return HttpResponseForbidden(str(e))
 

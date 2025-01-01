@@ -44,7 +44,7 @@ urlpatterns = [
         name="four-hands-partial",
     ),
     path("lobby/", lobby.lobby, name="lobby"),
-    path("play/<seat_pk>/<hand_pk>/", table.details.play_post_view, name="play-post"),
+    path("play/<hand_pk>/", table.details.play_post_view, name="play-post"),
     path("player/<pk>/", player.player_detail_view, name="player"),
     path("player/<pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"),
     path("player/<pk>/partnership/", player.partnership_view, name="player_partnership"),
