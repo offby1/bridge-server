@@ -67,7 +67,7 @@ ALLOWED_HOSTS = [
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://teensy-info.tail571dc2.ts.net",
-    "https://erics-work-macbook-pro.tail571dc2.ts.net",
+    "https://laptop.tail571dc2.ts.net",
 ]
 
 # Application definition
