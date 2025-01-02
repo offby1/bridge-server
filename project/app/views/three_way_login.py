@@ -60,10 +60,12 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
             user = player.user
             if password.rstrip() == settings.API_SKELETON_KEY:
                 login(request, user)
+                msg = f"Oh look, {user.username} used the skeleton key"
+                logger.debug("%s", msg)
                 return JsonResponse(
                     {
                         "player-name": user.username,
-                        "comment": f"Oh look, {user.username} used the skeleton key",
+                        "comment": msg,
                     }
                 )
             msg = f"{username_or_pk} looks like a number, but you didn't give us the skeleton key"
@@ -85,4 +87,5 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         return HttpResponseForbidden(escape(msg))
 
     assert user is not None
+    logger.debug(f"Just logged in {user.username}")
     return JsonResponse({"player-name": user.get_username(), "comment": msg})
