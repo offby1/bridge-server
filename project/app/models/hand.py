@@ -441,6 +441,8 @@ class Hand(models.Model):
             return None
 
         seat_who_may_play = self.get_xscript().next_seat_to_play()
+        if seat_who_may_play is None:
+            return None
         pbs = self.libPlayers_by_seat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 

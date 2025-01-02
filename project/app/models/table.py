@@ -195,7 +195,10 @@ class Table(models.Model):
     def next_seat_to_play(self) -> modelSeat | None:
         if self.current_auction.found_contract:
             xscript = self.current_hand.get_xscript()
-            return modelSeat.objects.get(table=self, direction=xscript.next_seat_to_play().value)
+            n = xscript.next_seat_to_play()
+            if n is None:
+                return None
+            return modelSeat.objects.get(table=self, direction=n.value)
 
         return None
 
