@@ -170,7 +170,7 @@ def test_player_permissions(usual_setup):
     assert response.status_code > 400
     assert (
         json.loads(response.content)
-        == f"You, requester_pk={player_two.user.pk}, may not futz with player target_pk={player_one.user.pk}"
+        == f"You, requester_pk={player_two.pk}, may not futz with player target_pk={player_one.pk}"
     )
     player_one.refresh_from_db()
     assert player_one.allow_bot_to_play_for_me is False

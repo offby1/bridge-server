@@ -9,7 +9,6 @@ from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
 from django.conf import settings
 from django.contrib import auth
-from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
@@ -221,24 +220,24 @@ def test_player_channnel_encoding():
     assert Message.player_pks_from_channel_name("players:20_10") == {10, 20}
 
 
-def quickly_auth_test_client(c: Client, user: User) -> None:
+def quickly_auth_test_client(c: Client, player: Player) -> None:
     # We could also have just done `c.login(username=user, password=".")` but that uses deliberately-slow
     # password-hashing.
     c.get(
         "/three-way-login/",
         headers={
             "Authorization": "Basic "
-            + base64.b64encode(f"{user.pk}:{settings.API_SKELETON_KEY}".encode()).decode()
+            + base64.b64encode(f"{player.pk}:{settings.API_SKELETON_KEY}".encode()).decode()
         },  # type: ignore [arg-type]
     )
 
 
 def test_sending_lobby_messages(usual_setup):
-    def say_hey(user=None):
+    def say_hey_from(player=None):
         c = Client()
 
-        if user is not None:
-            quickly_auth_test_client(c, user)
+        if player is not None:
+            quickly_auth_test_client(c, player)
 
         return c.post(
             "/send_lobby_message/",
@@ -246,7 +245,7 @@ def test_sending_lobby_messages(usual_setup):
             data=json.dumps({"message": "hey you"}),
         )
 
-    response = say_hey()
+    response = say_hey_from()
     match response.status_code:  # I'm honestly not sure which of these is correct :-|
         case 403:
             assert response.content == b"Go away, anonymous scoundrel"
@@ -257,7 +256,7 @@ def test_sending_lobby_messages(usual_setup):
             raise AssertionError(msg)
 
     t = Table.objects.first()
-    response = say_hey(user=t.current_hand.modPlayer_by_seat(libSeat.NORTH).user)
+    response = say_hey_from(player=t.current_hand.modPlayer_by_seat(libSeat.NORTH))
 
     assert response.status_code == 200
 
@@ -273,7 +272,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
             target = north
 
         if sender_player is not None:
-            quickly_auth_test_client(c, sender_player.user)
+            quickly_auth_test_client(c, sender_player)
 
         return c.post(
             reverse("app:send_player_message", args=[target.pk]),

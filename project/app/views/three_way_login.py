@@ -4,13 +4,16 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.utils.html import escape
+
+from app.models import Player
 
 logger = logging.getLogger(__name__)
 
 
+# Accepts ordinary usernames *and* primary keys for django.contrib.auth.models.user;
+# Accepts the relevant user's password *and* the "skeleton key"
 def three_way_login_view(request: HttpRequest) -> HttpResponse:
     user = getattr(request, "user", None)
 
@@ -53,7 +56,8 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         return HttpResponseForbidden(escape(msg))
 
     if username_or_pk.isdigit():  # TODO -- this won't work if we shift to, say, UUIDs as keys
-        if (user := User.objects.filter(pk=username_or_pk).first()) is not None:
+        if (player := Player.objects.filter(pk=username_or_pk).first()) is not None:
+            user = player.user
             if password.rstrip() == settings.API_SKELETON_KEY:
                 login(request, user)
                 return JsonResponse(
@@ -73,6 +77,12 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
 
     msg = f"{user=} used a regular password. Splendid."
     logger.info(msg)
-    login(request, user)
+    try:
+        login(request, user)
+    except Exception as e:
+        msg = f"Bummer -- logging in {user} got us {e}"
+        logger.warning(msg)
+        return HttpResponseForbidden(escape(msg))
+
     assert user is not None
     return JsonResponse({"player-name": user.get_username(), "comment": msg})
