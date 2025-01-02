@@ -425,6 +425,7 @@ class Hand(models.Model):
 
         if self.auction.status is libAuction.Incomplete:
             libAllowed = self.auction.allowed_caller()
+            assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
         return None

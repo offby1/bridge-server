@@ -164,7 +164,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     assert t.current_auction.found_contract
 
     # The auction is settled, so no bidding box.
-    response = _bidding_box_as_seen_by(t, t.current_auction.allowed_caller(), rf)
+    response = _bidding_box_as_seen_by(t, t.current_hand.player_who_may_play, rf)
     assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.

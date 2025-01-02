@@ -15,6 +15,7 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
     assert len(hand.auction.player_calls) == 0
 
     caller = hand.auction.allowed_caller()
+    assert caller is not None
 
     hand.add_call_from_player(player=caller, call=bid)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 1

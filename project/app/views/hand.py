@@ -46,7 +46,7 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
     }
 
 
-def _bidding_box_context_for_hand(request, hand):
+def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
     player = request.user.player  # type: ignore
     seat = player.current_seat
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
@@ -54,12 +54,17 @@ def _bidding_box_context_for_hand(request, hand):
     if not seat or seat.table != hand.table:
         buttons = "No bidding box 'cuz you are not at this table"
     else:
+        allowed_caller = hand.auction.allowed_caller()
+        if allowed_caller is None:
+            disabled_because_out_of_turn = True
+        else:
+            disabled_because_out_of_turn = (
+                player.name != allowed_caller.name and not hand.open_access
+            )
         buttons = bidding_box_buttons(
             auction=hand.auction,
             call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
-            disabled_because_out_of_turn=(
-                player.name != hand.auction.allowed_caller().name and not hand.open_access
-            ),
+            disabled_because_out_of_turn=disabled_because_out_of_turn,
         )
     return {
         "bidding_box_buttons": buttons,
