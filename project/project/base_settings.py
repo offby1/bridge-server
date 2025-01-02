@@ -55,6 +55,8 @@ API_SKELETON_KEY = from_env_var_file(
     "DJANGO_SKELETON_KEY_FILE",
     "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_skeleton_key",
 )
+if API_SKELETON_KEY is not None:
+    API_SKELETON_KEY = API_SKELETON_KEY.rstrip()
 
 ALLOWED_HOSTS = [
     ".orb.local",

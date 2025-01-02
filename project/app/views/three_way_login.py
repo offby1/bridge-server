@@ -54,7 +54,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
 
     if username_or_pk.isdigit():  # TODO -- this won't work if we shift to, say, UUIDs as keys
         if (user := User.objects.filter(pk=username_or_pk).first()) is not None:
-            if password == settings.API_SKELETON_KEY:
+            if password.rstrip() == settings.API_SKELETON_KEY:
                 login(request, user)
                 return JsonResponse(
                     {
