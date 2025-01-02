@@ -5,7 +5,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
@@ -15,9 +15,9 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     user = getattr(request, "user", None)
 
     if user and user.is_authenticated:
-        msg = f"{user=} is already authenticated -- welcome"
+        msg = f"{user.username} is already authenticated -- welcome"
         logger.info(msg)
-        return HttpResponse(escape(msg))
+        return JsonResponse({"player-name": user.username, "comment": msg})
 
     if (auth_header := request.headers.get("Authorization")) is None:
         msg = "No Authorization header attached to my request!  Begone!"
@@ -56,7 +56,15 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         if (user := User.objects.filter(pk=username_or_pk).first()) is not None:
             if password == settings.API_SKELETON_KEY:
                 login(request, user)
-                return HttpResponse(escape(f"Oh look, {user=} used the skeleton key"))
+                return JsonResponse(
+                    {
+                        "player-name": user.username,
+                        "comment": f"Oh look, {user.username} used the skeleton key",
+                    }
+                )
+            msg = f"{username_or_pk} looks like a number, but you didn't give us the skeleton key"
+            logger.info(msg)
+            return HttpResponseForbidden(escape(msg))
 
     elif (user := authenticate(username=username_or_pk, password=password)) is None:
         msg = f"{username_or_pk=} with that password just doesn't cut it, sorry"
@@ -66,4 +74,5 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     msg = f"{user=} used a regular password. Splendid."
     logger.info(msg)
     login(request, user)
-    return HttpResponse(escape(msg))
+    assert user is not None
+    return JsonResponse({"player-name": user.get_username(), "comment": msg})
