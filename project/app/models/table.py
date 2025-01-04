@@ -141,6 +141,7 @@ class Table(models.Model):
         return rv
 
     def played_boards(self) -> QuerySet:
+        # https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ might help
         return Board.objects.filter(
             pk__in=RawSQL(
                 """

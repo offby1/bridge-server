@@ -158,6 +158,8 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    # TODO -- maybe https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ has some hints
+    # for orm-ifying this
     def players_current_seats(self):
         return Seat.objects.raw(
             """
