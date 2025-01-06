@@ -10,10 +10,11 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what (I can reme
 # su - ubuntu
 $ mkdir -vp ~/.ssh
 $ cd .ssh
-$ cat > authorized_keys
-$ curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up # there's some link to tailscale.com that you gotta click on to authorize the new machine
+$ cat > authorized_keys # now paste your favorite ssh public key
 $ exit
-# tailscale serve --bg 9000
+$ curl -fsSL https://tailscale.com/install.sh | sh && tailscale up # there's some link to tailscale.com that you gotta click on to authorize the new machine
+$ exit
+$ tailscale serve --bg 9000
 ```
 
 - On my laptop:
