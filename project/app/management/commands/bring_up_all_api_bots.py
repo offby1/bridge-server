@@ -21,7 +21,15 @@ class Command(BaseCommand):
         for player in app.models.Player.objects.filter(allow_bot_to_play_for_me=True).filter(
             currently_seated=True,
         )[0:max_number]:
-            self.stderr.write(f"{player.name} ... ", ending="")
+            if player.current_table.current_hand.is_complete:
+                player.allow_bot_to_play_for_me = False
+                player.save()
+                self.stderr.write(
+                    f"Disabling bot for {player.name} since their hand {player.current_table.current_hand} is complete"
+                )
+            else:
+                self.stderr.write(f"{player.name} ... ", ending="")
+
             try:
                 app.views.player.control_bot_for_player(player)
             except OSError as e:
