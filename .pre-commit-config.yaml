@@ -21,7 +21,7 @@ repos:
     - id: djlint-django
       exclude: 'bootstrap-fiddling.html'
 
-# Prevent me from pusing a pyproject.toml that says that the library is in ../library
+# Prevent me from using a pyproject.toml that says that the library is in ../library
 # That doesn't work "in production", but I keep forgetting.
 - repo: local
   hooks:

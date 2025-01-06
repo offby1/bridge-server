@@ -4,6 +4,7 @@ import collections
 import contextlib
 import dataclasses
 import logging
+import time
 from typing import Any
 
 from django.db import connection
@@ -49,11 +50,17 @@ class QueryLogger:
 
     def __call__(self, execute, sql, params, many, context):
         self.calls.append((sql, params, many, context))
-        self.counter[sql] += 1
 
-        logger.info(f"{sql} {params=}")
+        start_time = time.time()
+        try:
+            rv = execute(sql, params, many, context)
+            logger.debug("%s %s => %s", sql, params, rv)
+        finally:
+            stop_time = time.time()
 
-        return execute(sql, params, many, context)
+        self.counter[sql] += stop_time - start_time
+
+        return rv
 
 
 @contextlib.contextmanager

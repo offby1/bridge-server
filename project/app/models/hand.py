@@ -4,7 +4,7 @@ import collections
 import dataclasses
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Iterable, Iterator
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 from bridge.auction import Auction as libAuction
@@ -20,7 +20,8 @@ from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
 from bridge.xscript import HandTranscript
 from django.contrib import admin
-from django.db import models
+from django.core.cache import cache
+from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -29,6 +30,8 @@ from .seat import Seat
 from .utils import assert_type
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
     from django.db.models.manager import RelatedManager
 
     from . import Board, Player, Seat, Table  # noqa
@@ -114,22 +117,7 @@ class DisplaySkeleton:
 
 
 def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
-    match data:
-        case {"new-hand": {"table": table}}:
-            assert isinstance(table, dict), f"gotcha mofo {data=}"
     send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
-
-
-class HandManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
-        from app.serializers import NewHandSerializer
-
-        rv: Hand = super().create(*args, **kwargs)
-
-        serialized_hand = NewHandSerializer(rv).data
-        rv.send_event_to_players_and_hand(data={"new-hand": serialized_hand})
-        logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
-        return rv
 
 
 class Hand(models.Model):
@@ -138,8 +126,6 @@ class Hand(models.Model):
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
-
-    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -158,6 +144,11 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def players(self) -> models.QuerySet:
+        return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
+
+    # TODO -- maybe https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ has some hints
+    # for orm-ifying this
     def players_current_seats(self):
         return Seat.objects.raw(
             """
@@ -185,6 +176,7 @@ class Hand(models.Model):
         )
 
     @admin.display(boolean=True)
+    @cached_property
     def is_abandoned(self) -> bool:
         if self.is_complete:
             return False
@@ -207,6 +199,10 @@ class Hand(models.Model):
         ]
         all_channels = [hand_channel, "all-tables", *player_channels]
 
+        data = data.copy()
+        data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
+        data["serial_number"] = self.calls.count() + self.plays.count()
+        data["hand_pk"] = self.pk
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data)
 
@@ -222,19 +218,16 @@ class Hand(models.Model):
     summary_for_this_viewer: str
     score_for_this_viewer: str | int
 
-    _xscript: HandTranscript
-
     @cached_property
     def libPlayers_by_seat(self) -> dict[libSeat, libPlayer]:
         rv: dict[libSeat, libPlayer] = {}
         seats = self.table.seats
         for direction_int in self.board.hand_strings_by_direction:
-            lib_hand = libHand(cards=self.board.cards_for_direction(direction_int))
             lib_seat = libSeat(direction_int)
             seat = seats.filter(direction=direction_int).first()
             assert seat is not None
             name = seat.player_name
-            rv[lib_seat] = libPlayer(seat=lib_seat, hand=lib_hand, name=name)
+            rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
         return rv
 
     @cached_property
@@ -244,50 +237,97 @@ class Hand(models.Model):
             assert_type(p, libPlayer)
         return libTable(players=players)
 
-    def get_xscript(self) -> HandTranscript:
-        def calls_starting_with(start: int) -> Iterator[tuple[libPlayer, libCall]]:
-            for index, (seat, call) in enumerate(self.annotated_calls):
-                if index >= start:
-                    player = self.libPlayers_by_seat[seat]
-                    yield (player, call.libraryThing)
+    def _cache_key(self) -> str:
+        return self.pk
 
-        if not hasattr(self, "_xscript"):
+    @property
+    def _cache_stats_keys(self) -> dict[str, str]:
+        return {
+            "hits": f"{self._cache_key()}_stats_hits",
+            "misses": f"{self._cache_key()}_stats_misses",
+        }
+
+    def _cache_set(self, value: str) -> None:
+        cache.set(self._cache_key(), value)
+
+    def _cache_get(self) -> Any:
+        return cache.get(self._cache_key())
+
+    def _cache_log_stats(self) -> None:
+        keys = self._cache_stats_keys
+        logger.debug(f"{cache.get(keys['hits'])=} {cache.get(keys['misses'])=} ")
+
+    def _cache_note_hit(self) -> None:
+        key = self._cache_stats_keys["hits"]
+        old = cache.get(key, default=0)
+        cache.set(key, old + 1)
+
+    def _cache_note_miss(self) -> None:
+        key = self._cache_stats_keys["misses"]
+        old = cache.get(key, default=0)
+        cache.set(key, old + 1)
+        self._cache_log_stats()
+
+    def get_xscript(self) -> HandTranscript:
+        def calls() -> Iterator[tuple[libPlayer, libCall]]:
+            for seat, call in self.annotated_calls:
+                player = self.libPlayers_by_seat[seat]
+                yield (player, call.libraryThing)
+
+        if (_xscript := self._cache_get()) is None:
+            self._cache_note_miss()
+            logger.debug(
+                "Did not find xscript for hand %s; recreating it from %s calls and %s plays",
+                self.pk,
+                self.call_set.count(),
+                self.play_set.count(),
+            )
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
+            dealt_cards_by_seat = {
+                libSeat(direction): self.board.cards_for_direction(direction)
+                for direction in (1, 2, 3, 4)
+            }
 
-            for player, call in calls_starting_with(0):
+            for player, call in calls():
                 auction.append_located_call(player=player, call=call)
 
-            self._xscript = HandTranscript(
+            _xscript = HandTranscript(
                 table=lib_table,
                 auction=auction,
                 ns_vuln=self.board.ns_vulnerable,
                 ew_vuln=self.board.ew_vulnerable,
+                dealt_cards_by_seat=dealt_cards_by_seat,
             )
 
-        num_missing_calls = self.calls.count() - len(self._xscript.auction.player_calls)
-        assert not num_missing_calls < 0
-        if num_missing_calls > 0:
-            c: Call
-            for c in reversed(self.calls.order_by("-id").all()[0:num_missing_calls]):
-                self._xscript.add_call(libBid.deserialize(c.serialized))
+            for play in self.plays:
+                _xscript.add_card(libCard.deserialize(play.serialized))
 
-        num_missing_plays = self.plays.count() - self._xscript.num_plays
-        assert (
-            not num_missing_plays < 0
-        ), f"{self.plays.count()=} but {self._xscript.num_plays=} -- {self._xscript.tricks=}"
-        if num_missing_plays > 0:
-            p: Play
-            for p in reversed(self.plays.order_by("-id").all()[0:num_missing_plays]):
-                self._xscript.add_card(libCard.deserialize(p.serialized))
+            self._cache_set(_xscript)
+            logger.debug("Cached %s", _xscript)
+        else:
+            self._cache_note_hit()
 
-        return self._xscript
+        return _xscript
 
-    def add_call_from_player(self, *, player: libPlayer, call: libCall):
+    def serializable_xscript(self) -> Any:
+        return self.get_xscript().serializable()
+
+    def disable_bots(self) -> None:
+        from app.views.player import control_bot_for_player
+
+        logger.info(
+            "Disabling bots for %s", self.players().values_list("user__username", flat=True)
+        )
+        self.players().update(allow_bot_to_play_for_me=False)
+        for p in self.players():
+            control_bot_for_player(p)
+
+    def add_call_from_player(self, *, player: libPlayer, call: libCall) -> None:
         assert_type(player, libPlayer)
         assert_type(call, libCall)
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             msg = f"Hand {self} is abandoned"
             raise AuctionError(msg)
 
@@ -297,7 +337,16 @@ class Hand(models.Model):
         except AuctionException as e:
             raise AuctionError(str(e)) from e
 
-        self.call_set.create(serialized=call.serialize())
+        modelCall = self.call_set.create(serialized=call.serialize())
+
+        self.send_event_to_players_and_hand(
+            data={
+                "new-call": {
+                    "serialized": call.serialize(),
+                    "seat_pk": modelCall.seat_pk,
+                },
+            },
+        )
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
@@ -313,6 +362,7 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().auction.status is libAuction.PassedOut:
+            self.disable_bots()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -324,7 +374,7 @@ class Hand(models.Model):
         assert_type(player, libPlayer)
         assert_type(card, libCard)
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             msg = f"Hand {self} is abandoned"
             raise PlayError(msg)
 
@@ -337,18 +387,36 @@ class Hand(models.Model):
             msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
             raise PlayError(msg)
 
-        legal_cards = self.get_xscript().legal_cards(
-            some_hand=self.players_remaining_cards(player=player)
-        )
+        remaining_cards = self.players_remaining_cards(player=player).cards
+        if remaining_cards is None:
+            msg = f"Cannot play a card from {libPlayer.name} because I don't know what cards they hold"
+            raise PlayError(msg)
+
+        legal_cards = self.get_xscript().legal_cards(some_cards=remaining_cards)
         if card not in legal_cards:
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
-        rv = self.play_set.create(hand=self, serialized=card.serialize())
+        try:
+            rv = self.play_set.create(hand=self, serialized=card.serialize())
+        except Error as e:
+            raise PlayError(str(e)) from e
+
+        self.send_event_to_players_and_hand(
+            data={
+                "new-play": {
+                    "serialized": card.serialize(),
+                    "seat_pk": rv.seat_pk,
+                },
+            },
+        )
 
         final_score = self.get_xscript().final_score()
 
         if final_score:
+            # Disable all bots at this table, since they no longer have anything to do.
+            self.disable_bots()
+
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -378,11 +446,12 @@ class Hand(models.Model):
     def player_who_may_call(self) -> Player | None:
         from . import Player
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             return None
 
         if self.auction.status is libAuction.Incomplete:
             libAllowed = self.auction.allowed_caller()
+            assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
         return None
@@ -391,14 +460,17 @@ class Hand(models.Model):
     def player_who_may_play(self) -> Player | None:
         from . import Player
 
-        if self.is_abandoned():
+        if self.is_abandoned:
             return None
 
         if not self.auction.found_contract:
             return None
 
-        named_seat_who_may_play = self.get_xscript().named_seats[0]
-        return Player.objects.get_by_name(named_seat_who_may_play.name)
+        seat_who_may_play = self.get_xscript().next_seat_to_play()
+        if seat_who_may_play is None:
+            return None
+        pbs = self.libPlayers_by_seat
+        return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:
         modelPlayer = self.players_by_direction[seat.value]
@@ -432,9 +504,7 @@ class Hand(models.Model):
         return libHand(cards=list(ccbs[player.seat]))
 
     def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
-        """
-        A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view.
-        """
+        """A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view."""
         xscript = self.get_xscript()
         whose_turn_is_it = None
 
@@ -456,7 +526,7 @@ class Hand(models.Model):
                 legal_now = False
                 if seat == whose_turn_is_it:
                     legal_now = any(
-                        c in xscript.legal_cards(some_hand=libHand(cards=sorted(cards)))
+                        c in xscript.legal_cards(some_cards=list(cards))
                         for c in cards_by_suit[suit]
                     )
 
@@ -471,7 +541,7 @@ class Hand(models.Model):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-    @property
+    @cached_property
     def most_recent_call(self):
         return self.call_set.order_by("-id").first()
 
@@ -491,20 +561,17 @@ class Hand(models.Model):
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
-    @property
+    @cached_property
     def is_complete(self):
-        return (
-            # Counting the play set does far fewer queries than examining the auction status, so we do it first.
-            self.play_set.count() == 52 or self.get_xscript().auction.status is libAuction.PassedOut
-        )
+        x = self.get_xscript()
+        return x.num_plays == 52 or x.auction.status is libAuction.PassedOut
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
 
     @property
     def calls(self):
-        """
-        All the calls in this hand, in chronological order.
+        """All the calls in this hand, in chronological order.
 
         `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
         """
@@ -526,7 +593,7 @@ class Hand(models.Model):
             zip(
                 self._seat_cycle_starting_with_dealer,
                 self.calls.all(),
-            )
+            ),
         )
 
     @property
@@ -566,12 +633,13 @@ class Hand(models.Model):
             ).items()
         }
 
+    # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
     def plays(self):
         return self.play_set.order_by("id")
 
     def toggle_open_access(self) -> None:
-        if self.is_abandoned():
+        if self.is_abandoned:
             return
 
         self.open_access = not self.open_access
@@ -621,7 +689,7 @@ class Hand(models.Model):
 
         return (f"{auction_status}: {trick_summary}", total_score)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 
 
@@ -632,15 +700,23 @@ class HandAdmin(admin.ModelAdmin):
 
 
 class CallManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
+    def create(self, *args, **kwargs) -> Call:
+        if "hand_id" in kwargs:
+            h = Hand.objects.get(pk=kwargs["hand_id"])
+        elif "hand" in kwargs:
+            h = kwargs["hand"]
+        else:
+            msg = f"wtf: {kwargs=}"
+            raise Exception(msg)
+
+        x = h.get_xscript()
+
         rv = super().create(*args, **kwargs)
 
-        # We're assuming that this call is valid, which is indeed the case if we're invoked by Hand.add_call_from_player
-        serialized = kwargs["serialized"]
+        c = libBid.deserialize(kwargs["serialized"])
 
-        rv.hand.send_event_to_players_and_hand(
-            data={"new-call": serialized},
-        )
+        x.add_call(c)
+        rv.hand._cache_set(x)
 
         return rv
 
@@ -661,7 +737,7 @@ class Call(models.Model):
 
     objects = CallManager()
 
-    @cached_property
+    @property
     def seat_pk(self) -> int | None:
         for pc in self.hand.get_xscript().auction.player_calls:
             if pc.call.serialize() == self.serialized:
@@ -673,7 +749,7 @@ class Call(models.Model):
     def libraryThing(self):
         return libBid.deserialize(self.serialized)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.libraryThing)
 
 
@@ -681,18 +757,24 @@ admin.site.register(Call)
 
 
 class PlayManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
-        """
-        Only Hand.add_play_from_player may call me; the rest of y'all should call *that*.
-        """
+    def create(self, *args, **kwargs) -> Play:
+        """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
+        # Apparently I call this both ways :shrug:
+        if "hand_id" in kwargs:
+            h = Hand.objects.get(pk=kwargs["hand_id"])
+        elif "hand" in kwargs:
+            h = kwargs["hand"]
+        else:
+            msg = f"wtf: {kwargs=}"
+            raise Exception(msg)
+
+        x = h.get_xscript()
 
         rv = super().create(*args, **kwargs)
 
-        serialized = kwargs["serialized"]
-
-        rv.hand.send_event_to_players_and_hand(
-            data={"new-play": serialized},
-        )
+        # See corresponding TODO in CallManager
+        x.add_card(libCard.deserialize(kwargs["serialized"]))
+        rv.hand._cache_set(x)
 
         return rv
 
@@ -719,7 +801,7 @@ class Play(models.Model):
             ),
         ]
 
-    @cached_property
+    @property
     def seat_pk(self) -> int | None:
         for t in self.hand.get_xscript().tricks:
             for p in t.plays:

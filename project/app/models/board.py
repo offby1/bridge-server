@@ -162,7 +162,7 @@ class Board(models.Model):
 
         rv = self.PlayerVisibility.own_hand
 
-        if hand.plays.count() > 0:
+        if next(hand.get_xscript().plays(), None) is not None:
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:

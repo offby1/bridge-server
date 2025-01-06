@@ -5,7 +5,7 @@
 # defaults to `postgres`; the password has no default).  Without a valid password, I *think* the db won't even come up.
 # `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
 
-start: pg-start redis
+start: pg-start
 
 [group('postgres')]
 [script('bash')]
@@ -13,12 +13,6 @@ pg-start: orb
     set -euxo pipefail
 
     docker compose up --wait postgres --detach
-
-[script('bash')]
-redis:
-    set -euxo pipefail
-
-    docker compose up --wait redis --detach
 
 [group('postgres')]
 drop: pg-start
@@ -47,11 +41,17 @@ r: grab-prod-backups
 alias stop := pg-stop
 
 [group('postgres')]
-pg-stop:
+pg-stop: orb
     docker compose down postgres
+
+[group('docker')]
+[private]
+dump-docker-context:
+    @docker context inspect --format json | jq '.[].Endpoints.docker.Host'
 
 orb:
     if [ "{{ os() }}" = "macos" ]; then orb start; else echo not mac I guess; fi
+    just dump-docker-context
 
 [script('bash')]
 docker-nuke: orb
@@ -60,7 +60,7 @@ docker-nuke: orb
     echo "Killing containers!"
     docker ps -aq | xargs --no-run-if-empty docker rm -f
     # echo "Killing volumes!"
-    echo Not doing docker volume prune --all --force
+    docker volume prune --all --force
     echo "Removing plugins!"
     docker plugin ls --quiet | xargs --no-run-if-empty docker plugin rm
     echo "Done!"

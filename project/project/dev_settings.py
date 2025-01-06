@@ -11,5 +11,6 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 
 LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore
+LOGGING["loggers"]["django_eventstream"] = {"handlers": ["console"], "level": "DEBUG"}  # type: ignore
 # See notes in prod_settings
 DEPLOYMENT_ENVIRONMENT = "development"

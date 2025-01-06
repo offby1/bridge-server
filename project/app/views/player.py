@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import contextlib
+import json
+import logging
+import pathlib
+import subprocess
+
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -15,6 +21,10 @@ from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 
 from .misc import AuthedHttpRequest, logged_in_as_player_required
+
+logger = logging.getLogger(__name__)
+
+MAX_BOT_PROCESSES = 100
 
 
 def player_detail_endpoint(player):
@@ -29,7 +39,7 @@ def player_link(player):
     )
 
 
-def partnership_status_channel_name(*, viewer, subject):
+def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
 
@@ -210,13 +220,99 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
     )
 
 
+# https://cr.yp.to/daemontools/svc.html
+def control_bot_for_player(player: Player) -> None:
+    service_directory = pathlib.Path("/service")
+    if not service_directory.is_dir():
+        logger.warning("Hmm, %s is not a directory; no bots for you", service_directory)
+        return
+
+    def run_in_slash_service(command: list[str]) -> None:
+        subprocess.run(
+            command,
+            cwd=service_directory,
+            check=False,
+            capture_output=True,
+        )
+
+    def svc(flags: str) -> None:
+        # might not want to block here, who knows how long it'll take
+        run_in_slash_service(
+            [
+                "svc",
+                flags,
+                str(player.pk),
+            ],
+        )
+
+    if player.allow_bot_to_play_for_me and player.currently_seated:
+        # This is a desperate attempt to not lock up the server ... my typical t2.micro EC2 box cannot handle more than
+        # about 10 bot clients before it just slows to a crawl.
+        if (
+            c := Player.objects.filter(allow_bot_to_play_for_me=True)
+            .filter(currently_seated=True)
+            .count()
+        ) > MAX_BOT_PROCESSES:
+            logger.warning(
+                "Not starting bot for %s because there are already %s botty players",
+                player,
+                c,
+            )
+            return
+
+        shell_script_text = """#!/bin/bash
+
+# wrapper script for [daemontools](https://cr.yp.to/daemontools/)
+
+set -euxo pipefail
+
+exec /api-bot/.venv/bin/python /api-bot/apibot.py
+"""
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(player.pk))
+        run_file = run_dir / "run.notyet"
+        run_file.parent.mkdir(parents=True, exist_ok=True)
+        run_file.write_text(shell_script_text)
+        run_file.chmod(0o755)
+        run_file = run_file.rename(run_dir / "run")
+
+        # "-u" means "up"; "-c" means "continue".  Neither alone seems to suffice in every case.  Might need to wait
+        # until svscan starts the service :-|
+        svc("-uc")
+        logger.info("Started bot for %s", player)
+    else:
+        # "-p" means "pause".
+        svc("-p")
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
     playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
     playa.save()
+    control_bot_for_player(playa)
     return HttpResponse(f"""Hello, {playa.as_link()}""")
+
+
+def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
+    p = Player.objects.filter(user__username=name_or_pk).first()
+
+    if p is None:
+        with contextlib.suppress(ValueError):
+            p = Player.objects.filter(pk=name_or_pk).first()
+
+        if p is None:
+            logger.debug(f"Nuttin' from pk={name_or_pk=}")
+            return HttpResponseNotFound()
+
+    payload = {
+        "pk": p.pk,
+        "current_table_pk": p.current_table_pk(),
+        "current_seat_pk": p.current_seat.pk if p.current_seat is not None else None,
+        "name": p.name,
+    }
+
+    return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
 def player_list_view(request):

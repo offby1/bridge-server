@@ -29,29 +29,46 @@ APP_NAME = "info.offby1.bridge"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+
+def from_env_var_file(env_varname: str, fallback_filename: str) -> str | None:
+    filename = os.environ.get(
+        env_varname,
+        fallback_filename,
+    )
+
+    if filename is None:
+        return None
+
+    with open(filename) as inf:
+        return inf.read()
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY: str
-DJANGO_SECRET_FILE = os.environ.get(
+SECRET_KEY = from_env_var_file(
     "DJANGO_SECRET_FILE",
     # This default works on my laptop, and nowhere else; it's here just to make it easier for me to run Visual Studio Code.
     "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_secret_key",
 )
 
-if DJANGO_SECRET_FILE is not None:
-    with open(DJANGO_SECRET_FILE) as inf:
-        SECRET_KEY = inf.read()
+API_SKELETON_KEY = from_env_var_file(
+    "DJANGO_SKELETON_KEY_FILE",
+    "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_skeleton_key",
+)
+if API_SKELETON_KEY is not None:
+    API_SKELETON_KEY = API_SKELETON_KEY.rstrip()
 
 ALLOWED_HOSTS = [
     ".orb.local",
     ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
     "192.168.4.39",  # laptop at home
+    "5.78.70.72",  # hetzner cheapie
     "localhost",
     "offby1.info",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://teensy-info.tail571dc2.ts.net",
-    "https://erics-work-macbook-pro.tail571dc2.ts.net",
+    "https://laptop.tail571dc2.ts.net",
 ]
 
 # Application definition
@@ -69,26 +86,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "debug_toolbar",
     "django_extensions",
-    "rest_framework",
     "template_partials",
     "app",
 ]
 
 FASTDEV_STRICT_IF = True
 
-REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
-    ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 100,
-}
-
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
-SECURE_SSL_REDIRECT = True
 SECURE_REDIRECT_EXEMPT = [
     r"^events/"
 ]  # for the bot when it's running on the same host and connecting to localhost
@@ -96,11 +101,7 @@ SECURE_REDIRECT_EXEMPT = [
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
 EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
-EVENTSTREAM_REDIS = {
-    "host": os.environ.get("REDIS_HOST", "localhost"),
-    "port": 6379,
-    "db": 0,
-}
+
 
 MIDDLEWARE = [
     "log_request_id.middleware.RequestIDMiddleware",
@@ -216,7 +217,8 @@ LOGGING = {
         "app": {
             "level": "DEBUG",
         },
-        "bot": {
+        "bridge": {
+            "handlers": ["console"],
             "level": "DEBUG",
         },
         "daphne.http_protocol": {
@@ -225,6 +227,9 @@ LOGGING = {
         "django.channels.server": {
             "level": "INFO",
         },
+        "django.core.cache": {
+            "level": "DEBUG",
+        },
         "django_eventstream.views": {
             "level": "WARNING",
         },
@@ -232,4 +237,11 @@ LOGGING = {
             "level": "INFO",
         },
     },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "bridge_django_cache",
+    }
 }

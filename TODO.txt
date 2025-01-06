@@ -1,6 +1,6 @@
 IN PROGRESS:
 
-* Big: write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
+* Big (largely done though): write an API so that strangers can write their own bots.  Presumably using <https://www.django-rest-framework.org/>
   Note: django-rest-framework has proven quite fiddly; I'm currently moving away from it, and replacing it with dirt-simple written-by-hand serialization in the library.
 
   Of course, switch the API bot to use it, once it exists.
@@ -8,34 +8,23 @@ IN PROGRESS:
   Next up: have the apibot maintain its own HandTranscript, with which it can ... wait for it ... come up with its own calls and plays.
   This also entails figuring out how to do a POST or a PUT via DRF.  Not at all obvious.
 
+* It occurs to me that the events pertaining to a hand should be *public* -- just the "new-hand", "someone made a call", and "someone made a play" events.  And maybe I can force the event IDs to be: zero for the "new-hand" event, 1, 2, 3 &c for the calls; and num-calls, num-calls + 1, ... num-calls + 52 for the plays.  That should make it easier for clients to "sync" up; or at least, when I see the event ID in a log message, it should be easier to tell what it's for.
+
+  Per-player events, if we need them at all, would pertain to "here's your hand", although the transcript provides that, so ...
+                                                                                                                                       
 STILL TODO:
+
+* At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
 
 * Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
 
 * Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
 
+* The bot replays *all* messages for its player when it starts, but it'd make more sense for it to only replay the messages from the most-recent hand.
+
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
 
   Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
-
-* The bot still occasionally crashes because it receives an event like this
-
-    MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': 1, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107423.441545}
-
-  But the "new-hand" event is supposed to (and, almost all the time, does) look like this
-
-    MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 3, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 3, 'tempo_seconds': 1.0}, 'board': 3}, 'tempo_seconds': 1.0, 'time': 1732107396.953585}
-
-  Also, I see a whole bunch of "new-hand" messages with the same hand primary key.  WTF?
-
-    2024-11-20T12:52:27+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 1}, 'tempo_seconds': 1.0, 'time': 1732107147.832227}
-    2024-11-20T12:52:29+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 1}, 'tempo_seconds': 1.0, 'time': 1732107149.4633641}
-    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.3725948}
-    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.4819589}
-    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.6503448}
-    2024-11-20T12:52:35+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.997817}
-    2024-11-20T12:52:35+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 3, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 3, 'tempo_seconds': 1.0}, 'board': 3}, 'tempo_seconds': 1.0, 'time': 1732107155.066463}
-    2024-11-20T12:56:36+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107396.893606}
 
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
@@ -792,6 +781,27 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+
+* The bot still occasionally crashes because it receives an event like this
+
+    MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': 1, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107423.441545}
+
+  But the "new-hand" event is supposed to (and, almost all the time, does) look like this
+
+    MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 3, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 3, 'tempo_seconds': 1.0}, 'board': 3}, 'tempo_seconds': 1.0, 'time': 1732107396.953585}
+
+  Also, I see a whole bunch of "new-hand" messages with the same hand primary key.  WTF?
+
+    2024-11-20T12:52:27+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 1}, 'tempo_seconds': 1.0, 'time': 1732107147.832227}
+    2024-11-20T12:52:29+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 1}, 'tempo_seconds': 1.0, 'time': 1732107149.4633641}
+    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.3725948}
+    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.4819589}
+    2024-11-20T12:52:34+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.6503448}
+    2024-11-20T12:52:35+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107154.997817}
+    2024-11-20T12:52:35+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 3, 'table': {'seat_set': [5, 6, 7, 8], 'id': 2, 'current_hand_pk': 3, 'tempo_seconds': 1.0}, 'board': 3}, 'tempo_seconds': 1.0, 'time': 1732107155.066463}
+    2024-11-20T12:56:36+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107396.893606}
+
+  At least on this branch, this is obsolete; that bot no longer exists.
 
 * I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
   At least some are not obsolete -- the chat system still uses them

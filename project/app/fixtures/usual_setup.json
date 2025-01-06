@@ -15,7 +15,7 @@
       "username": "Jeremy Northam"
     },
     "model": "auth.user",
-    "pk": 1
+    "pk": 11
   },
   {
     "fields": {
@@ -33,7 +33,7 @@
       "username": "Clint Eastwood"
     },
     "model": "auth.user",
-    "pk": 2
+    "pk": 12
   },
   {
     "fields": {
@@ -51,7 +51,7 @@
       "username": "J.D. Souther"
     },
     "model": "auth.user",
-    "pk": 3
+    "pk": 13
   },
   {
     "fields": {
@@ -69,7 +69,7 @@
       "username": "Adam West"
     },
     "model": "auth.user",
-    "pk": 4
+    "pk": 14
   },
   {
     "fields": {
@@ -137,7 +137,7 @@
       "allow_bot_to_play_for_me": true,
       "currently_seated": true,
       "partner": 3,
-      "user": 1
+      "user": 11
     },
     "model": "app.player",
     "pk": 1
@@ -147,7 +147,7 @@
       "allow_bot_to_play_for_me": true,
       "currently_seated": true,
       "partner": 4,
-      "user": 2
+      "user": 12
     },
     "model": "app.player",
     "pk": 2
@@ -157,7 +157,7 @@
       "allow_bot_to_play_for_me": true,
       "currently_seated": true,
       "partner": 1,
-      "user": 3
+      "user": 13
     },
     "model": "app.player",
     "pk": 3
@@ -167,7 +167,7 @@
       "allow_bot_to_play_for_me": true,
       "currently_seated": true,
       "partner": 2,
-      "user": 4
+      "user": 14
     },
     "model": "app.player",
     "pk": 4

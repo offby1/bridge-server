@@ -4,24 +4,34 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
 
 RUN pip install -U pip setuptools; pip install poetry
 
-FROM python AS poetry-install
+FROM python AS poetry-install-django
 
-COPY poetry.lock pyproject.toml /bridge/
+COPY server/poetry.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
 RUN poetry install --without=dev
+
+FROM python AS poetry-install-apibot
+
+COPY api-bot/poetry.lock api-bot/pyproject.toml /api-bot/
+WORKDIR /api-bot
+RUN poetry install
 
 FROM python AS app
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
-  libpq5 \
+  daemontools \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=poetry-install /bridge/ /bridge/
-COPY /project /bridge/project/
-WORKDIR /bridge/project
-ENV PGHOST=postgres
-ENV REDIS_HOST=redis
+COPY --from=poetry-install-django /bridge/ /bridge/
+COPY /server/project /bridge/project/
+
+COPY --from=poetry-install-apibot /api-bot/ /api-bot/
+COPY /api-bot/*.py /api-bot/
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
-CMD ["bash", "-c", "poetry run daphne --verbosity 3 --bind 0.0.0.0 --port 9000 project.asgi:application --log-fmt=\"%(asctime)sZ %(levelname)s %(name)s %(filename)s %(funcName)s %(message)s\""]
+COPY /server/start-daphne.sh /service/daphne/run
+
+WORKDIR /bridge/project
+
+CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && poetry run python manage.py bring_up_all_api_bots && cd /service && svscan"]

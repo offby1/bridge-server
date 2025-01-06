@@ -5,20 +5,23 @@ volumes:
 services:
   django: &django
     build:
-      context: .
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./server/Dockerfile
       labels:
          info.offby1.bridge.git-version: ${GIT_VERSION:-}
 
+    # So I can run e.g. `py-spy top --pid 21` in a shell in the container
+    cap_add:                    # for [py-spy](https://github.com/benfred/py-spy?tab=readme-ov-file#how-do-i-run-py-spy-in-kubernetes)
+      - SYS_PTRACE
+
     depends_on:
-      django-migrated:
+      populated-with-fake-data:
         condition: service_completed_successfully
       django-collected-static:
         condition: service_completed_successfully
-      redis:
-        condition: service_started
     environment:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
+      DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
       HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
       PGHOST: postgres
       PGPASS: postgres
@@ -26,6 +29,7 @@ services:
       - "9000:9000"
     secrets:
       - django_secret
+      - django_skeleton_key
     init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
@@ -34,18 +38,6 @@ services:
     # Note that you'll still have to manually restart daphne, though.
     # volumes:
     #   - ./project:/bridge/project
-
-  bot:
-    <<: *django
-    command: "poetry run python manage.py bot"
-    ports: []
-    depends_on:
-      populated-with-fake-data:
-        condition: service_completed_successfully
-    environment:
-      DJANGO_HOST: django
-      DJANGO_SECRET_FILE: /run/secrets/django_secret
-      HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
 
   django-collected-static:
     <<: *django
@@ -68,8 +60,8 @@ services:
     restart: "no"
     ports: []
     depends_on:
-      - django
-      - redis
+      django-migrated:
+        condition: service_completed_successfully
 
   postgres:
     image: postgres:17
@@ -96,11 +88,8 @@ services:
       start_period: 10s
       start_interval: 1s
 
-  redis:
-    image: redis:6
-    ports:
-      - "6379:6379"
-
 secrets:
   django_secret:
     environment: "DJANGO_SECRET_KEY"
+  django_skeleton_key:
+    environment: "DJANGO_SKELETON_KEY"

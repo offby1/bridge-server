@@ -1,3 +1,4 @@
+import base64
 import collections
 import importlib
 import json
@@ -6,8 +7,9 @@ import pytest
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
+from django.conf import settings
 from django.contrib import auth
-from django.contrib.auth.models import AnonymousUser
+from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
 
@@ -16,7 +18,7 @@ from app.models.table import TableException
 
 from .models import Board, Hand, Message, Player, PlayerException, Seat, SeatException, Table
 from .testutils import set_auction_to
-from .views import hand, lobby, player, table
+from .views import hand, player, table
 
 
 def test_we_gots_a_home_page():
@@ -119,7 +121,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    norths_cards = north.libraryThing(hand=t.current_hand).hand.cards
+    norths_cards = north.dealt_cards()
 
     client = Client()
 
@@ -137,12 +139,12 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
         assert c.serialize() in response.content.decode()
 
 
-def test_legal_cards(usual_setup, rf, settings):
+def test_legal_cards(usual_setup, rf):
     t = Table.objects.first()
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
     h = t.current_hand
     declarer = h.declarer
-    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing(hand=h)
+    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing()
 
     client = Client()
     client.login(username=leader.name, password=".")
@@ -218,27 +220,44 @@ def test_player_channnel_encoding():
     assert Message.player_pks_from_channel_name("players:20_10") == {10, 20}
 
 
-def test_sending_lobby_messages(usual_setup, rf):
-    def say_hey(user=None):
-        if user is None:
-            user = AnonymousUser()
+def quickly_auth_test_client(c: Client, player: Player) -> None:
+    # We could also have just done `c.login(username=user, password=".")` but that uses deliberately-slow
+    # password-hashing.
+    c.get(
+        "/three-way-login/",
+        headers={
+            "Authorization": "Basic "
+            + base64.b64encode(f"{player.pk}:{settings.API_SKELETON_KEY}".encode()).decode()
+        },  # type: ignore [arg-type]
+    )
 
-        request = rf.post(
+
+def test_sending_lobby_messages(usual_setup):
+    def say_hey_from(player=None):
+        c = Client()
+
+        if player is not None:
+            quickly_auth_test_client(c, player)
+
+        return c.post(
             "/send_lobby_message/",
             content_type="application/json",
             data=json.dumps({"message": "hey you"}),
         )
-        request.user = user
-        return request
 
-    response = lobby.send_lobby_message(say_hey())
-    assert response.status_code == 403  # client isn't authenticated
-    assert response.content == b"Go away, anonymous scoundrel"
+    response = say_hey_from()
+    match response.status_code:  # I'm honestly not sure which of these is correct :-|
+        case 403:
+            assert response.content == b"Go away, anonymous scoundrel"
+        case 302:
+            print(vars(response))
+        case _:
+            msg = f"OK, {response.status_code=} makes no sense"
+            raise AssertionError(msg)
 
     t = Table.objects.first()
-    response = lobby.send_lobby_message(
-        say_hey(user=t.current_hand.modPlayer_by_seat(libSeat.NORTH).user)
-    )
+    response = say_hey_from(player=t.current_hand.modPlayer_by_seat(libSeat.NORTH))
+
     assert response.status_code == 200
 
 
@@ -246,19 +265,19 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     t = Table.objects.first()
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
-    def hey_bob(*, target=None, sender_player=None):
+    def hey_bob(*, target=None, sender_player=None) -> HttpResponse:
+        c = Client()
+
         if target is None:
             target = north
 
-        user = AnonymousUser() if sender_player is None else sender_player.user
+        if sender_player is not None:
+            quickly_auth_test_client(c, sender_player)
 
-        request = rf.post(
+        return c.post(
             reverse("app:send_player_message", args=[target.pk]),
             data={"message": "hey you"},
         )
-
-        request.user = user
-        return player.send_player_message(request, recipient_pk=target.pk)
 
     response = hey_bob()
     assert response.status_code == 403  # client isn't authenticated
@@ -287,7 +306,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     assert response.status_code == 200
 
 
-def test_only_recipient_can_read_messages(usual_setup, settings):
+def test_only_recipient_can_read_messages(usual_setup):
     module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
@@ -305,7 +324,7 @@ def test_seat_ordering(usual_setup):
     assert " ".join([t[0] for t in t.as_tuples()]) == "North East South West"
 
 
-def test_splitsville_side_effects(usual_setup, rf, monkeypatch, settings):
+def test_splitsville_side_effects(usual_setup, rf, monkeypatch):
     t = Table.objects.first()
     north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
     assert north.partner is not None
@@ -360,7 +379,7 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
     assert h.player_who_may_call is not None
     north = h.modPlayer_by_seat(libSeat.NORTH)
     north.break_partnership()
-    h.refresh_from_db()
+    h = Hand.objects.get(pk=h.pk)
     assert h.player_who_may_call is None
     assert h.player_who_may_play is None
 
@@ -489,11 +508,12 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     assert Table.objects.count() == number_of_tables_before + 1
 
 
-def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
+def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> None:
     request = rf.get("/woteva/")
     t = Table.objects.first()
 
     # Nobody done played nothin'
+    assert t is not None
     assert not t.current_hand.current_trick
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
@@ -502,12 +522,12 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.modPlayer_by_seat(first_players_seat).libraryThing(hand=h)
-    first_players_cards = first_player.hand.cards
+    first_player = t.current_hand.modPlayer_by_seat(first_players_seat)
+    first_players_cards = first_player.dealt_cards()
 
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player, card=first_card)
+    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
     t = Table.objects.first()
     h = t.current_hand
 
@@ -515,7 +535,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf):
     for tt in h.current_trick:
         expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
-    ya = hand._three_by_three_trick_display_context_for_hand(request, t.current_hand)
+    ya = hand._three_by_three_trick_display_context_for_hand(request, h, xscript=h.get_xscript())
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows

@@ -84,6 +84,11 @@ class Table(models.Model):
 
     summary_for_this_viewer: tuple[str, str | int]
 
+    def gimme_dat_fresh_tempo(self):
+        if hasattr(self, "tempo_seconds"):
+            del self.tempo_seconds
+        return self.tempo_seconds
+
     @cached_property
     def seats(self):
         return self.seat_set.select_related("player__user").all()
@@ -136,6 +141,7 @@ class Table(models.Model):
         return rv
 
     def played_boards(self) -> QuerySet:
+        # https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ might help
         return Board.objects.filter(
             pk__in=RawSQL(
                 """
@@ -190,9 +196,10 @@ class Table(models.Model):
     def next_seat_to_play(self) -> modelSeat | None:
         if self.current_auction.found_contract:
             xscript = self.current_hand.get_xscript()
-            return modelSeat.objects.get(
-                table=self, direction=xscript.current_named_seat().seat.value
-            )
+            n = xscript.next_seat_to_play()
+            if n is None:
+                return None
+            return modelSeat.objects.get(table=self, direction=n.value)
 
         return None
 

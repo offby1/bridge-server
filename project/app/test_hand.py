@@ -35,21 +35,24 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     declarer = h.declarer
     assert declarer is not None
     first_players_seat = declarer.seat.lho()
-    first_player = h.players_by_direction[first_players_seat.value].libraryThing(hand=h)
-    first_players_cards = first_player.hand.cards
-    print(f"{first_players_cards=}")
+    first_player = h.players_by_direction[first_players_seat.value]
+    first_players_cards = first_player.dealt_cards()
+
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player, card=first_card)
+    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h = Hand.objects.get(pk=h.pk)
     assert len(h.get_xscript().tricks) == 1
     first_trick = h.get_xscript().tricks[0]
     first_play = first_trick.plays[0]
     assert first_play.card == first_card
 
     # I don't check that the two player's *hands* are equal because the library is stupid
-    assert first_play.seat == first_player.seat
-    assert len(h.players_remaining_cards(player=first_player).cards) == 12
-    assert first_play.card not in h.players_remaining_cards(player=first_player).cards
+    assert first_play.seat == first_player.libraryThing().seat
+    players_remaining_cards = h.players_remaining_cards(player=first_player.libraryThing()).cards
+    assert players_remaining_cards is not None
+    assert len(players_remaining_cards) == 12
+    assert first_play.card not in players_remaining_cards
 
 
 def test_rejects_illegal_calls(usual_setup):
@@ -103,7 +106,8 @@ def test_cards_by_player(usual_setup) -> None:
     assert len(before) == 13  # just checkin' :-)
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
-    h.add_play_from_player(player=east.libraryThing(hand=h), card=diamond_two)
+    h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
+    h = Hand.objects.get(pk=h.pk)
 
     after = set(h.current_cards_by_seat()[libSeat.EAST])
     assert before - after == {diamond_two}
@@ -160,7 +164,7 @@ def test_bidding_box_html(usual_setup, rf) -> None:
     assert t.current_auction.found_contract
 
     # The auction is settled, so no bidding box.
-    response = _bidding_box_as_seen_by(t, t.current_auction.allowed_caller(), rf)
+    response = _bidding_box_as_seen_by(t, t.current_hand.player_who_may_play, rf)
     assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.
@@ -225,25 +229,21 @@ def test_current_trick(usual_setup) -> None:
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.players_by_direction[first_players_seat.value].libraryThing(
-        hand=t.current_hand
-    )
-    first_players_cards = first_player.hand.cards
+    first_player = t.current_hand.players_by_direction[first_players_seat.value]
+    first_players_cards = first_player.dealt_cards()
 
-    second_player = t.current_hand.players_by_direction[
-        first_players_seat.lho().value
-    ].libraryThing(hand=t.current_hand)
-    second_players_cards = second_player.hand.cards
+    second_player = t.current_hand.players_by_direction[first_players_seat.lho().value]
+    second_players_cards = second_player.dealt_cards()
 
     first_card = first_players_cards[0]
-    t.current_hand.add_play_from_player(player=first_player, card=first_card)
+    t.current_hand.add_play_from_player(player=first_player.libraryThing(), card=first_card)
 
     assert len(t.current_hand.current_trick) == 1
     tt = t.current_hand.current_trick[-1]
     assert tt.card == first_card
 
     second_card = second_players_cards[0]
-    t.current_hand.add_play_from_player(player=second_player, card=second_card)
+    t.current_hand.add_play_from_player(player=second_player.libraryThing(), card=second_card)
 
     assert len(t.current_hand.current_trick) == 2
     tt = t.current_hand.current_trick[-1]
@@ -276,10 +276,9 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     monkeypatch.setattr(hand, "send_event", send_event)
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
-    print(f"{sent_events_by_channel=}")
     first_player = Player.objects.first()
     assert first_player is not None
-    assert "contract" in sent_events_by_channel[f"system:player:{first_player.pk}"][4]
+    assert any("contract" in e for e in sent_events_by_channel[f"system:player:{first_player.pk}"])
 
 
 class HandIsComplete(enum.Enum):

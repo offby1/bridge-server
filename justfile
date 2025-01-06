@@ -5,13 +5,9 @@ import 'postgres.just'
 # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
 
 export DJANGO_SECRET_FILE := config_directory() / "info.offby1.bridge/django_secret_key"
+export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/django_skeleton_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export HOSTNAME := env("HOSTNAME", `hostname`)
-
-# Keep this true as long as I occasionally use Visual Studio Code --
-# that IDE seems not to understand the world when this is false, and it confuses me to have two venvs for a single project.
-
-export POETRY_VIRTUALENVS_IN_PROJECT := "true"
 
 [private]
 default:
@@ -19,19 +15,90 @@ default:
 
 [private]
 [script('bash')]
+ensure-django-secret:
+    set -euo pipefail
+    mkdir -vp "$(dirname {{ DJANGO_SECRET_FILE }})"
+    touch "{{ DJANGO_SECRET_FILE }}"
+    if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
+    then
+    python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
+    else
+    echo "Looks like you've already got a reasonable django secret already: "; ls -l "{{ DJANGO_SECRET_FILE }}"
+    fi
+
+[private]
+[script('bash')]
+ensure-skeleton-key: poetry-install-no-dev
+    set -euo pipefail
+    mkdir -vp "$(dirname {{ DJANGO_SKELETON_KEY_FILE }})"
+    touch "{{ DJANGO_SKELETON_KEY_FILE }}"
+    if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
+    then
+    cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
+    else
+    echo "Looks like you've already got a reasonable skeleton key already: "; ls -l "{{ DJANGO_SKELETON_KEY_FILE }}"
+    fi
+
+# Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
+[private]
+[script('bash')]
+die-if-virtualenv-remarkably-hosed:
+    set -euo pipefail
+
+    # I suspect the below craziness only pertains to MacOS.
+    if [ "{{ os() }}" != "macos" ]
+    then
+    exit 0
+    fi
+
+    # If it don't exist, it can't be hosed :-)
+    if [ ! -d .venv ]
+    then
+    exit 0
+    fi
+
+    p=.venv/bin/python
+    if [ ! -h ${p} ]
+    then
+    echo "How come you don't have a symlink named ${p}"
+    exit 1
+    fi
+
+    case $(/bin/realpath -q ${p}) in
+       ""|/usr/bin/python*)
+        echo oh noes! your virtualenv python is bogus
+        ls -l ${p}
+        echo I bet you were running an orb machine
+        echo 'May I recommend "just clean"?'
+        exit 1
+    esac
+
+[private]
+[script('bash')]
 die-if-poetry-active:
     if [[ -n "${POETRY_ACTIVE:-}" || -n "${VIRTUAL_ENV:-}" ]]
     then
-      echo Hey man some environment variables suggest that a virtualenv is active
-      env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
+      if [[ -n "${VSCODE_ENV_REPLACE:-}" ]]
+         then echo "I guess this is VSC; let's soldier on and see what happens"
+      else
+        echo Hey man some environment variables suggest that a virtualenv is active
+        env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
 
-      false
+        false
+      fi
     fi
 
 [group('virtualenv')]
-poetry-install: die-if-poetry-active
-    poetry lock --no-update
+lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
+    poetry lock
+
+[group('virtualenv')]
+poetry-install: poetry-install-no-dev
     poetry install
+
+[group('virtualenv')]
+poetry-install-no-dev: die-if-poetry-active lock
+    poetry install --without=dev
 
 mypy: poetry-install
     poetry run mypy . --exclude=/migrations/
@@ -48,11 +115,11 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-start redis
+all-but-django-prep: version-file pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
-manage *options: all-but-django-prep
+manage *options: all-but-django-prep ensure-django-secret
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
@@ -65,11 +132,11 @@ shell *options: migrate (manage "shell_plus --print-sql " + options)
 makemigrations *options: (manage "makemigrations " + options)
 
 [group('django')]
-migrate: makemigrations (manage "migrate")
+migrate: makemigrations create-cache (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: test django-superuser migrate
+runme *options: t django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
@@ -77,10 +144,12 @@ runme *options: test django-superuser migrate
 
 alias runserver := runme
 
+create-cache: (manage "createcachetable")
+
 # For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate collectstatic
+daphne: test django-superuser migrate create-cache collectstatic ensure-skeleton-key
     set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
@@ -100,15 +169,10 @@ daphne: test django-superuser migrate collectstatic
 [group('bs')]
 pop: django-superuser migrate (manage "generate_fake_data --players=40")
 
-# Run the little bids-and-plays bot
-[group('bs')]
-bot *options: migrate
-    cd project && poetry run python manage.py bot {{ options }}
-
-poke: migrate (manage "pokey-party")
+alias createsuperuser := django-superuser
+alias superuser := django-superuser
 
 [group('django')]
-[private]
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
 
 # Run tests with --exitfirst and --failed-first
@@ -149,10 +213,11 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb
+dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x
