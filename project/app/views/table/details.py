@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import logging
-import time
 
 import bridge.auction
 import bridge.card
@@ -22,7 +20,6 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event  # type: ignore [import-untyped]
 
 import app.models
 from app.models.utils import assert_type
@@ -54,22 +51,6 @@ def table_list_view(request) -> HttpResponse:
 
 def _auction_channel_for_table(table):
     return str(table.pk)
-
-
-def poke_de_bot(request):
-    wassup = json.loads(request.POST["who pokes me"])
-
-    send_event(
-        channel="all-tables",
-        event_type="message",
-        data={
-            "table": wassup["table_id"],
-            "direction": wassup["direction"],
-            "action": "pokey pokey",
-            "time": time.time(),
-        },
-    )
-    return HttpResponse("Pokey enough for ya??")
 
 
 @csrf_exempt
