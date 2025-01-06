@@ -90,7 +90,7 @@ die-if-poetry-active:
 
 [group('virtualenv')]
 lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
-    poetry lock --no-update
+    poetry lock
 
 [group('virtualenv')]
 poetry-install: poetry-install-no-dev
