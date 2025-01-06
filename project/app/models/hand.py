@@ -120,26 +120,12 @@ def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
     send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
 
 
-class HandManager(models.Manager):
-    def create(self, *args, **kwargs) -> Hand:
-        from app.serializers import NewHandSerializer
-
-        rv: Hand = super().create(*args, **kwargs)
-
-        serialized_hand = NewHandSerializer(rv).data
-        rv.send_event_to_players_and_hand(data={"new-hand": serialized_hand})
-        logger.debug("Just created %s; dealer is %s", rv, rv.board.fancy_dealer)
-        return rv
-
-
 class Hand(models.Model):
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
-
-    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -335,7 +321,16 @@ class Hand(models.Model):
         except AuctionException as e:
             raise AuctionError(str(e)) from e
 
-        self.call_set.create(serialized=call.serialize())
+        modelCall = self.call_set.create(serialized=call.serialize())
+
+        self.send_event_to_players_and_hand(
+            data={
+                "new-call": {
+                    "serialized": call.serialize(),
+                    "seat_pk": modelCall.seat_pk,
+                },
+            },
+        )
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
@@ -389,6 +384,15 @@ class Hand(models.Model):
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
             raise PlayError(str(e)) from e
+
+        self.send_event_to_players_and_hand(
+            data={
+                "new-play": {
+                    "serialized": card.serialize(),
+                    "seat_pk": rv.seat_pk,
+                },
+            },
+        )
 
         final_score = self.get_xscript().final_score()
 
@@ -677,8 +681,6 @@ class HandAdmin(admin.ModelAdmin):
 
 class CallManager(models.Manager):
     def create(self, *args, **kwargs) -> Call:
-        from app.serializers import ReadOnlyCallSerializer
-
         if "hand_id" in kwargs:
             h = Hand.objects.get(pk=kwargs["hand_id"])
         elif "hand" in kwargs:
@@ -695,10 +697,6 @@ class CallManager(models.Manager):
 
         x.add_call(c)
         rv.hand._cache_set(x)
-
-        rv.hand.send_event_to_players_and_hand(
-            data={"new-call": ReadOnlyCallSerializer(rv).data},
-        )
 
         return rv
 
@@ -741,8 +739,6 @@ admin.site.register(Call)
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Play:
         """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
-        from app.serializers import ReadOnlyPlaySerializer
-
         # Apparently I call this both ways :shrug:
         if "hand_id" in kwargs:
             h = Hand.objects.get(pk=kwargs["hand_id"])
@@ -759,10 +755,6 @@ class PlayManager(models.Manager):
         # See corresponding TODO in CallManager
         x.add_card(libCard.deserialize(kwargs["serialized"]))
         rv.hand._cache_set(x)
-
-        rv.hand.send_event_to_players_and_hand(
-            data={"new-play": ReadOnlyPlaySerializer(rv).data},
-        )
 
         return rv
 

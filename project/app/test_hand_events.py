@@ -85,6 +85,7 @@ def test_sends_final_score(monkeypatch) -> None:
 
     monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
     h1 = Hand.objects.get(pk=1)
+    assert h1.player_who_may_play is not None
     libPlayer = h1.player_who_may_play.libraryThing()
     libCard = bridge.card.Card.deserialize("♠A")
 

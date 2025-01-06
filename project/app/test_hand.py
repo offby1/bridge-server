@@ -37,7 +37,7 @@ def test_keeps_accurate_transcript(usual_setup) -> None:
     first_players_seat = declarer.seat.lho()
     first_player = h.players_by_direction[first_players_seat.value]
     first_players_cards = first_player.dealt_cards()
-    print(f"{first_players_cards=}")
+
     first_card = first_players_cards[0]
 
     h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
@@ -276,10 +276,9 @@ def test_sends_message_on_auction_completed(usual_setup, monkeypatch) -> None:
     monkeypatch.setattr(hand, "send_event", send_event)
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
 
-    print(f"{sent_events_by_channel=}")
     first_player = Player.objects.first()
     assert first_player is not None
-    assert "contract" in sent_events_by_channel[f"system:player:{first_player.pk}"][4]
+    assert any("contract" in e for e in sent_events_by_channel[f"system:player:{first_player.pk}"])
 
 
 class HandIsComplete(enum.Enum):
