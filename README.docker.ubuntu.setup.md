@@ -17,5 +17,5 @@ $ exit
 ```
 
 - On my laptop:
-  - update `~/.ssh/config` so that I can just to "ssh hetz"
+  - update `~/.ssh/config` so that I can just "ssh hetz"
   - `docker context create remote --docker "host=ssh://ubuntu@hetz"`
