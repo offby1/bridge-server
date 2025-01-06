@@ -193,7 +193,10 @@ class Hand(models.Model):
     # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
-        player_channels = [f"system:player:{seat.player.pk}" for seat in self.table.seats]
+        player_channels = [
+            f"system:player:{player_pk}"
+            for player_pk in self.table.seats.values_list("player_id", flat=True)
+        ]
         all_channels = [hand_channel, "all-tables", *player_channels]
 
         data = data.copy()
