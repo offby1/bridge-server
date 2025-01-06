@@ -40,7 +40,6 @@ def from_env_var_file(env_varname: str, fallback_filename: str) -> str | None:
         return None
 
     with open(filename) as inf:
-        print(f"Setting {env_varname=} from {filename=}")
         return inf.read()
 
 
