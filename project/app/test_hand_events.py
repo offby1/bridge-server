@@ -7,7 +7,7 @@ import bridge.card
 import bridge.contract
 import pytest
 
-from .models import Player, Table
+from .models import Player, Table, hand
 from .testutils import set_auction_to
 
 
@@ -18,20 +18,26 @@ def test_auction_settled_messages(usual_setup, monkeypatch) -> None:
 
     sent_events = []
 
-    def send_event_to_players_and_hand(*, data: dict[str, Any]) -> None:
-        sent_events.append(data)
+    def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
+        sent_events.append({"channel": channel, "data": data})
 
-    monkeypatch.setattr(h, "send_event_to_players_and_hand", send_event_to_players_and_hand)
+    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
 
     set_auction_to(bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS), h)
 
-    event_counts_by_top_level_keys: collections.Counter[str] = collections.Counter()
+    serial_numbers = []
+    hand_event_counts_by_top_level_keys: collections.Counter[str] = collections.Counter()
     for e in sent_events:
-        for k in e:
-            event_counts_by_top_level_keys[k] += 1
+        # let's only look at events for the hand
+        if e["channel"] == "1":
+            serial_numbers.append(e["data"]["serial_number"])
+            for k in e["data"]:
+                hand_event_counts_by_top_level_keys[k] += 1
 
-    assert event_counts_by_top_level_keys["new-call"] == 4
-    assert event_counts_by_top_level_keys["contract"] == 1
+    assert hand_event_counts_by_top_level_keys["new-call"] == 4
+    assert hand_event_counts_by_top_level_keys["contract"] == 1
+
+    assert serial_numbers[0:3] == [0, 1, 2]
 
 
 def test_player_can_always_see_played_hands(played_to_completion) -> None:
