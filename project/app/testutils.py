@@ -31,7 +31,6 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
 
     hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 4
-    print(f"{hand.auction.player_calls=}")
     assert hand.auction.found_contract
 
     return hand
