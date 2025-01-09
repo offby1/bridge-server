@@ -313,16 +313,6 @@ class Hand(models.Model):
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
 
-    def disable_bots(self) -> None:
-        from app.views.player import control_bot_for_player
-
-        logger.info(
-            "Disabling bots for %s", self.players().values_list("user__username", flat=True)
-        )
-        self.players().update(allow_bot_to_play_for_me=False)
-        for p in self.players():
-            control_bot_for_player(p)
-
     def add_call_from_player(self, *, player: libPlayer, call: libCall) -> None:
         assert_type(player, libPlayer)
         assert_type(call, libCall)
@@ -362,7 +352,6 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().auction.status is libAuction.PassedOut:
-            self.disable_bots()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -414,9 +403,6 @@ class Hand(models.Model):
         final_score = self.get_xscript().final_score()
 
         if final_score:
-            # Disable all bots at this table, since they no longer have anything to do.
-            self.disable_bots()
-
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
