@@ -84,6 +84,10 @@ class Table(models.Model):
 
     summary_for_this_viewer: tuple[str, str | int]
 
+    @property
+    def event_channel_name(self):
+        return f"table:{self.pk}"
+
     def gimme_dat_fresh_tempo(self):
         if hasattr(self, "tempo_seconds"):
             del self.tempo_seconds
@@ -184,7 +188,12 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
                 assert b is not None
 
-            Hand.objects.create(board=b, table=self)
+            new_hand = Hand.objects.create(board=b, table=self)
+            send_event(
+                channel=self.event_channel_name,
+                event_type="message",
+                data={"new-hand": new_hand.pk, "time": time.time()},
+            )
 
         return b
 

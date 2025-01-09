@@ -6,6 +6,7 @@ from typing import Any
 import bridge.card
 import bridge.contract
 import pytest
+from django_eventstream.models import Event  # type: ignore[import-untyped]
 
 from .models import Player, Table, hand
 from .testutils import set_auction_to
@@ -16,7 +17,7 @@ def test_auction_settled_messages(usual_setup, monkeypatch) -> None:
     assert t is not None
     h = t.current_hand
 
-    sent_events = []
+    sent_events: list[dict[str, Any]] = []
 
     def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
         sent_events.append({"channel": channel, "data": data})
@@ -48,38 +49,6 @@ def test_player_can_always_see_played_hands(played_to_completion) -> None:
     assert p1.hands_played.count() == hand_count_before
 
 
-def test_new_hand_messages(played_to_completion, monkeypatch) -> None:
-    t = Table.objects.first()
-    assert t is not None
-
-    sent_events_by_channel: collections.defaultdict[str, list[dict[str, Any]]] = (
-        collections.defaultdict(list)
-    )
-
-    def send_timestamped_event(channel: str, data: dict[str, Any]) -> None:
-        sent_events_by_channel[channel].append(data)
-
-    from .models import hand
-
-    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
-
-    t.next_board()
-
-    def num_visible_cards(unpacked_events=list[dict[str, Any]]) -> int:
-        rv = 0
-        for e in unpacked_events:
-            match e:
-                case {"new-hand": {"board": board_guts}}:
-                    for dir_ in ("north", "east", "south", "west"):
-                        key = f"{dir_}_cards"
-                        if isinstance(board_guts, dict):
-                            rv += len(board_guts.get(key, "")) // 2
-        return rv
-
-    for channel, events in sent_events_by_channel.items():
-        assert num_visible_cards(events) == 0, f"{channel=} {num_visible_cards(events)} should be 0"
-
-
 @pytest.mark.usefixtures("played_almost_to_completion")
 def test_sends_final_score(monkeypatch) -> None:
     sent_events = []
@@ -101,3 +70,20 @@ def test_sends_final_score(monkeypatch) -> None:
         return "final_score" in datum and "table" in datum
 
     assert any(sought(d) for d in sent_events)
+
+
+@pytest.mark.usefixtures("played_to_completion")
+def test_sends_new_hand_event_to_table_channel() -> None:
+    t1 = Table.objects.first()
+    assert t1 is not None
+    filter_dict = {"channel": t1.event_channel_name}
+
+    message_ids_before = set(
+        Event.objects.filter(**filter_dict).values_list("id", flat=True),
+    )
+
+    t1.next_board()
+
+    messages_after = Event.objects.filter(**filter_dict).exclude(id__in=message_ids_before)
+
+    assert any("new-hand" in m.data for m in messages_after)

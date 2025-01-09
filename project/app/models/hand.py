@@ -190,7 +190,6 @@ class Hand(models.Model):
             self.table.seats.filter(pk__in={s.pk for s in self.players_current_seats()}).count() < 4
         )
 
-    # At some point we will probably not bother sending to the "hand" channel, but for now ...
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = str(self.pk)
         player_channels = [
