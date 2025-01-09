@@ -92,11 +92,9 @@ INSTALLED_APPS = [
 
 FASTDEV_STRICT_IF = True
 
+# This works because tailscale's "serve" and "funnel" commands set these headers for us.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
-SECURE_REDIRECT_EXEMPT = [
-    r"^events/"
-]  # for the bot when it's running on the same host and connecting to localhost
 
 EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
