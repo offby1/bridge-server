@@ -28,7 +28,12 @@ urlpatterns = [
         include(django_eventstream.urls),
         kwargs={"channels": ["all-tables"]},
     ),
-    # This gets a subset of table events.
+    # This gets events for one specific table.
+    path(
+        "events/table/<table_id>/",
+        include(django_eventstream.urls),
+        {"format-channels": ["table:{table_id}"]},
+    ),
     path(
         "hand/<channel>/events/",  # "channel" is an integer -- the hand's primary key
         include(django_eventstream.urls),
