@@ -73,6 +73,11 @@ services:
     # where it is
     ports:
       - "5432:5432"
+
+    # Experience shows we need about 200 connections for 40 players.  Probably more if they all have browsers open :-(
+    # (It looks like we need one connection per SSE client per channel)
+    command: ["postgres", "-c", "max_connections=200"] # suggested by https://hub.docker.com/_/postgres
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
