@@ -14,7 +14,7 @@ from .testutils import set_auction_to
 class CapturedEventsFromChannel:
     def __init__(self, channel_name: str) -> None:
         self._channel_name = channel_name
-        self.events = []
+        self.events: list[Event] = []
         self._message_ids_before = set(
             Event.objects.filter(channel=channel_name).values_list("id", flat=True),
         )

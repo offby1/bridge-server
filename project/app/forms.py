@@ -26,4 +26,4 @@ class SignupForm(forms.Form):
             self.cleaned_data["username"],
             password=self.cleaned_data["password"],
         )
-        Player.objects.create(user=u, allow_bot_to_play_for_me=False)
+        Player.objects.create(user=u)

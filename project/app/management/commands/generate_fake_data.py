@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import app.views.player
 import tqdm
 from app.models import Player, Table
+from app.models.player import BotPlayer, TooManyBots
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -35,6 +35,8 @@ class Command(BaseCommand):
         fake = Faker()
         Faker.seed(0)
 
+        new_players = []
+
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
             while Player.objects.count() < options["players"]:
                 # Make sure we always have "bob", because his name is easy to type, and to remember :-)
@@ -43,15 +45,18 @@ class Command(BaseCommand):
                 else:
                     username = fake.unique.first_name().lower()
 
-                self.maybe_create_player(username)
+                player, created = self.maybe_create_player(username)
+                if created:
+                    new_players.append(player)
 
                 progress_bar.update()
 
-        # Enable bots for the first few players.
-        Player.objects.update(allow_bot_to_play_for_me=False)
-        for p in Player.objects.all()[0 : app.views.player.MAX_BOT_PROCESSES]:
-            p.allow_bot_to_play_for_me = True
-            p.save()
+        # Enable bots for as many players as we can.
+        for p in new_players:
+            try:
+                p.toggle_bot()
+            except TooManyBots:
+                break
 
         # Now partner 'em up
         while True:
@@ -103,5 +108,5 @@ class Command(BaseCommand):
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
 
-        for independent_player in Player.objects.filter(allow_bot_to_play_for_me=False).all():
+        for independent_player in Player.objects.exclude(pk__in=BotPlayer.objects.all()).all():
             self.stdout.write(f"{independent_player} don't need no steenkin' bot!")

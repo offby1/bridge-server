@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 JOIN = "partnerup"
 SPLIT = "splitsville"
 
+MAX_BOT_PROCESSES = 40
+
 
 class PlayerManager(models.Manager):
     def get_from_user(self, user):
@@ -44,13 +46,17 @@ class PlayerException(Exception):
     pass
 
 
+class TooManyBots(PlayerException):
+    pass
+
+
 class PartnerException(PlayerException):
     pass
 
 
 class PlayerAdmin(admin.ModelAdmin):
     list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
-    list_filter = ["allow_bot_to_play_for_me", "currently_seated"]
+    list_filter = ["currently_seated"]
 
 
 class Player(models.Model):
@@ -65,8 +71,6 @@ class Player(models.Model):
         auth.models.User,
         on_delete=models.CASCADE,
     )
-
-    allow_bot_to_play_for_me = models.BooleanField(default=True)
 
     # TODO -- conceptually, this oughta be a OneToOneField, no?
 
@@ -89,9 +93,26 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    def toggle_bot(self) -> None:
+        with transaction.atomic():
+            # If they are asking to enable the bot, ensure there aren't already too many bots.
+            if not self.allow_bot_to_play_for_me:
+                c = BotPlayer.objects.count()
+                if c >= MAX_BOT_PROCESSES:
+                    msg = f"There are already {c} bots; no bot for you"
+                    raise TooManyBots(msg)
+
+                BotPlayer.objects.create(player=self)
+            else:
+                BotPlayer.objects.filter(player=self).delete()
+
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
         super().save(*args, **kwargs)
+
+    @property
+    def allow_bot_to_play_for_me(self) -> bool:
+        return BotPlayer.objects.filter(player_id=self.pk).exists()
 
     def _check_current_seat(self) -> None:
         if not self.currently_seated:
@@ -314,6 +335,13 @@ class Player(models.Model):
 
     def __str__(self):
         return f"{self.name} ({'bot-powered' if self.allow_bot_to_play_for_me else 'independent'})"
+
+
+class BotPlayer(models.Model):
+    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table_comment = "Those players whose PKs appear here will have a bot play for them."
 
 
 admin.site.register(Player, PlayerAdmin)

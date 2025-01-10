@@ -39,14 +39,15 @@ def test_bottiness_text(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
     h = t.current_hand
-    for p in Player.objects.all():
-        assert p.allow_bot_to_play_for_me is True
-        assert "(bot)" in p.name_dir(hand=h)
-
     p1 = Player.objects.first()
     assert p1 is not None
-    p1.allow_bot_to_play_for_me = False
-    p1.save()
+
+    p1.toggle_bot()
+    assert p1.allow_bot_to_play_for_me is True
+    assert "(bot)" in p1.name_dir(hand=h)
+
+    p1.toggle_bot()
+    assert p1.allow_bot_to_play_for_me is False
     assert "(bot)" not in p1.name_dir(hand=h)
 
 

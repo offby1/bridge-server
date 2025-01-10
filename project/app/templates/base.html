@@ -42,24 +42,12 @@
                         {{ user }}.
                     {% endif %}
                 </div>
-                <div>
-                    {# TODO -- reload the whole page, or somehow update the "Hello" message, which includes whether we're a bot or not #}
-                    {% if user.player %}
-                        <div class="form-check form-switch">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   role="switch"
-                                   id="bot-plays-for-me-switch"
-                                   hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
-                                   hx-target="#hello-user"
-                                   {% if user.player.allow_bot_to_play_for_me %}checked{% endif %} />
-                            <label class="form-check-label" for="bot-plays-for-me-switch">Let the bot play for me</label>
-                        </div>
-                    {% endif %}
-                </div>
             </div>
             {% block upper-right-column %}
             {% endblock upper-right-column %}
+        </div>
+        <div class="row">
+            <div class="col">{% include "bot-checkbox-partial.html#bot-checkbox-partial" with error_message="" %}</div>
         </div>
         <div class="row">
             <div class="col">

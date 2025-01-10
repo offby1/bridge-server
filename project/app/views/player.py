@@ -24,8 +24,6 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 
 logger = logging.getLogger(__name__)
 
-MAX_BOT_PROCESSES = 100
-
 
 def player_detail_endpoint(player):
     return reverse("app:player", args=[player.id])
@@ -224,7 +222,9 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
 def control_bot_for_player(player: Player) -> None:
     service_directory = pathlib.Path("/service")
     if not service_directory.is_dir():
-        logger.warning("Hmm, %s is not a directory; no bots for you", service_directory)
+        logger.warning(
+            "Hmm, %s is not a directory; cannot start or stop a bot for you", service_directory
+        )
         return
 
     def run_in_slash_service(command: list[str]) -> None:
@@ -246,20 +246,6 @@ def control_bot_for_player(player: Player) -> None:
         )
 
     if player.allow_bot_to_play_for_me and player.currently_seated:
-        # This is a desperate attempt to not lock up the server ... my typical t2.micro EC2 box cannot handle more than
-        # about 10 bot clients before it just slows to a crawl.
-        if (
-            c := Player.objects.filter(allow_bot_to_play_for_me=True)
-            .filter(currently_seated=True)
-            .count()
-        ) > MAX_BOT_PROCESSES:
-            logger.warning(
-                "Not starting bot for %s because there are already %s botty players",
-                player,
-                c,
-            )
-            return
-
         shell_script_text = """#!/bin/bash
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
@@ -288,10 +274,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
-    playa.allow_bot_to_play_for_me = not playa.allow_bot_to_play_for_me
-    playa.save()
+
+    try:
+        playa.toggle_bot()
+    except Exception as e:
+        return TemplateResponse(
+            request,
+            "bot-checkbox-partial.html#bot-checkbox-partial",
+            context={"error_message": str(e)},
+        )
+
     control_bot_for_player(playa)
-    return HttpResponse(f"""Hello, {playa.as_link()}""")
+    return TemplateResponse(
+        request, "bot-checkbox-partial.html#bot-checkbox-partial", context={"error_message": ""}
+    )
 
 
 def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
