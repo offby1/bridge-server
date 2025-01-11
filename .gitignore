@@ -1,7 +1,9 @@
-/project/db.sqlite3
-/project/.coverage
-/project/static_root/*
-/README.*.html
-/project/VERSION
-/project/prof/
 /api-bot/.venv/
+/project/.coverage
+/project/db.sqlite3
+/project/htmlcov/
+/project/prof/
+/project/static_root/*
+/project/VERSION
+/README.*.html
+__pycache__/
