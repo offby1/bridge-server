@@ -144,6 +144,10 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    @property
+    def event_channel_name(self):
+        return f"hand:{self.pk}"
+
     def players(self) -> models.QuerySet:
         return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
 
@@ -191,7 +195,7 @@ class Hand(models.Model):
         )
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
-        hand_channel = str(self.pk)
+        hand_channel = self.event_channel_name
         player_channels = [
             f"system:player:{player_pk}"
             for player_pk in self.table.seats.values_list("player_id", flat=True)

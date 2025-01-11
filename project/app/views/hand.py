@@ -531,7 +531,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         return HttpResponseForbidden()
 
     xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
-    current_event_id = get_current_event_id([str(hand.pk)])
+    current_event_id = get_current_event_id([hand.event_channel_name])
     return HttpResponse(
         json.dumps({"xscript": xscript.serializable(), "current_event_id": current_event_id}),
         headers={"Content-Type": "text/json"},

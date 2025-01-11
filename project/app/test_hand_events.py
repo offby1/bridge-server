@@ -36,7 +36,7 @@ def test_auction_settled_messages(usual_setup) -> None:
     assert t is not None
     h = t.current_hand
 
-    with CapturedEventsFromChannel(h.pk) as cap:
+    with CapturedEventsFromChannel(h.event_channel_name) as cap:
         set_auction_to(
             bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
             h,
@@ -73,7 +73,7 @@ def test_sends_final_score() -> None:
     libPlayer = h.player_who_may_play.libraryThing()
     libCard = bridge.card.Card.deserialize("♠A")
 
-    with CapturedEventsFromChannel(h.pk) as cap:
+    with CapturedEventsFromChannel(h.event_channel_name) as cap:
         h.add_play_from_player(player=libPlayer, card=libCard)
 
     def sought(datum):

@@ -12,8 +12,6 @@ STILL TODO:
 
   Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
-* The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
-
 * Also those events have zero auth -- anyone can receive any of them.
 
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
@@ -124,6 +122,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
+
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
 
   -- Apparently I considered that png file "obsolete" as of

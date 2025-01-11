@@ -35,8 +35,9 @@ urlpatterns = [
         {"format-channels": ["table:{table_id}"]},
     ),
     path(
-        "hand/<channel>/events/",  # "channel" is an integer -- the hand's primary key
+        "events/hand/<hand_id>/",
         include(django_eventstream.urls),
+        {"format-channels": ["hand:{hand_id}"]},
     ),
     path(
         # public.  Messages are like {"joined": [16, 17], "split": []} or {"split": [16, 17], "joined": []}
