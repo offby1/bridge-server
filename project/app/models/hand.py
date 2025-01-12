@@ -400,7 +400,8 @@ class Hand(models.Model):
                 "seat_pk": rv.seat_pk,
             },
         }
-        if self.play_set.count() == 1:  # opening lead
+
+        if self.get_xscript().num_plays == 1:  # opening lead
             assert self.dummy is not None
             libCards = sorted(self.current_cards_by_seat()[self.dummy.seat])
             data["dummy"] = "".join([c.serialize() for c in libCards])
