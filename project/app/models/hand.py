@@ -394,14 +394,18 @@ class Hand(models.Model):
         except Error as e:
             raise PlayError(str(e)) from e
 
-        self.send_event_to_players_and_hand(
-            data={
-                "new-play": {
-                    "serialized": card.serialize(),
-                    "seat_pk": rv.seat_pk,
-                },
+        data: dict[str, Any] = {
+            "new-play": {
+                "serialized": card.serialize(),
+                "seat_pk": rv.seat_pk,
             },
-        )
+        }
+        if self.play_set.count() == 1:  # opening lead
+            assert self.dummy is not None
+            libCards = sorted(self.current_cards_by_seat()[self.dummy.seat])
+            data["dummy"] = "".join([c.serialize() for c in libCards])
+
+        self.send_event_to_players_and_hand(data=data)
 
         final_score = self.get_xscript().final_score()
 

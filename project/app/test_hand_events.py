@@ -91,3 +91,35 @@ def test_sends_new_hand_event_to_table_channel() -> None:
         t1.next_board()
 
     assert any("new-hand" in m.data for m in cap.events)
+
+
+def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
+    t = Table.objects.first()
+    assert t is not None
+    h = t.current_hand
+    set_auction_to(
+        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+        h,
+    )
+
+    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+        h.add_play_from_player(
+            # opening lead from East
+            player=h.player_who_may_play.libraryThing(),
+            card=bridge.card.Card.deserialize("d2"),
+        )
+
+    data = json.loads(json.loads(cap.events[0].data))
+    dummy = data.get("dummy")
+    # TODO -- we shouldn't insist on this order
+    assert dummy == "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A"
+
+    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+        h.add_play_from_player(
+            # play from South
+            player=h.player_who_may_play.libraryThing(),
+            card=bridge.card.Card.deserialize("h2"),
+        )
+
+    data = json.loads(json.loads(cap.events[0].data))
+    assert "dummy" not in data
