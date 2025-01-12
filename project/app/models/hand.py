@@ -18,7 +18,7 @@ from bridge.seat import Seat as libSeat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
-from bridge.xscript import HandTranscript
+from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import Error, models
@@ -287,7 +287,7 @@ class Hand(models.Model):
             )
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
-            dealt_cards_by_seat = {
+            dealt_cards_by_seat: CBS = {
                 libSeat(direction): self.board.cards_for_direction(direction)
                 for direction in (1, 2, 3, 4)
             }
