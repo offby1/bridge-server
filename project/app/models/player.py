@@ -93,6 +93,10 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    @property
+    def event_channel_name(self):
+        return f"system:player:{self.pk}"
+
     def toggle_bot(self) -> None:
         with transaction.atomic():
             # If they are asking to enable the bot, ensure there aren't already too many bots.
