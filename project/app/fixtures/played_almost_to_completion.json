@@ -79,7 +79,7 @@
   },
   {
     "fields": {
-        "dealer": "N",
+      "dealer": "N",
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
