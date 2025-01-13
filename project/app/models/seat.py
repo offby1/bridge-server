@@ -91,6 +91,10 @@ class Seat(models.Model):
                 name="%(app_label)s_%(class)s_direction_valid",
                 condition=models.Q(direction__in=SEAT_CHOICES),
             ),
+            models.CheckConstraint(  # type: ignore
+                name="%(app_label)s_%(class)s_direction_letter_valid",
+                condition=models.Q(direction_letter__in=LETTER_SEAT_CHOICES),
+            ),
             models.UniqueConstraint(
                 fields=["direction", "table"],
                 name="%(app_label)s_%(class)s_no_more_than_four_directions_per_table",

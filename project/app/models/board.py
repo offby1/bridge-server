@@ -202,5 +202,13 @@ class Board(models.Model):
 
         return f"{self.short_string()}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_dealer_must_be_compass_letter",
+                condition=models.Q(dealer_letter__in="NESW"),
+            ),
+        ]
+
 
 admin.site.register(Board)
