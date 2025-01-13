@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db import models, transaction
 from django.utils.functional import cached_property
 
-from .common import SEAT_CHOICES
+from .common import LETTER_SEAT_CHOICES, SEAT_CHOICES
 
 if TYPE_CHECKING:
     from . import Player, Table  # noqa
@@ -18,6 +18,10 @@ class SeatException(Exception):
 class Seat(models.Model):
     direction = models.SmallIntegerField(
         choices=SEAT_CHOICES.items(),
+    )
+
+    direction_letter = models.CharField(
+        choices=LETTER_SEAT_CHOICES.items(),
     )
 
     player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)

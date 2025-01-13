@@ -128,6 +128,7 @@ class Board(models.Model):
     ew_vulnerable = models.BooleanField()
 
     dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
+    dealer_letter = models.CharField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
 
     north_cards = models.CharField(max_length=26)
     east_cards = models.CharField(max_length=26)
