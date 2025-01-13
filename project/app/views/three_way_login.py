@@ -19,6 +19,7 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
 
     current_table = user.player.current_table
     if current_table is not None:
+        data["table_pk"] = current_table.pk
         current_hand = current_table.current_hand
         if current_hand is not None:
             data["hand_pk"] = current_hand.pk
