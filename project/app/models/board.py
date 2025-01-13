@@ -52,6 +52,7 @@ def board_attributes_from_board_number(
 
     # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
     dealer = (board_number - 1) % 4 + 1
+    dealer_letter = "NESW"[(board_number - 1) % 4]
     only_ns_vuln = board_number in (2, 5, 12, 15)
     only_ew_vuln = board_number in (3, 6, 9, 16)
     all_vuln = board_number in (4, 7, 10, 13)
@@ -73,6 +74,7 @@ def board_attributes_from_board_number(
         "ns_vulnerable": only_ns_vuln or all_vuln,
         "ew_vulnerable": only_ew_vuln or all_vuln,
         "dealer": dealer,
+        "dealer_letter": dealer_letter,
         "north_cards": north_cards,
         "east_cards": east_cards,
         "south_cards": south_cards,
@@ -205,7 +207,7 @@ class Board(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(  # type: ignore[call-arg]
-                name="%(app_label)s_%(class)s_dealer_must_be_compass_letter",
+                name="%(app_label)s_%(class)s_dealer_letter_must_be_compass_letter",
                 condition=models.Q(dealer_letter__in="NESW"),
             ),
         ]

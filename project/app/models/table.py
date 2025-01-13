@@ -15,7 +15,7 @@ from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from app.models.board import Board, Tournament
-from app.models.common import SEAT_CHOICES
+from app.models.common import LETTER_SEAT_CHOICES, SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
 
@@ -44,9 +44,12 @@ class TableManager(models.Manager):
         try:
             with transaction.atomic():
                 t: Table = self.create()
-                for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
+                for direction_letter, seat, player in zip(
+                    LETTER_SEAT_CHOICES, SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)
+                ):
                     modelSeat.objects.create(
                         direction=seat,
+                        direction_letter=direction_letter,
                         player=player,
                         table=t,
                     )

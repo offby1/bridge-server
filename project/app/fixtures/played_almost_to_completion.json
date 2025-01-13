@@ -80,6 +80,7 @@
   {
     "fields": {
       "dealer": 1,
+        "dealer_letter": "N",
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
@@ -99,6 +100,7 @@
   {
     "fields": {
       "direction": 1,
+        "direction_letter": "N",
       "player": 1,
       "table": 1
     },
@@ -108,6 +110,7 @@
   {
     "fields": {
       "direction": 2,
+        "direction_letter": "E",
       "player": 2,
       "table": 1
     },
@@ -117,6 +120,7 @@
   {
     "fields": {
       "direction": 3,
+        "direction_letter": "S",
       "player": 3,
       "table": 1
     },
@@ -126,6 +130,7 @@
   {
     "fields": {
       "direction": 4,
+        "direction_letter": "W",
       "player": 4,
       "table": 1
     },
