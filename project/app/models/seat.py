@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import bridge.seat
 from django.contrib import admin
 from django.db import models, transaction
+from django.db.models.expressions import RawSQL
 from django.utils.functional import cached_property
 
 from .common import SEAT_CHOICES
@@ -16,7 +17,7 @@ class SeatException(Exception):
 
 
 class Seat(models.Model):
-    direction = models.SmallIntegerField(
+    direction = models.CharField(
         choices=SEAT_CHOICES.items(),
     )
 
@@ -81,7 +82,8 @@ class Seat(models.Model):
             self.player.save()
 
     class Meta:
-        ordering = ["direction"]
+        ordering = [RawSQL("position(DIRECTION in 'NESW')", params=[])]
+
         constraints = [
             models.CheckConstraint(  # type: ignore
                 name="%(app_label)s_%(class)s_direction_valid",
