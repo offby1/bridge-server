@@ -531,9 +531,17 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         return HttpResponseForbidden()
 
     xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
-    current_event_id = get_current_event_id([hand.event_channel_name])
+
     return HttpResponse(
-        json.dumps({"xscript": xscript.serializable(), "current_event_id": current_event_id}),
+        json.dumps(
+            {
+                "xscript": xscript.serializable(),
+                "current_event_ids_by_player_name": {
+                    s.player_name: get_current_event_id([s.player.event_channel_name])
+                    for s in hand.table.seats
+                },
+            }
+        ),
         headers={"Content-Type": "text/json"},
     )
 

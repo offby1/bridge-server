@@ -8,8 +8,23 @@ from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, JsonRe
 from django.utils.html import escape
 
 from app.models import Player
+from app.models.utils import UserMitPlaya
 
 logger = logging.getLogger(__name__)
+
+
+def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
+    assert user.player is not None
+    data = {"player-name": user.username, "player_pk": user.player.pk, "comment": comment}
+
+    current_table = user.player.current_table
+    if current_table is not None:
+        data["table_pk"] = current_table.pk
+        current_hand = current_table.current_hand
+        if current_hand is not None:
+            data["hand_pk"] = current_hand.pk
+
+    return JsonResponse(data)
 
 
 # Accepts ordinary usernames *and* primary keys for django.contrib.auth.models.user;
@@ -20,7 +35,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     if user and user.is_authenticated:
         msg = f"{user.username} is already authenticated -- welcome"
         logger.info(msg)
-        return JsonResponse({"player-name": user.username, "comment": msg})
+        return json_response(user, msg)
 
     if (auth_header := request.headers.get("Authorization")) is None:
         msg = "No Authorization header attached to my request!  Begone!"
@@ -62,13 +77,8 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
                 login(request, user)
                 msg = f"Oh look, {user.username} used the skeleton key"
                 logger.debug("%s", msg)
-                return JsonResponse(
-                    {
-                        "player-name": user.username,
-                        "comment": msg,
-                    }
-                )
-            msg = f"{username_or_pk} looks like a number, but you didn't give us the skeleton key"
+                return json_response(user, msg)
+
             logger.info(msg)
             return HttpResponseForbidden(escape(msg))
 
@@ -88,4 +98,4 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
 
     assert user is not None
     logger.debug(f"Just logged in {user.username}")
-    return JsonResponse({"player-name": user.get_username(), "comment": msg})
+    return json_response(user, msg)

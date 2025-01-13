@@ -190,11 +190,19 @@ class Table(models.Model):
                 assert b is not None
 
             new_hand = Hand.objects.create(board=b, table=self)
-            send_event(
-                channel=self.event_channel_name,
-                event_type="message",
-                data={"new-hand": new_hand.pk, "time": time.time()},
-            )
+            for channel in (
+                self.event_channel_name,
+                *[s.player.event_channel_name for s in self.seats],
+            ):
+                send_event(
+                    channel=channel,
+                    event_type="message",
+                    data={
+                        "new-hand": new_hand.pk,
+                        "time": time.time(),
+                        "tempo_seconds": self.tempo_seconds,
+                    },
+                )
 
         return b
 
