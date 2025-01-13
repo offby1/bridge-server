@@ -74,9 +74,9 @@ services:
     ports:
       - "5432:5432"
 
-    # Experience shows we need this many connections for 40 players.  Probably more if they all have browsers open :-(
-    # (It looks like we need one connection per SSE client per channel)
-    command: ["postgres", "--max_connections=1000", "--idle_session_timeout=120000"]
+    # Experience shows we need at least one connection per player.  (It looks like we need one connection per SSE
+    # client)
+    command: ["postgres", "--max_connections=100"]
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
