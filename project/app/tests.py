@@ -178,7 +178,7 @@ def test_cant_just_make_up_directions(j_northam, everybodys_password):
 
     t = Table.objects.create()
     with pytest.raises(Exception) as e:
-        Seat.objects.create(direction=1234, direction_letter="N", player=j_northam, table=t)
+        Seat.objects.create(direction=1234, player=j_northam, table=t)
 
     assert "app_seat_direction_valid" in str(e.value)
 

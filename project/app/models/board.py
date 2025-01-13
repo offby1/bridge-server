@@ -51,8 +51,7 @@ def board_attributes_from_board_number(
     board_number = (board_number - 1) % 16
 
     # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-    dealer = (board_number - 1) % 4 + 1
-    dealer_letter = "NESW"[(board_number - 1) % 4]
+    dealer = "NESW"[(board_number - 1) % 4]
     only_ns_vuln = board_number in (2, 5, 12, 15)
     only_ew_vuln = board_number in (3, 6, 9, 16)
     all_vuln = board_number in (4, 7, 10, 13)
@@ -74,7 +73,6 @@ def board_attributes_from_board_number(
         "ns_vulnerable": only_ns_vuln or all_vuln,
         "ew_vulnerable": only_ew_vuln or all_vuln,
         "dealer": dealer,
-        "dealer_letter": dealer_letter,
         "north_cards": north_cards,
         "east_cards": east_cards,
         "south_cards": south_cards,
@@ -129,8 +127,7 @@ class Board(models.Model):
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
 
-    dealer = models.SmallIntegerField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
-    dealer_letter = models.CharField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
+    dealer = models.CharField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
 
     north_cards = models.CharField(max_length=26)
     east_cards = models.CharField(max_length=26)
@@ -146,7 +143,7 @@ class Board(models.Model):
         return SEAT_CHOICES[self.dealer]
 
     @property
-    def hand_strings_by_direction(self) -> dict[int, str]:
+    def hand_strings_by_direction(self) -> dict[str, str]:
         return {
             Seat.NORTH.value: self.north_cards,
             Seat.EAST.value: self.east_cards,
@@ -154,8 +151,8 @@ class Board(models.Model):
             Seat.WEST.value: self.west_cards,
         }
 
-    def cards_for_direction(self, direction_integer: int) -> list[Card]:
-        card_string = self.hand_strings_by_direction[direction_integer]
+    def cards_for_direction(self, direction_letter: str) -> list[Card]:
+        card_string = self.hand_strings_by_direction[direction_letter]
         return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
     def what_can_they_see(self, *, player: Player) -> PlayerVisibility:
@@ -207,8 +204,8 @@ class Board(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(  # type: ignore[call-arg]
-                name="%(app_label)s_%(class)s_dealer_letter_must_be_compass_letter",
-                condition=models.Q(dealer_letter__in="NESW"),
+                name="%(app_label)s_%(class)s_dealer_must_be_compass_letter",
+                condition=models.Q(dealer__in="NESW"),
             ),
         ]
 

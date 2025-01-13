@@ -289,7 +289,7 @@ class Hand(models.Model):
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
                 libSeat(direction): self.board.cards_for_direction(direction)
-                for direction in (1, 2, 3, 4)
+                for direction in "NESW"
             }
 
             for player, call in calls():
@@ -475,7 +475,7 @@ class Hand(models.Model):
         return ", ".join([p.name for p in self.players_by_direction.values()])
 
     @property
-    def players_by_direction(self) -> dict[int, Player]:
+    def players_by_direction(self) -> dict[str, Player]:
         return {s.direction: s.player for s in self.table.seats}
 
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
@@ -620,12 +620,10 @@ class Hand(models.Model):
         return flattened
 
     def trick_counts_by_direction(self) -> dict[str, int]:
-        return {
-            "N/S" if north_or_east == 1 else "E/W": count
-            for north_or_east, count in collections.Counter(
-                p.seat.value % 2 for p in self.annotated_plays if p.winner
-            ).items()
-        }
+        cc = collections.Counter([p.seat.value for p in self.annotated_plays if p.winner])
+        ns = cc["S"] + cc["N"]
+        ew = cc["E"] + cc["W"]
+        return {"N/S": ns, "E/W": ew}
 
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property

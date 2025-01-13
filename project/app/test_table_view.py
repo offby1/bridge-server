@@ -33,8 +33,10 @@ def expect_visibility(expectation_array, table: Table) -> None:
                 as_viewed_by=table.current_hand.players_by_direction[viewer],
                 as_dealt=False,
             )
+            seat_index = "NESW".index(seat)
+            viewer_index = "NESW".index(viewer)
             assert (
-                actual1["display_cards"] == expectation_array[seat - 1][viewer - 1]
+                actual1["display_cards"] == expectation_array[seat_index][viewer_index]
             ), f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
 
 
@@ -107,9 +109,11 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
                     as_viewed_by=t.current_hand.players_by_direction[viewer],
                     as_dealt=False,
                 )
+                seat_index = "NESW".index(seat)
+                viewer_index = "NESW".index(viewer)
                 assert (
                     actual["viewer_may_control_this_seat"]
-                    == expectation_array[seat - 1][viewer - 1]
+                    == expectation_array[seat_index][viewer_index]
                 ), f"{t.current_hand.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
 
     # Nobody can control any cards, since the auction isn't settled
