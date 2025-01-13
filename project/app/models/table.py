@@ -197,7 +197,11 @@ class Table(models.Model):
                 send_event(
                     channel=channel,
                     event_type="message",
-                    data={"new-hand": new_hand.pk, "time": time.time()},
+                    data={
+                        "new-hand": new_hand.pk,
+                        "time": time.time(),
+                        "tempo_seconds": self.tempo_seconds,
+                    },
                 )
 
         return b
