@@ -2,6 +2,12 @@ IN PROGRESS:
 
 STILL TODO:
 
+* When I toggle the "let the bot play for me" button, my name doesn't update from e.g. "bob (bot-powered)" to "bob (independent)" everywhere; rather, I have to reload the page to see the new status.  This is annoying.
+
+  In theory I could fix this by making every spot that displays the name, and hence might need updating, into a partial, and have it reload as needed.  That seems so tedious, though, that my heart sinks just thinking about it.
+
+  Perhaps https://alpinejs.dev/ would make it easier to handle this.  Perhaps it could replace much of the HTMX I'm currently using.  https://news.ycombinator.com/item?id=29319298 compares and contrasts the two.
+
 * At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
 
 * Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
