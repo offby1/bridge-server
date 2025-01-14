@@ -28,7 +28,7 @@ ensure-django-secret:
 
 [private]
 [script('bash')]
-ensure-skeleton-key: poetry-install-no-dev
+ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
     set -euo pipefail
     mkdir -vp "$(dirname {{ DJANGO_SKELETON_KEY_FILE }})"
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
