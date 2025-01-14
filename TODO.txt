@@ -2,23 +2,33 @@ IN PROGRESS:
 
 STILL TODO:
 
+* Big big big: make the UI not suck.
+
+  In particular: it's hard to use on mobile -- the four hands aren't layed out nicely N E S W, but kinda squished together.
+
+  Also on the laptop, during the auction, it *sometimes* jumps a little when a new call gets displayed.
+
+* Big-ish: proper hosting and deployment.
+
+  Right now I'm using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
+
+* The hand-event channels have zero auth -- anyone can receive any of them.
+
+* Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
+
+* Try moving app.views.player.control_bot_for_player into app.models.player, and having that model's "save" method invoke it (or maybe even use django signals or something).  That way I could mass-update all the players to be bots, or not; currently I have to then log in as each one individually and toggle the little toggle thingy.
+
 * When I toggle the "let the bot play for me" button, my name doesn't update from e.g. "bob (bot-powered)" to "bob (independent)" everywhere; rather, I have to reload the page to see the new status.  This is annoying.
 
   In theory I could fix this by making every spot that displays the name, and hence might need updating, into a partial, and have it reload as needed.  That seems so tedious, though, that my heart sinks just thinking about it.
 
   Perhaps https://alpinejs.dev/ would make it easier to handle this.  Perhaps it could replace much of the HTMX I'm currently using.  https://news.ycombinator.com/item?id=29319298 compares and contrasts the two.
 
-* At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
-
-* Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
-
-* Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're annoying.
+* Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're disturbing.
 
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
 
   Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
-
-* Also those events have zero auth -- anyone can receive any of them.
 
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
@@ -128,6 +138,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
+
+* At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
+
 * The hand-event channel names are just integers.  This is annoying; instead of just "2", it should be something like "hand:2"
 
 * Fix the bottom-of-the-table-is-cut-off as shown at `mobile-rendering-trouble.png`
