@@ -218,7 +218,7 @@ def _three_by_three_trick_display_context_for_hand(
                 [" ", c(bridge.seat.Seat.NORTH.value), " "],
                 [
                     c(bridge.seat.Seat.WEST.value),
-                    arrow,
+                    arrow + arrow,  # two of 'em to make this box the same width as the others
                     c(bridge.seat.Seat.EAST.value),
                 ],
                 [" ", c(bridge.seat.Seat.SOUTH.value), " "],
