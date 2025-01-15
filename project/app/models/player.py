@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import pathlib
+import subprocess
 from typing import TYPE_CHECKING
 
 import bridge.auction
@@ -97,10 +99,62 @@ class Player(models.Model):
     def event_channel_name(self):
         return f"system:player:{self.pk}"
 
-    def toggle_bot(self) -> None:
+    # https://cr.yp.to/daemontools/svc.html
+    def control_bot(self) -> None:
+        service_directory = pathlib.Path("/service")
+        if not service_directory.is_dir():
+            logger.warning(
+                "Hmm, %s is not a directory; cannot start or stop a bot for you", service_directory
+            )
+            return
+
+        def run_in_slash_service(command: list[str]) -> None:
+            subprocess.run(
+                command,
+                cwd=service_directory,
+                check=False,
+                capture_output=True,
+            )
+
+        def svc(flags: str) -> None:
+            # might not want to block here, who knows how long it'll take
+            run_in_slash_service(
+                [
+                    "svc",
+                    flags,
+                    str(self.pk),
+                ],
+            )
+
+        if self.allow_bot_to_play_for_me and self.currently_seated:
+            shell_script_text = """#!/bin/bash
+
+# wrapper script for [daemontools](https://cr.yp.to/daemontools/)
+
+set -euxo pipefail
+
+exec /api-bot/.venv/bin/python /api-bot/apibot.py
+    """
+            run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
+            run_file = run_dir / "run.notyet"
+            run_file.parent.mkdir(parents=True, exist_ok=True)
+            run_file.write_text(shell_script_text)
+            run_file.chmod(0o755)
+            run_file = run_file.rename(run_dir / "run")
+
+            svc("-u")
+            logger.info("Started bot for %s", self)
+        else:
+            svc("-d")
+            logger.info("Stopped bot for %s", self)
+
+    def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
+            if desired_state is None:
+                desired_state = not self.allow_bot_to_play_for_me
+
             # If they are asking to enable the bot, ensure there aren't already too many bots.
-            if not self.allow_bot_to_play_for_me:
+            if desired_state:
                 c = BotPlayer.objects.count()
                 if c >= MAX_BOT_PROCESSES:
                     msg = f"There are already {c} bots; no bot for you"
@@ -109,6 +163,8 @@ class Player(models.Model):
                 BotPlayer.objects.create(player=self)
             else:
                 BotPlayer.objects.filter(player=self).delete()
+
+            self.control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()

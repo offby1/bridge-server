@@ -3,8 +3,6 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
-import pathlib
-import subprocess
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
@@ -218,58 +216,6 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
     )
 
 
-# https://cr.yp.to/daemontools/svc.html
-def control_bot_for_player(player: Player) -> None:
-    service_directory = pathlib.Path("/service")
-    if not service_directory.is_dir():
-        logger.warning(
-            "Hmm, %s is not a directory; cannot start or stop a bot for you", service_directory
-        )
-        return
-
-    def run_in_slash_service(command: list[str]) -> None:
-        subprocess.run(
-            command,
-            cwd=service_directory,
-            check=False,
-            capture_output=True,
-        )
-
-    def svc(flags: str) -> None:
-        # might not want to block here, who knows how long it'll take
-        run_in_slash_service(
-            [
-                "svc",
-                flags,
-                str(player.pk),
-            ],
-        )
-
-    if player.allow_bot_to_play_for_me and player.currently_seated:
-        shell_script_text = """#!/bin/bash
-
-# wrapper script for [daemontools](https://cr.yp.to/daemontools/)
-
-set -euxo pipefail
-
-exec /api-bot/.venv/bin/python /api-bot/apibot.py
-"""
-        run_dir = pathlib.Path("/service") / pathlib.Path(str(player.pk))
-        run_file = run_dir / "run.notyet"
-        run_file.parent.mkdir(parents=True, exist_ok=True)
-        run_file.write_text(shell_script_text)
-        run_file.chmod(0o755)
-        run_file = run_file.rename(run_dir / "run")
-
-        # "-u" means "up"; "-c" means "continue".  Neither alone seems to suffice in every case.  Might need to wait
-        # until svscan starts the service :-|
-        svc("-uc")
-        logger.info("Started bot for %s", player)
-    else:
-        # "-p" means "pause".
-        svc("-p")
-
-
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
@@ -284,7 +230,7 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
             context={"error_message": str(e)},
         )
 
-    control_bot_for_player(playa)
+    playa.control_bot()
     return TemplateResponse(
         request, "bot-checkbox-partial.html#bot-checkbox-partial", context={"error_message": ""}
     )

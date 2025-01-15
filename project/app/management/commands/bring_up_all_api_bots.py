@@ -1,4 +1,3 @@
-import app.views
 from app.models.player import BotPlayer
 from django.core.management.base import BaseCommand
 
@@ -17,7 +16,7 @@ class Command(BaseCommand):
             self.stderr.write(f"{bp.player.name} ... ", ending="")
 
             try:
-                app.views.player.control_bot_for_player(bp.player)
+                bp.player.control_bot()
             except OSError as e:
                 self.stderr.write(
                     f"{e}; I assume we're not running under docker, so ... outta here",
