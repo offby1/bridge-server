@@ -1,12 +1,9 @@
 IN PROGRESS:
+* Make the UI not suck.
+
+  It *sometimes* jumps a little when a new call or play gets displayed.
 
 STILL TODO:
-
-* Big big big: make the UI not suck.
-
-  In particular: it's hard to use on mobile -- the four hands aren't layed out nicely N E S W, but kinda squished together.
-
-  Also on the laptop, during the auction, it *sometimes* jumps a little when a new call gets displayed.
 
 * Big-ish: proper hosting and deployment.
 

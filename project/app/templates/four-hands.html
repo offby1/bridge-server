@@ -2,34 +2,28 @@
 <div id="four-hands"
      style="border: 1px solid;
             height: 50%;
-            font-family: monospace">
+            font-family: monospace;
+            display: grid;
+            grid-template-columns: auto auto auto">
     {# North at the top as per the Bridge Writing Style Guide #}
-    <div class="row">
-        <div class="col"></div>
-        <div class="col">{{ card_display.North.player.display_name }}: {{ card_display.North.cards }}</div>
-        <div class="col"></div>
-    </div>
-    <div class="row">
-        <div class="col">{{ card_display.West.player.display_name }}: {{ card_display.West.cards }}</div>
-        <div class="col">
-            {% ifexists three_by_three_trick_display %}
-            <div>
-                {% for row in three_by_three_trick_display.rows %}
-                    <div class="row">
-                        {% for column in row %}
-                            <div class="col"
-                                 {% if column != " " %}style="border: 1px dotted;"{% endif %}>{{ column|safe }}</div>
-                        {% endfor %}
-                    </div>
+    {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
+    <div></div>
+    <div>{{ card_display.North.player.display_name }}: {{ card_display.North.cards }}</div>
+    <div></div>
+    <div>{{ card_display.West.player.display_name }}: {{ card_display.West.cards }}</div>
+    <div>
+        {% ifexists three_by_three_trick_display %}
+        <div style="display: grid; grid-template-columns: auto auto auto;">
+            {% for row in three_by_three_trick_display.rows %}
+                {% for column in row %}
+                    <div {% if column != " " %}style="border: 1px dotted; text-align: center;"{% endif %}>{{ column|safe }}</div>
                 {% endfor %}
-            </div>
-        {% endifexists %}
-    </div>
-    <div class="col">{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
+            {% endfor %}
+        </div>
+    {% endifexists %}
 </div>
-<div class="row">
-    <div class="col"></div>
-    <div class="col">{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
-    <div class="col"></div>
-</div>
+<div>{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
+<div></div>
+<div>{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
+<div></div>
 </div>
