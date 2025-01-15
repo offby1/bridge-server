@@ -33,7 +33,7 @@ py-spy = "^0.4.0"
 
 [tool.djlint]
 use_gitignore=true
-ignore="H016,H021,H023,H030,H031"
+ignore="H016,H020,H021,H023,H030,H031"
 
 [tool.poetry]
 requires-poetry = ">=2.0"
