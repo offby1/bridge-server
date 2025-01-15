@@ -210,7 +210,7 @@ def _three_by_three_trick_display_context_for_hand(
 
     arrow = ""
     if lead_came_from is not None:
-        arrow = {"N": "↑", "E": "→", "S": "↓", "W": "←"}[lead_came_from.value]
+        arrow = {"N": "⬆️", "E": "➡️", "S": "⬇️", "W": "⬅️"}[lead_came_from.value]
 
     return {
         "three_by_three_trick_display": {
@@ -218,7 +218,7 @@ def _three_by_three_trick_display_context_for_hand(
                 [" ", c(bridge.seat.Seat.NORTH.value), " "],
                 [
                     c(bridge.seat.Seat.WEST.value),
-                    arrow + arrow,  # two of 'em to make this box the same width as the others
+                    arrow,
                     c(bridge.seat.Seat.EAST.value),
                 ],
                 [" ", c(bridge.seat.Seat.SOUTH.value), " "],
