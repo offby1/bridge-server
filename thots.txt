@@ -1,6 +1,0 @@
-I want to ensure that the four-hands layout always 
-
-* has three rows -- north, west/east, south
-  (Currently, on mobile, west/east get squished horizontally and wind up taking up two rows)
-
-* shows each hand's suit holdings in a single row.  IOW, if North has AQJT4 of spades, those five symbols are on one row, and the symbols for the other suits are on three other rows.
