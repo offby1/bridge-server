@@ -178,13 +178,12 @@ class Table(models.Model):
 
         return unplayed_boards.first()
 
-    # TODO -- limit this to the "current" tournament?
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
-        if self.hand_set.exists() and not self.hand_is_complete:
-            msg = f"Naw, {self} isn't complete; no next board for you"
-            raise TableException(msg)
-
         with transaction.atomic():
+            if self.hand_set.exists() and not self.hand_is_complete:
+                msg = f"Naw, {self} isn't complete; no next board for you"
+                raise TableException(msg)
+
             if desired_board_pk is not None:
                 b = Board.objects.get(pk=desired_board_pk)
             else:
@@ -209,7 +208,7 @@ class Table(models.Model):
                     },
                 )
 
-        return b
+            return b
 
     @property
     def current_board(self):
