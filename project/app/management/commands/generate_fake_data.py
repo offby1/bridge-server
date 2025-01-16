@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tqdm
-from app.models import Player, Table
+from app.models import Player, Table, Tournament
 from app.models.player import BotPlayer, TooManyBots
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -78,6 +78,7 @@ class Command(BaseCommand):
                 break
 
             # find another unseated partnership
+
             unseated_player_two = (
                 Player.objects.exclude(
                     pk__in={unseated_player_one.pk, unseated_player_one.partner.pk},
@@ -88,6 +89,11 @@ class Command(BaseCommand):
 
             if not unseated_player_two:
                 break
+
+            # Ensure we have at least one tournament.
+            if not Tournament.objects.exists():
+                t = Tournament.objects.create()
+                self.stdout.write(f"Created {t}")
 
             Table.objects.create_with_two_partnerships(
                 unseated_player_one,

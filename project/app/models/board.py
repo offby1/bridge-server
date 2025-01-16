@@ -83,7 +83,7 @@ def board_attributes_from_board_number(
 class TournamentManager(models.Manager):
     # When should we call this?
     # Whenever there are no more unplayed boards.
-    def create(self, *args, **kwargs) -> None:
+    def create(self, *args, **kwargs) -> Tournament:
         with transaction.atomic():
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
@@ -97,6 +97,8 @@ class TournamentManager(models.Manager):
                     ],
                 )
                 Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
+            logger.debug("Created new tournament with %s", t.board_set.all())
+            return t
 
 
 class Tournament(models.Model):

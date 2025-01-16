@@ -3,6 +3,10 @@ IN PROGRESS:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
+* It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
+
+  Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
+
 STILL TODO:
 
 * Big-ish: proper hosting and deployment.
@@ -22,10 +26,6 @@ STILL TODO:
   Perhaps https://alpinejs.dev/ would make it easier to handle this.  Perhaps it could replace much of the HTMX I'm currently using.  https://news.ycombinator.com/item?id=29319298 compares and contrasts the two.
 
 * Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're disturbing.
-
-* It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
-
-  Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
 * Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 

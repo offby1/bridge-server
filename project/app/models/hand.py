@@ -681,6 +681,14 @@ class Hand(models.Model):
     def __str__(self) -> str:
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["board", "table"],
+                name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_at_a_given_table",
+            ),
+        ]
+
 
 @admin.register(Hand)
 class HandAdmin(admin.ModelAdmin):

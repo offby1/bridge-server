@@ -14,7 +14,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import Board, Tournament
+from app.models.board import Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 class TableException(Exception):
+    pass
+
+
+class TournamentIsOverError(TableException):
     pass
 
 
@@ -165,31 +169,40 @@ class Table(models.Model):
     # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
         unplayed_boards = Board.objects.nicely_ordered().all()
+        logger.debug("All boards: %s", unplayed_boards)
         for seat in self.seats:
             unplayed_boards = unplayed_boards.exclude(id__in=seat.player.boards_played)
+            logger.debug(
+                "Subtracting %s since %s played them", seat.player.boards_played, seat.player
+            )
 
-        return unplayed_boards.first()
+        logger.debug("That leaves %s", unplayed_boards)
+        rv = unplayed_boards.first()
+        logger.debug("Returning %s", rv)
+        return rv
 
-    # TODO -- limit this to the "current" tournament?
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
-        if self.hand_set.exists() and not self.hand_is_complete:
-            msg = f"Naw, {self} isn't complete; no next board for you"
-            raise TableException(msg)
-
         with transaction.atomic():
+            logger.debug(
+                "%s: someone wants the next board (desired_board_pk is %s)", self, desired_board_pk
+            )
+            if self.hand_set.exists() and not self.hand_is_complete:
+                msg = f"Naw, {self} isn't complete; no next board for you"
+                logger.warning("%s", msg)
+                raise TableException(msg)
+
             if desired_board_pk is not None:
                 b = Board.objects.get(pk=desired_board_pk)
             else:
                 b = self.find_unplayed_board()
 
             if b is None:
-                # This seems wrong; players ought to explicitly request to join a tournament.
-                # TODO -- don't do this; instead, send a message that the current tournament has ended
-                Tournament.objects.create()
-                b = self.find_unplayed_board()
-                assert b is not None
+                msg = f"Tournaments {[h.board.tournament for h in self.hand_set.all()]} are over; no more boards"
+                logger.warning("%s", msg)
+                raise TournamentIsOverError(msg)
 
             new_hand = Hand.objects.create(board=b, table=self)
+            logger.debug("%s now has a new hand: %s", self, new_hand)
             for channel in (
                 self.event_channel_name,
                 *[s.player.event_channel_name for s in self.seats],
@@ -204,7 +217,7 @@ class Table(models.Model):
                     },
                 )
 
-        return b
+            return b
 
     @property
     def current_board(self):
