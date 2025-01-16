@@ -176,6 +176,7 @@ class Table(models.Model):
                 "Subtracting %s since %s played them", seat.player.boards_played, seat.player
             )
 
+        logger.debug("That leaves %s", unplayed_boards)
         rv = unplayed_boards.first()
         logger.debug("Returning %s", rv)
         return rv
