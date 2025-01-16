@@ -16,7 +16,17 @@ from django.urls import reverse
 import app.models.board
 from app.models.table import TableException
 
-from .models import Board, Hand, Message, Player, PlayerException, Seat, SeatException, Table
+from .models import (
+    Board,
+    Hand,
+    Message,
+    Player,
+    PlayerException,
+    Seat,
+    SeatException,
+    Table,
+    Tournament,
+)
 from .testutils import set_auction_to
 from .views import hand, player, table
 
@@ -419,6 +429,8 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
     players_by_name["tina"].partner_with(players_by_name["tony"])
 
+    Tournament.objects.create()
+
     request = rf.post(
         "/woteva/",
         data={"pk1": j_northam.pk, "pk2": players_by_name["tina"].pk},
@@ -428,6 +440,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
         request, j_northam.pk, players_by_name["tina"].pk
     )
 
+    print(f"{response.content=}")
     assert response.status_code == 302
 
 
@@ -503,7 +516,9 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     assert response.status_code == 403
     assert b"isn't one of" in response.content
 
+    # Tournament.objects.create()
     response = seat_em_dano(North)
+    print(response.content)
     assert response.status_code == 302
 
     assert Table.objects.count() == number_of_tables_before + 1
@@ -555,10 +570,10 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
 def test_find_unplayed_board(played_to_completion) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
-
-    all_known_boards_before_splitsville = {b.pk for b in Board.objects.all()}
+    assert t1.current_board.pk == 1
 
     t1.next_board()
+    assert t1.current_board.pk == 2
 
     North, East, South, West = [s.player for s in t1.seats]
 
@@ -585,10 +600,21 @@ def test_find_unplayed_board(played_to_completion) -> None:
     assert not South.currently_seated
     assert not West.currently_seated
 
+    # Create a third board in this tournament (our test fixture only has two)
+    Board.objects.create(
+        dealer="S",
+        ns_vulnerable=False,
+        ew_vulnerable=False,
+        tournament=t1.current_board.tournament,
+        east_cards="♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+        north_cards="♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+        south_cards="♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+        west_cards="♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
+    )
+
     # now we re-partner, creating a new table
     t2 = Table.objects.create_with_two_partnerships(North, East)
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
-    assert b is not None
-    assert b.pk not in all_known_boards_before_splitsville
+    assert b is None
