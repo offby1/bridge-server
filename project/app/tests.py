@@ -440,7 +440,6 @@ def test_table_creation(j_northam, rf, everybodys_password):
         request, j_northam.pk, players_by_name["tina"].pk
     )
 
-    print(f"{response.content=}")
     assert response.status_code == 302
 
 
@@ -516,9 +515,7 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
     assert response.status_code == 403
     assert b"isn't one of" in response.content
 
-    # Tournament.objects.create()
     response = seat_em_dano(North)
-    print(response.content)
     assert response.status_code == 302
 
     assert Table.objects.count() == number_of_tables_before + 1
@@ -567,8 +564,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
         assert expected_html in actual_html
 
 
-@pytest.mark.skip(reason="breaks 'cuz I reduced the number of boards per tournament")
-def test_find_unplayed_board(played_to_completion) -> None:
+def test_find_unplayed_board(played_to_completion, monkeypatch) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
     assert t1.current_board.pk == 1
@@ -602,16 +598,22 @@ def test_find_unplayed_board(played_to_completion) -> None:
     assert not West.currently_seated
 
     # Create a third board in this tournament (our test fixture only has two)
-    Board.objects.create(
-        dealer="S",
-        ns_vulnerable=False,
-        ew_vulnerable=False,
-        tournament=t1.current_board.tournament,
-        east_cards="♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
-        north_cards="♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
-        south_cards="♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
-        west_cards="♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
-    )
+    with monkeypatch.context() as m:
+        m.setattr(
+            app.models.board,
+            "BOARDS_PER_TOURNAMENT",
+            max(3, app.models.board.BOARDS_PER_TOURNAMENT),
+        )
+        Board.objects.create(
+            dealer="S",
+            ns_vulnerable=False,
+            ew_vulnerable=False,
+            tournament=t1.current_board.tournament,
+            east_cards="♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+            north_cards="♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+            south_cards="♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+            west_cards="♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
+        )
 
     # now we re-partner, creating a new table
     t2 = Table.objects.create_with_two_partnerships(North, East)
