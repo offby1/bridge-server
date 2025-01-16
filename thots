@@ -1,5 +1,0 @@
-Two players at a given table ask for "next_board" at more or less the same time ... and they both get the same one!
-
-Each call to "next_board" is happening inside a transaction, and within that transaction, everything makes sense.  But I'd have thought that the second player's transaction would abort at commit time, because ... uh ... I dunno.
-
-Maybe I'm missing some constraint?  Maybe the Hand model wants a "unique_together" constraint on "board" and "table"?
