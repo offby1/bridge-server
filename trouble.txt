@@ -1,0 +1,3 @@
+Some boards are getting played twice by the same table!!!
+
+See e.g. https://laptop.tail571dc2.ts.net/hand/21/archive/ and https://laptop.tail571dc2.ts.net/hand/19/archive/ -- both board 2, same players each hand.

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from app.models import Hand, Player
 
-BOARDS_PER_TOURNAMENT = 16
+BOARDS_PER_TOURNAMENT = 2
 
 logger = logging.getLogger(__name__)
 
