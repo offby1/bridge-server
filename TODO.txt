@@ -3,11 +3,8 @@ IN PROGRESS:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
-* It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
-
-  Also, at the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
-
 STILL TODO:
+* At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
 * Big-ish: proper hosting and deployment.
 
@@ -135,6 +132,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
+
 * Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup
 
 * At https://ubuntu-2gb-hil-1.tail571dc2.ts.net/hand/24/, I (bob) have chosen to *not* have the bot play for me, and I'm declarer ... but the bot is playing for dummy :-|
