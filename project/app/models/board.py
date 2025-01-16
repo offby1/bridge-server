@@ -97,6 +97,7 @@ class TournamentManager(models.Manager):
                     ],
                 )
                 Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
+            logger.debug("Created new tournament with %s", t.board_set.all())
             return t
 
 

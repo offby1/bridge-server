@@ -3,8 +3,7 @@ from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Board, Hand, Play, Player, Table, Tournament
-from .models.board import board_attributes_from_board_number
+from .models import Hand, Play, Player, Table
 
 
 @pytest.fixture(autouse=True)
@@ -63,10 +62,6 @@ def second_setup(usual_setup):
 
     Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-    Board.objects.create_from_attributes(
-        attributes=board_attributes_from_board_number(board_number=2, rng_seeds=[]),
-        tournament=Tournament.objects.first(),
-    )
 
     return Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
