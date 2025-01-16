@@ -176,12 +176,18 @@ class Table(models.Model):
                 "Subtracting %s since %s played them", seat.player.boards_played, seat.player
             )
 
-        return unplayed_boards.first()
+        rv = unplayed_boards.first()
+        logger.debug("Returning %s", rv)
+        return rv
 
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
         with transaction.atomic():
+            logger.debug(
+                "%s: someone wants the next board (desired_board_pk is %s)", self, desired_board_pk
+            )
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; no next board for you"
+                logger.warning("%s", msg)
                 raise TableException(msg)
 
             if desired_board_pk is not None:
@@ -191,9 +197,11 @@ class Table(models.Model):
 
             if b is None:
                 msg = f"Tournaments {[h.board.tournament for h in self.hand_set.all()]} are over; no more boards"
+                logger.warning("%s", msg)
                 raise TournamentIsOverError(msg)
 
             new_hand = Hand.objects.create(board=b, table=self)
+            logger.debug("%s now has a new hand: %s", self, new_hand)
             for channel in (
                 self.event_channel_name,
                 *[s.player.event_channel_name for s in self.seats],

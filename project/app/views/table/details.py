@@ -155,7 +155,10 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 # TODO -- restrict this view to just those players who are, you know, actually seated at the table.
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+    assert request.user.player is not None
+    logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
+
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
@@ -166,6 +169,7 @@ def new_board_view(_request: AuthedHttpRequest, pk: int) -> HttpResponse:
     try:
         table.next_board()
     except Exception as e:
+        logger.warning("%s", e)
         return HttpResponseNotFound(e)
 
     logger.debug('Called "next_board" on table %s', table)
