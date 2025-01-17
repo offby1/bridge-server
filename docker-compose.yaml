@@ -1,4 +1,5 @@
 volumes:
+  caddy_data: {}
   django_static_root: {}
   postgres_data: {}
 
@@ -38,6 +39,9 @@ services:
     # Note that you'll still have to manually restart daphne, though.
     # volumes:
     #   - ./project:/bridge/project
+    labels:
+      caddy: bridge.offby1.info
+      caddy.reverse_proxy: {{upstreams}}
 
   django-collected-static:
     <<: *django
@@ -93,8 +97,26 @@ services:
       start_period: 10s
       start_interval: 1s
 
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    restart: unless-stopped
+
 secrets:
   django_secret:
     environment: "DJANGO_SECRET_KEY"
   django_skeleton_key:
     environment: "DJANGO_SKELETON_KEY"
+
+networks:
+  caddy:
+    external: true
