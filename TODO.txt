@@ -3,12 +3,14 @@ IN PROGRESS:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
-STILL TODO:
-* At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
-
 * Big-ish: proper hosting and deployment.
 
-  Right now I'm using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
+  Up until now, I've been using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
+
+  So I'm experimenting with "caddy" -- another container in the docker-compose stack.  It works great!  Stuff is now running at https://bridge.offby1.info.
+
+STILL TODO:
+* At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
 * The hand-event channels have zero auth -- anyone can receive any of them.
 
