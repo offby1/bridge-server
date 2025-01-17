@@ -61,5 +61,11 @@ Optional but slick. `pipx install pre-commit`
 
   😭😭 **on every Debian and Ubuntu box I've tried it on, this fails with ` Unable to find installation candidates for pyqt5-qt5 (5.15.15)`** 😭😭
 
+  You can work around this by doing `poetry remove python-lsp-server` but geez.
+
 - `just dcu` will bring up the docker-compose stack, which includes the web server and bots (and postgres).  It conflicts with `just runme` since they both try to listen on the same port.
 `DEPLOYMENT_ENVIRONMENT` will be `"staging"` on the laptop, and `"production"` elsewhere.  When running on the laptop, you can fool it into thinking it's production by invoking e.g. `DJANGO_SETTINGS_MODULE=project.prod_settings HOSTNAME=yeah.im.production.trustme just dcu`
+
+- `just prod` does what `just dcu` does, plus:
+  - it deploys to a docker context named "ls", instead of locally.  This won't work for you unless you have a host accessible via `ssh ls`. Mine is a server that has a slick-looking domain name (`bridge.offby1.info`).
+  - it enables the "prod" profile, which includes "caddy", which is a TLS-doing reverse proxy *that gets TLS certificates for me automatically* 🎉
