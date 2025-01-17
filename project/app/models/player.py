@@ -369,9 +369,8 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                     role = "Declarer! "
                 elif self.name == a.dummy.name:
                     role = "Dummy "
-        bottiness = " (bot)" if self.allow_bot_to_play_for_me else ""
 
-        return f"{self.pk}:{role}{self.user.username}{bottiness}{direction}"
+        return f"{self.pk}:{role}{self}{direction}"
 
     def as_link(self, style=""):
         return format_html(
@@ -394,7 +393,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        return f"{self.name} ({'bot-powered' if self.allow_bot_to_play_for_me else 'independent'})"
+        if self.allow_bot_to_play_for_me:
+            return f"🤖🤖{self.name}🤖🤖"
+        return self.name
 
 
 class BotPlayer(models.Model):
