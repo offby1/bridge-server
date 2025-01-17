@@ -87,6 +87,8 @@ Mentions uvicorn, which *might* work for me.
 ### Roll my own with [caddy](https://hub.docker.com/_/caddy)
 I otta be able to make a simple docker-compose that includes a caddy image, and a django image (and well ok maybe also a postgresql image if I feel like using that).
 
+<https://github.com/lucaslorentz/caddy-docker-proxy> looks promising; mentioned [here](https://www.reddit.com/r/selfhosted/comments/1844zlx/questions_about_caddy_as_an_alternative_to/)
+
 ### [Traefik](https://doc.traefik.io/traefik/https/overview/)
 I think this is a reverse-proxy-and-lets-encrypt-client rolled into one.  I doubt they offer hosting.
 "theepic.dev" on Discord (visible as Pat in the Django server) uses it.
