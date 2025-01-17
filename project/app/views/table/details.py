@@ -18,6 +18,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -29,6 +30,14 @@ from app.views.misc import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def Forbid(e: Exception | str) -> HttpResponseForbidden:
+    return HttpResponseForbidden(escape(e))
+
+
+def NotFound(e: Exception | str) -> HttpResponseNotFound:
+    return HttpResponseNotFound(escape(e))
 
 
 def table_list_view(request) -> HttpResponse:
@@ -66,10 +75,10 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     try:
         who_clicked = player.libraryThing()
     except app.models.PlayerException as e:
-        return HttpResponseForbidden(str(e))
+        return Forbid(e)
 
     if hand.player_who_may_call is None:
-        return HttpResponseForbidden(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
+        return Forbid(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 
     from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
 
@@ -82,7 +91,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
             call=libCall,
         )
     except (app.models.hand.AuctionError, bridge.auction.AuctionException) as e:
-        return HttpResponseForbidden(str(e))
+        return Forbid(str(e))
 
     return HttpResponse()
 
@@ -98,7 +107,7 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     assert_type(who_clicked, app.models.Player)
 
     if hand.player_who_may_play is None:
-        return HttpResponseForbidden("Hey! Ain't nobody allowed to play now")
+        return Forbid("Hey! Ain't nobody allowed to play now")
 
     assert who_clicked is not None
 
@@ -112,13 +121,13 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     elif not (hand.open_access or who_clicked == hand.player_who_may_play):
         msg = f"Hand {hand.pk} says: Hey! {who_clicked} can't play now; only {hand.player_who_may_play} can; {hand.open_access=}"
         logger.debug("%s", msg)
-        return HttpResponseForbidden(msg)
+        return Forbid(msg)
 
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:
         hand.add_play_from_player(player=hand.player_who_may_play.libraryThing(), card=card)
     except app.models.hand.PlayError as e:
-        return HttpResponseForbidden(str(e))
+        return Forbid(str(e))
 
     return HttpResponse()
 
@@ -128,26 +137,26 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
     p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
-        return HttpResponseForbidden(f"Hey man {p1=} doesn't have a partner")
+        return Forbid(f"Hey man {p1=} doesn't have a partner")
 
     p2: app.models.Player = get_object_or_404(app.models.Player, pk=pk2)
     if p2.partner is None:
-        return HttpResponseForbidden(f"Hey man {p2=} doesn't have a partner")
+        return Forbid(f"Hey man {p2=} doesn't have a partner")
 
     p3: app.models.Player = get_object_or_404(app.models.Player, pk=p1.partner.pk)
     p4: app.models.Player = get_object_or_404(app.models.Player, pk=p2.partner.pk)
 
     all_four = {p1, p2, p3, p4}
     if len(all_four) != 4:
-        return HttpResponseForbidden(f"Hey man {all_four} isn't four distinct players")
+        return Forbid(f"Hey man {all_four} isn't four distinct players")
 
     if request.user.player not in all_four:
-        return HttpResponseForbidden(f"Hey man {request.user.player} isn't one of {all_four}")
+        return Forbid(f"Hey man {request.user.player} isn't one of {all_four}")
 
     try:
         t = app.models.Table.objects.create_with_two_partnerships(p1, p2)  # type: ignore
     except app.models.TableException as e:
-        return HttpResponseForbidden(str(e))
+        return Forbid(str(e))
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
@@ -170,7 +179,7 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         table.next_board()
     except Exception as e:
         logger.warning("%s", e)
-        return HttpResponseNotFound(e)
+        return NotFound(e)
 
     logger.debug('Called "next_board" on table %s', table)
 
@@ -185,7 +194,7 @@ def set_table_tempo_view(
 ) -> HttpResponse:
     logger.debug("%s %s", table_pk, request.POST)
     if settings.DEPLOYMENT_ENVIRONMENT == "production":
-        return HttpResponseNotFound("Geez I dunno what you're talking about")
+        return NotFound("Geez I dunno what you're talking about")
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
     payload = request.POST.get("tempo-seconds")

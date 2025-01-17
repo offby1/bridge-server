@@ -513,7 +513,7 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
 
     response = seat_em_dano(RandomDude)
     assert response.status_code == 403
-    assert b"isn't one of" in response.content
+    assert b"isn&#x27;t one of" in response.content
 
     response = seat_em_dano(North)
     assert response.status_code == 302
