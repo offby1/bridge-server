@@ -119,7 +119,7 @@ all-but-django-prep: version-file pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
-manage *options: all-but-django-prep ensure-django-secret
+manage *options: all-but-django-prep ensure-skeleton-key
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
