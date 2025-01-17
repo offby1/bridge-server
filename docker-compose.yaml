@@ -26,7 +26,6 @@ services:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
-      HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
       PGHOST: postgres
       PGPASS: postgres
     ports:

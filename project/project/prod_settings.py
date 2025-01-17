@@ -10,9 +10,6 @@ DEBUG = False
 
 ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-compose stack
 
-HOST_HOSTNAME = os.getenv("HOST_HOSTNAME", "unknown-host")
-print(f"prod_settings: {HOST_HOSTNAME=}")
-
 # "development": running on my laptop without docker
 # "staging": running on my laptop with docker
 # "production": running on my EC2 box or some other cloud server, with docker
