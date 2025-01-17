@@ -14,7 +14,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import Board
+from app.models.board import Board, Tournament
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
@@ -197,7 +197,12 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                msg = f"Tournaments {[h.board.tournament for h in self.hand_set.all()]} are over; no more boards"
+                my_tournaments = Tournament.objects.filter(
+                    id__in=Hand.objects.filter(table=self).values_list(
+                        "board__tournament", flat=True
+                    )
+                )
+                msg = f"Tournaments {[str(t) for t in my_tournaments]} are over; no more boards"
                 logger.warning("%s", msg)
                 raise TournamentIsOverError(msg)
 
