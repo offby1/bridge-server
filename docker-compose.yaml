@@ -1,5 +1,7 @@
+include:
+  - docker-compose-caddy.yaml
+
 volumes:
-  caddy_data: {}
   django_static_root: {}
   postgres_data: {}
 
@@ -96,16 +98,6 @@ services:
       # stopping after 10 seconds, or if the test succeeds, whichever comes first.
       start_period: 10s
       start_interval: 1s
-
-  caddy:
-    image: lucaslorentz/caddy-docker-proxy:ci-alpine
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - caddy_data:/data
-    restart: unless-stopped
 
 secrets:
   django_secret:
