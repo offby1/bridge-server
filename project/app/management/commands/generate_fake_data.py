@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tqdm
 from app.models import Player, Table, Tournament
-from app.models.player import BotPlayer, TooManyBots
+from app.models.player import BotPlayer
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -51,12 +51,8 @@ class Command(BaseCommand):
 
                 progress_bar.update()
 
-        # Enable bots for as many players as we can.
-        for p in new_players:
-            try:
-                p.toggle_bot()
-            except TooManyBots:
-                break
+        # Disable bots while I struggle with caddy.
+        BotPlayer.objects.all().delete()
 
         # Now partner 'em up
         while True:
