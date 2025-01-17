@@ -52,6 +52,7 @@ dump-docker-context:
 orb:
     if [ "{{ os() }}" = "macos" ]; then orb start; else echo not mac I guess; fi
     just dump-docker-context
+    docker network ls | grep -q caddy || docker network create caddy
 
 [script('bash')]
 docker-nuke: orb

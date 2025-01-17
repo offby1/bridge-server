@@ -26,6 +26,9 @@ services:
       HOST_HOSTNAME: ${HOSTNAME:-unknown-host}
       PGHOST: postgres
       PGPASS: postgres
+    networks:
+      - backend
+      - caddy
     ports:
       - "9000:9000"
     secrets:
@@ -41,7 +44,7 @@ services:
     #   - ./project:/bridge/project
     labels:
       caddy: bridge.offby1.info
-      caddy.reverse_proxy: {{upstreams}}
+      caddy.reverse_proxy: "{{upstreams 9000}}"
 
   django-collected-static:
     <<: *django
@@ -84,6 +87,8 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "postgres"]
       # Runs the healthcheck every 12 hours.  We don't particularly want this, but we are forced to specify *some*
@@ -120,3 +125,4 @@ secrets:
 networks:
   caddy:
     external: true
+  backend:
