@@ -1,3 +1,6 @@
+include:
+  - docker-compose-caddy.yaml
+
 volumes:
   django_static_root: {}
   postgres_data: {}
@@ -38,6 +41,9 @@ services:
     # Note that you'll still have to manually restart daphne, though.
     # volumes:
     #   - ./project:/bridge/project
+    labels:
+      caddy: bridge.offby1.info
+      caddy.reverse_proxy: "{{upstreams 9000}}"
 
   django-collected-static:
     <<: *django

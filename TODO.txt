@@ -6,10 +6,6 @@ IN PROGRESS:
 STILL TODO:
 * At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
-* Big-ish: proper hosting and deployment.
-
-  Right now I'm using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
-
 * The hand-event channels have zero auth -- anyone can receive any of them.
 
 * Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
@@ -132,6 +128,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Big-ish: proper hosting and deployment.
+
+  Up until now, I've been using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
+
+  So I'm experimenting with "caddy" -- another container in the docker-compose stack.  It works great!  Stuff is now running at https://bridge.offby1.info.
+
 * It seems wrong for "Table.next_board" to just plop you into a new tournament.  Perhaps I should require players to explicitly ask to join a tournament.
 
 * Explore https://django-htmx.readthedocs.io/; it appears to have been written by a grownup

@@ -7,6 +7,7 @@ import 'postgres.just'
 export DJANGO_SECRET_FILE := config_directory() / "info.offby1.bridge/django_secret_key"
 export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/django_skeleton_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
+export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 
 [private]
@@ -223,6 +224,10 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     set -x
     export GIT_VERSION="$(cat project/VERSION)"
     docker compose up --build {{ options }}
+
+[group('docker')]
+prod *options:
+    COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }}
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
