@@ -1,7 +1,7 @@
 # Tests for the "tainting" mechanism.
 import pytest
 
-from app.models import Board, Hand, Player, Seat, Table, TableException
+from app.models import Board, Hand, HandError, Player, Seat, Table
 
 
 @pytest.fixture
@@ -45,6 +45,6 @@ def test_tainted_players_may_not_play_relevant_board(seat_em_dano) -> None:
 
     Hand.objects.create(board=Board.objects.get(pk=2), table=t)
 
-    with pytest.raises(TableException) as e:
+    with pytest.raises(HandError) as e:
         Hand.objects.create(board=board_one, table=t)
-    assert str(e.value) == "North cannot play any boards"
+    assert "Cannot seat" in str(e.value)

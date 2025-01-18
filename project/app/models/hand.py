@@ -25,6 +25,7 @@ from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
+from . import Board
 from .player import Player
 from .seat import Seat
 from .utils import assert_type
@@ -34,12 +35,16 @@ if TYPE_CHECKING:
 
     from django.db.models.manager import RelatedManager
 
-    from . import Board, Player, Seat, Table  # noqa
+    from . import Player, Seat, Table  # noqa
 
 logger = logging.getLogger(__name__)
 
 
 class AuctionError(Exception):
+    pass
+
+
+class HandError(Exception):
     pass
 
 
@@ -128,6 +133,7 @@ class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
         logger.debug("args %s; kwargs %s", args, kwargs)
         board = kwargs.get("board")
+        assert board is not None
         table = kwargs.get("table")
         assert table is not None
         seats = table.seat_set
@@ -137,9 +143,17 @@ class HandManager(models.Manager):
             player_pks,
             board,
         )
-        players = Player.objects.filter(pk__in=player_pks)
-        taints = [p.boards_played.all() for p in players]
-        logger.debug("That is: does %s appear in %s?", board, taints)
+
+        expression = models.Q(pk__in=[])
+        for p in Player.objects.filter(pk__in=player_pks):
+            expression |= models.Q(pk__in=p.boards_played.all())
+
+            logger.debug("After %s, %s", p, expression)
+        logger.debug("That is: does %s appear in %s?", board, Board.objects.filter(expression))
+        if Board.objects.filter(expression).filter(pk=board.pk).exists():
+            players = Player.objects.filter(pk__in=player_pks)
+            msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
+            raise HandError(msg)
         return super().create(*args, **kwargs)
 
 

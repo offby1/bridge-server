@@ -11,7 +11,7 @@ from django.db import connection
 
 from .board import Board, Tournament
 from .common import SEAT_CHOICES
-from .hand import AuctionError, Call, Hand, Play
+from .hand import AuctionError, Call, Hand, HandError, Play
 from .message import Message
 from .player import (
     PartnerException,
@@ -26,6 +26,7 @@ __all__ = [
     "AuctionError",
     "Call",
     "Hand",
+    "HandError",
     "Play",
     "Message",
     "PartnerException",
