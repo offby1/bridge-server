@@ -116,8 +116,12 @@ class DisplaySkeleton:
         return self.holdings_by_seat[seat]
 
 
-def send_timestamped_event(*, channel: str, data: dict[str, Any]) -> None:
-    send_event(channel=channel, event_type="message", data=data | {"time": time.time()})
+def send_timestamped_event(
+    *, channel: str, data: dict[str, Any], when: float | None = None
+) -> None:
+    if when is None:
+        when = time.time()
+    send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
 class Hand(models.Model):
@@ -202,8 +206,9 @@ class Hand(models.Model):
         data = data.copy()
         data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
         data["hand_pk"] = self.pk
+        now = time.time()
         for channel in all_channels:
-            send_timestamped_event(channel=channel, data=data)
+            send_timestamped_event(channel=channel, data=data, when=now)
 
     def libraryThing(self, seat: Seat) -> libHand:
         from . import Seat
