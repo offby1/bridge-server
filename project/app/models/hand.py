@@ -154,6 +154,11 @@ class HandManager(models.Manager):
             players = Player.objects.filter(pk__in=player_pks)
             msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
             raise HandError(msg)
+
+        for p in Player.objects.filter(pk__in=player_pks):
+            p.taint_board(board_pk=board.pk)
+            p.save()
+
         return super().create(*args, **kwargs)
 
 
@@ -719,6 +724,12 @@ class Hand(models.Model):
 
     def __str__(self) -> str:
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
+
+    @staticmethod
+    def untaint_board(*, instance, **kwargs):
+        for p in instance.players():
+            p.boards_played_v2.remove(instance.board)
+        logger.debug("%s un-tainted %s from %s.", instance, instance.board, instance.players)
 
     class Meta:
         constraints = [

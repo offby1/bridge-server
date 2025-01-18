@@ -104,6 +104,7 @@ class Player(models.Model):
         board = Board.objects.filter(pk=board_pk).first()
         if board is not None:
             self.boards_played_v2.add(board)
+        logger.debug("Tainted %s with %s", self, board)
 
     @property
     def event_channel_name(self):
