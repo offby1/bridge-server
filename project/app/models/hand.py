@@ -124,12 +124,29 @@ def send_timestamped_event(
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
+class HandManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        logger.debug("args %s; kwargs %s", args, kwargs)
+        board = kwargs.get("board")
+        table = kwargs.get("table")
+        seats = table.seat_set
+        player_pks = seats.values_list("player__id", flat=True)
+        logger.debug(
+            "I suppose I should check if any of the players %s have been tainted by %s",
+            player_pks,
+            board,
+        )
+        return super().create(*args, **kwargs)
+
+
 class Hand(models.Model):
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
+
+    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
