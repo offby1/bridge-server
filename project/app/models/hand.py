@@ -201,7 +201,6 @@ class Hand(models.Model):
 
         data = data.copy()
         data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
-        data["serial_number"] = max(0, self.calls.count() + self.plays.count() - 1)
         data["hand_pk"] = self.pk
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data)

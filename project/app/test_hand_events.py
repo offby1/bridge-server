@@ -45,17 +45,6 @@ def test_auction_settled_messages(usual_setup) -> None:
     assert sum(["new-call" in e.data for e in cap.events]) == 4
     assert sum(["contract" in e.data for e in cap.events]) == 1
 
-    serial_numbers = []
-    for e in cap.events:
-        if e.data:
-            # I have no idea why I need to decode this *twice*
-            data = json.loads(json.loads(e.data))
-
-            if (sn := data.get("serial_number")) is not None:
-                serial_numbers.append(sn)
-
-    assert serial_numbers[0:3] == [0, 1, 2]
-
 
 def test_player_can_always_see_played_hands(played_to_completion) -> None:
     p1 = Player.objects.get(pk=1)
