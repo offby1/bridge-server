@@ -58,13 +58,11 @@ if API_SKELETON_KEY is not None:
     API_SKELETON_KEY = API_SKELETON_KEY.rstrip()
 
 ALLOWED_HOSTS = [
+    ".offby1.info",
     ".orb.local",
     ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
-    "192.168.4.39",  # laptop at home
-    "5.78.70.72",  # hetzner cheapie
     "localhost",
-    ".offby1.info",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://teensy-info.tail571dc2.ts.net",
