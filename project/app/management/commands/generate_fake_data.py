@@ -51,9 +51,6 @@ class Command(BaseCommand):
 
                 progress_bar.update()
 
-        # Disable bots while I struggle with caddy.
-        BotPlayer.objects.all().delete()
-
         # Now partner 'em up
         while True:
             single_players = Player.objects.filter(partner__isnull=True).all()[0:2]
