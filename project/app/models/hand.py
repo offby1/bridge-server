@@ -129,6 +129,7 @@ class HandManager(models.Manager):
         logger.debug("args %s; kwargs %s", args, kwargs)
         board = kwargs.get("board")
         table = kwargs.get("table")
+        assert table is not None
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
         logger.debug(
@@ -136,6 +137,9 @@ class HandManager(models.Manager):
             player_pks,
             board,
         )
+        players = Player.objects.filter(pk__in=player_pks)
+        taints = [p.boards_played.all() for p in players]
+        logger.debug("That is: does %s appear in %s?", board, taints)
         return super().create(*args, **kwargs)
 
 

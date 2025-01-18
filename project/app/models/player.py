@@ -95,10 +95,15 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
     def taint_board(self, *, board_pk: int) -> None:
-        pass
+        # TODO -- it seems wrong that I have to fetch the entire Board object, just to store its primary key.
+        board = Board.objects.filter(pk=board_pk).first()
+        if board is not None:
+            self.boards_played.add(board)
 
     @property
     def event_channel_name(self):
@@ -309,10 +314,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         my_seats = Seat.objects.filter(player=self)
         my_tables = Table.objects.filter(seat__in=my_seats)
         return Hand.objects.filter(table__in=my_tables)
-
-    @property
-    def boards_played(self):
-        return self.hands_played.values_list("board", flat=True)
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
