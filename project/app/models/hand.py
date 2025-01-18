@@ -146,7 +146,7 @@ class HandManager(models.Manager):
 
         expression = models.Q(pk__in=[])
         for p in Player.objects.filter(pk__in=player_pks):
-            expression |= models.Q(pk__in=p.boards_played_v2.all())
+            expression |= models.Q(pk__in=p.boards_played.all())
 
             logger.debug("After %s, %s", p, expression)
         logger.debug("That is: does %s appear in %s?", board, Board.objects.filter(expression))
@@ -728,7 +728,7 @@ class Hand(models.Model):
     @staticmethod
     def untaint_board(*, instance, **kwargs):
         for p in instance.players():
-            p.boards_played_v2.remove(instance.board)
+            p.boards_played.remove(instance.board)
         logger.debug("%s un-tainted %s from %s.", instance, instance.board, instance.players)
 
     class Meta:

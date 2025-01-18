@@ -171,10 +171,10 @@ class Table(models.Model):
         seats = self.seat_set.all()
         expression = models.Q(pk__in=[])
         for seat in seats:
-            expression |= models.Q(pk__in=seat.player.boards_played_v2.all())
+            expression |= models.Q(pk__in=seat.player.boards_played.all())
             logger.debug(
                 "Subtracting %s since %s played them",
-                seat.player.boards_played_v2.all(),
+                seat.player.boards_played.all(),
                 seat.player,
             )
 

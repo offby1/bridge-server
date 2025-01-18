@@ -36,7 +36,7 @@ def innocuous_secret_key(settings):
     settings.SECRET_KEY = "gabba gabba hey"
 
 
-# Needed because our fixtures predate the creation of the boards_played_v2 field
+# Needed because our fixtures predate the creation of the boards_played field
 def _taint_it_all() -> None:
     for h in Hand.objects.all():
         for seat in h.table.seat_set.all():
