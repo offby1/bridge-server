@@ -146,7 +146,7 @@ class HandManager(models.Manager):
 
         expression = models.Q(pk__in=[])
         for p in Player.objects.filter(pk__in=player_pks):
-            expression |= models.Q(pk__in=p.boards_played.all())
+            expression |= models.Q(pk__in=p.boards_played_v2.all())
 
             logger.debug("After %s, %s", p, expression)
         logger.debug("That is: does %s appear in %s?", board, Board.objects.filter(expression))
