@@ -95,6 +95,11 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    # Note that this player has been exposed to some information from the given board, which means we will not allow
+    # them to play that board later.
+    def taint_board(self, *, board_pk: int) -> None:
+        pass
+
     @property
     def event_channel_name(self):
         return f"system:player:{self.pk}"
