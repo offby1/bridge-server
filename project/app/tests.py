@@ -54,11 +54,11 @@ def test_bottiness_text(usual_setup) -> None:
 
     p1.toggle_bot()
     assert p1.allow_bot_to_play_for_me is True
-    assert "(bot)" in p1.name_dir(hand=h)
+    assert "🤖" in p1.name_dir(hand=h)
 
     p1.toggle_bot()
     assert p1.allow_bot_to_play_for_me is False
-    assert "(bot)" not in p1.name_dir(hand=h)
+    assert "🤖" not in p1.name_dir(hand=h)
 
 
 def test_splitsville_ejects_that_partnership_from_table(usual_setup):
