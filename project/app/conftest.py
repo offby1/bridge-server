@@ -42,6 +42,21 @@ def usual_setup(db: None) -> None:
 
 
 @pytest.fixture
+def nobody_seated(db: None) -> None:
+    call_command(
+        "loaddata",
+        "usual_setup",
+        "--exclude",
+        "app.seat",
+        "--exclude",
+        "app.hand",
+        "--exclude",
+        "app.table",
+    )
+    Player.objects.all().update(currently_seated=False)
+
+
+@pytest.fixture
 def played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "played_almost_to_completion")
 
