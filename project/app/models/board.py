@@ -39,7 +39,7 @@ def get_rng_from_seeds(*seed_args: bytes) -> random.Random:
     return rv
 
 
-def board_attributes_from_board_number(
+def board_attributes_from_display_number(
     *,
     display_number: int,
     rng_seeds: list[bytes],
@@ -87,7 +87,7 @@ class TournamentManager(models.Manager):
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
             for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
-                board_attributes = board_attributes_from_board_number(
+                board_attributes = board_attributes_from_display_number(
                     display_number=display_number,
                     rng_seeds=[
                         str(display_number).encode(),

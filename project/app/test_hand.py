@@ -365,14 +365,16 @@ def test_exhaustive_archive_and_detail_redirection(
 
 @pytest.mark.django_db
 def test_predictable_shuffles():
-    attrs1_empty = board.board_attributes_from_board_number(board_number=1, rng_seeds=[])
-    attrs2_empty = board.board_attributes_from_board_number(board_number=2, rng_seeds=[])
+    attrs1_empty = board.board_attributes_from_display_number(display_number=1, rng_seeds=[])
+    attrs2_empty = board.board_attributes_from_display_number(display_number=2, rng_seeds=[])
 
     # Same  'cuz we used the same random seeds
     for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
         assert attrs1_empty[k] == attrs2_empty[k]
 
-    attrs1_golly = board.board_attributes_from_board_number(board_number=1, rng_seeds=[b"golly"])
+    attrs1_golly = board.board_attributes_from_display_number(
+        display_number=1, rng_seeds=[b"golly"]
+    )
 
     for k in ("ns_vulnerable", "ew_vulnerable", "dealer"):
         assert attrs1_empty[k] == attrs1_golly[k]

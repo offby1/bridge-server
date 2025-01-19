@@ -606,6 +606,7 @@ def test_find_unplayed_board(played_to_completion, monkeypatch) -> None:
         )
         Board.objects.create(
             dealer="S",
+            display_number=12345,
             ns_vulnerable=False,
             ew_vulnerable=False,
             tournament=t1.current_board.tournament,
