@@ -304,10 +304,6 @@ class Hand(models.Model):
     def _cache_get(self) -> Any:
         return cache.get(self._cache_key())
 
-    def _cache_log_stats(self) -> None:
-        keys = self._cache_stats_keys
-        logger.debug(f"{cache.get(keys['hits'])=} {cache.get(keys['misses'])=} ")
-
     def _cache_note_hit(self) -> None:
         key = self._cache_stats_keys["hits"]
         old = cache.get(key, default=0)
@@ -317,7 +313,6 @@ class Hand(models.Model):
         key = self._cache_stats_keys["misses"]
         old = cache.get(key, default=0)
         cache.set(key, old + 1)
-        self._cache_log_stats()
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -327,12 +322,7 @@ class Hand(models.Model):
 
         if (_xscript := self._cache_get()) is None:
             self._cache_note_miss()
-            logger.debug(
-                "Did not find xscript for hand %s; recreating it from %s calls and %s plays",
-                self.pk,
-                self.call_set.count(),
-                self.play_set.count(),
-            )
+
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
@@ -355,7 +345,6 @@ class Hand(models.Model):
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
             self._cache_set(_xscript)
-            logger.debug("Cached %s", _xscript)
         else:
             self._cache_note_hit()
 
