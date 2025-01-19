@@ -22,3 +22,13 @@ $ tailscale serve --bg 9000
   - `docker context create remote --docker "host=ssh://ubuntu@hetz"`
 
 - I haven't yet confirmed this, but I am pretty sure that a fresh Hetzner box allows ssh access via password (as opposed to restricting ssh access to ssh public key only).  Thus it's crucial that you use a decent password for the `ubuntu` user, and ideally, restrict ssh access to just public key, lest the automated Bad Guys p0wn your box.  Ask me how I know :-)
+
+- Swap is handy!  It protects against the notorious OOM killer.  Set it up like this
+
+```shell
+   # fallocate -l 4g /mnt/4GiB.swap
+   # chmod 600 /mnt/4GiB.swap
+   # mkswap /mnt/4GiB.swap
+   # swapon /mnt/4GiB.swap
+   # echo '/mnt/4GiB.swap swap swap defaults 0 0' | tee -a /etc/fstab
+```
