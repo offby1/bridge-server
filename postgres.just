@@ -31,12 +31,7 @@ restore *options: drop pg-start
 
 [group('postgres')]
 grab-prod-backups:
-    rsync --times --partial --progress --recursive --links teensy.info:/home/ubuntu/git-repos/me/bridge/server/*.sql .
-
-# Fetch, and restore from, the latest prod backup.
-[group('postgres')]
-r: grab-prod-backups
-    just restore < $(ls -t1 *.sql | head -1)
+    DOCKER_CONTEXT=ls just backup
 
 alias stop := pg-stop
 
