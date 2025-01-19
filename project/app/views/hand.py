@@ -289,7 +289,6 @@ def _four_hands_context_for_hand(
         "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
-        "play_event_source_endpoint": "/events/all-tables/",
         "hand": hand,
     }
     if not hand.is_complete:
