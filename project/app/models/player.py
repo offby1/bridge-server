@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import bridge.auction
 import bridge.card
@@ -109,6 +109,13 @@ class Player(models.Model):
     @property
     def event_channel_name(self):
         return f"system:player:{self.pk}"
+
+    @staticmethod
+    def player_pk_from_event_channel_name(cn: str) -> Any:
+        pieces = cn.split("system:player:")
+        if len(pieces) != 2:
+            return None
+        return int(pieces[1])
 
     # https://cr.yp.to/daemontools/svc.html
     def control_bot(self) -> None:

@@ -192,6 +192,13 @@ class Hand(models.Model):
     def event_channel_name(self):
         return f"hand:{self.pk}"
 
+    @staticmethod
+    def hand_pk_from_event_channel_name(cn: str) -> Any:
+        pieces = cn.split("hand:")
+        if len(pieces) != 2:
+            return None
+        return int(pieces[1])
+
     def players(self) -> models.QuerySet:
         return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
 

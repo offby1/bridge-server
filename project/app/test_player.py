@@ -1,5 +1,9 @@
 # Tests for the "tainting" mechanism.
+import importlib
+
 import pytest
+from django.conf import settings
+from django.contrib import auth
 
 from app.models import Board, Hand, HandError, Player, Seat, Table
 
@@ -38,13 +42,41 @@ def test_untainted_players_may_play_any_board(seat_em_dano) -> None:
 
 def test_tainted_players_may_not_play_relevant_board(seat_em_dano) -> None:
     board_one = Board.objects.get(pk=1)
-
+    board_two = Board.objects.get(pk=2)
     t = seat_em_dano
+
     north = Player.objects.get_by_name("Jeremy Northam")
     north.taint_board(board_pk=1)
-
-    Hand.objects.create(board=Board.objects.get(pk=2), table=t)
 
     with pytest.raises(HandError) as e:
         Hand.objects.create(board=board_one, table=t)
     assert "Cannot seat" in str(e.value)
+
+    Hand.objects.create(board=board_two, table=t)
+
+
+def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
+    module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
+    cm = getattr(importlib.import_module(module_name), class_name)()
+
+    north = Player.objects.get_by_name("Jeremy Northam")
+    south = Player.objects.get_by_name("J.D. Souther")
+
+    assert cm.can_read_channel(north, north.event_channel_name)
+    assert not cm.can_read_channel(north, south.event_channel_name)
+    assert cm.can_read_channel(south, south.event_channel_name)
+    assert not cm.can_read_channel(south, north.event_channel_name)
+
+    the_hand = Hand.objects.first()
+    assert the_hand is not None
+    assert north in the_hand.players()
+    assert south in the_hand.players()
+
+    assert cm.can_read_channel(north, the_hand.event_channel_name)
+    assert cm.can_read_channel(south, the_hand.event_channel_name)
+
+    j_random_user = auth.models.User.objects.create(
+        username="J. Random User, Esq", password=everybodys_password
+    )
+
+    assert not cm.can_read_channel(j_random_user, the_hand.event_channel_name)

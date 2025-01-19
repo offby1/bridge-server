@@ -8,6 +8,9 @@ IN PROGRESS:
   In general, we want something like
   * every time a player sees even a single call, or a single card played, from a given board -- regardless of whether they played it themselves, or were kibitzing -- they must be marked as being "tainted" for that board
   * such a taint will prevent that player from playing that board in the future.
+
+  Unrelatedly:
+
   * Anonymous players must never see any calls or plays from a tournament that is still running
   * Any tournament that is complete is visible to everyone, anonymous or otherwise.
   Unfortunately this means that anonymous users cannot watch a hand in progress.
@@ -22,8 +25,6 @@ STILL TODO:
   It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
 
 * At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
-
-* The hand-event channels have zero auth -- anyone can receive any of them.
 
 * Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
 
@@ -142,6 +143,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The hand-event channels have zero auth -- anyone can receive any of them.
+
 * Big-ish: proper hosting and deployment.
 
   Up until now, I've been using tailscale's "funnel" feature mostly because it gets an SSL cert for me.  But it prevents me from using a sensible domain like `bridge.offby1.info`, and just feels temporary (see `README.hosting.md`).
