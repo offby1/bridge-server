@@ -227,7 +227,7 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
 
 [group('docker')]
 prod *options:
-    COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }}
+    COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }} --detach
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
