@@ -102,8 +102,11 @@ class TournamentManager(models.Manager):
     def maybe_new_tournament(self) -> Tournament | None:
         with transaction.atomic():
             if self.filter(is_complete=False).exists():
+                logger.debug("An incomplete tournament already exists; no need to create a new one")
                 return None
-            return self.create()
+            rv = self.create()
+            logger.debug("No incomplete tournaments exist; here's a new one: %s", rv)
+            return rv
 
 
 class Tournament(models.Model):
