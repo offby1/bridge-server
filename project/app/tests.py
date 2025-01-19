@@ -170,11 +170,11 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     t1 = Table.objects.first()
     north = t1.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
-    # We use "update" in order to circumvent the various checks in the "save" method, which otherwise would trigger.
     t2 = Table.objects.create()
 
-    with pytest.raises(SeatException):
+    with pytest.raises(SeatException) as e:
         Seat.objects.create(direction=libSeat.EAST.value, table=t2, player=north)
+    assert "already seated at" in str(e.value)
 
 
 def test_cant_just_make_up_directions(j_northam, everybodys_password):

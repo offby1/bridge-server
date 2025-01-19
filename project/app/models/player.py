@@ -95,6 +95,17 @@ class Player(models.Model):
         object_id_field="recipient_object_id",
     )
 
+    boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+
+    # Note that this player has been exposed to some information from the given board, which means we will not allow
+    # them to play that board later.
+    def taint_board(self, *, board_pk: int) -> None:
+        # TODO -- it seems wrong that I have to fetch the entire Board object, just to store its primary key.
+        board = Board.objects.filter(pk=board_pk).first()
+        if board is not None:
+            self.boards_played.add(board)
+        logger.debug("Tainted %s with %s", self, board)
+
     @property
     def event_channel_name(self):
         return f"system:player:{self.pk}"
@@ -160,7 +171,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                     msg = f"There are already {c} bots; no bot for you"
                     raise TooManyBots(msg)
 
-                BotPlayer.objects.create(player=self)
+                BotPlayer.objects.get_or_create(player=self)
             else:
                 BotPlayer.objects.filter(player=self).delete()
 
@@ -305,10 +316,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         my_tables = Table.objects.filter(seat__in=my_seats)
         return Hand.objects.filter(table__in=my_tables)
 
-    @property
-    def boards_played(self):
-        return self.hands_played.values_list("board", flat=True)
-
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
@@ -399,7 +406,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 
 class BotPlayer(models.Model):
-    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
+    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
 
     class Meta:
         db_table_comment = "Those players whose PKs appear here will have a bot play for them."

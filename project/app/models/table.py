@@ -168,14 +168,17 @@ class Table(models.Model):
 
     # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
-        unplayed_boards = Board.objects.nicely_ordered().all()
-        logger.debug("All boards: %s", unplayed_boards)
-        for seat in self.seats:
-            unplayed_boards = unplayed_boards.exclude(id__in=seat.player.boards_played)
+        seats = self.seat_set.all()
+        expression = models.Q(pk__in=[])
+        for seat in seats:
+            expression |= models.Q(pk__in=seat.player.boards_played.all())
             logger.debug(
-                "Subtracting %s since %s played them", seat.player.boards_played, seat.player
+                "Subtracting %s since %s played them",
+                seat.player.boards_played.all(),
+                seat.player,
             )
 
+        unplayed_boards = Board.objects.exclude(expression)
         logger.debug("That leaves %s", unplayed_boards)
         rv = unplayed_boards.first()
         logger.debug("Returning %s", rv)

@@ -36,14 +36,38 @@ def innocuous_secret_key(settings):
     settings.SECRET_KEY = "gabba gabba hey"
 
 
+# Needed because our fixtures predate the creation of the boards_played field
+def _taint_it_all() -> None:
+    for h in Hand.objects.all():
+        for seat in h.table.seat_set.all():
+            seat.player.taint_board(board_pk=h.board.pk)
+
+
 @pytest.fixture
 def usual_setup(db: None) -> None:
     call_command("loaddata", "usual_setup")
+    _taint_it_all()
+
+
+@pytest.fixture
+def nobody_seated(db: None) -> None:
+    call_command(
+        "loaddata",
+        "usual_setup",
+        "--exclude",
+        "app.seat",
+        "--exclude",
+        "app.hand",
+        "--exclude",
+        "app.table",
+    )
+    Player.objects.all().update(currently_seated=False)
 
 
 @pytest.fixture
 def played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "played_almost_to_completion")
+    _taint_it_all()
 
 
 @pytest.fixture

@@ -3,10 +3,20 @@ IN PROGRESS:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
+* Totally rethink access control.
+
+  In general, we want something like
+  * every time a player sees even a single call, or a single card played, from a given board -- regardless of whether they played it themselves, or were kibitzing -- they must be marked as being "tainted" for that board
+  * such a taint will prevent that player from playing that board in the future.
+  * Anonymous players must never see any calls or plays from a tournament that is still running
+  * Any tournament that is complete is visible to everyone, anonymous or otherwise.
+  Unfortunately this means that anonymous users cannot watch a hand in progress.
+
+  Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
+
 STILL TODO:
 * Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
 
-STILL TODO:
 * The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
 
   It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
@@ -39,9 +49,6 @@ STILL TODO:
 * Somehow visually distinguish cards of the trump suit? Glowing! Sparkles!
 
   https://www.perplexity.ai/search/using-css-or-bootstrap-how-can-A5U0WSQKTdS172ms6crEdQ
-
-* Maybe prevent someone from playing the same board twice?  Or at least, don't keep any but the first score.
-  I've gone to a fair amount of effort preventing disclosure of boards that a player hasn't yet seen; this is sort of the opposite.
 
 * Maybe prevent p1 from partnering up with p2 if they haven't played exactly the same sets of boards.  Otherwise they'll have an awkward encounter if the server refuses to let p1 play a board he's already played, even though p2 hasn't yet played it.
 

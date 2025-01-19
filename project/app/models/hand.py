@@ -25,6 +25,7 @@ from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
+from . import Board
 from .player import Player
 from .seat import Seat
 from .utils import assert_type
@@ -34,12 +35,16 @@ if TYPE_CHECKING:
 
     from django.db.models.manager import RelatedManager
 
-    from . import Board, Player, Seat, Table  # noqa
+    from . import Player, Seat, Table  # noqa
 
 logger = logging.getLogger(__name__)
 
 
 class AuctionError(Exception):
+    pass
+
+
+class HandError(Exception):
     pass
 
 
@@ -124,12 +129,47 @@ def send_timestamped_event(
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
+class HandManager(models.Manager):
+    def create(self, *args, **kwargs) -> Hand:
+        logger.debug("args %s; kwargs %s", args, kwargs)
+        board = kwargs.get("board")
+        assert board is not None
+        table = kwargs.get("table")
+        assert table is not None
+        seats = table.seat_set
+        player_pks = seats.values_list("player__id", flat=True)
+        logger.debug(
+            "I suppose I should check if any of the players %s have been tainted by %s",
+            player_pks,
+            board,
+        )
+
+        expression = models.Q(pk__in=[])
+        for p in Player.objects.filter(pk__in=player_pks):
+            expression |= models.Q(pk__in=p.boards_played.all())
+
+            logger.debug("After %s, %s", p, expression)
+        logger.debug("That is: does %s appear in %s?", board, Board.objects.filter(expression))
+        if Board.objects.filter(expression).filter(pk=board.pk).exists():
+            players = Player.objects.filter(pk__in=player_pks)
+            msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
+            raise HandError(msg)
+
+        for p in Player.objects.filter(pk__in=player_pks):
+            p.taint_board(board_pk=board.pk)
+            p.save()
+
+        return super().create(*args, **kwargs)
+
+
 class Hand(models.Model):
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
+
+    objects = HandManager()
 
     # The "when", and, when combined with knowledge of who dealt, the "who"
     id = models.BigAutoField(
@@ -684,6 +724,12 @@ class Hand(models.Model):
 
     def __str__(self) -> str:
         return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
+
+    @staticmethod
+    def untaint_board(*, instance, **kwargs):
+        for p in instance.players():
+            p.boards_played.remove(instance.board)
+        logger.debug("%s un-tainted %s from %s.", instance, instance.board, instance.players)
 
     class Meta:
         constraints = [
