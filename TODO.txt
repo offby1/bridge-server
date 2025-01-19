@@ -4,6 +4,13 @@ IN PROGRESS:
   It *sometimes* jumps a little when a new call or play gets displayed.
 
 STILL TODO:
+* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
+
+STILL TODO:
+* The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
+
+  It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
+
 * At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
 * The hand-event channels have zero auth -- anyone can receive any of them.
