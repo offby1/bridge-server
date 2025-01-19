@@ -125,7 +125,7 @@ class Board(models.Model):
     if TYPE_CHECKING:
         hand_set = RelatedManager[Hand]()
 
-    display_number = models.SmallIntegerField(null=True)
+    display_number = models.SmallIntegerField()
 
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
