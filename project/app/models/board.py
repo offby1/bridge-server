@@ -41,20 +41,18 @@ def get_rng_from_seeds(*seed_args: bytes) -> random.Random:
 
 def board_attributes_from_board_number(
     *,
-    board_number: int,
+    display_number: int,
     rng_seeds: list[bytes],
 ) -> dict[str, Any]:
     assert (
-        0 < board_number <= BOARDS_PER_TOURNAMENT
-    ), f"{board_number=} gotta be < {BOARDS_PER_TOURNAMENT=}"
-
-    board_number = (board_number - 1) % 16
+        1 <= display_number <= BOARDS_PER_TOURNAMENT
+    ), f"{display_number=} gotta be <= {BOARDS_PER_TOURNAMENT=}"
 
     # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-    dealer = "NESW"[(board_number - 1) % 4]
-    only_ns_vuln = board_number in (2, 5, 12, 15)
-    only_ew_vuln = board_number in (3, 6, 9, 16)
-    all_vuln = board_number in (4, 7, 10, 13)
+    dealer = "NESW"[(display_number - 1) % 4]
+    only_ns_vuln = display_number in (2, 5, 12, 15)
+    only_ew_vuln = display_number in (3, 6, 9, 16)
+    all_vuln = display_number in (4, 7, 10, 13)
 
     def deserialize_hand(cards: list[Card]) -> str:
         # sorted only so that they look purty in the Admin site.
@@ -73,6 +71,7 @@ def board_attributes_from_board_number(
         "ns_vulnerable": only_ns_vuln or all_vuln,
         "ew_vulnerable": only_ew_vuln or all_vuln,
         "dealer": dealer,
+        "display_number": display_number,
         "north_cards": north_cards,
         "east_cards": east_cards,
         "south_cards": south_cards,
@@ -87,11 +86,11 @@ class TournamentManager(models.Manager):
         with transaction.atomic():
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
-            for board_number in range(1, BOARDS_PER_TOURNAMENT + 1):
+            for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
                 board_attributes = board_attributes_from_board_number(
-                    board_number=board_number,
+                    display_number=display_number,
                     rng_seeds=[
-                        str(board_number).encode(),
+                        str(display_number).encode(),
                         str(t.pk).encode(),
                         settings.SECRET_KEY.encode(),
                     ],
@@ -110,7 +109,7 @@ class Tournament(models.Model):
 
 class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
-        return self.order_by("tournament", 1 + (models.F("pk") % BOARDS_PER_TOURNAMENT))
+        return self.order_by("tournament", "display_number")
 
     def create_from_attributes(self, *, attributes, tournament) -> Board:
         return self.create(**attributes, tournament=tournament)
@@ -125,6 +124,8 @@ class Board(models.Model):
 
     if TYPE_CHECKING:
         hand_set = RelatedManager[Hand]()
+
+    display_number = models.SmallIntegerField()
 
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
@@ -184,12 +185,8 @@ class Board(models.Model):
         assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
         return super().save(*args, **kwargs)
 
-    @property
-    def number(self) -> int:
-        return 1 + (self.pk % BOARDS_PER_TOURNAMENT)
-
     def short_string(self) -> str:
-        return f"Board #{self.number} ({self.tournament})"
+        return f"Board #{self.display_number} ({self.tournament})"
 
     def __str__(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:
