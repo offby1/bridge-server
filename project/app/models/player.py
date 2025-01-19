@@ -171,7 +171,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                     msg = f"There are already {c} bots; no bot for you"
                     raise TooManyBots(msg)
 
-                BotPlayer.objects.create(player=self)
+                BotPlayer.objects.get_or_create(player=self)
             else:
                 BotPlayer.objects.filter(player=self).delete()
 
@@ -406,7 +406,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 
 class BotPlayer(models.Model):
-    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
+    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
 
     class Meta:
         db_table_comment = "Those players whose PKs appear here will have a bot play for them."

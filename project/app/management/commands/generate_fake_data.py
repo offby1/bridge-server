@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import tqdm
 from app.models import Player, Table, Tournament
-from app.models.player import BotPlayer
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -106,6 +105,3 @@ class Command(BaseCommand):
             self.stdout.write(f"{player} {created=}")
 
         self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
-
-        for independent_player in Player.objects.exclude(pk__in=BotPlayer.objects.all()).all():
-            self.stdout.write(f"{independent_player} don't need no steenkin' bot!")
