@@ -3,8 +3,7 @@ IN PROGRESS:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
-STILL TODO:
-* Totally rething access control.
+* Totally rethink access control.
 
   In general, we want something like
   * every time a player sees even a single call, or a single card played, from a given board -- regardless of whether they played it themselves, or were kibitzing -- they must be marked as being "tainted" for that board
