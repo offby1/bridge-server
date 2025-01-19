@@ -99,12 +99,32 @@ class TournamentManager(models.Manager):
             logger.debug("Created new tournament with %s", t.board_set.all())
             return t
 
+    def maybe_new_tournament(self) -> Tournament | None:
+        with transaction.atomic():
+            if self.filter(is_complete=False).exists():
+                return None
+            return self.create()
+
 
 class Tournament(models.Model):
     objects = TournamentManager()
 
+    is_complete = models.BooleanField(default=False)
+
     def __str__(self) -> str:
         return f"tournament {self.pk}"
+
+    def _check_no_more_than_one_running_tournament(self):
+        if self.is_complete:
+            return
+
+        if Tournament.objects.filter(is_complete=False).exists():
+            msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
+            raise Exception(msg, self)
+
+    def save(self, *args, **kwargs):
+        self._check_no_more_than_one_running_tournament()
+        super().save(*args, **kwargs)
 
 
 class BoardManager(models.Manager):

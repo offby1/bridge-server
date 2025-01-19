@@ -26,6 +26,7 @@ from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from . import Board
+from .board import Tournament
 from .player import Player
 from .seat import Seat
 from .utils import assert_type
@@ -385,6 +386,7 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().auction.status is libAuction.PassedOut:
+            Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -441,6 +443,7 @@ class Hand(models.Model):
         final_score = self.get_xscript().final_score()
 
         if final_score:
+            Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
