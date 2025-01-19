@@ -22,7 +22,7 @@ from .common import SEAT_CHOICES
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Hand, Player
+    from app.models import Player
 
 BOARDS_PER_TOURNAMENT = 16
 
@@ -101,7 +101,9 @@ class TournamentManager(models.Manager):
 
     def maybe_new_tournament(self) -> Tournament | None:
         with transaction.atomic():
-            if self.filter(is_complete=False).exists():
+            currently_running = self.filter(is_complete=False).first()
+            if currently_running is not None:
+                currently_running.maybe_complete()
                 logger.debug("An incomplete tournament already exists; no need to create a new one")
                 return None
             rv = self.create()
@@ -109,6 +111,7 @@ class TournamentManager(models.Manager):
             return rv
 
 
+# This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
 class Tournament(models.Model):
     objects = TournamentManager()
 
@@ -116,6 +119,19 @@ class Tournament(models.Model):
 
     def __str__(self) -> str:
         return f"tournament {self.pk}"
+
+    def maybe_complete(self) -> None:
+        from app.models import Hand
+
+        logger.debug("If only there were some way that I, %s, could tell if I were complete", self)
+        boards = self.board_set.all()
+        logger.debug("I dunno, maybe I should check all my boards: %s", boards)
+        hands = Hand.objects.filter(board__in=boards)
+        logger.debug("Or maybe my hands: %s", hands)
+        tables = hands.values_list("table", flat=True).all()
+        logger.debug("Or maybe my tables: %s", tables)
+        players = boards.values_list("player", flat=True).all()
+        logger.debug("Or maybe my players: %s", players)
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:
