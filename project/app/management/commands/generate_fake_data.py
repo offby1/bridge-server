@@ -66,7 +66,9 @@ class Command(BaseCommand):
         pairs_to_seat = pairs[0 : len(pairs) // 2]
 
         for table in more_itertools.chunked(pairs_to_seat, 2):
-            self.stdout.write(f"Will create table from {table=}")
+            self.stdout.write(
+                f"Will create table with {[p.name for p in more_itertools.flatten(table)]}"
+            )
             if len(table) < 2:
                 break
             # Ensure we have at least one tournament.

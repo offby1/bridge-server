@@ -109,9 +109,7 @@ class TournamentManager(models.Manager):
                         "An incomplete tournament already exists; no need to create a new one"
                     )
                     return None
-            rv = self.create()
-            logger.debug("No incomplete tournaments exist; here's a new one: %s", rv)
-            return rv
+            return self.create()
 
 
 # This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
@@ -131,30 +129,28 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all())
 
-    def table_pks(self) -> models.QuerySet:
+    def table_pks(self):
         return self.hands().values_list("table", flat=True).all()
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
             logger.debug(
-                "If only there were some way that I, %s, could tell if I were complete", self
-            )
-            boards = self.board_set.all()
-            logger.debug("I dunno, maybe I should check all my boards: %s", boards)
-            logger.debug(
-                "Or maybe my hands: %s ... they %s all complete, btw",
+                "Checking hands: %s ... they %s all complete, btw",
                 self.hands(),
                 "are" if all(h.is_complete for h in self.hands()) else "are not",
             )
 
-            logger.debug("Or maybe my tables: %s", self.table_pks())
-            players = boards.values_list("player", flat=True).all()
-            logger.debug("Or maybe my players: %s", players)
-
-            if all(h.is_complete for h in self.hands()):
+            all_hands_are_complete = all(h.is_complete for h in self.hands())
+            if all_hands_are_complete:
                 self.is_complete = True
                 self.save()
                 self.eject_all_pairs()
+                logger.debug(
+                    "Marked myself %s as complete, and ejected all pairs from tables", self
+                )
+                return
+
+            logger.debug("%s: Some of my hands are still being played, so I'm not complete", self)
 
     def eject_all_pairs(self) -> None:
         logger.debug(
@@ -168,11 +164,12 @@ class Tournament(models.Model):
 
                 for seat in t.seat_set.all():
                     p = seat.player
-                    p.currently_seated = p.partner.currently_seated = False
+                    if p.currently_seated or p.partner.currently_seated:
+                        p.currently_seated = p.partner.currently_seated = False
 
-                    p.save()
-                    p.partner.save()
-                    logger.debug("%s and %s are now in the lobby", p, p.partner)
+                        p.save()
+                        p.partner.save()
+                        logger.debug("%s and %s are now in the lobby", p, p.partner)
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:
