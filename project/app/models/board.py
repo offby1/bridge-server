@@ -126,29 +126,53 @@ class Tournament(models.Model):
     def __str__(self) -> str:
         return f"tournament {self.pk}"
 
-    def maybe_complete(self) -> None:
+    def hands(self) -> models.QuerySet:
         from app.models import Hand
 
+        return Hand.objects.filter(board__in=self.board_set.all())
+
+    def table_pks(self) -> models.QuerySet:
+        return self.hands().values_list("table", flat=True).all()
+
+    def maybe_complete(self) -> None:
         with transaction.atomic():
             logger.debug(
                 "If only there were some way that I, %s, could tell if I were complete", self
             )
             boards = self.board_set.all()
             logger.debug("I dunno, maybe I should check all my boards: %s", boards)
-            hands = Hand.objects.filter(board__in=boards)
             logger.debug(
                 "Or maybe my hands: %s ... they %s all complete, btw",
-                hands,
-                "are" if all(h.is_complete for h in hands) else "are not",
+                self.hands(),
+                "are" if all(h.is_complete for h in self.hands()) else "are not",
             )
-            tables = hands.values_list("table", flat=True).all()
-            logger.debug("Or maybe my tables: %s", tables)
+
+            logger.debug("Or maybe my tables: %s", self.table_pks())
             players = boards.values_list("player", flat=True).all()
             logger.debug("Or maybe my players: %s", players)
 
-            if all(h.is_complete for h in hands):
+            if all(h.is_complete for h in self.hands()):
                 self.is_complete = True
                 self.save()
+                self.eject_all_pairs()
+
+    def eject_all_pairs(self) -> None:
+        logger.debug(
+            "Since I just completed, I should go around ejecting partnerships from tables."
+        )
+        with transaction.atomic():
+            for pk in self.table_pks():
+                from app.models import Table
+
+                t = Table.objects.get(pk=pk)
+
+                for seat in t.seat_set.all():
+                    p = seat.player
+                    p.currently_seated = p.partner.currently_seated = False
+
+                    p.save()
+                    p.partner.save()
+                    logger.debug("%s and %s are now in the lobby", p, p.partner)
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:

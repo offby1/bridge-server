@@ -17,6 +17,21 @@ def test_tournament_is_complete_if_and_only_if_all_boards_have_been_played_at_al
     assert not "I'll get to it, maaan"
 
 
+@pytest.fixture
+def just_completed(played_almost_to_completion) -> Tournament:
+    for p in Player.objects.all():
+        print(f"{p.name}: {p.currently_seated=}")
+
+    before = Tournament.objects.filter(is_complete=False).first()
+    assert before is not None
+
+    h1 = Hand.objects.get(pk=1)
+    west = Player.objects.get_by_name("Adam West")
+    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+
+    return before
+
+
 def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     played_almost_to_completion,
 ) -> None:
@@ -37,3 +52,7 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     before.refresh_from_db()
     assert before.is_complete
     assert not after.is_complete
+
+
+def test_completing_one_tournament_ejects_players(just_completed) -> None:
+    assert not Player.objects.filter(currently_seated=True).exists()
