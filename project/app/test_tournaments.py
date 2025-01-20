@@ -34,5 +34,6 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     after = after_qs.first()
     assert after is not None
 
+    before.refresh_from_db()
     assert before.is_complete
     assert not after.is_complete

@@ -104,8 +104,11 @@ class TournamentManager(models.Manager):
             currently_running = self.filter(is_complete=False).first()
             if currently_running is not None:
                 currently_running.maybe_complete()
-                logger.debug("An incomplete tournament already exists; no need to create a new one")
-                return None
+                if not currently_running.is_complete:
+                    logger.debug(
+                        "An incomplete tournament already exists; no need to create a new one"
+                    )
+                    return None
             rv = self.create()
             logger.debug("No incomplete tournaments exist; here's a new one: %s", rv)
             return rv
@@ -123,15 +126,26 @@ class Tournament(models.Model):
     def maybe_complete(self) -> None:
         from app.models import Hand
 
-        logger.debug("If only there were some way that I, %s, could tell if I were complete", self)
-        boards = self.board_set.all()
-        logger.debug("I dunno, maybe I should check all my boards: %s", boards)
-        hands = Hand.objects.filter(board__in=boards)
-        logger.debug("Or maybe my hands: %s", hands)
-        tables = hands.values_list("table", flat=True).all()
-        logger.debug("Or maybe my tables: %s", tables)
-        players = boards.values_list("player", flat=True).all()
-        logger.debug("Or maybe my players: %s", players)
+        with transaction.atomic():
+            logger.debug(
+                "If only there were some way that I, %s, could tell if I were complete", self
+            )
+            boards = self.board_set.all()
+            logger.debug("I dunno, maybe I should check all my boards: %s", boards)
+            hands = Hand.objects.filter(board__in=boards)
+            logger.debug(
+                "Or maybe my hands: %s ... they %s all complete, btw",
+                hands,
+                "are" if all(h.is_complete for h in hands) else "are not",
+            )
+            tables = hands.values_list("table", flat=True).all()
+            logger.debug("Or maybe my tables: %s", tables)
+            players = boards.values_list("player", flat=True).all()
+            logger.debug("Or maybe my players: %s", players)
+
+            if all(h.is_complete for h in hands):
+                self.is_complete = True
+                self.save()
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:
