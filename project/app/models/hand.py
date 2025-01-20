@@ -720,7 +720,9 @@ class Hand(models.Model):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
+        return (
+            f"Hand {self.pk} ({self.board}): {self.calls.count()} calls; {self.plays.count()} plays"
+        )
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):

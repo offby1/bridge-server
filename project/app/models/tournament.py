@@ -64,9 +64,9 @@ class Tournament(models.Model):
 
         board_set = RelatedManager["Board"]()
 
-    objects = TournamentManager()
-
     is_complete = models.BooleanField(default=False)
+
+    objects = TournamentManager()
 
     def __str__(self) -> str:
         return f"tournament {self.pk}"
@@ -74,15 +74,12 @@ class Tournament(models.Model):
     def hands(self) -> models.QuerySet:
         from app.models import Hand
 
-        return Hand.objects.filter(board__in=self.board_set.all())
+        return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
     def tables(self) -> models.QuerySet:
         from app.models import Table
 
-        return Table.objects.filter(hand__in=self.hands())
-
-    def table_pks(self):
-        return self.hands().values_list("table", flat=True).all()
+        return Table.objects.filter(hand__in=self.hands()).distinct()
 
     def dump_tableau(self) -> None:
         tableau = []
@@ -92,14 +89,13 @@ class Tournament(models.Model):
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
-            logger.debug(
-                "Checking hands: %s ... they %s all complete, btw",
-                self.hands(),
-                "are" if all(h.is_complete for h in self.hands()) else "are not",
-            )
+            num_needed_for_completion = self.tables().count() * self.board_set.count()
+            complete_hands = [h for h in self.hands() if h.is_complete]
 
-            all_hands_are_complete = all(h.is_complete for h in self.hands())
-            if all_hands_are_complete:
+            if len(complete_hands) == num_needed_for_completion:
+                logger.debug(
+                    f"{len(complete_hands)=}, which is == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
+                )
                 self.is_complete = True
                 self.save()
                 self.eject_all_pairs()
@@ -110,7 +106,9 @@ class Tournament(models.Model):
                 self.dump_tableau()
                 return
 
-            logger.debug("%s: Some of my hands are still being played, so I'm not complete", self)
+            logger.debug(
+                f"{len(complete_hands)=}, which is not == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
+            )
 
     def eject_all_pairs(self) -> None:
         logger.debug(
