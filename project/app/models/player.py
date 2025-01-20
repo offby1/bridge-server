@@ -204,7 +204,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def libraryThing(self) -> bridge.table.Player:
         seat = self.current_seat
 
-        assert seat is not None
+        if seat is None:
+            msg = f"{self} is not seated, so cannot be converted to a bridge-library Player"
+            raise PlayerException(msg)
 
         return bridge.table.Player(
             seat=seat.libraryThing,
