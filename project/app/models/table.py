@@ -172,17 +172,9 @@ class Table(models.Model):
         expression = models.Q(pk__in=[])
         for seat in seats:
             expression |= models.Q(pk__in=seat.player.boards_played.all())
-            logger.debug(
-                "Subtracting %s since %s played them",
-                seat.player.boards_played.all(),
-                seat.player,
-            )
 
         unplayed_boards = Board.objects.exclude(expression)
-        logger.debug("That leaves %s", unplayed_boards)
-        rv = unplayed_boards.first()
-        logger.debug("Returning %s", rv)
-        return rv
+        return unplayed_boards.first()
 
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
         with transaction.atomic():

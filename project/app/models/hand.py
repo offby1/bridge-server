@@ -138,18 +138,11 @@ class HandManager(models.Manager):
         assert table is not None
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
-        logger.debug(
-            "I suppose I should check if any of the players %s have been tainted by %s",
-            player_pks,
-            board,
-        )
 
         expression = models.Q(pk__in=[])
         for p in Player.objects.filter(pk__in=player_pks):
             expression |= models.Q(pk__in=p.boards_played.all())
 
-            logger.debug("After %s, %s", p, expression)
-        logger.debug("That is: does %s appear in %s?", board, Board.objects.filter(expression))
         if Board.objects.filter(expression).filter(pk=board.pk).exists():
             players = Player.objects.filter(pk__in=player_pks)
             msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
