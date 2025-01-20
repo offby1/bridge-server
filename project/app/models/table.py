@@ -106,7 +106,17 @@ class Table(models.Model):
         assert rv is not None
         return rv
 
-    # Seems dumb, but I don't know how else to get this information into a DRF serializer
+    def my_tournament(self) -> Tournament | None:
+        all_my_tournaments = Tournament.objects.filter(
+            board__in=Board.objects.filter(hand__in=self.hand_set.all())
+        ).distinct()
+        assert (
+            all_my_tournaments.count() < 2
+        ), f"Oy -- {self} is in more than one tournament {all_my_tournaments.all()}"
+        if all_my_tournaments.exists():
+            return all_my_tournaments.first()
+        return None
+
     def current_hand_pk(self) -> int:
         return self.current_hand.pk
 
@@ -161,7 +171,6 @@ class Table(models.Model):
             )
         )
 
-    # TODO -- limit this to the "current" tournament?
     def find_unplayed_board(self) -> Board | None:
         seats = self.seat_set.all()
         expression = models.Q(pk__in=[])
