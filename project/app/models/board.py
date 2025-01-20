@@ -7,6 +7,7 @@ import random
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
+import tabulate
 from bridge.card import Card
 from bridge.seat import Seat
 
@@ -98,6 +99,7 @@ class TournamentManager(models.Manager):
                 )
                 Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
             logger.debug("Created new tournament with %s", t.board_set.all())
+            t.dump_tableau()
             return t
 
     def maybe_new_tournament(self) -> Tournament | None:
@@ -130,8 +132,19 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all())
 
+    def tables(self) -> models.QuerySet:
+        from app.models import Table
+
+        return Table.objects.filter(hand__in=self.hands())
+
     def table_pks(self):
         return self.hands().values_list("table", flat=True).all()
+
+    def dump_tableau(self) -> None:
+        tableau = []
+        for b in self.board_set.order_by("display_number").all():
+            tableau.append([(b, h.table) for h in b.hand_set.order_by("pk")])
+        print(tabulate.tabulate(tableau))
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
@@ -149,6 +162,7 @@ class Tournament(models.Model):
                 logger.debug(
                     "Marked myself %s as complete, and ejected all pairs from tables", self
                 )
+                self.dump_tableau()
                 return
 
             logger.debug("%s: Some of my hands are still being played, so I'm not complete", self)
@@ -158,25 +172,21 @@ class Tournament(models.Model):
             "Since I just completed, I should go around ejecting partnerships from tables."
         )
         with transaction.atomic():
-            for pk in self.table_pks():
-                from app.models import Table
-
-                t = Table.objects.get(pk=pk)
-
+            for t in self.tables():
                 for seat in t.seat_set.all():
-                    p = seat.player
+                    p: Player = seat.player
 
-                    p.currently_seated = p.partner.currently_seated = False
-
+                    p.currently_seated = False
                     p.save()
-                    p.partner.save()
-                    logger.debug("%s and %s are now in the lobby", p, p.partner)
-                    for player in (p, p.partner):
-                        send_event(
-                            channel=player.event_channel_name,
-                            event_type="message",
-                            data={"get up, get out": "into something new"},
-                        )
+                    logger.debug("%s is now in the lobby", p)
+
+                    send_event(
+                        channel=p.event_channel_name,
+                        event_type="message",
+                        data={"Prepare to": "die"},
+                    )
+
+                    p.toggle_bot(False)
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:

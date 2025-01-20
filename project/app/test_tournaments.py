@@ -18,6 +18,13 @@ def test_tournament_is_complete_if_and_only_if_all_boards_have_been_played_at_al
     assert not "I'll get to it, maaan"
 
 
+@pytest.mark.skip(reason="I SAID I'll get to it! Quit nagging me!!")
+def test_tournament_is_complete_if_and_only_if_all_hands_have_been_played_at_all_tables(
+    usual_setup,
+) -> None:
+    assert not "I'll get to it, maaan"
+
+
 @pytest.fixture
 def just_completed(played_almost_to_completion) -> Tournament:
     for p in Player.objects.all():
@@ -54,9 +61,12 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     assert before.is_complete
     assert not after.is_complete
 
+    assert 6 == 9
+
 
 def test_completing_one_tournament_ejects_players(just_completed) -> None:
     assert not Player.objects.filter(currently_seated=True).exists()
+    assert 6 == 9
 
 
 def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> None:
