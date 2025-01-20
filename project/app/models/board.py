@@ -16,6 +16,7 @@ from bridge.seat import Seat
 from django.conf import settings
 from django.contrib import admin
 from django.db import models, transaction
+from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from .common import SEAT_CHOICES
 
@@ -164,12 +165,18 @@ class Tournament(models.Model):
 
                 for seat in t.seat_set.all():
                     p = seat.player
-                    if p.currently_seated or p.partner.currently_seated:
-                        p.currently_seated = p.partner.currently_seated = False
 
-                        p.save()
-                        p.partner.save()
-                        logger.debug("%s and %s are now in the lobby", p, p.partner)
+                    p.currently_seated = p.partner.currently_seated = False
+
+                    p.save()
+                    p.partner.save()
+                    logger.debug("%s and %s are now in the lobby", p, p.partner)
+                    for player in (p, p.partner):
+                        send_event(
+                            channel=player.event_channel_name,
+                            event_type="message",
+                            data={"get up, get out": "into something new"},
+                        )
 
     def _check_no_more_than_one_running_tournament(self):
         if self.is_complete:

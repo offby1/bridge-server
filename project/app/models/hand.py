@@ -132,16 +132,16 @@ def send_timestamped_event(
 
 class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
-        logger.debug("args %s; kwargs %s", args, kwargs)
         board = kwargs.get("board")
         assert board is not None
         table = kwargs.get("table")
         assert table is not None
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
+        players_qs = Player.objects.filter(pk__in=player_pks)
 
         expression = models.Q(pk__in=[])
-        for p in Player.objects.filter(pk__in=player_pks):
+        for p in players_qs:
             expression |= models.Q(pk__in=p.boards_played.all())
 
         if Board.objects.filter(expression).filter(pk=board.pk).exists():
@@ -149,9 +149,11 @@ class HandManager(models.Manager):
             msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
             raise HandError(msg)
 
-        for p in Player.objects.filter(pk__in=player_pks):
+        for p in players_qs:
             p.taint_board(board_pk=board.pk)
             p.save()
+
+        logger.debug("New hand: %s at %s with %s", board, table, [p.name for p in players_qs])
 
         return super().create(*args, **kwargs)
 
