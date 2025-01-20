@@ -14,10 +14,11 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import Board, Tournament
+from app.models.board import Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
+from app.models.tournament import Tournament
 
 if TYPE_CHECKING:
     import bridge.table

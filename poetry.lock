@@ -4167,6 +4167,19 @@ files = [
 urllib3 = ">=2"
 
 [[package]]
+name = "types-tabulate"
+version = "0.9.0.20241207"
+description = "Typing stubs for tabulate"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+files = [
+    {file = "types_tabulate-0.9.0.20241207-py3-none-any.whl", hash = "sha256:b8dad1343c2a8ba5861c5441370c3e35908edd234ff036d4298708a1d4cf8a85"},
+    {file = "types_tabulate-0.9.0.20241207.tar.gz", hash = "sha256:ac1ac174750c0a385dfd248edc6279fa328aaf4ea317915ab879a2ec47833230"},
+]
+
+[[package]]
 name = "types-tqdm"
 version = "4.67.0.20241119"
 description = "Typing stubs for tqdm"
@@ -4625,4 +4638,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "6861a3ca5fae7f580afc04042e1af9a8b10ac023e0ee928535288f8cde4205b3"
+content-hash = "4953b7b5637d24e910342b5f549833f7231761800fded4c95dbdfc6d30a45183"

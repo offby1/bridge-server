@@ -7,17 +7,14 @@ import random
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
-import tabulate
 from bridge.card import Card
 from bridge.seat import Seat
 
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
 # indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
-from django.conf import settings
 from django.contrib import admin
-from django.db import models, transaction
-from django_eventstream import send_event  # type: ignore [import-untyped]
+from django.db import models
 
 from .common import SEAT_CHOICES
 
@@ -81,126 +78,6 @@ def board_attributes_from_display_number(
     }
 
 
-class TournamentManager(models.Manager):
-    # When should we call this?
-    # Whenever there are no more unplayed boards.
-    def create(self, *args, **kwargs) -> Tournament:
-        with transaction.atomic():
-            t = super().create(*args, **kwargs)
-            # create all the boards ahead of time.
-            for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
-                board_attributes = board_attributes_from_display_number(
-                    display_number=display_number,
-                    rng_seeds=[
-                        str(display_number).encode(),
-                        str(t.pk).encode(),
-                        settings.SECRET_KEY.encode(),
-                    ],
-                )
-                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
-            logger.debug("Created new tournament with %s", t.board_set.all())
-            t.dump_tableau()
-            return t
-
-    def maybe_new_tournament(self) -> Tournament | None:
-        with transaction.atomic():
-            currently_running = self.filter(is_complete=False).first()
-            if currently_running is not None:
-                currently_running.maybe_complete()
-                if not currently_running.is_complete:
-                    logger.debug(
-                        "An incomplete tournament already exists; no need to create a new one"
-                    )
-                    return None
-            return self.create()
-
-
-# This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
-class Tournament(models.Model):
-    if TYPE_CHECKING:
-        board_set = RelatedManager["Board"]()
-
-    objects = TournamentManager()
-
-    is_complete = models.BooleanField(default=False)
-
-    def __str__(self) -> str:
-        return f"tournament {self.pk}"
-
-    def hands(self) -> models.QuerySet:
-        from app.models import Hand
-
-        return Hand.objects.filter(board__in=self.board_set.all())
-
-    def tables(self) -> models.QuerySet:
-        from app.models import Table
-
-        return Table.objects.filter(hand__in=self.hands())
-
-    def table_pks(self):
-        return self.hands().values_list("table", flat=True).all()
-
-    def dump_tableau(self) -> None:
-        tableau = []
-        for b in self.board_set.order_by("display_number").all():
-            tableau.append([(b, h.table) for h in b.hand_set.order_by("pk")])
-        print(tabulate.tabulate(tableau))
-
-    def maybe_complete(self) -> None:
-        with transaction.atomic():
-            logger.debug(
-                "Checking hands: %s ... they %s all complete, btw",
-                self.hands(),
-                "are" if all(h.is_complete for h in self.hands()) else "are not",
-            )
-
-            all_hands_are_complete = all(h.is_complete for h in self.hands())
-            if all_hands_are_complete:
-                self.is_complete = True
-                self.save()
-                self.eject_all_pairs()
-                logger.debug(
-                    "Marked myself %s as complete, and ejected all pairs from tables", self
-                )
-                self.dump_tableau()
-                return
-
-            logger.debug("%s: Some of my hands are still being played, so I'm not complete", self)
-
-    def eject_all_pairs(self) -> None:
-        logger.debug(
-            "Since I just completed, I should go around ejecting partnerships from tables."
-        )
-        with transaction.atomic():
-            for t in self.tables():
-                for seat in t.seat_set.all():
-                    p: Player = seat.player
-
-                    p.currently_seated = False
-                    p.save()
-                    logger.debug("%s is now in the lobby", p)
-
-                    send_event(
-                        channel=p.event_channel_name,
-                        event_type="message",
-                        data={"Prepare to": "die"},
-                    )
-
-                    p.toggle_bot(False)
-
-    def _check_no_more_than_one_running_tournament(self):
-        if self.is_complete:
-            return
-
-        if Tournament.objects.filter(is_complete=False).exists():
-            msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
-            raise Exception(msg, self)
-
-    def save(self, *args, **kwargs):
-        self._check_no_more_than_one_running_tournament()
-        super().save(*args, **kwargs)
-
-
 class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
@@ -233,9 +110,23 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
+    from app.models.tournament import Tournament
+
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
     objects = BoardManager()
+
+    def save(self, *args, **kwargs):
+        assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
+        assert (
+            len(self.north_cards)
+            == len(self.south_cards)
+            == len(self.east_cards)
+            == len(self.west_cards)
+            == 26
+        ), f"why no cards {vars(self)}"
+        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
+        return super().save(*args, **kwargs)
 
     @property
     def fancy_dealer(self):
@@ -268,18 +159,6 @@ class Board(models.Model):
             rv = self.PlayerVisibility.everything
 
         return rv
-
-    def save(self, *args, **kwargs):
-        assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
-        assert (
-            len(self.north_cards)
-            == len(self.south_cards)
-            == len(self.east_cards)
-            == len(self.west_cards)
-            == 26
-        ), f"why no cards {vars(self)}"
-        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
-        return super().save(*args, **kwargs)
 
     def short_string(self) -> str:
         return f"Board #{self.display_number} ({self.tournament})"
