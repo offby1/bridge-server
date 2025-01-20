@@ -387,12 +387,12 @@ class Hand(models.Model):
                     },
                 },
             )
-        elif self.get_xscript().auction.status is libAuction.PassedOut:
+        elif self.get_xscript().final_score() is not None:
             Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
-                    "passed_out": "Yup, sure was",
+                    "final_score": "Passed Out",
                 },
             )
 
@@ -444,7 +444,7 @@ class Hand(models.Model):
 
         final_score = self.get_xscript().final_score()
 
-        if final_score:
+        if final_score is not None:
             Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
@@ -703,10 +703,13 @@ class Hand(models.Model):
             my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
         fs = self.get_xscript().final_score()
 
-        if fs is None or my_seat is None:
+        if fs is None:
             total_score = "-"
             trick_summary = "still being played"
-        else:
+        elif fs == 0:
+            total_score = 0
+            trick_summary = "Passed Out"
+        elif my_seat is not None:
             my_seat_direction = my_seat.direction
             if my_seat_direction in {1, 3}:  # north/south
                 total_score = fs.north_south_points or -fs.east_west_points

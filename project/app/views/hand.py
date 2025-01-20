@@ -473,17 +473,19 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     if broken_down_score is None:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
 
-    score_description = f"{broken_down_score.trick_summary}: "
-
-    if broken_down_score.total < 0:  # defenders got points
-        score_description += f"Defenders get {-broken_down_score.total}"
+    if broken_down_score == 0:
+        score_description = "Passed Out"
     else:
-        score_description += f"Declarer's side get {broken_down_score.total}"
+        score_description = f"{broken_down_score.trick_summary}: "
+
+        if broken_down_score.total < 0:  # defenders got points
+            score_description += f"Defenders get {-broken_down_score.total}"
+        else:
+            score_description += f"Declarer's side get {broken_down_score.total}"
 
     context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
-        "vars_score": vars(broken_down_score),
         "show_auction_history": True,
     }
     return TemplateResponse(
