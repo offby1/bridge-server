@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import random
+
+import more_itertools
 import tqdm
 from app.models import Player, Table, Tournament
 from django.contrib.auth.hashers import make_password
@@ -10,6 +13,8 @@ from faker import Faker
 
 class Command(BaseCommand):
     def __init__(self) -> None:
+        random.seed(0)
+
         # Use the same password for everybody, to speed things up :-)
         self.everybodys_password = make_password(".")
         super().__init__()
@@ -51,45 +56,27 @@ class Command(BaseCommand):
                 progress_bar.update()
 
         # Now partner 'em up
-        while True:
-            single_players = Player.objects.filter(partner__isnull=True).all()[0:2]
+        pairs = []
+        for player_pair in more_itertools.chunked(new_players, 2):
+            player_pair[0].partner_with(player_pair[1])
+            pairs.append((player_pair[0], player_pair[1]))
 
-            if len(single_players) < 2:
+        # Now seat half of those players.
+        random.shuffle(pairs)
+        pairs_to_seat = pairs[0 : len(pairs) // 2]
+
+        for table in more_itertools.chunked(pairs_to_seat, 2):
+            self.stdout.write(f"Will create table from {table=}")
+            if len(table) < 2:
                 break
-
-            single_players[0].partner_with(single_players[1])
-
-        # Now seat those players.
-        while True:
-            unseated_player_one = Player.objects.filter(
-                partner__isnull=False,
-                seat__isnull=True,
-            ).first()
-
-            if not unseated_player_one:
-                break
-
-            # find another unseated partnership
-
-            unseated_player_two = (
-                Player.objects.exclude(
-                    pk__in={unseated_player_one.pk, unseated_player_one.partner.pk},
-                )
-                .filter(partner__isnull=False, seat__isnull=True)
-                .first()
-            )
-
-            if not unseated_player_two:
-                break
-
             # Ensure we have at least one tournament.
             if not Tournament.objects.exists():
                 t = Tournament.objects.create()
                 self.stdout.write(f"Created {t}")
 
             Table.objects.create_with_two_partnerships(
-                unseated_player_one,
-                unseated_player_two,
+                table[0][0],
+                table[1][0],
             )
 
         # Don't ask me how but I've seen tables without hands
