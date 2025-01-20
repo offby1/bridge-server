@@ -529,7 +529,11 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
-    xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+    if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
+        logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
+        xscript = hand.get_xscript()
+    else:
+        xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
 
     return HttpResponse(
         json.dumps(

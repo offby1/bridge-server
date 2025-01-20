@@ -1,6 +1,7 @@
 import pytest
 from bridge.card import Card
 
+import app.views.hand
 from app.models import Hand, Player, Tournament
 
 # mumble import settings, monkeypatch, change BOARDS_PER_TOURNAMENT to 2 for convenience
@@ -56,3 +57,10 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
 
 def test_completing_one_tournament_ejects_players(just_completed) -> None:
     assert not Player.objects.filter(currently_seated=True).exists()
+
+
+def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> None:
+    request = rf.get("/wat")
+    request.user = Player.objects.get_by_name("Adam West").user
+    response = app.views.hand.hand_serialized_view(request, pk=1)
+    print(f"{response=}")
