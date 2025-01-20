@@ -32,6 +32,9 @@ class MyChannelManager(DefaultChannelManager):
             hand = models.Hand.objects.get(pk=hand_pk)
             return player in hand.players()
 
+        if channel == "partnerships":
+            return True
+
         # everything else is visible to everyone, although I don't think there *are* any other messages.
         logger.warning("OK, so wtf is channel %s?", channel)
         return True
