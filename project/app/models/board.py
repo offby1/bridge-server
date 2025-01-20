@@ -116,6 +116,9 @@ class TournamentManager(models.Manager):
 
 # This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
 class Tournament(models.Model):
+    if TYPE_CHECKING:
+        board_set = RelatedManager["Board"]()
+
     objects = TournamentManager()
 
     is_complete = models.BooleanField(default=False)
@@ -176,6 +179,8 @@ class Board(models.Model):
         everything = enum.auto()
 
     if TYPE_CHECKING:
+        from app.models import Hand
+
         hand_set = RelatedManager[Hand]()
 
     display_number = models.SmallIntegerField()
