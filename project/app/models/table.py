@@ -92,11 +92,6 @@ class Table(models.Model):
     def event_channel_name(self):
         return f"table:{self.pk}"
 
-    def gimme_dat_fresh_tempo(self):
-        if hasattr(self, "tempo_seconds"):
-            del self.tempo_seconds
-        return self.tempo_seconds
-
     @cached_property
     def seats(self):
         return self.seat_set.select_related("player__user").all()

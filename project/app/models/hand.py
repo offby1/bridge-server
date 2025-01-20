@@ -245,7 +245,7 @@ class Hand(models.Model):
         all_channels = [hand_channel, "all-tables", *player_channels]
 
         data = data.copy()
-        data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
+        data["tempo_seconds"] = self.table.tempo_seconds
         data["hand_pk"] = self.pk
         now = time.time()
         for channel in all_channels:
