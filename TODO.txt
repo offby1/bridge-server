@@ -20,7 +20,7 @@ IN PROGRESS:
 
   Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).
 
-* At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
+* At the end of a tournament, shouldn't all the players be splitsvilled? (No.)  And ejected from their tables?  (Yes.)
 
 STILL TODO:
 * Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
