@@ -473,17 +473,19 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
     if broken_down_score is None:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
 
-    score_description = f"{broken_down_score.trick_summary}: "
-
-    if broken_down_score.total < 0:  # defenders got points
-        score_description += f"Defenders get {-broken_down_score.total}"
+    if broken_down_score == 0:
+        score_description = "Passed Out"
     else:
-        score_description += f"Declarer's side get {broken_down_score.total}"
+        score_description = f"{broken_down_score.trick_summary}: "
+
+        if broken_down_score.total < 0:  # defenders got points
+            score_description += f"Defenders get {-broken_down_score.total}"
+        else:
+            score_description += f"Declarer's side get {broken_down_score.total}"
 
     context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
-        "vars_score": vars(broken_down_score),
         "show_auction_history": True,
     }
     return TemplateResponse(
@@ -529,7 +531,11 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
-    xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+    if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
+        logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
+        xscript = hand.get_xscript()
+    else:
+        xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
 
     return HttpResponse(
         json.dumps(

@@ -13,16 +13,15 @@ from bridge.seat import Seat
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
 # indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
-from django.conf import settings
 from django.contrib import admin
-from django.db import models, transaction
+from django.db import models
 
 from .common import SEAT_CHOICES
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Hand, Player
+    from app.models import Player
 
 BOARDS_PER_TOURNAMENT = 16
 
@@ -79,34 +78,6 @@ def board_attributes_from_display_number(
     }
 
 
-class TournamentManager(models.Manager):
-    # When should we call this?
-    # Whenever there are no more unplayed boards.
-    def create(self, *args, **kwargs) -> Tournament:
-        with transaction.atomic():
-            t = super().create(*args, **kwargs)
-            # create all the boards ahead of time.
-            for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
-                board_attributes = board_attributes_from_display_number(
-                    display_number=display_number,
-                    rng_seeds=[
-                        str(display_number).encode(),
-                        str(t.pk).encode(),
-                        settings.SECRET_KEY.encode(),
-                    ],
-                )
-                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
-            logger.debug("Created new tournament with %s", t.board_set.all())
-            return t
-
-
-class Tournament(models.Model):
-    objects = TournamentManager()
-
-    def __str__(self) -> str:
-        return f"tournament {self.pk}"
-
-
 class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
@@ -123,6 +94,8 @@ class Board(models.Model):
         everything = enum.auto()
 
     if TYPE_CHECKING:
+        from app.models import Hand
+
         hand_set = RelatedManager[Hand]()
 
     display_number = models.SmallIntegerField()
@@ -137,9 +110,23 @@ class Board(models.Model):
     south_cards = models.CharField(max_length=26)
     west_cards = models.CharField(max_length=26)
 
+    from app.models.tournament import Tournament
+
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
     objects = BoardManager()
+
+    def save(self, *args, **kwargs):
+        assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
+        assert (
+            len(self.north_cards)
+            == len(self.south_cards)
+            == len(self.east_cards)
+            == len(self.west_cards)
+            == 26
+        ), f"why no cards {vars(self)}"
+        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
+        return super().save(*args, **kwargs)
 
     @property
     def fancy_dealer(self):
@@ -172,18 +159,6 @@ class Board(models.Model):
             rv = self.PlayerVisibility.everything
 
         return rv
-
-    def save(self, *args, **kwargs):
-        assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
-        assert (
-            len(self.north_cards)
-            == len(self.south_cards)
-            == len(self.east_cards)
-            == len(self.west_cards)
-            == 26
-        ), f"why no cards {vars(self)}"
-        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
-        return super().save(*args, **kwargs)
 
     def short_string(self) -> str:
         return f"Board #{self.display_number} ({self.tournament})"

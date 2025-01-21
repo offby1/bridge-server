@@ -5,30 +5,34 @@ IN PROGRESS:
 
 * Totally rethink access control.
 
-  In general, we want something like
-  * every time a player sees even a single call, or a single card played, from a given board -- regardless of whether they played it themselves, or were kibitzing -- they must be marked as being "tainted" for that board
-  * such a taint will prevent that player from playing that board in the future.
-
-  Unrelatedly:
-
-  * Anonymous players must never see any calls or plays from a tournament that is still running
   * Any tournament that is complete is visible to everyone, anonymous or otherwise.
-  Unfortunately this means that anonymous users cannot watch a hand in progress.
+
+  * Anonymous users cannot watch a hand in progress.
+
+    Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
+
+    Perhaps a specialized decorator for views?
 
   * After `just dcu` (commit c8a78a9), logged in as "bob", https://laptop.tail571dc2.ts.net/table/ shows (correctly)
     Table 5 Hand 5 -- Board #2 (tournament 1), Neither side vulnerable, dealt by West: ('Sorry, bob, but you have not completely played board Board #2 (tournament 1), so later d00d', '-')
     However when I click that link, it shows me the hand :-|  Granted, it shows me only West's cards, and I am indeed West; but still this seems inconsistent.
 
-  Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
+* At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
 
+  Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).
+
+* At the end of a tournament, shouldn't all the players be splitsvilled? (No.)  And ejected from their tables?  (Yes.)
+
 STILL TODO:
+* Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
+
+* Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
+
 * Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
 
 * The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
 
   It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
-
-* At the end of a tournament, shouldn't all the players be splitsvilled?  And ejected from their tables?
 
 * Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
 
@@ -147,6 +151,16 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Access control:
+
+  In general, we want something like
+  * every time a player sees even a single call, or a single card played, from a given board -- regardless of whether they played it themselves, or were kibitzing -- they must be marked as being "tainted" for that board
+  * such a taint will prevent that player from playing that board in the future.
+
+  Unrelatedly:
+
+  * Anonymous players must never see any calls or plays from a tournament that is still running
+
 * The hand-event channels have zero auth -- anyone can receive any of them.
 
 * Big-ish: proper hosting and deployment.

@@ -9,7 +9,7 @@ from typing import Any
 
 from django.db import connection
 
-from .board import Board, Tournament
+from .board import Board
 from .common import SEAT_CHOICES
 from .hand import AuctionError, Call, Hand, HandError, Play
 from .message import Message
@@ -20,6 +20,7 @@ from .player import (
 )
 from .seat import Seat, SeatException
 from .table import Table, TableException
+from .tournament import Tournament
 
 __all__ = [
     "Board",

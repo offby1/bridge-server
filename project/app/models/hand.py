@@ -28,6 +28,7 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from . import Board
 from .player import Player
 from .seat import Seat
+from .tournament import Tournament
 from .utils import assert_type
 
 if TYPE_CHECKING:
@@ -131,16 +132,16 @@ def send_timestamped_event(
 
 class HandManager(models.Manager):
     def create(self, *args, **kwargs) -> Hand:
-        logger.debug("args %s; kwargs %s", args, kwargs)
         board = kwargs.get("board")
         assert board is not None
         table = kwargs.get("table")
         assert table is not None
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
+        players_qs = Player.objects.filter(pk__in=player_pks)
 
         expression = models.Q(pk__in=[])
-        for p in Player.objects.filter(pk__in=player_pks):
+        for p in players_qs:
             expression |= models.Q(pk__in=p.boards_played.all())
 
         if Board.objects.filter(expression).filter(pk=board.pk).exists():
@@ -148,9 +149,11 @@ class HandManager(models.Manager):
             msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
             raise HandError(msg)
 
-        for p in Player.objects.filter(pk__in=player_pks):
+        for p in players_qs:
             p.taint_board(board_pk=board.pk)
             p.save()
+
+        logger.debug("New hand: %s at %s with %s", board, table, [p.name for p in players_qs])
 
         return super().create(*args, **kwargs)
 
@@ -244,7 +247,7 @@ class Hand(models.Model):
         all_channels = [hand_channel, "all-tables", *player_channels]
 
         data = data.copy()
-        data.setdefault("tempo_seconds", self.table.gimme_dat_fresh_tempo())
+        data["tempo_seconds"] = self.table.tempo_seconds
         data["hand_pk"] = self.pk
         now = time.time()
         for channel in all_channels:
@@ -384,11 +387,12 @@ class Hand(models.Model):
                     },
                 },
             )
-        elif self.get_xscript().auction.status is libAuction.PassedOut:
+        elif self.get_xscript().final_score() is not None:
+            Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
-                    "passed_out": "Yup, sure was",
+                    "final_score": "Passed Out",
                 },
             )
 
@@ -440,7 +444,8 @@ class Hand(models.Model):
 
         final_score = self.get_xscript().final_score()
 
-        if final_score:
+        if final_score is not None:
+            Tournament.objects.maybe_new_tournament()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -698,10 +703,13 @@ class Hand(models.Model):
             my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
         fs = self.get_xscript().final_score()
 
-        if fs is None or my_seat is None:
+        if fs is None:
             total_score = "-"
             trick_summary = "still being played"
-        else:
+        elif fs == 0:
+            total_score = 0
+            trick_summary = "Passed Out"
+        elif my_seat is not None:
             my_seat_direction = my_seat.direction
             if my_seat_direction in {1, 3}:  # north/south
                 total_score = fs.north_south_points or -fs.east_west_points
@@ -712,7 +720,9 @@ class Hand(models.Model):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Hand {self.pk}: {self.calls.count()} calls; {self.plays.count()} plays"
+        return (
+            f"Hand {self.pk} ({self.board}): {self.calls.count()} calls; {self.plays.count()} plays"
+        )
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):

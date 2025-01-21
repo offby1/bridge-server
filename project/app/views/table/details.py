@@ -161,7 +161,6 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
     return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
 
-# TODO -- restrict this view to just those players who are, you know, actually seated at the table.
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
@@ -169,6 +168,13 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
+
+    # TODO -- clean this shit up.  Half the time I treat primary keys as strings; half the time I treat them as integers.
+    if str(request.user.player.current_table_pk()) != str(pk):
+        msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=!s} != {pk=!s})"
+        logger.warning("%s", msg)
+        return HttpResponseForbidden(msg)
+
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
     if not ch.is_complete:

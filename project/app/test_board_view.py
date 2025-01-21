@@ -7,8 +7,7 @@ from app.models import Board, Player, Tournament
 
 
 def test_board_list_view(db, rf, everybodys_password) -> None:
-    while Tournament.objects.count() < 2:
-        Tournament.objects.create()
+    Tournament.objects.create()
 
     some_user, _ = auth.models.User.objects.get_or_create(
         username="bob", password=everybodys_password
