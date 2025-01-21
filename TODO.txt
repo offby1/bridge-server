@@ -1,4 +1,12 @@
 IN PROGRESS:
+
+STILL TODO:
+* MOVEMENTS
+
+  I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
+
+  There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
+
 * Make the UI not suck.
 
   It *sometimes* jumps a little when a new call or play gets displayed.
@@ -17,13 +25,6 @@ IN PROGRESS:
     Table 5 Hand 5 -- Board #2 (tournament 1), Neither side vulnerable, dealt by West: ('Sorry, bob, but you have not completely played board Board #2 (tournament 1), so later d00d', '-')
     However when I click that link, it shows me the hand :-|  Granted, it shows me only West's cards, and I am indeed West; but still this seems inconsistent.
 
-* At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
-
-  Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).
-
-* At the end of a tournament, shouldn't all the players be splitsvilled? (No.)  And ejected from their tables?  (Yes.)
-
-STILL TODO:
 * Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
 
 * Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
@@ -151,6 +152,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
+
+  Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).
+
+* At the end of a tournament, shouldn't all the players be splitsvilled? (No.)  And ejected from their tables?  (Yes.)
+
 * Access control:
 
   In general, we want something like
