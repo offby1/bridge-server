@@ -3,6 +3,8 @@ volumes:
 
 services:
   caddy:
+    # TODO -- "Wy use the lucasloretnz caddy and not the official?"
+    # i.e., either use the official image, or explain why not
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
     ports:
       - 80:80
