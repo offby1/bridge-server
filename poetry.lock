@@ -2474,6 +2474,21 @@ setproctitle = ["setproctitle"]
 testing = ["filelock"]
 
 [[package]]
+name = "python-constraint"
+version = "1.4.0"
+description = "python-constraint is a module implementing support for handling CSPs (Constraint Solving Problems) over finite domain"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "python-constraint-1.4.0.tar.bz2", hash = "sha256:501d6f17afe0032dfc6ea6c0f8acc12e44f992733f00e8538961031ef27ccb8e"},
+]
+
+[package.extras]
+dev = ["check-manifest", "nose"]
+test = ["coverage", "nose"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -3935,4 +3950,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "e6ed3bb699f815abdd2689f4f775bb8075de9960b91f1faca092eb8b07cf0760"
+content-hash = "c21363e1822e7cbe0334f9515f7966cd6c4c4dc29ed5c141a56c415ae141c5f0"

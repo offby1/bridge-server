@@ -1,13 +1,13 @@
 IN PROGRESS:
-Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
-
-STILL TODO:
 * MOVEMENTS
 
   I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
 
   There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
 
+Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
+
+STILL TODO:
 * Allow humans to submit feedback via a form or something.
 
   Only let them do this if I've got a confirmed email address for them; I imagine that'd reduce spam.
