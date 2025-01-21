@@ -3,10 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import tabulate
 from django.conf import settings
 from django.db import models, transaction
-from django_eventstream import send_event  # type: ignore [import-untyped]
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -41,7 +39,6 @@ class TournamentManager(models.Manager):
                 )
                 Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
             logger.debug("Created new tournament with %s", t.board_set.all())
-            t.dump_tableau()
             return t
 
     def maybe_new_tournament(self) -> Tournament | None:
@@ -81,12 +78,6 @@ class Tournament(models.Model):
 
         return Table.objects.filter(hand__in=self.hands()).distinct()
 
-    def dump_tableau(self) -> None:
-        tableau = []
-        for b in self.board_set.order_by("display_number").all():
-            tableau.append([(b, h.table) for h in b.hand_set.order_by("pk")])
-        print(tabulate.tabulate(tableau))
-
     def maybe_complete(self) -> None:
         with transaction.atomic():
             num_needed_for_completion = self.tables().count() * self.board_set.count()
@@ -103,7 +94,6 @@ class Tournament(models.Model):
                     "Marked myself %s as complete, and ejected all pairs from tables",
                     self,
                 )
-                self.dump_tableau()
                 return
 
             logger.debug(
@@ -121,13 +111,8 @@ class Tournament(models.Model):
 
                     p.currently_seated = False
                     p.save()
-                    logger.debug("%s is now in the lobby", p)
-
-                    send_event(
-                        channel=p.event_channel_name,
-                        event_type="message",
-                        data={"Prepare to": "die"},
-                    )
+                    p.toggle_bot(False)
+                    logger.debug("%s is now in the lobby, and un-bottified", p)
 
     def _check_no_more_than_one_running_tournament(self) -> None:
         if self.is_complete:

@@ -100,6 +100,7 @@ EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 
 
 MIDDLEWARE = [
+    "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
     "log_request_id.middleware.RequestIDMiddleware",
     "app.middleware.add_git_commit_hash.AddVersionHeaderMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
