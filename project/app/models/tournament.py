@@ -129,8 +129,6 @@ class Tournament(models.Model):
                         data={"Prepare to": "die"},
                     )
 
-                    p.toggle_bot(False)
-
     def _check_no_more_than_one_running_tournament(self) -> None:
         if self.is_complete:
             return

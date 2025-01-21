@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import time
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
@@ -222,6 +223,18 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
 
     try:
+        wait_time = float(request.POST.get("wait_time", "0"))
+    except ValueError as e:
+        logger.warning("%s; will not wait", e)
+        wait_time = 0
+
+    logger.debug(f"Hi folks! {playa.name=} {pk=} {request.POST=}; {wait_time=}")
+
+    if wait_time > 0:
+        logger.debug("Waiting %f seconds, since %s", wait_time, request.POST)
+        time.sleep(wait_time)
+
+    try:
         playa.toggle_bot()
     except Exception as e:
         return TemplateResponse(
@@ -230,7 +243,6 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
             context={"error_message": str(e)},
         )
 
-    playa.control_bot()
     return TemplateResponse(
         request, "bot-checkbox-partial.html#bot-checkbox-partial", context={"error_message": ""}
     )
