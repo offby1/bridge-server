@@ -6,7 +6,10 @@ IN PROGRESS:
 * Totally rethink access control.
 
   * Any tournament that is complete is visible to everyone, anonymous or otherwise.
-    Unfortunately this means that anonymous users cannot watch a hand in progress.
+
+  * Anonymous users cannot watch a hand in progress.
+
+    Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
 
     Perhaps a specialized decorator for views?
 
@@ -14,15 +17,17 @@ IN PROGRESS:
     Table 5 Hand 5 -- Board #2 (tournament 1), Neither side vulnerable, dealt by West: ('Sorry, bob, but you have not completely played board Board #2 (tournament 1), so later d00d', '-')
     However when I click that link, it shows me the hand :-|  Granted, it shows me only West's cards, and I am indeed West; but still this seems inconsistent.
 
-  Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
-
 * At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
 
   Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).
 
 * At the end of a tournament, shouldn't all the players be splitsvilled? (No.)  And ejected from their tables?  (Yes.)
-
+
 STILL TODO:
+* Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
+
+* Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
+
 * Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
 
 * The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
