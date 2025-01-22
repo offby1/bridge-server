@@ -64,6 +64,9 @@ python-lsp-ruff = "^2.2.2"
 # We hates it, we does.
 ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D212", "D213"]
 
+[tool.ruff.lint]
+ignore = ["T201", "T203"]
+
 [tool.coverage.run]
 dynamic_context = "test_function"
 plugins = [
