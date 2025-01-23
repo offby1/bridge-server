@@ -6,6 +6,7 @@
 {% block content %}
     <div>
         <h1>Review of {{ hand }}</h1>
+        <h3>{{ tournament_status }}</h3>
         <form method="post" action="{% url 'app:new-board-plz' hand.table.pk %}">
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>

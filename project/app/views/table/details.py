@@ -151,7 +151,7 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
         return Forbid(f"Hey man {request.user.player} isn't one of {all_four}")
 
     try:
-        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)  # type: ignore
+        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
     except app.models.TableException as e:
         return Forbid(str(e))
 

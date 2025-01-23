@@ -41,7 +41,8 @@ logger = logging.getLogger(__name__)
 def _auction_context_for_hand(hand) -> dict[str, Any]:
     return {
         "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "show_auction_history": hand.auction.status
+        is bridge.auction.Auction.Incomplete,
         "hand": hand,
     }
 
@@ -68,9 +69,12 @@ def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str,
         )
     return {
         "bidding_box_buttons": buttons,
-        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
+        "bidding_box_partial_endpoint": reverse(
+            "app:bidding-box-partial", args=[hand.pk]
+        ),
         "display_bidding_box": display_bidding_box,
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "show_auction_history": hand.auction.status
+        is bridge.auction.Auction.Incomplete,
     }
 
 
@@ -91,7 +95,10 @@ def _display_and_control(
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
         or hand.open_access
-        or ((as_viewed_by is not None) and as_viewed_by.has_seen_board_at(hand.board, seat))
+        or (
+            (as_viewed_by is not None)
+            and as_viewed_by.has_seen_board_at(hand.board, seat)
+        )
     )
     viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
@@ -107,7 +114,9 @@ def _display_and_control(
         and is_this_seats_turn_to_play
     ):
         if seat.value == as_viewed_by.current_seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat |= not is_dummy  # declarer controls this hand, not dummy
+            viewer_may_control_this_seat |= (
+                not is_dummy
+            )  # declarer controls this hand, not dummy
         elif hand.dummy is not None and hand.declarer is not None:
             the_declarer: bridge.seat.Seat = hand.declarer.seat
             if (
@@ -206,7 +215,9 @@ def _three_by_three_trick_display_context_for_hand(
         throb = ""
         if direction == winning_direction:
             throb = " class=throb-div"
-        return f"""<div{throb}><span style="color: {color}">{card or "__"}</span></div>"""
+        return (
+            f"""<div{throb}><span style="color: {color}">{card or "__"}</span></div>"""
+        )
 
     arrow = ""
     if lead_came_from is not None:
@@ -237,7 +248,9 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
                 leading_seat = p.seat
             plays.append(
                 {
-                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
+                    "card": p.card
+                    if p_index == 0 or p.card.suit != led_suit
+                    else p.card.rank,
                     "wins_the_trick": p.wins_the_trick,
                 },
             )
@@ -273,7 +286,9 @@ def _four_hands_context_for_hand(
             dem_cards_baby = _single_hand_as_four_divs(
                 all_four=suitholdings,
                 hand=hand,
-                viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
+                viewer_may_control_this_seat=visibility_and_control[
+                    "viewer_may_control_this_seat"
+                ],
             )
         else:
             dem_cards_baby = SafeString(suitholdings.textual_summary)
@@ -288,8 +303,11 @@ def _four_hands_context_for_hand(
     always = {
         "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
-        "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
+        "four_hands_partial_endpoint": reverse(
+            "app:four-hands-partial", args=[hand.pk]
+        ),
         "hand": hand,
+        "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(
@@ -303,7 +321,9 @@ def auction_partial_view(request: AuthedHttpRequest, hand_pk: str) -> HttpRespon
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
     context = _auction_context_for_hand(hand)
 
-    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
+    return TemplateResponse(
+        request, "auction-partial.html#auction-partial", context=context
+    )
 
 
 def bidding_box_buttons(
@@ -361,7 +381,11 @@ def bidding_box_buttons(
         rows.append(row)
 
     top_button_group = """<div class="btn-group">"""
-    for call in (bridge.contract.Pass, bridge.contract.Double, bridge.contract.Redouble):
+    for call in (
+        bridge.contract.Pass,
+        bridge.contract.Double,
+        bridge.contract.Redouble,
+    ):
         active = call in legal_calls
 
         top_button_group += buttonize(call=call, active=active)
@@ -385,7 +409,9 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResp
 
 
 @logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
+def four_hands_partial_view(
+    request: AuthedHttpRequest, table_pk: str
+) -> TemplateResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
     context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
 
@@ -456,7 +482,9 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
 
     if c is Auction.PassedOut:
-        context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
+        context = _four_hands_context_for_hand(
+            request=request, hand=hand, as_dealt=True
+        )
         context |= {
             "score": 0,
             "vars_score": {"passed_out": 0},
@@ -531,7 +559,9 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     if player not in hand.players_by_direction.values():
         return HttpResponseForbidden()
 
-    if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
+    if (
+        hand.board.tournament.is_complete
+    ):  # completed tournaments are visible to everyone
         logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
         xscript = hand.get_xscript()
     else:
