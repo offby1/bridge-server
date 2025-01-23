@@ -37,7 +37,9 @@ class TournamentManager(models.Manager):
                         settings.SECRET_KEY.encode(),
                     ],
                 )
-                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
+                Board.objects.create_from_attributes(
+                    attributes=board_attributes, tournament=t
+                )
             logger.debug("Created new tournament with %s", t.board_set.all())
             return t
 
@@ -80,6 +82,12 @@ class Tournament(models.Model):
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
+            if self.is_complete:
+                logger.info(
+                    "Pff, no need to complete %s since it's already complete.", self
+                )
+                return
+
             num_needed_for_completion = self.tables().count() * self.board_set.count()
             complete_hands = [h for h in self.hands() if h.is_complete]
 
