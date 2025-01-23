@@ -137,7 +137,9 @@ class HandManager(models.Manager):
         table = kwargs.get("table")
         assert table is not None
 
-        assert board.tournament == table.my_tournament(), f"Nuts, {board.tournament=} != {table.my_tournament()=}"
+        assert (
+            board.tournament == table.my_tournament()
+        ), f"Nuts, {board.tournament=} != {table.my_tournament()=}"
 
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
@@ -310,13 +312,11 @@ class Hand(models.Model):
     def _cache_note_hit(self) -> None:
         key = "hits"
         old = cache.get(key, default=0)
-        logger.debug("Cache hit %s; incrementing %d", self.pk, old)
         cache.set(key, old + 1)
 
     def _cache_note_miss(self) -> None:
         key = "misses"
         old = cache.get(key, default=0)
-        logger.debug("Cache miss %s; incrementing %d", self.pk, old)
         cache.set(key, old + 1)
 
     def get_xscript(self) -> HandTranscript:

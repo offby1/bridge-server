@@ -277,7 +277,7 @@ class Table(models.Model):
         return all(p is not None for p in self.players_by_direction.values())
 
     def __str__(self):
-        return f"Table {self.id}"
+        return f"Table {self.id} in {self.tournament}"
 
 
 @admin.register(Table)
