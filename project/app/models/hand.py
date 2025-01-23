@@ -138,8 +138,8 @@ class HandManager(models.Manager):
         assert table is not None
 
         assert (
-            board.tournament == table.my_tournament()
-        ), f"Nuts, {board.tournament=} != {table.my_tournament()=}"
+            board.tournament == table.tournament
+        ), f"Nuts, {board.tournament=} != {table.tournament=}"
 
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)

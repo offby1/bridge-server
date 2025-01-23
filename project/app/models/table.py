@@ -63,7 +63,7 @@ class TableManager(models.Manager):
         try:
             with transaction.atomic():
                 t: Table = self.create()
-                logger.debug("Created %s, tournament %s", t, t.my_tournament())
+                logger.debug("Created %s, tournament %s", t, t.tournament)
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                     modelSeat.objects.create(
                         direction=seat,
@@ -124,10 +124,6 @@ class Table(models.Model):
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None
         return rv
-
-    # TODO -- inline me, duh
-    def my_tournament(self) -> Tournament | None:
-        return self.tournament
 
     def current_hand_pk(self) -> int:
         return self.current_hand.pk
@@ -215,12 +211,7 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                my_tournaments = Tournament.objects.filter(
-                    id__in=Hand.objects.filter(table=self).values_list(
-                        "board__tournament", flat=True
-                    )
-                )
-                msg = f"Tournaments {[str(t) for t in my_tournaments]} are over; no more boards"
+                msg = f"{self.tournament} is over; no more boards"
                 logger.warning("%s", msg)
                 raise TournamentIsOverError(msg)
 
