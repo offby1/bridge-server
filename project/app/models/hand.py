@@ -136,6 +136,9 @@ class HandManager(models.Manager):
         assert board is not None
         table = kwargs.get("table")
         assert table is not None
+
+        assert board.tournament == table.my_tournament(), f"Nuts, {board.tournament=} != {table.my_tournament()=}"
+
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
         players_qs = Player.objects.filter(pk__in=player_pks)

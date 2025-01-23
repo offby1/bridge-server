@@ -43,6 +43,20 @@ class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
+    def create(self, *args, **kwargs) -> Table:
+        requested_tournament = kwargs.get("tournament")
+        if requested_tournament is not None:
+            kwargs["tournament"] = requested_tournament
+        else:
+            new_tournament = Tournament.objects.maybe_new_tournament()
+            if new_tournament is None:
+                kwargs["tournament"] = Tournament.objects.filter(
+                    is_complete=False
+                ).first()
+            else:
+                kwargs["tournament"] = new_tournament
+        return super().create(*args, **kwargs)
+
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, desired_board_pk: int | None = None
     ) -> Table:
@@ -88,6 +102,9 @@ class Table(models.Model):
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
+    # TODO -- data migration, and then nix the "null=True"
+    tournament = models.ForeignKey(Tournament, null=True, on_delete=models.CASCADE)
+
     summary_for_this_viewer: tuple[str, str | int]
 
     @property
@@ -108,16 +125,9 @@ class Table(models.Model):
         assert rv is not None
         return rv
 
+    # TODO -- inline me, duh
     def my_tournament(self) -> Tournament | None:
-        all_my_tournaments = Tournament.objects.filter(
-            board__in=Board.objects.filter(hand__in=self.hand_set.all())
-        ).distinct()
-        assert (
-            all_my_tournaments.count() < 2
-        ), f"Oy -- {self} is in more than one tournament {all_my_tournaments.all()}"
-        if all_my_tournaments.exists():
-            return all_my_tournaments.first()
-        return None
+        return self.tournament
 
     def current_hand_pk(self) -> int:
         return self.current_hand.pk
@@ -183,7 +193,8 @@ class Table(models.Model):
         for seat in seats:
             expression |= models.Q(pk__in=seat.player.boards_played.all())
 
-        unplayed_boards = Board.objects.exclude(expression)
+        assert self.tournament is not None
+        unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
