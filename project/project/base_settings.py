@@ -64,10 +64,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
-CSRF_TRUSTED_ORIGINS = [
-    "https://teensy-info.tail571dc2.ts.net",
-    "https://laptop.tail571dc2.ts.net",
-]
+
 
 # Application definition
 
@@ -115,7 +112,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    }
+}
 
 INTERNAL_IPS = [
     "127.0.0.1",

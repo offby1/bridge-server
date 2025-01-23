@@ -19,7 +19,6 @@ from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 import app.models
@@ -62,7 +61,6 @@ def _auction_channel_for_table(table):
     return str(table.pk)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
@@ -80,7 +78,9 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     if hand.player_who_may_call is None:
         return Forbid(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 
-    from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
+    from_whom = (
+        hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
+    )
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
@@ -96,7 +96,6 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
     return HttpResponse()
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
@@ -125,7 +124,9 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:
-        hand.add_play_from_player(player=hand.player_who_may_play.libraryThing(), card=card)
+        hand.add_play_from_player(
+            player=hand.player_who_may_play.libraryThing(), card=card
+        )
     except app.models.hand.PlayError as e:
         return Forbid(str(e))
 
@@ -134,7 +135,9 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
+def new_table_for_two_partnerships(
+    request: AuthedHttpRequest, pk1: str, pk2: str
+) -> HttpResponse:
     p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
         return Forbid(f"Hey man {p1=} doesn't have a partner")
@@ -178,7 +181,9 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
     if not ch.is_complete:
-        logger.debug("Table %s has an active hand %s, so redirecting to that", table, ch)
+        logger.debug(
+            "Table %s has an active hand %s, so redirecting to that", table, ch
+        )
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
     try:
@@ -189,7 +194,9 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     logger.debug('Called "next_board" on table %s', table)
 
-    return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
+    return HttpResponseRedirect(
+        reverse("app:hand-detail", args=[table.current_hand.pk])
+    )
 
 
 @require_http_methods(["POST"])
