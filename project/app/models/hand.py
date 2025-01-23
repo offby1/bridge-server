@@ -287,12 +287,16 @@ class Hand(models.Model):
     def _cache_key(self) -> str:
         return self.pk
 
-    @property
-    def _cache_stats_keys(self) -> dict[str, str]:
+    @staticmethod
+    def _cache_stats_keys() -> dict[str, str]:
         return {
-            "hits": f"{self._cache_key()}_stats_hits",
-            "misses": f"{self._cache_key()}_stats_misses",
+            "hits": "cache_stats_hits",
+            "misses": "cache_stats_misses",
         }
+
+    @staticmethod
+    def _cache_stats() -> dict[str, int]:
+        return {k: cache.get(k) for k in ("hits", "misses")}
 
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
@@ -301,13 +305,15 @@ class Hand(models.Model):
         return cache.get(self._cache_key())
 
     def _cache_note_hit(self) -> None:
-        key = self._cache_stats_keys["hits"]
+        key = "hits"
         old = cache.get(key, default=0)
+        logger.debug("Cache hit %s; incrementing %d", self.pk, old)
         cache.set(key, old + 1)
 
     def _cache_note_miss(self) -> None:
-        key = self._cache_stats_keys["misses"]
+        key = "misses"
         old = cache.get(key, default=0)
+        logger.debug("Cache miss %s; incrementing %d", self.pk, old)
         cache.set(key, old + 1)
 
     def get_xscript(self) -> HandTranscript:
