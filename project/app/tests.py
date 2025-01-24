@@ -440,7 +440,6 @@ def test_table_creation(j_northam, rf, everybodys_password):
         request, j_northam.pk, players_by_name["tina"].pk
     )
 
-    print(response.content.decode())
     assert response.status_code == 302
 
 
