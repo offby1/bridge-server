@@ -55,9 +55,7 @@ def test_tainted_players_may_not_play_relevant_board(seat_em_dano) -> None:
 
 
 def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
-    module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(
-        ".", maxsplit=1
-    )
+    module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
     north = Player.objects.get_by_name("Jeremy Northam")

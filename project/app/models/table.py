@@ -46,14 +46,10 @@ class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
             with transaction.atomic():
-                if (
-                    new_tournament := Tournament.objects.maybe_new_tournament()
-                ) is not None:
+                if (new_tournament := Tournament.objects.maybe_new_tournament()) is not None:
                     kwargs["tournament"] = new_tournament
                 else:
-                    kwargs["tournament"] = Tournament.objects.filter(
-                        is_complete=False
-                    ).first()
+                    kwargs["tournament"] = Tournament.objects.filter(is_complete=False).first()
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
@@ -139,17 +135,13 @@ class Table(models.Model):
         if self.current_hand.declarer is None:
             return None
 
-        return modelSeat.objects.get(
-            direction=self.current_hand.declarer.seat.value, table=self
-        )
+        return modelSeat.objects.get(direction=self.current_hand.declarer.seat.value, table=self)
 
     @property
     def dummy(self) -> modelSeat | None:
         if self.current_hand.dummy is None:
             return None
-        return modelSeat.objects.get(
-            direction=self.current_hand.dummy.seat.value, table=self
-        )
+        return modelSeat.objects.get(direction=self.current_hand.dummy.seat.value, table=self)
 
     @cached_property
     def dealt_cards_by_seat(self) -> dict[modelSeat, list[bridge.card.Card]]:
@@ -254,10 +246,7 @@ class Table(models.Model):
         )
 
     def as_tuples(self):
-        return [
-            (SEAT_CHOICES[d], p)
-            for d, p in self.current_hand.players_by_direction.items()
-        ]
+        return [(SEAT_CHOICES[d], p) for d, p in self.current_hand.players_by_direction.items()]
 
     def is_empty(self):
         return all(p is None for p in self.players_by_direction.values())

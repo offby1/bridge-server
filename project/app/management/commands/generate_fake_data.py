@@ -41,9 +41,7 @@ class Command(BaseCommand):
 
         new_players = []
 
-        with tqdm.tqdm(
-            desc="players", total=options["players"], unit="p"
-        ) as progress_bar:
+        with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
             while Player.objects.count() < options["players"]:
                 # Make sure we always have "bob", because his name is easy to type, and to remember :-)
                 if not Player.objects.exists():
@@ -84,9 +82,7 @@ class Command(BaseCommand):
             )
 
         # Don't ask me how but I've seen tables without hands
-        last_table: Table | None = (
-            Table.objects.exclude(hand__isnull=True).order_by("-pk").first()
-        )
+        last_table: Table | None = Table.objects.exclude(hand__isnull=True).order_by("-pk").first()
         assert last_table is not None
 
         # Now create a couple of unseated players.
@@ -97,6 +93,4 @@ class Command(BaseCommand):
             player, created = self.maybe_create_player(fake.unique.first_name().lower())
             self.stdout.write(f"{player} {created=}")
 
-        self.stdout.write(
-            f"{Player.objects.count()} players at {Table.objects.count()} tables."
-        )
+        self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")

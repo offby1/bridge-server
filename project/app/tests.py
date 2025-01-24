@@ -39,9 +39,7 @@ def test_we_gots_a_home_page():
 
 @pytest.fixture
 def j_northam(db, everybodys_password):
-    u = auth.models.User.objects.create(
-        username="Jeremy Northam", password=everybodys_password
-    )
+    u = auth.models.User.objects.create(username="Jeremy Northam", password=everybodys_password)
     return Player.objects.create(user=u)
 
 
@@ -113,9 +111,7 @@ def test_one_partnerships_splitting_does_not_remove_table(usual_setup):
 
 def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
     Alice = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="Alice", password=everybodys_password
-        ),
+        user=auth.models.User.objects.create(username="Alice", password=everybodys_password),
     )
     Alice.partner_with(j_northam)
 
@@ -141,9 +137,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
     client = Client()
 
     def r():
-        return client.get(
-            reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True
-        )
+        return client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
 
     response = r()
     for c in norths_cards:
@@ -166,9 +160,7 @@ def test_legal_cards(usual_setup, rf):
     client = Client()
     client.login(username=leader.name, password=".")
 
-    response = client.get(
-        reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True
-    )
+    response = client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
@@ -246,9 +238,7 @@ def quickly_auth_test_client(c: Client, player: Player) -> None:
         "/three-way-login/",
         headers={
             "Authorization": "Basic "
-            + base64.b64encode(
-                f"{player.pk}:{settings.API_SKELETON_KEY}".encode()
-            ).decode()
+            + base64.b64encode(f"{player.pk}:{settings.API_SKELETON_KEY}".encode()).decode()
         },  # type: ignore [arg-type]
     )
 
@@ -328,9 +318,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
 
 
 def test_only_recipient_can_read_messages(usual_setup):
-    module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(
-        ".", maxsplit=1
-    )
+    module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
     t = Table.objects.first()
@@ -426,9 +414,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
     )
 
     request.user = j_northam.user
-    response = table.details.new_table_for_two_partnerships(
-        request, j_northam.pk, j_northam.pk
-    )
+    response = table.details.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
     assert response.status_code == 403
     assert b"four distinct" in response.content
 
@@ -568,9 +554,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
     for tt in h.current_trick:
         expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
-    ya = hand._three_by_three_trick_display_context_for_hand(
-        request, h, xscript=h.get_xscript()
-    )
+    ya = hand._three_by_three_trick_display_context_for_hand(request, h, xscript=h.get_xscript())
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows

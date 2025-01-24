@@ -81,9 +81,7 @@ def second_setup(usual_setup):
     new_player_names = ["n2", "e2", "s2", "w2"]
     for name in new_player_names:
         Player.objects.create(
-            user=auth.models.User.objects.create(
-                username=name, password=everybodys_password
-            ),
+            user=auth.models.User.objects.create(username=name, password=everybodys_password),
         )
 
     Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))

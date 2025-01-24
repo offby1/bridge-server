@@ -186,9 +186,7 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
         msg = f"{e}, so created {new_tournament=}"
         messages.info(request, msg)
         logger.info(msg)
-        return HttpResponseRedirect(
-            reverse("app:player", kwargs={"pk": request.user.player.pk})
-        )
+        return HttpResponseRedirect(reverse("app:player", kwargs={"pk": request.user.player.pk}))
     except Exception as e:
         logger.warning("%s", e)
         return NotFound(e)
