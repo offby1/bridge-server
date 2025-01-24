@@ -39,12 +39,6 @@ class Command(BaseCommand):
         fake = Faker()
         Faker.seed(0)
 
-        # Ensure any existing tournaments get completed, if they need to be.  This is essentially part of a data
-        # migration, and only needs to run once, since tournaments automatically complete themselves when the last card
-        # is played.  But I have got tournaments in the db that predate that code, so they need this extra pass.
-        for t in Tournament.objects.all():
-            t.maybe_complete()
-
         new_players = []
 
         with tqdm.tqdm(

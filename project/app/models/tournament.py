@@ -43,9 +43,12 @@ class TournamentManager(models.Manager):
             logger.debug("Created new tournament with %s", t.board_set.all())
             return t
 
+    def current(self) -> Tournament | None:
+        return self.filter(is_complete=False).first()
+
     def maybe_new_tournament(self) -> Tournament | None:
         with transaction.atomic():
-            currently_running = self.filter(is_complete=False).first()
+            currently_running = self.current()
             if currently_running is not None:
                 currently_running.maybe_complete()
                 if not currently_running.is_complete:
@@ -89,6 +92,14 @@ class Tournament(models.Model):
                 return
 
             num_needed_for_completion = self.tables().count() * self.board_set.count()
+
+            if num_needed_for_completion == 0:
+                logger.info(
+                    "We don't consider %s to be complete because it's never had any tables assigned.",
+                    self,
+                )
+                return
+
             complete_hands = [h for h in self.hands() if h.is_complete]
 
             if len(complete_hands) == num_needed_for_completion:

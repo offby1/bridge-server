@@ -15,6 +15,7 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseRedirect,
 )
+from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -180,6 +181,14 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
     try:
         table.next_board()
+    except app.models.table.TournamentIsOverError as e:
+        new_tournament = app.models.Tournament.objects.maybe_new_tournament()
+        msg = f"{e}, so created {new_tournament=}"
+        messages.info(request, msg)
+        logger.info(msg)
+        return HttpResponseRedirect(
+            reverse("app:player", kwargs={"pk": request.user.player.pk})
+        )
     except Exception as e:
         logger.warning("%s", e)
         return NotFound(e)
