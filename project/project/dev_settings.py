@@ -1,7 +1,7 @@
 import logging
 
 from .base_settings import *  # noqa
-from .base_settings import TEMPLATES
+from .base_settings import LOGGING, TEMPLATES
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
