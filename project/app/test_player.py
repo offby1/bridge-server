@@ -34,19 +34,18 @@ def seat_em_dano(nobody_seated: None) -> Table:
 
 def test_untainted_players_may_play_any_board(seat_em_dano) -> None:
     t = seat_em_dano
-    for b in Board.objects.all():
+    for b in t.tournament.board_set.all():
         Hand.objects.create(board=b, table=t)
 
     # We're just checking for the lack of an exception.
 
 
 def test_tainted_players_may_not_play_relevant_board(seat_em_dano) -> None:
-    board_one = Board.objects.get(pk=1)
-    board_two = Board.objects.get(pk=2)
     t = seat_em_dano
+    board_one, board_two = t.tournament.board_set.all()[0:2]
 
     north = Player.objects.get_by_name("Jeremy Northam")
-    north.taint_board(board_pk=1)
+    north.taint_board(board_pk=board_one.pk)
 
     with pytest.raises(HandError) as e:
         Hand.objects.create(board=board_one, table=t)

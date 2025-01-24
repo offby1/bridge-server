@@ -136,6 +136,11 @@ class HandManager(models.Manager):
         assert board is not None
         table = kwargs.get("table")
         assert table is not None
+
+        assert (
+            board.tournament == table.tournament
+        ), f"Nuts, {board.tournament=} != {table.tournament=}"
+
         seats = table.seat_set
         player_pks = seats.values_list("player__id", flat=True)
         players_qs = Player.objects.filter(pk__in=player_pks)
@@ -287,12 +292,16 @@ class Hand(models.Model):
     def _cache_key(self) -> str:
         return self.pk
 
-    @property
-    def _cache_stats_keys(self) -> dict[str, str]:
+    @staticmethod
+    def _cache_stats_keys() -> dict[str, str]:
         return {
-            "hits": f"{self._cache_key()}_stats_hits",
-            "misses": f"{self._cache_key()}_stats_misses",
+            "hits": "cache_stats_hits",
+            "misses": "cache_stats_misses",
         }
+
+    @staticmethod
+    def _cache_stats() -> dict[str, int]:
+        return {k: cache.get(k) for k in ("hits", "misses")}
 
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
@@ -301,12 +310,12 @@ class Hand(models.Model):
         return cache.get(self._cache_key())
 
     def _cache_note_hit(self) -> None:
-        key = self._cache_stats_keys["hits"]
+        key = "hits"
         old = cache.get(key, default=0)
         cache.set(key, old + 1)
 
     def _cache_note_miss(self) -> None:
-        key = self._cache_stats_keys["misses"]
+        key = "misses"
         old = cache.get(key, default=0)
         cache.set(key, old + 1)
 

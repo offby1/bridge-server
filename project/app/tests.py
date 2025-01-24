@@ -475,7 +475,12 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
 
     North, East, South, West = t.current_hand.players_by_direction.values()
 
-    assert {North.current_table, East.current_table, South.current_table, West.current_table} == {t}
+    assert {
+        North.current_table,
+        East.current_table,
+        South.current_table,
+        West.current_table,
+    } == {t}
 
     North.break_partnership()
     South.refresh_from_db()

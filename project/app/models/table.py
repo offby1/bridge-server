@@ -43,12 +43,22 @@ class TableManager(models.Manager):
     def get_nonfull(self):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
+    def create(self, *args, **kwargs) -> Table:
+        if "tournament" not in kwargs:
+            with transaction.atomic():
+                if (new_tournament := Tournament.objects.maybe_new_tournament()) is not None:
+                    kwargs["tournament"] = new_tournament
+                else:
+                    kwargs["tournament"] = Tournament.objects.filter(is_complete=False).first()
+        return super().create(*args, **kwargs)
+
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, desired_board_pk: int | None = None
     ) -> Table:
         try:
             with transaction.atomic():
                 t: Table = self.create()
+                logger.debug("Created %s, tournament %s", t, t.tournament)
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                     modelSeat.objects.create(
                         direction=seat,
@@ -87,6 +97,8 @@ class Table(models.Model):
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+
     summary_for_this_viewer: tuple[str, str | int]
 
     @property
@@ -106,17 +118,6 @@ class Table(models.Model):
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None
         return rv
-
-    def my_tournament(self) -> Tournament | None:
-        all_my_tournaments = Tournament.objects.filter(
-            board__in=Board.objects.filter(hand__in=self.hand_set.all())
-        ).distinct()
-        assert (
-            all_my_tournaments.count() < 2
-        ), f"Oy -- {self} is in more than one tournament {all_my_tournaments.all()}"
-        if all_my_tournaments.exists():
-            return all_my_tournaments.first()
-        return None
 
     def current_hand_pk(self) -> int:
         return self.current_hand.pk
@@ -178,13 +179,16 @@ class Table(models.Model):
         for seat in seats:
             expression |= models.Q(pk__in=seat.player.boards_played.all())
 
-        unplayed_boards = Board.objects.exclude(expression)
+        assert self.tournament is not None
+        unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
     def next_board(self, *, desired_board_pk: int | None = None) -> Board:
         with transaction.atomic():
             logger.debug(
-                "%s: someone wants the next board (desired_board_pk is %s)", self, desired_board_pk
+                "%s: someone wants the next board (desired_board_pk is %s)",
+                self,
+                desired_board_pk,
             )
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; no next board for you"
@@ -197,12 +201,7 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                my_tournaments = Tournament.objects.filter(
-                    id__in=Hand.objects.filter(table=self).values_list(
-                        "board__tournament", flat=True
-                    )
-                )
-                msg = f"Tournaments {[str(t) for t in my_tournaments]} are over; no more boards"
+                msg = f"{self.tournament} is over; no more boards"
                 logger.warning("%s", msg)
                 raise TournamentIsOverError(msg)
 
@@ -256,7 +255,7 @@ class Table(models.Model):
         return all(p is not None for p in self.players_by_direction.values())
 
     def __str__(self):
-        return f"Table {self.id}"
+        return f"Table {self.id} in {self.tournament}"
 
 
 @admin.register(Table)
