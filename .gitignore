@@ -1,4 +1,4 @@
-/api-bot/.venv/
+/[0-9]*.sql
 /project/.coverage
 /project/db.sqlite3
 /project/htmlcov/
