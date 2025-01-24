@@ -44,17 +44,16 @@ class TableManager(models.Manager):
         return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
 
     def create(self, *args, **kwargs) -> Table:
-        requested_tournament = kwargs.get("tournament")
-        if requested_tournament is not None:
-            kwargs["tournament"] = requested_tournament
-        else:
-            new_tournament = Tournament.objects.maybe_new_tournament()
-            if new_tournament is None:
-                kwargs["tournament"] = Tournament.objects.filter(
-                    is_complete=False
-                ).first()
-            else:
-                kwargs["tournament"] = new_tournament
+        if "tournament" not in kwargs:
+            with transaction.atomic():
+                if (
+                    new_tournament := Tournament.objects.maybe_new_tournament()
+                ) is not None:
+                    kwargs["tournament"] = new_tournament
+                else:
+                    kwargs["tournament"] = Tournament.objects.filter(
+                        is_complete=False
+                    ).first()
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
