@@ -290,6 +290,7 @@ def _four_hands_context_for_hand(
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "hand": hand,
+        "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(
