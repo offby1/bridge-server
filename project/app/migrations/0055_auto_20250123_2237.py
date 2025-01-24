@@ -4,12 +4,18 @@ from django.db import migrations
 
 
 def backfill_table_tournaments(apps, schema_editor):
+    Board = apps.get_model("app", "Board")
+    Hand = apps.get_model("app", "Hand")
     Table = apps.get_model("app", "Table")
     Tournament = apps.get_model("app", "Tournament")
 
     for t in Table.objects.all():
         if t.tournament is None:
-            t.tournament = Tournament.objects.maybe_new_tournament()
+            hands = Hand.objects.filter(table=t)
+            boards = Board.objects.filter(hand__in=hands)
+            tournaments = boards.values_list("tournament", flat=True).distinct()
+            assert len(tournaments) == 1, f"Hmm, {t=} hasn't exactly one tournament: {tournaments=}"
+            t.tournament = Tournament.objects.get(pk=tournaments[0])
             t.save()
 
 
@@ -19,4 +25,6 @@ class Migration(migrations.Migration):
         ("app", "0054_table_tournament"),
     ]
 
-    operations = []
+    operations = [
+        migrations.RunPython(backfill_table_tournaments, reverse_code=migrations.RunPython.noop),
+    ]

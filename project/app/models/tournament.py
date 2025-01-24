@@ -68,7 +68,7 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     def __str__(self) -> str:
-        return f"tournament {self.pk}"
+        return f"tournament {self.pk}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
 
     def hands(self) -> models.QuerySet:
         from app.models import Hand

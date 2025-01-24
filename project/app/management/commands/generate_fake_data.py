@@ -39,9 +39,17 @@ class Command(BaseCommand):
         fake = Faker()
         Faker.seed(0)
 
+        # Ensure any existing tournaments get completed, if they need to be.  This is essentially part of a data
+        # migration, and only needs to run once, since tournaments automatically complete themselves when the last card
+        # is played.  But I have got tournaments in the db that predate that code, so they need this extra pass.
+        for t in Tournament.objects.all():
+            t.maybe_complete()
+
         new_players = []
 
-        with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
+        with tqdm.tqdm(
+            desc="players", total=options["players"], unit="p"
+        ) as progress_bar:
             while Player.objects.count() < options["players"]:
                 # Make sure we always have "bob", because his name is easy to type, and to remember :-)
                 if not Player.objects.exists():
@@ -82,7 +90,9 @@ class Command(BaseCommand):
             )
 
         # Don't ask me how but I've seen tables without hands
-        last_table: Table | None = Table.objects.exclude(hand__isnull=True).order_by("-pk").first()
+        last_table: Table | None = (
+            Table.objects.exclude(hand__isnull=True).order_by("-pk").first()
+        )
         assert last_table is not None
 
         # Now create a couple of unseated players.
@@ -93,4 +103,6 @@ class Command(BaseCommand):
             player, created = self.maybe_create_player(fake.unique.first_name().lower())
             self.stdout.write(f"{player} {created=}")
 
-        self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
+        self.stdout.write(
+            f"{Player.objects.count()} players at {Table.objects.count()} tables."
+        )
