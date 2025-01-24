@@ -102,8 +102,7 @@ class Table(models.Model):
         db_comment="Time, in seconds, that the bot will wait before making a call or play",
     )  # type: ignore
 
-    # TODO -- data migration, and then nix the "null=True"
-    tournament = models.ForeignKey(Tournament, null=True, on_delete=models.CASCADE)
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
     summary_for_this_viewer: tuple[str, str | int]
 

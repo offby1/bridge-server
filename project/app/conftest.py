@@ -3,7 +3,7 @@ from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Table, Tournament
+from .models import Hand, Play, Player, Table
 
 
 @pytest.fixture(autouse=True)
@@ -43,25 +43,10 @@ def _taint_it_all() -> None:
             seat.player.taint_board(board_pk=h.board.pk)
 
 
-# TODO -- turn this into a data migration
-def _ensure_tables_have_tournaments() -> None:
-    tournament = Tournament.objects.first()
-    assert tournament is not None
-
-    if tournament.is_complete:
-        tournament = Tournament.objects.maybe_new_tournament()
-
-    for t in Table.objects.all():
-        if t.tournament is None:
-            t.tournament = tournament
-            t.save()
-
-
 @pytest.fixture
 def usual_setup(db: None) -> None:
     call_command("loaddata", "usual_setup")
     _taint_it_all()
-    _ensure_tables_have_tournaments()
 
 
 @pytest.fixture
@@ -77,14 +62,12 @@ def nobody_seated(db: None) -> None:
         "app.table",
     )
     Player.objects.all().update(currently_seated=False)
-    _ensure_tables_have_tournaments()
 
 
 @pytest.fixture
 def played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "played_almost_to_completion")
     _taint_it_all()
-    _ensure_tables_have_tournaments()
 
 
 @pytest.fixture
