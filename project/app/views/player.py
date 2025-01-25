@@ -128,9 +128,13 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
-def player_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
+    assert request.user.player is not None
     who_clicked = request.user.player
-    assert who_clicked is not None
+
+    if pk is None:
+        pk = request.user.player.pk
+
     subject: Player = get_object_or_404(Player, pk=pk)
 
     common_context = {

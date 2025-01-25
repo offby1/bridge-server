@@ -45,6 +45,7 @@ urlpatterns = [
     ),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/<hand_pk>/", table.details.play_post_view, name="play-post"),
+    path("player/", player.player_detail_view, name="player"),
     path("player/<int:pk>/", player.player_detail_view, name="player"),
     path(
         "player/<int:pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"
