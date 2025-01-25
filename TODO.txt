@@ -1,6 +1,10 @@
 IN PROGRESS:
 
 STILL TODO:
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+
+* Along with the above, ensure there are always enough unpartnered bot players to accomodate a newcomer.
+
 * MOVEMENTS
 
   I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
