@@ -21,7 +21,12 @@ class Seat(models.Model):
         choices=SEAT_CHOICES.items(),
     )
 
-    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
+    player = models.ForeignKey["Player"](
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="historical_seat_set",
+        db_comment="this is None *only* if this player has *never* been seated.  Use `Player.currently_seated` for most things.",
+    )  # type: ignore [call-overload]
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
     def __str__(self):

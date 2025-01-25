@@ -287,13 +287,13 @@ def player_list_view(request):
         qs = qs.filter(partner__isnull=lfl_filter)
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
-        qs = qs.filter(seat__isnull=not seated_filter)
+        qs = qs.filter(currently_seated=seated_filter)
 
     filtered_count = qs.count()
     if player is not None and player.partner is not None:
         qs = qs.annotate(
             maybe_a_link=(
-                Q(seat__isnull=True)
+                Q(currently_seated=False)
                 & Q(partner__isnull=False)
                 & ~Q(pk=player.pk)
                 & ~Q(pk=player.partner.pk)

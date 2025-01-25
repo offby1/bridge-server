@@ -63,10 +63,9 @@ class PlayerAdmin(admin.ModelAdmin):
 
 class Player(models.Model):
     if TYPE_CHECKING:
-        seat_set = RelatedManager["Seat"]()
+        historical_seat_set = RelatedManager["Seat"]()
 
     display_name: str  # set by a view, from name_dir
-    seat: Seat
     objects = PlayerManager()
 
     user = models.OneToOneField(
@@ -334,7 +333,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         qs = Hand.objects.filter(
             board=board,
             table__in=Table.objects.filter(
-                pk__in=self.seat_set.values_list("table_id", flat=True).all()
+                pk__in=self.historical_seat_set.values_list("table_id", flat=True).all()
             ).all(),
         ).all()
         return qs.first()

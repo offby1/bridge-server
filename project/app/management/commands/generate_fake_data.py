@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
         # Now create a couple of unseated players.
         while True:
-            count = Player.objects.filter(seat__isnull=True).count()
+            count = Player.objects.filter(currently_seated=False).count()
             if count >= 3:
                 break
             player, created = self.maybe_create_player(fake.unique.first_name().lower())
