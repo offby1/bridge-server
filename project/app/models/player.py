@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import bridge.auction
 import bridge.card
@@ -20,12 +20,14 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from .board import Board
 from .message import Message
 from .seat import Seat
+from .types import PK_from_str
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
     from .hand import Hand
     from .table import Table
+    from .types import PK
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +100,7 @@ class Player(models.Model):
 
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
-    def taint_board(self, *, board_pk: int) -> None:
+    def taint_board(self, *, board_pk: PK) -> None:
         # TODO -- it seems wrong that I have to fetch the entire Board object, just to store its primary key.
         board = Board.objects.filter(pk=board_pk).first()
         if board is not None:
@@ -109,11 +111,11 @@ class Player(models.Model):
         return f"system:player:{self.pk}"
 
     @staticmethod
-    def player_pk_from_event_channel_name(cn: str) -> Any:
+    def player_pk_from_event_channel_name(cn: str) -> PK | None:
         pieces = cn.split("system:player:")
         if len(pieces) != 2:
             return None
-        return int(pieces[1])
+        return PK_from_str(pieces[1])
 
     # https://cr.yp.to/daemontools/svc.html
     def control_bot(self) -> None:
@@ -289,7 +291,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
-    def current_table_pk(self) -> int | None:
+    def current_table_pk(self) -> PK | None:
         ct = self.current_table
         if ct is None:
             return None

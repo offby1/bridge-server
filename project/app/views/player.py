@@ -18,6 +18,7 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
+from app.models.types import PK
 
 from .misc import AuthedHttpRequest, logged_in_as_player_required
 
@@ -127,7 +128,7 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
-def player_detail_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+def player_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     who_clicked = request.user.player
     assert who_clicked is not None
     subject: Player = get_object_or_404(Player, pk=pk)
@@ -180,7 +181,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
 
 @require_http_methods(["GET"])
 @logged_in_as_player_required()
-def partnership_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+def partnership_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     subject: Player = get_object_or_404(Player, pk=pk)
     context = partnership_context(subject=subject, as_viewed_by=request.user.player)
     return TemplateResponse(
@@ -192,7 +193,7 @@ def partnership_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpResponse:
+def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
@@ -219,7 +220,7 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: str) -> HttpRe
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def bot_checkbox_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
 
     try:

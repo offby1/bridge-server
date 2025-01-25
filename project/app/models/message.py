@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.html import format_html
 
+from .types import PK, PK_from_str
+
 logger = logging.getLogger(__name__)
 
 
@@ -74,7 +76,7 @@ class Message(models.Model):
         )
 
     @staticmethod
-    def channel_name_from_player_pks(pk1: int, pk2: int) -> str:
+    def channel_name_from_player_pks(pk1: PK, pk2: PK) -> str:
         return "players:" + "_".join([str(pk) for pk in sorted([pk1, pk2])])
 
     @staticmethod
@@ -82,14 +84,14 @@ class Message(models.Model):
         return Message.channel_name_from_player_pks(p1.pk, p2.pk)
 
     @staticmethod
-    def player_pks_from_channel_name(channel_name: str) -> set[int] | None:
+    def player_pks_from_channel_name(channel_name: str) -> set[PK] | None:
         if ":" not in channel_name:
             return None
         if "_" not in channel_name:
             return None
         try:
             _, pk_underscore_string = channel_name.split(":")
-            return {int(p) for p in pk_underscore_string.split("_")}
+            return {PK_from_str(p) for p in pk_underscore_string.split("_")}
         except Exception:
             logger.exception(channel_name)
             return None

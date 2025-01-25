@@ -5,9 +5,10 @@ from django.shortcuts import get_object_or_404
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
 
 from app.models import Table
+from app.models.types import PK
 
 
-def table_json_view(request: HttpRequest, pk: int) -> HttpResponse:
+def table_json_view(request: HttpRequest, pk: PK) -> HttpResponse:
     table = get_object_or_404(Table, pk=pk)
 
     payload = {

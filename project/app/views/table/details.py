@@ -23,6 +23,7 @@ from django.utils.html import escape
 from django.views.decorators.http import require_http_methods
 
 import app.models
+from app.models.types import PK
 from app.models.utils import assert_type
 from app.views.misc import (
     AuthedHttpRequest,
@@ -64,7 +65,7 @@ def _auction_channel_for_table(table):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     player = request.user.player
@@ -97,7 +98,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     who_clicked = request.user.player
@@ -161,15 +162,14 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     assert request.user.player is not None
     logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
 
-    # TODO -- clean this shit up.  Half the time I treat primary keys as strings; half the time I treat them as integers.
-    if str(request.user.player.current_table_pk()) != str(pk):
-        msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=!s} != {pk=!s})"
+    if request.user.player.current_table_pk() != pk:
+        msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
         logger.warning("%s", msg)
         return HttpResponseForbidden(msg)
 
@@ -200,7 +200,7 @@ def new_board_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 @logged_in_as_player_required()
 def set_table_tempo_view(
     request: AuthedHttpRequest,
-    table_pk: str,
+    table_pk: PK,
 ) -> HttpResponse:
     logger.debug("%s %s", table_pk, request.POST)
     if settings.DEPLOYMENT_ENVIRONMENT == "production":

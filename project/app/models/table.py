@@ -19,6 +19,7 @@ from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
 from app.models.tournament import Tournament
+from app.models.types import PK
 
 if TYPE_CHECKING:
     import bridge.table
@@ -53,7 +54,7 @@ class TableManager(models.Manager):
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
-        self, p1: Player, p2: Player, desired_board_pk: int | None = None
+        self, p1: Player, p2: Player, desired_board_pk: PK | None = None
     ) -> Table:
         try:
             with transaction.atomic():
@@ -119,7 +120,7 @@ class Table(models.Model):
         assert rv is not None
         return rv
 
-    def current_hand_pk(self) -> int:
+    def current_hand_pk(self) -> PK:
         return self.current_hand.pk
 
     @property
@@ -183,7 +184,7 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
-    def next_board(self, *, desired_board_pk: int | None = None) -> Board:
+    def next_board(self, *, desired_board_pk: PK | None = None) -> Board:
         with transaction.atomic():
             logger.debug(
                 "%s: someone wants the next board (desired_board_pk is %s)",

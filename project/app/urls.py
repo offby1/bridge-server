@@ -20,17 +20,17 @@ app_name = "app"
 urlpatterns = [
     path("", home_view, name="home"),
     path("board/", board_list_view, name="board-list"),
-    path("board/<pk>/", board_archive_view, name="board-archive"),
+    path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
-    path("hand/<pk>/", hand_detail_view, name="hand-detail"),
+    path("hand/<int:pk>/", hand_detail_view, name="hand-detail"),
     path(
-        "hand/<pk>/updates/<int:calls>/<int:plays>/",
+        "hand/<int:pk>/updates/<int:calls>/<int:plays>/",
         hand_xscript_updates_view,
         name="hand-xscript-updates",
     ),
-    path("serialized/hand/<pk>/", hand_serialized_view, name="serialized-hand-detail"),
-    path("hand/<pk>/archive/", hand_archive_view, name="hand-archive"),
+    path("serialized/hand/<int:pk>/", hand_serialized_view, name="serialized-hand-detail"),
+    path("hand/<int:pk>/archive/", hand_archive_view, name="hand-archive"),
     path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path(
         "hand/<hand_pk>/bidding-box",
@@ -45,9 +45,11 @@ urlpatterns = [
     ),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/<hand_pk>/", table.details.play_post_view, name="play-post"),
-    path("player/<pk>/", player.player_detail_view, name="player"),
-    path("player/<pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"),
-    path("player/<pk>/partnership/", player.partnership_view, name="player_partnership"),
+    path("player/<int:pk>/", player.player_detail_view, name="player"),
+    path(
+        "player/<int:pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"
+    ),
+    path("player/<int:pk>/partnership/", player.partnership_view, name="player_partnership"),
     path(
         "player-by-name-or-pk/<str:name_or_pk>/",
         player.by_name_or_pk_view,
@@ -62,9 +64,9 @@ urlpatterns = [
     ),
     path("signup/", signup_view, name="signup"),
     path("table/", table.table_list_view, name="table-list"),
-    path("table/<pk>/", table.table_json_view, name="table-json"),
+    path("table/<int:pk>/", table.table_json_view, name="table-json"),
     path(
-        "table/<pk>/new-board-plz/",
+        "table/<int:pk>/new-board-plz/",
         table.details.new_board_view,
         name="new-board-plz",
     ),

@@ -29,6 +29,7 @@ from . import Board
 from .player import Player
 from .seat import Seat
 from .tournament import Tournament
+from .types import PK, PK_from_str
 from .utils import assert_type
 
 if TYPE_CHECKING:
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 
     from django.db.models.manager import RelatedManager
 
-    from . import Player, Seat, Table  # noqa
+    from . import Table
 
 logger = logging.getLogger(__name__)
 
@@ -194,11 +195,11 @@ class Hand(models.Model):
         return f"hand:{self.pk}"
 
     @staticmethod
-    def hand_pk_from_event_channel_name(cn: str) -> Any:
+    def hand_pk_from_event_channel_name(cn: str) -> PK | None:
         pieces = cn.split("hand:")
         if len(pieces) != 2:
             return None
-        return int(pieces[1])
+        return PK_from_str(pieces[1])
 
     def players(self) -> models.QuerySet:
         return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
@@ -793,7 +794,7 @@ class Call(models.Model):
     objects = CallManager()
 
     @property
-    def seat_pk(self) -> int | None:
+    def seat_pk(self) -> PK | None:
         for pc in self.hand.get_xscript().auction.player_calls:
             if pc.call.serialize() == self.serialized:
                 return self.hand.table.seats.get(direction=pc.player.seat.value).pk
@@ -857,7 +858,7 @@ class Play(models.Model):
         ]
 
     @property
-    def seat_pk(self) -> int | None:
+    def seat_pk(self) -> PK | None:
         for t in self.hand.get_xscript().tricks:
             for p in t.plays:
                 if p.card.serialize() == self.serialized:

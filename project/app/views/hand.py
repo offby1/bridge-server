@@ -24,6 +24,7 @@ from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
 
 import app.models
+from app.models.types import PK
 from app.models.utils import assert_type
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
@@ -300,7 +301,7 @@ def _four_hands_context_for_hand(
 
 
 @logged_in_as_player_required()
-def auction_partial_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+def auction_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
     context = _auction_context_for_hand(hand)
 
@@ -377,7 +378,7 @@ def bidding_box_buttons(
 
 
 @logged_in_as_player_required()
-def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResponse:
+def bidding_box_partial_view(request: HttpRequest, hand_pk: PK) -> TemplateResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     context = _bidding_box_context_for_hand(request, hand)
@@ -390,7 +391,7 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: str) -> TemplateResp
 
 
 @logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> TemplateResponse:
+def four_hands_partial_view(request: AuthedHttpRequest, table_pk: PK) -> TemplateResponse:
     table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
     context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
 
@@ -404,7 +405,7 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: str) -> Templa
 def _maybe_redirect_or_error(
     *,
     hand_is_complete: bool,
-    hand_pk: int,
+    hand_pk: PK,
     player_visibility: app.models.Board.PlayerVisibility,
     request_viewname: str,
 ) -> HttpResponse | None:
@@ -438,7 +439,7 @@ def _maybe_redirect_or_error(
 
 
 @logged_in_as_player_required()
-def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
+def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     player = request.user.player
@@ -501,7 +502,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: int) -> HttpResponse:
 
 
 @logged_in_as_player_required()
-def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     player = request.user.player
@@ -527,7 +528,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
 
 
 @logged_in_as_player_required(redirect=False)
-def hand_serialized_view(request: AuthedHttpRequest, pk: int) -> HttpResponse:
+def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     player = request.user.player
@@ -588,7 +589,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 
 
 @logged_in_as_player_required(redirect=False)
-def hand_xscript_updates_view(request, pk: int, calls: int, plays: int) -> HttpResponse:
+def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     player = request.user.player
@@ -603,7 +604,7 @@ def hand_xscript_updates_view(request, pk: int, calls: int, plays: int) -> HttpR
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: str) -> HttpResponse:
+def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     if settings.DEPLOYMENT_ENVIRONMENT == "production":
         return HttpResponseNotFound("Geez I dunno what you're talking about")
 

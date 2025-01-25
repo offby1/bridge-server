@@ -8,10 +8,11 @@ from django.template.response import TemplateResponse
 
 import app.models
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+from app.models.types import PK
 
 
 @logged_in_as_player_required()
-def board_archive_view(request: AuthedHttpRequest, pk: int) -> TemplateResponse:
+def board_archive_view(request: AuthedHttpRequest, pk: PK) -> TemplateResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
     player = request.user.player
     assert player is not None
