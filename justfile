@@ -192,9 +192,17 @@ graph: migrate
 test *options: makemigrations mypy
     set -euxo pipefail
     cd project
-    pytest_exe=$(poetry env info --path)/bin/pytest
-    echo "pass --profile-svg" to profile code during tests!
-    poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
+
+    case "${PYINSTRUMENT:-}" in
+    t*)
+      pyinstrument_exe=$(poetry env info --path)/bin/pyinstrument
+      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pyinstrument_exe} -m pytest --create-db {{ options }}
+    ;;
+    *)
+      pytest_exe=$(poetry env info --path)/bin/pytest
+      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
+    ;;
+    esac
 
 # Display coverage from a test run
 [group('bs')]
