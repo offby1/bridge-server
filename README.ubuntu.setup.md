@@ -4,8 +4,11 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what (I can reme
 
 ```shell
 # apt update
-# apt install htop docker.io
-# adduser ubuntu # annoyingly interactive.  Be sure to use a secure password here; see below.
+# apt install -y htop docker.io
+# # edit /etc/ssh/sshd_config
+# # change `#PasswordAuthentication yes` to `PasswordAuthentication no`
+# /etc/init.d/ssh restart
+# adduser ubuntu # annoyingly interactive.
 # usermod --append --groups sudo,docker ubuntu
 # su - ubuntu
 $ mkdir -vp ~/.ssh
@@ -21,7 +24,19 @@ $ tailscale serve --bg 9000
   - update `~/.ssh/config` so that I can just "ssh hetz"
   - `docker context create remote --docker "host=ssh://ubuntu@hetz"`
 
-- I haven't yet confirmed this, but I am pretty sure that a fresh Hetzner box allows ssh access via password (as opposed to restricting ssh access to ssh public key only).  Thus it's crucial that you use a decent password for the `ubuntu` user, and ideally, restrict ssh access to just public key, lest the automated Bad Guys p0wn your box.  Ask me how I know :-)
+- I haven't yet confirmed this, but I am pretty sure that a fresh Hetzner box allows ssh access via password (as opposed to restricting ssh access to ssh public key only).  Thus it's crucial that you tweak /etc/ssh/sshd_config, lest the automated Bad Guys p0wn your box.  Ask me how I know :-)
+
+  You could replace the entire /etc/ssh/sshd_config file, which is mostly comments and blank lines, with this
+  ```
+  Include /etc/ssh/sshd_config.d/*.conf
+  PasswordAuthentication no
+  KbdInteractiveAuthentication no
+  UsePAM yes
+  X11Forwarding yes
+  PrintMotd no
+  AcceptEnv LANG LC_*
+  Subsystem sftp    /usr/lib/openssh/sftp-server
+  ```
 
 - Swap is handy!  It protects against the notorious OOM killer.  Set it up like this
 
