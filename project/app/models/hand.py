@@ -518,7 +518,7 @@ class Hand(models.Model):
     def player_names(self) -> str:
         return ", ".join([p.name for p in self.players_by_direction.values()])
 
-    @property
+    @cached_property
     def players_by_direction(self) -> dict[str, Player]:
         return {s.direction: s.player for s in self.table.seats}
 
