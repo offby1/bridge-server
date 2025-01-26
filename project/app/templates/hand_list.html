@@ -46,7 +46,7 @@
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names }}</a>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names_string }}</a>
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>

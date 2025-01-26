@@ -516,7 +516,7 @@ class Hand(models.Model):
         return Player.objects.get_by_name(modelPlayer.name)
 
     @property
-    def player_names(self) -> str:
+    def player_names_string(self) -> str:
         return ", ".join([p.name for p in self.players_by_direction.values()])
 
     @cached_property
@@ -687,11 +687,11 @@ class Hand(models.Model):
         if as_viewed_by is None:
             return "Remind me -- who are you, again?", "-"
 
-        if (
-            self.board.what_can_they_see(player=as_viewed_by)
-            != self.board.PlayerVisibility.everything
-            and as_viewed_by.name not in self.player_names
-        ):
+        if self.board.what_can_they_see(
+            player=as_viewed_by
+        ) != self.board.PlayerVisibility.everything and as_viewed_by.name not in {
+            p.name for p in self.players_by_direction.values()
+        }:
             return (
                 f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
                 "-",
