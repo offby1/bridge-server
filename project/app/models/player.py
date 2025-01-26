@@ -410,7 +410,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        if self.allow_bot_to_play_for_me:
+        if self.synthetic:
             return f"🤖🤖{self.name}🤖🤖"
         return self.name
 

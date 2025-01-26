@@ -45,19 +45,19 @@ def j_northam(db, everybodys_password):
 
 # You'd think the code-under-test would be simple enough to not warrant its own test.
 # And yet I managed to screw it up.
-def test_bottiness_text(usual_setup) -> None:
+def test_synthetic_player_text(usual_setup) -> None:
     t = Table.objects.first()
     assert t is not None
     h = t.current_hand
     p1 = Player.objects.first()
     assert p1 is not None
 
-    p1.toggle_bot()
-    assert p1.allow_bot_to_play_for_me is True
+    p1.synthetic = True
+    p1.save()
     assert "🤖" in p1.name_dir(hand=h)
 
-    p1.toggle_bot()
-    assert p1.allow_bot_to_play_for_me is False
+    p1.synthetic = False
+    p1.save()
     assert "🤖" not in p1.name_dir(hand=h)
 
 

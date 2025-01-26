@@ -14,6 +14,7 @@ from .common import SEAT_CHOICES
 from .hand import AuctionError, Call, Hand, HandError, Play
 from .message import Message
 from .player import (
+    BotPlayer,
     PartnerException,
     Player,
     PlayerException,
@@ -24,6 +25,7 @@ from .tournament import Tournament
 
 __all__ = [
     "Board",
+    "BotPlayer",
     "AuctionError",
     "Call",
     "Hand",

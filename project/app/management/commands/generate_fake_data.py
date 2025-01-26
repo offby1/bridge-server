@@ -5,9 +5,11 @@ import random
 import more_itertools
 import tqdm
 from app.models import Player, Table, Tournament
+from app.models.player import TooManyBots
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from faker import Faker
 
 
@@ -26,12 +28,21 @@ class Command(BaseCommand):
             type=int,
         )
 
-    def maybe_create_player(self, username: str) -> tuple[Player, bool]:
+    def maybe_create_synthetic_player(self, username: str) -> tuple[Player | None, bool]:
         user, _ = User.objects.get_or_create(
             username=username,
             defaults={"password": self.everybodys_password},
         )
-        return Player.objects.get_or_create(user=user, kwargs=dict(synthetic=True))
+
+        player, created = Player.objects.get_or_create(user=user, defaults=dict(synthetic=True))
+        try:
+            player.toggle_bot(True)
+        except TooManyBots:
+            player.delete()
+            player = None
+            created = False
+
+        return player, created
 
     def handle(self, *args, **options) -> None:
         fake = Faker()
@@ -47,7 +58,10 @@ class Command(BaseCommand):
                 else:
                     username = fake.unique.first_name().lower()
 
-                player, created = self.maybe_create_player(username)
+                player, created = self.maybe_create_synthetic_player(username)
+                if not player:
+                    self.stderr.write("Guess we have too many bots already")
+                    break
                 if created:
                     new_synthetic_players.append(player)
 
@@ -56,6 +70,8 @@ class Command(BaseCommand):
         # Now partner 'em up
         pairs = []
         for player_pair in more_itertools.chunked(new_synthetic_players, 2):
+            if len(player_pair) < 2:
+                break
             player_pair[0].partner_with(player_pair[1])
             pairs.append((player_pair[0], player_pair[1]))
 
@@ -88,8 +104,10 @@ class Command(BaseCommand):
             count = Player.objects.filter(synthetic=True).filter(currently_seated=False).count()
             if count >= 3:
                 break
-            player, created = self.maybe_create_player(fake.unique.first_name().lower())
+            player, created = self.maybe_create_synthetic_player(fake.unique.first_name().lower())
             self.stdout.write(f"{player} {created=}")
+            if player is None:
+                break
 
         self.stdout.write(
             f"{Player.objects.filter(synthetic=True).count()} synthetic players at {Table.objects.count()} tables."

@@ -67,8 +67,8 @@ def _button(*, page_subject, action):
 
 def _find_swinging_singles_link():
     return format_html(
-        """<a href="{}?lookin_for_love=True">Find swinging singles in your area.</a>""",
-        reverse("app:players"),
+        """<a href="{}">Find swinging singles in your area.</a>""",
+        reverse("app:players") + "?lookin_for_love=True&exclude_me=True",
     )
 
 
