@@ -322,7 +322,7 @@ def player_list_view(request):
         )
 
     total_count = qs.count()
-    paginator = Paginator(qs, 10)
+    paginator = Paginator(qs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
