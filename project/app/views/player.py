@@ -297,8 +297,6 @@ def player_list_view(request):
     seated = request.GET.get("seated")
     exclude_me = request.GET.get("exclude_me")
 
-    template_name = "player_list.html"
-
     qs = Player.objects.all()
 
     player = getattr(request.user, "player", None)
@@ -333,4 +331,4 @@ def player_list_view(request):
         "page_obj": page_obj,
     }
 
-    return render(request, template_name, context)
+    return render(request, "player_list.html", context)
