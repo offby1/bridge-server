@@ -1,19 +1,20 @@
 {% load fastdev %}
 {% if show_auction_history %}
     <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
-        <table class="table">
-            <th>
+        <table class="table caption-top">
+            <caption style="font-size: 2em">Auction</caption>
+            <thead>
                 <tr>
                     {% for direction, player in history %}
-                        <td {{ player.style|safe }}>
+                        <th {{ player.style|safe }}>
                             <i>{{ direction }}</i>
                             <br>
                             {{ player.player.name }}
-                        </td>
+                        </th>
                     {% endfor %}
                 </tr>
-            </th>
-            <tbody>
+            </thead>
+            <tbody class="table-group-divider">
                 {% for row in hand.auction.fancy_HTML_display %}
                     <tr>
                         {% for call in row %}

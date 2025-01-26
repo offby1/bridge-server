@@ -4,27 +4,29 @@
 {% endblock title %}
 {% block content %}
     {% block table_list %}
-        <h2>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
-        <table class="table">
+        <table class="table caption-top">
             {# yep, it's a table of tables #}
-            <th>
+            <caption>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</caption>
+            <thead>
                 <tr>
-                    <td>Table #</td>
-                    <td>Current Status</td>
-                    <td>Number of Boards played</td>
+                    <th>Table #</th>
+                    <th>Current Status</th>
+                    <th>Number of Boards played</th>
                 </tr>
-            </th>
-            {% for table in page_obj %}
-                <tr>
-                    <td>{{ table.pk }}</td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
-                            Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.summary_for_this_viewer }}
-                        </a>
-                    </td>
-                    <td>{{ table.played_boards.count }}</td>
-                </tr>
-            {% endfor %}
+            </thead>
+            <tbody class="table-group-divider">
+                {% for table in page_obj %}
+                    <tr>
+                        <th>{{ table.pk }}</th>
+                        <td>
+                            <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
+                                Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.summary_for_this_viewer }}
+                            </a>
+                        </td>
+                        <td>{{ table.played_boards.count }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
         {% include "pagination-controls.html" %}
     {% endblock table_list %}

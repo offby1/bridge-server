@@ -4,15 +4,18 @@
 {% endblock title %}
 {% block content %}
     {% block tournament_list %}
-        <h2>Tournaments</h2>
-        <table class="table">
-            {% for tournament in tournament_list %}
-                <tr>
-                    <td>
-                        <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
-                    </td>
-                </tr>
-            {% endfor %}
+        <table class="table caption-top">
+            <caption>Tournaments</caption>
+            <tbody>
+                {% for tournament in tournament_list %}
+                    <tr>
+                        <th>{{ tournament.pk }}</th>
+                        <td>
+                            <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
     {% endblock tournament_list %}
 {% endblock content %}

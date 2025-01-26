@@ -4,24 +4,22 @@
 {% endblock title %}
 {% block content %}
     <div>
-        <h1>Review of {{ board }}</h1>
-    </div>
-    <div>
-        <table class="table">
-            <th>
+        <table class="table caption-top">
+            <caption>Review of {{ board }}</caption>
+            <thead>
                 <tr>
-                    <td>Hand</td>
-                    <td>Table</td>
-                    <td>Summary</td>
-                    <td>Your Side's Score</td>
+                    <th>Hand</th>
+                    <th>Table</th>
+                    <th>Summary</th>
+                    <th>Your Side's Score</th>
                 </tr>
-            </th>
-            <tbody>
+            </thead>
+            <tbody class="table-group-divider">
                 {% for h in annotated_hands %}
                     <tr {% if h.pk == my_hand_pk %}class="table-warning"{% endif %}>
-                        <td>
+                        <th>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.pk }}</a>
-                        </td>
+                        </th>
                         <td>
                             <a href="{% url 'app:hand-archive' h.pk %}">{{ h.table }}</a>
                         </td>

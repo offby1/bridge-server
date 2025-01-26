@@ -4,54 +4,56 @@
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
-        <h2>
-            Hands
-            {% if player %}played by {{ player.name }},{% endif %}
-            {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
-        </h2>
-        <table class="table">
-            <th>
+        <table class="table caption-top">
+            <caption>
+                Hands
+                {% if player %}played by {{ player.name }},{% endif %}
+                {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
+            </caption>
+            <thead>
                 <tr>
-                    <td>ID #</td>
-                    <td>Status</td>
-                    <td>Tournament</td>
-                    <td>Board</td>
-                    <td>Table</td>
-                    <td>players</td>
-                    <td>Summary</td>
+                    <th>ID #</th>
+                    <th>Status</th>
+                    <th>Tournament</th>
+                    <th>Board</th>
+                    <th>Table</th>
+                    <th>players</th>
+                    <th>Summary</th>
                 </tr>
-            </th>
-            {% for hand in page_obj %}
-                <tr>
-                    <td>{{ hand.pk }}</td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">
-                            {% if hand.is_complete %}
-                                ✔
-                            {% elif hand.is_abandoned %}
-                                ✘
-                            {% else %}
-                                …
-                            {% endif %}
-                        </a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.pk }}</a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.short_string }}</a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names }}</a>
-                    </td>
-                    <td>
-                        <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
-                    </td>
-                </tr>
-            {% endfor %}
+            </thead>
+            <tbody class="table-group-divider">
+                {% for hand in page_obj %}
+                    <tr>
+                        <th>{{ hand.pk }}</th>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">
+                                {% if hand.is_complete %}
+                                    ✔
+                                {% elif hand.is_abandoned %}
+                                    ✘
+                                {% else %}
+                                    …
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.pk }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.short_string }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
         {% include "pagination-controls.html" %}
     {% endblock hand_list %}

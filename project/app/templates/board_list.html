@@ -4,24 +4,26 @@
 {% endblock title %}
 {% block content %}
     {% block board_list %}
-        <h2>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</h2>
-        <table class="table">
-            <th>
+        <table class="table caption-top">
+            <caption>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</caption>
+            <thead>
                 <tr>
-                    <td>Tournament #</td>
-                    <td>Board #</td>
-                    <td>Summary</td>
+                    <th>Board #</th>
+                    <th>Tournament #</th>
+                    <th>Summary</th>
                 </tr>
-            </th>
-            {% for board in page_obj %}
-                <tr>
-                    <td>{{ board.tournament.pk }}</td>
-                    <td>{{ board.short_string }}</td>
-                    <td>
-                        <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
-                    </td>
-                </tr>
-            {% endfor %}
+            </thead>
+            <tbody class="table-group-divider">
+                {% for board in page_obj %}
+                    <tr>
+                        <th>{{ board.display_number }}</th>
+                        <td>{{ board.tournament.pk }}</td>
+                        <td>
+                            <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
         {% include "pagination-controls.html" %}
     {% endblock board_list %}

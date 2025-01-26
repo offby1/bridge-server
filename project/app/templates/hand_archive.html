@@ -23,23 +23,24 @@
     </div>
     <div>
         {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
-        <table class="table">
-            <th>
+        <table class="table caption-top">
+            <caption style="font-size: 2em">Play</caption>
+            <thead>
                 <tr>
-                    <td>Trick</td>
-                    <td>Lead</td>
-                    <td>2nd</td>
-                    <td>3rd</td>
-                    <td>4th</td>
+                    <th>Trick</th>
+                    <th>Lead</th>
+                    <th>2nd</th>
+                    <th>3rd</th>
+                    <th>4th</th>
                 </tr>
-            </th>
-            <tbody>
+            </thead>
+            <tbody class="table-group-divider">
                 {% for t in annotated_tricks %}
                     <tr>
-                        <td>{{ t.number }} {{ t.seat }}</td>
+                        <th>{{ t.number }} {{ t.seat }}</th>
                         {% for p in t.plays %}
                             <td>
-                                <div {% if p.wins_the_trick %}class="throb-div"{% endif %}>
+                                <div {% if p.wins_the_trick %}style="background-color: lightgreen;"{% endif %}>
                                     <span {% ifexists p.card.color %}style="color: {{ p.card.color }}"{% endifexists %}>{{ p.card }}</span>
                                 </div>
                             </td>

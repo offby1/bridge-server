@@ -6,8 +6,8 @@
 {% endblock title %}
 {% block content %}
     {% block player_list %}
-        <h2>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</h2>
-        <table id="player-list" class="table">
+        <table id="player-list" class="table caption-top">
+            <caption>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</caption>
             <thead>
                 <tr>
                     <th scope="col">Who</th>
@@ -16,10 +16,10 @@
                     <th scope="col">Let's All Make A Table Together</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="table-group-divider">
                 {% for player in page_obj %}
                     <tr style="border: 1px dotted">
-                        <td>{{ player|sedate_link:user }}</td>
+                        <th>{{ player|sedate_link:user }}</th>
                         <td>
                             {% if player.partner %}
                                 {{ player.partner|sedate_link:user }}
