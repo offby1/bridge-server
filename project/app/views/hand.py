@@ -48,7 +48,7 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
     }
 
 
-def _auction_history_context_for_hand(hand) -> dict[str, Any]:
+def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
     context = {}
     p_b_d_list = list(hand.players_by_direction.items())
     # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
@@ -302,7 +302,7 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
-        if this_seats_player.id == as_viewed_by.id:
+        if as_viewed_by is not None and this_seats_player.pk == as_viewed_by.pk:
             cards_by_direction_display["current_player"] = cards_by_direction_display[libSeat.name]
 
     xscript = hand.get_xscript()

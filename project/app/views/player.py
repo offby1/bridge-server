@@ -150,6 +150,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
     subject: Player = get_object_or_404(Player, pk=pk)
 
     if redirect_to_table and subject.currently_seated:
+        assert subject.current_table is not None
         return HttpResponseRedirect(
             reverse("app:hand-detail", kwargs={"pk": subject.current_table.current_hand.pk})
         )
