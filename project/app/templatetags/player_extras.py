@@ -1,5 +1,7 @@
 from django import template
+from django.contrib.auth.models import User
 from django.utils.html import format_html
+from app.models import Player
 
 register = template.Library()
 
@@ -11,7 +13,7 @@ def sedate_link(value, arg):
 register.filter("sedate_link", sedate_link)
 
 
-def styled_link(value, arg, style_attrs=None):
+def styled_link(value: Player, arg: User, style_attrs=None):
     if style_attrs is None:
         style_attrs = ["font-size: xx-large"]
     comment = ""
@@ -20,7 +22,7 @@ def styled_link(value, arg, style_attrs=None):
     del value
     viewer = arg
 
-    if subject == viewer:
+    if hasattr(viewer, "player") and subject.pk == viewer.player.pk:
         style_attrs.append("color:green")
         comment = " (that's you!)"
 

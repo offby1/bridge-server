@@ -27,7 +27,7 @@
         </button>
     </div>
     <div>
-        Chat Log 'twixt {{ user.player|styled_link:user.player }} and {{ chat_target|styled_link:user.player }}
+        Chat Log 'twixt {{ user.player|styled_link:user }} and {{ chat_target|styled_link:user }}
         <div id="chat-log"
              hx-ext="sse"
              hx-swap="beforeend scroll:bottom"
