@@ -8,6 +8,8 @@ from app.forms import SignupForm
 
 
 def home_view(request):
+    if hasattr(request.user, "player"):
+        return HttpResponseRedirect(reverse("app:player", kwargs={"pk": request.user.player.pk}))
     return render(request, "home.html")
 
 
