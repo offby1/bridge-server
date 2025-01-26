@@ -1,19 +1,8 @@
 # Why is hosting so hard?
 
-Yes, I got <https://teensy.info> working on my own, but it was a pain in the ass.  And yes, I could probably more or less duplicate what it does.  But surely there's something easier and more out-of-the box out there somewhere?
-
-In particular, I'm grumpy about getting an SSL/TLS certificate and rigging up the HTTP reverse proxy to use it.  Surely there are hosting providers that
-
-* make this easy
-* specialize in Django
-
-## Random ideas
-
-- It might be that, if my web server is based on Twisted (as this server indeed is), all I need is to put a few magic characters on the command line, and the web server will magically grab certificates for me?  https://txacme.readthedocs.io/en/stable/using.html
-
 - Now that I've gotten this reasonably containerized, maybe I should read about those "run your container" services -- pretty sure AWS and Azure have those.  E.g., in a perfect world, I'd sign up for the service, they'd give me some sort of credential and URL; I'd type "docker context mumble something credential URL", and then just "docker compose up" should push the containers onto their hosting and Bob's my uncle.
 
-  I dimly recall investigating, and finding that there are exactly no services like this.  But a simple Unix box with docker and ssh might be all I need (I can deploy to it with a remote docker context, and I'd need ssh for installing tailscale, and perhaps monitoring via e.g. htop)
+  I dimly recall investigating, and finding that there are exactly no services like this.  But a simple Unix box with docker and ssh seems to be all I need for now: I can deploy to it with a remote docker context.
 
 In the below, ✘ means "this sucks; no need to investigate further"
 
@@ -22,19 +11,11 @@ In the below, ✘ means "this sucks; no need to investigate further"
 [The obvious search](https://duckduckgo.com/?q=django+hosting).  As expected, most of the results look scammy.
 
 ### [Tailscale](https://login.tailscale.com/admin/machines)
-They don't *host*, but they do have a dead-easy [TLS-doing reverse proxy](https://tailscale.com/kb/1223/funnel#establishing-an-encrypted-proxy), which [I'm using now](https://teensy-info.tail571dc2.ts.net/) (and also [here](https://laptop.tail571dc2.ts.net/)).
-
-I'd feel a little better about their reverse proxy if they charged me money for using it.  The blurb about it says
-
-* it's in beta
-* > Traffic sent over a Funnel is subject to non-configurable bandwidth limits.
-
-They also say something like "funnel is meant for transient, off-the-cuff sharing", which is also not great, but ... it's been fine so far (I've been using it since Oct 30 2024).
-
-Something I read somewhere suggested that the reverse proxy is *not* doing crypto stuff, which is good -- that means it's not working as hard as I'd feared, and thus is likely to *keep* working :-)
+They don't *host*, but they do have a dead-easy [TLS-doing reverse proxy](https://tailscale.com/kb/1223/funnel#establishing-an-encrypted-proxy), which I'd been using before I figured out how to get the Caddy docker image working.
 
 ### [railway.app](https://railway.app/)
 Glanced at it; it clearly aims to make deployment easy.  No idea if it's got what I'd need, though; worth more investigation.
+
 ### ✘ digital ocean
 
 The signup process *looks* slick, but kept refusing to accept my SSH public key.  Finally I gave up and switched to "log in with a password" ... then found out that it had created *four* "droplets" and *four* postgres databases (which would charge me $80/month total) without telling me (i.e., my attempts to add my ssh public key might have succeeded even though the UI said they'd fail?). Overwhelmingly untrustworthy.  I had to spend a fair amount of time individually deleting the droplets and databases, and shutting down my account.
@@ -83,11 +64,6 @@ As mentioned by "boxed" on discord.  Looks interesting.
 ### [Render](https://docs.render.com/deploy-django)
 
 Mentions uvicorn, which *might* work for me.
-
-### Roll my own with [caddy](https://hub.docker.com/_/caddy)
-I otta be able to make a simple docker-compose that includes a caddy image, and a django image (and well ok maybe also a postgresql image if I feel like using that).
-
-<https://github.com/lucaslorentz/caddy-docker-proxy> looks promising; mentioned [here](https://www.reddit.com/r/selfhosted/comments/1844zlx/questions_about_caddy_as_an_alternative_to/)
 
 ### [Traefik](https://doc.traefik.io/traefik/https/overview/)
 I think this is a reverse-proxy-and-lets-encrypt-client rolled into one.  I doubt they offer hosting.

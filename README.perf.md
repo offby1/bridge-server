@@ -1,10 +1,22 @@
 # Perf notes
 
-## pytest-profiling
-Just run `just t --profile-svg`, and it'll run the tests and collect profile data; then you can open an SVG page (whose path will be displayed) to see a complex graph that shows who calls whom and how long it takes, &c.
+## pyinstrument
+
+This is the nicest profiler I've found so far.  I can use it in two ways; both are enabled by setting `PYINSTRUMENT` to `t` in the environment.
+
+* `just test` will run the unit tests as usual, but when they're done, it'll spew a cute text-mode call graph showing which functions took how long.
+
+* `just runme` will work normally, but you can append `?profile` to any URL, and it'll render a slick flamegraph, instead of the usual page content.
+
 ## py-spy
 
-I once managed to get py-spy working on MacOS (it wasn't easy); I have not been able to reproduce this success.  It works fine in the docker container, though.
+I once managed to get py-spy working on MacOS (it wasn't easy); I have not been able to reproduce this success.  It works fine in the docker container, though.  I think I use it there like this:
+
+```shell
+$ docker compose exec -it django bash
+# htop # to find out the PID you care about
+# poetry run py-spy --attach PID
+```
 
 ## Other ideas to explore
 

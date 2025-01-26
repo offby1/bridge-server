@@ -46,7 +46,7 @@ The below is from memory; it's hard to get a fresh MacOS installation to test it
 
 * git is preinstalled, yay
 * `brew install just`
-* I use [orbstack](https://orbstack.dev/) instad of Docker Desktop, although the latter might work fine
+* I use [orbstack](https://orbstack.dev/) instad of Docker Desktop, although the latter works fine
 * `brew install jq`
 * python from <https://www.python.org/downloads/macos/>
 * pipx via `/Library/Frameworks/Python.framework/Versions/Current/bin/python3 -m pip install pipx`
