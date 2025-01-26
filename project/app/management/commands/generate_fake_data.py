@@ -31,18 +31,16 @@ class Command(BaseCommand):
             username=username,
             defaults={"password": self.everybodys_password},
         )
-        return Player.objects.get_or_create(
-            user=user,
-        )
+        return Player.objects.get_or_create(user=user, kwargs=dict(synthetic=True))
 
     def handle(self, *args, **options) -> None:
         fake = Faker()
         Faker.seed(0)
 
-        new_players = []
+        new_synthetic_players = []
 
         with tqdm.tqdm(desc="players", total=options["players"], unit="p") as progress_bar:
-            while Player.objects.count() < options["players"]:
+            while Player.objects.filter(synthetic=True).count() < options["players"]:
                 # Make sure we always have "bob", because his name is easy to type, and to remember :-)
                 if not Player.objects.exists():
                     username = "bob"
@@ -51,13 +49,13 @@ class Command(BaseCommand):
 
                 player, created = self.maybe_create_player(username)
                 if created:
-                    new_players.append(player)
+                    new_synthetic_players.append(player)
 
                 progress_bar.update()
 
         # Now partner 'em up
         pairs = []
-        for player_pair in more_itertools.chunked(new_players, 2):
+        for player_pair in more_itertools.chunked(new_synthetic_players, 2):
             player_pair[0].partner_with(player_pair[1])
             pairs.append((player_pair[0], player_pair[1]))
 
@@ -87,10 +85,12 @@ class Command(BaseCommand):
 
         # Now create a couple of unseated players.
         while True:
-            count = Player.objects.filter(currently_seated=False).count()
+            count = Player.objects.filter(synthetic=True).filter(currently_seated=False).count()
             if count >= 3:
                 break
             player, created = self.maybe_create_player(fake.unique.first_name().lower())
             self.stdout.write(f"{player} {created=}")
 
-        self.stdout.write(f"{Player.objects.count()} players at {Table.objects.count()} tables.")
+        self.stdout.write(
+            f"{Player.objects.filter(synthetic=True).count()} synthetic players at {Table.objects.count()} tables."
+        )

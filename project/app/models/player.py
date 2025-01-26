@@ -88,6 +88,7 @@ class Player(models.Model):
     # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
     # partnership splits up.
     currently_seated = models.BooleanField(default=False)
+    synthetic = models.BooleanField(default=False)
 
     messages_for_me = GenericRelation(
         Message,
