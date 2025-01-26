@@ -8,7 +8,14 @@ import time
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -131,11 +138,21 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
     who_clicked = request.user.player
+    redirect_to_table = False
 
     if pk is None:
+        if request.method != "GET":
+            return HttpResponseNotAllowed(["GET"])
+
         pk = request.user.player.pk
+        redirect_to_table = True
 
     subject: Player = get_object_or_404(Player, pk=pk)
+
+    if redirect_to_table and subject.currently_seated:
+        return HttpResponseRedirect(
+            reverse("app:hand-detail", kwargs={"pk": subject.current_table.current_hand.pk})
+        )
 
     common_context = {
         "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),

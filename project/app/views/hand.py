@@ -44,7 +44,25 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
         "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
         "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
         "hand": hand,
+        "history": _auction_history_context_for_hand(hand),
     }
+
+
+def _auction_history_context_for_hand(hand) -> dict[str, Any]:
+    context = {}
+    p_b_d_list = list(hand.players_by_direction.items())
+    # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
+    p_b_d_list.insert(0, p_b_d_list.pop(-1))
+    # Hightlight whoever's turn it is
+    for direction, player in p_b_d_list:
+        this_player_context = {"player": player}
+        if player == hand.player_who_may_call:
+            this_player_context["style"] = """ style="background-color: lightgreen;" """
+        else:
+            this_player_context["style"] = ""
+        context[direction] = this_player_context
+
+    return context.items()
 
 
 def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
@@ -284,6 +302,9 @@ def _four_hands_context_for_hand(
             "player": this_seats_player,
         }
 
+        if this_seats_player.id == as_viewed_by.id:
+            cards_by_direction_display["current_player"] = cards_by_direction_display[libSeat.name]
+
     xscript = hand.get_xscript()
 
     always = {
@@ -493,6 +514,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     context |= {
         "score": score_description,
         "show_auction_history": True,
+        "history": _auction_history_context_for_hand(hand),
     }
     return TemplateResponse(
         request,

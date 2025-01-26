@@ -29,3 +29,15 @@
 .throb-div {
   animation: throb 1s infinite;
 }
+
+:root {
+  --navbar-height: 100px;
+}
+
+.navbar {
+  height: var(--navbar-height);
+}
+
+body {
+  padding-top: var(--navbar-height);
+}

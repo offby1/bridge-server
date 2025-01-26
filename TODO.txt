@@ -96,8 +96,6 @@ STILL TODO:
 
   Perhaps allow each table to set its own tempo, down to some minimum that will keep the server unstressed, and the browsers capable of following along (1/2 second might be OK).
 
-* Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
-
 * "Claim" and "Concede" buttons, at least if you're declarer
 
 * Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
@@ -156,6 +154,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
+
 * At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
 
   Players who have finished playing in one tournament will be free to join the next one, somehow (contra the below point).

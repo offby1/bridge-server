@@ -30,12 +30,22 @@
             </div>
         {% endif %}
     </div>
-    <div class="col">{% include "four-hands.html" %}</div>
+    <div>{% include "auction.html" %}</div>
+    {% if not show_auction_history %}
+        <div class="col">{% include "four-hands.html" %}</div>
+    {% endif %}
     <div>
-        <div style="font-family: monospace;" id="bidding-box">
-            {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+        <div style="font-family: monospace;
+                    display: grid;
+                    grid-template-columns: auto auto"
+             id="bidding-box">
+            <div>
+                {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+            </div>
+            <div>
+                {% if show_auction_history %}{{ card_display.current_player.cards }}{% endif %}
+            </div>
         </div>
-        <div>{% include "auction.html" %}</div>
     </div>
 {% endblock content %}
 {% block upper-right-column %}

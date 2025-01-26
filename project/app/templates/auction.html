@@ -4,18 +4,13 @@
         <table class="table">
             <th>
                 <tr>
-                    <td>
-                        <i>West</i>
-                    </td>
-                    <td>
-                        <i>North</i>
-                    </td>
-                    <td>
-                        <i>East</i>
-                    </td>
-                    <td>
-                        <i>South</i>
-                    </td>
+                    {% for direction, player in history %}
+                        <td {{ player.style|safe }}>
+                            <i>{{ direction }}</i>
+                            <br>
+                            {{ player.player.name }}
+                        </td>
+                    {% endfor %}
                 </tr>
             </th>
             <tbody>
