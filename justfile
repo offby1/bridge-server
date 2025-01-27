@@ -233,8 +233,14 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     export GIT_VERSION="$(cat project/VERSION)"
     docker compose up --build {{ options }}
 
+ensure_git_repo_clean:
+    [[ -z "$(git status --porcelain)" ]]
+
+ensure_branch_is_main:
+    [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
+
 [group('docker')]
-prod *options:
+prod *options: ensure_branch_is_main ensure_git_repo_clean
     COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }} --detach
 
 # Kill it all.  Kill it all, with fire.
