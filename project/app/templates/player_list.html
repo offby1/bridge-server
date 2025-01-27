@@ -13,7 +13,7 @@
                     <th scope="col">Who</th>
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
-                    <th scope="col">Let's All Make A Table Together</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -39,15 +39,16 @@
                             <form method="post"
                                   action="{% url 'app:new-table' player.pk user.player.pk %}">
                                 {% csrf_token %}
-                                <input type="submit" value="Table up with these dudes">
-                            </input>
-                        </form>
-                    {% endifexists %}
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% include "pagination-controls.html" %}
+                                <input type="submit" value="Table up with these dudes" />
+                            </form>
+                        {% else %}
+                            hello, I am a placeholder.
+                        {% endifexists %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
