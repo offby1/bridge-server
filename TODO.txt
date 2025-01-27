@@ -1,11 +1,13 @@
 IN PROGRESS:
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+
 
 STILL TODO:
 * Not clear how to reproduce this, but I think I simply did "docker compose up --build", and then I noticed that none (or few) of the bots were actually running, despite some players having "allow_bot_to_play_for_me" be True.
 
   I guess I need to do something at startup to ensure that all the bot services are up?  I'd have thought daemontools would have taken care of that for me.
 
-* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
 
 * Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
 
