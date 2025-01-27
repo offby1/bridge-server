@@ -10,6 +10,9 @@ In the below, ✘ means "this sucks; no need to investigate further"
 
 [The obvious search](https://duckduckgo.com/?q=django+hosting).  As expected, most of the results look scammy.
 
+### [Serverless Container Platform](https://www.google.com/search?q=serverless+container+platform)
+Never heard of it until just now; sounds kinda like what I want, maybe?
+E.g., AWS Fargate, which I've heard of, but know nothing about.
 ### [Tailscale](https://login.tailscale.com/admin/machines)
 They don't *host*, but they do have a dead-easy [TLS-doing reverse proxy](https://tailscale.com/kb/1223/funnel#establishing-an-encrypted-proxy), which I'd been using before I figured out how to get the Caddy docker image working.
 
