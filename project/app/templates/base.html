@@ -82,7 +82,7 @@
                                 <a class="nav-link" href="{% url "app:players" %}">Players</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ VERSION|gitlab_link }}">version <tt>{{ VERSION }}</tt></a>
+                                <a class="nav-link" href="{{ VERSION|gitlab_link }}">version <tt>{{ VERSION }} ({{ GIT_SYMBOLIC_REF }})</tt></a>
                             </li>
                         </ul>
                     </div>

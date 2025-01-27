@@ -4,6 +4,7 @@
 /project/htmlcov/
 /project/prof/
 /project/static_root/*
+/project/GIT_SYMBOLIC_REF
 /project/VERSION
 /README.*.html
 __pycache__/

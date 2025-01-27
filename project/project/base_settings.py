@@ -18,11 +18,15 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 VERSION = "unknown"
-try:
-    with open(BASE_DIR / "VERSION") as inf:
-        VERSION = inf.read().rstrip()
-except FileNotFoundError:
-    pass
+GIT_SYMBOLIC_REF = "unknown"
+for fn in ("VERSION", "GIT_SYMBOLIC_REF"):
+    try:
+        with open(BASE_DIR / fn) as inf:
+            globals()[fn] = inf.read().rstrip()
+    except FileNotFoundError as e:
+        print(f"{e}; ignoring")
+
+del fn
 
 APP_NAME = "info.offby1.bridge"
 
