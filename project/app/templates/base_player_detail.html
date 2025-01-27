@@ -5,30 +5,29 @@
     {{ player }}
 {% endblock title %}
 {% block content %}
-    <div>
+    <ul id="player-deets">
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}
-        <div class="row">
+        <li>
             {% block partnership-status-html %}
             {% endblock partnership-status-html %}
-        </div>
-        <div class="row">
-            <div class="col">
-                {% if player.current_table %}
-                    {{ player.current_table.as_link }}
+        </li>
+        <li>
+            {% if player.current_table %}
+                {{ player.current_table.as_link }}
+            {% else %}
+                {% if user.player == player %}
+                    You
                 {% else %}
-                    {% if user.player == player %}
-                        You
-                    {% else %}
-                        They
-                    {% endif %}
-                    are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+                    They
                 {% endif %}
-            </div>
-            <div class="col">
-                <a href="{% url 'app:hand-list' %}{% querystring played_by=player.pk %}">Hands {{ player }} has played</a>
-            </div>
-        </div>
-    </div>
+                are in <a href="{% url 'app:lobby' %}">the lobby</a>.
+            {% endif %}
+        </li>
+        <li>
+            <a href="{% url 'app:hand-list' %}{% querystring played_by=player.pk %}">Hands {{ player }} has played</a>
+        </li>
+    </ul>
+    <hr style="height: 10px; background-color: black; border: none;">
     {% include "chat-partial.html#chat-html-partial" %}
 {% endblock content %}
 {% block scripts %}

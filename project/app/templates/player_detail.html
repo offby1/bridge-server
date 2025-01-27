@@ -10,7 +10,6 @@
          data-subject="{{ subject.pk }}"
          {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}>
         <div class="row">
-            <div class="col">{{ subject | styled_link:as_viewed_by.user }}</div>
             <div class="col">
                 {% if text %}{{ text }}{% endif %}
             </div>
