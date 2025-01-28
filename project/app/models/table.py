@@ -41,9 +41,6 @@ class TournamentIsOverError(TableException):
 
 
 class TableManager(models.Manager):
-    def get_nonfull(self):
-        return self.annotate(num_seats=models.Count("seat")).filter(num_seats__lt=4)
-
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
             with transaction.atomic():
@@ -60,6 +57,15 @@ class TableManager(models.Manager):
             with transaction.atomic():
                 t: Table = self.create()
                 logger.debug("Created %s, tournament %s", t, t.tournament)
+                if p1.partner is None or p2.partner is None:
+                    raise TableException(
+                        f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
+                    )
+                player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
+                if len(player_pks) != 4:
+                    raise TableException(
+                        f"Cannot create a table with seats {player_pks} --we need exactly four"
+                    )
                 for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                     modelSeat.objects.create(
                         direction=seat,
