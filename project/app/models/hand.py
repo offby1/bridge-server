@@ -232,20 +232,24 @@ class Hand(models.Model):
             [self.pk],
         )
 
-    @admin.display(boolean=True)
     @cached_property
-    def is_abandoned(self) -> bool:
+    @admin.display
+    def is_abandoned(self) -> str | None:
         if self.is_complete:
-            return False
-        if not all(s.player.currently_seated for s in self.table.seats):
-            return True
+            return None
+        players = [s.player for s in self.table.seats]
+        unseated_players = [p for p in players if not p.currently_seated]
+        if unseated_players:
+            return f"{[p.name for p in unseated_players]} left their seats for the lobby"
 
-        # Clearer, but less efficient
-        # return any(s != s.player.current_seat for s in self.table.seats)
-
-        return (
-            self.table.seats.filter(pk__in={s.pk for s in self.players_current_seats()}).count() < 4
-        )
+        player_table_tuples = [
+            (s.player.name, s.table.pk)
+            for s in self.players_current_seats()
+            if s.table.pk != self.table.pk
+        ]
+        if not player_table_tuples:
+            return None
+        return f"Some players are now at other tables: {player_table_tuples}"
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = self.event_channel_name
@@ -364,7 +368,7 @@ class Hand(models.Model):
         assert_type(call, libCall)
 
         if self.is_abandoned:
-            msg = f"Hand {self} is abandoned"
+            msg = f"Hand {self} is abandoned: {self.is_abandoned}"
             raise AuctionError(msg)
 
         auction = self.auction
@@ -411,7 +415,7 @@ class Hand(models.Model):
         assert_type(card, libCard)
 
         if self.is_abandoned:
-            msg = f"Hand {self} is abandoned"
+            msg = f"Hand {self} is abandoned: {self.is_abandoned}"
             raise PlayError(msg)
 
         legit_player = self.player_who_may_play
