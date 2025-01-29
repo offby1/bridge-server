@@ -65,10 +65,10 @@ def _button(*, page_subject, action):
     )
 
 
-def _find_swinging_singles_link():
+def _find_a_partner_link():
     return format_html(
-        """<a style="font-size: 3em;"
-              href="{}?lookin_for_love=True">Find a partner.</a>""",
+        """<a style="font-size: 5em;"
+              href="{}?lookin_for_love=True&exclude_me=True">Find a partner.</a>""",
         reverse("app:players"),
     )
 
@@ -90,7 +90,7 @@ def _get_text(subject, as_viewed_by):
         return format_html("{}{}", text, addendum)
 
     if as_viewed_by == subject:
-        return _find_swinging_singles_link()
+        return _find_a_partner_link()
 
     return f"{subject} has no partner 😢"
 
