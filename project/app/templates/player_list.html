@@ -6,7 +6,9 @@
 {% endblock title %}
 {% block content %}
     {% block player_list %}
-        <table id="player-list" class="table caption-top">
+        <table id="player-list"
+               class="table caption-top"
+               data-players="{{ this_pages_players }}">
             <caption>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ extra_crap.total_count }}</caption>
             <thead>
                 <tr>
@@ -66,6 +68,18 @@ console.log("Listening for partnership events");
 
 partnershipsEventSource.addEventListener('message', function (e) {
     console.log("Hand event listener saw " + e.data);
+
+    // collect the two partner IDs in the message
+    var d = JSON.parse(e.data) ;
+    var messagePKs = d.split.concat(d.joined) ;
+    messagePKs = new Set(messagePKs.map((i) => String(i)) );
+
+    // if either player in the message is one of the ones we're displaying in our list, reload the page.
+    // I can imagine this getting annoying, if lots of people are splitting and partnering up, the page will reload so frequently that
+    // it'd flicker. This strikes me as one of those "nice-to-have" problems :-)
+
+    // collect the player primary keys from the "data-players" attribute on the element whose id  is "player-list"
+    // do ye olde set intersection of those keys with the message PKs.
 
     // window.location.reload();
 }, false);
