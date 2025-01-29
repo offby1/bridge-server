@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.http import (
     HttpRequest,
     HttpResponse,
+    HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
@@ -19,7 +20,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -183,6 +184,10 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
                 who_clicked.break_partnership()
             elif action == JOIN:
                 who_clicked.partner_with(subject)
+            else:
+                return HttpResponseBadRequest(
+                    escape(f"{action=} but I only accept {SPLIT=} or {JOIN=}")
+                )
 
         except PartnerException as e:
             django_web_messages.add_message(

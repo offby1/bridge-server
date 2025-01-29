@@ -46,7 +46,7 @@
                                 <button hx-post="{% url 'app:player' pk=player.pk %}"
                                         hx-swap="none"
                                         name="action"
-                                        value="JOIN">Partner Up With This Dude</button>
+                                        value="partnerup">Partner Up With This Dude</button>
                             {% else %}
                                 hello, I am a placeholder.  Our "mode" <tt>{{ mode }}</tt> isn't telling me anything useful.
                             {% endif %}
@@ -59,3 +59,4 @@
     {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
+<!-- TODO -- add some JS/eventstream magic to reload this page after someone clicks the "Partnerup" button -->
