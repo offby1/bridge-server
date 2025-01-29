@@ -59,4 +59,16 @@
     {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
-<!-- TODO -- add some JS/eventstream magic to reload this page after someone clicks the "Partnerup" button -->
+{% block scripts %}
+    <script>
+var partnershipsEventSource = new ReconnectingEventSource('/events/partnerships/');
+console.log("Listening for partnership events");
+
+partnershipsEventSource.addEventListener('message', function (e) {
+    console.log("Hand event listener saw " + e.data);
+
+    // window.location.reload();
+}, false);
+
+    </script>
+{% endblock scripts %}
