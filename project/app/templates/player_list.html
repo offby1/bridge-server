@@ -42,7 +42,11 @@
                                 <input type="submit" value="Table up with these dudes" />
                             </form>
                         {% else %}
-                            hello, I am a placeholder.
+                            {% if mode == 'find_partner' %}
+                                imagine a "partnerup" button here
+                            {% else %}
+                                hello, I am a placeholder.  Our "mode" <tt>{{ mode }}</tt> isn't telling me anything useful.
+                            {% endif %}
                         {% endifexists %}
                     </td>
                 </tr>

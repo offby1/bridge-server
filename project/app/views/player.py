@@ -68,7 +68,7 @@ def _button(*, page_subject, action):
 def _find_a_partner_link():
     return format_html(
         """<a style="font-size: 5em;"
-              href="{}?lookin_for_love=True&exclude_me=True">Find a partner.</a>""",
+              href="{}?lookin_for_love=True&exclude_me=True&mode=find_partner">Find a partner.</a>""",
         reverse("app:players"),
     )
 
@@ -329,6 +329,7 @@ def player_list_view(request):
 
     context = {
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
+        "mode": "find_partner" if lookin_for_love else None,
         "page_obj": page_obj,
     }
 
