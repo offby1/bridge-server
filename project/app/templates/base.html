@@ -17,7 +17,7 @@
         <link rel="icon" type="image/png" href="{% static "app/spadesuit.png" %}" />
     </head>
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-          {% if user.is_authenticated %}data-viewer="{{ user.player }}"{% endif %}>
+          {% if user.is_authenticated %}data-viewer-pk="{{ user.player.pk }}"{% endif %}>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
                 <div id="hello-user" class="navbar-brand">

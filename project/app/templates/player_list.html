@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 {% extends "base.html" %}
 {% load fastdev %}
 {% load player_extras %}
@@ -77,6 +78,10 @@ tableEventSource.addEventListener('message', function (e) {
     seats = JSON.parse(e.data)["seats"];
     if (seats) {
       messagePKs = new Set(seats.map(s => s.player));
+      var viewerPK = JSON.parse(document.querySelector("body").dataset.viewer);
+      if (messagePKs.has(viewerPK)) {
+        window.location = {% 'app:table' pk=1 %}
+      }
       reloadIfPlayerStatusesChanged(messagePKs);
     }
 }, false);
