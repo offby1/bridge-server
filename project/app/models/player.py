@@ -11,6 +11,7 @@ import bridge.seat
 import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
@@ -187,11 +188,19 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
+        self._check_synthetic()
         super().save(*args, **kwargs)
 
     @property
     def allow_bot_to_play_for_me(self) -> bool:
         return BotPlayer.objects.filter(player_id=self.pk).exists()
+
+    def _check_synthetic(self) -> None:
+        if not self.pk:
+            return
+        original = Player.objects.get(pk=self.pk)
+        if self.synthetic != original.synthetic:
+            raise ValidationError("The 'synthetic' field cannot be changed.")
 
     def _check_current_seat(self) -> None:
         if not self.currently_seated:

@@ -152,6 +152,7 @@
     "fields": {
       "currently_seated": true,
       "partner": 3,
+      "synthetic": true,
       "user": 11
     },
     "model": "app.player",
