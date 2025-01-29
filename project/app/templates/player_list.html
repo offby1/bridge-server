@@ -52,8 +52,9 @@ console.log("Listening for partnership events");
 partnershipsEventSource.addEventListener('message', function (e) {
     console.log("Hand event listener saw " + e.data);
 
-    // collect the two partner IDs in the message
+    // collect the partner IDs in the message
     messagePKs = new Set(JSON.parse(e.data)["joined"]);
+    messagePKs = messagePKs.union(new Set(JSON.parse(e.data)["split"]));
 
     // console.log("messagePKs:");
     // messagePKs.forEach(i => console.log(JSON.stringify(i)));
