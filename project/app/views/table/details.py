@@ -136,11 +136,11 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
     p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
-        return Forbid(f"Hey man {p1=} doesn't have a partner")
+        return Forbid(f"Hey man {p1.name} doesn't have a partner")
 
     p2: app.models.Player = get_object_or_404(app.models.Player, pk=pk2)
     if p2.partner is None:
-        return Forbid(f"Hey man {p2=} doesn't have a partner")
+        return Forbid(f"Hey man {p2.name} doesn't have a partner")
 
     p3: app.models.Player = get_object_or_404(app.models.Player, pk=p1.partner.pk)
     p4: app.models.Player = get_object_or_404(app.models.Player, pk=p2.partner.pk)
@@ -150,7 +150,9 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
         return Forbid(f"Hey man {all_four} isn't four distinct players")
 
     if request.user.player not in all_four:
-        return Forbid(f"Hey man {request.user.player} isn't one of {all_four}")
+        return Forbid(
+            f"Hey man {request.user.player.name} isn't one of {[p.name for p in all_four]}"
+        )
 
     try:
         t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
