@@ -43,7 +43,10 @@
                             </form>
                         {% else %}
                             {% if mode == 'find_partner' %}
-                                imagine a "partnerup" button here
+                                <button hx-post="{% url 'app:player' pk=player.pk %}"
+                                        hx-swap="none"
+                                        name="action"
+                                        value="JOIN">Partner Up With This Dude</button>
                             {% else %}
                                 hello, I am a placeholder.  Our "mode" <tt>{{ mode }}</tt> isn't telling me anything useful.
                             {% endif %}
