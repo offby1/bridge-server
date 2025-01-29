@@ -336,7 +336,7 @@ def player_list_view(request):
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
         "mode": "find_partner" if lookin_for_love else None,
         "page_obj": page_obj,
-        "this_pages_players": [p.pk for p in page_obj],
+        "this_pages_players": json.dumps([p.pk for p in page_obj]),
     }
 
     return render(request, "player_list.html", context)

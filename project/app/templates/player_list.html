@@ -70,18 +70,26 @@ partnershipsEventSource.addEventListener('message', function (e) {
     console.log("Hand event listener saw " + e.data);
 
     // collect the two partner IDs in the message
-    var d = JSON.parse(e.data) ;
-    var messagePKs = d.split.concat(d.joined) ;
-    messagePKs = new Set(messagePKs.map((i) => String(i)) );
+    messagePKs = new Set(JSON.parse(e.data)["joined"]);
+
+    // console.log("messagePKs:");
+    // messagePKs.forEach(i => console.log(JSON.stringify(i)));
 
     // if either player in the message is one of the ones we're displaying in our list, reload the page.
     // I can imagine this getting annoying, if lots of people are splitting and partnering up, the page will reload so frequently that
     // it'd flicker. This strikes me as one of those "nice-to-have" problems :-)
 
     // collect the player primary keys from the "data-players" attribute on the element whose id  is "player-list"
-    // do ye olde set intersection of those keys with the message PKs.
+    var displayedPlayersDataset = document.querySelector("#player-list").dataset;
 
-    // window.location.reload();
+    var displayedPlayerPKs = new Set(JSON.parse(displayedPlayersDataset.players));
+
+    // console.log("displayedPlayerPKs:");
+    // displayedPlayerPKs.forEach(i => console.log(JSON.stringify(i)));
+
+    if (displayedPlayerPKs.intersection(messagePKs).size > 0) {
+        window.location.reload();
+    }
 }, false);
 
     </script>
