@@ -88,6 +88,8 @@ partnershipsEventSource.addEventListener('message', function (e) {
     // displayedPlayerPKs.forEach(i => console.log(JSON.stringify(i)));
 
     if (displayedPlayerPKs.intersection(messagePKs).size > 0) {
+        // TODO -- this isn't quite right.  We want to load a page whose url is *similar* to this one, but not identical;
+        // in particular we want to remove the "mode=find_partner" thing, since we just found a partner.
         window.location.reload();
     }
 }, false);
