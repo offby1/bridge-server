@@ -46,16 +46,7 @@
 {% endblock content %}
 {% block scripts %}
     <script>
-var partnershipsEventSource = new ReconnectingEventSource('/events/partnerships/');
-console.log("Listening for partnership events");
-
-partnershipsEventSource.addEventListener('message', function (e) {
-    console.log("Hand event listener saw " + e.data);
-
-    // collect the partner IDs in the message
-    messagePKs = new Set(JSON.parse(e.data)["joined"]);
-    messagePKs = messagePKs.union(new Set(JSON.parse(e.data)["split"]));
-
+var reloadIfPlayerStatusesChanged = function(messagePKs) {
     // console.log("messagePKs:");
     // messagePKs.forEach(i => console.log(JSON.stringify(i)));
 
@@ -76,6 +67,34 @@ partnershipsEventSource.addEventListener('message', function (e) {
         // in particular we want to remove the "mode=find_partner" thing, since we just found a partner.
         window.location.reload();
     }
+};
+
+var tableEventSource = new ReconnectingEventSource('/events/all-tables/');
+console.log("Listening for table events");
+
+tableEventSource.addEventListener('message', function (e) {
+    console.log("Table event listener saw " + e.data);
+
+    // collect the player IDs in the message
+    seats = JSON.parse(e.data)["seats"];
+    if (seats) {
+      messagePKs = new Set(seats.map(s => s.player));
+      reloadIfPlayerStatusesChanged(messagePKs);
+    }
+}, false);
+
+var partnershipsEventSource = new ReconnectingEventSource('/events/partnerships/');
+console.log("Listening for partnership events");
+
+partnershipsEventSource.addEventListener('message', function (e) {
+    console.log("Partnership event listener saw " + e.data);
+
+    // collect the partner IDs in the message
+    messagePKs = new Set(JSON.parse(e.data)["joined"]);
+    messagePKs = messagePKs.union(new Set(JSON.parse(e.data)["split"]));
+
+    reloadIfPlayerStatusesChanged(messagePKs);
+
 }, false);
 
     </script>
