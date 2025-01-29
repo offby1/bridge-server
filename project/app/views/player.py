@@ -96,7 +96,10 @@ def _get_text(subject, as_viewed_by):
     return f"{subject} has no partner 😢"
 
 
-def _get_button(subject, as_viewed_by):
+def _get_button(subject: Player, as_viewed_by: Player | None) -> str | None:
+    if as_viewed_by is None:
+        return None
+
     if subject.partner is None and as_viewed_by.partner is None and subject != as_viewed_by:
         return _button(page_subject=subject, action=JOIN)
 
@@ -105,6 +108,26 @@ def _get_button(subject, as_viewed_by):
 
     if subject == as_viewed_by.partner:
         return _button(page_subject=subject, action=SPLIT)
+
+    # TODO -- this should redirect to the new table
+    if (
+        subject.partner is not None
+        and not subject.currently_seated
+        and as_viewed_by.partner is not None
+        and not as_viewed_by.currently_seated
+    ):
+        action = "Table Up With These Dudes"
+        return format_html(
+            """<button
+      hx-post="{}"
+      hx-swap="none"
+      name="action"
+      value={}
+      >{}</button>""",
+            reverse("app:new-table", args=[subject.pk, as_viewed_by.pk]),
+            action,
+            action,
+        )
 
     return None
 
@@ -331,6 +354,10 @@ def player_list_view(request):
     paginator = Paginator(qs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    # Smuggle a button in there.
+    for other in page_obj:
+        other.action_button = _get_button(subject=other, as_viewed_by=player) or ""
 
     context = {
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},

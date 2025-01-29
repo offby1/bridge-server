@@ -1,6 +1,8 @@
 IN PROGRESS:
 * Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
 
+* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
+
 
 STILL TODO:
 * Not clear how to reproduce this, but I think I simply did "docker compose up --build", and then I noticed that none (or few) of the bots were actually running, despite some players having "allow_bot_to_play_for_me" be True.
@@ -42,8 +44,6 @@ STILL TODO:
 * Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
 
 * Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
-
-* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
 
 * The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
 
