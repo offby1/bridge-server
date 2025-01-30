@@ -138,6 +138,9 @@ def _get_partner_action_form_context(
 def _partnership_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player
 ) -> dict[str, Any]:
+    if subject == as_viewed_by and as_viewed_by.partner is not None:
+        subject = as_viewed_by.partner
+
     context = {
         "as_viewed_by": as_viewed_by,
         "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
