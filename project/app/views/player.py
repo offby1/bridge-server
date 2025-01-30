@@ -110,7 +110,7 @@ def _get_text(subject, as_viewed_by):
     return f"{subject} has no partner 😢"
 
 
-def _get_partner_action_form_context(
+def _get_partner_action_from_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
 ) -> dict[str, Any] | None:
     """
@@ -179,7 +179,7 @@ def _partnership_context(
         "text": _get_text(subject, as_viewed_by),
     }
     if (
-        form_stuff := _get_partner_action_form_context(
+        form_stuff := _get_partner_action_from_context(
             request=request, subject=subject, as_viewed_by=as_viewed_by
         )
     ) is not None:
@@ -390,7 +390,7 @@ def player_list_view(request):
     # Smuggle a button in there.
     for other in page_obj:
         other.action_button = (
-            _get_partner_action_form_context(request=request, subject=other, as_viewed_by=player)
+            _get_partner_action_from_context(request=request, subject=other, as_viewed_by=player)
             or None
         )
 
