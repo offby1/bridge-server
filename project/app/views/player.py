@@ -4,6 +4,7 @@ import contextlib
 import json
 import logging
 import time
+from typing import Any
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
@@ -33,8 +34,8 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def player_detail_endpoint(player):
-    return reverse("app:player", args=[player.id])
+def player_detail_endpoint(player_pk: PK):
+    return reverse("app:player", args=[player_pk])
 
 
 def player_link(player):
@@ -49,21 +50,31 @@ def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
 
-def _button(*, page_subject, action):
-    assert action in (JOIN, SPLIT)
-    url = player_detail_endpoint(page_subject)
+def _splitsville_context(*, request: AuthedHttpRequest, player_pk: PK) -> dict[str, Any]:
+    return {
+        "form_action": player_detail_endpoint(player_pk),
+        "button_submit_value": SPLIT,
+        "input_hidden_value": request.get_full_path(),
+    }
 
-    return format_html(
-        """<button
-      hx-post="{}"
-      hx-swap="none"
-      name="action"
-      value={}
-      >{}</button>""",
-        url,
-        action,
-        action,
-    )
+
+def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
+    return {
+        "form_action": player_detail_endpoint(subject_pk),
+        "button_submit_value": JOIN,
+        "input_hidden_value": reverse("app:players")
+        + "?lookin_for_love=False&seated=True&exclude_me=True",
+    }
+
+
+def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
+    assert request.user.player is not None
+    return {
+        "form_action": reverse(
+            "new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
+        ),
+        "button_submit_value": "",
+    }
 
 
 def _find_a_partner_link():
@@ -96,53 +107,46 @@ def _get_text(subject, as_viewed_by):
     return f"{subject} has no partner 😢"
 
 
-def _get_button(subject: Player, as_viewed_by: Player | None) -> str | None:
+# if player == as_viewed_by: nothing.
+# if player == as_viewed_by.partner (or vice-versa): splitsville & reload
+# if {player.partner, as_viewed_by.partner} is empty: partnerup & redirect to same page, but with "unseated partnerships" filters
+# if {player.currently_seated, as_viewed_by.currently_seated} is False: tableup & redirect to table
+def _get_partner_action_form_context(
+    *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
+) -> dict[str, Any] | None:
     if as_viewed_by is None:
         return None
 
-    if subject.partner is None and as_viewed_by.partner is None and subject != as_viewed_by:
-        return _button(page_subject=subject, action=JOIN)
+    if {bool(subject.partner), bool(as_viewed_by.partner)} == {True} and subject != as_viewed_by:
+        return _splitsville_context(request=request, player_pk=subject.pk)
 
-    if subject == as_viewed_by and subject.partner is not None:
-        return _button(page_subject=subject, action=SPLIT)
+    if {subject.partner, as_viewed_by.partner} == {None}:
+        return _partnerup_context(request=request, subject_pk=subject.pk)
 
-    if subject == as_viewed_by.partner:
-        return _button(page_subject=subject, action=SPLIT)
+    if {subject.currently_seated, as_viewed_by.currently_seated} == {False}:
+        return _tableup_context(request=request, subject_pk=subject.pk)
 
-    # TODO -- this should redirect to the new table
-    if (
-        subject.partner is not None
-        and not subject.currently_seated
-        and as_viewed_by.partner is not None
-        and not as_viewed_by.currently_seated
-    ):
-        action = "Table Up With These Dudes"
-        return format_html(
-            """<button
-      hx-post="{}"
-      hx-swap="none"
-      name="action"
-      value={}
-      >{}</button>""",
-            reverse("app:new-table", args=[subject.pk, as_viewed_by.pk]),
-            action,
-            action,
-        )
-
+    logger.warning(f"Dunno what to do in this case: {subject=}, {as_viewed_by=}")
     return None
 
 
-def partnership_context(*, subject, as_viewed_by):
-    text = _get_text(subject, as_viewed_by)
-    button = _get_button(subject, as_viewed_by)
-
-    return {
+def _partnership_context(
+    *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player
+) -> dict[str, Any]:
+    context = {
         "as_viewed_by": as_viewed_by,
-        "button": button,
         "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
         "subject": subject,
-        "text": text,
+        "text": _get_text(subject, as_viewed_by),
     }
+    if (
+        form_stuff := _get_partner_action_form_context(
+            request=request, subject=subject, as_viewed_by=as_viewed_by
+        )
+    ) is not None:
+        context["button"] = form_stuff
+
+    return context
 
 
 def _chat_disabled_explanation(*, sender, recipient) -> str | None:
@@ -226,15 +230,19 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
     return TemplateResponse(
         request,
         "player_detail.html",
-        context=common_context | partnership_context(subject=subject, as_viewed_by=who_clicked),
+        context=common_context
+        | _partnership_context(request=request, subject=subject, as_viewed_by=who_clicked),
     )
 
 
 @require_http_methods(["GET"])
 @logged_in_as_player_required()
 def partnership_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    assert request.user.player is not None
     subject: Player = get_object_or_404(Player, pk=pk)
-    context = partnership_context(subject=subject, as_viewed_by=request.user.player)
+    context = _partnership_context(
+        request=request, subject=subject, as_viewed_by=request.user.player
+    )
     return TemplateResponse(
         request=request,
         template="player_detail.html#partnership-status-partial",
@@ -357,7 +365,9 @@ def player_list_view(request):
 
     # Smuggle a button in there.
     for other in page_obj:
-        other.action_button = _get_button(subject=other, as_viewed_by=player) or ""
+        other.action_button = (
+            _get_partner_action_form_context(subject=other, as_viewed_by=player) or ""
+        )
 
     context = {
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},

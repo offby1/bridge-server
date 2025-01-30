@@ -37,13 +37,21 @@
                                 <a href="{% url 'app:lobby' %}">lobby</a>
                             {% endif %}
                         </td>
-                        <td>{{ player.action_button | safe }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% include "pagination-controls.html" %}
-    {% endblock player_list %}
+                        <td>
+                            <form method="post" action="{{ form_action }}">
+                                {% csrf_token %}
+                                <button type="submit" value="{{ button_submit_value }}" />
+                                {% ifexists input_hidden_value %}
+                                <input type="hidden" name="next" value="{{ input_hidden_value }}" />
+                            {% endifexists %}
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "pagination-controls.html" %}
+{% endblock player_list %}
 {% endblock content %}
 {% block scripts %}
     <script>
