@@ -38,12 +38,22 @@
                             {% endif %}
                         </td>
                         <td>
-                            <form method="post" action="{{ form_action }}">
-                                {% csrf_token %}
-                                <button type="submit" value="{{ button_submit_value }}" />
-                                {% ifexists input_hidden_value %}
-                                <input type="hidden" name="next" value="{{ input_hidden_value }}" />
-                            {% endifexists %}
+                            {% if player.action_button %}
+                                <form method="post" action="{{ player.action_button.form_action }}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            name="action"
+                                            value="{{ player.action_button.button_submit_value }}">
+                                        {{ player.action_button.button_content }}
+                                    </button>
+                                    {% ifexists player.action_button.input_hidden_value %}
+                                    <input type="hidden"
+                                           name="next"
+                                           value="{{ player.action_button.input_hidden_value }}" />
+                                {% endifexists %}
+                            {% else %}
+                                <hr />
+                            {% endif %}
                         </form>
                     </td>
                 </tr>
@@ -53,60 +63,3 @@
     {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
-{% block scripts %}
-    <script>
-var reloadIfPlayerStatusesChanged = function(messagePKs) {
-    // console.log("messagePKs:");
-    // messagePKs.forEach(i => console.log(JSON.stringify(i)));
-
-    // if either player in the message is one of the ones we're displaying in our list, reload the page.
-    // I can imagine this getting annoying, if lots of people are splitting and partnering up, the page will reload so frequently that
-    // it'd flicker. This strikes me as one of those "nice-to-have" problems :-)
-
-    // collect the player primary keys from the "data-players" attribute on the element whose id  is "player-list"
-    var displayedPlayersDataset = document.querySelector("#player-list").dataset;
-
-    var displayedPlayerPKs = new Set(JSON.parse(displayedPlayersDataset.players));
-
-    // console.log("displayedPlayerPKs:");
-    // displayedPlayerPKs.forEach(i => console.log(JSON.stringify(i)));
-
-    if (displayedPlayerPKs.intersection(messagePKs).size > 0) {
-        window.location.reload();
-    }
-};
-
-var tableEventSource = new ReconnectingEventSource('/events/all-tables/');
-console.log("Listening for table events");
-
-tableEventSource.addEventListener('message', function (e) {
-    console.log("Table event listener saw " + e.data);
-
-    // collect the player IDs in the message
-    seats = JSON.parse(e.data)["seats"];
-    if (seats) {
-      messagePKs = new Set(seats.map(s => s.player));
-      var viewerPK = JSON.parse(document.querySelector("body").dataset.viewer);
-      if (messagePKs.has(viewerPK)) {
-        window.location = {% 'app:table' pk=1 %}
-      }
-      reloadIfPlayerStatusesChanged(messagePKs);
-    }
-}, false);
-
-var partnershipsEventSource = new ReconnectingEventSource('/events/partnerships/');
-console.log("Listening for partnership events");
-
-partnershipsEventSource.addEventListener('message', function (e) {
-    console.log("Partnership event listener saw " + e.data);
-
-    // collect the partner IDs in the message
-    messagePKs = new Set(JSON.parse(e.data)["joined"]);
-    messagePKs = messagePKs.union(new Set(JSON.parse(e.data)["split"]));
-
-    reloadIfPlayerStatusesChanged(messagePKs);
-
-}, false);
-
-    </script>
-{% endblock scripts %}

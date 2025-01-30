@@ -147,7 +147,7 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 
     all_four = {p1, p2, p3, p4}
     if len(all_four) != 4:
-        return Forbid(f"Hey man {all_four} isn't four distinct players")
+        return Forbid(f"Hey man {[p.name for p in all_four]} isn't four distinct players")
 
     if request.user.player not in all_four:
         return Forbid(

@@ -34,14 +34,14 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def player_detail_endpoint(player_pk: PK):
+def player_detail_endpoint(*, player_pk: PK) -> str:
     return reverse("app:player", args=[player_pk])
 
 
-def player_link(player):
+def player_link(player: Player) -> str:
     return format_html(
         "<a href='{}'>{}</a>",
-        player_detail_endpoint(player),
+        player_detail_endpoint(player_pk=player.pk),
         player,
     )
 
@@ -52,16 +52,18 @@ def partnership_status_channel_name(*, viewer, subject) -> str:
 
 def _splitsville_context(*, request: AuthedHttpRequest, player_pk: PK) -> dict[str, Any]:
     return {
-        "form_action": player_detail_endpoint(player_pk),
+        "button_content": "Splitsville!!",
         "button_submit_value": SPLIT,
+        "form_action": player_detail_endpoint(player_pk=player_pk),
         "input_hidden_value": request.get_full_path(),
     }
 
 
 def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
     return {
-        "form_action": player_detail_endpoint(subject_pk),
+        "button_content": "Partner 'em Up, Boss",
         "button_submit_value": JOIN,
+        "form_action": player_detail_endpoint(player_pk=subject_pk),
         "input_hidden_value": reverse("app:players")
         + "?lookin_for_love=False&seated=True&exclude_me=True",
     }
@@ -70,10 +72,11 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
 def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
     assert request.user.player is not None
     return {
-        "form_action": reverse(
-            "new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
-        ),
+        "button_content": "Table Up With Yon Dudes",
         "button_submit_value": "",
+        "form_action": reverse(
+            "app:new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
+        ),
     }
 
 
@@ -117,11 +120,14 @@ def _get_partner_action_form_context(
     if as_viewed_by is None:
         return None
 
-    if {bool(subject.partner), bool(as_viewed_by.partner)} == {True} and subject != as_viewed_by:
+    if subject != as_viewed_by and subject.partner == as_viewed_by:
         return _splitsville_context(request=request, player_pk=subject.pk)
 
-    if {subject.partner, as_viewed_by.partner} == {None}:
+    if {subject.partner, as_viewed_by.partner} == {None} and subject != as_viewed_by:
         return _partnerup_context(request=request, subject_pk=subject.pk)
+
+    if as_viewed_by.partner is None:
+        return None
 
     if {subject.currently_seated, as_viewed_by.currently_seated} == {False}:
         return _tableup_context(request=request, subject_pk=subject.pk)
@@ -144,7 +150,7 @@ def _partnership_context(
             request=request, subject=subject, as_viewed_by=as_viewed_by
         )
     ) is not None:
-        context["button"] = form_stuff
+        context["button_context"] = form_stuff
 
     return context
 
@@ -225,7 +231,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
             )
             return HttpResponseForbidden(str(e))
 
-        return HttpResponse()
+        return HttpResponseRedirect(request.get_full_path())
 
     return TemplateResponse(
         request,
@@ -366,7 +372,8 @@ def player_list_view(request):
     # Smuggle a button in there.
     for other in page_obj:
         other.action_button = (
-            _get_partner_action_form_context(subject=other, as_viewed_by=player) or ""
+            _get_partner_action_form_context(request=request, subject=other, as_viewed_by=player)
+            or None
         )
 
     context = {
