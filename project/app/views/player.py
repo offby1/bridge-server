@@ -174,7 +174,7 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 @logged_in_as_player_required()
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
-    who_clicked = request.user.player
+    who_clicked = request.user.player  # aka "as_viewed_by"
     redirect_to_table = False
 
     if pk is None:
