@@ -241,21 +241,6 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
     )
 
 
-@require_http_methods(["GET"])
-@logged_in_as_player_required()
-def partnership_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    assert request.user.player is not None
-    subject: Player = get_object_or_404(Player, pk=pk)
-    context = _partnership_context(
-        request=request, subject=subject, as_viewed_by=request.user.player
-    )
-    return TemplateResponse(
-        request=request,
-        template="player_detail.html#partnership-status-partial",
-        context=context,
-    )
-
-
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:

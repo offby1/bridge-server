@@ -68,10 +68,10 @@ es.addEventListener('message', function (e) {
     }
 
     // compute the set intersection of those two
-    // if the intersection is non-empty, reload the relevant bit of the page.
+    // if the intersection is non-empty, reload the page.
 
     if (messagePKs.intersection(watchedPKs).size > 0) {
-      htmx.ajax('GET', '/player/' + partnershipStatusDataset.subject + '/partnership/', {target:'#partnership-status', swap:'outerHTML'});
+      window.location.reload();
     }
 
 }, false);
