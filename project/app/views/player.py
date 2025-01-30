@@ -110,27 +110,58 @@ def _get_text(subject, as_viewed_by):
     return f"{subject} has no partner 😢"
 
 
-# if player == as_viewed_by: nothing.
-# if player == as_viewed_by.partner (or vice-versa): splitsville & reload
-# if {player.partner, as_viewed_by.partner} is empty: partnerup & redirect to same page, but with "unseated partnerships" filters
-# if {player.currently_seated, as_viewed_by.currently_seated} is False: tableup & redirect to table
 def _get_partner_action_form_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
 ) -> dict[str, Any] | None:
+    """
+    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise "Nuttin'".  Otherwise ...
+
+    Each player has (for our purposes) a few possible states:
+
+    * no partner, unseated
+    * partner, unseated
+    * partner, seated
+
+    Otherwise
+
+    | viewer state      | subject state     | outcome                                                        |
+    |-------------------+-------------------+----------------------------------------------------------------|
+    | no partner        | no partner        | partnerup                                                      |
+    | no partner        | partner, unseated | --                                                             |
+    | no partner        | seated            | --                                                             |
+    | partner, unseated | no partner        | --                                                             |
+    | partner, unseated | partner, unseated | splitsville, if we are each other's partner; otherwise tableup |
+    | partner, unseated | seated            | --                                                             |
+    | seated            | no partner        | --                                                             |
+    | seated            | partner, unseated | --                                                             |
+    | seated            | seated            | splitsville, if we are each other's partner; otherwise nothing |
+    """
+    logger.debug(f"{subject=} {as_viewed_by=}")
     if as_viewed_by is None:
         return None
 
-    if subject != as_viewed_by and subject.partner == as_viewed_by:
+    if as_viewed_by == subject:
+        if subject.partner is not None:
+            return _splitsville_context(request=request, player_pk=subject.pk)
+
+        return None
+
+    if subject.partner == as_viewed_by:
         return _splitsville_context(request=request, player_pk=subject.pk)
 
-    if {subject.partner, as_viewed_by.partner} == {None} and subject != as_viewed_by:
+    if {subject.partner, as_viewed_by.partner} == {None}:
         return _partnerup_context(request=request, subject_pk=subject.pk)
 
     if as_viewed_by.partner is None:
         return None
 
-    if {subject.currently_seated, as_viewed_by.currently_seated} == {False}:
-        return _tableup_context(request=request, subject_pk=subject.pk)
+    if {subject.currently_seated, as_viewed_by.currently_seated} == {
+        False
+    } and not subject.currently_seated:
+        if subject.partner == as_viewed_by:
+            return _splitsville_context(request=request, player_pk=subject.pk)
+        else:
+            return _tableup_context(request=request, subject_pk=subject.pk)
 
     return None
 
