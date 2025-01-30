@@ -132,7 +132,6 @@ def _get_partner_action_form_context(
     if {subject.currently_seated, as_viewed_by.currently_seated} == {False}:
         return _tableup_context(request=request, subject_pk=subject.pk)
 
-    logger.warning(f"Dunno what to do in this case: {subject=}, {as_viewed_by=}")
     return None
 
 
