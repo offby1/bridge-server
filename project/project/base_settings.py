@@ -126,6 +126,8 @@ ROOT_URLCONF = "project.urls"
 
 LOGIN_REDIRECT_URL = "app:player"
 
+GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -133,6 +135,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "app.template.context_processors.stick_that_gitlab_link_in_there_daddy_O",
                 "app.template.context_processors.stick_that_version_in_there_daddy_O",
                 "app.template.context_processors.stick_deployment_environment_in_there_daddy_O",
                 "django.template.context_processors.debug",
