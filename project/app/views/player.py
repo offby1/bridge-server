@@ -65,7 +65,7 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
         "button_submit_value": JOIN,
         "form_action": player_detail_endpoint(player_pk=subject_pk),
         "input_hidden_value": reverse("app:players")
-        + "?lookin_for_love=False&seated=True&exclude_me=True",
+        + "?lookin_for_love=False&seated=False&exclude_me=True",
     }
 
 
