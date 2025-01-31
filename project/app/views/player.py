@@ -65,7 +65,7 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
         "button_submit_value": JOIN,
         "form_action": player_detail_endpoint(player_pk=subject_pk),
         "input_hidden_value": reverse("app:players")
-        + "?lookin_for_love=False&seated=False&exclude_me=True",
+        + "?has_partner=True&seated=False&exclude_me=True",
     }
 
 
@@ -83,7 +83,7 @@ def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str,
 def _find_a_partner_link():
     return format_html(
         """<a style="font-size: 5em;"
-              href="{}?lookin_for_love=True&exclude_me=True">Find a partner.</a>""",
+              href="{}?has_partner=False&exclude_me=True">Find a partner.</a>""",
         reverse("app:players"),
     )
 
@@ -351,7 +351,7 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
 
 
 def player_list_view(request):
-    lookin_for_love = request.GET.get("lookin_for_love")
+    has_partner = request.GET.get("has_partner")
     seated = request.GET.get("seated")
     exclude_me = request.GET.get("exclude_me")
 
@@ -362,8 +362,8 @@ def player_list_view(request):
     if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
         qs = qs.exclude(pk=player.pk).exclude(partner=player)
 
-    if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
-        qs = qs.filter(partner__isnull=lfl_filter)
+    if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
+        qs = qs.exclude(partner__isnull=has_partner_filter)
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
         qs = qs.filter(currently_seated=seated_filter)
