@@ -133,7 +133,7 @@ def _get_partner_action_from_context(
     | seated            | partner, unseated | --                                                             |
     | seated            | seated            | splitsville, if we are each other's partner; otherwise nothing |
     """
-    logger.debug(f"{subject=} {as_viewed_by=}")
+
     if as_viewed_by is None:
         return None
 
