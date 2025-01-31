@@ -1,8 +1,4 @@
 IN PROGRESS:
-* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
-
-* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
-
 
 STILL TODO:
 * Not clear how to reproduce this, but I think I simply did "docker compose up --build", and then I noticed that none (or few) of the bots were actually running, despite some players having "allow_bot_to_play_for_me" be True.
@@ -11,9 +7,11 @@ STILL TODO:
 
 * The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
 
-* Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
+* Let users create synthetic players, if there aren't enough already to play with.
 
-* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
+* Whatever happened to lobby chat?  It must have slipped into a crack at some point.
+
+* Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
 
 * Along with the above, ensure there are always enough unpartnered bot players to accomodate a newcomer.
 
@@ -29,9 +27,9 @@ STILL TODO:
 
 * Totally rethink access control.
 
-  * Any tournament that is complete is visible to everyone, anonymous or otherwise.
+  * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
 
-  * Anonymous users cannot watch a hand in progress.
+  * Anonymous users must not be allowed to watch a hand in progress.
 
     Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
 
@@ -118,8 +116,6 @@ STILL TODO:
 
   I seem to be slowly moving towards this; most of what was previously associated with Table is now associated with Hand.
 
-* Whatever happened to lobby chat?  It must have slipped into a crack at some point.
-
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
 
@@ -164,6 +160,14 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
+
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+
+* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
+
+* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
+
 * Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
 
 * At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.
