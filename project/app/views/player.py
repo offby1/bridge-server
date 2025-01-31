@@ -88,26 +88,23 @@ def _find_a_partner_link():
     )
 
 
-def _get_text(*, subject: Player, as_viewed_by: Player) -> str:
-    addendum = ""
-    if subject.current_seat is None and as_viewed_by.current_seat is None:
-        addendum = format_html(
-            """ (<a href="{}">other unseated partnerships</a>)""",
-            reverse("app:players") + "?seated=False&lookin_for_love=False&exclude_me=True",
-        )
+def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
+    if subject.partner is None:
+        if subject == as_viewed_by:
+            return _find_a_partner_link()
 
-    if subject.partner:
-        if subject.partner != as_viewed_by:
-            text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
-        else:
-            text = format_html("{}'s partner is, gosh, you!", subject)
+        return f"{subject} has no partner 😢"
 
-        return format_html("{}{}", text, addendum)
+    possessive_noun = f"{subject}'s"
+    if subject == as_viewed_by:
+        possessive_noun = "Your"
 
-    if as_viewed_by == subject:
-        return _find_a_partner_link()
+    if subject.partner == as_viewed_by:
+        text = format_html("{} partner is, gosh, you!", possessive_noun)
+    else:
+        text = format_html("{} partner is {}", possessive_noun, player_link(subject.partner))
 
-    return f"{subject} has no partner 😢"
+    return format_html("{}", text)
 
 
 def _get_partner_action_from_context(
@@ -173,7 +170,7 @@ def _partnership_context(
         "as_viewed_by": as_viewed_by,
         "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
         "subject": subject,
-        "text": _get_text(subject=subject, as_viewed_by=as_viewed_by),
+        "text": _describe_partnership(subject=subject, as_viewed_by=as_viewed_by),
     }
     if (
         form_stuff := _get_partner_action_from_context(
