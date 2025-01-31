@@ -258,7 +258,10 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
             )
             return HttpResponseForbidden(str(e))
 
-        return HttpResponseRedirect(request.get_full_path())
+        if (next_ := request.POST.get("next")) is None:
+            next_ = request.get_full_path()
+
+        return HttpResponseRedirect(next_)
 
     return TemplateResponse(
         request,
