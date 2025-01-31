@@ -1,6 +1,7 @@
 import contextlib
 
 from django import template
+from django.conf import settings
 from django.utils.html import format_html
 
 register = template.Library()
@@ -11,7 +12,7 @@ def gitlab_link(value):
     del value
 
     commit_hash = None
-    base_url = "https://gitlab.com/offby1/bridge-server/"
+    base_url = settings.GITLAB_HOMEPAGE
     with contextlib.suppress(ValueError):
         commit_hash, _ = version_blob.split(" ")
     if commit_hash:
