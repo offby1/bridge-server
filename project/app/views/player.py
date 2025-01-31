@@ -88,7 +88,7 @@ def _find_a_partner_link():
     )
 
 
-def _get_text(subject, as_viewed_by):
+def _get_text(*, subject: Player, as_viewed_by: Player) -> str:
     addendum = ""
     if subject.current_seat is None and as_viewed_by.current_seat is None:
         addendum = format_html(
@@ -169,14 +169,11 @@ def _get_partner_action_from_context(
 def _partnership_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player
 ) -> dict[str, Any]:
-    if subject == as_viewed_by and as_viewed_by.partner is not None:
-        subject = as_viewed_by.partner
-
     context = {
         "as_viewed_by": as_viewed_by,
         "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
         "subject": subject,
-        "text": _get_text(subject, as_viewed_by),
+        "text": _get_text(subject=subject, as_viewed_by=as_viewed_by),
     }
     if (
         form_stuff := _get_partner_action_from_context(
