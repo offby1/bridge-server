@@ -13,13 +13,13 @@ class Command(BaseCommand):
         for bp in Player.objects.filter(
             player__currently_seated=True,
         ).filter(allow_bot_to_play_for_me=True):
-            self.stderr.write(f"{bp.player.name} ... ", ending="")
+            self.stderr.write(f"{bp.name} ... ", ending="")
 
             try:
-                bp.player.control_bot()
+                bp.control_bot()
             except OSError as e:
                 self.stderr.write(
                     f"{e}; I assume we're not running under docker, so ... outta here",
                 )
                 break
-            self.stderr.write(f"{bp.player.name} done")
+            self.stderr.write(f"{bp.name} done")
