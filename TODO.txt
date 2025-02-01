@@ -4,6 +4,8 @@ IN PROGRESS:
 STILL TODO:
 * Let users create synthetic players, if there aren't enough already to play with.
 
+  Also: don't create *any* synthetic players in generate_fake_data; let the first human player see a totally empty tournament, since they'll easily be able to create friends to play with.  Well, maybe create one table's worth; I dunno.
+
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
 * Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
