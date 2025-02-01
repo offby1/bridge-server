@@ -438,9 +438,6 @@ def player_list_view(request):
 
     # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
     # create a synthetic player.
-    logger.debug(
-        f"{player=} {getattr(player, 'partner', None)=} {has_partner_filter=} {seated_filter=} {filtered_count=}"
-    )
     if (
         player is not None
         and player.partner is None
@@ -451,6 +448,7 @@ def player_list_view(request):
         context["create_synth_partner_next"] = (
             reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
         )
+    # similarly for opponents.
     elif (
         player is not None
         and player.partner is not None
