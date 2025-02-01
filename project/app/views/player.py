@@ -390,17 +390,21 @@ def player_list_view(request):
     exclude_me = request.GET.get("exclude_me")
 
     qs = Player.objects.all()
+    filter_description = []
 
     player = getattr(request.user, "player", None)
 
     if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
         qs = qs.exclude(pk=player.pk).exclude(partner=player)
+        filter_description.append(f"excluding {player}")
 
     if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
         qs = qs.exclude(partner__isnull=has_partner_filter)
+        filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
         qs = qs.filter(currently_seated=seated_filter)
+        filter_description.append("currently seated" if seated_filter else "in the lobby")
 
     filtered_count = qs.count()
     if player is not None and player.partner is not None:
@@ -429,6 +433,7 @@ def player_list_view(request):
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
         "page_obj": page_obj,
         "this_pages_players": json.dumps([p.pk for p in page_obj]),
+        "title": ("Players " + ", ".join(filter_description)) if filter_description else "",
     }
 
     # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
