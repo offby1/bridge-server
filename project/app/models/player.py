@@ -182,7 +182,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
                 BotPlayer.objects.get_or_create(player=self)
             else:
-                BotPlayer.objects.filter(player=self).delete()
+                BotPlayer.objects.get(player_id=self.pk).delete()
 
             self.control_bot()
 
@@ -429,6 +429,11 @@ class BotPlayer(models.Model):
 
     class Meta:
         db_table_comment = "Those players whose PKs appear here will have a bot play for them."
+
+    def delete(self, *args, **kwargs):
+        if self.player.allow_bot_to_play_for_me:
+            raise ValidationError("Synthetic players must allow the bot to play for them")
+        return super().delete(*args, **kwargs)
 
 
 admin.site.register(Player, PlayerAdmin)
