@@ -6,10 +6,6 @@ STILL TODO:
 
   Simplest thing: set a "django message" that says something like "no tournament for you, this tournament is still running", then redirect to a list of hands that are still being played (so we can at least have something to watch while we wait).
 
-* Let users create synthetic players, if there aren't enough already to play with.
-
-  Also: don't create *any* synthetic players in generate_fake_data; let the first human player see a totally empty tournament, since they'll easily be able to create friends to play with.  Well, maybe create one table's worth; I dunno.
-
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
 * Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
@@ -161,6 +157,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Let users create synthetic players, if there aren't enough already to play with.
+
+  Also: don't create *any* synthetic players in generate_fake_data; let the first human player see a totally empty tournament, since they'll easily be able to create friends to play with.  Well, maybe create one table's worth; I dunno.
+
 * Replace the BotPlayer model with a simple boolean field on the Player model (like it was not long ago).
 
   This way I'll be able to easily make a database constraint that says "we gotta have allow_bot_to_play_for_me set if we also have synthetic set".
