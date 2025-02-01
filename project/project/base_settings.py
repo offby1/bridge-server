@@ -230,6 +230,9 @@ LOGGING = {
         "django_eventstream.views": {
             "level": "WARNING",
         },
+        "faker.factory": {
+            "level": "CRITICAL",  # please shut up please please please
+        },
         "urllib3.connectionpool": {
             "level": "INFO",
         },
