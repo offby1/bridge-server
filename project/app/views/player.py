@@ -368,7 +368,20 @@ def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
 
 
 def _create_synth_opponents_button(request) -> str:
-    return format_html("""Imagine I'm a big 'create opponents' button""")
+    return format_html(
+        """<button class="btn btn-primary" type="submit">Gimme synthetic opponents, Yo</button>"""
+    )
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def player_create_synthetic_opponents_view(request: AuthedHttpRequest) -> HttpResponse:
+    next_ = request.POST["next"]
+    try:
+        request.user.player.create_synthetic_opponents()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
+    return HttpResponseRedirect(next_)
 
 
 def player_list_view(request):
@@ -441,8 +454,6 @@ def player_list_view(request):
         and filtered_count < 2
     ):
         context["create_synth_opponents_button"] = _create_synth_opponents_button(request)
-        context["create_synth_opponents_next"] = (
-            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
-        )
+        context["create_synth_opponents_next"] = request.get_full_path()
 
     return render(request, "player_list.html", context)
