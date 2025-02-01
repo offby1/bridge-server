@@ -350,9 +350,16 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
+def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
+    return format_html(
+        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
+    )
+
+
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
+    assert request.user.player is not None
     next_ = request.POST["next"]
     try:
         partner = request.user.player.create_synthetic_partner()
@@ -367,12 +374,6 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
     return HttpResponseRedirect(next_)
 
 
-def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
-    return format_html(
-        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
-    )
-
-
 def _create_synth_opponents_button(request) -> str:
     return format_html(
         """<button class="btn btn-primary" type="submit">Gimme synthetic opponents, Yo</button>"""
@@ -382,6 +383,7 @@ def _create_synth_opponents_button(request) -> str:
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def player_create_synthetic_opponents_view(request: AuthedHttpRequest) -> HttpResponse:
+    assert request.user.player is not None
     next_ = request.POST["next"]
     try:
         request.user.player.create_synthetic_opponents()

@@ -81,7 +81,9 @@ class Player(models.Model):
 
     # On the other hand -- do I need this at all?  If our player is seated, then we can deduce his partner by seeing
     # who's sitting across from him.  But then if the partnership isn't seated, I'm outta luck.
-    partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
+    partner = models.ForeignKey["Player"](
+        "Player", null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
     # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
@@ -443,7 +445,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 raise PartnerException(
                     f"There are already at least two existing synths {[s.name for s in existing.all()]}"
                 )
-            rv = []
+            rv: list[Player] = []
 
             while len(rv) < 2:
                 new_user = auth.models.User.objects.create_user(
