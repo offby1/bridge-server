@@ -408,10 +408,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         fake = Faker()
         Faker.seed(0)
         while True:
-            candidate = prefix + fake.unique.first_name().lower()
-            if not auth.models.User.objects.filter(username=candidate).exists():
-                return candidate
-            logger.debug("User named %s already exists; let's try another", candidate)
+            # Ensure neither the prefixed, nor the unprefixed, version exists.
+            unprefixed_candidate = fake.unique.first_name().lower()
+            candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
+            if not auth.models.User.objects.filter(username__in=candidates).exists():
+                return candidates[-1]
+            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
 
     def create_synthetic_partner(self) -> Player:
         with transaction.atomic():
