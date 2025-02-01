@@ -61,7 +61,12 @@
         </tbody>
     </table>
     {% ifexists create_synth_partner_button %}
-    <h1>{{ create_synth_partner_button }}</h1>
+    <form action="{% url 'app:player-create-synthetic-partner' %}"
+          method="post">
+        {% csrf_token %}
+        {{ create_synth_partner_button }}
+        <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
+    </form>
 {% endifexists %}
 {% include "pagination-controls.html" %}
 {% endblock player_list %}

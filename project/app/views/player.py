@@ -273,12 +273,6 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
-    return HttpResponse("Imagine I created a new player for you")
-
-
-@require_http_methods(["POST"])
-@logged_in_as_player_required(redirect=False)
 def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
@@ -356,10 +350,20 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
+    next_ = request.POST["next"]
+    return HttpResponseRedirect(next_)
+
+
 def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
     # Text will be "create a synthetic partner"
     # POST target will be, I dunno, "app:player-create-synthetic-partner"
-    return "Imagine I was a button"
+    # action after POST will be to reload the current page
+    return format_html(
+        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
+    )
 
 
 def player_list_view(request):
@@ -419,5 +423,6 @@ def player_list_view(request):
         and filtered_count == 0
     ):
         context["create_synth_partner_button"] = _create_synth_partner_button(request)
+        context["create_synth_partner_next"] = request.get_full_path()
 
     return render(request, "player_list.html", context)
