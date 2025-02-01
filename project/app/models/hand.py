@@ -282,7 +282,7 @@ class Hand(models.Model):
         for direction_int in self.board.hand_strings_by_direction:
             lib_seat = libSeat(direction_int)
             seat = seats.filter(direction=direction_int).first()
-            assert seat is not None
+            assert seat is not None, f"Alas! No seat {direction_int=} at {self}"
             name = seat.player_name
             rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
         return rv

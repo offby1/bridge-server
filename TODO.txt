@@ -1,7 +1,12 @@
 IN PROGRESS:
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
 
 STILL TODO:
-* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+* Let users create synthetic players, if there aren't enough already to play with.
+
+* Whatever happened to lobby chat?  It must have slipped into a crack at some point.
+
+* Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
 
 * Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
 
@@ -21,9 +26,9 @@ STILL TODO:
 
 * Totally rethink access control.
 
-  * Any tournament that is complete is visible to everyone, anonymous or otherwise.
+  * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
 
-  * Anonymous users cannot watch a hand in progress.
+  * Anonymous users must not be allowed to watch a hand in progress.
 
     Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
 
@@ -36,8 +41,6 @@ STILL TODO:
 * Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
 
 * Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
-
-* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
 
 * The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
 
@@ -112,8 +115,6 @@ STILL TODO:
 
   I seem to be slowly moving towards this; most of what was previously associated with Table is now associated with Hand.
 
-* Whatever happened to lobby chat?  It must have slipped into a crack at some point.
-
 * Think about optimization (without actually doing it, since that would be premature):
   Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
 
@@ -158,6 +159,20 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+
+* Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
+
+* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
+
+* Not clear how to reproduce this, but I think I simply did "docker compose up --build", and then I noticed that none (or few) of the bots were actually running, despite some players having "allow_bot_to_play_for_me" be True.
+
+  I guess I need to do something at startup to ensure that all the bot services are up?  I'd have thought daemontools would have taken care of that for me.
+
+  On futher reflection, I think most of the bot players weren't seated for some reason, which prevents their bots from coming up.
+
+  So now, the question is: what brings the bots up normally? Answer: the Dockerfile invokes `bring_up_all_api_bots` before starting `svscan`.
+
 * Put the green highlight on the player whose turn it is to *call*, just as we do for when it's their turn to *play*
 
 * At the end of a tournament, something should create a new one.  In general, we should have an invariant that says there is always exactly one uncompleted tournament.

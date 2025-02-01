@@ -16,7 +16,9 @@ if os.environ.get("PYINSTRUMENT", "").lower().startswith("t"):
     MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
     MIDDLEWARE = ["pyinstrument.middleware.ProfilerMiddleware"] + MIDDLEWARE
 
-LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore
-LOGGING["loggers"]["django_eventstream"] = {"handlers": ["console"], "level": "DEBUG"}  # type: ignore
+LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore  [index]
+LOGGING["loggers"]["django_eventstream"] = {"handlers": ["console"], "level": "DEBUG"}  # type: ignore  [index]
+LOGGING["root"]["level"] = "DEBUG"  # type: ignore  [index]
+
 # See notes in prod_settings
 DEPLOYMENT_ENVIRONMENT = "development"

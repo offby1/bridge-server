@@ -372,7 +372,7 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch):
 
     assert set(the_kwargs["data"]["split"]) == {north_pk, north_partner_pk}
 
-    assert response.status_code == 200
+    assert response.status_code == 302
 
     north.refresh_from_db()
     assert north.partner is None

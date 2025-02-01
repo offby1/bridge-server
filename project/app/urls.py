@@ -50,7 +50,6 @@ urlpatterns = [
     path(
         "player/<int:pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"
     ),
-    path("player/<int:pk>/partnership/", player.partnership_view, name="player_partnership"),
     path(
         "player-by-name-or-pk/<str:name_or_pk>/",
         player.by_name_or_pk_view,

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
+# Meant to run in our docker container, not e.g. your laptop
 
 set -euxo pipefail
 
