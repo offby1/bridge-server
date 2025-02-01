@@ -407,6 +407,10 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 name="%(app_label)s_%(class)s_cant_be_own_partner",
                 condition=models.Q(partner__isnull=True) | ~models.Q(partner_id=models.F("id")),
             ),
+            models.CheckConstraint(
+                name="synthetic_players_must_allow_bot_to_play_for_them",
+                condition=models.Q(synthetic=False) | models.Q(allow_bot_to_play_for_me=True),
+            ),  # type: ignore [call-arg]
         ]
 
     def __repr__(self) -> str:
