@@ -362,12 +362,13 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
 
 
 def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
-    # Text will be "create a synthetic partner"
-    # POST target will be, I dunno, "app:player-create-synthetic-partner"
-    # action after POST will be to reload the current page
     return format_html(
         """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
     )
+
+
+def _create_synth_opponents_button(request) -> str:
+    return format_html("""Imagine I'm a big 'create opponents' button""")
 
 
 def player_list_view(request):
@@ -420,7 +421,7 @@ def player_list_view(request):
     # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
     # create a synthetic player.
     logger.debug(
-        f"{player=} {getattr(player, 'partner', None)=} {has_partner_filter=} {filtered_count=}"
+        f"{player=} {getattr(player, 'partner', None)=} {has_partner_filter=} {seated_filter=} {filtered_count=}"
     )
     if (
         player is not None
@@ -430,6 +431,17 @@ def player_list_view(request):
     ):
         context["create_synth_partner_button"] = _create_synth_partner_button(request)
         context["create_synth_partner_next"] = (
+            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
+        )
+    elif (
+        player is not None
+        and player.partner is not None
+        and has_partner_filter is True
+        and seated_filter is False
+        and filtered_count < 2
+    ):
+        context["create_synth_opponents_button"] = _create_synth_opponents_button(request)
+        context["create_synth_opponents_next"] = (
             reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
         )
 

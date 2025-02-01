@@ -68,6 +68,9 @@
         <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
     </form>
 {% endifexists %}
+{% ifexists create_synth_opponents_button %}
+{{ create_synth_opponents_button }}
+{% endifexists %}
 {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}
