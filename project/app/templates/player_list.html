@@ -60,6 +60,9 @@
             {% endfor %}
         </tbody>
     </table>
-    {% include "pagination-controls.html" %}
+    {% ifexists create_synth_partner_button %}
+    <h1>{{ create_synth_partner_button }}</h1>
+{% endifexists %}
+{% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}

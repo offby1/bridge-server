@@ -273,6 +273,12 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
+def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
+    return HttpResponse("Imagine I created a new player for you")
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
 def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
@@ -350,6 +356,12 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
+def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
+    # Text will be "create a synthetic partner"
+    # POST target will be, I dunno, "app:player-create-synthetic-partner"
+    return "Imagine I was a button"
+
+
 def player_list_view(request):
     has_partner = request.GET.get("has_partner")
     seated = request.GET.get("seated")
@@ -396,5 +408,16 @@ def player_list_view(request):
         "page_obj": page_obj,
         "this_pages_players": json.dumps([p.pk for p in page_obj]),
     }
+
+    # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
+    # create a synthetic player.
+    logger.debug(f"{player=} {getattr(player, 'partner')=} {has_partner_filter=} {filtered_count=}")
+    if (
+        player is not None
+        and player.partner is None
+        and has_partner_filter is False
+        and filtered_count == 0
+    ):
+        context["create_synth_partner_button"] = _create_synth_partner_button(request)
 
     return render(request, "player_list.html", context)
