@@ -452,10 +452,17 @@ def _maybe_redirect_or_error(
             if hand_is_complete:
                 if (response := redirect_or_none("app:hand-archive")) is not None:
                     return response
+                return None
 
             elif (response := redirect_or_none("app:hand-detail")) is not None:
                 return response
+            else:
+                logger.debug(
+                    f"{player_visibility.name=} for a {hand_is_complete=}; we must have already played this board.  Returning None"
+                )
+                return None
 
+    logger.error(f"Don't know what to do with {player_visibility=}")
     return None
 
 
@@ -540,10 +547,22 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
+    # for when player is looking at a hand whose board they've already played.
+    other_hand = player.hand_at_which_board_was_played(hand.board)
+    assert other_hand is not None
+    hand_link = reverse("app:hand-detail", args=[other_hand.pk])
+    hand_description = str(other_hand)
+
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
+        | {
+            "hand_at_which_I_played_this_board": {
+                "link": hand_link,
+                "description": hand_description,
+            }
+        }
     )
 
     return TemplateResponse(request, "hand_detail.html", context=context)

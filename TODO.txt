@@ -157,6 +157,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* version 0a1dfaf 2025-01-31 (refs/heads/main) 2025-02-01T03:47:01+0000.sql : Template error when bob looks at https://django.server.orb.local/hand/40/
+
+  Something about "current_player"
+
 * Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
 
 * Don't show the "table up with these dudes" button if the partnership on that line is already seated!  Duh.
