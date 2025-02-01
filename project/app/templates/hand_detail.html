@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fastdev %}
 {% block title %}
     {{ hand }}
 {% endblock title %}
@@ -43,10 +44,18 @@
                 {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
             </div>
             <div>
-                {% if show_auction_history %}{{ card_display.current_player.cards }}{% endif %}
-            </div>
+                {% if show_auction_history %}
+                    {% ifexists card_display.current_player %}
+                    {{ card_display.current_player.cards }}
+                {% endifexists %}
+            {% endif %}
         </div>
     </div>
+</div>
+{% ifexists card_display.current_player %}
+{% else %}
+<div>{% include "four-hands.html" %}</div>
+{% endifexists %}
 {% endblock content %}
 {% block upper-right-column %}
     {% if DEPLOYMENT_ENVIRONMENT != "production" %}
