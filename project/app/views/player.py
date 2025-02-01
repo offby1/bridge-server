@@ -354,6 +354,10 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
 @logged_in_as_player_required(redirect=False)
 def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
     next_ = request.POST["next"]
+    try:
+        request.user.player.create_synthetic_partner()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
     return HttpResponseRedirect(next_)
 
 
@@ -415,7 +419,9 @@ def player_list_view(request):
 
     # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
     # create a synthetic player.
-    logger.debug(f"{player=} {getattr(player, 'partner')=} {has_partner_filter=} {filtered_count=}")
+    logger.debug(
+        f"{player=} {getattr(player, 'partner', None)=} {has_partner_filter=} {filtered_count=}"
+    )
     if (
         player is not None
         and player.partner is None
@@ -423,6 +429,8 @@ def player_list_view(request):
         and filtered_count == 0
     ):
         context["create_synth_partner_button"] = _create_synth_partner_button(request)
-        context["create_synth_partner_next"] = request.get_full_path()
+        context["create_synth_partner_next"] = (
+            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
+        )
 
     return render(request, "player_list.html", context)

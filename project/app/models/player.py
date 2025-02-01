@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from faker import Faker
 
 from .board import Board
 from .message import Message
@@ -399,6 +400,31 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             reverse("app:player", kwargs={"pk": self.pk}),
             str(self),
         )
+
+    @staticmethod
+    def _find_unused_username(prefix=""):
+        fake = Faker()
+        Faker.seed(0)
+        while True:
+            candidate = prefix + fake.unique.first_name().lower()
+            if not auth.models.User.objects.filter(username=candidate).exists():
+                return candidate
+            logger.debug("User named %s already exists; let's try another", candidate)
+
+    def create_synthetic_partner(self) -> Player:
+        with transaction.atomic():
+            existing = Player.objects.filter(synthetic=True).filter(partner__isnull=True)
+            if existing.exists():
+                raise PartnerException(f"There are already existing synths {existing.all()}")
+            new_user = auth.models.User.objects.create_user(
+                username=self._find_unused_username(prefix="synthetic_")
+            )
+            new_player = Player.objects.create(
+                synthetic=True, allow_bot_to_play_for_me=True, partner=self, user=new_user
+            )
+            self.partner = new_player
+            self.save()
+            return self.partner
 
     class Meta:
         ordering = ["user__username"]
