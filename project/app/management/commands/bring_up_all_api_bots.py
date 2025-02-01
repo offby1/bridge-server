@@ -1,4 +1,4 @@
-from app.models.player import BotPlayer
+from app.models.player import Player
 from django.core.management.base import BaseCommand
 
 # Creates the necessary directories for daemontools.
@@ -10,9 +10,9 @@ from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
-        for bp in BotPlayer.objects.filter(
+        for bp in Player.objects.filter(
             player__currently_seated=True,
-        ):
+        ).filter(allow_bot_to_play_for_me=True):
             self.stderr.write(f"{bp.player.name} ... ", ending="")
 
             try:

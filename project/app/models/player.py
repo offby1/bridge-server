@@ -89,6 +89,7 @@ class Player(models.Model):
     # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
     # partnership splits up.
     currently_seated = models.BooleanField(default=False)
+    allow_bot_to_play_for_me = models.BooleanField(default=False)
     synthetic = models.BooleanField(default=False)
 
     messages_for_me = GenericRelation(
@@ -173,27 +174,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             if desired_state is None:
                 desired_state = not self.allow_bot_to_play_for_me
 
-            # If they are asking to enable the bot, ensure there aren't already too many bots.
-            if desired_state:
-                c = BotPlayer.objects.count()
+            if desired_state is True:
+                c = Player.objects.filter(allow_bot_to_play_for_me=True).count()
                 if c >= MAX_BOT_PROCESSES:
                     msg = f"There are already {c} bots; no bot for you"
                     raise TooManyBots(msg)
 
-                BotPlayer.objects.get_or_create(player=self)
-            else:
-                BotPlayer.objects.get(player_id=self.pk).delete()
-
+            self.allow_bot_to_play_for_me = desired_state
+            self.save()
             self.control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
         self._check_synthetic()
         super().save(*args, **kwargs)
-
-    @property
-    def allow_bot_to_play_for_me(self) -> bool:
-        return BotPlayer.objects.filter(player_id=self.pk).exists()
 
     def _check_synthetic(self) -> None:
         if not self.pk:
@@ -409,7 +403,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     class Meta:
         ordering = ["user__username"]
         constraints = [
-            models.CheckConstraint(  # type: ignore
+            models.CheckConstraint(  # type: ignore [call-arg]
                 name="%(app_label)s_%(class)s_cant_be_own_partner",
                 condition=models.Q(partner__isnull=True) | ~models.Q(partner_id=models.F("id")),
             ),
@@ -422,18 +416,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         if self.synthetic:
             return f"🤖🤖{self.name}🤖🤖"
         return self.name
-
-
-class BotPlayer(models.Model):
-    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
-
-    class Meta:
-        db_table_comment = "Those players whose PKs appear here will have a bot play for them."
-
-    def delete(self, *args, **kwargs):
-        if self.player.allow_bot_to_play_for_me:
-            raise ValidationError("Synthetic players must allow the bot to play for them")
-        return super().delete(*args, **kwargs)
 
 
 admin.site.register(Player, PlayerAdmin)

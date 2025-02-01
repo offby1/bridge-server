@@ -150,6 +150,7 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": true,
       "currently_seated": true,
       "partner": 3,
       "synthetic": true,

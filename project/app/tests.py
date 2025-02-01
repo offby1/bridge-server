@@ -47,7 +47,7 @@ def j_northam(db, everybodys_password):
 
 def test_synthetic_immutability(db) -> None:
     andy = auth.models.User.objects.create(username="Andy Android")
-    android = Player.objects.create(synthetic=True, user=andy)
+    android = Player.objects.create(allow_bot_to_play_for_me=True, synthetic=True, user=andy)
     android.synthetic = False
     with pytest.raises(ValidationError) as e:
         android.save()
