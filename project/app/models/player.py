@@ -104,6 +104,11 @@ class Player(models.Model):
 
     boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
 
+    def unseat_me(self) -> None:
+        self.currently_seated = False
+        if self.synthetic:
+            self.control_bot()
+
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
     def taint_board(self, *, board_pk: PK) -> None:
@@ -288,12 +293,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             old_partner_pk = self.partner.pk
 
             self.partner.partner = None
-            self.partner.currently_seated = False
+            self.partner.unseat_me()
 
             self.partner.save(update_fields=["partner", "currently_seated"])
 
             self.partner = None
-            self.currently_seated = False
+            self.unseat_me()
             self.save(update_fields=["partner", "currently_seated"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
