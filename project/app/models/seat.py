@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 import bridge.seat
@@ -12,11 +13,25 @@ if TYPE_CHECKING:
     from . import Player, Table  # noqa
 
 
+logger = logging.getLogger(__name__)
+
+
 class SeatException(Exception):
     pass
 
 
+class SeatManager(models.Manager):
+    def create(self, *args, **kwargs):
+        rv = super().create(*args, **kwargs)
+        player = rv.player
+        if player.synthetic:
+            player.control_bot()
+        return rv
+
+
 class Seat(models.Model):
+    objects = SeatManager()
+
     direction = models.CharField(
         choices=SEAT_CHOICES.items(),
     )

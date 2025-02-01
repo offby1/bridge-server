@@ -124,10 +124,13 @@ class Tournament(models.Model):
                 for seat in t.seat_set.all():
                     p: Player = seat.player
 
+                    message = f"{p} is now in the lobby"
                     p.currently_seated = False
                     p.save()
-                    p.toggle_bot(False)
-                    logger.debug("%s is now in the lobby, and un-bottified", p)
+                    if not p.synthetic:
+                        p.toggle_bot(False)
+                        message += ", and unbottified"
+                    logger.debug("%s", message)
 
     def _check_no_more_than_one_running_tournament(self) -> None:
         if self.is_complete:

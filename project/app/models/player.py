@@ -11,11 +11,13 @@ import bridge.seat
 import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from faker import Faker
 
 from .board import Board
 from .message import Message
@@ -79,7 +81,9 @@ class Player(models.Model):
 
     # On the other hand -- do I need this at all?  If our player is seated, then we can deduce his partner by seeing
     # who's sitting across from him.  But then if the partnership isn't seated, I'm outta luck.
-    partner = models.ForeignKey("Player", null=True, blank=True, on_delete=models.SET_NULL)
+    partner = models.ForeignKey["Player"](
+        "Player", null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
     # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
@@ -88,6 +92,8 @@ class Player(models.Model):
     # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
     # partnership splits up.
     currently_seated = models.BooleanField(default=False)
+    allow_bot_to_play_for_me = models.BooleanField(default=False)
+    synthetic = models.BooleanField(default=False)
 
     messages_for_me = GenericRelation(
         Message,
@@ -97,6 +103,11 @@ class Player(models.Model):
     )
 
     boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+
+    def unseat_me(self) -> None:
+        self.currently_seated = False
+        if self.synthetic:
+            self.control_bot()
 
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
@@ -171,26 +182,27 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             if desired_state is None:
                 desired_state = not self.allow_bot_to_play_for_me
 
-            # If they are asking to enable the bot, ensure there aren't already too many bots.
-            if desired_state:
-                c = BotPlayer.objects.count()
+            if desired_state is True:
+                c = Player.objects.filter(allow_bot_to_play_for_me=True).count()
                 if c >= MAX_BOT_PROCESSES:
                     msg = f"There are already {c} bots; no bot for you"
                     raise TooManyBots(msg)
 
-                BotPlayer.objects.get_or_create(player=self)
-            else:
-                BotPlayer.objects.filter(player=self).delete()
-
+            self.allow_bot_to_play_for_me = desired_state
+            self.save()
             self.control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
+        self._check_synthetic()
         super().save(*args, **kwargs)
 
-    @property
-    def allow_bot_to_play_for_me(self) -> bool:
-        return BotPlayer.objects.filter(player_id=self.pk).exists()
+    def _check_synthetic(self) -> None:
+        if not self.pk:
+            return
+        original = Player.objects.get(pk=self.pk)
+        if self.synthetic != original.synthetic:
+            raise ValidationError("The 'synthetic' field cannot be changed.")
 
     def _check_current_seat(self) -> None:
         if not self.currently_seated:
@@ -281,12 +293,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             old_partner_pk = self.partner.pk
 
             self.partner.partner = None
-            self.partner.currently_seated = False
+            self.partner.unseat_me()
 
             self.partner.save(update_fields=["partner", "currently_seated"])
 
             self.partner = None
-            self.currently_seated = False
+            self.unseat_me()
             self.save(update_fields=["partner", "currently_seated"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
@@ -396,29 +408,88 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             str(self),
         )
 
+    @staticmethod
+    def _find_unused_username(prefix=""):
+        fake = Faker()
+        Faker.seed(0)
+        while True:
+            # Ensure neither the prefixed, nor the unprefixed, version exists.
+            unprefixed_candidate = fake.unique.first_name().lower()
+            candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
+            if not auth.models.User.objects.filter(username__in=candidates).exists():
+                return candidates[-1]
+            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
+
+    def create_synthetic_partner(self) -> Player:
+        with transaction.atomic():
+            if self.partner is not None:
+                return self.partner
+
+            existing = Player.objects.filter(synthetic=True).filter(partner__isnull=True)
+            if existing.exists():
+                raise PartnerException(
+                    f"There are already existing synths {[s.name for s in existing.all()]}"
+                )
+            new_user = auth.models.User.objects.create_user(
+                username=self._find_unused_username(prefix="synthetic_")
+            )
+            new_player = Player.objects.create(
+                synthetic=True, allow_bot_to_play_for_me=True, partner=self, user=new_user
+            )
+            self.partner = new_player
+            self.save()
+            return self.partner
+
+    def create_synthetic_opponents(self) -> list[Player]:
+        with transaction.atomic():
+            existing = (
+                Player.objects.filter(synthetic=True)
+                .filter(partner__isnull=False)
+                .filter(currently_seated=False)
+                .exclude(partner=self)
+            )
+            if existing.count() >= 2:
+                raise PartnerException(
+                    f"There are already at least two existing synths {[s.name for s in existing.all()]}"
+                )
+            rv: list[Player] = []
+
+            while len(rv) < 2:
+                new_user = auth.models.User.objects.create_user(
+                    username=self._find_unused_username(prefix="synthetic_")
+                )
+                new_player = Player.objects.create(
+                    synthetic=True, allow_bot_to_play_for_me=True, user=new_user
+                )
+                rv.append(new_player)
+
+            rv[0].partner = rv[1]
+            rv[1].partner = rv[0]
+            for p in rv:
+                p.save()
+
+            return rv
+
     class Meta:
         ordering = ["user__username"]
         constraints = [
-            models.CheckConstraint(  # type: ignore
+            models.CheckConstraint(  # type: ignore [call-arg]
                 name="%(app_label)s_%(class)s_cant_be_own_partner",
                 condition=models.Q(partner__isnull=True) | ~models.Q(partner_id=models.F("id")),
             ),
+            models.CheckConstraint(
+                name="synthetic_players_must_allow_bot_to_play_for_them",
+                condition=models.Q(synthetic=False) | models.Q(allow_bot_to_play_for_me=True),
+            ),  # type: ignore [call-arg]
         ]
 
     def __repr__(self) -> str:
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        if self.allow_bot_to_play_for_me:
+        if self.synthetic:
             return f"🤖🤖{self.name}🤖🤖"
         return self.name
-
-
-class BotPlayer(models.Model):
-    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
-
-    class Meta:
-        db_table_comment = "Those players whose PKs appear here will have a bot play for them."
 
 
 admin.site.register(Player, PlayerAdmin)

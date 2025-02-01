@@ -134,6 +134,8 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
+    assert request.user.player is not None
+
     p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
     if p1.partner is None:
         return Forbid(f"Hey man {p1.name} doesn't have a partner")

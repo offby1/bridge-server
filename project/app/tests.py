@@ -2,6 +2,7 @@ import base64
 import collections
 import importlib
 import json
+import re
 
 import pytest
 from bridge.card import Suit as libSuit
@@ -9,6 +10,7 @@ from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
 from django.conf import settings
 from django.contrib import auth
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
@@ -43,22 +45,26 @@ def j_northam(db, everybodys_password):
     return Player.objects.create(user=u)
 
 
+def test_synthetic_immutability(db) -> None:
+    andy = auth.models.User.objects.create(username="Andy Android")
+    android = Player.objects.create(allow_bot_to_play_for_me=True, synthetic=True, user=andy)
+    android.synthetic = False
+    with pytest.raises(ValidationError) as e:
+        android.save()
+    assert "cannot be changed" in str(e.value)
+
+
 # You'd think the code-under-test would be simple enough to not warrant its own test.
 # And yet I managed to screw it up.
-def test_bottiness_text(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    h = t.current_hand
-    p1 = Player.objects.first()
-    assert p1 is not None
+def test_synthetic_player_text(usual_setup) -> None:
+    android = Player.objects.filter(synthetic=True).first()
+    assert android is not None
 
-    p1.toggle_bot()
-    assert p1.allow_bot_to_play_for_me is True
-    assert "🤖" in p1.name_dir(hand=h)
+    assert "🤖" in str(android)
 
-    p1.toggle_bot()
-    assert p1.allow_bot_to_play_for_me is False
-    assert "🤖" not in p1.name_dir(hand=h)
+    hooman = Player.objects.filter(synthetic=False).first()
+    assert hooman is not None
+    assert "🤖" not in str(hooman)
 
 
 def test_splitsville_ejects_that_partnership_from_table(usual_setup):
@@ -124,8 +130,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get_by_name("Jeremy Northam")
 
     link = p.as_link()
-    assert ">Jeremy Northam" in link
-    assert "href='/player/" in link
+    assert re.search(r"href='/player/.*>.*Jeremy Northam.*</a>", link)
 
 
 def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:

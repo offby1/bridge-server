@@ -167,10 +167,6 @@ daphne: test django-superuser migrate create-cache collectstatic ensure-skeleton
       --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
       project.asgi:application
 
-# Create a bunch of users and tables
-[group('bs')]
-pop: django-superuser migrate (manage "generate_fake_data --players=40")
-
 alias createsuperuser := django-superuser
 alias superuser := django-superuser
 

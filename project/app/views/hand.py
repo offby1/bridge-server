@@ -462,7 +462,6 @@ def _maybe_redirect_or_error(
                 )
                 return None
 
-    logger.error(f"Don't know what to do with {player_visibility=}")
     return None
 
 

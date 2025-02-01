@@ -13,9 +13,6 @@ def dump_django_cache():
     cache.clear()
 
 
-logging.getLogger("faker.factory").setLevel(logging.CRITICAL)
-
-
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
 @pytest.fixture(autouse=True)
 def shaddap_complaints_about_missing_staticfiles_manifest_entries(settings):

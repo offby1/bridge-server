@@ -350,23 +350,69 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
+def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
+    return format_html(
+        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
+    )
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
+    assert request.user.player is not None
+    next_ = request.POST["next"]
+    try:
+        partner = request.user.player.create_synthetic_partner()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
+
+    django_web_messages.add_message(
+        request,
+        django_web_messages.INFO,
+        f"Your partner is now {partner}.",
+    )
+    return HttpResponseRedirect(next_)
+
+
+def _create_synth_opponents_button(request) -> str:
+    return format_html(
+        """<button class="btn btn-primary" type="submit">Gimme synthetic opponents, Yo</button>"""
+    )
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def player_create_synthetic_opponents_view(request: AuthedHttpRequest) -> HttpResponse:
+    assert request.user.player is not None
+    next_ = request.POST["next"]
+    try:
+        request.user.player.create_synthetic_opponents()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
+    return HttpResponseRedirect(next_)
+
+
 def player_list_view(request):
     has_partner = request.GET.get("has_partner")
     seated = request.GET.get("seated")
     exclude_me = request.GET.get("exclude_me")
 
     qs = Player.objects.all()
+    filter_description = []
 
     player = getattr(request.user, "player", None)
 
     if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
         qs = qs.exclude(pk=player.pk).exclude(partner=player)
+        filter_description.append(f"excluding {player}")
 
     if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
         qs = qs.exclude(partner__isnull=has_partner_filter)
+        filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
         qs = qs.filter(currently_seated=seated_filter)
+        filter_description.append("currently seated" if seated_filter else "in the lobby")
 
     filtered_count = qs.count()
     if player is not None and player.partner is not None:
@@ -395,6 +441,30 @@ def player_list_view(request):
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
         "page_obj": page_obj,
         "this_pages_players": json.dumps([p.pk for p in page_obj]),
+        "title": ("Players " + ", ".join(filter_description)) if filter_description else "",
     }
+
+    # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
+    # create a synthetic player.
+    if (
+        player is not None
+        and player.partner is None
+        and has_partner_filter is False
+        and filtered_count == 0
+    ):
+        context["create_synth_partner_button"] = _create_synth_partner_button(request)
+        context["create_synth_partner_next"] = (
+            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
+        )
+    # similarly for opponents.
+    elif (
+        player is not None
+        and player.partner is not None
+        and has_partner_filter is True
+        and seated_filter is False
+        and filtered_count < 2
+    ):
+        context["create_synth_opponents_button"] = _create_synth_opponents_button(request)
+        context["create_synth_opponents_next"] = request.get_full_path()
 
     return render(request, "player_list.html", context)
