@@ -413,9 +413,14 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     def create_synthetic_partner(self) -> Player:
         with transaction.atomic():
+            if self.partner is not None:
+                return self.partner
+
             existing = Player.objects.filter(synthetic=True).filter(partner__isnull=True)
             if existing.exists():
-                raise PartnerException(f"There are already existing synths {existing.all()}")
+                raise PartnerException(
+                    f"There are already existing synths {[s.name for s in existing.all()]}"
+                )
             new_user = auth.models.User.objects.create_user(
                 username=self._find_unused_username(prefix="synthetic_")
             )
@@ -432,10 +437,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 Player.objects.filter(synthetic=True)
                 .filter(partner__isnull=False)
                 .filter(currently_seated=False)
+                .exclude(partner=self)
             )
             if existing.count() >= 2:
                 raise PartnerException(
-                    f"There are already at least two existing synths {existing.all()}"
+                    f"There are already at least two existing synths {[s.name for s in existing.all()]}"
                 )
             rv = []
 
