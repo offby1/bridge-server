@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from django.contrib import auth
 from django.core.cache import cache
@@ -9,6 +11,9 @@ from .models import Hand, Play, Player, Table
 @pytest.fixture(autouse=True)
 def dump_django_cache():
     cache.clear()
+
+
+logging.getLogger("faker.factory").setLevel(logging.CRITICAL)
 
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.

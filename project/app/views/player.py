@@ -4,6 +4,7 @@ import contextlib
 import json
 import logging
 import time
+from typing import Any
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
@@ -11,6 +12,7 @@ from django.db.models import Q
 from django.http import (
     HttpRequest,
     HttpResponse,
+    HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
@@ -19,7 +21,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -32,14 +34,14 @@ from .misc import AuthedHttpRequest, logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def player_detail_endpoint(player):
-    return reverse("app:player", args=[player.id])
+def player_detail_endpoint(*, player_pk: PK) -> str:
+    return reverse("app:player", args=[player_pk])
 
 
-def player_link(player):
+def player_link(player: Player) -> str:
     return format_html(
         "<a href='{}'>{}</a>",
-        player_detail_endpoint(player),
+        player_detail_endpoint(player_pk=player.pk),
         player,
     )
 
@@ -48,76 +50,136 @@ def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
 
-def _button(*, page_subject, action):
-    assert action in (JOIN, SPLIT)
-    url = player_detail_endpoint(page_subject)
+def _splitsville_context(*, request: AuthedHttpRequest, player_pk: PK) -> dict[str, Any]:
+    return {
+        "button_content": "Splitsville!!",
+        "button_submit_value": SPLIT,
+        "form_action": player_detail_endpoint(player_pk=player_pk),
+        "input_hidden_value": request.get_full_path(),
+    }
 
+
+def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
+    return {
+        "button_content": "Partner 'em Up, Boss",
+        "button_submit_value": JOIN,
+        "form_action": player_detail_endpoint(player_pk=subject_pk),
+        "input_hidden_value": reverse("app:players")
+        + "?has_partner=True&seated=False&exclude_me=True",
+    }
+
+
+def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
+    assert request.user.player is not None
+    return {
+        "button_content": "Table Up With Yon Dudes",
+        "button_submit_value": "",
+        "form_action": reverse(
+            "app:new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
+        ),
+    }
+
+
+def _find_a_partner_link():
     return format_html(
-        """<button
-      hx-post="{}"
-      hx-swap="none"
-      name="action"
-      value={}
-      >{}</button>""",
-        url,
-        action,
-        action,
-    )
-
-
-def _find_swinging_singles_link():
-    return format_html(
-        """<a href="{}?lookin_for_love=True">Find swinging singles in your area.</a>""",
+        """<a style="font-size: 5em;"
+              href="{}?has_partner=False&exclude_me=True">Find a partner.</a>""",
         reverse("app:players"),
     )
 
 
-def _get_text(subject, as_viewed_by):
-    addendum = ""
-    if subject.current_seat is None and as_viewed_by.current_seat is None:
-        addendum = format_html(
-            """ (<a href="{}">other unseated partnerships</a>)""",
-            reverse("app:players") + "?seated=False&lookin_for_love=False&exclude_me=True",
-        )
+def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
+    if subject.partner is None:
+        if subject == as_viewed_by:
+            return _find_a_partner_link()
 
-    if subject.partner:
-        if subject.partner != as_viewed_by:
-            text = format_html("{}'s partner is {}", subject, player_link(subject.partner))
-        else:
-            text = format_html("{}'s partner is, gosh, you!", subject)
+        return f"{subject} has no partner 😢"
 
-        return format_html("{}{}", text, addendum)
+    possessive_noun = f"{subject}'s"
+    if subject == as_viewed_by:
+        possessive_noun = "Your"
+
+    if subject.partner == as_viewed_by:
+        text = format_html("{} partner is, gosh, you!", possessive_noun)
+    else:
+        text = format_html("{} partner is {}", possessive_noun, player_link(subject.partner))
+
+    return format_html("{}", text)
+
+
+def _get_partner_action_from_context(
+    *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
+) -> dict[str, Any] | None:
+    """
+    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise "Nuttin'".  Otherwise ...
+
+    Each player has (for our purposes) a few possible states:
+
+    * no partner, unseated
+    * partner, unseated
+    * partner, seated
+
+    Otherwise
+
+    | viewer state      | subject state     | outcome                                                        |
+    |-------------------+-------------------+----------------------------------------------------------------|
+    | no partner        | no partner        | partnerup                                                      |
+    | no partner        | partner, unseated | --                                                             |
+    | no partner        | seated            | --                                                             |
+    | partner, unseated | no partner        | --                                                             |
+    | partner, unseated | partner, unseated | splitsville, if we are each other's partner; otherwise tableup |
+    | partner, unseated | seated            | --                                                             |
+    | seated            | no partner        | --                                                             |
+    | seated            | partner, unseated | --                                                             |
+    | seated            | seated            | splitsville, if we are each other's partner; otherwise nothing |
+    """
+
+    if as_viewed_by is None:
+        return None
 
     if as_viewed_by == subject:
-        return _find_swinging_singles_link()
+        if subject.partner is not None:
+            return _splitsville_context(request=request, player_pk=subject.pk)
 
-    return f"{subject} has no partner 😢"
+        return None
 
+    if subject.partner == as_viewed_by:
+        return _splitsville_context(request=request, player_pk=subject.pk)
 
-def _get_button(subject, as_viewed_by):
-    if subject.partner is None and as_viewed_by.partner is None and subject != as_viewed_by:
-        return _button(page_subject=subject, action=JOIN)
+    if {subject.partner, as_viewed_by.partner} == {None}:
+        return _partnerup_context(request=request, subject_pk=subject.pk)
 
-    if subject == as_viewed_by and subject.partner is not None:
-        return _button(page_subject=subject, action=SPLIT)
+    if as_viewed_by.partner is None:
+        return None
 
-    if subject == as_viewed_by.partner:
-        return _button(page_subject=subject, action=SPLIT)
+    if {subject.currently_seated, as_viewed_by.currently_seated} == {
+        False
+    } and not subject.currently_seated:
+        if subject.partner == as_viewed_by:
+            return _splitsville_context(request=request, player_pk=subject.pk)
+        else:
+            return _tableup_context(request=request, subject_pk=subject.pk)
 
     return None
 
 
-def partnership_context(*, subject, as_viewed_by):
-    text = _get_text(subject, as_viewed_by)
-    button = _get_button(subject, as_viewed_by)
-
-    return {
+def _partnership_context(
+    *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player
+) -> dict[str, Any]:
+    context = {
         "as_viewed_by": as_viewed_by,
-        "button": button,
         "partnership_event_source_endpoint": f"/events/player/{partnership_status_channel_name(viewer=as_viewed_by, subject=subject)}",
         "subject": subject,
-        "text": text,
+        "text": _describe_partnership(subject=subject, as_viewed_by=as_viewed_by),
     }
+    if (
+        form_stuff := _get_partner_action_from_context(
+            request=request, subject=subject, as_viewed_by=as_viewed_by
+        )
+    ) is not None:
+        context["button_context"] = form_stuff
+
+    return context
 
 
 def _chat_disabled_explanation(*, sender, recipient) -> str | None:
@@ -137,7 +199,7 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 @logged_in_as_player_required()
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
-    who_clicked = request.user.player
+    who_clicked = request.user.player  # aka "as_viewed_by"
     redirect_to_table = False
 
     if pk is None:
@@ -182,6 +244,10 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
                 who_clicked.break_partnership()
             elif action == JOIN:
                 who_clicked.partner_with(subject)
+            else:
+                return HttpResponseBadRequest(
+                    escape(f"{action=} but I only accept {SPLIT=} or {JOIN=}")
+                )
 
         except PartnerException as e:
             django_web_messages.add_message(
@@ -192,24 +258,16 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
             )
             return HttpResponseForbidden(str(e))
 
-        return HttpResponse()
+        if (next_ := request.POST.get("next")) is None:
+            next_ = request.get_full_path()
+
+        return HttpResponseRedirect(next_)
 
     return TemplateResponse(
         request,
         "player_detail.html",
-        context=common_context | partnership_context(subject=subject, as_viewed_by=who_clicked),
-    )
-
-
-@require_http_methods(["GET"])
-@logged_in_as_player_required()
-def partnership_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    subject: Player = get_object_or_404(Player, pk=pk)
-    context = partnership_context(subject=subject, as_viewed_by=request.user.player)
-    return TemplateResponse(
-        request=request,
-        template="player_detail.html#partnership-status-partial",
-        context=context,
+        context=common_context
+        | _partnership_context(request=request, subject=subject, as_viewed_by=who_clicked),
     )
 
 
@@ -293,7 +351,7 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
 
 
 def player_list_view(request):
-    lookin_for_love = request.GET.get("lookin_for_love")
+    has_partner = request.GET.get("has_partner")
     seated = request.GET.get("seated")
     exclude_me = request.GET.get("exclude_me")
 
@@ -304,8 +362,8 @@ def player_list_view(request):
     if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
         qs = qs.exclude(pk=player.pk).exclude(partner=player)
 
-    if (lfl_filter := {"True": True, "False": False}.get(lookin_for_love)) is not None:
-        qs = qs.filter(partner__isnull=lfl_filter)
+    if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
+        qs = qs.exclude(partner__isnull=has_partner_filter)
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
         qs = qs.filter(currently_seated=seated_filter)
@@ -326,9 +384,17 @@ def player_list_view(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # Smuggle a button in there.
+    for other in page_obj:
+        other.action_button = (
+            _get_partner_action_from_context(request=request, subject=other, as_viewed_by=player)
+            or None
+        )
+
     context = {
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
         "page_obj": page_obj,
+        "this_pages_players": json.dumps([p.pk for p in page_obj]),
     }
 
     return render(request, "player_list.html", context)

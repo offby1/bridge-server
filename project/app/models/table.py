@@ -123,7 +123,7 @@ class Table(models.Model):
     @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
-        assert rv is not None
+        assert rv is not None, "current_hand can't find no hands"
         return rv
 
     def current_hand_pk(self) -> PK:
@@ -186,7 +186,7 @@ class Table(models.Model):
         for seat in seats:
             expression |= models.Q(pk__in=seat.player.boards_played.all())
 
-        assert self.tournament is not None
+        assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 

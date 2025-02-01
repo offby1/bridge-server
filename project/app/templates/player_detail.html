@@ -1,4 +1,5 @@
 {% extends "base_player_detail.html" %}
+{% load fastdev %}
 {% load player_extras %}
 {% load partials %}
 {% partialdef partnership-status-partial %}
@@ -10,59 +11,29 @@
          data-subject="{{ subject.pk }}"
          {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}>
         <div class="row">
-            <div class="col">{{ subject | styled_link:as_viewed_by.user }}</div>
             <div class="col">
                 {% if text %}{{ text }}{% endif %}
             </div>
             <div class="col">
-                {% if button %}
-                    {{ button }}
-                {% else %}
-                    ...
-                {% endif %}
-            </div>
-        </div>
+                {% ifexists button_context %}
+                <form method="post" action="{{ button_context.form_action }}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            name="action"
+                            value="{{ button_context.button_submit_value }}">
+                        {{ button_context.button_content }}
+                    </button>
+                    {% ifexists button_context.input_hidden_value %}
+                    <input type="hidden"
+                           name="next"
+                           value="{{ button_context.input_hidden_value }}" />
+                {% endifexists %}
+            </form>
+        {% else %}
+            ...
+        {% endifexists %}
     </div>
+</div>
+</div>
 {% endblock partnership-status-html %}
 {% endpartialdef partnership-status-partial %}
-{% block scripts %}
-    {{ block.super }}
-    <script>
-var es = new ReconnectingEventSource('/events/partnerships/');
-
-es.addEventListener('message', function (e) {
-    console.log(e.data);
-
-    // collect the two partner IDs in the message
-    var d = JSON.parse(e.data) ;
-    var messagePKs = d.split.concat(d.joined) ;
-    messagePKs = new Set(messagePKs.map((i) => String(i)) );
-
-    // collect the (up to) four relevant player IDs from this page
-    var watchedPKs = new Set();
-    var partnershipStatusDataset = document.querySelector("#partnership-status").dataset;
-
-    watchedPKs.add(partnershipStatusDataset.player);
-
-    if ("player-partner" in partnershipStatusDataset) {
-        // camelCase: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset#name_conversion
-       watchedPKs.add(partnershipStatusDataset.playerPartner);
-    }
-
-    watchedPKs.add(partnershipStatusDataset.subject);
-
-    if ("subject-partner" in partnershipStatusDataset) {
-       watchedPKs.add(partnershipStatusDataset.subjectPartner);
-    }
-
-    // compute the set intersection of those two
-    // if the intersection is non-empty, reload the relevant bit of the page.
-
-    if (messagePKs.intersection(watchedPKs).size > 0) {
-      htmx.ajax('GET', '/player/' + partnershipStatusDataset.subject + '/partnership/', {target:'#partnership-status', swap:'outerHTML'});
-    }
-
-}, false);
-
-    </script>
-{% endblock scripts %}
