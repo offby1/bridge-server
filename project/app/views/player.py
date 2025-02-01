@@ -355,9 +355,15 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
 def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
     next_ = request.POST["next"]
     try:
-        request.user.player.create_synthetic_partner()
+        partner = request.user.player.create_synthetic_partner()
     except Exception as e:
         return HttpResponseBadRequest(str(e))
+
+    django_web_messages.add_message(
+        request,
+        django_web_messages.INFO,
+        f"Your partner is now {partner}.",
+    )
     return HttpResponseRedirect(next_)
 
 
