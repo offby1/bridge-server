@@ -8,10 +8,6 @@ STILL TODO:
 
 * Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
 
-* Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
-
-* The http://localhost:9000/players/?lookin_for_love=True page has a table whose rightmost column is "Let's All Make A Table Together".  But that's wrong sometimes -- if I'm looking for a partner, e.g., it should say "Partnerup", and have the "partnerup" button in the relevant rows.
-
 * Along with the above, ensure there are always enough unpartnered bot players to accomodate a newcomer.
 
 * MOVEMENTS
