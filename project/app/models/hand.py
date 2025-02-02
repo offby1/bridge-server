@@ -742,7 +742,12 @@ class Hand(models.Model):
     def untaint_board(*, instance, **kwargs):
         for p in instance.players():
             p.boards_played.remove(instance.board)
-        logger.debug("%s un-tainted %s from %s.", instance, instance.board, instance.players)
+        logger.debug(
+            "Hand %s un-tainted board %s from %s.",
+            instance.pk,
+            instance.board.pk,
+            [p.name for p in instance.players()],
+        )
 
     class Meta:
         constraints = [

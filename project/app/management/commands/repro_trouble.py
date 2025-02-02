@@ -24,9 +24,7 @@ def scan_for_bogons():
 
             if qs.count() > 1:
                 for h in qs.order_by("id"):
-                    bogon_tuples.add(
-                        (p.name, f"Board #{b.display_number} ({b.tournament.pk})", h.pk)
-                    )
+                    bogon_tuples.add((p.name, b.pk, h.pk))
     import pprint
 
     pprint.pprint(bogon_tuples)
@@ -60,7 +58,7 @@ class Command(BaseCommand):
         print("After splitsville and re-partering:")
         scan_for_bogons()
 
-        Table.objects.create_with_two_partnerships(christine, katie)
+        t = Table.objects.create_with_two_partnerships(christine, katie)
 
-        print("After creating new table:")
+        print(f"After creating {t}:")
         scan_for_bogons()
