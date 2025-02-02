@@ -184,7 +184,9 @@ class Table(models.Model):
         seats = self.seat_set.all()
         expression = models.Q(pk__in=[])
         for seat in seats:
-            expression |= models.Q(pk__in=seat.player.boards_played.all())
+            bp = seat.player.boards_played.order_by("id").all()
+            logger.debug("Player %s has played %s", seat.player, [b.pk for b in bp])
+            expression |= models.Q(pk__in=bp)
 
         assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
         unplayed_boards = self.tournament.board_set.exclude(expression)
