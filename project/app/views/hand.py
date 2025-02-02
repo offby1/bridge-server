@@ -19,6 +19,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
@@ -546,6 +547,18 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
+    terse_description = format_html(
+        """
+    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board {}</a>, Hand {}
+    """,
+        reverse("app:board-list"),
+        hand.board.tournament.pk,
+        hand.board.tournament.pk,
+        reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
+        hand.board.pk,
+        hand.pk,
+    )
+
     # for when player is looking at a hand whose board they've already played.
     other_hand = player.hand_at_which_board_was_played(hand.board)
     assert other_hand is not None
@@ -554,6 +567,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
+        | {"terse_description": terse_description}
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
         | {

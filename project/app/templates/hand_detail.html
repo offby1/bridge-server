@@ -6,18 +6,13 @@
 {% block content %}
     <div>
         <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
-            <div class="row">
-                <div class="col">
-                    <h1>{{ hand.board }}</h1>
-                </div>
-                <div class="col">
-                    <h1>Table {{ hand.table.pk }}, {{ hand }}</h1>
-                </div>
+            <div>
+                <h1 style="text-align:center">{{ terse_description }}</h1>
             </div>
             <div class="row">
                 <div class="col">
                     <h1>
-                        <div id="auction-summary">Auction: {{ hand.auction.status }}</div>
+                        <div id="auction-summary">{{ hand.auction.status }}</div>
                     </h1>
                 </div>
                 <div class="col">

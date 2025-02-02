@@ -1,18 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* The hand detail page is a mess -- specifically, the large type at the top:
-
-| Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North | Table 20, Hand 317 (Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North): 3 calls; 0 plays |
-| Auction: Incomplete                                                                           | {'N/S': 0, 'E/W': 0}                                                                                                                 |
-
-  That's waaay too much redundant information.
-
-  How about:
-
-  One big line that tells you *which* hand you're looking at -- tournament number, board number, hand number.
-  And another that tells you about the *state* of the hand: auction, trick count.
-
 * I think I've seen the "Redouble" button inactive when it should be active.  Something like
 
   - North bids 1 Club
@@ -182,6 +170,18 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The hand detail page is a mess -- specifically, the large type at the top:
+
+| Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North | Table 20, Hand 317 (Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North): 3 calls; 0 plays |
+| Auction: Incomplete                                                                           | {'N/S': 0, 'E/W': 0}                                                                                                                 |
+
+  That's waaay too much redundant information.
+
+  How about:
+
+  One big line that tells you *which* hand you're looking at -- tournament number, board number, hand number.
+  And another that tells you about the *state* of the hand: auction, trick count.
+
 * Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
 
   I'll consider this done because as of fc4f51a, Xterm ("oldxterm" on Discord) says she got it working easily.
