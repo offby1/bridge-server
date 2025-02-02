@@ -3,6 +3,7 @@ from __future__ import annotations
 import operator
 
 from django.core.paginator import Paginator
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
@@ -47,8 +48,7 @@ def board_archive_view(request: AuthedHttpRequest, pk: PK) -> TemplateResponse:
     )
 
 
-@logged_in_as_player_required()
-def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
+def board_list_view(request: HttpRequest) -> TemplateResponse:
     board_list = app.models.Board.objects.nicely_ordered()
     tournament = request.GET.get("tournament")
     if tournament is not None:
