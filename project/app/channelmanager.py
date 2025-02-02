@@ -29,8 +29,13 @@ class MyChannelManager(DefaultChannelManager):
 
         # hand messages, alas, are private.
         if (hand_pk := models.Hand.hand_pk_from_event_channel_name(channel)) is not None:
-            hand = models.Hand.objects.get(pk=hand_pk)
-            return player in hand.players()
+            try:
+                hand = models.Hand.objects.get(pk=hand_pk)
+            except models.Hand.DoesNotExist:
+                logger.info("Hand %s does not exist", hand_pk)
+                return False
+            else:
+                return player in hand.players()
 
         if channel == "partnerships":
             return True
