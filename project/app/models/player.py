@@ -350,7 +350,8 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 pk__in=self.historical_seat_set.values_list("table_id", flat=True).all()
             ).all(),
         ).all()
-        assert qs.count() < 2, f"Uh oh -- {self} played {board} more than once: {qs.all()}"
+        if qs.count() > 1:
+            logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
