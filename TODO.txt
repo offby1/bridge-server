@@ -1,7 +1,32 @@
 IN PROGRESS:
-* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
 
 STILL TODO:
+* The hand detail page is a mess -- specifically, the large type at the top:
+
+| Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North | Table 20, Hand 317 (Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North): 3 calls; 0 plays |
+| Auction: Incomplete                                                                           | {'N/S': 0, 'E/W': 0}                                                                                                                 |
+
+  That's waaay too much redundant information.
+
+  How about:
+
+  One big line that tells you *which* hand you're looking at -- tournament number, board number, hand number.
+  And another that tells you about the *state* of the hand: auction, trick count.
+
+* I think I've seen the "Redouble" button inactive when it should be active.  Something like
+
+  - North bids 1 Club
+  - East doubles
+  - South should be able to redouble here.  Let's say they pass
+  - West passes
+  - North should be able to redouble here.
+
+* Come up with a more-reliable way to visually distinguish synths from humans.
+
+  Right now, synths have names that begin with `synthetic_`, and those names are *usually* (not always) festooned with little robot icons 🤖🤖.  But both those indicators can be spoofed -- a human can sign up with a name that includes those things.
+
+  So I should choose something that can't be spoofed -- text style, perhaps.
+
 * Ponder: if a tournament is still running, but one player has played all the boards, should they be allowed to create a new tournament?  If so, that'd mean there is more than one "current" tournament, and I'd probably get confused.  But if not, they cannot play until the existing tournament finishes, which it might never.
 
   Simplest thing: set a "django message" that says something like "no tournament for you, this tournament is still running", then redirect to a list of hands that are still being played (so we can at least have something to watch while we wait).
@@ -157,6 +182,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Make it obvious for a new user what they need to do to start playing.  Some sort of old-school "Wizard" seems appropriate.
+
+  I'll consider this done because as of fc4f51a, Xterm ("oldxterm" on Discord) says she got it working easily.
+
 * Let users create synthetic players, if there aren't enough already to play with.
 
   Also: don't create *any* synthetic players in generate_fake_data; let the first human player see a totally empty tournament, since they'll easily be able to create friends to play with.  Well, maybe create one table's worth; I dunno.
