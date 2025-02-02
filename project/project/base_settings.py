@@ -218,6 +218,9 @@ LOGGING = {
         "app": {
             "level": "DEBUG",
         },
+        "asyncio": {
+            "level": "INFO",
+        },
         "daphne.http_protocol": {
             "level": "INFO",
         },
