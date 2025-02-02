@@ -106,7 +106,9 @@ class Table(models.Model):
 
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
+    # View code adds these
     summary_for_this_viewer: tuple[str, str | int]
+    played_hands_string: str
 
     @property
     def event_channel_name(self):
@@ -162,30 +164,23 @@ class Table(models.Model):
 
         return rv
 
-    def played_boards(self) -> QuerySet:
+    def played_hands_count(self) -> tuple[int, bool]:
         # https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ might help
-        return Board.objects.filter(
-            pk__in=RawSQL(
-                """
-                SELECT
-                        APP_BOARD.ID
-                FROM
-                        PUBLIC.APP_TABLE
-                        JOIN PUBLIC.APP_HAND ON APP_HAND.TABLE_ID = APP_TABLE.ID
-                        JOIN PUBLIC.APP_BOARD ON APP_BOARD.ID = APP_HAND.BOARD_ID
-                WHERE
-                        APP_TABLE.ID = %s
-        """,
-                (self.pk,),
-            )
-        )
+        completed = 0
+        in_progress = 0
+        for h in Hand.objects.filter(table=self):
+            if h.is_complete:
+                completed += 1
+            else:
+                in_progress += 1
+        return (completed, in_progress > 0)
 
     def find_unplayed_board(self) -> Board | None:
         seats = self.seat_set.all()
         expression = models.Q(pk__in=[])
         for seat in seats:
             bp = seat.player.boards_played.order_by("id").all()
-            logger.debug("Player %s has played %s", seat.player, [b.pk for b in bp])
+            logger.debug("Player %s has played %s", seat.player.name, [b.pk for b in bp])
             expression |= models.Q(pk__in=bp)
 
         assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"

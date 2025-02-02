@@ -51,6 +51,8 @@ def table_list_view(request) -> HttpResponse:
         t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
             as_viewed_by=getattr(request.user, "player", None)
         )
+        completed, in_progress = t.played_hands_count()
+        t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
     context = {
         "page_obj": page_obj,
         "total_count": app.models.Table.objects.count(),

@@ -23,7 +23,7 @@
                                 Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.summary_for_this_viewer }}
                             </a>
                         </td>
-                        <td>{{ table.played_boards.count }}</td>
+                        <td>{{ table.played_hands_string }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

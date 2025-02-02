@@ -35,10 +35,6 @@ STILL TODO:
 
 * Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
 
-* The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
-
-  It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
-
 * Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
 
 * Try moving app.views.player.control_bot_for_player into app.models.player, and having that model's "save" method invoke it (or maybe even use django signals or something).  That way I could mass-update all the players to be bots, or not; currently I have to then log in as each one individually and toggle the little toggle thingy.
@@ -152,6 +148,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The "Number of boards played" column on `/table/` is ambiguous -- it counts boards that aren't yet complete.
+
+  It should probably show a number corresponding to *completed* boards, and then show a `+` if there's one in progress.
+
+* Most places where a player's name appears -- in particular, the header row of the auction history, and the "four-hands" div -- should be links to their detail pages.
+
 * Come up with a more-reliable way to visually distinguish synths from humans.
 
   Right now, synths have names that begin with `synthetic_`, and those names are *usually* (not always) festooned with little robot icons 🤖🤖.  But both those indicators can be spoofed -- a human can sign up with a name that includes those things.
