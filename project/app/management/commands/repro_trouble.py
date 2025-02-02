@@ -51,6 +51,8 @@ class Command(BaseCommand):
             p.unseat_me()
             p.save()
 
+        alexis.taint_board(board_pk=17)
+
         assert alexis.partner == katie
         alexis.break_partnership()
         alexis.partner_with(katie)
