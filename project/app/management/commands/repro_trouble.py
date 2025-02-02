@@ -36,7 +36,11 @@ class Command(BaseCommand):
         scan_for_bogons()
 
         Hand.objects.get(pk=318).delete()
-        Table.objects.get(pk=21).delete()
+        t21 = Table.objects.get(pk=21)
+
+        t21.find_unplayed_board()
+
+        t21.delete()
 
         alexis = Player.objects.get_by_name("alexis")
         katie = Player.objects.get_by_name("katie")
