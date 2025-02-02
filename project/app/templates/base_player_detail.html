@@ -24,7 +24,7 @@
             {% endif %}
         </li>
         <li>
-            <a href="{% url 'app:hand-list' %}{% querystring played_by=player.pk %}">Hands {{ player }} has played</a>
+            <a href="{% url 'app:hand-list' %}{% querystring played_by=player.pk %}">Hands {{ player.name }} has played</a>
         </li>
     </ul>
     <hr style="height: 10px; background-color: black; border: none;">

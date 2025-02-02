@@ -400,14 +400,17 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 elif self.name == a.dummy.name:
                     role = "Dummy "
 
-        return f"{self.pk}:{role}{self}{direction}"
+        return f"{self.pk}:{role}{self.as_link()}{direction}"
 
     def as_link(self, style=""):
+        name = self.name
+        if self.synthetic:
+            name = format_html("<i>{}</i>", self.name)
         return format_html(
             "<a style='{}' href='{}'>{}</a>",
             style,
             reverse("app:player", kwargs={"pk": self.pk}),
-            str(self),
+            name,
         )
 
     @staticmethod

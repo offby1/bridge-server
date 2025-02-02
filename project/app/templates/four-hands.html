@@ -8,9 +8,9 @@
     {# North at the top as per the Bridge Writing Style Guide #}
     {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
     <div></div>
-    <div>{{ card_display.North.player.display_name }}: {{ card_display.North.cards }}</div>
+    <div>{{ card_display.North.player.display_name|safe }}: {{ card_display.North.cards }}</div>
     <div></div>
-    <div>{{ card_display.West.player.display_name }}: {{ card_display.West.cards }}</div>
+    <div>{{ card_display.West.player.display_name|safe }}: {{ card_display.West.cards }}</div>
     <div>
         {% ifexists three_by_three_trick_display %}
         <div style="display: grid; grid-template-columns: auto auto auto;">
@@ -22,8 +22,8 @@
         </div>
     {% endifexists %}
 </div>
-<div>{{ card_display.East.player.display_name }}: {{ card_display.East.cards }}</div>
+<div>{{ card_display.East.player.display_name|safe }}: {{ card_display.East.cards }}</div>
 <div></div>
-<div>{{ card_display.South.player.display_name }}: {{ card_display.South.cards }}</div>
+<div>{{ card_display.South.player.display_name|safe }}: {{ card_display.South.cards }}</div>
 <div></div>
 </div>

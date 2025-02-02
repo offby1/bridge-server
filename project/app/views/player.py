@@ -38,14 +38,6 @@ def player_detail_endpoint(*, player_pk: PK) -> str:
     return reverse("app:player", args=[player_pk])
 
 
-def player_link(player: Player) -> str:
-    return format_html(
-        "<a href='{}'>{}</a>",
-        player_detail_endpoint(player_pk=player.pk),
-        player,
-    )
-
-
 def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
@@ -95,14 +87,14 @@ def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
 
         return f"{subject} has no partner 😢"
 
-    possessive_noun = f"{subject}'s"
+    possessive_noun = format_html("{}'s", subject.as_link())
     if subject == as_viewed_by:
-        possessive_noun = "Your"
+        possessive_noun = format_html("Your")
 
     if subject.partner == as_viewed_by:
         text = format_html("{} partner is, gosh, you!", possessive_noun)
     else:
-        text = format_html("{} partner is {}", possessive_noun, player_link(subject.partner))
+        text = format_html("{} partner is {}", possessive_noun, subject.partner.as_link())
 
     return format_html("{}", text)
 
@@ -188,7 +180,7 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
         return None
 
     if recipient.current_seat:
-        return f"{recipient} is already seated"
+        return f"{recipient.name} is already seated"
     if sender.current_seat:
         return "You are already seated"
 
