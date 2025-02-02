@@ -7,14 +7,6 @@ IN PROGRESS:
 
 
 STILL TODO:
-* I think I've seen the "Redouble" button inactive when it should be active.  Something like
-
-  - North bids 1 Club
-  - East doubles
-  - South should be able to redouble here.  Let's say they pass
-  - West passes
-  - North should be able to redouble here.
-
 * Ponder: if a tournament is still running, but one player has played all the boards, should they be allowed to create a new tournament?  If so, that'd mean there is more than one "current" tournament, and I'd probably get confused.  But if not, they cannot play until the existing tournament finishes, which it might never.
 
   Simplest thing: set a "django message" that says something like "no tournament for you, this tournament is still running", then redirect to a list of hands that are still being played (so we can at least have something to watch while we wait).
@@ -170,6 +162,14 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* I think I've seen the "Redouble" button inactive when it should be active.  Something like
+
+  - North bids 1 Club
+  - East doubles
+  - South should be able to redouble here.  Let's say they pass
+  - West passes
+  - North should be able to redouble here.
+
 * The hand detail page is a mess -- specifically, the large type at the top:
 
 | Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North | Table 20, Hand 317 (Board #5 (tournament 2; currently_running; 16 boards), North/South vulnerable, dealt by North): 3 calls; 0 plays |
