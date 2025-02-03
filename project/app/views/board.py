@@ -2,22 +2,28 @@ from __future__ import annotations
 
 import operator
 
+from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
 import app.models
-from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
 
 
-@logged_in_as_player_required()
-def board_archive_view(request: AuthedHttpRequest, pk: PK) -> TemplateResponse:
+def board_archive_view(request: HttpRequest, pk: PK) -> TemplateResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
-    player = request.user.player
-    assert player is not None
-    my_hand = player.hand_at_which_board_was_played(board)
+    if request.user.is_anonymous and not board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
+    my_hand = None
+
+    if not request.user.is_anonymous:
+        player = request.user.player
+        assert player is not None
+        my_hand = player.hand_at_which_board_was_played(board)
 
     annotated_hands: list[app.models.Hand] = []
 
@@ -69,7 +75,6 @@ def board_list_view(request: HttpRequest) -> TemplateResponse:
     return TemplateResponse(request=request, template="board_list.html", context=context)
 
 
-@logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     tournament_list = app.models.Tournament.objects.order_by("pk")
 
