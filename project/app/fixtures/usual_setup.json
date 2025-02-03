@@ -73,6 +73,7 @@
   },
   {
     "fields": {
+      "is_complete": false
     },
     "model": "app.tournament",
     "pk": 1
@@ -97,12 +98,12 @@
       "dealer": "S",
       "display_number": 2,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
-      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
-      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
-      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
-      "tournament": 1,
       "ew_vulnerable": false,
-      "ns_vulnerable": true
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": true,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "tournament": 1,
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
     },
     "model": "app.board",
     "pk": 2
@@ -151,6 +152,9 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 3,
       "synthetic": true,
@@ -161,8 +165,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 4,
+      "synthetic": false,
       "user": 12
     },
     "model": "app.player",
@@ -170,8 +179,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 1,
+      "synthetic": false,
       "user": 13
     },
     "model": "app.player",
@@ -179,8 +193,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 2,
+      "synthetic": false,
       "user": 14
     },
     "model": "app.player",

@@ -73,6 +73,7 @@
   },
   {
     "fields": {
+      "is_complete": false
     },
     "model": "app.tournament",
     "pk": 1
@@ -150,8 +151,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 3,
+      "synthetic": false,
       "user": 1
     },
     "model": "app.player",
@@ -159,8 +165,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 4,
+      "synthetic": false,
       "user": 2
     },
     "model": "app.player",
@@ -168,8 +179,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 1,
+      "synthetic": false,
       "user": 3
     },
     "model": "app.player",
@@ -177,8 +193,13 @@
   },
   {
     "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
       "currently_seated": true,
       "partner": 2,
+      "synthetic": false,
       "user": 4
     },
     "model": "app.player",
@@ -191,14 +212,6 @@
       "table": 1
     },
     "model": "app.hand",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
     "pk": 1
   },
   {
@@ -640,5 +653,13 @@
     },
     "model": "app.play",
     "pk": 51
+  },
+  {
+    "fields": {
+      "tempo_seconds": 1.0,
+      "tournament": 1
+    },
+    "model": "app.table",
+    "pk": 1
   }
 ]
