@@ -4,3 +4,22 @@ One board per tournament.
 Two tables (i.e., 8 players), all seated, none have yet called or played.
 One table is still playing.
 The other table finishes.  The question is: what should happen when one of those players click "next board plz"
+
+
+=====
+
+Uh oh!
+
+$ just drop migrate manage loaddata now_what
+$ just --no-deps runme
+- sign up as new player, e.g. "n2"
+- find partner, table up
+- go to http://localhost:9000/hand/1/
+
+Note Clint Eastwood's hand -- the dummy -- shows as a single column of four empty blue squares
+
+Actually ... that's probably correct, since *I* (n2) haven't yet seen the dummy at my table.
+
+Now that I think about it ... the problem isn't that the dummy is *invisible* ... it's that I'm allowed to watch this hand at all, given that it's t1.b1, and I haven't yet *completed* playing that hand.
+
+I suspect I'm conflating "played a hand completely (and hence saw all 52 cards)" with "started playing a hand, and hence saw my own cards".
