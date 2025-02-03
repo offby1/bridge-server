@@ -5,7 +5,9 @@ from bridge.card import Card
 from django.contrib import auth
 
 import app.views.hand
+import app.views.table.details
 from app.models import Board, Hand, Player, Table, Tournament
+from app.models.table import TournamentIsOverError
 import app.models.board
 
 # mumble import settings, monkeypatch, change BOARDS_PER_TOURNAMENT to 2 for convenience
@@ -66,7 +68,7 @@ def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> Non
     print(f"{response=}")
 
 
-def test_ponder_wassup(now_what, everybodys_password, monkeypatch) -> None:
+def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> None:
     assert Board.objects.count() == 1
     with monkeypatch.context() as m:
         t1 = Table.objects.first()
@@ -94,7 +96,13 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch) -> None:
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
         # Have someone at the first table click "Next Board Plz".
-        t1.next_board()
+        with pytest.raises(TournamentIsOverError):
+            t1.next_board()
+
+        client.force_login(t1.seat_set.first().player.user)
+        response = client.post(f"/table/{t1.pk}/new-board-plz/")
+        assert response.status_code == 302
+        assert response.url == "/lobby/"
 
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
@@ -102,4 +110,4 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch) -> None:
         # Now what??
         from django.core.management import call_command
 
-        call_command("dumpdata", "--output", "now_what")
+        call_command("dumpdata", "--output", "/tmp/now_what")
