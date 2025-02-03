@@ -4,16 +4,17 @@ import operator
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
 import app.models
+from app.models.utils import UserMitPlaya
 from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
 
 
-def board_archive_view(request: HttpRequest, pk: PK) -> TemplateResponse:
+def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
     if request.user.is_anonymous and not board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
@@ -21,9 +22,8 @@ def board_archive_view(request: HttpRequest, pk: PK) -> TemplateResponse:
     my_hand = None
 
     if not request.user.is_anonymous:
-        player = request.user.player
-        assert player is not None
-        my_hand = player.hand_at_which_board_was_played(board)
+        if (player := getattr(request.user, "player", None)) is not None:
+            my_hand = player.hand_at_which_board_was_played(board)
 
     annotated_hands: list[app.models.Hand] = []
 

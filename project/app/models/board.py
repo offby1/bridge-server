@@ -149,6 +149,7 @@ class Board(models.Model):
         if player is None:
             if self.tournament.is_complete:
                 return self.PlayerVisibility.everything
+            return self.PlayerVisibility.nothing
 
         hand = player.hand_at_which_board_was_played(self)
         if hand is None:
