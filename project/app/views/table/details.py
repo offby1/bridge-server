@@ -160,10 +160,33 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    def deal_with_completed_tournament():
+        if (ct := app.models.Tournament.objects.current()) is not None:
+            msg = f"""{table.tournament} is complete, but you could maybe table up with some other pair and join {ct}"""
+            messages.info(request, msg)
+            logger.info(msg)
+            return HttpResponseRedirect(reverse("app:lobby"))
+
+        new_tournament = app.models.Tournament.objects.maybe_new_tournament()
+        if new_tournament is not None:
+            msg = f"{table.tournament} is complete, so created {new_tournament}"
+            messages.info(request, msg)
+            logger.info(msg)
+            return HttpResponseRedirect(
+                reverse("app:player", kwargs={"pk": request.user.player.pk})
+            )
+
+        return HttpResponseNotFound(
+            "For reasons that escape me, there is no current tournament, and I couldn't create a new one"
+        )
+
     assert request.user.player is not None
     logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
+
+    if table.tournament.is_complete:
+        return deal_with_completed_tournament()
 
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
@@ -178,12 +201,8 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     try:
         table.next_board()
-    except app.models.table.TournamentIsOverError as e:
-        new_tournament = app.models.Tournament.objects.maybe_new_tournament()
-        msg = f"{e}, so created {new_tournament=}"
-        messages.info(request, msg)
-        logger.info(msg)
-        return HttpResponseRedirect(reverse("app:player", kwargs={"pk": request.user.player.pk}))
+    except app.models.table.TournamentIsOverError:
+        return deal_with_completed_tournament()
     except Exception as e:
         logger.warning("%s", e)
         return NotFound(e)
