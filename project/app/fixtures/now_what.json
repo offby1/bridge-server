@@ -19,15 +19,6 @@
   },
   {
     "fields": {
-      "name": "table:2",
-      "updated": "2025-02-03T17:35:59.077Z",
-      "value": 1
-    },
-    "model": "django_eventstream.eventcounter",
-    "pk": 3
-  },
-  {
-    "fields": {
       "name": "system:player:5",
       "updated": "2025-02-03T17:35:59.085Z",
       "value": 1
@@ -190,28 +181,6 @@
     },
     "model": "django_eventstream.event",
     "pk": 6
-  },
-  {
-    "fields": {
-      "channel": "table:2",
-      "created": "2025-02-03T17:35:59.076Z",
-      "data": "",
-      "eid": 0,
-      "type": ""
-    },
-    "model": "django_eventstream.event",
-    "pk": 7
-  },
-  {
-    "fields": {
-      "channel": "table:2",
-      "created": "2025-02-03T17:35:59.077Z",
-      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.0728981, \\\"tempo_seconds\\\": 1.0}\"",
-      "eid": 1,
-      "type": "message"
-    },
-    "model": "django_eventstream.event",
-    "pk": 8
   },
   {
     "fields": {
@@ -1334,78 +1303,6 @@
   },
   {
     "fields": {
-      "date_joined": "2025-02-03T17:35:58.843Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
-      "user_permissions": [],
-      "username": "n2"
-    },
-    "model": "auth.user",
-    "pk": 5
-  },
-  {
-    "fields": {
-      "date_joined": "2025-02-03T17:35:58.845Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
-      "user_permissions": [],
-      "username": "e2"
-    },
-    "model": "auth.user",
-    "pk": 6
-  },
-  {
-    "fields": {
-      "date_joined": "2025-02-03T17:35:58.846Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
-      "user_permissions": [],
-      "username": "s2"
-    },
-    "model": "auth.user",
-    "pk": 7
-  },
-  {
-    "fields": {
-      "date_joined": "2025-02-03T17:35:58.848Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
-      "user_permissions": [],
-      "username": "w2"
-    },
-    "model": "auth.user",
-    "pk": 8
-  },
-  {
-    "fields": {
       "app_label": "django_eventstream",
       "model": "event"
     },
@@ -1579,46 +1476,9 @@
     "pk": 1
   },
   {
-    "fields": {
-      "dealer": "S",
-      "display_number": 2,
-      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
-      "ew_vulnerable": false,
-      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
-      "ns_vulnerable": true,
-      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
-      "tournament": 1,
-      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
-    },
-    "model": "app.board",
-    "pk": 2
-  },
-  {
     "fields": {},
     "model": "app.lobby",
     "pk": 1
-  },
-  {
-    "fields": {
-      "from_player": 5,
-      "message": "Partnered with s2",
-      "recipient_content_type": 13,
-      "recipient_object_id": 1,
-      "timestamp": "2025-02-03T17:35:58.858Z"
-    },
-    "model": "app.message",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "from_player": 6,
-      "message": "Partnered with w2",
-      "recipient_content_type": 13,
-      "recipient_object_id": 1,
-      "timestamp": "2025-02-03T17:35:58.922Z"
-    },
-    "model": "app.message",
-    "pk": 2
   },
   {
     "fields": {
@@ -1658,46 +1518,9 @@
   },
   {
     "fields": {
-      "direction": "N",
-      "player": 5,
-      "table": 2
-    },
-    "model": "app.seat",
-    "pk": 5
-  },
-  {
-    "fields": {
-      "direction": "E",
-      "player": 6,
-      "table": 2
-    },
-    "model": "app.seat",
-    "pk": 6
-  },
-  {
-    "fields": {
-      "direction": "S",
-      "player": 7,
-      "table": 2
-    },
-    "model": "app.seat",
-    "pk": 7
-  },
-  {
-    "fields": {
-      "direction": "W",
-      "player": 8,
-      "table": 2
-    },
-    "model": "app.seat",
-    "pk": 8
-  },
-  {
-    "fields": {
       "allow_bot_to_play_for_me": false,
       "boards_played": [
-        1,
-        2
+        1
       ],
       "currently_seated": true,
       "partner": 3,
@@ -1711,8 +1534,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "boards_played": [
-        1,
-        2
+        1
       ],
       "currently_seated": true,
       "partner": 4,
@@ -1726,8 +1548,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "boards_played": [
-        1,
-        2
+        1
       ],
       "currently_seated": true,
       "partner": 1,
@@ -1741,8 +1562,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "boards_played": [
-        1,
-        2
+        1
       ],
       "currently_seated": true,
       "partner": 2,
@@ -1754,86 +1574,12 @@
   },
   {
     "fields": {
-      "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
-      "currently_seated": true,
-      "partner": 7,
-      "synthetic": false,
-      "user": 5
-    },
-    "model": "app.player",
-    "pk": 5
-  },
-  {
-    "fields": {
-      "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
-      "currently_seated": true,
-      "partner": 8,
-      "synthetic": false,
-      "user": 6
-    },
-    "model": "app.player",
-    "pk": 6
-  },
-  {
-    "fields": {
-      "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
-      "currently_seated": true,
-      "partner": 5,
-      "synthetic": false,
-      "user": 7
-    },
-    "model": "app.player",
-    "pk": 7
-  },
-  {
-    "fields": {
-      "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
-      "currently_seated": true,
-      "partner": 6,
-      "synthetic": false,
-      "user": 8
-    },
-    "model": "app.player",
-    "pk": 8
-  },
-  {
-    "fields": {
       "board": 1,
       "open_access": false,
       "table": 1
     },
     "model": "app.hand",
     "pk": 1
-  },
-  {
-    "fields": {
-      "board": 1,
-      "open_access": false,
-      "table": 2
-    },
-    "model": "app.hand",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "board": 2,
-      "open_access": false,
-      "table": 1
-    },
-    "model": "app.hand",
-    "pk": 3
   },
   {
     "fields": {
@@ -2277,26 +2023,10 @@
   },
   {
     "fields": {
-      "hand": 1,
-      "serialized": "♠A"
-    },
-    "model": "app.play",
-    "pk": 52
-  },
-  {
-    "fields": {
       "tempo_seconds": 1.0,
       "tournament": 1
     },
     "model": "app.table",
     "pk": 1
-  },
-  {
-    "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
-    "pk": 2
   }
 ]

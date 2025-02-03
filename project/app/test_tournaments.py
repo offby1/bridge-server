@@ -66,13 +66,16 @@ def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> Non
     print(f"{response=}")
 
 
-def test_ponder_wassup(played_almost_to_completion, everybodys_password, monkeypatch) -> None:
+def test_ponder_wassup(now_what, everybodys_password, monkeypatch) -> None:
+    assert Board.objects.count() == 1
     with monkeypatch.context() as m:
         t1 = Table.objects.first()
         assert t1 is not None
         assert Table.objects.count() == 1
 
         m.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
+        assert app.models.board.BOARDS_PER_TOURNAMENT == 1
+
         # Create a second table in this tournament.
         for name in ("n2", "e2", "s2", "w2"):
             u = auth.models.User.objects.create(username=name, password=everybodys_password)
@@ -92,6 +95,9 @@ def test_ponder_wassup(played_almost_to_completion, everybodys_password, monkeyp
 
         # Have someone at the first table click "Next Board Plz".
         t1.next_board()
+
+        for t in Tournament.objects.all():
+            assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
 
         # Now what??
         from django.core.management import call_command
