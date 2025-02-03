@@ -1,0 +1,2302 @@
+[
+  {
+    "fields": {
+      "name": "lobby",
+      "updated": "2025-02-03T17:35:58.927Z",
+      "value": 2
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "name": "partnerships",
+      "updated": "2025-02-03T17:35:58.931Z",
+      "value": 2
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "name": "table:2",
+      "updated": "2025-02-03T17:35:59.077Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "name": "system:player:5",
+      "updated": "2025-02-03T17:35:59.085Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "name": "system:player:6",
+      "updated": "2025-02-03T17:35:59.093Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "name": "system:player:7",
+      "updated": "2025-02-03T17:35:59.101Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "name": "system:player:8",
+      "updated": "2025-02-03T17:35:59.108Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "name": "all-tables",
+      "updated": "2025-02-03T17:35:59.262Z",
+      "value": 3
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "name": "hand:1",
+      "updated": "2025-02-03T17:35:59.254Z",
+      "value": 2
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "name": "system:player:1",
+      "updated": "2025-02-03T17:35:59.419Z",
+      "value": 3
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "name": "system:player:2",
+      "updated": "2025-02-03T17:35:59.427Z",
+      "value": 3
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "name": "system:player:3",
+      "updated": "2025-02-03T17:35:59.434Z",
+      "value": 3
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "name": "system:player:4",
+      "updated": "2025-02-03T17:35:59.442Z",
+      "value": 3
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "name": "table:1",
+      "updated": "2025-02-03T17:35:59.411Z",
+      "value": 1
+    },
+    "model": "django_eventstream.eventcounter",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "channel": "lobby",
+      "created": "2025-02-03T17:35:58.865Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "channel": "lobby",
+      "created": "2025-02-03T17:35:58.866Z",
+      "data": "\"\\\"\\\\n      <div class=\\\\\\\"chat-message-row\\\\\\\">\\\\n        <div style=\\\\\\\"display: inline; font-family: monospace;\\\\\\\" class=\\\\\\\"chat-message-timestamp\\\\\\\">2025-02-03T17:35:58.858799+00:00</div>\\\\n        <div style=\\\\\\\"display: inline;\\\\\\\" class=\\\\\\\"chat-message-sender-name\\\\\\\">n2</div>\\\\n        <div style=\\\\\\\"display: inline;\\\\\\\" class=\\\\\\\"chat-message-text\\\\\\\">Partnered with s2</div>\\\\n      </div>\\\\n        \\\"\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "channel": "partnerships",
+      "created": "2025-02-03T17:35:58.910Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "channel": "partnerships",
+      "created": "2025-02-03T17:35:58.910Z",
+      "data": "\"{\\\"split\\\": [], \\\"joined\\\": [7, 5]}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "channel": "lobby",
+      "created": "2025-02-03T17:35:58.926Z",
+      "data": "\"\\\"\\\\n      <div class=\\\\\\\"chat-message-row\\\\\\\">\\\\n        <div style=\\\\\\\"display: inline; font-family: monospace;\\\\\\\" class=\\\\\\\"chat-message-timestamp\\\\\\\">2025-02-03T17:35:58.922546+00:00</div>\\\\n        <div style=\\\\\\\"display: inline;\\\\\\\" class=\\\\\\\"chat-message-sender-name\\\\\\\">e2</div>\\\\n        <div style=\\\\\\\"display: inline;\\\\\\\" class=\\\\\\\"chat-message-text\\\\\\\">Partnered with w2</div>\\\\n      </div>\\\\n        \\\"\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "channel": "partnerships",
+      "created": "2025-02-03T17:35:58.931Z",
+      "data": "\"{\\\"split\\\": [], \\\"joined\\\": [8, 6]}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "channel": "table:2",
+      "created": "2025-02-03T17:35:59.076Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "channel": "table:2",
+      "created": "2025-02-03T17:35:59.077Z",
+      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.0728981, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "channel": "system:player:5",
+      "created": "2025-02-03T17:35:59.084Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "channel": "system:player:5",
+      "created": "2025-02-03T17:35:59.085Z",
+      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.0807402, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "channel": "system:player:6",
+      "created": "2025-02-03T17:35:59.091Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "channel": "system:player:6",
+      "created": "2025-02-03T17:35:59.092Z",
+      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.088428, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "channel": "system:player:7",
+      "created": "2025-02-03T17:35:59.099Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "channel": "system:player:7",
+      "created": "2025-02-03T17:35:59.100Z",
+      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.095964, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "channel": "system:player:8",
+      "created": "2025-02-03T17:35:59.106Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "channel": "system:player:8",
+      "created": "2025-02-03T17:35:59.107Z",
+      "data": "\"{\\\"new-hand\\\": 2, \\\"time\\\": 1738604159.103489, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "channel": "all-tables",
+      "created": "2025-02-03T17:35:59.121Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "channel": "all-tables",
+      "created": "2025-02-03T17:35:59.122Z",
+      "data": "\"{\\\"table\\\": 2, \\\"seats\\\": [{\\\"direction\\\": \\\"N\\\", \\\"player\\\": 5, \\\"table\\\": 2}, {\\\"direction\\\": \\\"E\\\", \\\"player\\\": 6, \\\"table\\\": 2}, {\\\"direction\\\": \\\"S\\\", \\\"player\\\": 7, \\\"table\\\": 2}, {\\\"direction\\\": \\\"W\\\", \\\"player\\\": 8, \\\"table\\\": 2}], \\\"action\\\": \\\"just formed\\\", \\\"time\\\": 1738604159.117711}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "channel": "hand:1",
+      "created": "2025-02-03T17:35:59.170Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "channel": "hand:1",
+      "created": "2025-02-03T17:35:59.171Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "channel": "all-tables",
+      "created": "2025-02-03T17:35:59.177Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "channel": "system:player:1",
+      "created": "2025-02-03T17:35:59.184Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "channel": "system:player:1",
+      "created": "2025-02-03T17:35:59.185Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "channel": "system:player:2",
+      "created": "2025-02-03T17:35:59.193Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "channel": "system:player:2",
+      "created": "2025-02-03T17:35:59.194Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "channel": "system:player:3",
+      "created": "2025-02-03T17:35:59.202Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "channel": "system:player:3",
+      "created": "2025-02-03T17:35:59.203Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "channel": "system:player:4",
+      "created": "2025-02-03T17:35:59.210Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "channel": "system:player:4",
+      "created": "2025-02-03T17:35:59.211Z",
+      "data": "\"{\\\"new-play\\\": {\\\"serialized\\\": \\\"\\\\u2660A\\\", \\\"seat_pk\\\": 4}, \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.166325}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "channel": "hand:1",
+      "created": "2025-02-03T17:35:59.253Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "channel": "all-tables",
+      "created": "2025-02-03T17:35:59.261Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 3,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "channel": "system:player:1",
+      "created": "2025-02-03T17:35:59.268Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "channel": "system:player:2",
+      "created": "2025-02-03T17:35:59.275Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "channel": "system:player:3",
+      "created": "2025-02-03T17:35:59.282Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "channel": "system:player:4",
+      "created": "2025-02-03T17:35:59.291Z",
+      "data": "\"{\\\"table\\\": 1, \\\"final_score\\\": \\\"BrokenDownScore(contract_points=20, overtrick_points=120, slam_bonus=0, doubled_bonus=0, penalty_points=0, game_bonus=50, trick_summary='Made contract with 6 overtricks', east_west_points=0, north_south_points=190, east_west_tricks=0, north_south_tricks=13): Made contract with 6 overtricks\\\", \\\"tempo_seconds\\\": 1.0, \\\"hand_pk\\\": 1, \\\"time\\\": 1738604159.250087}\"",
+      "eid": 2,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "channel": "table:1",
+      "created": "2025-02-03T17:35:59.409Z",
+      "data": "",
+      "eid": 0,
+      "type": ""
+    },
+    "model": "django_eventstream.event",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "channel": "table:1",
+      "created": "2025-02-03T17:35:59.410Z",
+      "data": "\"{\\\"new-hand\\\": 3, \\\"time\\\": 1738604159.404661, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 1,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "channel": "system:player:1",
+      "created": "2025-02-03T17:35:59.418Z",
+      "data": "\"{\\\"new-hand\\\": 3, \\\"time\\\": 1738604159.415024, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 3,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "channel": "system:player:2",
+      "created": "2025-02-03T17:35:59.426Z",
+      "data": "\"{\\\"new-hand\\\": 3, \\\"time\\\": 1738604159.422888, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 3,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "channel": "system:player:3",
+      "created": "2025-02-03T17:35:59.433Z",
+      "data": "\"{\\\"new-hand\\\": 3, \\\"time\\\": 1738604159.430186, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 3,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "channel": "system:player:4",
+      "created": "2025-02-03T17:35:59.442Z",
+      "data": "\"{\\\"new-hand\\\": 3, \\\"time\\\": 1738604159.437642, \\\"tempo_seconds\\\": 1.0}\"",
+      "eid": 3,
+      "type": "message"
+    },
+    "model": "django_eventstream.event",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "codename": "add_event",
+      "content_type": 1,
+      "name": "Can add event"
+    },
+    "model": "auth.permission",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "codename": "change_event",
+      "content_type": 1,
+      "name": "Can change event"
+    },
+    "model": "auth.permission",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "codename": "delete_event",
+      "content_type": 1,
+      "name": "Can delete event"
+    },
+    "model": "auth.permission",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "codename": "view_event",
+      "content_type": 1,
+      "name": "Can view event"
+    },
+    "model": "auth.permission",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "codename": "add_eventcounter",
+      "content_type": 2,
+      "name": "Can add event counter"
+    },
+    "model": "auth.permission",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "codename": "change_eventcounter",
+      "content_type": 2,
+      "name": "Can change event counter"
+    },
+    "model": "auth.permission",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "codename": "delete_eventcounter",
+      "content_type": 2,
+      "name": "Can delete event counter"
+    },
+    "model": "auth.permission",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "codename": "view_eventcounter",
+      "content_type": 2,
+      "name": "Can view event counter"
+    },
+    "model": "auth.permission",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "codename": "add_logentry",
+      "content_type": 3,
+      "name": "Can add log entry"
+    },
+    "model": "auth.permission",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "codename": "change_logentry",
+      "content_type": 3,
+      "name": "Can change log entry"
+    },
+    "model": "auth.permission",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "codename": "delete_logentry",
+      "content_type": 3,
+      "name": "Can delete log entry"
+    },
+    "model": "auth.permission",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "codename": "view_logentry",
+      "content_type": 3,
+      "name": "Can view log entry"
+    },
+    "model": "auth.permission",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "codename": "add_permission",
+      "content_type": 4,
+      "name": "Can add permission"
+    },
+    "model": "auth.permission",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "codename": "change_permission",
+      "content_type": 4,
+      "name": "Can change permission"
+    },
+    "model": "auth.permission",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "codename": "delete_permission",
+      "content_type": 4,
+      "name": "Can delete permission"
+    },
+    "model": "auth.permission",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "codename": "view_permission",
+      "content_type": 4,
+      "name": "Can view permission"
+    },
+    "model": "auth.permission",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "codename": "add_group",
+      "content_type": 5,
+      "name": "Can add group"
+    },
+    "model": "auth.permission",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "codename": "change_group",
+      "content_type": 5,
+      "name": "Can change group"
+    },
+    "model": "auth.permission",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "codename": "delete_group",
+      "content_type": 5,
+      "name": "Can delete group"
+    },
+    "model": "auth.permission",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "codename": "view_group",
+      "content_type": 5,
+      "name": "Can view group"
+    },
+    "model": "auth.permission",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "codename": "add_user",
+      "content_type": 6,
+      "name": "Can add user"
+    },
+    "model": "auth.permission",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "codename": "change_user",
+      "content_type": 6,
+      "name": "Can change user"
+    },
+    "model": "auth.permission",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "codename": "delete_user",
+      "content_type": 6,
+      "name": "Can delete user"
+    },
+    "model": "auth.permission",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "codename": "view_user",
+      "content_type": 6,
+      "name": "Can view user"
+    },
+    "model": "auth.permission",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "codename": "add_contenttype",
+      "content_type": 7,
+      "name": "Can add content type"
+    },
+    "model": "auth.permission",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "codename": "change_contenttype",
+      "content_type": 7,
+      "name": "Can change content type"
+    },
+    "model": "auth.permission",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "codename": "delete_contenttype",
+      "content_type": 7,
+      "name": "Can delete content type"
+    },
+    "model": "auth.permission",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "codename": "view_contenttype",
+      "content_type": 7,
+      "name": "Can view content type"
+    },
+    "model": "auth.permission",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "codename": "add_session",
+      "content_type": 8,
+      "name": "Can add session"
+    },
+    "model": "auth.permission",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "codename": "change_session",
+      "content_type": 8,
+      "name": "Can change session"
+    },
+    "model": "auth.permission",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "codename": "delete_session",
+      "content_type": 8,
+      "name": "Can delete session"
+    },
+    "model": "auth.permission",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "codename": "view_session",
+      "content_type": 8,
+      "name": "Can view session"
+    },
+    "model": "auth.permission",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "codename": "add_table",
+      "content_type": 9,
+      "name": "Can add table"
+    },
+    "model": "auth.permission",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "codename": "change_table",
+      "content_type": 9,
+      "name": "Can change table"
+    },
+    "model": "auth.permission",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "codename": "delete_table",
+      "content_type": 9,
+      "name": "Can delete table"
+    },
+    "model": "auth.permission",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "codename": "view_table",
+      "content_type": 9,
+      "name": "Can view table"
+    },
+    "model": "auth.permission",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "codename": "add_player",
+      "content_type": 10,
+      "name": "Can add player"
+    },
+    "model": "auth.permission",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "codename": "change_player",
+      "content_type": 10,
+      "name": "Can change player"
+    },
+    "model": "auth.permission",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "codename": "delete_player",
+      "content_type": 10,
+      "name": "Can delete player"
+    },
+    "model": "auth.permission",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "codename": "view_player",
+      "content_type": 10,
+      "name": "Can view player"
+    },
+    "model": "auth.permission",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "codename": "add_seat",
+      "content_type": 11,
+      "name": "Can add seat"
+    },
+    "model": "auth.permission",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "codename": "change_seat",
+      "content_type": 11,
+      "name": "Can change seat"
+    },
+    "model": "auth.permission",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "codename": "delete_seat",
+      "content_type": 11,
+      "name": "Can delete seat"
+    },
+    "model": "auth.permission",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "codename": "view_seat",
+      "content_type": 11,
+      "name": "Can view seat"
+    },
+    "model": "auth.permission",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "codename": "add_message",
+      "content_type": 12,
+      "name": "Can add message"
+    },
+    "model": "auth.permission",
+    "pk": 45
+  },
+  {
+    "fields": {
+      "codename": "change_message",
+      "content_type": 12,
+      "name": "Can change message"
+    },
+    "model": "auth.permission",
+    "pk": 46
+  },
+  {
+    "fields": {
+      "codename": "delete_message",
+      "content_type": 12,
+      "name": "Can delete message"
+    },
+    "model": "auth.permission",
+    "pk": 47
+  },
+  {
+    "fields": {
+      "codename": "view_message",
+      "content_type": 12,
+      "name": "Can view message"
+    },
+    "model": "auth.permission",
+    "pk": 48
+  },
+  {
+    "fields": {
+      "codename": "add_lobby",
+      "content_type": 13,
+      "name": "Can add lobby"
+    },
+    "model": "auth.permission",
+    "pk": 49
+  },
+  {
+    "fields": {
+      "codename": "change_lobby",
+      "content_type": 13,
+      "name": "Can change lobby"
+    },
+    "model": "auth.permission",
+    "pk": 50
+  },
+  {
+    "fields": {
+      "codename": "delete_lobby",
+      "content_type": 13,
+      "name": "Can delete lobby"
+    },
+    "model": "auth.permission",
+    "pk": 51
+  },
+  {
+    "fields": {
+      "codename": "view_lobby",
+      "content_type": 13,
+      "name": "Can view lobby"
+    },
+    "model": "auth.permission",
+    "pk": 52
+  },
+  {
+    "fields": {
+      "codename": "add_board",
+      "content_type": 14,
+      "name": "Can add board"
+    },
+    "model": "auth.permission",
+    "pk": 53
+  },
+  {
+    "fields": {
+      "codename": "change_board",
+      "content_type": 14,
+      "name": "Can change board"
+    },
+    "model": "auth.permission",
+    "pk": 54
+  },
+  {
+    "fields": {
+      "codename": "delete_board",
+      "content_type": 14,
+      "name": "Can delete board"
+    },
+    "model": "auth.permission",
+    "pk": 55
+  },
+  {
+    "fields": {
+      "codename": "view_board",
+      "content_type": 14,
+      "name": "Can view board"
+    },
+    "model": "auth.permission",
+    "pk": 56
+  },
+  {
+    "fields": {
+      "codename": "add_call",
+      "content_type": 15,
+      "name": "Can add call"
+    },
+    "model": "auth.permission",
+    "pk": 57
+  },
+  {
+    "fields": {
+      "codename": "change_call",
+      "content_type": 15,
+      "name": "Can change call"
+    },
+    "model": "auth.permission",
+    "pk": 58
+  },
+  {
+    "fields": {
+      "codename": "delete_call",
+      "content_type": 15,
+      "name": "Can delete call"
+    },
+    "model": "auth.permission",
+    "pk": 59
+  },
+  {
+    "fields": {
+      "codename": "view_call",
+      "content_type": 15,
+      "name": "Can view call"
+    },
+    "model": "auth.permission",
+    "pk": 60
+  },
+  {
+    "fields": {
+      "codename": "add_play",
+      "content_type": 16,
+      "name": "Can add play"
+    },
+    "model": "auth.permission",
+    "pk": 61
+  },
+  {
+    "fields": {
+      "codename": "change_play",
+      "content_type": 16,
+      "name": "Can change play"
+    },
+    "model": "auth.permission",
+    "pk": 62
+  },
+  {
+    "fields": {
+      "codename": "delete_play",
+      "content_type": 16,
+      "name": "Can delete play"
+    },
+    "model": "auth.permission",
+    "pk": 63
+  },
+  {
+    "fields": {
+      "codename": "view_play",
+      "content_type": 16,
+      "name": "Can view play"
+    },
+    "model": "auth.permission",
+    "pk": 64
+  },
+  {
+    "fields": {
+      "codename": "add_usermitplaya",
+      "content_type": 17,
+      "name": "Can add user"
+    },
+    "model": "auth.permission",
+    "pk": 65
+  },
+  {
+    "fields": {
+      "codename": "change_usermitplaya",
+      "content_type": 17,
+      "name": "Can change user"
+    },
+    "model": "auth.permission",
+    "pk": 66
+  },
+  {
+    "fields": {
+      "codename": "delete_usermitplaya",
+      "content_type": 17,
+      "name": "Can delete user"
+    },
+    "model": "auth.permission",
+    "pk": 67
+  },
+  {
+    "fields": {
+      "codename": "view_usermitplaya",
+      "content_type": 17,
+      "name": "Can view user"
+    },
+    "model": "auth.permission",
+    "pk": 68
+  },
+  {
+    "fields": {
+      "codename": "add_hand",
+      "content_type": 18,
+      "name": "Can add hand"
+    },
+    "model": "auth.permission",
+    "pk": 69
+  },
+  {
+    "fields": {
+      "codename": "change_hand",
+      "content_type": 18,
+      "name": "Can change hand"
+    },
+    "model": "auth.permission",
+    "pk": 70
+  },
+  {
+    "fields": {
+      "codename": "delete_hand",
+      "content_type": 18,
+      "name": "Can delete hand"
+    },
+    "model": "auth.permission",
+    "pk": 71
+  },
+  {
+    "fields": {
+      "codename": "view_hand",
+      "content_type": 18,
+      "name": "Can view hand"
+    },
+    "model": "auth.permission",
+    "pk": 72
+  },
+  {
+    "fields": {
+      "codename": "add_tournament",
+      "content_type": 19,
+      "name": "Can add tournament"
+    },
+    "model": "auth.permission",
+    "pk": 73
+  },
+  {
+    "fields": {
+      "codename": "change_tournament",
+      "content_type": 19,
+      "name": "Can change tournament"
+    },
+    "model": "auth.permission",
+    "pk": 74
+  },
+  {
+    "fields": {
+      "codename": "delete_tournament",
+      "content_type": 19,
+      "name": "Can delete tournament"
+    },
+    "model": "auth.permission",
+    "pk": 75
+  },
+  {
+    "fields": {
+      "codename": "view_tournament",
+      "content_type": 19,
+      "name": "Can view tournament"
+    },
+    "model": "auth.permission",
+    "pk": 76
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.402Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Jeremy Northam"
+    },
+    "model": "auth.user",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.373Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2024-11-06T15:27:39.341Z",
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Clint Eastwood"
+    },
+    "model": "auth.user",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.389Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "J.D. Souther"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.396Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Adam West"
+    },
+    "model": "auth.user",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "date_joined": "2025-02-03T17:35:58.843Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
+      "user_permissions": [],
+      "username": "n2"
+    },
+    "model": "auth.user",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "date_joined": "2025-02-03T17:35:58.845Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
+      "user_permissions": [],
+      "username": "e2"
+    },
+    "model": "auth.user",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "date_joined": "2025-02-03T17:35:58.846Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
+      "user_permissions": [],
+      "username": "s2"
+    },
+    "model": "auth.user",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "date_joined": "2025-02-03T17:35:58.848Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU=",
+      "user_permissions": [],
+      "username": "w2"
+    },
+    "model": "auth.user",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "app_label": "django_eventstream",
+      "model": "event"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "app_label": "django_eventstream",
+      "model": "eventcounter"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "app_label": "admin",
+      "model": "logentry"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "permission"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "group"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "app_label": "auth",
+      "model": "user"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "app_label": "contenttypes",
+      "model": "contenttype"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "app_label": "sessions",
+      "model": "session"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "table"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "player"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "seat"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "message"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "lobby"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "board"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "call"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "play"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "usermitplaya"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "hand"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "app_label": "app",
+      "model": "tournament"
+    },
+    "model": "contenttypes.contenttype",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "is_complete": false
+    },
+    "model": "app.tournament",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "dealer": "N",
+      "display_number": 1,
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "ew_vulnerable": false,
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": false,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "tournament": 1,
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
+    },
+    "model": "app.board",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "dealer": "S",
+      "display_number": 2,
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "ew_vulnerable": false,
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": true,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "tournament": 1,
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
+    },
+    "model": "app.board",
+    "pk": 2
+  },
+  {
+    "fields": {},
+    "model": "app.lobby",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "from_player": 5,
+      "message": "Partnered with s2",
+      "recipient_content_type": 13,
+      "recipient_object_id": 1,
+      "timestamp": "2025-02-03T17:35:58.858Z"
+    },
+    "model": "app.message",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "from_player": 6,
+      "message": "Partnered with w2",
+      "recipient_content_type": 13,
+      "recipient_object_id": 1,
+      "timestamp": "2025-02-03T17:35:58.922Z"
+    },
+    "model": "app.message",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "direction": "N",
+      "player": 1,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "direction": "E",
+      "player": 2,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "direction": "S",
+      "player": 3,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "direction": "W",
+      "player": 4,
+      "table": 1
+    },
+    "model": "app.seat",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "direction": "N",
+      "player": 5,
+      "table": 2
+    },
+    "model": "app.seat",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "direction": "E",
+      "player": 6,
+      "table": 2
+    },
+    "model": "app.seat",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "direction": "S",
+      "player": 7,
+      "table": 2
+    },
+    "model": "app.seat",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "direction": "W",
+      "player": 8,
+      "table": 2
+    },
+    "model": "app.seat",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1,
+        2
+      ],
+      "currently_seated": true,
+      "partner": 3,
+      "synthetic": false,
+      "user": 1
+    },
+    "model": "app.player",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1,
+        2
+      ],
+      "currently_seated": true,
+      "partner": 4,
+      "synthetic": false,
+      "user": 2
+    },
+    "model": "app.player",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1,
+        2
+      ],
+      "currently_seated": true,
+      "partner": 1,
+      "synthetic": false,
+      "user": 3
+    },
+    "model": "app.player",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1,
+        2
+      ],
+      "currently_seated": true,
+      "partner": 2,
+      "synthetic": false,
+      "user": 4
+    },
+    "model": "app.player",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
+      "currently_seated": true,
+      "partner": 7,
+      "synthetic": false,
+      "user": 5
+    },
+    "model": "app.player",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
+      "currently_seated": true,
+      "partner": 8,
+      "synthetic": false,
+      "user": 6
+    },
+    "model": "app.player",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
+      "currently_seated": true,
+      "partner": 5,
+      "synthetic": false,
+      "user": 7
+    },
+    "model": "app.player",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "boards_played": [
+        1
+      ],
+      "currently_seated": true,
+      "partner": 6,
+      "synthetic": false,
+      "user": 8
+    },
+    "model": "app.player",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "board": 1,
+      "open_access": false,
+      "table": 1
+    },
+    "model": "app.hand",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "board": 1,
+      "open_access": false,
+      "table": 2
+    },
+    "model": "app.hand",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "board": 2,
+      "open_access": false,
+      "table": 1
+    },
+    "model": "app.hand",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "1♣"
+    },
+    "model": "app.call",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 45
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 46
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 47
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 48
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 49
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 50
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 51
+  },
+  {
+    "fields": {
+      "hand": 1,
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 52
+  },
+  {
+    "fields": {
+      "tempo_seconds": 1.0,
+      "tournament": 1
+    },
+    "model": "app.table",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "tempo_seconds": 1.0,
+      "tournament": 1
+    },
+    "model": "app.table",
+    "pk": 2
+  }
+]
