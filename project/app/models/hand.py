@@ -687,19 +687,23 @@ class Hand(models.Model):
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
+    # The summary is phrased in terms of the player, who is presumed to have played the board already -- except if it's
+    # None, in which case we (arbitrarily) summarize in terms of North.
     def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
         if as_viewed_by is None:
-            return "Remind me -- who are you, again?", "-"
+            if not self.board.tournament.is_complete:
+                return "Remind me -- who are you, again?", "-"
 
-        if self.board.what_can_they_see(
-            player=as_viewed_by
-        ) != self.board.PlayerVisibility.everything and as_viewed_by.name not in {
-            p.name for p in self.players_by_direction.values()
-        }:
-            return (
-                f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
-                "-",
-            )
+        if as_viewed_by is not None:
+            if self.board.what_can_they_see(
+                player=as_viewed_by
+            ) != self.board.PlayerVisibility.everything and as_viewed_by.name not in {
+                p.name for p in self.players_by_direction.values()
+            }:
+                return (
+                    f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
+                    "-",
+                )
 
         auction_status = self.get_xscript().auction.status
 
@@ -712,7 +716,10 @@ class Hand(models.Model):
         total_score: int | str
 
         my_seat = None
-        my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
+        my_hand_for_this_board = None
+
+        if as_viewed_by is not None:
+            my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
         if my_hand_for_this_board is not None:
             my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
         fs = self.get_xscript().final_score()
@@ -723,13 +730,13 @@ class Hand(models.Model):
         elif fs == 0:
             total_score = 0
             trick_summary = "Passed Out"
-        elif my_seat is not None:
-            my_seat_direction = my_seat.direction
-            if my_seat_direction in {1, 3}:  # north/south
+        else:
+            trick_summary = fs.trick_summary
+
+            if getattr(my_seat, "direction", None) in {None, 1, 3}:  # north/south
                 total_score = fs.north_south_points or -fs.east_west_points
             else:
                 total_score = fs.east_west_points or -fs.north_south_points
-            trick_summary = fs.trick_summary
 
         return (f"{auction_status}: {trick_summary}", total_score)
 

@@ -466,13 +466,13 @@ def _maybe_redirect_or_error(
     return None
 
 
-@logged_in_as_player_required()
 def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    player = request.user.player
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
-    assert player is not None
+    player = None if request.user.is_anonymous else request.user.player
 
     response = _maybe_redirect_or_error(
         hand_is_complete=hand.is_complete,
@@ -611,7 +611,6 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     )
 
 
-@logged_in_as_player_required()
 def hand_list_view(request: HttpRequest) -> HttpResponse:
     player_pk = request.GET.get("played_by")
     player: app.models.Player | None = None

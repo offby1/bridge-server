@@ -11,7 +11,13 @@
                     <th>Hand</th>
                     <th>Table</th>
                     <th>Summary</th>
-                    <th>Your Side's Score</th>
+                    <th>
+                        {% if user.is_anonymous %}
+                            North/South Score
+                        {% else %}
+                            Your Side's Score
+                        {% endif %}
+                    </th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">

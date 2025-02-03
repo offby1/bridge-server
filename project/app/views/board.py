@@ -2,21 +2,28 @@ from __future__ import annotations
 
 import operator
 
+from django.conf import settings
 from django.core.paginator import Paginator
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
 import app.models
-from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+from app.models.utils import UserMitPlaya
+from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
 
 
-@logged_in_as_player_required()
-def board_archive_view(request: AuthedHttpRequest, pk: PK) -> TemplateResponse:
+def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
-    player = request.user.player
-    assert player is not None
-    my_hand = player.hand_at_which_board_was_played(board)
+    if request.user.is_anonymous and not board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
+    my_hand = None
+
+    if not request.user.is_anonymous:
+        if (player := getattr(request.user, "player", None)) is not None:
+            my_hand = player.hand_at_which_board_was_played(board)
 
     annotated_hands: list[app.models.Hand] = []
 
@@ -47,8 +54,7 @@ def board_archive_view(request: AuthedHttpRequest, pk: PK) -> TemplateResponse:
     )
 
 
-@logged_in_as_player_required()
-def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
+def board_list_view(request: HttpRequest) -> TemplateResponse:
     board_list = app.models.Board.objects.nicely_ordered()
     tournament = request.GET.get("tournament")
     if tournament is not None:
@@ -69,7 +75,6 @@ def board_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     return TemplateResponse(request=request, template="board_list.html", context=context)
 
 
-@logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     tournament_list = app.models.Tournament.objects.order_by("pk")
 
