@@ -29,6 +29,8 @@ STILL TODO:
 
   It *sometimes* jumps a little when a new call or play gets displayed.
 
+  I think I see what's happening: when the page loads, the auction history (I'm guessing) is displayed scrolled to ensure that its *top* is visible.  But then I have some `onLoad` magic that scrolls to ensure the *bottom* is visible, since that's the most interesting part.
+
 * Totally rethink access control.
 
   * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
