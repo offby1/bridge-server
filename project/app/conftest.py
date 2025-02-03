@@ -67,6 +67,11 @@ def played_almost_to_completion(db: None) -> None:
 
 
 @pytest.fixture
+def now_what(db: None) -> None:
+    call_command("loaddata", "now_what")
+
+
+@pytest.fixture
 def played_to_completion(played_almost_to_completion) -> None:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")

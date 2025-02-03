@@ -87,9 +87,9 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
-            num_needed_for_completion = self.tables().count() * self.board_set.count()
+            num_hands_needed_for_completion = self.tables().count() * self.board_set.count()
 
-            if num_needed_for_completion == 0:
+            if num_hands_needed_for_completion == 0:
                 logger.info(
                     "We don't consider %s to be complete because it's never had any tables assigned.",
                     self,
@@ -98,9 +98,9 @@ class Tournament(models.Model):
 
             complete_hands = [h for h in self.hands() if h.is_complete]
 
-            if len(complete_hands) == num_needed_for_completion:
+            if len(complete_hands) == num_hands_needed_for_completion:
                 logger.debug(
-                    f"{len(complete_hands)=}, which is == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
+                    f"{len(complete_hands)=}, which is == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
                 )
                 self.is_complete = True
                 self.save()
@@ -112,7 +112,7 @@ class Tournament(models.Model):
                 return
 
             logger.debug(
-                f"{len(complete_hands)=}, which is not == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
+                f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
             )
 
     def eject_all_pairs(self) -> None:
