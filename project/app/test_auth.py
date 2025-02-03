@@ -12,6 +12,8 @@ def kablooey(*args, **kwargs) -> None:
     raise Exception(KABLOOEY_MESSAGE)
 
 
+# The pbkdf2 hash is (by design) incredibly slow, so I don't want to call it any more often than necessary.  And of
+# course I've accidentally done exactly that, so I have some tests to ensure I'm no longer doing that.
 @pytest.fixture
 def no_pbkdf2(monkeypatch) -> None:
     monkeypatch.setattr(django.contrib.auth.hashers, "pbkdf2", kablooey)
