@@ -5,8 +5,8 @@
 {% endblock title %}
 {% block content %}
     <div>
-        <h1>Review of {{ hand }}</h1>
-        <h3>{{ tournament_status }}</h3>
+        <h4>Review of {{ hand }}</h4>
+        <h4>{{ tournament_status }}</h4>
         <form method="post" action="{% url 'app:new-board-plz' hand.table.pk %}">
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
@@ -15,7 +15,7 @@
             <a href="{% url 'app:board-archive' hand.board.pk %}">{{ hand.board }}</a>
         </h2>
         <h2>{{ hand.auction.status }}</h2>
-        <h2>{{ score }}</h2>
+        <h1>{{ score }}</h1>
     </div>
     <div>{% include "four-hands.html" %}</div>
     <div style="display: flex;">
@@ -32,6 +32,8 @@
                     <th>2nd</th>
                     <th>3rd</th>
                     <th>4th</th>
+                    <th>N/S</th>
+                    <th>E/W</th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -45,6 +47,12 @@
                                 </div>
                             </td>
                         {% endfor %}
+                        <td>
+                            {% if t.ns %}✔{% endif %}
+                        </td>
+                        <td>
+                            {% if t.ew %}✔{% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

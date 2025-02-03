@@ -251,17 +251,30 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
     # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
     for t_index, t in enumerate(xscript.tricks):
         plays = []
+        winning_seat = None
+
         for p_index, p in enumerate(t.plays):
             if p_index == 0:
                 led_suit = p.card.suit
                 leading_seat = p.seat
+
+            if p.wins_the_trick:
+                winning_seat = p.seat.value
+
             plays.append(
                 {
                     "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
                     "wins_the_trick": p.wins_the_trick,
                 },
             )
-        yield {"seat": leading_seat.name[0], "number": t_index + 1, "plays": plays}
+        assert winning_seat is not None
+        yield {
+            "seat": leading_seat.name[0],
+            "number": t_index + 1,
+            "plays": plays,
+            "ns": winning_seat in "NS",
+            "ew": winning_seat in "EW",
+        }
 
 
 def _four_hands_context_for_hand(
