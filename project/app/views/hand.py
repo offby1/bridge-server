@@ -549,13 +549,13 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     terse_description = format_html(
         """
-    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board {}</a>, Hand {}
+    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{}</a>, Hand {}
     """,
         reverse("app:board-list"),
         hand.board.tournament.pk,
         hand.board.tournament.pk,
         reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
-        hand.board.pk,
+        hand.board.display_number,
         hand.pk,
     )
 
