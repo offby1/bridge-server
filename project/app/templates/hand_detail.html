@@ -53,7 +53,9 @@
     You played <a href="{% url 'app:board-archive' pk=hand.board.pk %}">this board</a>
     at <a href="{{ hand_at_which_I_played_this_board.link }}">{{ hand_at_which_I_played_this_board.description }}</a>.
 </h4>
-<div>{% include "four-hands.html" %}</div>
+{% if show_auction_history %}
+    <div>{% include "four-hands.html" %}</div>
+{% endif %}
 {% endifexists %}
 {% endblock content %}
 {% block upper-right-column %}
