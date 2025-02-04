@@ -90,6 +90,7 @@
         </nav>
         {% ifexists debug %}
         <h2>It's debugging time!!</h2>
+        <tt>{{ request.resolver_match.view_name }}</tt>
     {% endifexists %}
     <div class="row">
         <div class="col"></div>
