@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* An RSS feed! Maybe each completed hand, or each completed tournament, would appear in it.
 * A scenario
 
   - I let the bot play for me
