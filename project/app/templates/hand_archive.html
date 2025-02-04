@@ -5,15 +5,11 @@
 {% endblock title %}
 {% block content %}
     <div>
-        <h4>Review of {{ hand }}</h4>
-        <h4>{{ tournament_status }}</h4>
+        <h2>Review of {{ terse_description }}</h2>
         <form method="post" action="{% url 'app:new-board-plz' hand.table.pk %}">
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
         </form>
-        <h2>
-            <a href="{% url 'app:board-archive' hand.board.pk %}">{{ hand.board }}</a>
-        </h2>
         <h2>{{ hand.auction.status }}</h2>
         <h1>{{ score }}</h1>
     </div>

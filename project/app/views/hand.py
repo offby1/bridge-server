@@ -535,11 +535,26 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
         "score": score_description,
         "show_auction_history": True,
         "history": _auction_history_context_for_hand(hand),
+        "terse_description": _terse_description(hand),
     }
     return TemplateResponse(
         request,
         "hand_archive.html",
         context=context,
+    )
+
+
+def _terse_description(hand: Hand) -> str:
+    return format_html(
+        """
+    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{}</a>, Hand {}
+    """,
+        reverse("app:board-list"),
+        hand.board.tournament.pk,
+        hand.board.tournament.pk,
+        reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
+        hand.board.display_number,
+        hand.pk,
     )
 
 
@@ -560,18 +575,6 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
-    terse_description = format_html(
-        """
-    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{}</a>, Hand {}
-    """,
-        reverse("app:board-list"),
-        hand.board.tournament.pk,
-        hand.board.tournament.pk,
-        reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
-        hand.board.display_number,
-        hand.pk,
-    )
-
     # for when player is looking at a hand whose board they've already played.
     other_hand = player.hand_at_which_board_was_played(hand.board)
     assert other_hand is not None
@@ -580,7 +583,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
-        | {"terse_description": terse_description}
+        | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
         | {
