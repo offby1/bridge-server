@@ -21,7 +21,7 @@
                 {% if chat_target == user.player %}
                     Mumble to yourself
                 {% else %}
-                    Speak to {{ chat_target }}
+                    Speak to {{ chat_target.name }}
                 {% endif %}
             {% endif %}
         </button>

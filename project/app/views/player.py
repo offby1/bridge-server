@@ -22,6 +22,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import escape, format_html
+from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
@@ -85,7 +86,7 @@ def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
         if subject == as_viewed_by:
             return _find_a_partner_link()
 
-        return f"{subject} has no partner 😢"
+        return f"{subject.name} has no partner 😢"
 
     possessive_noun = format_html("{}'s", subject.as_link())
     if subject == as_viewed_by:
@@ -361,7 +362,7 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
     django_web_messages.add_message(
         request,
         django_web_messages.INFO,
-        f"Your partner is now {partner}.",
+        mark_safe(_describe_partnership(subject=partner, as_viewed_by=request.user.player)),
     )
     return HttpResponseRedirect(next_)
 
