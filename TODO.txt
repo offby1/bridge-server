@@ -19,6 +19,16 @@ STILL TODO:
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
+    fc053e10f2103a096c21a882428e38c0a80169ce
+    Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+    AuthorDate: 2024-08-19 15:29:33 -0700
+
+    Nix lobby view.
+
+    Now the "lobby" link goes to the player list, with seated players filtered out.
+
+  Yikes, that was a long time ago.
+
 * MOVEMENTS
 
   I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
