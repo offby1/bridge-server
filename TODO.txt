@@ -18,6 +18,16 @@ STILL TODO:
 
   Simplest thing: set a "django message" that says something like "no tournament for you, this tournament is still running", then redirect to a list of hands that are still being played (so we can at least have something to watch while we wait).
 
+  Another idea: when we create a tournament, we associate with it two timestamps in the future:
+
+  * One is the "joining deadline" -- after this time, no more tables can join the tournament.
+
+  * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the board that they *have* finished (maybe exclude them from appearing in the board-archive view?).
+
+    This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
+
+  This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
+
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
     fc053e10f2103a096c21a882428e38c0a80169ce
