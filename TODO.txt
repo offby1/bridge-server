@@ -1,6 +1,16 @@
 IN PROGRESS:
 
 STILL TODO:
+* A scenario
+
+  - I let the bot play for me
+  - The hand completes, so I'm looking at the "next board plz" button
+  - I change my mind and turn off the "let the bot play for me"
+  - I click the "next board plz" button
+  - I discover that the hand is in progress -- and if the auction is over, I don't get to see it.  I get to see the *contract* but not the calls that led up to it.
+
+  I guess I need a "review the bidding" button? :-\
+
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
 
 * Ponder: if a tournament is still running, but one player has played all the boards, should they be allowed to create a new tournament?  If so, that'd mean there is more than one "current" tournament, and I'd probably get confused.  But if not, they cannot play until the existing tournament finishes, which it might never.
