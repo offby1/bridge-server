@@ -251,7 +251,7 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
     # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
     for t_index, t in enumerate(xscript.tricks):
         plays = []
-        winning_seat = None
+        winning_seat = "?"
 
         for p_index, p in enumerate(t.plays):
             if p_index == 0:
@@ -267,7 +267,7 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
                     "wins_the_trick": p.wins_the_trick,
                 },
             )
-        assert winning_seat is not None
+
         yield {
             "seat": leading_seat.name[0],
             "number": t_index + 1,

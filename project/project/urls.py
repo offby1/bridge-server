@@ -1,6 +1,7 @@
 import django_eventstream  # type: ignore [import-untyped]
 from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore [import-untyped]
 from django.contrib import admin
+from django.http import HttpResponseServerError
 from django.urls import include, path
 
 urlpatterns = [
@@ -43,3 +44,21 @@ urlpatterns = [
 ]
 
 urlpatterns.extend(debug_toolbar_urls())
+
+
+def my_server_error(request, template_name="500.html"):
+    return HttpResponseServerError("""
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+    <small>Yipe!</small>
+</body>
+</html>
+    """)
+
+
+handler500 = my_server_error
