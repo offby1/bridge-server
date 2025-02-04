@@ -146,6 +146,16 @@ runme *options: t django-superuser migrate create-cache ensure-skeleton-key
 
 alias runserver := runme
 
+curl *options: django-superuser migrate create-cache ensure-skeleton-key
+    curl -v --cookie cook --cookie-jar cook "{{ options }}"
+
+[script('bash')]
+curl-login:
+    set -euxo pipefail
+    b64_blob=$(echo -n bob:. | base64)
+    header="Authorization: Basic ${b64_blob}"
+    curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:9000/three-way-login/
+
 create-cache: (manage "createcachetable")
 
 # For production -- doesn't restart when a file changes.
