@@ -1,4 +1,4 @@
-On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what (I can remember!) I had to do:
+On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do:
 
 - navigated to <https://console.hetzner.cloud/projects/4228251/servers/create>
 - chose Hillsboro, OR as the location
@@ -6,6 +6,7 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what (I can reme
 - chose "Shared vCPU", x86 (Intel/AMD) as the type
   - within that, chose "CPX11" since that's the smallest and cheapest
 - accepted the default SSH pub key that I'd already uploaded
+- activated the firewall I've already created, named "ssh and https"
 - clicked "Create and Buy Now"
 - copied the IP address of the newly-created machine into the `Host hetz` stanza of `~/.ssh/config`, as the `hostname` entry
 
@@ -25,6 +26,7 @@ If it doesn't (which is good), do `ssh root@hetz` again and continue ...
 
 ```shell
 # apt update
+# apt -y upgrade
 # apt install -y htop docker.io
 # usermod --append --groups sudo,docker ubuntu
 # su - ubuntu
