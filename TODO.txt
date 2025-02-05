@@ -1,8 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* What with all the recent terse_description stuff, I believe I no longer indicate vulnerability during the auction.
-
 * God Mode doesn't show all four hands during the auction; only during play.
 
 * An RSS feed! Maybe each completed hand, or each completed tournament, would appear in it.
@@ -182,6 +180,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* What with all the recent terse_description stuff, I believe I no longer indicate vulnerability during the auction.
+
 * Improve the "play summary" at the bottom of the hand archive view: I can never follow it!
 
   I designed it to conform to the "Bridge Writing Style Guide by Richard Pavlicek.pdf", but just because that dude says to use it, doesn't mean it makes it easy for me.

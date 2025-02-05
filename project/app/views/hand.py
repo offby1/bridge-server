@@ -12,7 +12,6 @@ from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
     HttpResponse,
-    HttpResponseForbidden,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
@@ -548,13 +547,14 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
 def _terse_description(hand: Hand) -> str:
     return format_html(
         """
-    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{}</a>, Hand {}
+    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{} ({})</a>, Hand {}
     """,
         reverse("app:board-list"),
         hand.board.tournament.pk,
         hand.board.tournament.pk,
         reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
         hand.board.display_number,
+        hand.board.vulnerability_string(),
         hand.pk,
     )
 

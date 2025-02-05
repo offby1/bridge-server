@@ -9,7 +9,6 @@ from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 
 import app.models
-from app.models.utils import UserMitPlaya
 from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
 
