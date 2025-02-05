@@ -27,7 +27,7 @@ services:
       PGHOST: postgres
       PGPASS: postgres
     ports:
-      - "9000:9000"
+      - "127.0.0.1:9000:9000"
     secrets:
       - django_secret
       - django_skeleton_key
@@ -67,7 +67,7 @@ services:
     # TODO -- figure out how to tell docker to put the backing store where I want it, or at the very least, figure out
     # where it is
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
     # Experience shows we need at least one connection per player.  (It looks like we need one connection per SSE
     # client)
