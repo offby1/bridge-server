@@ -161,37 +161,31 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     def deal_with_completed_tournament():
-        if (ct := app.models.Tournament.objects.current()) is not None:
-            msg = f"""{table.tournament} is complete, but you could maybe table up with some other pair and join {ct}"""
-            messages.info(request, msg)
-            logger.info(msg)
-            return HttpResponseRedirect(reverse("app:lobby"))
+        tournament, created = app.models.Tournament.objects.get_or_create_running_tournament()
+        msg = f"{table.tournament} is complete"
 
-        new_tournament = app.models.Tournament.objects.maybe_new_tournament()
-        if new_tournament is not None:
-            msg = f"{table.tournament} is complete, so created {new_tournament}"
-            messages.info(request, msg)
-            logger.info(msg)
-            return HttpResponseRedirect(
-                reverse("app:player", kwargs={"pk": request.user.player.pk})
-            )
+        if created:
+            msg += f", so created {tournament}"
+        else:
+            msg += f"; {tournament} is the current one"
 
-        return HttpResponseNotFound(
-            "For reasons that escape me, there is no current tournament, and I couldn't create a new one"
-        )
+        messages.info(request, msg)
+        logger.info(msg)
+
+        return HttpResponseRedirect(reverse("app:lobby"))
 
     assert request.user.player is not None
     logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
 
-    if table.tournament.is_complete:
-        return deal_with_completed_tournament()
-
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
         logger.warning("%s", msg)
         return Forbid(msg)
+
+    if table.tournament.is_complete:
+        return deal_with_completed_tournament()
 
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand

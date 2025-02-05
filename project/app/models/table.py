@@ -43,11 +43,8 @@ class TournamentIsOverError(TableException):
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
-            with transaction.atomic():
-                if (new_tournament := Tournament.objects.maybe_new_tournament()) is not None:
-                    kwargs["tournament"] = new_tournament
-                else:
-                    kwargs["tournament"] = Tournament.objects.filter(is_complete=False).first()
+            tournament, _ = Tournament.objects.get_or_create_running_tournament()
+            kwargs["tournament"] = tournament
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(

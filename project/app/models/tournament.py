@@ -44,7 +44,7 @@ class TournamentManager(models.Manager):
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
 
-    def maybe_new_tournament(self) -> Tournament | None:
+    def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
         with transaction.atomic():
             currently_running = self.current()
             if currently_running is not None:
@@ -53,8 +53,8 @@ class TournamentManager(models.Manager):
                     logger.debug(
                         f"An incomplete tournament ({currently_running}) already exists; no need to create a new one",
                     )
-                    return None
-            return self.create()
+                    return currently_running, False
+            return self.create(), True
 
 
 # This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
