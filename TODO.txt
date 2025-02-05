@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* Tournaments display their PK, instead of a display number; PKs aren't necessarily contiguous :-|
+
 * God Mode doesn't show all four hands during the auction; only during play.
 
 * An RSS feed! Maybe each completed hand, or each completed tournament, would appear in it.
