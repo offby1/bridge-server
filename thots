@@ -5,6 +5,9 @@ Two tables (i.e., 8 players), all seated, none have yet called or played.
 One table is still playing.
 The other table finishes.  The question is: what should happen when one of those players click "next board plz"
 
+Another question: when should we create a new tournament:
+* When someone clicks "Next Board", and that tournament is found to be complete; or maybe
+* When someone makes the 52nd play in some hand, that turns out to be the final hand in that tournament
 
 =====
 
@@ -16,10 +19,6 @@ $ just --no-deps runme
 - find partner, table up
 - go to http://localhost:9000/hand/1/
 
-Note Clint Eastwood's hand -- the dummy -- shows as a single column of four empty blue squares
-
-Actually ... that's probably correct, since *I* (n2) haven't yet seen the dummy at my table.
-
-Now that I think about it ... the problem isn't that the dummy is *invisible* ... it's that I'm allowed to watch this hand at all, given that it's t1.b1, and I haven't yet *completed* playing that hand.
+I'm allowed to see the cards played in this trick, yet I haven't yet *completed* playing this hand.  I.e., I now know that North has the ace of clubs, and South has the ace of Hearts.
 
 I suspect I'm conflating "played a hand completely (and hence saw all 52 cards)" with "started playing a hand, and hence saw my own cards".
