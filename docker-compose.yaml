@@ -40,7 +40,7 @@ services:
     # volumes:
     #   - ./project:/bridge/project
     labels:
-      caddy: bridge.offby1.info
+      caddy: ${CADDY_HOSTNAME:-}
       caddy.reverse_proxy: "{{upstreams 9000}}"
 
   django-collected-static:
