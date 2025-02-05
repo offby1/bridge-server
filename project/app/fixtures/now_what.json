@@ -1455,6 +1455,7 @@
   },
   {
     "fields": {
+      "display_number": 1,
       "is_complete": false
     },
     "model": "app.tournament",
