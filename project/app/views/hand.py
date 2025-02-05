@@ -508,6 +508,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
             "score": 0,
             "vars_score": {"passed_out": 0},
             "show_auction_history": False,
+            "terse_description": _terse_description(hand),
         }
         return TemplateResponse(
             request,
