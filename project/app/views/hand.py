@@ -436,6 +436,12 @@ def four_hands_partial_view(request: AuthedHttpRequest, table_pk: PK) -> Templat
     )
 
 
+def _no_hand_for_you():
+    return Forbid(
+        "You are not allowed to see neither squat, zip, nada, nor bupkis",
+    )
+
+
 def _maybe_redirect_or_error(
     *,
     hand_is_complete: bool,
@@ -450,9 +456,7 @@ def _maybe_redirect_or_error(
 
     match player_visibility:
         case app.models.Board.PlayerVisibility.nothing:
-            return Forbid(
-                "You are not allowed to see neither squat, zip, nada, nor bupkis",
-            )
+            return _no_hand_for_you()
 
         case (
             app.models.Board.PlayerVisibility.dummys_hand
@@ -565,6 +569,11 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     player = request.user.player
     assert player is not None
+
+    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
+    if player.current_table_pk() != hand.table.pk:
+        if (h := player.hand_at_which_board_was_played(hand.board)) is None or not h.is_complete:
+            return _no_hand_for_you()
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,
