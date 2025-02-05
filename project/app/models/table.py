@@ -186,6 +186,12 @@ class Table(models.Model):
 
     def next_board(self, *, desired_board_pk: PK | None = None) -> Board:
         with transaction.atomic():
+            if self.tournament.is_complete:
+                logger.debug(
+                    "No need to do fancy queries if we already know the tournament is over."
+                )
+                return None
+
             logger.debug(
                 "%s: someone wants the next board (desired_board_pk is %s)",
                 self,
@@ -202,9 +208,10 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                msg = f"{self.tournament} is over; no more boards"
-                logger.warning("%s", msg)
-                raise TournamentIsOverError(msg)
+                logger.debug(
+                    "I guess our caller has played all the boards, and just has to wait 🤷"
+                )
+                return None
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("%s now has a new hand: %s", self, new_hand)

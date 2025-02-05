@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}
-    Tables {{ page_obj.start_index }} through {{ page_obj.end_index }}
+    {{ page_title }}
 {% endblock title %}
 {% block content %}
     {% block table_list %}
         <table class="table caption-top">
             {# yep, it's a table of tables #}
-            <caption>Tables {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</caption>
+            <caption style="font-size: xx-large;">{{ page_title }}; {{ total_count }} total</caption>
             <thead>
                 <tr>
                     <th>Table #</th>
