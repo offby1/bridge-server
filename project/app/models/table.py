@@ -174,7 +174,10 @@ class Table(models.Model):
 
     def find_unplayed_board(self) -> Board | None:
         seats = self.seat_set.all()
+
+        # What I *really* wanted to write here was `models.Q(False)`, but that doesn't work.
         expression = models.Q(pk__in=[])
+
         for seat in seats:
             bp = seat.player.boards_played.order_by("id").all()
             logger.debug("Player %s has played %s", seat.player.name, [b.pk for b in bp])
@@ -184,6 +187,13 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
+    # TODO -- maybe simplify calling interface; currently it can return None *and* it can raise an exception.
+    # Why might this not be able to fetch the next board?
+    # - The current hand isn't complete.  This indeed seems to warrant an exception.
+    # - it's already played all the boards in the current tournament.  We will know this because find_unplayed_board will return None.
+    # I don't think there are any other reasons.  (Tables are "allocated" a set of boards when they're created; and when they're all played, they're all played.)
+
+    # A return of None means the tournament is complete.  (We check this twice; I'm not sure that's necessary, given that it's wrapped in a transaction)
     def next_board(self, *, desired_board_pk: PK | None = None) -> Board:
         with transaction.atomic():
             if self.tournament.is_complete:
