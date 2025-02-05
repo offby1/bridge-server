@@ -8,17 +8,3 @@ The other table finishes.  The question is: what should happen when one of those
 Another question: when should we create a new tournament:
 * When someone clicks "Next Board", and that tournament is found to be complete; or maybe
 * When someone makes the 52nd play in some hand, that turns out to be the final hand in that tournament
-
-=====
-
-Uh oh!
-
-$ just drop migrate manage loaddata now_what
-$ just --no-deps runme
-- sign up as new player, e.g. "n2"
-- find partner, table up
-- go to http://localhost:9000/hand/1/
-
-I'm allowed to see the cards played in this trick, yet I haven't yet *completed* playing this hand.  I.e., I now know that North has the ace of clubs, and South has the ace of Hearts.
-
-I suspect I'm conflating "played a hand completely (and hence saw all 52 cards)" with "started playing a hand, and hence saw my own cards".
