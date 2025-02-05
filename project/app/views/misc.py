@@ -14,6 +14,7 @@ from django.urls import reverse
 
 import app.models
 import app.models.utils
+from app.views import Forbid
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
@@ -74,7 +75,7 @@ def logged_in_as_player_required(*, redirect=True):
                     logger.debug(f"{player=}, and {redirect=}, so redirecting to {home=}")
                     return HttpResponseRedirect(home)
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
-                return HttpResponseForbidden("Go away, anonymous scoundrel")
+                return Forbid("Go away, anonymous scoundrel")
 
             return view_function(request, *args, **kwargs)
 

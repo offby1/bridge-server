@@ -12,33 +12,24 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
-    HttpResponseNotFound,
     HttpResponseRedirect,
 )
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import escape
 from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.types import PK
 from app.models.utils import assert_type
+from app.views import Forbid, NotFound
 from app.views.misc import (
     AuthedHttpRequest,
     logged_in_as_player_required,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def Forbid(e: Exception | str) -> HttpResponseForbidden:
-    return HttpResponseForbidden(escape(e))
-
-
-def NotFound(e: Exception | str) -> HttpResponseNotFound:
-    return HttpResponseNotFound(escape(e))
 
 
 def table_list_view(request) -> HttpResponse:
@@ -177,7 +168,7 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
         logger.warning("%s", msg)
-        return HttpResponseForbidden(msg)
+        return Forbid(msg)
 
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand

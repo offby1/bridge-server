@@ -29,8 +29,8 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
-
 from .misc import AuthedHttpRequest, logged_in_as_player_required
+from . import Forbid
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +249,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
                 str(e),
                 fail_silently=True,
             )
-            return HttpResponseForbidden(str(e))
+            return Forbid(e)
 
         if (next_ := request.POST.get("next")) is None:
             next_ = request.get_full_path()
@@ -271,7 +271,7 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
     if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
-        return HttpResponseForbidden(explanation)
+        return Forbid(explanation)
 
     channel_name, message_type, message_content = Message.create_player_event_args(
         from_player=sender,

@@ -13,7 +13,6 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
-    HttpResponseNotFound,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
@@ -27,6 +26,7 @@ from django_eventstream import get_current_event_id  # type: ignore[import-untyp
 import app.models
 from app.models.types import PK
 from app.models.utils import assert_type
+from app.views import Forbid, NotFound
 from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
 
 if TYPE_CHECKING:
@@ -451,7 +451,7 @@ def _maybe_redirect_or_error(
 
     match player_visibility:
         case app.models.Board.PlayerVisibility.nothing:
-            return HttpResponseForbidden(
+            return Forbid(
                 "You are not allowed to see neither squat, zip, nada, nor bupkis",
             )
 
@@ -605,7 +605,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     assert player is not None
 
     if player not in hand.players_by_direction.values():
-        return HttpResponseForbidden()
+        return Forbid("You're not at that table")
 
     if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
         logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
@@ -665,7 +665,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
     assert player is not None
 
     if player not in hand.players_by_direction.values():
-        return HttpResponseForbidden()
+        return Forbid("You're not at that table")
 
     whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
     return HttpResponse(json.dumps(whats_new), headers={"Content-Type": "text/json"})
@@ -675,7 +675,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
 @logged_in_as_player_required()
 def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     if settings.DEPLOYMENT_ENVIRONMENT == "production":
-        return HttpResponseNotFound("Geez I dunno what you're talking about")
+        return NotFound("Geez I dunno what you're talking about")
 
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
