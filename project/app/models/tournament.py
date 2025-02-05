@@ -26,6 +26,9 @@ class TournamentManager(models.Manager):
         )
 
         with transaction.atomic():
+            if ("display_number") not in kwargs:
+                kwargs["display_number"] = self.count() + 1
+
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
             for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
@@ -65,11 +68,12 @@ class Tournament(models.Model):
         board_set = RelatedManager["Board"]()
 
     is_complete = models.BooleanField(default=False)
+    display_number = models.SmallIntegerField(unique=True)
 
     objects = TournamentManager()
 
     def __str__(self) -> str:
-        return f"tournament {self.pk}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
+        return f"tournament #{self.display_number}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
 
     def hands(self) -> models.QuerySet:
         from app.models import Hand

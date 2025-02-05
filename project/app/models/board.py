@@ -173,7 +173,7 @@ class Board(models.Model):
     def short_string(self) -> str:
         return f"Board #{self.display_number} ({self.tournament})"
 
-    def __str__(self) -> str:
+    def vulnerability_string(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:
             vuln = "Both sides"
         elif not self.ns_vulnerable and not self.ew_vulnerable:
@@ -183,7 +183,10 @@ class Board(models.Model):
         else:
             vuln = "East/West"
 
-        return f"{self.short_string()}, {vuln} vulnerable, dealt by {self.fancy_dealer}"
+        return f"{vuln} vulnerable"
+
+    def __str__(self) -> str:
+        return f"{self.short_string()}, {self.vulnerability_string()}, dealt by {self.fancy_dealer}"
 
     class Meta:
         constraints = [
