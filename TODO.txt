@@ -3,6 +3,12 @@ IN PROGRESS:
 
   Simplest thing: set a "django message" that says something like "no tournament for you, this tournament is still running", then redirect to a list of hands that are still being played (so we can at least have something to watch while we wait).
 
+  Another question: when should we create a new tournament --
+
+  * When someone clicks "Next Board", and that tournament is found to be complete?; or maybe
+  * When someone makes the 52nd play in some hand, that turns out to be the final hand in that tournament?
+
+Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
 * God Mode doesn't show all four hands during the auction; only during play.
