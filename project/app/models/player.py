@@ -60,11 +60,6 @@ class PartnerException(PlayerException):
     pass
 
 
-class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
-    list_filter = ["currently_seated"]
-
-
 class Player(models.Model):
     if TYPE_CHECKING:
         historical_seat_set = RelatedManager["Seat"]()
@@ -497,4 +492,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return self.name
 
 
-admin.site.register(Player, PlayerAdmin)
+@admin.register(Player)
+class PlayerAdmin(admin.ModelAdmin):
+    list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
+    list_filter = ["currently_seated"]

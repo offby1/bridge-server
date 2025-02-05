@@ -150,7 +150,7 @@ def _get_partner_action_from_context(
     } and not subject.currently_seated:
         if subject.partner == as_viewed_by:
             return _splitsville_context(request=request, player_pk=subject.pk)
-        else:
+        elif subject.partner is not None:
             return _tableup_context(request=request, subject_pk=subject.pk)
 
     return None
