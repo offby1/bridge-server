@@ -6,6 +6,7 @@
 {% block content %}
     <div>
         <h2>Review of {{ terse_description }}</h2>
+        {# TODO -- omit this if clicking it would yield a 403 #}
         <form method="post" action="{% url 'app:new-board-plz' hand.table.pk %}">
             {% csrf_token %}
             <button class="btn btn-primary" type="submit">NEXT BOARD PLZ</button>
