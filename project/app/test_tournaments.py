@@ -96,18 +96,12 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> No
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
         # Have someone at the first table click "Next Board Plz".
-        with pytest.raises(TournamentIsOverError):
-            t1.next_board()
+        assert t1.next_board() is None
 
         client.force_login(t1.seat_set.first().player.user)
         response = client.post(f"/table/{t1.pk}/new-board-plz/")
         assert response.status_code == 302
-        assert response.url == "/lobby/"
+        assert response.url == "/table/?tournament=1"
 
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
-
-        # Now what??
-        from django.core.management import call_command
-
-        call_command("dumpdata", "--output", "/tmp/now_what")

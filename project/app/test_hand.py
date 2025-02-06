@@ -12,6 +12,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
+import app.models.board
 from .models import AuctionError, Board, Hand, Player, Table, board, hand
 from .testutils import set_auction_to
 from .views.hand import (
@@ -364,7 +365,9 @@ def test_exhaustive_archive_and_detail_redirection(
 
 
 @pytest.mark.django_db
-def test_predictable_shuffles():
+def test_predictable_shuffles(monkeypatch):
+    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 2)
+
     attrs1_empty = board.board_attributes_from_display_number(display_number=1, rng_seeds=[])
     attrs2_empty = board.board_attributes_from_display_number(display_number=2, rng_seeds=[])
 

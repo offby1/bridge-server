@@ -194,7 +194,7 @@ class Table(models.Model):
     # I don't think there are any other reasons.  (Tables are "allocated" a set of boards when they're created; and when they're all played, they're all played.)
 
     # A return of None means the tournament is complete.  (We check this twice; I'm not sure that's necessary, given that it's wrapped in a transaction)
-    def next_board(self, *, desired_board_pk: PK | None = None) -> Board:
+    def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
         with transaction.atomic():
             if self.tournament.is_complete:
                 logger.debug(
