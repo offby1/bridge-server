@@ -8,6 +8,7 @@ set -euxo pipefail
 cd /bridge/project
 
 export PGHOST=postgres
+export PYTHONUNBUFFERED=t       # https://github.com/django/daphne/pull/520
 
 exec poetry run  daphne                                                                         \
     --verbosity  3                                                                              \
