@@ -36,10 +36,6 @@ class TableException(Exception):
     pass
 
 
-class TournamentIsOverError(TableException):
-    pass
-
-
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
@@ -195,6 +191,7 @@ class Table(models.Model):
 
     # A return of None means the tournament is complete.  (We check this twice; I'm not sure that's necessary, given that it's wrapped in a transaction)
     def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
+        logger.debug(f"{self}: {self.tournament=}")
         with transaction.atomic():
             if self.tournament.is_complete:
                 logger.debug(

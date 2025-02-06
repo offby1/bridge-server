@@ -65,8 +65,8 @@ def played_almost_to_completion(db: None) -> None:
 
 
 @pytest.fixture
-def now_what(db: None) -> None:
-    call_command("loaddata", "now_what")
+def nearly_completed_tournament(db: None) -> None:
+    call_command("loaddata", "nearly_completed_tournament")
 
 
 @pytest.fixture

@@ -110,7 +110,7 @@ class Tournament(models.Model):
                 self.save()
                 self.eject_all_pairs()
                 logger.debug(
-                    "Marked myself %s as complete, and ejected all pairs from tables",
+                    f"Marked myself %s as complete, and ejected all pairs from {self.tables()}",
                     self,
                 )
                 return

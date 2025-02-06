@@ -7,7 +7,6 @@ from django.contrib import auth
 import app.views.hand
 import app.views.table.details
 from app.models import Board, Hand, Player, Table, Tournament
-from app.models.table import TournamentIsOverError
 import app.models.board
 
 # mumble import settings, monkeypatch, change BOARDS_PER_TOURNAMENT to 2 for convenience
@@ -83,7 +82,9 @@ def play_out_hand(t: Table) -> None:
         h.get_xscript().add_card(play.card)
 
 
-def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> None:
+def test_tournament_end(
+    nearly_completed_tournament, everybodys_password, monkeypatch, client
+) -> None:
     assert Board.objects.count() == 1
     with monkeypatch.context() as m:
         t1 = Table.objects.first()
@@ -121,11 +122,11 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> No
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
 
-        # Play out the hand at the second table
         play_out_hand(t2)
 
-        with pytest.raises(TournamentIsOverError):
-            t1.next_board()
+        t1.refresh_from_db()
+        assert t1.tournament.is_complete
+        assert t1.next_board() is None
 
-        with pytest.raises(TournamentIsOverError):
-            t2.next_board()
+        t2.refresh_from_db()
+        assert t2.next_board() is None
