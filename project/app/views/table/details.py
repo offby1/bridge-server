@@ -11,7 +11,6 @@ from django.core.paginator import Paginator
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
-    HttpResponseForbidden,
     HttpResponseRedirect,
 )
 from django.contrib import messages
@@ -33,10 +32,20 @@ logger = logging.getLogger(__name__)
 
 
 def table_list_view(request) -> HttpResponse:
-    table_list = app.models.Table.objects.order_by("id").all()
+    table_list = app.models.Table.objects.order_by("id")
+
+    tournament_pk = request.GET.get("tournament")
+    if tournament_pk is not None:
+        table_list = table_list.filter(tournament__pk=tournament_pk)
+
     paginator = Paginator(table_list, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    page_title = f"Tables {page_obj.start_index()} through {page_obj.end_index()}"
+    if tournament_pk is not None:
+        tournament = get_object_or_404(app.models.Tournament, pk=tournament_pk)
+        page_title += f" in tournament #{tournament.display_number}"
+
     t: app.models.Table
     for t in page_obj.object_list:
         t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
@@ -46,7 +55,9 @@ def table_list_view(request) -> HttpResponse:
         t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
     context = {
         "page_obj": page_obj,
+        "page_title": page_title,
         "total_count": app.models.Table.objects.count(),
+        "tournament_pk": tournament_pk,
     }
 
     return TemplateResponse(request, "table_list.html", context=context)
@@ -160,6 +171,25 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    def deal_with_completed_tournament():
+        assert (
+            table.tournament.is_complete
+        ), f"Hey man why'd you call me if {table.tournament} isn't complete"
+        tournament, created = app.models.Tournament.objects.get_or_create_running_tournament()
+        assert not tournament.is_complete
+        assert tournament != table.tournament
+        msg = f"{table.tournament} is complete"
+
+        if created:
+            msg += f", so created {tournament}"
+        else:
+            msg += f"; {tournament} is the current one"
+
+        messages.info(request, msg)
+        logger.info(msg)
+
+        return HttpResponseRedirect(reverse("app:lobby"))
+
     assert request.user.player is not None
     logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
@@ -170,23 +200,24 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         logger.warning("%s", msg)
         return Forbid(msg)
 
+    if table.tournament.is_complete:
+        return deal_with_completed_tournament()
+
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
     if not ch.is_complete:
         logger.debug("Table %s has an active hand %s, so redirecting to that", table, ch)
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
-    try:
-        table.next_board()
-    except app.models.table.TournamentIsOverError as e:
-        new_tournament = app.models.Tournament.objects.maybe_new_tournament()
-        msg = f"{e}, so created {new_tournament=}"
+    nb = table.next_board()
+    if nb is None:
+        msg = "I guess you just gotta wait for this tournament to finish"
         messages.info(request, msg)
         logger.info(msg)
-        return HttpResponseRedirect(reverse("app:player", kwargs={"pk": request.user.player.pk}))
-    except Exception as e:
-        logger.warning("%s", e)
-        return NotFound(e)
+
+        return HttpResponseRedirect(
+            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
+        )
 
     logger.debug('Called "next_board" on table %s', table)
 

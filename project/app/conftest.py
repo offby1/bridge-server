@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 from django.contrib import auth
 from django.core.cache import cache
@@ -64,6 +62,11 @@ def nobody_seated(db: None) -> None:
 @pytest.fixture
 def played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "played_almost_to_completion")
+
+
+@pytest.fixture
+def nearly_completed_tournament(db: None) -> None:
+    call_command("loaddata", "nearly_completed_tournament")
 
 
 @pytest.fixture

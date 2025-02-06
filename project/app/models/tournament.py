@@ -47,7 +47,7 @@ class TournamentManager(models.Manager):
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
 
-    def maybe_new_tournament(self) -> Tournament | None:
+    def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
         with transaction.atomic():
             currently_running = self.current()
             if currently_running is not None:
@@ -56,8 +56,8 @@ class TournamentManager(models.Manager):
                     logger.debug(
                         f"An incomplete tournament ({currently_running}) already exists; no need to create a new one",
                     )
-                    return None
-            return self.create()
+                    return currently_running, False
+            return self.create(), True
 
 
 # This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
@@ -91,9 +91,9 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
-            num_needed_for_completion = self.tables().count() * self.board_set.count()
+            num_hands_needed_for_completion = self.tables().count() * self.board_set.count()
 
-            if num_needed_for_completion == 0:
+            if num_hands_needed_for_completion == 0:
                 logger.info(
                     "We don't consider %s to be complete because it's never had any tables assigned.",
                     self,
@@ -102,21 +102,21 @@ class Tournament(models.Model):
 
             complete_hands = [h for h in self.hands() if h.is_complete]
 
-            if len(complete_hands) == num_needed_for_completion:
+            if len(complete_hands) == num_hands_needed_for_completion:
                 logger.debug(
-                    f"{len(complete_hands)=}, which is == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
+                    f"{len(complete_hands)=}, which is == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
                 )
                 self.is_complete = True
                 self.save()
                 self.eject_all_pairs()
                 logger.debug(
-                    "Marked myself %s as complete, and ejected all pairs from tables",
+                    f"Marked myself %s as complete, and ejected all pairs from {self.tables()}",
                     self,
                 )
                 return
 
             logger.debug(
-                f"{len(complete_hands)=}, which is not == {num_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
+                f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
             )
 
     def eject_all_pairs(self) -> None:

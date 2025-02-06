@@ -36,18 +36,11 @@ class TableException(Exception):
     pass
 
 
-class TournamentIsOverError(TableException):
-    pass
-
-
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
-            with transaction.atomic():
-                if (new_tournament := Tournament.objects.maybe_new_tournament()) is not None:
-                    kwargs["tournament"] = new_tournament
-                else:
-                    kwargs["tournament"] = Tournament.objects.filter(is_complete=False).first()
+            tournament, _ = Tournament.objects.get_or_create_running_tournament()
+            kwargs["tournament"] = tournament
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
@@ -177,7 +170,10 @@ class Table(models.Model):
 
     def find_unplayed_board(self) -> Board | None:
         seats = self.seat_set.all()
+
+        # What I *really* wanted to write here was `models.Q(False)`, but that doesn't work.
         expression = models.Q(pk__in=[])
+
         for seat in seats:
             bp = seat.player.boards_played.order_by("id").all()
             logger.debug("Player %s has played %s", seat.player.name, [b.pk for b in bp])
@@ -187,8 +183,15 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
-    def next_board(self, *, desired_board_pk: PK | None = None) -> Board:
+    def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
+        logger.debug(f"{self}: {self.tournament=}")
         with transaction.atomic():
+            if self.tournament.is_complete:
+                logger.debug(
+                    "No need to do fancy queries if we already know the tournament is over."
+                )
+                return None
+
             logger.debug(
                 "%s: someone wants the next board (desired_board_pk is %s)",
                 self,
@@ -205,9 +208,10 @@ class Table(models.Model):
                 b = self.find_unplayed_board()
 
             if b is None:
-                msg = f"{self.tournament} is over; no more boards"
-                logger.warning("%s", msg)
-                raise TournamentIsOverError(msg)
+                logger.debug(
+                    "I guess our caller has played all the boards, and just has to wait 🤷"
+                )
+                return None
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("%s now has a new hand: %s", self, new_hand)
