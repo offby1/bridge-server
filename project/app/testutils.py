@@ -34,3 +34,17 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
     assert hand.auction.found_contract
 
     return hand
+
+
+def play_out_hand(t: app.models.Table) -> None:
+    h = t.current_hand
+
+    while (p := h.player_who_may_call) is not None:
+        call = h.get_xscript().auction.legal_calls()[0]
+        print(f"{p} calls {call}")
+        h.add_call_from_player(player=p.libraryThing(), call=call)
+    while (p := h.player_who_may_play) is not None:
+        play = h.get_xscript().slightly_less_dumb_play()
+        h.add_play_from_player(player=p.libraryThing(), card=play.card)
+        print(f"{p} plays {play}")
+        h.get_xscript().add_card(play.card)

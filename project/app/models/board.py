@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from app.models import Player
 
-BOARDS_PER_TOURNAMENT = 1
+BOARDS_PER_TOURNAMENT = 16
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +81,6 @@ def board_attributes_from_display_number(
 class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
-
-    def create(self, *args, **kwargs) -> Board:
-        rv = super().create(*args, **kwargs)
-        logger.warning("Created a board from %s, %s: %s", args, kwargs, rv)
-        return rv
 
     def create_from_attributes(self, *, attributes, tournament) -> Board:
         return self.create(**attributes, tournament=tournament)

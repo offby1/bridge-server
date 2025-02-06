@@ -9,6 +9,8 @@ import app.views.table.details
 from app.models import Board, Hand, Player, Table, Tournament
 import app.models.board
 
+from .testutils import play_out_hand
+
 # mumble import settings, monkeypatch, change BOARDS_PER_TOURNAMENT to 2 for convenience
 
 
@@ -65,21 +67,6 @@ def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> Non
     request.user = Player.objects.get_by_name("Adam West").user
     response = app.views.hand.hand_serialized_view(request, pk=1)
     print(f"{response=}")
-
-
-# TODO -- move me to testutils.py
-def play_out_hand(t: Table) -> None:
-    h = t.current_hand
-
-    while (p := h.player_who_may_call) is not None:
-        call = h.get_xscript().auction.legal_calls()[0]
-        print(f"{p} calls {call}")
-        h.add_call_from_player(player=p.libraryThing(), call=call)
-    while (p := h.player_who_may_play) is not None:
-        play = h.get_xscript().slightly_less_dumb_play()
-        h.add_play_from_player(player=p.libraryThing(), card=play.card)
-        print(f"{p} plays {play}")
-        h.get_xscript().add_card(play.card)
 
 
 def test_tournament_end(
