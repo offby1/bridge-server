@@ -68,6 +68,21 @@ def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> Non
     print(f"{response=}")
 
 
+# TODO -- move me to testutils.py
+def play_out_hand(t: Table) -> None:
+    h = t.current_hand
+
+    while (p := h.player_who_may_call) is not None:
+        call = h.get_xscript().auction.legal_calls()[0]
+        print(f"{p} calls {call}")
+        h.add_call_from_player(player=p.libraryThing(), call=call)
+    while (p := h.player_who_may_play) is not None:
+        play = h.get_xscript().slightly_less_dumb_play()
+        h.add_play_from_player(player=p.libraryThing(), card=play.card)
+        print(f"{p} plays {play}")
+        h.get_xscript().add_card(play.card)
+
+
 def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> None:
     assert Board.objects.count() == 1
     with monkeypatch.context() as m:
@@ -88,7 +103,7 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> No
         e2 = Player.objects.get_by_name("e2")
         e2.partner_with(Player.objects.get_by_name("w2"))
 
-        Table.objects.create_with_two_partnerships(n2, e2)
+        t2 = Table.objects.create_with_two_partnerships(n2, e2)
         # Complete the first table.
 
         h1 = Hand.objects.get(pk=1)
@@ -105,3 +120,12 @@ def test_ponder_wassup(now_what, everybodys_password, monkeypatch, client) -> No
 
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
+
+        # Play out the hand at the second table
+        play_out_hand(t2)
+
+        with pytest.raises(TournamentIsOverError):
+            t1.next_board()
+
+        with pytest.raises(TournamentIsOverError):
+            t2.next_board()

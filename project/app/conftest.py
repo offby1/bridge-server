@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 from django.contrib import auth
 from django.core.cache import cache
