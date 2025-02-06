@@ -256,10 +256,5 @@ hetz *options: ensure_git_repo_clean
     CADDY_HOSTNAME=beta.bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
     COMPOSE_PROFILES=prod                                        DOCKER_CONTEXT=hetz docker compose logs django --follow
 
-[group('docker')]
-hetz *options: ensure_git_repo_clean
-    DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
-    DOCKER_CONTEXT=hetz docker compose logs django --follow
-
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
