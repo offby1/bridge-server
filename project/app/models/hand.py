@@ -199,7 +199,9 @@ class Hand(models.Model):
 
             from .table import TableException
 
-            msg = "The play completion deadline has passed!"
+            deadline = tour.play_completion_deadline
+            assert deadline is not None
+            msg = f"The play completion deadline ({deadline.isoformat()}) has passed!"
             raise TableException(msg)
 
     @property

@@ -177,7 +177,8 @@ def test_play_completion_deadline(usual_setup) -> None:
         with pytest.raises(TableException) as e:
             hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
 
-        assert "deadline has passed" in str(e.value)
+        assert "deadline" in str(e.value)
+        assert "has passed" in str(e.value)
 
         # All players have been ejected
         assert not Player.objects.filter(currently_seated=True).exists()
@@ -210,4 +211,5 @@ def test_deadline_via_view(usual_setup, rf) -> None:
 
         response = app.views.table.details.call_post_view(request, table.current_hand.pk)
         assert response.status_code == HttpResponseForbidden.status_code
-        assert b"deadline has passed" in response.content
+        assert b"deadline" in response.content
+        assert b"has passed" in response.content

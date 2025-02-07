@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.contrib import admin
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -216,3 +217,8 @@ class Tournament(models.Model):
                 ),
             ),
         ]
+
+
+@admin.register(Tournament)
+class TournamentAdmin(admin.ModelAdmin):
+    list_display = ["display_number", "signup_deadline", "play_completion_deadline"]
