@@ -200,14 +200,16 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
 
+    pytest_args="--create-db {{ options }} -n 8"
+
     case "${PYINSTRUMENT:-}" in
     t*)
       pyinstrument_exe=$(poetry env info --path)/bin/pyinstrument
-      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pyinstrument_exe} -m pytest --create-db {{ options }}
+      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pyinstrument_exe} -m pytest ${pytest_args}
     ;;
     *)
       pytest_exe=$(poetry env info --path)/bin/pytest
-      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} --create-db {{ options }}
+      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} ${pytest_args}
     ;;
     esac
 
