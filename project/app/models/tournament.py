@@ -109,7 +109,6 @@ class Tournament(models.Model):
         if self.play_completion_deadline is None:
             return True
 
-        # TODO -- add a constraint that says either both deadlines are NULL, or neither is
         assert self.signup_deadline is not None
 
         return Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
@@ -195,3 +194,18 @@ class Tournament(models.Model):
     def save(self, *args, **kwargs) -> None:
         self._check_no_more_than_one_running_tournament()
         super().save(*args, **kwargs)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_cant_have_just_one_deadline",
+                condition=(
+                    (
+                        models.Q(signup_deadline__isnull=True)
+                        & models.Q(play_completion_deadline__isnull=True)
+                    )
+                    | models.Q(signup_deadline__isnull=False)
+                    & models.Q(play_completion_deadline__isnull=False)
+                ),
+            ),
+        ]
