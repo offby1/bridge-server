@@ -161,9 +161,9 @@ class Tournament(models.Model):
                 f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
             )
 
-    def eject_all_pairs(self) -> None:
+    def eject_all_pairs(self, explanation: str | None = None) -> None:
         logger.debug(
-            "Since I just completed, I should go around ejecting partnerships from tables.",
+            f"{explanation=}; I should go around ejecting partnerships from tables.",
         )
         with transaction.atomic():
             for t in self.tables():
@@ -179,7 +179,10 @@ class Tournament(models.Model):
                         message += ", and unbottified"
                     logger.debug("%s", message)
 
-                assert t.current_hand.is_abandoned
+                # oddly, `t.current_hand.save()` seems to have no effect; hence the temp variable `h`
+                h = t.current_hand
+                h.abandoned_because = explanation
+                h.save()
 
     def _check_no_more_than_one_running_tournament(self) -> None:
         if not self.is_running():

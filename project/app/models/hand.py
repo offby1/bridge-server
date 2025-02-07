@@ -190,10 +190,12 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    abandoned_because = models.CharField(max_length=100, null=True)
+
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament
         if tour.play_completion_deadline_is_past():
-            tour.eject_all_pairs()
+            tour.eject_all_pairs(explanation=f"Tournament {tour} expired")
 
             from .table import TableException
 
@@ -244,16 +246,21 @@ class Hand(models.Model):
 
     @cached_property
     @admin.display
-    def is_abandoned(self) -> str | None:
+    def is_abandoned(self) -> bool:
         if self.is_complete:
-            return None
+            return False
+
+        if self.abandoned_because is not None:
+            return True
+
         players = [s.player for s in self.table.seats]
         unseated_players = [p for p in players if not p.currently_seated]
 
-        # TODO -- different text if they were ejected due to the tournament expiring
-        # And maybe point the finger of blame at whoever's turn it was
         if unseated_players:
-            return f"{[p.name for p in unseated_players]} left their seats for the lobby"
+            self.abandoned_because = (
+                f"{[p.name for p in unseated_players]} left their seats for the lobby"
+            )
+            return True
 
         player_table_tuples = [
             (s.player.name, s.table.pk)
@@ -261,8 +268,9 @@ class Hand(models.Model):
             if s.table.pk != self.table.pk
         ]
         if not player_table_tuples:
-            return None
-        return f"Some players are now at other tables: {player_table_tuples}"
+            return False
+        self.abandoned_because = f"Some players are now at other tables: {player_table_tuples}"
+        return True
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = self.event_channel_name
@@ -381,7 +389,7 @@ class Hand(models.Model):
         assert_type(call, libCall)
 
         if self.is_abandoned:
-            msg = f"Hand {self} is abandoned: {self.is_abandoned}"
+            msg = f"Hand {self} is abandoned: {self.abandoned_because}"
             raise AuctionError(msg)
 
         self._check_for_expired_tournament()
@@ -430,7 +438,7 @@ class Hand(models.Model):
         assert_type(card, libCard)
 
         if self.is_abandoned:
-            msg = f"Hand {self} is abandoned: {self.is_abandoned}"
+            msg = f"Hand {self} is abandoned: {self.abandoned_because}"
             raise PlayError(msg)
 
         self._check_for_expired_tournament()
@@ -698,7 +706,7 @@ class Hand(models.Model):
 
     def toggle_open_access(self) -> None:
         if self.is_abandoned:
-            return
+            return None
 
         self.open_access = not self.open_access
         self.save()

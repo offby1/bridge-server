@@ -183,5 +183,5 @@ def test_play_completion_deadline(usual_setup) -> None:
         hand.refresh_from_db()
         del hand.is_abandoned
 
-        assert hand.is_abandoned is not None
-        assert "deadline" in hand.is_abandoned
+        assert hand.is_abandoned
+        assert "expired" in hand.abandoned_because
