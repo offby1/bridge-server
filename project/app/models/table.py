@@ -41,6 +41,7 @@ class TableManager(models.Manager):
         if "tournament" not in kwargs:
             tournament, _ = Tournament.objects.get_or_create_running_tournament()
             kwargs["tournament"] = tournament
+        assert not tournament.signup_deadline_is_past
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(

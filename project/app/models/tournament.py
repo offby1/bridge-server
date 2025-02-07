@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime
 import logging
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models, transaction
+from django.utils import timezone
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -28,6 +30,13 @@ class TournamentManager(models.Manager):
         with transaction.atomic():
             if ("display_number") not in kwargs:
                 kwargs["display_number"] = self.count() + 1
+
+            now = timezone.now()
+            kwargs.setdefault("signup_deadline", now + datetime.timedelta(seconds=300))
+            kwargs.setdefault(
+                "play_completion_deadline",
+                kwargs["signup_deadline"] + datetime.timedelta(seconds=300),
+            )
 
             t = super().create(*args, **kwargs)
             # create all the boards ahead of time.
@@ -70,7 +79,16 @@ class Tournament(models.Model):
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
 
+    signup_deadline = models.DateTimeField(null=True, default=None)
+    play_completion_deadline = models.DateTimeField(null=True, default=None)
+
     objects = TournamentManager()
+
+    def signup_deadline_is_past(self) -> bool:
+        return datetime.now() > self.signup_deadline
+
+    def play_completion_deadline_is_past(self) -> bool:
+        return datetime.now() > self.play_completion_deadline
 
     def __str__(self) -> str:
         return f"tournament #{self.display_number}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
