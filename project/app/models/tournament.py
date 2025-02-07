@@ -216,6 +216,16 @@ class Tournament(models.Model):
                     & models.Q(play_completion_deadline__isnull=False)
                 ),
             ),
+            models.CheckConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_play_deadline_must_follow_signup_deadline",
+                condition=(
+                    (
+                        models.Q(signup_deadline__isnull=True)
+                        & models.Q(play_completion_deadline__isnull=True)
+                    )
+                    | models.Q(play_completion_deadline__gt=models.F("signup_deadline"))
+                ),
+            ),
         ]
 
 
