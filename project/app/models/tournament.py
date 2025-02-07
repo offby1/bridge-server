@@ -114,7 +114,14 @@ class Tournament(models.Model):
         return Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
 
     def __str__(self) -> str:
-        return f"tournament #{self.display_number}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
+        status = (
+            "completed"
+            if self.is_complete
+            else "currently_running"
+            if self.is_running()
+            else "expired"
+        )
+        return f"tournament #{self.display_number}; {status}; {self.board_set.count()} boards"
 
     def hands(self) -> models.QuerySet:
         from app.models import Hand

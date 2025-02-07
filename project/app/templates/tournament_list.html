@@ -6,13 +6,23 @@
     {% block tournament_list %}
         <table class="table caption-top">
             <caption>Tournaments</caption>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Signup Deadline</th>
+                    <th>Play Completion Deadline</th>
+                </tr>
+            </thead>
             <tbody>
                 {% for tournament in tournament_list %}
                     <tr>
-                        <th>{{ tournament.pk }}</th>
+                        <th>{{ tournament.display_number }}</th>
                         <td>
                             <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
                         </td>
+                        <td>{{ tournament.signup_deadline|date:"r" }}</td>
+                        <td>{{ tournament.play_completion_deadline|date:"r" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

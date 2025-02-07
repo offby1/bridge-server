@@ -38,6 +38,10 @@
   height: var(--navbar-height);
 }
 
+caption {
+    font-size: 10em;
+}
+
 body {
   padding-top: var(--navbar-height);
 }
