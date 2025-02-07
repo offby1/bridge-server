@@ -190,6 +190,16 @@ class Hand(models.Model):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
+    def _check_for_expired_tournament(self) -> None:
+        tour = self.table.tournament
+        if tour.play_completion_deadline_is_past():
+            tour.eject_all_pairs()
+
+            from .table import TableException
+
+            msg = "The play completion deadline has passed!"
+            raise TableException(msg)
+
     @property
     def event_channel_name(self):
         return f"hand:{self.pk}"
@@ -239,6 +249,9 @@ class Hand(models.Model):
             return None
         players = [s.player for s in self.table.seats]
         unseated_players = [p for p in players if not p.currently_seated]
+
+        # TODO -- different text if they were ejected due to the tournament expiring
+        # And maybe point the finger of blame at whoever's turn it was
         if unseated_players:
             return f"{[p.name for p in unseated_players]} left their seats for the lobby"
 
@@ -371,6 +384,8 @@ class Hand(models.Model):
             msg = f"Hand {self} is abandoned: {self.is_abandoned}"
             raise AuctionError(msg)
 
+        self._check_for_expired_tournament()
+
         auction = self.auction
         try:
             auction.raise_if_illegal_call(player=player, call=call)
@@ -417,6 +432,8 @@ class Hand(models.Model):
         if self.is_abandoned:
             msg = f"Hand {self} is abandoned: {self.is_abandoned}"
             raise PlayError(msg)
+
+        self._check_for_expired_tournament()
 
         legit_player = self.player_who_may_play
         if legit_player is None:

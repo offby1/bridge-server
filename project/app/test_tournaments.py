@@ -4,6 +4,7 @@ import datetime
 from freezegun import freeze_time
 import pytest
 from bridge.card import Card
+from bridge.contract import Call
 from django.contrib import auth
 
 import app.views.hand
@@ -127,7 +128,7 @@ def test_signup_deadline(nobody_seated) -> None:
     p3 = Player.objects.exclude(pk=p1.pk).exclude(pk=p1.partner.pk).first()
     assert p3 is not None
 
-    Tuesday = datetime.datetime.fromisoformat("2012-01-14T00:00:00Z")
+    Tuesday = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Wednesday = Tuesday + datetime.timedelta(seconds=3600 * 24)
     Thursday = Wednesday + datetime.timedelta(seconds=3600 * 24)
 
@@ -146,3 +147,41 @@ def test_signup_deadline(nobody_seated) -> None:
             Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
 
         assert "deadline has passed" in str(e.value)
+
+
+def test_play_completion_deadline(usual_setup) -> None:
+    # All players are initially seated
+    assert not Player.objects.filter(currently_seated=False).exists()
+
+    north = Player.objects.get_by_name("Jeremy Northam")
+
+    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+    DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
+
+    table = north.current_table
+    the_tournament = table.tournament
+    hand = table.current_hand
+
+    with freeze_time(Today):
+        the_tournament.play_completion_deadline = Tomorrow
+        the_tournament.signup_deadline = Today
+        the_tournament.save()
+
+        hand.add_call_from_player(player=north.libraryThing(), call=Call.deserialize("Pass"))
+
+    east = Player.objects.get_by_name("Clint Eastwood")
+    with freeze_time(DayAfter):
+        with pytest.raises(TableException) as e:
+            hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
+
+        assert "deadline has passed" in str(e.value)
+
+        # All players have been ejected
+        assert not Player.objects.filter(currently_seated=True).exists()
+
+        hand.refresh_from_db()
+        del hand.is_abandoned
+
+        assert hand.is_abandoned is not None
+        assert "deadline" in hand.is_abandoned

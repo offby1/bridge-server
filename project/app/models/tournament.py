@@ -173,10 +173,13 @@ class Tournament(models.Model):
                     message = f"{p} is now in the lobby"
                     p.currently_seated = False
                     p.save()
+
                     if not p.synthetic:
                         p.toggle_bot(False)
                         message += ", and unbottified"
                     logger.debug("%s", message)
+
+                assert t.current_hand.is_abandoned
 
     def _check_no_more_than_one_running_tournament(self) -> None:
         if not self.is_running():
