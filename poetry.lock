@@ -1380,6 +1380,22 @@ unicode = ["unicodedata2 (>=15.1.0)"]
 woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
+name = "freezegun"
+version = "1.5.1"
+description = "Let your Python tests travel through time"
+optional = false
+python-versions = ">=3.7"
+groups = ["dev"]
+markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+files = [
+    {file = "freezegun-1.5.1-py3-none-any.whl", hash = "sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1"},
+    {file = "freezegun-1.5.1.tar.gz", hash = "sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9"},
+]
+
+[package.dependencies]
+python-dateutil = ">=2.7"
+
+[[package]]
 name = "frilouz"
 version = "0.0.2"
 description = "Python AST parser adapter with partial error recovery"
@@ -4755,4 +4771,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "57f5b0b4b9912052d3c05faa9fb9ce8a567189ab4366cf729fee20fc7ca86391"
+content-hash = "25b169c968b887fbb46d1de41a15f5f712c0ddf37290f22ef766109646c4aa6e"

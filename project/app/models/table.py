@@ -41,15 +41,19 @@ class TableManager(models.Manager):
         if "tournament" not in kwargs:
             tournament, _ = Tournament.objects.get_or_create_running_tournament()
             kwargs["tournament"] = tournament
-        assert not tournament.signup_deadline_is_past
+        tournament = kwargs["tournament"]
+        if tournament.signup_deadline_is_past():
+            msg = f"oops -- {tournament=}'s signup deadline has passed"
+            raise TableException(msg)
+
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
-        self, p1: Player, p2: Player, desired_board_pk: PK | None = None
+        self, p1: Player, p2: Player, desired_board_pk: PK | None = None, **kwargs
     ) -> Table:
         try:
             with transaction.atomic():
-                t: Table = self.create()
+                t: Table = self.create(**kwargs)
                 logger.debug("Created %s, tournament %s", t, t.tournament)
                 if p1.partner is None or p2.partner is None:
                     raise TableException(

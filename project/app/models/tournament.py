@@ -56,6 +56,9 @@ class TournamentManager(models.Manager):
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
 
+    def running(self) -> models.QuerySet:
+        return self.filter(Tournament.between_deadlines_Q())
+
     def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
         with transaction.atomic():
             currently_running = self.current()
@@ -85,10 +88,31 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     def signup_deadline_is_past(self) -> bool:
-        return datetime.now() > self.signup_deadline
+        if self.signup_deadline is None:
+            return False
+        return timezone.now() > self.signup_deadline
 
     def play_completion_deadline_is_past(self) -> bool:
-        return datetime.now() > self.play_completion_deadline
+        if self.play_completion_deadline is None:
+            return False
+        return timezone.now() > self.play_completion_deadline
+
+    @staticmethod
+    def between_deadlines_Q() -> models.Q:
+        now = timezone.now()
+        return models.Q(signup_deadline__lte=now) & models.Q(play_completion_deadline__gte=now)
+
+    def is_running(self) -> bool:
+        if self.is_complete:
+            return False
+
+        if self.play_completion_deadline is None:
+            return True
+
+        # TODO -- add a constraint that says either both deadlines are NULL, or neither is
+        assert self.signup_deadline is not None
+
+        return Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
 
     def __str__(self) -> str:
         return f"tournament #{self.display_number}; {'completed' if self.is_complete else 'currently_running'}; {self.board_set.count()} boards"
@@ -155,10 +179,10 @@ class Tournament(models.Model):
                     logger.debug("%s", message)
 
     def _check_no_more_than_one_running_tournament(self) -> None:
-        if self.is_complete:
+        if not self.is_running():
             return
 
-        if Tournament.objects.filter(is_complete=False).exists():
+        if Tournament.objects.running().exists():
             msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
             raise Exception(msg, self)
 

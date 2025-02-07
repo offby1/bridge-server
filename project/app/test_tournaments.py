@@ -1,12 +1,14 @@
 import collections
+import datetime
 
+from freezegun import freeze_time
 import pytest
 from bridge.card import Card
 from django.contrib import auth
 
 import app.views.hand
 import app.views.table.details
-from app.models import Board, Hand, Player, Table, Tournament
+from app.models import Board, Hand, Player, Table, TableException, Tournament
 import app.models.board
 
 from .testutils import play_out_hand
@@ -117,3 +119,30 @@ def test_tournament_end(
 
         t2.refresh_from_db()
         assert t2.next_board() is None
+
+
+def test_signup_deadline(nobody_seated) -> None:
+    p1 = Player.objects.first()
+    assert p1 is not None
+    p3 = Player.objects.exclude(pk=p1.pk).exclude(pk=p1.partner.pk).first()
+    assert p3 is not None
+
+    Tuesday = datetime.datetime.fromisoformat("2012-01-14T00:00:00Z")
+    Wednesday = Tuesday + datetime.timedelta(seconds=3600 * 24)
+    Thursday = Wednesday + datetime.timedelta(seconds=3600 * 24)
+
+    with freeze_time(Tuesday):
+        # Create a tournament whose signup deadline is comfortably in the future.
+        the_tournament = Tournament.objects.create(signup_deadline=Wednesday)
+        # Ensure we can sign up.
+
+        # I guess this is what I mean by "sign up"
+        Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
+
+    # Scoot the clock forward, past the deadline.
+    with freeze_time(Thursday):
+        # Ensure that we can *not* sign up.
+        with pytest.raises(TableException) as e:
+            Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
+
+        assert "deadline has passed" in str(e.value)
