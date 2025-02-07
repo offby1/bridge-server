@@ -9,6 +9,7 @@ export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/djan
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
+export PYTHONUNBUFFERED := "t"
 
 [private]
 default:
