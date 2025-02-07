@@ -6,6 +6,7 @@ import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
+from django.http.response import HttpResponseForbidden
 
 import app.views.hand
 import app.views.table.details
@@ -146,7 +147,8 @@ def test_signup_deadline(nobody_seated) -> None:
         with pytest.raises(TableException) as e:
             Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
 
-        assert "deadline has passed" in str(e.value)
+        assert "deadline" in str(e.value)
+        assert "has passed" in str(e.value)
 
 
 def test_play_completion_deadline(usual_setup) -> None:
@@ -164,8 +166,8 @@ def test_play_completion_deadline(usual_setup) -> None:
     hand = table.current_hand
 
     with freeze_time(Today):
-        the_tournament.play_completion_deadline = Tomorrow
         the_tournament.signup_deadline = Today
+        the_tournament.play_completion_deadline = Tomorrow
         the_tournament.save()
 
         hand.add_call_from_player(player=north.libraryThing(), call=Call.deserialize("Pass"))
@@ -185,3 +187,27 @@ def test_play_completion_deadline(usual_setup) -> None:
 
         assert hand.is_abandoned
         assert "expired" in hand.abandoned_because
+
+
+def test_deadline_via_view(usual_setup, rf) -> None:
+    north = Player.objects.get_by_name("Jeremy Northam")
+    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+    DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
+
+    table = north.current_table
+    the_tournament = table.tournament
+
+    the_tournament.signup_deadline = Today
+    the_tournament.play_completion_deadline = Tomorrow
+    the_tournament.save()
+
+    table = north.current_table
+
+    with freeze_time(DayAfter):
+        request = rf.post("/", data={"call": "Pass"})
+        request.user = north.user
+
+        response = app.views.table.details.call_post_view(request, table.current_hand.pk)
+        assert response.status_code == HttpResponseForbidden.status_code
+        assert b"deadline has passed" in response.content

@@ -94,7 +94,11 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
             player=from_whom,
             call=libCall,
         )
-    except (app.models.hand.AuctionError, bridge.auction.AuctionException) as e:
+    except (
+        app.models.table.TableException,
+        app.models.hand.AuctionError,
+        bridge.auction.AuctionException,
+    ) as e:
         return Forbid(str(e))
 
     return HttpResponse()

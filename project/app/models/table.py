@@ -42,8 +42,11 @@ class TableManager(models.Manager):
             tournament, _ = Tournament.objects.get_or_create_running_tournament()
             kwargs["tournament"] = tournament
         tournament = kwargs["tournament"]
+
+        # TODO -- maybe create or find a new tournament?
         if tournament.signup_deadline_is_past():
-            msg = f"oops -- {tournament=}'s signup deadline has passed"
+            assert tournament.signup_deadline is not None
+            msg = f"oops -- {tournament=}'s signup deadline ({tournament.signup_deadline.isoformat()}) has passed"
             raise TableException(msg)
 
         return super().create(*args, **kwargs)
