@@ -6,7 +6,7 @@
 {% block content %}
     {% block hand_list %}
         <table class="table caption-top">
-            <caption style="font-size: xx-large;">
+            <caption>
                 Hands
                 {% if player %}played by {{ player|styled_link:user }},{% endif %}
                 {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
