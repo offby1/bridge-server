@@ -70,8 +70,6 @@ def _auction_channel_for_table(table):
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
-    return Forbid("No calls for you!!")
-
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     player = request.user.player
