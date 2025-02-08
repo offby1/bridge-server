@@ -10,6 +10,8 @@ STILL TODO:
     This should create synths to play with if there isn't already a "fun" table with an open slot
     The boards should NOT be the same boards that were generated for a tournament
 
+  I guess our constraint about tournaments should change from "only one running tournament at a time" to, I dunno, "no more than one tournament whose signup deadline hasn't passed".  Might be OK to have two or more tournaments whose *play* deadlines haven't yet passed, though.
+
 * MOVEMENTS
 
   I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
