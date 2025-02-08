@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load base_extras %}
 {% block title %}
     Tournaments
 {% endblock title %}
@@ -21,8 +22,8 @@
                         <td>
                             <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
                         </td>
-                        <td>{{ tournament.signup_deadline|date:"r" }}</td>
-                        <td>{{ tournament.play_completion_deadline|date:"r" }}</td>
+                        <td>{{ tournament.signup_deadline|humanized_timestamp }}</td>
+                        <td>{{ tournament.play_completion_deadline|humanized_timestamp }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

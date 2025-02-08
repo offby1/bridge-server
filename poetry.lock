@@ -1452,6 +1452,22 @@ PyJWT = ">=1.5,<3"
 six = ">=1.10.0,<2"
 
 [[package]]
+name = "humanize"
+version = "4.11.0"
+description = "Python humanize utilities"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+files = [
+    {file = "humanize-4.11.0-py3-none-any.whl", hash = "sha256:b53caaec8532bcb2fff70c8826f904c35943f8cecaca29d272d9df38092736c0"},
+    {file = "humanize-4.11.0.tar.gz", hash = "sha256:e66f36020a2d5a974c504bd2555cf770621dbdbb6d82f94a6857c0b1ea2608be"},
+]
+
+[package.extras]
+tests = ["freezegun", "pytest", "pytest-cov"]
+
+[[package]]
 name = "hyperlink"
 version = "21.0.0"
 description = "A featureful, immutable, and correct URL for Python."
@@ -4771,4 +4787,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "25b169c968b887fbb46d1de41a15f5f712c0ddf37290f22ef766109646c4aa6e"
+content-hash = "a667a7f5ead0f88d02e99c578c5ffc8ccdb17ec9567b60920196e25d2a618607"
