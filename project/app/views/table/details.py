@@ -206,7 +206,7 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
     if not ch.is_complete:
-        logger.debug("Table %s has an active hand %s, so redirecting to that", table, ch)
+        logger.debug("Table %s has an active hand %s, so redirecting to that", table.pk, ch.pk)
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
     nb = table.next_board()
@@ -219,7 +219,7 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             reverse("app:table-list") + f"?tournament={table.tournament.pk}"
         )
 
-    logger.debug('Called "next_board" on table %s', table)
+    logger.debug('Called "next_board" on table %s', table.pk)
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
 

@@ -184,7 +184,6 @@ class Table(models.Model):
         return unplayed_boards.first()
 
     def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
-        logger.debug(f"{self}: {self.tournament=}")
         with transaction.atomic():
             if self.tournament.is_complete:
                 logger.debug(
@@ -193,8 +192,8 @@ class Table(models.Model):
                 return None
 
             logger.debug(
-                "%s: someone wants the next board (desired_board_pk is %s)",
-                self,
+                "Table %s: someone wants the next board (desired_board_pk is %s)",
+                self.pk,
                 desired_board_pk,
             )
             if self.hand_set.exists() and not self.hand_is_complete:
@@ -214,7 +213,7 @@ class Table(models.Model):
                 return None
 
             new_hand = Hand.objects.create(board=b, table=self)
-            logger.debug("%s now has a new hand: %s", self, new_hand)
+            logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
             for channel in (
                 self.event_channel_name,
                 *[s.player.event_channel_name for s in self.seats],
