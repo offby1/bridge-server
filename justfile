@@ -242,6 +242,9 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     export GIT_VERSION="$(cat project/VERSION)"
     docker compose up --build {{ options }}
 
+follow: (dcu "--detach")
+    docker compose logs django --follow
+
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
 
