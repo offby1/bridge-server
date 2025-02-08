@@ -27,6 +27,9 @@ register.filter("gitlab_link", gitlab_link)
 
 
 def humanized_timestamp(value: Any) -> str:
+    if value is None:
+        return "None"
+
     delta = value - now()
     suffix = "ago" if delta.total_seconds() < 0 else "from now"
     return f"{value.isoformat()} ({humanize.naturaldelta(delta)} {suffix})"
