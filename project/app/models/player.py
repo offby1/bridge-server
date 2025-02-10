@@ -496,5 +496,5 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "currently_seated"]
     list_filter = ["currently_seated"]
