@@ -2,6 +2,9 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
+
+  Maybe change `player_who_may_call` and `player_who_may_play` to return directions instead of players.
 * After finding a partner, the next step should be a choice:
   - join a tournament
     Maybe you should get a chance to choose a tournament style, or the time it starts, or something
