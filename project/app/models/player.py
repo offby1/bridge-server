@@ -128,7 +128,9 @@ class Player(models.Model):
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
             logger.warning(
-                "Hmm, %s is not a directory; cannot start or stop a bot for you", service_directory
+                "Hmm, %s is not a directory; cannot start or stop a bot for %s",
+                service_directory,
+                self.name,
             )
             return
 
@@ -494,5 +496,5 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "allow_bot_to_play_for_me", "currently_seated"]
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "currently_seated"]
     list_filter = ["currently_seated"]

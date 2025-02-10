@@ -8,6 +8,7 @@ import bridge.contract
 import bridge.seat
 from django.conf import settings
 from django.core.paginator import Paginator
+import django.db.utils
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -210,10 +211,20 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
     if not ch.is_complete:
-        logger.debug("Table %s has an active hand %s, so redirecting to that", table, ch)
+        logger.debug("Table %s has an active hand %s, so redirecting to that", table.pk, ch.pk)
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
-    nb = table.next_board()
+    try:
+        nb = table.next_board()
+    except app.models.hand.HandError as e:
+        return Forbid(e)
+    except (django.db.utils.IntegrityError, app.models.table.TableException) as e:
+        msg = f"{e}: I guess someone else requested the next board already, or something"
+        messages.info(request, msg)
+        logger.info(msg)
+
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
+
     if nb is None:
         msg = "I guess you just gotta wait for this tournament to finish"
         messages.info(request, msg)
@@ -223,7 +234,7 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             reverse("app:table-list") + f"?tournament={table.tournament.pk}"
         )
 
-    logger.debug('Called "next_board" on table %s', table)
+    logger.debug('Called "next_board" on table %s', table.pk)
 
     return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
 

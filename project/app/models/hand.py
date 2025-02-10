@@ -159,7 +159,12 @@ class HandManager(models.Manager):
             p.taint_board(board_pk=board.pk)
             p.save()
 
-        logger.debug("New hand: %s at %s with %s", board, table, [p.name for p in players_qs])
+        logger.debug(
+            "New hand: board #%s at table %s with %s",
+            board.display_number,
+            table.pk,
+            [p.name for p in players_qs],
+        )
 
         return super().create(*args, **kwargs)
 

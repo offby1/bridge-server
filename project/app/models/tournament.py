@@ -67,7 +67,7 @@ class TournamentManager(models.Manager):
                 currently_running.maybe_complete()
                 if not currently_running.is_complete:
                     logger.debug(
-                        f"An incomplete tournament ({currently_running}) already exists; no need to create a new one",
+                        f"An incomplete tournament (#{currently_running.display_number}) already exists; no need to create a new one",
                     )
                     return currently_running, False
             return self.create(), True

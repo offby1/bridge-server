@@ -4,6 +4,8 @@ import collections
 import enum
 from typing import TYPE_CHECKING, Any
 
+from django.contrib import auth
+
 import pytest
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
@@ -385,3 +387,50 @@ def test_predictable_shuffles(monkeypatch):
     # Cards are different
     for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
         assert attrs1_empty[k] != attrs1_golly[k]
+
+
+def test_is_abandoned(usual_setup, everybodys_password) -> None:
+    assert Hand.objects.count() > 0
+
+    for h in Hand.objects.all():
+        assert not h.is_abandoned
+
+    h = Hand.objects.first()
+    assert not h.is_complete
+
+    seats = h.table.seats.select_related("player")
+    assert seats.count() == 4
+
+    north = seats.first().player
+    south = north.partner
+    north.break_partnership()
+
+    message = h.is_abandoned
+    assert "left their seats for the lobby" in message
+    assert north.name in message
+    assert south.name in message
+
+    north.partner_with(south)
+
+    # Now reseat north and south at some other table
+    new_player_names = ["e2", "w2"]
+    for name in new_player_names:
+        Player.objects.create(
+            user=auth.models.User.objects.create(username=name, password=everybodys_password),
+        )
+
+    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
+
+    Table.objects.create_with_two_partnerships(
+        p1=north,
+        p2=Player.objects.get_by_name("e2"),
+    )
+    for p in Player.objects.all():
+        print(f"{p.name}: {p.current_seat.direction} at table {p.current_seat.table.pk}")
+
+    h.refresh_from_db()
+    del h.is_abandoned
+    message = h.is_abandoned
+    assert north.name in message
+    assert south.name in message
+    assert "other tables" in message
