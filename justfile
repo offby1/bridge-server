@@ -200,8 +200,7 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
 
-    pytest_args="--create-db {{ options }} -n 8"
-    pytest_args="--create-db {{ options }} -n 8 --log-cli-level=WARNING"
+    pytest_args="--create-db {{ options }}  --log-cli-level=WARNING"
 
     case "${PYINSTRUMENT:-}" in
     t*)
@@ -213,6 +212,10 @@ test *options: makemigrations mypy
       poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} ${pytest_args}
     ;;
     esac
+
+# Fast tests (i.e., run in parallel)
+[group('bs')]
+ft: (t "-n 8")
 
 # Display coverage from a test run
 [group('bs')]
