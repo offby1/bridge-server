@@ -117,7 +117,7 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-start
+all-but-django-prep: pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
@@ -138,7 +138,7 @@ migrate: makemigrations create-cache (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: t django-superuser migrate create-cache ensure-skeleton-key
+runme *options: t version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
