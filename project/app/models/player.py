@@ -160,6 +160,7 @@ class Player(models.Model):
 
 set -euxo pipefail
 
+printf "%s %s %s " $$ $(date -u +%FT%T%z) $(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
             run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
