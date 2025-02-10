@@ -1,11 +1,13 @@
 IN PROGRESS:
-Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
-
-STILL TODO:
 * Hands should have nice consecutive display numbers, just like ... uh ... tables do.
 
   Find some general way to do this; it feels wrong to have to write code to make this happen.
 
+  I'm trying to avoid actually doing the above; and instead, just fiddling templates and strings to make the hand's "provenance" (i.e., tournament, table, and board) clear.
+
+Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
+
+STILL TODO:
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
 
   Maybe change `player_who_may_call` and `player_who_may_play` to return directions instead of players.

@@ -13,19 +13,17 @@
             </caption>
             <thead>
                 <tr>
-                    <th>ID #</th>
                     <th>Status</th>
                     <th>Tournament</th>
-                    <th>Board</th>
                     <th>Table</th>
+                    <th>Board</th>
                     <th>players</th>
-                    <th>Summary</th>
+                    <th>Result</th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
                 {% for hand in page_obj %}
                     <tr>
-                        <th>{{ hand.pk }}</th>
                         <td>
                             <a href="{% url 'app:hand-archive' hand.pk %}">
                                 {% if hand.is_complete %}
@@ -41,10 +39,10 @@
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.pk }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.short_string }}</a>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.display_number }}</a>
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names_string }}</a>

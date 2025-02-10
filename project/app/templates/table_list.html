@@ -20,7 +20,7 @@
                         <th>{{ table.pk }}</th>
                         <td>
                             <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
-                                Hand {{ table.current_hand.pk }} -- {{ table.current_hand.board }}: {{ table.summary_for_this_viewer }}
+                                {{ table.current_hand }}: {{ table.summary_for_this_viewer }}
                             </a>
                         </td>
                         <td>{{ table.played_hands_string }}</td>
