@@ -1,11 +1,13 @@
 import bridge.card
 import bridge.contract
 
-from .models import Hand, Player, Table, logged_queries
+from .models import Hand, Player, Table
 from .views.hand import hand_detail_view
 
 
-def test_hand_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> None:
+def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
+    usual_setup, rf, django_assert_max_num_queries
+) -> None:
     t = Table.objects.first()
     assert t is not None
     h = t.current_hand
@@ -36,11 +38,5 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(usual_setup, rf) -> Non
     assert p is not None
     request.user = p.user
 
-    # Note: I could also use https://pytest-django.readthedocs.io/en/latest/helpers.html#django-assert-max-num-queries
-    with logged_queries() as ql:
+    with django_assert_max_num_queries(76):
         hand_detail_view(request, t.current_hand.pk)
-
-    # Omit "select count" in the hope that those are somehow less expensive
-    filtered_calls = [c for c in ql.calls if not c[0].startswith("SELECT COUNT(*)")]
-
-    assert len(filtered_calls) <= 62
