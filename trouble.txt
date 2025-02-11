@@ -1,3 +1,5 @@
+# What's all this, then
+
 It *seems* (although I haven't proven) that somehow I created a table with no hands.
 
 I'm trying to contrive a way to make that happen, so I can write a test and fix it.
@@ -27,3 +29,34 @@ Ooh Ooh I reproduced it. Here's what I did:
 - Table 'em up
 
 Kablooey!
+
+**
+
+What kindsa stateful entities we got?
+By "stateful", I mean we might update a column -- like toggling "open_access" on the Hand model, e.g.
+- Board
+  totally stateless
+- Hand
+  "open_access" but that seems benign
+- Player
+  - partner
+  - currently_seated
+  - allow_bot_to_play_for_me
+  - synthetic, although I jump through hoops to make this immutable
+  - boards_played
+- Seat
+  stateless
+- Table
+  tempo_seconds can change, but that seems benign
+- Tournament
+  - is_complete of course
+
+So this is curious:
+
+```python
+In [1]: brad = Player.objects.get_by_name("BradS")
+In [2]: brad._check_current_seat()
+AssertionError: self.currently_seated=True and yet I cannot find a table at which I am sitting
+```
+
+This might be fallout from me having forcibly deleted the troublesome table :-|
