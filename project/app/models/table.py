@@ -43,9 +43,7 @@ class TableManager(models.Manager):
             kwargs["tournament"] = tournament
         return super().create(*args, **kwargs)
 
-    def create_with_two_partnerships(
-        self, p1: Player, p2: Player, desired_board_pk: PK | None = None
-    ) -> Table:
+    def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
         try:
             with transaction.atomic():
                 t: Table = self.create()
@@ -66,7 +64,7 @@ class TableManager(models.Manager):
                         table=t,
                     )
 
-                t.next_board(desired_board_pk=desired_board_pk)
+                t.next_board()
         except Exception as e:
             raise TableException(str(e)) from e
 
@@ -185,7 +183,7 @@ class Table(models.Model):
 
     # TODO -- change this so that failure *always* raises an exception.  That entails removing the `| None` from the
     # return type signature.
-    def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
+    def next_board(self) -> Board | None:
         with transaction.atomic():
             if self.tournament.is_complete:
                 logger.debug(
@@ -193,22 +191,13 @@ class Table(models.Model):
                 )
                 return None
 
-            logger.debug(
-                "Table %s: someone wants the next board (desired_board_pk is %s)",
-                self.pk,
-                desired_board_pk,
-            )
+            logger.debug("Table %s: someone wants the next board", self.pk)
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; no next board for you"
                 logger.warning("%s", msg)
                 raise TableException(msg)
 
-            if desired_board_pk is not None:
-                b = Board.objects.get(pk=desired_board_pk)
-            else:
-                b = self.find_unplayed_board()
-
-            if b is None:
+            if (b := self.find_unplayed_board()) is None:
                 logger.debug(
                     "I guess our caller has played all the boards, and just has to wait 🤷"
                 )
