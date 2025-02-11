@@ -71,6 +71,8 @@ class TableManager(models.Manager):
                 nb = t.next_board()
                 if nb is None:
                     logger.warning("I have a bad feeling about this")
+        except (TableException, NoMoreBoards):
+            raise
         except Exception as e:
             raise TableException(str(e)) from e
 
@@ -190,10 +192,9 @@ class Table(models.Model):
     def next_board(self) -> Board:
         with transaction.atomic():
             if self.tournament.is_complete:
-                logger.debug(
-                    "No need to do fancy queries if we already know the tournament is over."
-                )
-                raise NoMoreBoards()
+                msg = f"{self.tournament} is complete; thus there are no more boards"
+                logger.debug("%s", msg)
+                raise NoMoreBoards(msg)
 
             logger.debug("Table %s: someone wants the next board", self.pk)
             if self.hand_set.exists() and not self.hand_is_complete:
@@ -202,10 +203,9 @@ class Table(models.Model):
                 raise TableException(msg)
 
             if (b := self.find_unplayed_board()) is None:
-                logger.debug(
-                    "I guess our caller has played all the boards, and just has to wait 🤷"
-                )
-                raise NoMoreBoards()
+                msg = f"Some players at {self} have played all the boards in {self.tournament}, so we cannot get a new board"
+                logger.debug("%s", msg)
+                raise NoMoreBoards(msg)
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)

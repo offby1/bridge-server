@@ -163,6 +163,12 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 
     try:
         t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
+    except app.models.NoMoreBoards as e:
+        msg = f"{e}, so I guess you gotta wait for the tournament to finish"
+        messages.info(request, msg)
+        logger.info("%s", msg)
+        return HttpResponseRedirect(reverse("app:table-list"))
+
     except app.models.TableException as e:
         return Forbid(str(e))
 
@@ -213,6 +219,8 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     try:
         table.next_board()
     except app.models.hand.HandError as e:
+        msg = f"{e}: dunno what's happening here tbh"
+        logger.warning(msg)
         return Forbid(e)
     except app.models.table.NoMoreBoards as e:
         msg = f"{e}: I guess you just gotta wait for this tournament to finish"
