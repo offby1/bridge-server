@@ -6,7 +6,7 @@ from django.contrib import auth
 
 import app.views.hand
 import app.views.table.details
-from app.models import Board, Hand, Player, Table, TableException, Tournament
+from app.models import Board, Hand, NoMoreBoards, Player, Table, Tournament
 import app.models.board
 
 from .testutils import play_out_hand
@@ -99,7 +99,8 @@ def test_tournament_end(
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
         # Have someone at the first table click "Next Board Plz".
-        assert t1.next_board() is None
+        with pytest.raises(NoMoreBoards):
+            t1.next_board()
 
         client.force_login(t1.seat_set.first().player.user)
         response = client.post(f"/table/{t1.pk}/new-board-plz/")
@@ -113,10 +114,13 @@ def test_tournament_end(
 
         t1.refresh_from_db()
         assert t1.tournament.is_complete
-        assert t1.next_board() is None
+
+        with pytest.raises(NoMoreBoards):
+            t1.next_board()
 
         t2.refresh_from_db()
-        assert t2.next_board() is None
+        with pytest.raises(NoMoreBoards):
+            t2.next_board()
 
 
 def test_no_stragglers(

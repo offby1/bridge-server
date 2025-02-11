@@ -36,6 +36,10 @@ class TableException(Exception):
     pass
 
 
+class NoMoreBoards(Exception):
+    pass
+
+
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
@@ -183,15 +187,13 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
-    # TODO -- change this so that failure *always* raises an exception.  That entails removing the `| None` from the
-    # return type signature.
-    def next_board(self) -> Board | None:
+    def next_board(self) -> Board:
         with transaction.atomic():
             if self.tournament.is_complete:
                 logger.debug(
                     "No need to do fancy queries if we already know the tournament is over."
                 )
-                return None
+                raise NoMoreBoards()
 
             logger.debug("Table %s: someone wants the next board", self.pk)
             if self.hand_set.exists() and not self.hand_is_complete:
@@ -203,7 +205,7 @@ class Table(models.Model):
                 logger.debug(
                     "I guess our caller has played all the boards, and just has to wait 🤷"
                 )
-                return None
+                raise NoMoreBoards()
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)

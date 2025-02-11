@@ -52,6 +52,7 @@ class TournamentManager(models.Manager):
                 return self.create(), True
 
             first_incomplete = incomplete_qs.first()
+            assert first_incomplete is not None
             first_incomplete.maybe_complete()
 
             if first_incomplete.is_complete:

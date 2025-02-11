@@ -211,24 +211,23 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
     try:
-        nb = table.next_board()
+        table.next_board()
     except app.models.hand.HandError as e:
         return Forbid(e)
-    except (django.db.utils.IntegrityError, app.models.table.TableException) as e:
-        msg = f"{e}: I guess someone else requested the next board already, or something"
-        messages.info(request, msg)
-        logger.info(msg)
-
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
-
-    if nb is None:
-        msg = "I guess you just gotta wait for this tournament to finish"
+    except app.models.table.NoMoreBoards as e:
+        msg = f"{e}: I guess you just gotta wait for this tournament to finish"
         messages.info(request, msg)
         logger.info(msg)
 
         return HttpResponseRedirect(
             reverse("app:table-list") + f"?tournament={table.tournament.pk}"
         )
+    except (django.db.utils.IntegrityError, app.models.table.TableException) as e:
+        msg = f"{e}: I guess someone else requested the next board already, or something"
+        messages.info(request, msg)
+        logger.info(msg)
+
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
 
     logger.debug('Called "next_board" on table %s', table.pk)
 
