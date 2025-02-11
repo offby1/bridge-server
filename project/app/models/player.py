@@ -293,7 +293,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.partner.partner = None
             self.partner.unseat_me()
-
             self.partner.save(update_fields=["partner", "currently_seated"])
 
             self.partner = None

@@ -152,7 +152,7 @@ class Tournament(models.Model):
         if self.is_complete:
             return
 
-        if Tournament.objects.filter(is_complete=False).exists():
+        if Tournament.objects.exclude(pk=self.pk).filter(is_complete=False).exists():
             msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
             raise Exception(msg, self)
 
