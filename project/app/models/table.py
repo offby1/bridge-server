@@ -183,6 +183,8 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
+    # TODO -- change this so that failure *always* raises an exception.  That entails removing the `| None` from the
+    # return type signature.
     def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
         with transaction.atomic():
             if self.tournament.is_complete:

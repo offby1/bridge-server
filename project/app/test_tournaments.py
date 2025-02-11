@@ -6,7 +6,7 @@ from django.contrib import auth
 
 import app.views.hand
 import app.views.table.details
-from app.models import Board, Hand, Player, Table, Tournament
+from app.models import Board, Hand, Player, Table, TableException, Tournament
 import app.models.board
 
 from .testutils import play_out_hand
@@ -117,3 +117,39 @@ def test_tournament_end(
 
         t2.refresh_from_db()
         assert t2.next_board() is None
+
+
+def test_no_stragglers(
+    nearly_completed_tournament, everybodys_password, monkeypatch, client
+) -> None:
+    assert Board.objects.count() == 1
+    with monkeypatch.context() as m:
+        t1 = Table.objects.first()
+        assert t1 is not None
+        assert Table.objects.count() == 1
+        print(f"{t1.current_hand.board=}")
+        m.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
+        assert app.models.board.BOARDS_PER_TOURNAMENT == 1
+
+        # Complete the first table.
+
+        h1 = Hand.objects.get(pk=1)
+        west = Player.objects.get_by_name("Adam West")
+        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+
+        # Have someone at the first table click "Next Board Plz".
+        t1.next_board()
+
+        print(f"{t1.hand_set.all()=}")
+
+        north = Player.objects.get_by_name("Jeremy Northam")
+        south = Player.objects.get_by_name("J.D. Souther")
+        west = Player.objects.get_by_name("Adam West")
+
+        north.break_partnership()
+        north.partner_with(south)
+
+        t2 = Table.objects.create_with_two_partnerships(north, west)
+        print(f"{t2.hand_set.all()=}")
+        assert t2 is None or t2.hand_set.count() > 0
+        print(f"{t2.current_hand.board=}")

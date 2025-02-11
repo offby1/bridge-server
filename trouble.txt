@@ -1,0 +1,14 @@
+It *seems* (although I haven't proven) that somehow I created a table with no hands.
+
+I'm trying to contrive a way to make that happen, so I can write a test and fix it.
+
+How might I reproduce this?
+
+I've got to create a table with no hands, duh.
+
+Maybe start with table.details.new_table_for_two_partnerships:
+That calls app.models.Table.objects.create_with_two_partnerships
+That calls t.next_board
+That will return None if
+- if self.tournament.is_complete; or
+- self.find_unplayed_board() itself returns None
