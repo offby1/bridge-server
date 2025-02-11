@@ -136,18 +136,10 @@ def test_no_stragglers(
         h1 = Hand.objects.get(pk=1)
         west = Player.objects.get_by_name("Adam West")
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
-
-        # Have someone at the first table click "Next Board Plz".
-        t1.next_board()
-
-        print(f"{t1.hand_set.all()=}")
+        assert t1.tournament.is_complete
 
         north = Player.objects.get_by_name("Jeremy Northam")
-        south = Player.objects.get_by_name("J.D. Souther")
         west = Player.objects.get_by_name("Adam West")
-
-        north.break_partnership()
-        north.partner_with(south)
 
         t2 = Table.objects.create_with_two_partnerships(north, west)
         print(f"{t2.hand_set.all()=}")
