@@ -64,7 +64,9 @@ class TableManager(models.Manager):
                         table=t,
                     )
 
-                t.next_board()
+                nb = t.next_board()
+                if nb is None:
+                    logger.warning("I have a bad feeling about this")
         except Exception as e:
             raise TableException(str(e)) from e
 

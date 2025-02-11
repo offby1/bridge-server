@@ -1,0 +1,99 @@
+2025-02-11T19:11:10+0000 WARNING request_id=072558fdf0c94299bb7dd457a754c7d3 player.py(131) control_bot Hmm, /service is not a directory; cannot start or stop a bot for synthetic_megan 
+2025-02-11T19:11:20+0000 DEBUG request_id=7de2e037b7ab42feb0b6774f7b7f4323 player.py(427) _find_unused_username User named prez or synthetic_prez already exists; let's try another 
+2025-02-11T19:11:20+0000 DEBUG request_id=7de2e037b7ab42feb0b6774f7b7f4323 player.py(427) _find_unused_username User named rhonda or synthetic_rhonda already exists; let's try another 
+2025-02-11T19:11:20+0000 DEBUG request_id=7de2e037b7ab42feb0b6774f7b7f4323 player.py(427) _find_unused_username User named prez or synthetic_prez already exists; let's try another 
+2025-02-11T19:11:20+0000 DEBUG request_id=7de2e037b7ab42feb0b6774f7b7f4323 player.py(427) _find_unused_username User named rhonda or synthetic_rhonda already exists; let's try another 
+2025-02-11T19:11:20+0000 DEBUG request_id=7de2e037b7ab42feb0b6774f7b7f4323 player.py(427) _find_unused_username User named bodie or synthetic_bodie already exists; let's try another 
+2025-02-11T19:11:31+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(89) hands tournament #1; currently_running; 16 boards has 30 hands 
+2025-02-11T19:11:31+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(96) tables tournament #1; currently_running; 16 boards has 3 tables 
+2025-02-11T19:11:31+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(89) hands tournament #1; currently_running; 16 boards has 30 hands 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(89) hands tournament #1; currently_running; 16 boards has 30 hands 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(96) tables tournament #1; currently_running; 16 boards has 3 tables 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(129) maybe_complete len(complete_hands)=30, which is not == num_hands_needed_for_completion=48 (self.tables().count()=3 * self.board_set.count()=16), so we're not done 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f tournament.py(64) get_or_create_running_tournament An incomplete tournament (#1) already exists; no need to create a new one 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(50) create_with_two_partnerships Created Table 6 in tournament #1; currently_running; 16 boards, tournament tournament #1; currently_running; 16 boards 
+2025-02-11T19:11:32+0000 WARNING request_id=3484744d88e445168efa310a32d4b94f player.py(131) control_bot Hmm, /service is not a directory; cannot start or stop a bot for synthetic_bodie 
+2025-02-11T19:11:32+0000 WARNING request_id=3484744d88e445168efa310a32d4b94f player.py(131) control_bot Hmm, /service is not a directory; cannot start or stop a bot for synthetic_kima 
+2025-02-11T19:11:32+0000 WARNING request_id=3484744d88e445168efa310a32d4b94f player.py(131) control_bot Hmm, /service is not a directory; cannot start or stop a bot for synthetic_megan 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(196) next_board Table 6: someone wants the next board 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(179) find_unplayed_board Player synthetic_bodie has played [] 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(179) find_unplayed_board Player bob has played [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(179) find_unplayed_board Player synthetic_kima has played [] 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(179) find_unplayed_board Player synthetic_megan has played [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] 
+2025-02-11T19:11:32+0000 DEBUG request_id=3484744d88e445168efa310a32d4b94f table.py(203) next_board I guess our caller has played all the boards, and just has to wait 🤷 
+2025-02-11T19:11:32+0000 WARNING request_id=3484744d88e445168efa310a32d4b94f table.py(69) create_with_two_partnerships I have a bad feeling about this 
+Internal Server Error: /table/new/17/1/ 
+Traceback (most recent call last): 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 518, in thread_handler 
+    raise exc_info[1] 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 42, in inner 
+    response = await get_response(request) 
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 518, in thread_handler 
+    raise exc_info[1] 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 253, in _get_response_async 
+    response = await wrapped_callback( 
+               ^^^^^^^^^^^^^^^^^^^^^^^ 
+        request, *callback_args, **callback_kwargs 
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+    ) 
+    ^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 468, in __call__ 
+    ret = await asyncio.shield(exec_coro) 
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/current_thread_executor.py", line 40, in run 
+    result = self.fn(*self.args, **self.kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 522, in thread_handler 
+    return func(*args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner 
+    return func(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper 
+    return view_func(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py", line 80, in non_players_piss_off 
+    return view_function(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/table/details.py", line 169, in new_table_for_two_partnerships 
+    return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk])) 
+                                                                 ^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py", line 121, in current_hand 
+    assert rv is not None, "current_hand can't find no hands" 
+           ^^^^^^^^^^^^^^ 
+AssertionError: current_hand can't find no hands 
+2025-02-11T19:11:32+0000 ERROR request_id=3484744d88e445168efa310a32d4b94f log.py(248) log_response Internal Server Error: /table/new/17/1/ 
+Traceback (most recent call last): 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 518, in thread_handler 
+    raise exc_info[1] 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 42, in inner 
+    response = await get_response(request) 
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 518, in thread_handler 
+    raise exc_info[1] 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 253, in _get_response_async 
+    response = await wrapped_callback( 
+               ^^^^^^^^^^^^^^^^^^^^^^^ 
+        request, *callback_args, **callback_kwargs 
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+    ) 
+    ^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 468, in __call__ 
+    ret = await asyncio.shield(exec_coro) 
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/current_thread_executor.py", line 40, in run 
+    result = self.fn(*self.args, **self.kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/asgiref/sync.py", line 522, in thread_handler 
+    return func(*args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner 
+    return func(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper 
+    return view_func(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/misc.py", line 80, in non_players_piss_off 
+    return view_function(request, *args, **kwargs) 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/views/table/details.py", line 169, in new_table_for_two_partnerships 
+    return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk])) 
+                                                                 ^^^^^^^^^^^^^^ 
+  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/models/table.py", line 121, in current_hand 
+    assert rv is not None, "current_hand can't find no hands" 
+           ^^^^^^^^^^^^^^ 
+AssertionError: current_hand can't find no hands 
+HTTP POST /table/new/17/1/ 500 [1.28, 127.0.0.1:52972] 
+2025-02-11T19:11:32+0000 ERROR request_id=3484744d88e445168efa310a32d4b94f runserver.py(181) log_action HTTP POST /table/new/17/1/ 500 [1.28, 127.0.0.1:52972] 
+ 

@@ -12,3 +12,18 @@ That calls t.next_board
 That will return None if
 - if self.tournament.is_complete; or
 - self.find_unplayed_board() itself returns None
+
+**
+
+Ooh Ooh I reproduced it. Here's what I did:
+
+- `just restore < repro.sql`
+- `just --no-deps runme`
+- log in as bob
+- Splitsville
+- Find a partner
+- Partner 'em up, Boss
+- Gimme synthetic opponents, Yo
+- Table 'em up
+
+Kablooey!
