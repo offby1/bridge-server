@@ -200,13 +200,14 @@ class Hand(models.Model):
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament
         if tour.play_completion_deadline_is_past():
-            tour.eject_all_pairs(explanation=f"Tournament {tour} expired")
+            deadline = tour.play_completion_deadline
+            assert deadline is not None
+
+            msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
+            tour.eject_all_pairs(explanation=msg)
 
             from .table import TableException
 
-            deadline = tour.play_completion_deadline
-            assert deadline is not None
-            msg = f"The play completion deadline ({deadline.isoformat()}) has passed!"
             raise TableException(msg)
 
     @property

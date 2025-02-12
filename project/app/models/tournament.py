@@ -167,12 +167,11 @@ class Tournament(models.Model):
             complete_hands = [h for h in self.hands() if h.is_complete]
 
             if len(complete_hands) == num_hands_needed_for_completion:
-                logger.debug(
-                    f"{len(complete_hands)=}, which is == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're done"
-                )
+                explanation = f"We've played {num_hands_needed_for_completion=}, so we're done"
+                logger.debug(explanation)
                 self.is_complete = True
                 self.save()
-                self.eject_all_pairs()
+                self.eject_all_pairs(explanation=explanation)
                 logger.debug(
                     f"Marked myself %s as complete, and ejected all pairs from {self.tables()}",
                     self,
@@ -183,7 +182,7 @@ class Tournament(models.Model):
                 f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
             )
 
-    def eject_all_pairs(self, explanation: str | None = None) -> None:
+    def eject_all_pairs(self, explanation: str) -> None:
         logger.debug(
             f"{explanation=}; I should go around ejecting partnerships from tables.",
         )
