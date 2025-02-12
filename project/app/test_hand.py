@@ -405,7 +405,8 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     south = north.partner
     north.break_partnership()
 
-    message = h.is_abandoned
+    assert h.is_abandoned
+    message = h.abandoned_because
     assert "left their seats for the lobby" in message
     assert north.name in message
     assert south.name in message
@@ -430,7 +431,8 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
 
     h.refresh_from_db()
     del h.is_abandoned
-    message = h.is_abandoned
+    assert h.is_abandoned
+    message = h.abandoned_because
     assert north.name in message
     assert south.name in message
     assert "other tables" in message
