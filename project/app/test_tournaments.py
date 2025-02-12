@@ -138,19 +138,31 @@ def test_signup_deadline(nobody_seated) -> None:
     Wednesday = Tuesday + datetime.timedelta(seconds=3600 * 24)
     Thursday = Wednesday + datetime.timedelta(seconds=3600 * 24)
 
-    with freeze_time(Tuesday):
-        # Create a tournament whose signup deadline is comfortably in the future.
-        the_tournament = Tournament.objects.create(signup_deadline=Wednesday)
-        # Ensure we can sign up.
+    the_tournament = Tournament.objects.first()
+    assert the_tournament is not None
 
-        # I guess this is what I mean by "sign up"
-        Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
+    # Ensure out tournament's signup deadline is comfortably in the future.
+    the_tournament.signup_deadline = Wednesday
+    the_tournament.play_completion_deadline = Thursday
+    the_tournament.save()
+
+    with freeze_time(Tuesday):
+        # Ensure we can sign up.
+        Table.objects.create_with_two_partnerships(p1, p3)
+
+    p2 = p1.partner
+    p1.break_partnership()
+    p1.partner_with(p2)
+
+    p4 = p3.partner
+    p3.break_partnership()
+    p3.partner_with(p4)
 
     # Scoot the clock forward, past the deadline.
     with freeze_time(Thursday):
         # Ensure that we can *not* sign up.
         with pytest.raises(TableException) as e:
-            Table.objects.create_with_two_partnerships(p1, p3, tournament=the_tournament)
+            Table.objects.create_with_two_partnerships(p1, p3)
 
         assert "deadline" in str(e.value)
         assert "has passed" in str(e.value)
