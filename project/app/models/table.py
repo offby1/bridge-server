@@ -43,38 +43,38 @@ class NoMoreBoards(Exception):
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
-            tournament, _ = Tournament.objects.get_or_create_running_tournament()
+            tournament, created = Tournament.objects.get_or_create_running_tournament()
+            logger.debug(
+                "%s new tournament %s",
+                "created" if created else "didn't need to create",
+                tournament.pk,
+            )
             kwargs["tournament"] = tournament
-        return super().create(*args, **kwargs)
+        rv = super().create(*args, **kwargs)
+        logger.debug("Created table %s", rv.pk)
+        return rv
 
     def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
-        try:
-            with transaction.atomic():
-                t: Table = self.create()
-                logger.debug("Created %s, tournament %s", t, t.tournament)
-                if p1.partner is None or p2.partner is None:
-                    raise TableException(
-                        f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
-                    )
-                player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
-                if len(player_pks) != 4:
-                    raise TableException(
-                        f"Cannot create a table with seats {player_pks} --we need exactly four"
-                    )
-                for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
-                    modelSeat.objects.create(
-                        direction=seat,
-                        player=player,
-                        table=t,
-                    )
+        with transaction.atomic():
+            t: Table = self.create()
+            logger.debug("Created %s, tournament %s", t, t.tournament)
+            if p1.partner is None or p2.partner is None:
+                raise TableException(
+                    f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
+                )
+            player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
+            if len(player_pks) != 4:
+                raise TableException(
+                    f"Cannot create a table with seats {player_pks} --we need exactly four"
+                )
+            for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
+                modelSeat.objects.create(
+                    direction=seat,
+                    player=player,
+                    table=t,
+                )
 
-                nb = t.next_board()
-                if nb is None:
-                    logger.warning("I have a bad feeling about this")
-        except (TableException, NoMoreBoards):
-            raise
-        except Exception as e:
-            raise TableException(str(e)) from e
+            t.next_board()
 
         send_event(
             channel="all-tables",
@@ -203,7 +203,7 @@ class Table(models.Model):
                 raise TableException(msg)
 
             if (b := self.find_unplayed_board()) is None:
-                msg = f"Some players at {self} have played all the boards in {self.tournament}, so we cannot get a new board"
+                msg = f"Some players at {self} have played all the boards, so we cannot get a new board"
                 logger.debug("%s", msg)
                 raise NoMoreBoards(msg)
 

@@ -164,7 +164,7 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
     try:
         t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
     except app.models.NoMoreBoards as e:
-        msg = f"{e}, so I guess you gotta wait for the tournament to finish"
+        msg = f"You cannot get a new table in this tournament because {e}"
         messages.info(request, msg)
         logger.info("%s", msg)
         return HttpResponseRedirect(reverse("app:table-list"))
