@@ -24,12 +24,20 @@
                             <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
                         </td>
                         <td>
-                            <span class="isoformat">{{ tournament.signup_deadline.isoformat }}</span>
-                            <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
+                            {% if tournament.signup_deadline %}
+                                <span class="isoformat">{{ tournament.signup_deadline.isoformat }}</span>
+                                <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
+                            {% else %}
+                                None
+                            {% endif %}
                         </td>
                         <td>
-                            <span class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</span>
-                            <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
+                            {% if tournament.signup_deadline %}
+                                <span class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</span>
+                                <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
+                            {% else %}
+                                None
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
