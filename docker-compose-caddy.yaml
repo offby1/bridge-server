@@ -3,8 +3,8 @@ volumes:
 
 services:
   caddy:
-    # TODO -- "Wy use the lucasloretnz caddy and not the official?"
-    # i.e., either use the official image, or explain why not
+    # Unlike the official caddy image, this is falling-down-easy to configure as a lets-encrypt-certificate-fetching
+    # reverse proxy.
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
     ports:
       - 80:80
