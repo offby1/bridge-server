@@ -21,6 +21,7 @@ from faker import Faker
 
 from .board import Board
 from .message import Message
+from .playaz import WireCharacterProvider
 from .seat import Seat
 from .types import PK_from_str
 
@@ -414,9 +415,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def _find_unused_username(prefix=""):
         fake = Faker()
         Faker.seed(0)
+        fake.add_provider(WireCharacterProvider)
+
         while True:
             # Ensure neither the prefixed, nor the unprefixed, version exists.
-            unprefixed_candidate = fake.unique.first_name().lower()
+            unprefixed_candidate = fake.unique.playa().lower()
             candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
             if not auth.models.User.objects.filter(username__in=candidates).exists():
                 return candidates[-1]

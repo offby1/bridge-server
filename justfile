@@ -118,7 +118,7 @@ pre-commit:
 
 [group('django')]
 [private]
-all-but-django-prep: version-file pre-commit poetry-install pg-start
+all-but-django-prep: pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
@@ -139,7 +139,7 @@ migrate: makemigrations create-cache (manage "migrate")
 
 [group('bs')]
 [script('bash')]
-runme *options: t django-superuser migrate create-cache ensure-skeleton-key
+runme *options: t version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
@@ -201,8 +201,7 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
 
-    pytest_args="--create-db {{ options }} -n 8"
-    pytest_args="--create-db {{ options }} -n 8 --log-cli-level=WARNING"
+    pytest_args="--create-db {{ options }}  --log-cli-level=WARNING"
 
     case "${PYINSTRUMENT:-}" in
     t*)
@@ -214,6 +213,10 @@ test *options: makemigrations mypy
       poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} ${pytest_args}
     ;;
     esac
+
+# Fast tests (i.e., run in parallel)
+[group('bs')]
+ft: (t "-n 8")
 
 # Display coverage from a test run
 [group('bs')]
@@ -248,7 +251,13 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     export GIT_VERSION="$(cat project/VERSION)"
     docker compose up --build {{ options }}
 
+# Your kids know 'front and follow'?
+[script('bash')]
 follow: (dcu "--detach")
+    set -euo pipefail
+
+    tput rmam
+    trap "tput smam" EXIT
     docker compose logs django --follow
 
 ensure_git_repo_clean:
