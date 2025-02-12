@@ -463,7 +463,7 @@ def test_max_boards(played_to_completion, monkeypatch):
 
 def test_no_bogus_tables(usual_setup):
     count_before = Table.objects.count()
-    with pytest.raises(TableException):
+    with pytest.raises(SeatException):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),

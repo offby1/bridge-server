@@ -128,11 +128,6 @@ class Player(models.Model):
     def control_bot(self) -> None:
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
-            logger.warning(
-                "Hmm, %s is not a directory; cannot start or stop a bot for %s",
-                service_directory,
-                self.name,
-            )
             return
 
         def run_in_slash_service(command: list[str]) -> None:
@@ -293,7 +288,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.partner.partner = None
             self.partner.unseat_me()
-
             self.partner.save(update_fields=["partner", "currently_seated"])
 
             self.partner = None
