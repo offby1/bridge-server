@@ -59,4 +59,9 @@ In [2]: brad._check_current_seat()
 AssertionError: self.currently_seated=True and yet I cannot find a table at which I am sitting
 ```
 
-This might be fallout from me having forcibly deleted the troublesome table :-|
+This is fallout from me having forcibly deleted the troublesome table :-|
+
+```python
+In [4]: Player.objects.filter(user__username__in={"BradS", "synthetic_brandy", "synthetic_prez", "synthetic_rhonda"}).update(currently_seated=False)
+```
+ought to fix things up 🤞
