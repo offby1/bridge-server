@@ -19,7 +19,7 @@ from .player import (
     PlayerException,
 )
 from .seat import Seat, SeatException
-from .table import Table, TableException
+from .table import NoMoreBoards, Table, TableException
 from .tournament import Tournament
 
 __all__ = [
@@ -30,6 +30,7 @@ __all__ = [
     "HandError",
     "Play",
     "Message",
+    "NoMoreBoards",
     "PartnerException",
     "Player",
     "PlayerException",

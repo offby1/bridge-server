@@ -62,15 +62,26 @@ class TournamentManager(models.Manager):
 
     def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
         with transaction.atomic():
-            currently_running = self.current()
-            if currently_running is not None:
-                currently_running.maybe_complete()
-                if not currently_running.is_complete:
-                    logger.debug(
-                        f"An incomplete tournament (#{currently_running.display_number}) already exists; no need to create a new one",
-                    )
-                    return currently_running, False
-            return self.create(), True
+            incomplete_qs = self.filter(is_complete=False)
+
+            if not incomplete_qs.exists():
+                return self.create(), True
+
+            first_incomplete = incomplete_qs.first()
+            assert first_incomplete is not None
+            first_incomplete.maybe_complete()
+
+            if first_incomplete.is_complete:
+                logger.warning(
+                    "OK, that's surprising; %s was incomplete but now I just completed it?",
+                    first_incomplete,
+                )
+                return self.create(), True
+
+            logger.debug(
+                f"An incomplete tournament (#{first_incomplete.display_number}) already exists; no need to create a new one",
+            )
+            return first_incomplete, False
 
 
 # This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
@@ -127,12 +138,16 @@ class Tournament(models.Model):
     def hands(self) -> models.QuerySet:
         from app.models import Hand
 
-        return Hand.objects.filter(board__in=self.board_set.all()).distinct()
+        rv = Hand.objects.filter(board__in=self.board_set.all()).distinct()
+        logger.debug("%s has %d hands", self, rv.count())
+        return rv
 
     def tables(self) -> models.QuerySet:
         from app.models import Table
 
-        return Table.objects.filter(hand__in=self.hands()).distinct()
+        rv = Table.objects.filter(hand__in=self.hands()).distinct()
+        logger.debug("%s has %d tables", self, rv.count())
+        return rv
 
     def maybe_complete(self) -> None:
         with transaction.atomic():

@@ -549,18 +549,26 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
 
 
 def _terse_description(hand: Hand) -> str:
-    return format_html(
-        """
-    <a href="{}?tournament={}">Tournament {}</a>, <a href="{}">Board #{} ({})</a>, Hand {}
-    """,
+    tourney = format_html(
+        '<a href="{}?tournament={}">Tournament {}</a>',
         reverse("app:board-list"),
         hand.board.tournament.pk,
         hand.board.tournament.pk,
+    )
+
+    table = format_html(
+        "Table #{}",
+        hand.table.pk,
+    )
+
+    board = format_html(
+        '<a href="{}">Board #{} ({})</a>',
         reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
         hand.board.display_number,
         hand.board.vulnerability_string(),
-        hand.pk,
     )
+
+    return SafeString(" ".join([tourney, table, board]))
 
 
 @logged_in_as_player_required()
@@ -641,7 +649,7 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     player_pk = request.GET.get("played_by")
     player: app.models.Player | None = None
 
-    hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "id")
+    hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "table__pk", "id")
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)

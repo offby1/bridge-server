@@ -10,7 +10,7 @@ from django.http.response import HttpResponseForbidden
 
 import app.views.hand
 import app.views.table.details
-from app.models import Board, Hand, Player, Table, TableException, Tournament
+from app.models import Board, Hand, NoMoreBoards, Player, Table, TableException, Tournament
 import app.models.board
 
 from .testutils import play_out_hand
@@ -103,7 +103,8 @@ def test_tournament_end(
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
         # Have someone at the first table click "Next Board Plz".
-        assert t1.next_board() is None
+        with pytest.raises(NoMoreBoards):
+            t1.next_board()
 
         client.force_login(t1.seat_set.first().player.user)
         response = client.post(f"/table/{t1.pk}/new-board-plz/")
@@ -117,10 +118,14 @@ def test_tournament_end(
 
         t1.refresh_from_db()
         assert t1.tournament.is_complete
-        assert t1.next_board() is None
+
+        with pytest.raises(NoMoreBoards):
+            t1.next_board()
 
         t2.refresh_from_db()
-        assert t2.next_board() is None
+
+        with pytest.raises(NoMoreBoards):
+            t2.next_board()
 
 
 def test_signup_deadline(nobody_seated) -> None:
@@ -213,3 +218,31 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert response.status_code == HttpResponseForbidden.status_code
         assert b"deadline" in response.content
         assert b"has passed" in response.content
+
+
+def test_no_stragglers(
+    nearly_completed_tournament, everybodys_password, monkeypatch, client
+) -> None:
+    assert Board.objects.count() == 1
+    with monkeypatch.context() as m:
+        t1 = Table.objects.first()
+        assert t1 is not None
+        assert Table.objects.count() == 1
+        print(f"{t1.current_hand.board=}")
+        m.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
+        assert app.models.board.BOARDS_PER_TOURNAMENT == 1
+
+        # Complete the first table.
+
+        h1 = Hand.objects.get(pk=1)
+        west = Player.objects.get_by_name("Adam West")
+        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+        assert t1.tournament.is_complete
+
+        north = Player.objects.get_by_name("Jeremy Northam")
+        west = Player.objects.get_by_name("Adam West")
+
+        t2 = Table.objects.create_with_two_partnerships(north, west)
+        print(f"{t2.hand_set.all()=}")
+        assert t2 is None or t2.hand_set.count() > 0
+        print(f"{t2.current_hand.board=}")

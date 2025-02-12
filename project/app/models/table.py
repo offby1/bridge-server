@@ -36,11 +36,21 @@ class TableException(Exception):
     pass
 
 
+class NoMoreBoards(Exception):
+    pass
+
+
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
-            tournament, _ = Tournament.objects.get_or_create_running_tournament()
+            tournament, created = Tournament.objects.get_or_create_running_tournament()
+            logger.debug(
+                "%s new tournament %s",
+                "created" if created else "didn't need to create",
+                tournament.pk,
+            )
             kwargs["tournament"] = tournament
+
         tournament = kwargs["tournament"]
 
         # TODO -- maybe create or find a new tournament?
@@ -51,32 +61,27 @@ class TableManager(models.Manager):
 
         return super().create(*args, **kwargs)
 
-    def create_with_two_partnerships(
-        self, p1: Player, p2: Player, desired_board_pk: PK | None = None, **kwargs
-    ) -> Table:
-        try:
-            with transaction.atomic():
-                t: Table = self.create(**kwargs)
-                logger.debug("Created %s, tournament %s", t, t.tournament)
-                if p1.partner is None or p2.partner is None:
-                    raise TableException(
-                        f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
-                    )
-                player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
-                if len(player_pks) != 4:
-                    raise TableException(
-                        f"Cannot create a table with seats {player_pks} --we need exactly four"
-                    )
-                for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
-                    modelSeat.objects.create(
-                        direction=seat,
-                        player=player,
-                        table=t,
-                    )
+    def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
+        with transaction.atomic():
+            t: Table = self.create()
+            logger.debug("Created %s, tournament %s", t, t.tournament)
+            if p1.partner is None or p2.partner is None:
+                raise TableException(
+                    f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
+                )
+            player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
+            if len(player_pks) != 4:
+                raise TableException(
+                    f"Cannot create a table with seats {player_pks} --we need exactly four"
+                )
+            for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
+                modelSeat.objects.create(
+                    direction=seat,
+                    player=player,
+                    table=t,
+                )
 
-                t.next_board(desired_board_pk=desired_board_pk)
-        except Exception as e:
-            raise TableException(str(e)) from e
+            t.next_board()
 
         send_event(
             channel="all-tables",
@@ -191,34 +196,23 @@ class Table(models.Model):
         unplayed_boards = self.tournament.board_set.exclude(expression)
         return unplayed_boards.first()
 
-    def next_board(self, *, desired_board_pk: PK | None = None) -> Board | None:
+    def next_board(self) -> Board:
         with transaction.atomic():
             if self.tournament.is_complete:
-                logger.debug(
-                    "No need to do fancy queries if we already know the tournament is over."
-                )
-                return None
+                msg = f"{self.tournament} is complete; thus there are no more boards"
+                logger.debug("%s", msg)
+                raise NoMoreBoards(msg)
 
-            logger.debug(
-                "Table %s: someone wants the next board (desired_board_pk is %s)",
-                self.pk,
-                desired_board_pk,
-            )
+            logger.debug("Table %s: someone wants the next board", self.pk)
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; no next board for you"
                 logger.warning("%s", msg)
                 raise TableException(msg)
 
-            if desired_board_pk is not None:
-                b = Board.objects.get(pk=desired_board_pk)
-            else:
-                b = self.find_unplayed_board()
-
-            if b is None:
-                logger.debug(
-                    "I guess our caller has played all the boards, and just has to wait 🤷"
-                )
-                return None
+            if (b := self.find_unplayed_board()) is None:
+                msg = f"Some players at {self} have played all the boards, so we cannot get a new board"
+                logger.debug("%s", msg)
+                raise NoMoreBoards(msg)
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
