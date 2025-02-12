@@ -1,7 +1,23 @@
 IN PROGRESS:
+* Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
+
+  * One is the "joining deadline" -- after this time, no more tables can join the tournament.
+
+    If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
+
+    How would players "sign up" for an upcoming tournament? 🤔
+
+  * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
+
+    This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
+
+  This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
+
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* On [the tournament list page](/tournament/), have the English timestamps (e.g. "two minutes from now") update in real time
+
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
@@ -40,20 +56,6 @@ STILL TODO:
   I guess I need a "review the bidding" button? :-\
 
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
-
-* Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
-
-  * One is the "joining deadline" -- after this time, no more tables can join the tournament.
-
-    If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
-
-    How would players "sign up" for an upcoming tournament? 🤔
-
-  * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
-
-    This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
-
-  This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
 
