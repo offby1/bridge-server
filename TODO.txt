@@ -16,8 +16,6 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
-* On [the tournament list page](/tournament/), have the English timestamps (e.g. "two minutes from now") update in real time
-
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
@@ -200,6 +198,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* On [the tournament list page](/tournament/), have the English timestamps (e.g. "two minutes from now") update in real time
+
 * Hands should have nice consecutive display numbers, just like ... uh ... tables do.
 
   Find some general way to do this; it feels wrong to have to write code to make this happen.

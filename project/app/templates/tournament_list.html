@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load base_extras %}
+{% load static %}
 {% block title %}
     Tournaments
 {% endblock title %}
@@ -22,11 +23,45 @@
                         <td>
                             <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
                         </td>
-                        <td>{{ tournament.signup_deadline|humanized_timestamp }}</td>
-                        <td>{{ tournament.play_completion_deadline|humanized_timestamp }}</td>
+                        <td>
+                            <span class="isoformat">{{ tournament.signup_deadline.isoformat }}</span>
+                            <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
+                        </td>
+                        <td>
+                            <span class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</span>
+                            <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% endblock tournament_list %}
 {% endblock content %}
+{% block scripts %}
+    <script src="{% static 'app/humanize-duration.js' %}"></script>
+    <script>
+function updateDurations() {
+      const now = new Date();
+
+      var clobberSibling = function (span) {
+         var innards = span.innerHTML;
+         var then = new Date (innards);
+         var durationMS = then - now ;
+         var suffix = " from now";
+         if (durationMS < 0) {
+            durationMS *= -1;
+            suffix = " ago";
+         }
+         span.innerHTML = then;
+         span.nextElementSibling.innerHTML = " (" + 
+                                             humanizeDuration(durationMS, { units: ["h", "m", "s"], round: true }) + suffix
+          + ")";
+      };
+
+      isos = document.querySelectorAll("span.isoformat");
+      isos.forEach (clobberSibling);
+    }
+setInterval(updateDurations, 1000);
+updateDurations();
+    </script>
+{% endblock scripts %}
