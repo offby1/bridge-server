@@ -262,8 +262,8 @@ tabulate = "*"
 [package.source]
 type = "git"
 url = "https://gitlab.com/offby1/bridge.git"
-reference = "b236aefd7f60dc9f195fa9c162ac5196d49dd003"
-resolved_reference = "b236aefd7f60dc9f195fa9c162ac5196d49dd003"
+reference = "055e73cf1d423a47933f3dd4e7027b8e7ba5f1ad"
+resolved_reference = "055e73cf1d423a47933f3dd4e7027b8e7ba5f1ad"
 
 [[package]]
 name = "brotli"
@@ -4787,4 +4787,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "a667a7f5ead0f88d02e99c578c5ffc8ccdb17ec9567b60920196e25d2a618607"
+content-hash = "c9f2b47cc771492ff435aff3e56b5c4c80003d749f501dc8a7af8dac6fd6a273"
