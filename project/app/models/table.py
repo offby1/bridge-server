@@ -8,7 +8,6 @@ import bridge.card
 import bridge.seat
 from django.contrib import admin
 from django.db import models, transaction
-from django.db.models.expressions import RawSQL
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -24,7 +23,6 @@ from app.models.types import PK
 if TYPE_CHECKING:
     import bridge.table
     from bridge.auction import Auction as libAuction
-    from django.db.models.query import QuerySet
 
     from app.models.player import Player
 
