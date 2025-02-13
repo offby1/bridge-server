@@ -32,7 +32,7 @@ from .testutils import set_auction_to
 from .views import hand, player, table
 
 
-def test_we_gots_a_home_page():
+def test_we_gots_a_home_page(db):
     c = Client()
     response = c.get("/", follow=True)
     assert b"Welcome" in response.content

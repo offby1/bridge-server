@@ -6,16 +6,65 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib import admin
+from django.core.signals import request_started
 from django.db import models, transaction
+from django.dispatch import receiver
 from django.utils import timezone
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player
+    from app.models import Player, Table
 
 
 logger = logging.getLogger(__name__)
+
+
+@receiver(request_started)
+def check_for_expirations(sender, **kwargs) -> None:
+    logger.debug(f"{sender=} {kwargs=}: {Tournament.objects.count()} tournaments")
+
+    t: Tournament
+    with transaction.atomic():
+        for t in Tournament.objects.filter(is_complete=False).filter(
+            models.Q(signup_deadline__isnull=False)
+            | models.Q(play_completion_deadline__isnull=False)
+        ):
+            logger.debug("Checking %s: ", t)
+            logger.debug(
+                "signup deadline %s %s passed",
+                t.signup_deadline,
+                "has" if t.signup_deadline_is_past() else "has not",
+            )
+            logger.debug(
+                "play completion deadline %s %s passed",
+                t.play_completion_deadline,
+                "has" if t.play_completion_deadline_is_past() else "has not",
+            )
+            if t.play_completion_deadline_is_past():
+                t.maybe_complete()
+                logger.warning("Ejecting players")
+
+                from app.models import Hand
+
+                hands = Hand.objects.filter(table__in=t.table_set.all())
+                for h in hands:
+                    if h.is_complete:
+                        continue
+                    if h.is_abandoned:
+                        continue
+                    for s in h.table.seats:
+                        s.player.unseat_me()
+                        s.player.save()
+                t.is_complete = True
+                t.save()
+                continue
+
+            if t.signup_deadline_is_past():
+                # TODO -- come up with an appropriate movement, and assign it to this tournament.
+                logger.warning(
+                    "Tournament #%s's signup_deadline_is_past; what do we do?", t.display_number
+                )
 
 
 class TournamentManager(models.Manager):
@@ -90,6 +139,7 @@ class Tournament(models.Model):
         from app.models.board import Board
 
         board_set = RelatedManager["Board"]()
+        table_set = RelatedManager[Table]()
 
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
@@ -196,11 +246,10 @@ class Tournament(models.Model):
                     p: Player = seat.player
 
                     message = f"{p} is now in the lobby"
-                    p.currently_seated = False
+                    p.unseat_me()
                     p.save()
 
                     if not p.synthetic:
-                        p.toggle_bot(False)
                         message += ", and unbottified"
                     logger.debug("%s", message)
 
@@ -213,7 +262,7 @@ class Tournament(models.Model):
         if not self.is_running():
             return
 
-        if Tournament.objects.running().exists():
+        if Tournament.objects.running().exclude(pk=self.pk).exists():
             msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
             raise Exception(msg, self)
 
