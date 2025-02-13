@@ -34,14 +34,14 @@ def check_for_expirations(sender, **kwargs) -> None:
             logger.debug(
                 "signup deadline %s %s passed",
                 t.signup_deadline,
-                "has" if t.signup_deadline_is_past() else "has not",
+                "has" if t.signup_deadline_has_passed() else "has not",
             )
             logger.debug(
                 "play completion deadline %s %s passed",
                 t.play_completion_deadline,
-                "has" if t.play_completion_deadline_is_past() else "has not",
+                "has" if t.play_completion_deadline_has_passed() else "has not",
             )
-            if t.play_completion_deadline_is_past():
+            if t.play_completion_deadline_has_passed():
                 t.maybe_complete()
                 logger.warning("Ejecting players")
 
@@ -60,10 +60,16 @@ def check_for_expirations(sender, **kwargs) -> None:
                 t.save()
                 continue
 
-            if t.signup_deadline_is_past():
+            if t.signup_deadline_has_passed():
                 # TODO -- come up with an appropriate movement, and assign it to this tournament.
                 logger.warning(
-                    "Tournament #%s's signup_deadline_is_past; what do we do?", t.display_number
+                    "Tournament #%s's signup deadline has passed; imagine I came up with a movement for %d tables",
+                    t.display_number,
+                    t.table_set.count(),
+                )
+                logger.warning(
+                    "Alas, I already pre-created %d boards, which probably isn't the right number.",
+                    t.board_set.count(),
                 )
 
 
@@ -153,12 +159,12 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def signup_deadline_is_past(self) -> bool:
+    def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
             return False
         return timezone.now() > self.signup_deadline
 
-    def play_completion_deadline_is_past(self) -> bool:
+    def play_completion_deadline_has_passed(self) -> bool:
         if self.play_completion_deadline is None:
             return False
         return timezone.now() > self.play_completion_deadline

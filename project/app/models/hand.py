@@ -199,7 +199,7 @@ class Hand(models.Model):
 
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament
-        if tour.play_completion_deadline_is_past():
+        if tour.play_completion_deadline_has_passed():
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
