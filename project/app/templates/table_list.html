@@ -19,9 +19,13 @@
                     <tr>
                         <th>{{ table.pk }}</th>
                         <td>
-                            <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
-                                {{ table.current_hand }}: {{ table.summary_for_this_viewer }}
-                            </a>
+                            {% if table.has_hand %}
+                                <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
+                                    {{ table.current_hand }}: {{ table.summary_for_this_viewer }}
+                                </a>
+                            {% else %}
+                                {{ table.summary_for_this_viewer }}
+                            {% endif %}
                         </td>
                         <td>{{ table.played_hands_string }}</td>
                     </tr>

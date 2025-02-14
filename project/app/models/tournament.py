@@ -247,14 +247,17 @@ class Tournament(models.Model):
         return f"tournament #{self.display_number}"
 
     def __str__(self) -> str:
-        return f"{self.short_string()}; {self.status().__name__}; {self.board_set.count()} boards"
+        rv = f"{self.short_string()}; {self.status().__name__}"
+        if self.status() is not Complete:
+            num_completed = sum([h.is_complete for h in self.hands()])
+            rv += f"; {num_completed} hands played out of {self.board_set.count() * self.table_set.count()}"
+
+        return rv
 
     def hands(self) -> models.QuerySet:
         from app.models import Hand
 
-        rv = Hand.objects.filter(board__in=self.board_set.all()).distinct()
-        logger.debug("%s has %d hands", self, rv.count())
-        return rv
+        return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
     def tables(self) -> models.QuerySet:
         from app.models import Table

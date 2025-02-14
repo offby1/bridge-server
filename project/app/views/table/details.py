@@ -50,11 +50,15 @@ def table_list_view(request) -> HttpResponse:
 
     t: app.models.Table
     for t in page_obj.object_list:
-        t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
-            as_viewed_by=getattr(request.user, "player", None)
-        )
-        completed, in_progress = t.played_hands_count()
-        t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
+        if t.has_hand:
+            t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
+                as_viewed_by=getattr(request.user, "player", None)
+            )
+            completed, in_progress = t.played_hands_count()
+            t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
+        else:
+            t.summary_for_this_viewer = "No hands played yet"
+            t.played_hands_string = "0"
     context = {
         "page_obj": page_obj,
         "page_title": page_title,

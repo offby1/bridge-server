@@ -125,6 +125,10 @@ class Table(models.Model):
         return self.current_hand.auction
 
     @property
+    def has_hand(self) -> bool:
+        return self.hand_set.exists()
+
+    @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
         assert rv is not None, "current_hand can't find no hands"
@@ -245,11 +249,13 @@ class Table(models.Model):
         return None
 
     def as_link(self):
-        return format_html(
-            "<a href='{}'>{}</a>",
-            reverse("app:hand-detail", kwargs={"pk": self.current_hand.pk}),
-            str(self),
-        )
+        if self.has_hand:
+            return format_html(
+                "<a href='{}'>{}</a>",
+                reverse("app:hand-detail", kwargs={"pk": self.current_hand.pk}),
+                str(self),
+            )
+        return format_html("At {}, waiting for a board!!", self)
 
     def as_tuples(self):
         return [(SEAT_CHOICES[d], p) for d, p in self.current_hand.players_by_direction.items()]
