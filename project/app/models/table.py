@@ -62,7 +62,7 @@ class TableManager(models.Manager):
     def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
         with transaction.atomic():
             t: Table = self.create()
-            logger.debug("Created %s, tournament %s", t, t.tournament)
+            logger.debug("Created %s", t)
             if p1.partner is None or p2.partner is None:
                 raise TableException(
                     f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
@@ -78,8 +78,6 @@ class TableManager(models.Manager):
                     player=player,
                     table=t,
                 )
-
-            t.next_board()
 
         send_event(
             channel="all-tables",
