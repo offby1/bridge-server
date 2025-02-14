@@ -16,7 +16,6 @@ from django.test import Client
 from django.urls import reverse
 
 import app.models.board
-from app.models.table import TableException
 
 from .models import (
     Board,
@@ -614,7 +613,7 @@ def test_find_unplayed_board(played_to_completion, monkeypatch) -> None:
             "BOARDS_PER_TOURNAMENT",
             max(3, app.models.board.BOARDS_PER_TOURNAMENT),
         )
-        Board.objects.create(
+        third_board = Board.objects.create(
             dealer="S",
             display_number=12345,
             ns_vulnerable=False,
@@ -631,4 +630,7 @@ def test_find_unplayed_board(played_to_completion, monkeypatch) -> None:
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
+    # There aren't any, because creating the new table automatically assigned it the new board, and we consider the
+    # players to have played it.
+    assert t2.current_board == third_board
     assert b is None
