@@ -170,6 +170,7 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
 
     t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
     if t.tournament.status() is Running:
+        t.next_board()
         return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
     msg = f"{t.tournament} isn't running, so y'all just gotta wait until the signup deadline {t.tournament.signup_deadline} has passed"
