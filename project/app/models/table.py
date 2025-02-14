@@ -208,7 +208,8 @@ class Table(models.Model):
                 raise TableException(msg)
 
             if (b := self.find_unplayed_board()) is None:
-                msg = f"Some players at {self} have played all the boards, so we cannot get a new board"
+                t = self.tournament
+                msg = f"Some players at table {self.pk} (tournament {t.display_number}) have played all {t.board_set.count()} boards, so we cannot get a new board"
                 logger.debug("%s", msg)
                 raise NoMoreBoards(msg)
 

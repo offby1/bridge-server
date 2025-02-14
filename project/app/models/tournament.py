@@ -63,8 +63,8 @@ def check_for_expirations(sender, **kwargs) -> None:
             if t.signup_deadline_has_passed():
                 # TODO -- come up with an appropriate movement, and assign it to this tournament.
                 logger.warning(
-                    "Tournament #%s's signup deadline has passed; imagine I came up with a movement for %d tables",
-                    t.display_number,
+                    "%s's signup deadline has passed; imagine I came up with a movement for %d tables",
+                    t.short_string(),
                     t.table_set.count(),
                 )
                 logger.warning(
@@ -73,8 +73,47 @@ def check_for_expirations(sender, **kwargs) -> None:
                 )
 
 
+class TournamentStatus:
+    pass
+
+
+class Complete(TournamentStatus):
+    pass
+
+
+class Running(TournamentStatus):
+    pass
+
+
+class OpenForSignup(TournamentStatus):
+    pass
+
+
+def _status(
+    *,
+    is_complete: bool,
+    signup_deadline: datetime.datetime | None,
+    play_completion_deadline: datetime.datetime | None,
+    as_of: datetime.datetime,
+) -> type[TournamentStatus]:
+    if is_complete:
+        return Complete
+    if signup_deadline is None:
+        return Running
+    assert play_completion_deadline is not None
+    if as_of < signup_deadline:
+        return OpenForSignup
+    if as_of > play_completion_deadline:
+        logger.warning(
+            "Some tournament's play_completion_deadline has passed, but it hasn't (yet) been marked is_complete"
+        )
+        return Complete
+    return Running
+
+
 class TournamentManager(models.Manager):
     def create(self, *args, **kwargs) -> Tournament:
+        kwargs = kwargs.copy()
         with transaction.atomic():
             if ("display_number") not in kwargs:
                 kwargs["display_number"] = self.count() + 1
@@ -86,7 +125,15 @@ class TournamentManager(models.Manager):
                 kwargs["signup_deadline"] + datetime.timedelta(seconds=300),
             )
 
-            return super().create(*args, **kwargs)
+            rv: Tournament = super().create(*args, **kwargs)
+            logger.debug("Just created %s", vars(rv))
+            logger.debug(
+                "Now it's %s; signup_deadline is %s; play_completion_deadline is %s",
+                now,
+                rv.signup_deadline,
+                rv.play_completion_deadline,
+            )
+            return rv
 
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
@@ -105,18 +152,23 @@ class TournamentManager(models.Manager):
                 new_tournament.add_boards(
                     n=BOARDS_PER_TOURNAMENT
                 )  # TODO -- compute this from a movement
+                logger.debug(
+                    "No incomplete tournament exists, so we just created %s", new_tournament
+                )
                 return new_tournament, True
 
-            first_incomplete = incomplete_qs.first()
+            first_incomplete: Tournament | None = incomplete_qs.first()
             assert first_incomplete is not None
             first_incomplete.maybe_complete()
 
             if first_incomplete.is_complete:
-                logger.warning(
-                    "OK, that's surprising; %s was incomplete but now I just completed it?",
-                    first_incomplete,
+                new_tournament = self.create()
+                logger.debug(
+                    "%s was incomplete but now I just completed it; created a new empty tournament %s",
+                    first_incomplete.short_string(),
+                    new_tournament.short_string(),
                 )
-                return self.create(), True
+                return new_tournament, True
 
             logger.debug(
                 f"An incomplete tournament (#{first_incomplete.display_number}) already exists; no need to create a new one",
@@ -189,17 +241,25 @@ class Tournament(models.Model):
 
         assert self.signup_deadline is not None
 
-        return Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
+        rv = Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
+        logger.debug(
+            "Checking to see if #%s is %s: %s", self.display_number, self.between_deadlines_Q(), rv
+        )
+        return rv
+
+    def status(self) -> type[TournamentStatus]:
+        return _status(
+            is_complete=self.is_complete,
+            signup_deadline=self.signup_deadline,
+            play_completion_deadline=self.play_completion_deadline,
+            as_of=timezone.now(),
+        )
+
+    def short_string(self) -> str:
+        return f"tournament #{self.display_number}"
 
     def __str__(self) -> str:
-        status = (
-            "completed"
-            if self.is_complete
-            else "currently_running"
-            if self.is_running()
-            else "expired"
-        )
-        return f"tournament #{self.display_number}; {status}; {self.board_set.count()} boards"
+        return f"{self.short_string()}; {self.status().__name__}; {self.board_set.count()} boards"
 
     def hands(self) -> models.QuerySet:
         from app.models import Hand
@@ -233,7 +293,7 @@ class Tournament(models.Model):
             complete_hands = [h for h in self.hands() if h.is_complete]
 
             if len(complete_hands) == num_hands_needed_for_completion:
-                explanation = f"We've played {num_hands_needed_for_completion=}, so we're done"
+                explanation = f"{self.short_string()} has played {num_hands_needed_for_completion} hands, so it is completed"
                 logger.debug(explanation)
                 self.is_complete = True
                 self.save()
