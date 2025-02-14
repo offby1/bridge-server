@@ -41,7 +41,7 @@ class NoMoreBoards(Exception):
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
         if "tournament" not in kwargs:
-            tournament, created = Tournament.objects.get_or_create_running_tournament()
+            tournament, created = Tournament.objects.get_or_create_tournament_open_for_signups()
             logger.debug(
                 "%s new tournament %s",
                 "created" if created else "didn't need to create",

@@ -433,7 +433,7 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            Tournament.objects.get_or_create_running_tournament()
+            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -492,7 +492,9 @@ class Hand(models.Model):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            Tournament.objects.get_or_create_running_tournament()
+            self.table.tournament.maybe_complete()
+
+            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,

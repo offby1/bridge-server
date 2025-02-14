@@ -57,7 +57,7 @@ def table_list_view(request) -> HttpResponse:
             completed, in_progress = t.played_hands_count()
             t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
         else:
-            t.summary_for_this_viewer = "No hands played yet"
+            t.summary_for_this_viewer = "No hands played yet", "-"
             t.played_hands_string = "0"
     context = {
         "page_obj": page_obj,
@@ -190,7 +190,9 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         assert (
             table.tournament.is_complete
         ), f"Hey man why'd you call me if {table.tournament} isn't complete"
-        tournament, created = app.models.Tournament.objects.get_or_create_running_tournament()
+        tournament, created = (
+            app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
+        )
         assert not tournament.is_complete
         assert tournament != table.tournament
         msg = f"{table.tournament} is complete"

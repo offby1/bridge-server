@@ -62,15 +62,16 @@ def check_for_expirations(sender, **kwargs) -> None:
 
             if t.signup_deadline_has_passed():
                 # TODO -- come up with an appropriate movement, and assign it to this tournament.
-                logger.warning(
-                    "%s's signup deadline has passed; imagine I came up with a movement for %d tables",
-                    t.short_string(),
-                    t.table_set.count(),
-                )
+                logger.debug("%s might need some boards; who knows?", t)
                 logger.warning(
                     "Alas, I already pre-created %d boards, which probably isn't the right number.",
                     t.board_set.count(),
                 )
+                table: Table
+                for table in t.table_set.all():
+                    if not table.hand_set.exists():
+                        logger.debug("%s of %s needs a board!", table, t)
+                        table.next_board()
 
 
 class TournamentStatus:
@@ -141,12 +142,15 @@ class TournamentManager(models.Manager):
     def running(self) -> models.QuerySet:
         return self.filter(Tournament.between_deadlines_Q())
 
-    def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
+    def get_or_create_tournament_open_for_signups(self) -> tuple[Tournament, bool]:
         from app.models.board import BOARDS_PER_TOURNAMENT
 
         with transaction.atomic():
-            incomplete_qs = self.filter(is_complete=False)
-
+            a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
+            incomplete_qs = self.filter(is_complete=False).filter(
+                signup_deadline__gte=a_few_seconds_from_now
+            )
+            logger.debug(f"{a_few_seconds_from_now=} {incomplete_qs=}")
             if not incomplete_qs.exists():
                 new_tournament = self.create()
                 new_tournament.add_boards(
@@ -158,6 +162,7 @@ class TournamentManager(models.Manager):
                 return new_tournament, True
 
             first_incomplete: Tournament | None = incomplete_qs.first()
+            logger.debug(f"{vars(first_incomplete)=}")
             assert first_incomplete is not None
             first_incomplete.maybe_complete()
 
@@ -320,18 +325,6 @@ class Tournament(models.Model):
                 h = t.current_hand
                 h.abandoned_because = explanation
                 h.save()
-
-    def _check_no_more_than_one_running_tournament(self) -> None:
-        if not self.is_running():
-            return
-
-        if Tournament.objects.running().exclude(pk=self.pk).exists():
-            msg = "Cannot save incomplete tournament %s when you've already got one going, Mrs Mulwray"
-            raise Exception(msg, self)
-
-    def save(self, *args, **kwargs) -> None:
-        self._check_no_more_than_one_running_tournament()
-        super().save(*args, **kwargs)
 
     class Meta:
         constraints = [

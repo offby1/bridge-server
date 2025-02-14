@@ -52,6 +52,8 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     h1 = Hand.objects.get(pk=1)
     west = Player.objects.get_by_name("Adam West")
     h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+    before.refresh_from_db()
+    assert before.is_complete
 
     tally_after = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
     assert tally_after == {True: 1, False: 1}
