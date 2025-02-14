@@ -86,7 +86,9 @@ def second_setup(usual_setup):
     Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
 
-    return Table.objects.create_with_two_partnerships(
+    table = Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
     )
+    table.next_board()
+    return table
