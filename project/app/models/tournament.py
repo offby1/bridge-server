@@ -233,19 +233,7 @@ class Tournament(models.Model):
         return models.Q(signup_deadline__lte=now) & models.Q(play_completion_deadline__gte=now)
 
     def is_running(self) -> bool:
-        if self.is_complete:
-            return False
-
-        if self.play_completion_deadline is None:
-            return True
-
-        assert self.signup_deadline is not None
-
-        rv = Tournament.objects.filter(pk=self.pk).filter(self.between_deadlines_Q()).exists()
-        logger.debug(
-            "Checking to see if #%s is %s: %s", self.display_number, self.between_deadlines_Q(), rv
-        )
-        return rv
+        return self.status() is Running
 
     def status(self) -> type[TournamentStatus]:
         return _status(
