@@ -6,7 +6,7 @@ import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
-from django.http.response import HttpResponseForbidden
+from django.http.response import HttpResponseForbidden, HttpResponseRedirect
 
 import app.views.hand
 import app.views.table.details
@@ -110,7 +110,7 @@ def test_tournament_end(
 
         client.force_login(t1.seat_set.first().player.user)
         response = client.post(f"/table/{t1.pk}/new-board-plz/")
-        assert response.status_code == 302
+        assert type(response) is HttpResponseRedirect
         assert response.url == "/table/?tournament=1"
 
         for t in Tournament.objects.all():
