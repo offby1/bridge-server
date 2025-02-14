@@ -506,17 +506,17 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
         ),
     )
 
-    def seat_em_dano(player=None):
+    def new_table(*, requester=None) -> HttpResponse:
         request = rf.post("/woteva/")
 
-        request.user = player.user
+        request.user = requester.user
         return table.details.new_table_for_two_partnerships(request, North.pk, East.pk)
 
-    response = seat_em_dano(RandomDude)
+    response = new_table(requester=RandomDude)
     assert response.status_code == 403
     assert b"isn&#x27;t one of" in response.content
 
-    response = seat_em_dano(North)
+    response = new_table(requester=North)
     assert response.status_code == 302
 
     assert Table.objects.count() == number_of_tables_before + 1
