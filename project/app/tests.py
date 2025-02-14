@@ -2,6 +2,7 @@ import base64
 import collections
 import importlib
 import json
+import logging
 import re
 
 import pytest
@@ -30,6 +31,8 @@ from .models import (
 )
 from .testutils import set_auction_to
 from .views import hand, player, table
+
+logger = logging.getLogger(__name__)
 
 
 def test_we_gots_a_home_page(db):
@@ -67,10 +70,10 @@ def test_synthetic_player_text(usual_setup) -> None:
 
 
 def test_splitsville_ejects_that_partnership_from_table(usual_setup):
-    table = Table.objects.first()
+    the_table = Table.objects.first()
 
-    north = table.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    south = table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
+    north = the_table.current_hand.modPlayer_by_seat(libSeat.NORTH)
+    south = the_table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
     assert north.partner == south
@@ -82,8 +85,8 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
     table_count_before = Table.objects.count()
     assert table_count_before == 1
 
-    east = table.current_hand.modPlayer_by_seat(libSeat.EAST)
-    west = table.current_hand.modPlayer_by_seat(libSeat.WEST)
+    east = the_table.current_hand.modPlayer_by_seat(libSeat.EAST)
+    west = the_table.current_hand.modPlayer_by_seat(libSeat.WEST)
 
     north.break_partnership()
 
@@ -101,8 +104,8 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
 
     assert north.current_table is None
     assert south.current_table is None
-    assert east.current_table == table
-    assert west.current_table == table
+    assert east.current_table == the_table
+    assert west.current_table == the_table
 
 
 def test_one_partnerships_splitting_does_not_remove_table(usual_setup):
@@ -464,7 +467,7 @@ def test_no_bogus_tables(usual_setup):
     assert count_after == count_before
 
 
-def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
+def test_random_dude_cannot_create_table(usual_setup, everybodys_password):
     number_of_tables_before = Table.objects.count()
 
     t = Table.objects.first()
@@ -506,11 +509,11 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
         ),
     )
 
-    def new_table(*, requester=None) -> HttpResponse:
-        request = rf.post("/woteva/")
+    client = Client()
 
-        request.user = requester.user
-        return table.details.new_table_for_two_partnerships(request, North.pk, East.pk)
+    def new_table(*, requester=None) -> HttpResponse:
+        client.login(username=requester.user, password=".")
+        return client.post(path=f"/table/new/{North.pk}/{East.pk}/", data={})
 
     response = new_table(requester=RandomDude)
     assert response.status_code == 403
@@ -598,28 +601,13 @@ def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
     assert not South.currently_seated
     assert not West.currently_seated
 
-    # Create a third board in this tournament (our test fixture only has two)
-    with monkeypatch.context() as m:
-        m.setattr(
-            app.models.board,
-            "BOARDS_PER_TOURNAMENT",
-            max(3, app.models.board.BOARDS_PER_TOURNAMENT),
-        )
-        third_board = Board.objects.create(
-            dealer="S",
-            display_number=12345,
-            ns_vulnerable=False,
-            ew_vulnerable=False,
-            tournament=t1.current_board.tournament,
-            east_cards="♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
-            north_cards="♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
-            south_cards="♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
-            west_cards="♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
-        )
-
     # now we re-partner, creating a new table
+    logger.debug("Creating second table")
     t2 = Table.objects.create_with_two_partnerships(North, East)
+    assert t2.tournament == t1.tournament
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
-    assert b == third_board
+    assert b is not None
+    print(f"{b.tournament=}")
+    assert b.pk == 2

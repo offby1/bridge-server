@@ -40,8 +40,9 @@ def test_untainted_players_may_play_any_board(seat_em_dano) -> None:
     # We're just checking for the lack of an exception.
 
 
-def test_tainted_players_may_not_play_relevant_board(seat_em_dano) -> None:
+def test_tainted_players_may_not_play_relevant_board(seat_em_dano: Table) -> None:
     t = seat_em_dano
+    t.tournament.add_boards(n=2)
     board_one, board_two = t.tournament.board_set.all()[0:2]
 
     north = Player.objects.get_by_name("Jeremy Northam")

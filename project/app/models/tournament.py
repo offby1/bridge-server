@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import inspect
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,14 +23,14 @@ logger = logging.getLogger(__name__)
 
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
-    logger.debug(f"{Tournament.objects.count()} tournaments")
-
     t: Tournament
     with transaction.atomic():
-        for t in Tournament.objects.filter(is_complete=False).filter(
-            models.Q(signup_deadline__isnull=False)
-            | models.Q(play_completion_deadline__isnull=False)
-        ):
+        incompletes = Tournament.objects.filter(is_complete=False)
+
+        logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
+
+        for t in incompletes:
+            t.maybe_complete()
             logger.debug("Checking %s: ", t)
             logger.debug(
                 "signup deadline %s %s passed",
@@ -42,22 +43,18 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                t.maybe_complete()
                 logger.warning("Ejecting players")
 
-                from app.models import Hand
-
-                hands = Hand.objects.filter(table__in=t.table_set.all())
-                for h in hands:
-                    if h.is_complete:
-                        continue
-                    if h.is_abandoned:
-                        continue
-                    for s in h.table.seats:
-                        s.player.unseat_me()
-                        s.player.save()
                 t.is_complete = True
                 t.save()
+                t.eject_all_pairs(
+                    explanation=f"Tournament's play deadline {t.play_completion_deadline} has passed"
+                )
+                logger.debug(
+                    "Marked myself %s as complete, and ejected all pairs from %s",
+                    t,
+                    t.tables(),
+                )
                 continue
 
             if t.signup_deadline_has_passed():
@@ -127,6 +124,8 @@ class TournamentManager(models.Manager):
             )
 
             rv: Tournament = super().create(*args, **kwargs)
+            for fi in inspect.stack()[0:3]:
+                logger.debug(f"-- {fi.function} {fi.filename} {fi.lineno}")
             logger.debug("Just created %s", rv)
             logger.debug(
                 "Now it's %s; signup_deadline is %s; play_completion_deadline is %s",
@@ -152,17 +151,17 @@ class TournamentManager(models.Manager):
             )
             logger.debug(f"{a_few_seconds_from_now=} {incomplete_qs=}")
             if not incomplete_qs.exists():
+                logger.debug("No incomplete tournament exists, so we will create a new one")
                 new_tournament = self.create()
-                new_tournament.add_boards(
-                    n=BOARDS_PER_TOURNAMENT
-                )  # TODO -- compute this from a movement
-                logger.debug(
-                    "No incomplete tournament exists, so we just created %s", new_tournament
-                )
+                logger.debug("... namely %s", new_tournament)
                 return new_tournament, True
 
             first_incomplete: Tournament | None = incomplete_qs.first()
-            logger.debug(f"{vars(first_incomplete)=}")
+            logger.debug(
+                "An incomplete tournament (%s) exists, so we didn't need to create a new one",
+                first_incomplete,
+            )
+
             assert first_incomplete is not None
             first_incomplete.maybe_complete()
 
@@ -208,7 +207,12 @@ class Tournament(models.Model):
         )
 
         with transaction.atomic():
-            assert not self.board_set.exists()
+            assert (
+                not self.board_set.exists()
+            ), f"Don't add boards to {self}; it already has {self.board_set.count()}!!"
+            assert (
+                not self.is_complete
+            ), f"Wassup! Don't add boards to a completed tournament!! {self}"
 
             for display_number in range(1, n + 1):
                 board_attributes = board_attributes_from_display_number(
@@ -220,7 +224,7 @@ class Tournament(models.Model):
                     ],
                 )
                 Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
-            logger.debug("Created new tournament with %d boards", self.board_set.count())
+            logger.debug("Added %d boards to %s", self.board_set.count(), self)
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:

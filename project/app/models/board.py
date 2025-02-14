@@ -85,6 +85,14 @@ class BoardManager(models.Manager):
     def create_from_attributes(self, *, attributes, tournament) -> Board:
         return self.create(**attributes, tournament=tournament)
 
+    def create(self, *args, **kwargs) -> Board:
+        tournament = kwargs.get("tournament")
+        if tournament:
+            assert (
+                not tournament.is_complete
+            ), f"Wassup! Don't add boards to a completed tournament!! {tournament}"
+        return super().create(*args, **kwargs)
+
 
 class Board(models.Model):
     class PlayerVisibility(enum.Enum):

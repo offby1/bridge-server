@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.core.management import call_command
 
 from .models import Hand, Play, Player, Table
+from .models.tournament import check_for_expirations
 
 
 @pytest.fixture(autouse=True)
@@ -73,6 +74,7 @@ def nearly_completed_tournament(db: None) -> None:
 def two_boards_one_is_complete(two_boards_one_of_which_is_played_almost_to_completion) -> None:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
+    check_for_expirations(__name__)
 
 
 @pytest.fixture
@@ -90,5 +92,6 @@ def second_setup(usual_setup):
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
     )
+    table.tournament.add_boards(n=2)
     table.next_board()
     return table
