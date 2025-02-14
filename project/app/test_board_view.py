@@ -15,7 +15,7 @@ def test_board_list_view(db, rf, everybodys_password) -> None:
     some_player, _ = Player.objects.get_or_create(user=some_user)
     assert some_player is not None
 
-    request = rf.get("/woteva/", data={"per_page": Board.objects.count()})
+    request = rf.get("/woteva/", data={"per_page": max(1, Board.objects.count())})
     request.user = some_player.user
 
     response = app.views.board.board_list_view(request=request)

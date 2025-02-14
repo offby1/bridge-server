@@ -74,15 +74,7 @@ def check_for_expirations(sender, **kwargs) -> None:
 
 
 class TournamentManager(models.Manager):
-    # When should we call this?
-    # Whenever there are no more unplayed boards.
     def create(self, *args, **kwargs) -> Tournament:
-        from app.models.board import (
-            BOARDS_PER_TOURNAMENT,
-            Board,
-            board_attributes_from_display_number,
-        )
-
         with transaction.atomic():
             if ("display_number") not in kwargs:
                 kwargs["display_number"] = self.count() + 1
@@ -94,20 +86,7 @@ class TournamentManager(models.Manager):
                 kwargs["signup_deadline"] + datetime.timedelta(seconds=300),
             )
 
-            t = super().create(*args, **kwargs)
-            # create all the boards ahead of time.
-            for display_number in range(1, BOARDS_PER_TOURNAMENT + 1):
-                board_attributes = board_attributes_from_display_number(
-                    display_number=display_number,
-                    rng_seeds=[
-                        str(display_number).encode(),
-                        str(t.pk).encode(),
-                        settings.SECRET_KEY.encode(),
-                    ],
-                )
-                Board.objects.create_from_attributes(attributes=board_attributes, tournament=t)
-            logger.debug("Created new tournament with %s", t.board_set.all())
-            return t
+            return super().create(*args, **kwargs)
 
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
@@ -116,11 +95,17 @@ class TournamentManager(models.Manager):
         return self.filter(Tournament.between_deadlines_Q())
 
     def get_or_create_running_tournament(self) -> tuple[Tournament, bool]:
+        from app.models.board import BOARDS_PER_TOURNAMENT
+
         with transaction.atomic():
             incomplete_qs = self.filter(is_complete=False)
 
             if not incomplete_qs.exists():
-                return self.create(), True
+                new_tournament = self.create()
+                new_tournament.add_boards(
+                    n=BOARDS_PER_TOURNAMENT
+                )  # TODO -- compute this from a movement
+                return new_tournament, True
 
             first_incomplete = incomplete_qs.first()
             assert first_incomplete is not None
@@ -158,6 +143,27 @@ class Tournament(models.Model):
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
+
+    def add_boards(self, *, n: int) -> None:
+        from app.models.board import (
+            Board,
+            board_attributes_from_display_number,
+        )
+
+        with transaction.atomic():
+            assert not self.board_set.exists()
+
+            for display_number in range(1, n + 1):
+                board_attributes = board_attributes_from_display_number(
+                    display_number=display_number,
+                    rng_seeds=[
+                        str(display_number).encode(),
+                        str(self.pk).encode(),
+                        settings.SECRET_KEY.encode(),
+                    ],
+                )
+                Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
+            logger.debug("Created new tournament with %d boards", self.board_set.count())
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
