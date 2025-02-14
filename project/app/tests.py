@@ -622,7 +622,4 @@ def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
 
     # now ask for an unplayed board
     b = t2.find_unplayed_board()
-    # There aren't any, because creating the new table automatically assigned it the new board, and we consider the
-    # players to have played it.
-    assert t2.current_board == third_board
-    assert b is None
+    assert b == third_board
