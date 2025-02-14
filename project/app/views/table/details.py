@@ -22,6 +22,7 @@ from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.types import PK
+from app.models.tournament import Running
 from app.models.utils import assert_type
 from app.views import Forbid, NotFound
 from app.views.misc import (
@@ -165,18 +166,16 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
             f"Hey man {request.user.player.name} isn't one of {[p.name for p in all_four]}"
         )
 
-    try:
-        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
-    except app.models.NoMoreBoards as e:
-        msg = f"You cannot get a new table in this tournament because {e}"
-        messages.info(request, msg)
-        logger.info("%s", msg)
-        return HttpResponseRedirect(reverse("app:table-list"))
+    logger.debug("OK, %s is one of %s", request.user.player.name, [p.name for p in all_four])
 
-    except app.models.TableException as e:
-        return Forbid(str(e))
+    t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
+    if t.tournament.status() is Running:
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
-    return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
+    msg = f"{t.tournament} isn't running, so y'all just gotta wait until the signup deadline {t.tournament.signup_deadline} has passed"
+    messages.info(request, msg)
+    logger.info(msg)
+    return HttpResponseRedirect(reverse("app:table-list") + f"?tournament={t.tournament.pk}")
 
 
 @require_http_methods(["POST"])
@@ -208,8 +207,11 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
-        logger.warning("%s", msg)
-        return Forbid(msg)
+        logger.info("%s", msg)
+        # Perhaps they were just playing at that table, and the tournament ended, so we ejected them.  In that case, they might want to at least watch the rest of the tournament.
+        return HttpResponseRedirect(
+            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
+        )
 
     if table.tournament.is_complete:
         return deal_with_completed_tournament()

@@ -11,7 +11,7 @@ from bridge.seat import Seat as libSeat
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.test import Client
 from django.urls import reverse
 
@@ -399,7 +399,7 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
     assert h.player_who_may_play is None
 
 
-def test_table_creation(j_northam, rf, everybodys_password):
+def test_table_creation(j_northam, everybodys_password):
     players_by_name = {"bob": j_northam}
     sam = Player.objects.create(
         user=auth.models.User.objects.create(
@@ -412,14 +412,12 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
     assert j_northam.partner is not None
 
-    request = rf.post(
-        "/woteva/",
-        data={"pk1": j_northam.pk, "pk2": j_northam.pk},
-    )
+    client = Client()
+    assert client.login(username=j_northam.name, password=".")
 
-    request.user = j_northam.user
-    response = table.details.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
-    assert response.status_code == 403
+    response = client.post(path=f"/table/new/{j_northam.pk}/{j_northam.pk}/", data={})
+
+    assert type(response) is HttpResponseForbidden
     assert b"four distinct" in response.content
 
     for name in ("tina", "tony"):
@@ -431,20 +429,14 @@ def test_table_creation(j_northam, rf, everybodys_password):
         )
         players_by_name[name] = p
 
-    players_by_name["tina"].partner_with(players_by_name["tony"])
+    tina = players_by_name["tina"]
+    tina.partner_with(players_by_name["tony"])
 
     Tournament.objects.create()
 
-    request = rf.post(
-        "/woteva/",
-        data={"pk1": j_northam.pk, "pk2": players_by_name["tina"].pk},
-    )
-    request.user = j_northam.user
-    response = table.details.new_table_for_two_partnerships(
-        request, j_northam.pk, players_by_name["tina"].pk
-    )
+    response = client.post(path=f"/table/new/{j_northam.pk}/{tina.pk}/", data={})
 
-    assert response.status_code == 302
+    assert type(response) is HttpResponseRedirect
 
 
 def test_max_boards(two_boards_one_is_complete, monkeypatch):

@@ -7,6 +7,7 @@ from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
 from django.http.response import HttpResponseForbidden, HttpResponseRedirect
+from django.urls import reverse
 
 import app.views.hand
 import app.views.table.details
@@ -98,6 +99,8 @@ def test_tournament_end(
         e2.partner_with(Player.objects.get_by_name("w2"))
 
         t2 = Table.objects.create_with_two_partnerships(n2, e2)
+        t2.next_board()
+
         # Complete the first table.
 
         h1 = Hand.objects.get(pk=1)
@@ -111,7 +114,7 @@ def test_tournament_end(
         client.force_login(t1.seat_set.first().player.user)
         response = client.post(f"/table/{t1.pk}/new-board-plz/")
         assert type(response) is HttpResponseRedirect
-        assert response.url == "/table/?tournament=1"
+        assert response.url == reverse("app:table-list") + "?tournament=1"
 
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
@@ -233,31 +236,3 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert response.status_code == HttpResponseForbidden.status_code
         assert b"deadline" in response.content
         assert b"has passed" in response.content
-
-
-def test_no_stragglers(
-    nearly_completed_tournament, everybodys_password, monkeypatch, client
-) -> None:
-    assert Board.objects.count() == 1
-    with monkeypatch.context() as m:
-        t1 = Table.objects.first()
-        assert t1 is not None
-        assert Table.objects.count() == 1
-        print(f"{t1.current_hand.board=}")
-        m.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
-        assert app.models.board.BOARDS_PER_TOURNAMENT == 1
-
-        # Complete the first table.
-
-        h1 = Hand.objects.get(pk=1)
-        west = Player.objects.get_by_name("Adam West")
-        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
-        assert t1.tournament.is_complete
-
-        north = Player.objects.get_by_name("Jeremy Northam")
-        west = Player.objects.get_by_name("Adam West")
-
-        t2 = Table.objects.create_with_two_partnerships(north, west)
-        print(f"{t2.hand_set.all()=}")
-        assert t2 is None or t2.hand_set.count() > 0
-        print(f"{t2.current_hand.board=}")

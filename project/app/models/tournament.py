@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
-    logger.debug(f"{sender=} {kwargs=}: {Tournament.objects.count()} tournaments")
+    logger.debug(f"{Tournament.objects.count()} tournaments")
 
     t: Tournament
     with transaction.atomic():
@@ -126,7 +126,7 @@ class TournamentManager(models.Manager):
             )
 
             rv: Tournament = super().create(*args, **kwargs)
-            logger.debug("Just created %s", vars(rv))
+            logger.debug("Just created %s", rv)
             logger.debug(
                 "Now it's %s; signup_deadline is %s; play_completion_deadline is %s",
                 now,
