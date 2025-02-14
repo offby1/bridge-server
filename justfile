@@ -201,7 +201,7 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
 
-    pytest_args="--create-db {{ options }}  --log-cli-level=WARNING"
+    pytest_args="--create-db --log-cli-level=WARNING {{ options }}" 
 
     case "${PYINSTRUMENT:-}" in
     t*)
