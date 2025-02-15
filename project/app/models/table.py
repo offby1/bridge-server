@@ -198,6 +198,7 @@ class Table(models.Model):
 
         assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
         unplayed_boards = self.tournament.board_set.exclude(expression)
+        logger.debug("Thus, by my calculations, that leaves us %s", unplayed_boards)
         return unplayed_boards.first()
 
     def next_board(self) -> Board:
