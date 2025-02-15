@@ -29,7 +29,7 @@ from .models import (
     Table,
     Tournament,
 )
-from .testutils import set_auction_to
+from .testutils import play_out_hand, set_auction_to
 from .views import hand, player, table
 
 logger = logging.getLogger(__name__)
@@ -568,50 +568,16 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
         assert expected_html in actual_html
 
 
-def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
+def test_find_unplayed_board(two_boards_one_is_complete) -> None:
     # Just checking that we are in sync with the fixture
     assert set(Board.objects.values_list("pk", flat=True)) == {1, 2}
 
     t1 = Table.objects.first()
     assert t1 is not None
     assert t1.current_board.pk == 1
+    assert t1.find_unplayed_board().pk == 2
 
+    play_out_hand(t1)
     t1.next_board()
-    assert t1.current_board.pk == 2
-
-    North, East, South, West = [s.player for s in t1.seats]
-
-    # now we splitsville
-    North.break_partnership()
-    East.break_partnership()
-
-    South.refresh_from_db()
-    West.refresh_from_db()
-
-    assert not North.currently_seated
-    assert not East.currently_seated
-    assert not South.currently_seated
-    assert not West.currently_seated
-
-    North.partner_with(South)
-    East.partner_with(West)
-
-    South.refresh_from_db()
-    West.refresh_from_db()
-
-    assert not North.currently_seated
-    assert not East.currently_seated
-    assert not South.currently_seated
-    assert not West.currently_seated
-
-    # now we re-partner, creating a new table
-    assert not t1.tournament.is_complete
-    logger.debug("Creating second table")
-    t2 = Table.objects.create_with_two_partnerships(North, East)
-    assert t2.tournament == t1.tournament
-
-    # now ask for an unplayed board
-    b = t2.find_unplayed_board()
-    assert b is not None
-    print(f"{b.tournament=}")
-    assert b.pk == 2
+    play_out_hand(t1)
+    assert t1.find_unplayed_board() is None
