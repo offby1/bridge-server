@@ -30,6 +30,8 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
+from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
+
 
 from ..utils import movements
 from .common import attribute_names
@@ -247,7 +249,7 @@ class HandManager(models.Manager):
         return rv
 
 
-class Hand(TimeStampedModel):
+class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignore[misc]
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
@@ -1090,7 +1092,7 @@ class CallManager(models.Manager):
         return rv
 
 
-class Call(TimeStampedModel):
+class Call(ExportModelOperationsMixin("call"), TimeStampedModel):  # type: ignore[misc]
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
@@ -1141,7 +1143,7 @@ class PlayManager(models.Manager):
         return rv
 
 
-class Play(TimeStampedModel):
+class Play(ExportModelOperationsMixin("play"), TimeStampedModel):  # type: ignore[misc]
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.

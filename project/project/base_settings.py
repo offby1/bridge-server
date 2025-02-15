@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "debug_toolbar",
     "django_extensions",
+    "django_prometheus",
     "template_partials",
     "tz_detect",
     "app",
@@ -107,6 +108,7 @@ EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
     "log_request_id.middleware.RequestIDMiddleware",
     "app.middleware.simple_access_log.RequestLoggingMiddleware",
@@ -121,6 +123,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
 ]
 LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
@@ -167,7 +170,7 @@ WSGI_APPLICATION = "project.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django_prometheus.db.backends.postgresql",
         "HOST": os.environ.get("PGHOST", "localhost"),
         "NAME": "bridge",
         "PASSWORD": os.environ.get("PGPASS", "postgres"),
@@ -269,7 +272,7 @@ LOGGING: dict[str, Any] = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
         "LOCATION": "bridge_django_cache",
     }
 }
