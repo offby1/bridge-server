@@ -101,7 +101,6 @@ def test_tournament_end(
         e2.partner_with(Player.objects.get_by_name("w2"))
 
         t2 = Table.objects.create_with_two_partnerships(n2, e2)
-        t2.tournament.add_boards(n=1)
         t2.next_board()
 
         # Complete the first table.

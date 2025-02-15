@@ -92,6 +92,5 @@ def second_setup(usual_setup):
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
     )
-    table.tournament.add_boards(n=2)
     table.next_board()
     return table
