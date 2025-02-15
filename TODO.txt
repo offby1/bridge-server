@@ -16,6 +16,9 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to 
+  match up the bot's logs with the server's.
+
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
