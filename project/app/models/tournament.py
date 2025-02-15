@@ -94,8 +94,12 @@ class Tournament(models.Model):
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
 
-    signup_deadline = models.DateTimeField(null=True, default=None)
-    play_completion_deadline = models.DateTimeField(null=True, default=None)
+    signup_deadline = models.DateTimeField(
+        null=True, default=None, db_comment="NULL means 'infintely far in the future'"
+    )  # type: ignore[call-overload]
+    play_completion_deadline = models.DateTimeField(
+        null=True, default=None, db_comment="NULL means 'infintely far in the future'"
+    )  # type: ignore[call-overload]
 
     objects = TournamentManager()
 
