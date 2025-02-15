@@ -160,7 +160,10 @@ class TournamentManager(models.Manager):
             )
             logger.debug(f"{a_few_seconds_from_now=} {incomplete_qs=}")
             if not incomplete_qs.exists():
-                logger.debug("No incomplete tournament exists, so we will create a new one")
+                logger.debug(
+                    "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
+                    a_few_seconds_from_now,
+                )
                 new_tournament = self.create()
                 logger.debug("... namely %s", new_tournament)
                 return new_tournament, True
