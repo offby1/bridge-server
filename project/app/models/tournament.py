@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.core.signals import request_started
 from django.db import models, transaction
+from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -71,7 +72,10 @@ def check_for_expirations(sender, **kwargs) -> None:
                 for table in t.table_set.all():
                     if not table.hand_set.exists():
                         logger.debug("%s of %s needs a board!", table, t)
-                        t.add_boards(n=2)
+                        try:
+                            t.add_boards(n=2)
+                        except IntegrityError as e:
+                            logger.info("%s while trying to add boards to %s; ignoring", e, t)
                         table.next_board()
 
 

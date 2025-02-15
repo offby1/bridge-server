@@ -197,6 +197,10 @@ class Board(models.Model):
                 name="%(app_label)s_%(class)s_dealer_must_be_compass_letter",
                 condition=models.Q(dealer__in="NESW"),
             ),
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
+                fields=["display_number", "tournament_id"],
+            ),
         ]
 
 
