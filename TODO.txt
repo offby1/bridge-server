@@ -6,6 +6,9 @@ IN PROGRESS:
     If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
 
     How would players "sign up" for an upcoming tournament? 🤔
+    *Who* would sign up for a tournament -- a player, or a pair?
+      - If a player, I might want to enforce that they have a partner at signup time
+        Or maybe not!  If not, then when they search for a suitable partner, it should exclude players who are already signed up for some other tournament.  Or maybe it should include them, but *indicate* that they are so signed up (so that they can chat and perhaps agree on a tournament to enter)
 
   * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
 
