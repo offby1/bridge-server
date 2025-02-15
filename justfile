@@ -137,6 +137,9 @@ makemigrations *options: (manage "makemigrations " + options)
 [group('django')]
 migrate: makemigrations create-cache (manage "migrate")
 
+[group('django')]
+stress: (manage "big_bot_stress")
+
 [group('bs')]
 [script('bash')]
 runme *options: t version-file django-superuser migrate create-cache ensure-skeleton-key
