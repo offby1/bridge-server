@@ -80,7 +80,7 @@ def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
     )
 
 
-def test_hand_visibility_two(played_to_completion: None) -> None:
+def test_hand_visibility_two(two_boards_one_is_complete: None) -> None:
     t2: Table | None = Table.objects.first()
     assert t2 is not None
 

@@ -447,7 +447,7 @@ def test_table_creation(j_northam, rf, everybodys_password):
     assert response.status_code == 302
 
 
-def test_max_boards(played_to_completion, monkeypatch):
+def test_max_boards(two_boards_one_is_complete, monkeypatch):
     monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
     t = Table.objects.first()
 
@@ -573,7 +573,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
         assert expected_html in actual_html
 
 
-def test_find_unplayed_board(played_to_completion, monkeypatch) -> None:
+def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
     assert t1.current_board.pk == 1

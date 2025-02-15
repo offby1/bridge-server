@@ -60,8 +60,8 @@ def nobody_seated(db: None) -> None:
 
 
 @pytest.fixture
-def played_almost_to_completion(db: None) -> None:
-    call_command("loaddata", "played_almost_to_completion")
+def two_boards_one_of_which_is_played_almost_to_completion(db: None) -> None:
+    call_command("loaddata", "two_boards_one_of_which_is_played_almost_to_completion")
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ def nearly_completed_tournament(db: None) -> None:
 
 
 @pytest.fixture
-def played_to_completion(played_almost_to_completion) -> None:
+def two_boards_one_is_complete(two_boards_one_of_which_is_played_almost_to_completion) -> None:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
 

@@ -46,7 +46,7 @@ def test_auction_settled_messages(usual_setup) -> None:
     assert sum(["contract" in e.data for e in cap.events]) == 1
 
 
-def test_player_can_always_see_played_hands(played_to_completion) -> None:
+def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
     p1 = Player.objects.get(pk=1)
     hand_count_before = p1.hands_played.count()
     assert hand_count_before > 0
@@ -54,7 +54,7 @@ def test_player_can_always_see_played_hands(played_to_completion) -> None:
     assert p1.hands_played.count() == hand_count_before
 
 
-@pytest.mark.usefixtures("played_almost_to_completion")
+@pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
 def test_sends_final_score() -> None:
     h = Hand.objects.get(pk=1)
 
@@ -71,7 +71,7 @@ def test_sends_final_score() -> None:
     assert any(sought(d.data) for d in cap.events)
 
 
-@pytest.mark.usefixtures("played_to_completion")
+@pytest.mark.usefixtures("two_boards_one_is_complete")
 def test_sends_new_hand_event_to_table_channel() -> None:
     t1 = Table.objects.first()
     assert t1 is not None

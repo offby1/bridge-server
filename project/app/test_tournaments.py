@@ -23,7 +23,7 @@ def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup) -
 
 
 @pytest.fixture
-def just_completed(played_almost_to_completion) -> Tournament:
+def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
     for p in Player.objects.all():
         print(f"{p.name}: {p.currently_seated=}")
 
@@ -38,7 +38,7 @@ def just_completed(played_almost_to_completion) -> Tournament:
 
 
 def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
-    played_almost_to_completion,
+    two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
     Board.objects.filter(pk=2).delete()  # speeds the test up
 
@@ -56,7 +56,9 @@ def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
     assert tally_after == {True: 1, False: 1}
 
 
-def test_completing_one_tournament_ejects_players(played_almost_to_completion) -> None:
+def test_completing_one_tournament_ejects_players(
+    two_boards_one_of_which_is_played_almost_to_completion,
+) -> None:
     Board.objects.filter(pk=2).delete()  # speeds the test up
 
     h1 = Hand.objects.get(pk=1)
