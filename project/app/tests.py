@@ -569,6 +569,9 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
 
 
 def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
+    # Just checking that we are in sync with the fixture
+    assert set(Board.objects.values_list("pk", flat=True)) == {1, 2}
+
     t1 = Table.objects.first()
     assert t1 is not None
     assert t1.current_board.pk == 1
@@ -602,6 +605,7 @@ def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
     assert not West.currently_seated
 
     # now we re-partner, creating a new table
+    assert not t1.tournament.is_complete
     logger.debug("Creating second table")
     t2 = Table.objects.create_with_two_partnerships(North, East)
     assert t2.tournament == t1.tournament

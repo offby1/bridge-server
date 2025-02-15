@@ -147,7 +147,8 @@ class TournamentManager(models.Manager):
         with transaction.atomic():
             a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
             incomplete_qs = self.filter(is_complete=False).filter(
-                signup_deadline__gte=a_few_seconds_from_now
+                models.Q(signup_deadline__gte=a_few_seconds_from_now)
+                | models.Q(signup_deadline__isnull=True)
             )
             logger.debug(f"{a_few_seconds_from_now=} {incomplete_qs=}")
             if not incomplete_qs.exists():
