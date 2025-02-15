@@ -6,6 +6,9 @@ IN PROGRESS:
     If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
 
     How would players "sign up" for an upcoming tournament? 🤔
+    *Who* would sign up for a tournament -- a player, or a pair?
+      - If a player, I might want to enforce that they have a partner at signup time
+        Or maybe not!  If not, then when they search for a suitable partner, it should exclude players who are already signed up for some other tournament.  Or maybe it should include them, but *indicate* that they are so signed up (so that they can chat and perhaps agree on a tournament to enter)
 
   * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
 
@@ -16,6 +19,9 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to 
+  match up the bot's logs with the server's.
+
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
