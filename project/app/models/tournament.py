@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
+# "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
+# every second.
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
