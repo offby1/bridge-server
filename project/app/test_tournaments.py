@@ -142,24 +142,24 @@ def test_signup_deadline(nobody_seated) -> None:
     assert p3 is not None
 
     Tuesday = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
-    Wednesday = Tuesday + datetime.timedelta(seconds=3600 * 24)
-    Thursday = Wednesday + datetime.timedelta(seconds=3600 * 24)
+    WednesdaySignup = Tuesday + datetime.timedelta(seconds=3600 * 24)
+    ThursdayPlayCompletion = WednesdaySignup + datetime.timedelta(seconds=3600 * 24)
 
     assert Tournament.objects.count() == 1
 
     the_tournament = Tournament.objects.first()
     assert the_tournament is not None
 
-    # Ensure out tournament's signup deadline is comfortably in the future.
-    the_tournament.signup_deadline = Wednesday
-    the_tournament.play_completion_deadline = Thursday
+    # Ensure our tournament's signup deadline is comfortably in the future.
+    the_tournament.signup_deadline = WednesdaySignup
+    the_tournament.play_completion_deadline = ThursdayPlayCompletion
     the_tournament.save()
 
     with freeze_time(Tuesday):
         # Ensure we can sign up.
         t = Table.objects.create_with_two_partnerships(p1, p3)
 
-    assert t.tournament == the_tournament
+        assert t.tournament == the_tournament
 
     p2 = p1.partner
     p1.break_partnership()
@@ -170,7 +170,7 @@ def test_signup_deadline(nobody_seated) -> None:
     p3.partner_with(p4)
 
     # Scoot the clock forward, past the deadline.
-    with freeze_time(Thursday):
+    with freeze_time(ThursdayPlayCompletion):
         # Ensure that we wind up in a new tournament
         t2 = Table.objects.create_with_two_partnerships(p1, p3)
         assert Tournament.objects.count() == 2
