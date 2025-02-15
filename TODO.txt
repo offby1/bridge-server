@@ -1,4 +1,44 @@
 IN PROGRESS:
+* GEVALT!!
+
+  After "big_bot_stress", and our boys have finished Tournament 2, Table 2, Board 2:
+
+  - the "Next Board Plz" button appears as usual
+  - Clicking it starts the next board over again!!
+
+  In the django logs, I see
+
+  ```
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(210) next_board Table 2: someone wants the next board
+  2025-02-15T17:35:27+0000 DEBUG request_id=none tournament.py(229) add_boards Added 2 boards to tournament #2; Running; 0 hands played out of 2
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(210) next_board Table 2: someone wants the next board
+  2025-02-15T17:35:27+0000 DEBUG request_id=none tournament.py(229) add_boards Added 2 boards to tournament #2; Running; 0 hands played out of 2
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(210) next_board Table 2: someone wants the next board
+  ```
+
+  and
+
+  ```
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(223) next_board Table 2 now has a new hand: 3
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(223) next_board Table 2 now has a new hand: 4
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(223) next_board Table 2 now has a new hand: 5
+  2025-02-15T17:35:27+0000 DEBUG request_id=none table.py(223) next_board Table 2 now has a new hand: 6
+  ```
+
+  So we added two boards, then added two more, all in the same second.  This smells like I need to wrap something in a savepoint.
+
+  Dunno why the request_ids are all None, but that *was* immediately after the four bots came up.
+
+  I think the repro steps were
+
+  - just drop migrate manage loaddata two_boards_one_of_which_is_played_almost_to_completion
+  - just superuser dcu -d
+  - docker compose exec django poetry run python manage.py big_bot_stress
+  - wait until that finishes (it's just one or two hands)
+  - using the admin site, scoot tournament 2's signup deadline to "now" to save time
+
+  ... but it seems to be working fine :-(
+
 * Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
 
   * One is the "joining deadline" -- after this time, no more tables can join the tournament.

@@ -215,7 +215,9 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
         logger.info("%s", msg)
-        # Perhaps they were just playing at that table, and the tournament ended, so we ejected them.  In that case, they might want to at least watch the rest of the tournament.
+        messages.error(request, msg)
+        # Perhaps they were just playing at that table, and the tournament ended, so we ejected them.  In that case,
+        # they might want to at least watch the rest of the tournament.
         return HttpResponseRedirect(
             reverse("app:table-list") + f"?tournament={table.tournament.pk}"
         )

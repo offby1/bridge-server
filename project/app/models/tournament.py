@@ -68,6 +68,7 @@ def check_for_expirations(sender, **kwargs) -> None:
                 for table in t.table_set.all():
                     if not table.hand_set.exists():
                         logger.debug("%s of %s needs a board!", table, t)
+                        t.add_boards(n=2)
                         table.next_board()
 
 
