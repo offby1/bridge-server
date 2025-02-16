@@ -39,29 +39,11 @@ class NoMoreBoards(Exception):
 
 
 class TableManager(models.Manager):
-    def create(self, *args, **kwargs) -> Table:
-        if "tournament" not in kwargs:
-            tournament, created = Tournament.objects.get_or_create_tournament_open_for_signups()
-            logger.debug(
-                "%s new tournament %s",
-                "created" if created else "didn't need to create",
-                tournament.pk,
-            )
-            kwargs["tournament"] = tournament
-
-        tournament = kwargs["tournament"]
-
-        # TODO -- maybe create or find a new tournament?
-        if tournament.signup_deadline_has_passed():
-            assert tournament.signup_deadline is not None
-            msg = f"oops -- {tournament=}'s signup deadline ({tournament.signup_deadline.isoformat()}) has passed"
-            raise TableException(msg)
-
-        return super().create(*args, **kwargs)
-
-    def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
+    def create_with_two_partnerships(
+        self, p1: Player, p2: Player, tournament: Tournament | None = None
+    ) -> Table:
         with transaction.atomic():
-            t: Table = self.create()
+            t: Table = self.create(tournament=tournament)
             logger.debug("Created %s", t)
             if p1.partner is None or p2.partner is None:
                 raise TableException(

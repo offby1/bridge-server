@@ -17,6 +17,7 @@ import app.views.table.details
 from app.models import Board, Hand, NoMoreBoards, Player, Table, TableException, Tournament
 import app.models.board
 from app.models.tournament import (
+    check_for_expirations,
     NotOpenForSignupError,
     PlayerNeedsPartnerError,
     Running,
@@ -110,7 +111,7 @@ def test_tournament_end(
         e2 = Player.objects.get_by_name("e2")
         e2.partner_with(Player.objects.get_by_name("w2"))
 
-        t2 = Table.objects.create_with_two_partnerships(n2, e2)
+        t2 = Table.objects.create_with_two_partnerships(n2, e2, tournament=t1.tournament)
         t2.next_board()
 
         # Complete the first table.
@@ -131,10 +132,14 @@ def test_tournament_end(
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
 
+        logger.debug("Ok, this next buncha spew should complete tournament #1")
         play_out_hand(t2)
 
+        t2.tournament.maybe_complete()
         t1.refresh_from_db()
-        assert t1.tournament.is_complete
+        assert (
+            t1.tournament.is_complete
+        ), f"Why is {t1.tournament=} ({t1.tournament.status()}) not complete"
 
         with pytest.raises(NoMoreBoards):
             t1.next_board()
@@ -143,48 +148,6 @@ def test_tournament_end(
 
         with pytest.raises(NoMoreBoards):
             t2.next_board()
-
-
-def test_signup_deadline(nobody_seated) -> None:
-    p1 = Player.objects.first()
-    assert p1 is not None
-    p3 = Player.objects.exclude(pk=p1.pk).exclude(pk=p1.partner.pk).first()
-    assert p3 is not None
-
-    Tuesday = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
-    WednesdaySignup = Tuesday + datetime.timedelta(seconds=3600 * 24)
-    ThursdayPlayCompletion = WednesdaySignup + datetime.timedelta(seconds=3600 * 24)
-
-    assert Tournament.objects.count() == 1
-
-    the_tournament = Tournament.objects.first()
-    assert the_tournament is not None
-
-    # Ensure our tournament's signup deadline is comfortably in the future.
-    the_tournament.signup_deadline = WednesdaySignup
-    the_tournament.play_completion_deadline = ThursdayPlayCompletion
-    the_tournament.save()
-
-    with freeze_time(Tuesday):
-        # Ensure we can sign up.
-        t = Table.objects.create_with_two_partnerships(p1, p3)
-
-        assert t.tournament == the_tournament
-
-    p2 = p1.partner
-    p1.break_partnership()
-    p1.partner_with(p2)
-
-    p4 = p3.partner
-    p3.break_partnership()
-    p3.partner_with(p4)
-
-    # Scoot the clock forward, past the deadline.
-    with freeze_time(ThursdayPlayCompletion):
-        # Ensure that we wind up in a new tournament
-        t2 = Table.objects.create_with_two_partnerships(p1, p3)
-        assert Tournament.objects.count() == 2
-        assert t2.tournament != the_tournament
 
 
 def test_play_completion_deadline(usual_setup) -> None:
@@ -326,3 +289,14 @@ def test_signups(nobody_seated) -> None:
     east.break_partnership()
     with pytest.raises(PlayerNeedsPartnerError):
         open_tournament.sign_up(east)
+
+    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
+        with pytest.raises(NotOpenForSignupError):
+            open_tournament.sign_up(east)
+
+    east.partner_with(Player.objects.get_by_name("Adam West"))
+    open_tournament.sign_up(east)
+
+    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
+        check_for_expirations(__name__)
+        assert open_tournament.table_set.count() == 1

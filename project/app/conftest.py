@@ -3,7 +3,7 @@ from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Table
+from .models import Hand, Play, Player, Table, Tournament
 from .models.tournament import check_for_expirations
 
 
@@ -91,6 +91,7 @@ def second_setup(usual_setup):
     table = Table.objects.create_with_two_partnerships(
         p1=Player.objects.get_by_name("n2"),
         p2=Player.objects.get_by_name("e2"),
+        tournament=Tournament.objects.first(),
     )
     table.next_board()
     return table

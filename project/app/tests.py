@@ -177,7 +177,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     t1 = Table.objects.first()
     north = t1.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
-    t2 = Table.objects.create()
+    t2 = Table.objects.create(tournament=t1.tournament)
 
     with pytest.raises(SeatException) as e:
         Seat.objects.create(direction=libSeat.EAST.value, table=t2, player=north)
@@ -193,7 +193,7 @@ def test_cant_just_make_up_directions(j_northam, everybodys_password):
     )
     j_northam.partner_with(partner)
 
-    t = Table.objects.create()
+    t = Table.objects.create(tournament=Tournament.objects.create(display_number=1))
     with pytest.raises(Exception) as e:
         Seat.objects.create(direction=1234, player=j_northam, table=t)
 
@@ -418,7 +418,9 @@ def test_table_creation(j_northam, everybodys_password):
     client = Client()
     assert client.login(username=j_northam.name, password=".")
 
-    response = client.post(path=f"/table/new/{j_northam.pk}/{j_northam.pk}/", data={})
+    t = Tournament.objects.create()
+
+    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
 
     assert type(response) is HttpResponseForbidden
     assert b"four distinct" in response.content
@@ -435,9 +437,7 @@ def test_table_creation(j_northam, everybodys_password):
     tina = players_by_name["tina"]
     tina.partner_with(players_by_name["tony"])
 
-    Tournament.objects.create()
-
-    response = client.post(path=f"/table/new/{j_northam.pk}/{tina.pk}/", data={})
+    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
 
     assert type(response) is HttpResponseRedirect
 
@@ -461,6 +461,7 @@ def test_no_bogus_tables(usual_setup):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),
+            tournament=Tournament.objects.first(),
         )
     count_after = Table.objects.count()
 
@@ -511,9 +512,11 @@ def test_random_dude_cannot_create_table(usual_setup, everybodys_password):
 
     client = Client()
 
+    tournament, _ = Tournament.objects.get_or_create(display_number=1)
+
     def new_table(*, requester=None) -> HttpResponse:
         client.login(username=requester.user, password=".")
-        return client.post(path=f"/table/new/{North.pk}/{East.pk}/", data={})
+        return client.post(path=f"/table/new/{tournament.pk}/{North.pk}/{East.pk}/", data={})
 
     response = new_table(requester=RandomDude)
     assert response.status_code == 403

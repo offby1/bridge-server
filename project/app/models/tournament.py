@@ -14,6 +14,8 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.utils import timezone
 
+import more_itertools
+
 from app.models.signups import TournamentSignups
 
 if TYPE_CHECKING:
@@ -78,17 +80,24 @@ def check_for_expirations(sender, **kwargs) -> None:
                     "Alas, I already pre-created %d boards, which probably isn't the right number.",
                     t.board_set.count(),
                 )
-                table: Table
-                for table in t.table_set.all():
-                    if not table.hand_set.exists():
-                        logger.debug("%s of %s needs a board!", table, t)
-                        try:
-                            # TODO -- come up with an appropriate movement, and assign it to this tournament;
-                            # use the movement to determine the number of boards.
-                            t.add_boards(n=2)
-                        except IntegrityError as e:
-                            logger.info("%s while trying to add boards to %s; ignoring", e, t)
-                        table.next_board()
+
+                waiting_players = set()
+
+                for p in t.signed_up_players():
+                    waiting_players.add(frozenset([p, p.partner]))
+
+                logger.debug("These pairs are waiting: %s", waiting_players)
+
+                # Group them into pairs of pairs.
+                # Create a table for each such quartet.
+                from app.models.table import Table
+
+                for quartet in more_itertools.chunked(waiting_players, 2):
+                    pair1 = quartet.pop()
+                    pair2 = quartet.pop()
+                    p1 = next(iter(pair1))
+                    p2 = next(iter(pair2))
+                    Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
 
 
 class TournamentStatus:

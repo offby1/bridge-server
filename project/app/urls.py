@@ -81,7 +81,11 @@ urlpatterns = [
         name="new-board-plz",
     ),
     path("table/<table_pk>/set-table-tempo/", set_table_tempo_view, name="set-table-tempo"),
-    path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
+    path(
+        "table/new/<tournament_pk>/<pk1>/<pk2>/",
+        table.details.new_table_for_two_partnerships,
+        name="new-table",
+    ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
 ]

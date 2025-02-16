@@ -1,8 +1,11 @@
-import bridge.contract
-import bridge.table
+import logging
 
 import app.models
+import bridge.contract
+import bridge.table
 from app.models.utils import assert_type
+
+logger = logging.getLogger(__name__)
 
 
 def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.models.Hand:
@@ -38,13 +41,13 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
 
 def play_out_hand(t: app.models.Table) -> None:
     h = t.current_hand
-
+    logger.info(f"Playing out {h=} of {t=} (tournament #{t.tournament.display_number})")
     while (p := h.player_who_may_call) is not None:
         call = h.get_xscript().auction.legal_calls()[0]
-        print(f"{p} calls {call}")
+        logger.info(f"{p} calls {call}")
         h.add_call_from_player(player=p.libraryThing(), call=call)
     while (p := h.player_who_may_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
         h.add_play_from_player(player=p.libraryThing(), card=play.card)
-        print(f"{p} plays {play}")
+        logger.info(f"{p} plays {play}")
         h.get_xscript().add_card(play.card)

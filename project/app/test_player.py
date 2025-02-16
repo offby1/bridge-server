@@ -5,7 +5,7 @@ import pytest
 from django.conf import settings
 from django.contrib import auth
 
-from app.models import Board, Hand, HandError, Player, Seat, Table
+from app.models import Board, Hand, HandError, Player, Seat, Table, Tournament
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def seat_em_dano(nobody_seated: None) -> Table:
     east.partner_with(west)
 
     # Not calling create_with_two_partnerships since that invokes "next_board", which I'd prefer to invoke explicitly
-    t = Table.objects.create()
+    t = Table.objects.create(tournament=Tournament.objects.first())
     Seat.objects.create(direction="N", player=north, table=t)
     Seat.objects.create(direction="E", player=east, table=t)
     Seat.objects.create(direction="S", player=south, table=t)

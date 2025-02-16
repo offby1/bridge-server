@@ -15,7 +15,7 @@ from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
 import app.models.board
-from .models import AuctionError, Board, Hand, Player, Table, board, hand
+from .models import AuctionError, Board, Hand, Player, Table, Tournament, board, hand
 from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
@@ -425,6 +425,7 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     Table.objects.create_with_two_partnerships(
         p1=north,
         p2=Player.objects.get_by_name("e2"),
+        tournament=Tournament.objects.first(),
     )
     for p in Player.objects.all():
         print(f"{p.name}: {p.current_seat.direction} at table {p.current_seat.table.pk}")
