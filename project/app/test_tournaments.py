@@ -16,6 +16,7 @@ import app.views.hand
 import app.views.table.details
 from app.models import Board, Hand, NoMoreBoards, Player, Table, TableException, Tournament
 import app.models.board
+from app.models.tournament import NotOpenForSignupError, Running, OpenForSignup
 
 from .testutils import play_out_hand
 
@@ -294,3 +295,20 @@ def test_concurrency() -> None:
             t.join()
 
     assert the_tournament.board_set.count() == 2
+
+
+def test_signups(nobody_seated) -> None:
+    playaz = Player.objects.all()
+
+    running_tournament, _ = Tournament.objects.get_or_create(display_number=1)
+    assert not running_tournament.is_complete
+    assert running_tournament.status() is Running
+
+    with pytest.raises(NotOpenForSignupError):
+        running_tournament.sign_up(playaz[0])
+
+    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    assert not open_tournament.is_complete
+    assert open_tournament.status() is OpenForSignup
+    open_tournament.sign_up(playaz[0])
+    assert set(open_tournament.signed_up_players()) == {playaz[0], playaz[0].partner}

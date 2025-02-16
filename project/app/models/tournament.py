@@ -23,6 +23,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class NotOpenForSignupError(Exception):
+    pass
+
+
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
 # "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
 # every second.
@@ -156,12 +160,11 @@ class TournamentManager(models.Manager):
 
         with transaction.atomic():
             a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
-            incomplete_qs = self.filter(is_complete=False).filter(
+            incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
                 models.Q(signup_deadline__gte=a_few_seconds_from_now)
-                | models.Q(signup_deadline__isnull=True)
             )
-            logger.debug(f"{a_few_seconds_from_now=} {incomplete_qs=}")
-            if not incomplete_qs.exists():
+            logger.debug(f"{a_few_seconds_from_now=} {incomplete_and_open_tournaments_qs=}")
+            if not incomplete_and_open_tournaments_qs.exists():
                 logger.debug(
                     "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
                     a_few_seconds_from_now,
@@ -170,7 +173,7 @@ class TournamentManager(models.Manager):
                 logger.debug("... namely %s", new_tournament)
                 return new_tournament, True
 
-            first_incomplete: Tournament | None = incomplete_qs.first()
+            first_incomplete: Tournament | None = incomplete_and_open_tournaments_qs.first()
             logger.debug(
                 "An incomplete tournament (%s) exists, so we didn't need to create a new one",
                 first_incomplete,
@@ -275,6 +278,17 @@ class Tournament(models.Model):
 
     def short_string(self) -> str:
         return f"tournament #{self.display_number}"
+
+    def sign_up(self, player: Player) -> None:
+        if self.status() is not OpenForSignup:
+            raise NotOpenForSignupError()
+        logger.error("Not implemented, duh")
+
+    def signed_up_players(self) -> models.QuerySet:
+        from django.db.models.query import EmptyQuerySet
+
+        logger.error("Not implemented, duh")
+        return Tournament.objects.none()
 
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
