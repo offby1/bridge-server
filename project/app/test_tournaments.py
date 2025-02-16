@@ -16,7 +16,12 @@ import app.views.hand
 import app.views.table.details
 from app.models import Board, Hand, NoMoreBoards, Player, Table, TableException, Tournament
 import app.models.board
-from app.models.tournament import NotOpenForSignupError, Running, OpenForSignup
+from app.models.tournament import (
+    NotOpenForSignupError,
+    PlayerNeedsPartnerError,
+    Running,
+    OpenForSignup,
+)
 
 from .testutils import play_out_hand
 
@@ -298,17 +303,26 @@ def test_concurrency() -> None:
 
 
 def test_signups(nobody_seated) -> None:
-    playaz = Player.objects.all()
+    north = Player.objects.get_by_name("Jeremy Northam")
+    south = Player.objects.get_by_name("J.D. Souther")
+    assert north.partner == south
 
     running_tournament, _ = Tournament.objects.get_or_create(display_number=1)
     assert not running_tournament.is_complete
     assert running_tournament.status() is Running
 
     with pytest.raises(NotOpenForSignupError):
-        running_tournament.sign_up(playaz[0])
+        running_tournament.sign_up(north)
 
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
-    open_tournament.sign_up(playaz[0])
-    assert set(open_tournament.signed_up_players()) == {playaz[0], playaz[0].partner}
+    open_tournament.sign_up(north)
+    actual = set(open_tournament.signed_up_players())
+    expected = {north, south}
+    assert actual == expected
+
+    east = Player.objects.get_by_name("Clint Eastwood")
+    east.break_partnership()
+    with pytest.raises(PlayerNeedsPartnerError):
+        open_tournament.sign_up(east)

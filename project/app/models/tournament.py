@@ -14,6 +14,8 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.utils import timezone
 
+from app.models.signups import TournamentSignups
+
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
@@ -21,6 +23,10 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+class PlayerNeedsPartnerError(Exception):
+    pass
 
 
 class NotOpenForSignupError(Exception):
@@ -282,13 +288,19 @@ class Tournament(models.Model):
     def sign_up(self, player: Player) -> None:
         if self.status() is not OpenForSignup:
             raise NotOpenForSignupError()
-        logger.error("Not implemented, duh")
+        if player.partner is None:
+            raise PlayerNeedsPartnerError(f"{player.name} has no partner")
+        for p in (player, player.partner):
+            TournamentSignups.objects.get_or_create(tournament=self, player=p)
 
     def signed_up_players(self) -> models.QuerySet:
-        from django.db.models.query import EmptyQuerySet
+        from app.models import Player
 
-        logger.error("Not implemented, duh")
-        return Tournament.objects.none()
+        return Player.objects.filter(
+            pk__in=TournamentSignups.objects.filter(tournament=self).values_list(
+                "player", flat=True
+            )
+        )
 
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
