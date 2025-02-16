@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import inspect
 import logging
+import threading
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -62,7 +63,6 @@ def check_for_expirations(sender, **kwargs) -> None:
                 continue
 
             if t.signup_deadline_has_passed():
-                # TODO -- come up with an appropriate movement, and assign it to this tournament.
                 logger.debug("%s might need some boards; who knows?", t)
                 logger.warning(
                     "Alas, I already pre-created %d boards, which probably isn't the right number.",
@@ -73,6 +73,8 @@ def check_for_expirations(sender, **kwargs) -> None:
                     if not table.hand_set.exists():
                         logger.debug("%s of %s needs a board!", table, t)
                         try:
+                            # TODO -- come up with an appropriate movement, and assign it to this tournament;
+                            # use the movement to determine the number of boards.
                             t.add_boards(n=2)
                         except IntegrityError as e:
                             logger.info("%s while trying to add boards to %s; ignoring", e, t)
@@ -212,12 +214,8 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def add_boards(self, *, n: int) -> None:
-        from app.models.board import (
-            Board,
-            board_attributes_from_display_number,
-        )
-
+    # The barrier is just for unit testing
+    def add_boards(self, *, n: int, barrier: threading.Barrier | None = None) -> None:
         with transaction.atomic():
             assert (
                 not self.board_set.exists()
@@ -226,17 +224,28 @@ class Tournament(models.Model):
                 not self.is_complete
             ), f"Wassup! Don't add boards to a completed tournament!! {self}"
 
-            for display_number in range(1, n + 1):
-                board_attributes = board_attributes_from_display_number(
-                    display_number=display_number,
-                    rng_seeds=[
-                        str(display_number).encode(),
-                        str(self.pk).encode(),
-                        settings.SECRET_KEY.encode(),
-                    ],
-                )
-                Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
+            self._add_boards_internal(n=n)
+
             logger.debug("Added %d boards to %s", self.board_set.count(), self)
+
+            if barrier is not None:
+                logger.debug("Waiting on %s", barrier)
+                barrier.wait()
+
+    # This is easier to test than add_boards, because it doesn't raise those assertions
+    def _add_boards_internal(self, *, n: int) -> None:
+        from app.models.board import Board, board_attributes_from_display_number
+
+        for display_number in range(1, n + 1):
+            board_attributes = board_attributes_from_display_number(
+                display_number=display_number,
+                rng_seeds=[
+                    str(display_number).encode(),
+                    str(self.pk).encode(),
+                    settings.SECRET_KEY.encode(),
+                ],
+            )
+            Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:

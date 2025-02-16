@@ -1,11 +1,14 @@
 import collections
 import datetime
+import logging
+import threading
 
 from freezegun import freeze_time
 import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
+from django.db.utils import IntegrityError
 from django.http.response import HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
@@ -16,7 +19,8 @@ import app.models.board
 
 from .testutils import play_out_hand
 
-# mumble import settings, monkeypatch, change BOARDS_PER_TOURNAMENT to 2 for convenience
+
+logger = logging.getLogger(__name__)
 
 
 def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup) -> None:
@@ -240,3 +244,53 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert response.status_code == HttpResponseForbidden.status_code
         assert b"deadline" in response.content
         assert b"has passed" in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_that_new_unique_constraint() -> None:
+    the_tournament = Tournament.objects.create(display_number=1)
+    logger.debug("created %s", the_tournament)
+
+    the_tournament._add_boards_internal(n=2)
+    with pytest.raises(IntegrityError):
+        the_tournament._add_boards_internal(n=2)
+
+    assert the_tournament.board_set.count() == 2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_concurrency() -> None:
+    ThePast = datetime.datetime.fromisoformat("2001-01-01T00:00:00Z")
+    TheFuture = datetime.datetime.fromisoformat("2112-01-01T00:00:00Z")
+    InBetween = ThePast + datetime.timedelta(seconds=(TheFuture - ThePast).total_seconds() // 2)
+
+    the_tournament = Tournament.objects.create(
+        signup_deadline=ThePast, play_completion_deadline=TheFuture
+    )
+
+    threading.Barrier(parties=3, timeout=2)
+
+    class BoardAdder(threading.Thread):
+        def run(self):
+            logger.debug("Hiya")
+            try:
+                the_tournament.add_boards(n=2, barrier=None)
+            except Exception as e:
+                logger.debug("Oy! %s", e)
+
+    with freeze_time(InBetween):
+        threads = []
+        for _ in range(2):
+            threads.append(BoardAdder())
+
+        for t in threads:
+            t.start()
+            logger.debug("Started thread %s", t)
+
+        # logger.debug("Now ... we wait")
+        # the_barrier.wait()
+
+        for t in threads:
+            t.join()
+
+    assert the_tournament.board_set.count() == 2
