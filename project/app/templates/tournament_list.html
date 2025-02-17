@@ -7,7 +7,9 @@
 {% block content %}
     {% block tournament_list %}
         <table class="table caption-top">
-            <caption>Tournaments</caption>
+            <caption>Tournaments
+                {% if description %}{{ description }}{% endif %}
+            </caption>
             <thead>
                 <tr>
                     <th>#</th>
@@ -44,6 +46,7 @@
             </tbody>
         </table>
     {% endblock tournament_list %}
+    {% if button %}OK here's the "New tournament button" 👉{{ button }}👈{% endif %}
 {% endblock content %}
 {% block scripts %}
     <script src="{% static 'app/humanize-duration.js' %}"></script>

@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.utils import timezone
 
 import app.models
 from app.views.misc import AuthedHttpRequest
@@ -76,7 +77,19 @@ def board_list_view(request: HttpRequest) -> TemplateResponse:
 
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     tournament_list = app.models.Tournament.objects.order_by("pk")
+    open_for_signups = request.GET.get("open_for_signups")
 
-    context = {"tournament_list": tournament_list}
+    if open_for_signups:
+        now = timezone.now()
+        tournament_list = tournament_list.filter(
+            signup_deadline__gte=now
+        )  # .filter(play_completion_deadline__gte=now)
+
+    context = {"tournament_list": tournament_list, "description": "", "button": ""}
+
+    if open_for_signups:
+        context["description"] = "Open for signups"
+        if not tournament_list.exists():
+            context["button"] = "Oh I guess you need a 'Make a new Tournament' button"
 
     return TemplateResponse(request=request, template="tournament_list.html", context=context)
