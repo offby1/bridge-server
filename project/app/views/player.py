@@ -57,8 +57,7 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
         "button_content": "Partner 'em Up, Boss",
         "button_submit_value": JOIN,
         "form_action": player_detail_endpoint(player_pk=subject_pk),
-        "input_hidden_value": reverse("app:players")
-        + "?has_partner=True&seated=False&exclude_me=True",
+        "input_hidden_value": reverse("app:tournament-list") + "?open_for_signups=True",
     }
 
 
@@ -444,7 +443,7 @@ def player_list_view(request):
     ):
         context["create_synth_partner_button"] = _create_synth_partner_button(request)
         context["create_synth_partner_next"] = (
-            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
+            reverse("app:tournament-list") + "?open_for_signups=True"
         )
     # similarly for opponents.
     elif (
