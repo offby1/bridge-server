@@ -4,8 +4,6 @@ from .views import home_view, lobby, player, signup_view, table, three_way_login
 from .views.board import (
     board_archive_view,
     board_list_view,
-    new_tournament_view,
-    tournament_list_view,
 )
 from .views.hand import (
     auction_partial_view,
@@ -19,6 +17,10 @@ from .views.hand import (
     open_access_toggle_view,
 )
 from .views.table import set_table_tempo_view
+from .views.tournament import (
+    new_tournament_view,
+    tournament_list_view,
+)
 
 app_name = "app"
 
