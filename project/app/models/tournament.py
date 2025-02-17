@@ -41,6 +41,11 @@ class NotOpenForSignupError(Exception):
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
+
+    TournamentSignups.objects.filter(
+        tournament__in=Tournament.objects.filter(is_complete=True)
+    ).delete()
+
     with transaction.atomic():
         incompletes = Tournament.objects.filter(is_complete=False)
 
