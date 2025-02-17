@@ -292,12 +292,16 @@ class Tournament(models.Model):
             as_of=timezone.now(),
         )
 
+    def status_str(self) -> str:
+        return self.status().__name__
+
     def short_string(self) -> str:
         return f"tournament #{self.display_number}"
 
     def sign_up(self, player: Player) -> None:
         if self.status() is not OpenForSignup:
-            raise NotOpenForSignupError()
+            msg = f"Tournament #{self.display_number} is {self.status_str()}, not open for signup; the signup deadline was {self.signup_deadline}"
+            raise NotOpenForSignupError(msg)
         if player.partner is None:
             raise PlayerNeedsPartnerError(f"{player.name} has no partner")
         for p in (player, player.partner):

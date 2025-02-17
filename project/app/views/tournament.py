@@ -1,3 +1,5 @@
+import logging
+
 from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -9,33 +11,45 @@ from django.views.decorators.http import require_http_methods
 from app.views.misc import AuthedHttpRequest
 
 import app.models
+import app.models.tournament
 
 from .misc import logged_in_as_player_required
 
 
+logger = logging.getLogger(__name__)
+
+
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
+    viewer = request.user.player
+
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
-    return TemplateResponse(request=request, template="tournament.html", context={"tournament": t})
+    context = {"tournament": t, "button": ""}
+    # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
+    current_signups = app.models.TournamentSignups.objects.filter(player=viewer)
+    logger.debug("%s is currently signed up for %s", viewer.name, current_signups)
+
+    if not current_signups.exists():
+        logger.debug("%s's status is %s", t.display_number, t.status())
+        if t.status() is app.models.tournament.OpenForSignup:
+            context["button"] = (
+                f"Oh! I guess I should let {viewer.name} sign up for {t.display_number}."
+            )
+    return TemplateResponse(request=request, template="tournament.html", context=context)
 
 
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
-    tournament_list = app.models.Tournament.objects.order_by("pk")
-    open_for_signups = request.GET.get("open_for_signups")
+    all_ = app.models.Tournament.objects.order_by("pk")
 
-    if open_for_signups:
-        now = timezone.now()
-        tournament_list = tournament_list.filter(
-            signup_deadline__gte=now
-        )  # .filter(play_completion_deadline__gte=now)
+    now = timezone.now()
 
-    context = {"tournament_list": tournament_list, "description": "", "button": ""}
+    open_ = all_.filter(signup_deadline__gte=now).filter(play_completion_deadline__gte=now)
 
-    if open_for_signups:
-        context["description"] = "Open for signups"
-        if not tournament_list.exists():
-            context["button"] = format_html(
-                """<button class="btn btn-primary" type="submit">Gimme new tournament, Yo</button>"""
-            )
+    context = {"tournament_list": all_, "description": "", "button": ""}
+
+    if not open_.exists():
+        context["button"] = format_html(
+            """<button class="btn btn-primary" type="submit">Gimme new tournament, Yo</button>"""
+        )
 
     return TemplateResponse(request=request, template="tournament_list.html", context=context)
 

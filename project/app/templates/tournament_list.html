@@ -15,17 +15,19 @@
                 <tr>
                     <th>#</th>
                     <th>Name</th>
+                    <th>Status</th>
                     <th>Signup Deadline</th>
                     <th>Play Completion Deadline</th>
                 </tr>
             </thead>
             <tbody>
                 {% for tournament in tournament_list %}
-                    <tr>
+                    <tr {% if tournament.status_str == "OpenForSignup" %}class="throb-div"{% endif %}>
                         <th>{{ tournament.display_number }}</th>
                         <td>
                             <a href="{% url 'app:tournament' pk=tournament.pk %}">{{ tournament }}</a>
                         </td>
+                        <td>{{ tournament.status_str }}</td>
                         <td>
                             {% if tournament.signup_deadline %}
                                 <span class="isoformat">{{ tournament.signup_deadline.isoformat }}</span>
