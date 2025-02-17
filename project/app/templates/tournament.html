@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% load player_extras %}
 {% block title %}
     {{ tournament }}
 {% endblock title %}
 {% block content %}
-    Well I'd tell you all about {{ tournament }} here, if I could think of what I wanted to tell you.
     {% if button %}
         <form action="{% url 'app:tournament-signup' pk=tournament.pk %}"
               method="post">
@@ -11,4 +11,49 @@
             {{ button }}
         </form>
     {% endif %}
+    {% if tournament.status_str == "Complete" %}
+        <span style="font-size: 2em;">Completed
+            {% if tournament.play_completion_deadline %}
+                at {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}
+            {% endif %}
+        .</span>
+        <hr />
+        <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
+    {% elif tournament.status_str == "Running" %}
+        <span style="font-size: 2em;">Running
+            {% if tournament.play_completion_deadline %}
+                until {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}
+            {% endif %}
+        .</span>
+        <hr />
+        <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">Tables</a>.
+    {% elif tournament.status_str == "OpenForSignup" %}
+        <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
+        <table id="player-list" class="table caption-top">
+            <caption>Players Signed Up For Tournament {{ tournament.display_number }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Who</th>
+                    <th scope="col">Partner</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for signup in signed_up_players %}
+                    <tr style="border: 1px dotted">
+                        <th>{{ signup.player|sedate_link:user }}</th>
+                        <td>
+                            {% if signup.player.partner %}
+                                {{ signup.player.partner|sedate_link:user }}
+                            {% else %}
+                                😢
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        Please tell your IT dude that I have no idea what to do with "{{ tournament.status_str }}"
+    {% endif %}
+    <hr>
 {% endblock content %}
