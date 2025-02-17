@@ -20,6 +20,7 @@ from .views.table import set_table_tempo_view
 from .views.tournament import (
     new_tournament_view,
     tournament_list_view,
+    tournament_view,
 )
 
 app_name = "app"
@@ -96,5 +97,6 @@ urlpatterns = [
     ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
+    path("tournament/<int:pk>/", tournament_view, name="tournament"),
     path("tournament/new/", new_tournament_view, name="new-tournament"),
 ]

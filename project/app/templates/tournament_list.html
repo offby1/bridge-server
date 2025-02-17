@@ -24,7 +24,7 @@
                     <tr>
                         <th>{{ tournament.display_number }}</th>
                         <td>
-                            <a href="{% url 'app:board-list' %}{% querystring tournament=tournament.pk %}">{{ tournament }}</a>
+                            <a href="{% url 'app:tournament' pk=tournament.pk %}">{{ tournament }}</a>
                         </td>
                         <td>
                             {% if tournament.signup_deadline %}

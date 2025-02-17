@@ -1,5 +1,6 @@
 from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -10,6 +11,11 @@ from app.views.misc import AuthedHttpRequest
 import app.models
 
 from .misc import logged_in_as_player_required
+
+
+def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
+    t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
+    return TemplateResponse(request=request, template="tournament.html", context={"tournament": t})
 
 
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
