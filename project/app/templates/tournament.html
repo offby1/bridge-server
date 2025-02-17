@@ -4,7 +4,11 @@
 {% endblock title %}
 {% block content %}
     Well I'd tell you all about {{ tournament }} here, if I could think of what I wanted to tell you.
-    <hr />
-    Imagine this is a button: {{ button }}
-    <hr />
+    {% if button %}
+        <form action="{% url 'app:tournament-signup' pk=tournament.pk %}"
+              method="post">
+            {% csrf_token %}
+            {{ button }}
+        </form>
+    {% endif %}
 {% endblock content %}

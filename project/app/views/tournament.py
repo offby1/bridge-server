@@ -19,9 +19,10 @@ from .misc import logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
+@logged_in_as_player_required()
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer = request.user.player
-
+    assert viewer is not None
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     context = {"tournament": t, "button": ""}
     # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
@@ -31,12 +32,24 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     if not current_signups.exists():
         logger.debug("%s's status is %s", t.display_number, t.status())
         if t.status() is app.models.tournament.OpenForSignup:
-            context["button"] = (
-                f"Oh! I guess I should let {viewer.name} sign up for {t.display_number}."
+            context["button"] = format_html(
+                """<button class="btn btn-primary" type="submit">Sign Me Up, Daddy-O</button>"""
             )
     return TemplateResponse(request=request, template="tournament.html", context=context)
 
 
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+    viewer = request.user.player
+    assert viewer is not None
+
+    t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
+    t.sign_up(viewer)
+    return HttpResponse("OK there ya go")
+
+
+@logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     all_ = app.models.Tournament.objects.order_by("pk")
 
