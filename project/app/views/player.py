@@ -64,10 +64,10 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
 def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
     assert request.user.player is not None
     return {
-        "button_content": "Table Up With Yon Dudes",
+        "button_content": "Kinda bogus at this point",
         "button_submit_value": "",
         "form_action": reverse(
-            "app:new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
+            "app:dev-null",
         ),
     }
 

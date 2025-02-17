@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.paginator import Paginator
 import django.db.utils
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
@@ -281,3 +282,10 @@ def set_table_tempo_view(
     response_text = f"{table=} {table.tempo_seconds=}"
     logger.debug("Returning %s", response_text)
     return HttpResponse(response_text)
+
+
+@require_http_methods(["POST"])
+def dev_null_view(
+    request: HttpRequest,
+) -> HttpResponse:
+    return HttpResponse("OK, we have sent your POST data to /dev/null")
