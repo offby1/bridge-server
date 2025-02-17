@@ -8,6 +8,4 @@ if TYPE_CHECKING:
 
 class TournamentSignups(models.Model):
     tournament = models.ForeignKey["Tournament"]("Tournament", on_delete=models.CASCADE)
-    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
-
-    # TODO -- unique constraint on player
+    player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
