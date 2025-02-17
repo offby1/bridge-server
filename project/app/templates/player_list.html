@@ -17,6 +17,7 @@
                     <th scope="col">Who</th>
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
+                    <th scope="col">Tournament</th>
                     <th scope="col">Action</th>
                 </tr>
             </thead>
@@ -36,6 +37,13 @@
                                 {{ player.current_table.as_link }}
                             {% else %}
                                 <a href="{% url 'app:lobby' %}">lobby</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.tournamentsignups %}
+                                <a href="{% url 'app:tournament' pk=player.tournamentsignups.tournament.pk %}">
+                                    {{ player.tournamentsignups.tournament }}
+                                </a>
                             {% endif %}
                         </td>
                         <td>
