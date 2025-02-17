@@ -8,6 +8,7 @@ import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
+from django.db import connection
 from django.db.utils import IntegrityError
 from django.http.response import HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
@@ -237,27 +238,27 @@ def test_concurrency() -> None:
         signup_deadline=ThePast, play_completion_deadline=TheFuture
     )
 
-    threading.Barrier(parties=3, timeout=2)
+    the_barrier = threading.Barrier(parties=3)
 
     class BoardAdder(threading.Thread):
         def run(self):
             logger.debug("Hiya")
             try:
-                the_tournament.add_boards(n=2, barrier=None)
+                the_tournament.add_boards(n=2, barrier=the_barrier)
             except Exception as e:
                 logger.debug("Oy! %s", e)
+            finally:
+                connection.close()
 
     with freeze_time(InBetween):
-        threads = []
-        for _ in range(2):
-            threads.append(BoardAdder())
+        threads = [BoardAdder() for _ in range(2)]
 
         for t in threads:
             t.start()
             logger.debug("Started thread %s", t)
 
-        # logger.debug("Now ... we wait")
-        # the_barrier.wait()
+        logger.debug("Now ... we wait")
+        the_barrier.wait()
 
         for t in threads:
             t.join()

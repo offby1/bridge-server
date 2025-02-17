@@ -234,6 +234,11 @@ class Tournament(models.Model):
 
     # The barrier is just for unit testing
     def add_boards(self, *, n: int, barrier: threading.Barrier | None = None) -> None:
+        if barrier is not None:
+            logger.debug("Waiting on %s", barrier)
+            barrier.wait()
+            logger.debug("OK! Now we get to work.")
+
         with transaction.atomic():
             assert (
                 not self.board_set.exists()
@@ -245,10 +250,6 @@ class Tournament(models.Model):
             self._add_boards_internal(n=n)
 
             logger.debug("Added %d boards to %s", self.board_set.count(), self)
-
-            if barrier is not None:
-                logger.debug("Waiting on %s", barrier)
-                barrier.wait()
 
     # This is easier to test than add_boards, because it doesn't raise those assertions
     def _add_boards_internal(self, *, n: int) -> None:
