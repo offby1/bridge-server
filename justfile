@@ -142,7 +142,7 @@ stress: (manage "big_bot_stress")
 
 [group('bs')]
 [script('bash')]
-runme *options: t version-file django-superuser migrate create-cache ensure-skeleton-key
+runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
