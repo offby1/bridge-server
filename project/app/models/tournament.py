@@ -167,6 +167,9 @@ class TournamentManager(models.Manager):
     def current(self) -> Tournament | None:
         return self.filter(is_complete=False).first()
 
+    def open_for_signups(self) -> models.QuerySet:
+        return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
+
     def running(self) -> models.QuerySet:
         return self.filter(Tournament.between_deadlines_Q())
 

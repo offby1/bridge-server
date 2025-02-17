@@ -40,9 +40,9 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     all_ = app.models.Tournament.objects.order_by("pk")
 
-    now = timezone.now()
+    # TODO -- sort the items so that openforsignups come first; then in descending order by signup deadline.
 
-    open_ = all_.filter(signup_deadline__gte=now).filter(play_completion_deadline__gte=now)
+    open_ = app.models.Tournament.objects.open_for_signups()
 
     context = {"tournament_list": all_, "description": "", "button": ""}
 
