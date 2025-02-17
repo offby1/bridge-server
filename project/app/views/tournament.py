@@ -26,7 +26,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     context = {"tournament": t, "button": ""}
     # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
-    current_signups = app.models.TournamentSignups.objects.filter(player=viewer)
+    current_signups = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, current_signups)
 
     if not current_signups.exists():

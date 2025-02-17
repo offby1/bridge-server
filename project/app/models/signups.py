@@ -7,11 +7,11 @@ if TYPE_CHECKING:
     from app.models import Player, Tournament
 
 
-class TournamentSignups(models.Model):
+class TournamentSignup(models.Model):
     tournament = models.ForeignKey["Tournament"]("Tournament", on_delete=models.CASCADE)
     player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
 
 
-@admin.register(TournamentSignups)
+@admin.register(TournamentSignup)
 class TournamentSignupAdmin(admin.ModelAdmin):
     list_display = ["tournament", "player"]

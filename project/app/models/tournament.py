@@ -16,7 +16,7 @@ from django.utils import timezone
 
 import more_itertools
 
-from app.models.signups import TournamentSignups
+from app.models.signups import TournamentSignup
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -42,7 +42,7 @@ class NotOpenForSignupError(Exception):
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
-    TournamentSignups.objects.filter(
+    TournamentSignup.objects.filter(
         tournament__in=Tournament.objects.filter(is_complete=True)
     ).delete()
 
@@ -318,15 +318,13 @@ class Tournament(models.Model):
         if player.partner is None:
             raise PlayerNeedsPartnerError(f"{player.name} has no partner")
         for p in (player, player.partner):
-            TournamentSignups.objects.get_or_create(tournament=self, player=p)
+            TournamentSignup.objects.get_or_create(tournament=self, player=p)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
 
         return Player.objects.filter(
-            pk__in=TournamentSignups.objects.filter(tournament=self).values_list(
-                "player", flat=True
-            )
+            pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player", flat=True)
         )
 
     def __str__(self) -> str:

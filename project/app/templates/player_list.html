@@ -40,9 +40,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if player.tournamentsignups %}
-                                <a href="{% url 'app:tournament' pk=player.tournamentsignups.tournament.pk %}">
-                                    {{ player.tournamentsignups.tournament }}
+                            {% if player.tournamentsignup %}
+                                <a href="{% url 'app:tournament' pk=player.tournamentsignup.tournament.pk %}">
+                                    {{ player.tournamentsignup.tournament }}
                                 </a>
                             {% endif %}
                         </td>

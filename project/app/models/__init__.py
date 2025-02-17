@@ -19,7 +19,7 @@ from .player import (
     PlayerException,
 )
 from .seat import Seat, SeatException
-from .signups import TournamentSignups
+from .signups import TournamentSignup
 from .table import NoMoreBoards, Table, TableException
 from .tournament import Tournament
 
@@ -40,7 +40,7 @@ __all__ = [
     "Table",
     "TableException",
     "Tournament",
-    "TournamentSignups",
+    "TournamentSignup",
     "SEAT_CHOICES",
 ]
 
