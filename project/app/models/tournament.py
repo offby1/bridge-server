@@ -75,24 +75,29 @@ def check_for_expirations(sender, **kwargs) -> None:
                 continue
 
             if t.signup_deadline_has_passed():
-                logger.debug("%s might need some boards; who knows?", t)
-                logger.warning(
-                    "Alas, I already pre-created %d boards, which probably isn't the right number.",
-                    t.board_set.count(),
-                )
+                if t.board_set.count() > 0:
+                    logger.warning(
+                        "Alas, I already pre-created %d boards, which probably isn't the right number.",
+                        t.board_set.count(),
+                    )
+                else:
+                    logger.debug("%s needs some boards", t)
 
-                waiting_players = set()
+                # Now seat everyone who's signed up.
+                waiting_pairs = set()
 
-                for p in t.signed_up_players():
-                    waiting_players.add(frozenset([p, p.partner]))
+                p: Player
+                for p in t.signed_up_players().filter(partner__isnull=False):
+                    waiting_pairs.add(frozenset([p, p.partner]))
 
-                logger.debug("These pairs are waiting: %s", waiting_players)
+                logger.debug("These pairs are waiting: %s", waiting_pairs)
 
                 # Group them into pairs of pairs.
                 # Create a table for each such quartet.
                 from app.models.table import Table
 
-                for quartet in more_itertools.chunked(waiting_players, 2):
+                # TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it
+                for quartet in more_itertools.chunked(waiting_pairs, 2):
                     pair1 = quartet.pop()
                     pair2 = quartet.pop()
                     p1 = next(iter(pair1))

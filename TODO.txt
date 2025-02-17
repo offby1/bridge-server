@@ -21,6 +21,9 @@ IN PROGRESS:
         - seats all the players who are signed up (confirming that each still has the same partner who is also signed up)
         - deletes the corresponding entry from the TournamentSignups table
 
+    Should it be possible to cancel a signup?  If so, what happens?
+    Should splitsville un-sign-up the relevant players?
+
   * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
 
     This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
