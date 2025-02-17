@@ -66,6 +66,9 @@ def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str,
     return {
         "button_content": "Table Up With Yon Dudes",
         "button_submit_value": "",
+        "form_action": reverse(
+            "app:new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
+        ),
     }
 
 

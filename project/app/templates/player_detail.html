@@ -14,8 +14,26 @@
             <div class="col">
                 {% if text %}{{ text }}{% endif %}
             </div>
-            <div class="col">...</div>
-        </div>
+            <div class="col">
+                {% ifexists button_context %}
+                <form method="post" action="{{ button_context.form_action }}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            name="action"
+                            value="{{ button_context.button_submit_value }}">
+                        {{ button_context.button_content }}
+                    </button>
+                    {% ifexists button_context.input_hidden_value %}
+                    <input type="hidden"
+                           name="next"
+                           value="{{ button_context.input_hidden_value }}" />
+                {% endifexists %}
+            </form>
+        {% else %}
+            ...
+        {% endifexists %}
     </div>
+</div>
+</div>
 {% endblock partnership-status-html %}
 {% endpartialdef partnership-status-partial %}
