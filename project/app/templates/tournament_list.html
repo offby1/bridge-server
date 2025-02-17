@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load base_extras %}
+{% load fastdev %}
 {% load static %}
 {% block title %}
     Tournaments
@@ -46,7 +47,12 @@
             </tbody>
         </table>
     {% endblock tournament_list %}
-    {% if button %}OK here's the "New tournament button" 👉{{ button }}👈{% endif %}
+    {% ifexists button %}
+    <form action="{% url 'app:new-tournament' %}" method="post">
+        {% csrf_token %}
+        {{ button }}
+    </form>
+{% endifexists %}
 {% endblock content %}
 {% block scripts %}
     <script src="{% static 'app/humanize-duration.js' %}"></script>

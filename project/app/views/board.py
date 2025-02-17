@@ -7,11 +7,15 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
+from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
+from .misc import logged_in_as_player_required
 
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
@@ -90,6 +94,15 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     if open_for_signups:
         context["description"] = "Open for signups"
         if not tournament_list.exists():
-            context["button"] = "Oh I guess you need a 'Make a new Tournament' button"
+            context["button"] = format_html(
+                """<button class="btn btn-primary" type="submit">Gimme new tournament, Yo</button>"""
+            )
 
     return TemplateResponse(request=request, template="tournament_list.html", context=context)
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def new_tournament_view(request: AuthedHttpRequest) -> HttpResponse:
+    app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
+    return HttpResponseRedirect(reverse("app:tournament-list") + "?open_for_signups=True")

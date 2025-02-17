@@ -1,7 +1,12 @@
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table, three_way_login
-from .views.board import board_archive_view, board_list_view, tournament_list_view
+from .views.board import (
+    board_archive_view,
+    board_list_view,
+    new_tournament_view,
+    tournament_list_view,
+)
 from .views.hand import (
     auction_partial_view,
     bidding_box_partial_view,
@@ -89,4 +94,5 @@ urlpatterns = [
     ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
+    path("tournament/new/", new_tournament_view, name="new-tournament"),
 ]
