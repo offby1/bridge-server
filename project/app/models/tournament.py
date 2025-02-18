@@ -340,7 +340,9 @@ class Tournament(models.Model):
         from app.models import Player
 
         return Player.objects.filter(
-            pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player", flat=True)
+            player__in=TournamentSignup.objects.filter(tournament=self).values_list(
+                "player", flat=True
+            )
         )
 
     def __str__(self) -> str:

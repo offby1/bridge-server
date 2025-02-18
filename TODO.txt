@@ -25,6 +25,7 @@ IN PROGRESS:
       Seems like if a tournament is complete, we shouldn't have people signed up for it.
 
     - Should splitsville un-sign-up the relevant players?
+      Yes, since I go to some effort to prevent singles from joining the tournament in the first place.
 
   * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
 

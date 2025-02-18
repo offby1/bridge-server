@@ -306,6 +306,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             old_partner_pk = self.partner.pk
 
+            import app.models
+
+            evictees = app.models.TournamentSignup.objects.filter(player__in={self, self.partner})
+            logger.debug(
+                "About to remove %s",
+                ", ".join(
+                    [
+                        f"{su.player.name} from signups for t#{su.tournament.display_number}"
+                        for su in evictees
+                    ]
+                ),
+            )
+            evictees.delete()
+
             self.partner.partner = None
             self.partner.unseat_me()
             self.partner.save(update_fields=["partner", "currently_seated"])

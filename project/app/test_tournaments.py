@@ -329,6 +329,7 @@ def test_signups(nobody_seated) -> None:
     assert actual == expected
 
     east = Player.objects.get_by_name("Clint Eastwood")
+    west = Player.objects.get_by_name("Adam West")
     east.break_partnership()
     with pytest.raises(PlayerNeedsPartnerError):
         open_tournament.sign_up(east)
@@ -337,12 +338,23 @@ def test_signups(nobody_seated) -> None:
         with pytest.raises(NotOpenForSignupError):
             open_tournament.sign_up(east)
 
-    east.partner_with(Player.objects.get_by_name("Adam West"))
+    east.partner_with(west)
     open_tournament.sign_up(east)
+
+    actual = set(open_tournament.signed_up_players())
+    expected = {north, south, east, west}
+    assert actual == expected
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         check_for_expirations(__name__)
         assert open_tournament.table_set.count() == 1
+
+    with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
+        east.break_partnership()
+
+        assert not TournamentSignup.objects.filter(
+            tournament=open_tournament, player=east
+        ).exists(), f"Hey, {east.name} went splitsville, but is still signed up"
 
 
 def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
