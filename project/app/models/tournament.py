@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import inspect
 import logging
 import threading
 from typing import TYPE_CHECKING
@@ -103,6 +102,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
 # "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
 # every second.
+
+
+# Also TODO -- replace this entire mess with a scheduled solution -- see the "django-q2" branch
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
@@ -186,8 +188,6 @@ class TournamentManager(models.Manager):
             )
 
             rv: Tournament = super().create(*args, **kwargs)
-            for fi in inspect.stack()[0:3]:
-                logger.debug(f"-- {fi.function} {fi.filename} {fi.lineno}")
             logger.debug("Just created %s", rv)
             logger.debug(
                 "Now it's %s; signup_deadline is %s; play_completion_deadline is %s",
