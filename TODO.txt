@@ -31,7 +31,9 @@ IN PROGRESS:
 
     This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
 
-  This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
+    This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
+
+  * Idea: when we're waiting for the signup deadline, and someone loads a page that shows that deadline (e.g. <http://localhost:9000/tournament/5/>), we should see if that viewer (or their partner) are the only non-synthetic players signed up for that tournament.  (Unless people discover this site and start using it For Realz, this is overwhelmingly likely to be true at all times.)  In that case: display a button that says "Aw man, miss me with this signup deadline; I wanna play NOW".
 
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
