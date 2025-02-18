@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.core.signals import request_started
 from django.db import models, transaction
-from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -202,8 +201,6 @@ class TournamentManager(models.Manager):
         return self.filter(Tournament.between_deadlines_Q())
 
     def get_or_create_tournament_open_for_signups(self) -> tuple[Tournament, bool]:
-        from app.models.board import BOARDS_PER_TOURNAMENT
-
         with transaction.atomic():
             a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
             incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
