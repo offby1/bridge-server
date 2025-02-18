@@ -348,3 +348,34 @@ def test_signups(nobody_seated) -> None:
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         check_for_expirations(__name__)
         assert open_tournament.table_set.count() == 1
+
+
+def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
+    existing_player_pks = set([p.pk for p in Player.objects.all()])
+
+    north = Player.objects.get_by_name("Jeremy Northam")
+    south = Player.objects.get_by_name("J.D. Souther")
+    assert north.partner == south
+
+    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    assert not open_tournament.is_complete
+    assert open_tournament.status() is OpenForSignup
+    open_tournament.sign_up(north)
+    app.models.tournament._do_signup_expired_stuff(open_tournament)
+
+    current_player_pks = set([p.pk for p in Player.objects.all()])
+    new_player_pks = current_player_pks - existing_player_pks
+    assert len(new_player_pks) == 2
+
+    north.refresh_from_db()
+    south.refresh_from_db()
+
+    norths_table = north.current_table
+    assert norths_table is not None
+    players_at_the_table = set([s.player.pk for s in norths_table.seats])
+    assert len(players_at_the_table) == 4
+    assert north.pk in players_at_the_table
+    assert south.pk in players_at_the_table
+    for pk in new_player_pks:
+        assert pk in players_at_the_table
+        assert Player.objects.get(pk=pk).synthetic

@@ -204,7 +204,7 @@ test *options: makemigrations mypy
     set -euxo pipefail
     cd project
 
-    pytest_args="--create-db --log-cli-level=WARNING {{ options }}" 
+    pytest_args="--create-db --log-cli-level=WARNING {{ options }}"
 
     case "${PYINSTRUMENT:-}" in
     t*)
@@ -224,12 +224,8 @@ ft: (t "-n 8")
 # Display coverage from a test run
 [group('bs')]
 [script('bash')]
-cover:
-    set -euo pipefail
-    echo "apparently I don't work properly when the tests run in parallel"
-    echo "so edit {{ justfile() }} in the obvious way to disable that, in order to get a coverage report"
-    false
-    set -x
+cover: test
+    set -euox pipefail
     cd project
     poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
     open htmlcov/index.html

@@ -342,6 +342,7 @@ class Tournament(models.Model):
             raise PlayerNeedsPartnerError(f"{player.name} has no partner")
         for p in (player, player.partner):
             TournamentSignup.objects.get_or_create(tournament=self, player=p)
+            logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
