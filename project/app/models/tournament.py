@@ -203,9 +203,6 @@ class TournamentManager(models.Manager):
     def open_for_signups(self) -> models.QuerySet:
         return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
 
-    def running(self) -> models.QuerySet:
-        return self.filter(Tournament.between_deadlines_Q())
-
     def get_or_create_tournament_open_for_signups(self) -> tuple[Tournament, bool]:
         with transaction.atomic():
             a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
@@ -311,11 +308,6 @@ class Tournament(models.Model):
         if self.play_completion_deadline is None:
             return False
         return timezone.now() > self.play_completion_deadline
-
-    @staticmethod
-    def between_deadlines_Q() -> models.Q:
-        now = timezone.now()
-        return models.Q(signup_deadline__lte=now) & models.Q(play_completion_deadline__gte=now)
 
     def is_running(self) -> bool:
         return self.status() is Running
