@@ -10,6 +10,7 @@
             <thead>
                 <tr>
                     <th>Table #</th>
+                    <th>Tournament #</th>
                     <th>Current Status</th>
                     <th>Number of Boards played</th>
                 </tr>
@@ -18,6 +19,7 @@
                 {% for table in page_obj %}
                     <tr>
                         <th>{{ table.pk }}</th>
+                        <td>{{ table.tournament.display_number }}</td>
                         <td>
                             {% if table.has_hand %}
                                 <a href="{% url 'app:hand-archive' table.current_hand.pk %}">

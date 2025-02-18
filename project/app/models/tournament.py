@@ -50,20 +50,22 @@ def _do_completion_stuff(t: "Tournament") -> None:
     )
 
 
-def _do_signup_expired_stuff(t: "Tournament") -> None:
-    if t.board_set.count() > 0:
+def _do_signup_expired_stuff(tour: "Tournament") -> None:
+    if tour.board_set.count() > 0:
         logger.warning(
             "Alas, I already pre-created %d boards, which probably isn't the right number.",
-            t.board_set.count(),
+            tour.board_set.count(),
         )
     else:
-        logger.warning("TODO: %s needs some boards!!", t)
+        logger.warning("TODO: adding a hard-coded number (namely, 2) of boards to %s", tour)
+        logger.warning("TODO: this needs to be computed from a movement")
+        tour.add_boards(n=2)
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
 
     p: Player
-    for p in t.signed_up_players().filter(partner__isnull=False).exclude(currently_seated=True):
+    for p in tour.signed_up_players().filter(partner__isnull=False).exclude(currently_seated=True):
         waiting_pairs.add(frozenset([p, p.partner]))
 
     logger.debug("%d pairs are waiting", len(waiting_pairs))
@@ -89,7 +91,8 @@ def _do_signup_expired_stuff(t: "Tournament") -> None:
             p2.partner.save()
             p2.save()
 
-        Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
+        table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
+        table.next_board()
 
 
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
