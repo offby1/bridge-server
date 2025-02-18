@@ -451,4 +451,4 @@ class Tournament(models.Model):
 
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
-    list_display = ["display_number", "signup_deadline", "play_completion_deadline"]
+    list_display = ["display_number", "is_complete", "signup_deadline", "play_completion_deadline"]
