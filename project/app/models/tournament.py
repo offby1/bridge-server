@@ -95,19 +95,25 @@ def check_for_expirations(sender, **kwargs) -> None:
                 for p in t.signed_up_players().filter(partner__isnull=False):
                     waiting_pairs.add(frozenset([p, p.partner]))
 
-                logger.debug("These pairs are waiting: %s", waiting_pairs)
+                logger.debug("%d pairs are waiting", len(waiting_pairs))
 
                 # Group them into pairs of pairs.
                 # Create a table for each such quartet.
                 from app.models.table import Table
 
-                # TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it
                 for quartet in more_itertools.chunked(waiting_pairs, 2):
-                    pair1 = quartet.pop()
-                    pair2 = quartet.pop()
-                    p1 = next(iter(pair1))
-                    p2 = next(iter(pair2))
-                    Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
+                    if len(quartet) == 2:
+                        pair1 = quartet.pop()
+                        pair2 = quartet.pop()
+                        p1 = next(iter(pair1))
+                        p2 = next(iter(pair2))
+                        assert p1 is not None
+                        assert p2 is not None
+                        Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
+                    else:
+                        logger.error(
+                            "TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it"
+                        )
 
 
 class TournamentStatus:
