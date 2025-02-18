@@ -24,7 +24,12 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer = request.user.player
     assert viewer is not None
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
-    context = {"tournament": t, "button": ""}
+    context = {
+        "tournament": t,
+        "button": "",
+        "comment": "",
+        "speed_things_up_button": "",
+    }
     # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
@@ -35,6 +40,22 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             context["button"] = format_html(
                 """<button class="btn btn-primary" type="submit">Sign Me Up, Daddy-O</button>"""
             )
+    else:
+        relevant_signups = app.models.TournamentSignup.objects.filter(tournament=t)
+
+        non_synths_signed_up_besides_us = (
+            relevant_signups.filter(player__synthetic=False)
+            .exclude(player__in={viewer, viewer.partner})
+            .select_related("player")
+        )
+        comment = f"Say, {[s.player.name for s in non_synths_signed_up_besides_us]=} and none of those are you {viewer.name} or your partner {viewer.partner.name}"
+
+        if not non_synths_signed_up_besides_us.exists():
+            context["speed_things_up_button"] = format_html(
+                """<button class="btn btn-primary" type="submit">Miss Me With This Signup Deadline Shit</button>"""
+            )
+        context["comment"] = comment
+
     context["signed_up_players"] = app.models.TournamentSignup.objects.filter(tournament=t)
     return TemplateResponse(request=request, template="tournament.html", context=context)
 

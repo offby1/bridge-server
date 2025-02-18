@@ -11,6 +11,7 @@
             {{ button }}
         </form>
     {% endif %}
+    <h1>Tournament #{{ tournament.display_number }}</h1>
     {% if tournament.status_str == "Complete" %}
         <span style="font-size: 2em;">Completed
             {% if tournament.play_completion_deadline %}
@@ -29,8 +30,10 @@
         <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">Tables</a>.
     {% elif tournament.status_str == "OpenForSignup" %}
         <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
+        <hr />
+        {{ comment }}
         <table id="player-list" class="table caption-top">
-            <caption>Players Signed Up For Tournament {{ tournament.display_number }}</caption>
+            <caption>Players Signed Up</caption>
             <thead>
                 <tr>
                     <th scope="col">Who</th>
