@@ -35,6 +35,58 @@ class NotOpenForSignupError(Exception):
     pass
 
 
+def _do_completion_stuff(t: "Tournament") -> None:
+    logger.warning("Ejecting players")
+
+    t.is_complete = True
+    t.save()
+    t.eject_all_pairs(
+        explanation=f"Tournament's play deadline {t.play_completion_deadline} has passed"
+    )
+    logger.debug(
+        "Marked myself %s as complete, and ejected all pairs from %s",
+        t,
+        t.tables(),
+    )
+
+
+def _do_signup_expired_stuff(t: "Tournament") -> None:
+    if t.board_set.count() > 0:
+        logger.warning(
+            "Alas, I already pre-created %d boards, which probably isn't the right number.",
+            t.board_set.count(),
+        )
+    else:
+        logger.warning("TODO: %s needs some boards!!", t)
+
+    # Now seat everyone who's signed up.
+    waiting_pairs = set()
+
+    p: Player
+    for p in t.signed_up_players().filter(partner__isnull=False):
+        waiting_pairs.add(frozenset([p, p.partner]))
+
+    logger.debug("%d pairs are waiting", len(waiting_pairs))
+
+    # Group them into pairs of pairs.
+    # Create a table for each such quartet.
+    from app.models.table import Table
+
+    for quartet in more_itertools.chunked(waiting_pairs, 2):
+        pair1 = quartet.pop()
+        p1 = next(iter(pair1))
+        assert p1 is not None
+        if not quartet:
+            pair2 = quartet.pop()
+            p2 = next(iter(pair2))
+            assert p2 is not None
+            Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
+        else:
+            logger.error(
+                "TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it"
+            )
+
+
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
 # "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
 # every second.
@@ -65,55 +117,11 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                logger.warning("Ejecting players")
-
-                t.is_complete = True
-                t.save()
-                t.eject_all_pairs(
-                    explanation=f"Tournament's play deadline {t.play_completion_deadline} has passed"
-                )
-                logger.debug(
-                    "Marked myself %s as complete, and ejected all pairs from %s",
-                    t,
-                    t.tables(),
-                )
+                _do_completion_stuff(t)
                 continue
 
             if t.signup_deadline_has_passed():
-                if t.board_set.count() > 0:
-                    logger.warning(
-                        "Alas, I already pre-created %d boards, which probably isn't the right number.",
-                        t.board_set.count(),
-                    )
-                else:
-                    logger.debug("%s needs some boards", t)
-
-                # Now seat everyone who's signed up.
-                waiting_pairs = set()
-
-                p: Player
-                for p in t.signed_up_players().filter(partner__isnull=False):
-                    waiting_pairs.add(frozenset([p, p.partner]))
-
-                logger.debug("%d pairs are waiting", len(waiting_pairs))
-
-                # Group them into pairs of pairs.
-                # Create a table for each such quartet.
-                from app.models.table import Table
-
-                for quartet in more_itertools.chunked(waiting_pairs, 2):
-                    if len(quartet) == 2:
-                        pair1 = quartet.pop()
-                        pair2 = quartet.pop()
-                        p1 = next(iter(pair1))
-                        p2 = next(iter(pair2))
-                        assert p1 is not None
-                        assert p2 is not None
-                        Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
-                    else:
-                        logger.error(
-                            "TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it"
-                        )
+                _do_signup_expired_stuff(t)
 
 
 class TournamentStatus:
