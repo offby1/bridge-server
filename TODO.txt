@@ -35,7 +35,10 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
-* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to 
+* Ensure that timestamps (in particular, tournament deadlines) show up in the browser in the user's preferred time zone.
+  - https://docs.djangoproject.com/en/dev/topics/i18n/timezones/#selecting-the-current-time-zone is one (rather tedious) way to do that;
+  - maybe I can just embed calls to the Javascript `Date` function in the web pages, thereby letting the browser handle it
+* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to
   match up the bot's logs with the server's.
 
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
