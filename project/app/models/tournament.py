@@ -63,7 +63,7 @@ def _do_signup_expired_stuff(t: "Tournament") -> None:
     waiting_pairs = set()
 
     p: Player
-    for p in t.signed_up_players().filter(partner__isnull=False):
+    for p in t.signed_up_players().filter(partner__isnull=False).exclude(currently_seated=True):
         waiting_pairs.add(frozenset([p, p.partner]))
 
     logger.debug("%d pairs are waiting", len(waiting_pairs))
@@ -76,15 +76,20 @@ def _do_signup_expired_stuff(t: "Tournament") -> None:
         pair1 = quartet.pop()
         p1 = next(iter(pair1))
         assert p1 is not None
-        if not quartet:
+        if quartet:
             pair2 = quartet.pop()
             p2 = next(iter(pair2))
             assert p2 is not None
-            Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
         else:
-            logger.error(
-                "TODO -- if there's a leftover pair, either create synth opponents, or somehow let our movement deal with it"
-            )
+            from app.models import Player
+
+            p2 = Player.objects.create_synthetic()
+            p2.partner = Player.objects.create_synthetic()
+            p2.partner.partner = p2
+            p2.partner.save()
+            p2.save()
+
+        Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=t)
 
 
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
