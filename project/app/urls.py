@@ -22,6 +22,7 @@ from .views.tournament import (
     tournament_list_view,
     tournament_signup_view,
     tournament_view,
+    tournament_void_signup_deadline_view,
 )
 
 app_name = "app"
@@ -100,4 +101,9 @@ urlpatterns = [
     path("tournament/<int:pk>/", tournament_view, name="tournament"),
     path("tournament/signup/<int:pk>/", tournament_signup_view, name="tournament-signup"),
     path("tournament/new/", new_tournament_view, name="new-tournament"),
+    path(
+        "tournament/void-signup-deadline/<int:pk>",
+        tournament_void_signup_deadline_view,
+        name="tournament-void-signup-deadline",
+    ),
 ]

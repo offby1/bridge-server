@@ -30,6 +30,13 @@
         <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">Tables</a>.
     {% elif tournament.status_str == "OpenForSignup" %}
         <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
+        {% if speed_things_up_button %}
+            <form action="{% url 'app:tournament-void-signup-deadline' pk=tournament.pk %}"
+                  method="post">
+                {% csrf_token %}
+                {{ speed_things_up_button }}
+            </form>
+        {% endif %}
         <hr />
         {{ comment }}
         <table id="player-list" class="table caption-top">

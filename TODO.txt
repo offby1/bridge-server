@@ -1,40 +1,4 @@
 IN PROGRESS:
-* Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
-
-  * One is the "joining deadline" -- after this time, no more tables can join the tournament.
-
-    If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
-
-    How would players "sign up" for an upcoming tournament? 🤔
-    *Who* would sign up for a tournament -- a player, or a pair?
-      - If a player, I might want to enforce that they have a partner at signup time
-        Or maybe not!  If not, then when they search for a suitable partner, it should exclude players who are already signed up for some other tournament.  Or maybe it should include them, but *indicate* that they are so signed up (so that they can chat and perhaps agree on a tournament to enter)
-
-        OK here's an idea.
-        New model: TournamentSignups.  The table is basically a tournament ID and a player ID.
-        Unique constraint on that pair of columns, or perhaps just the player ID (since it seems wrong to sign up for more than one tournament).
-        When a player signs up, we
-        - reject them if the tournament is not in OpenForSignup
-        - reject them if they have no partner
-        - automatically sign up their partner as well
-        When the signup deadline passes, the tournament code
-        - seats all the players who are signed up (confirming that each still has the same partner who is also signed up)
-        - deletes the corresponding entry from the TournamentSignups table
-
-    - Should it be possible to cancel a signup?  If so, what happens?
-      Seems like if a tournament is complete, we shouldn't have people signed up for it.
-
-    - Should splitsville un-sign-up the relevant players?
-      Yes, since I go to some effort to prevent singles from joining the tournament in the first place.
-
-  * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
-
-    This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
-
-    This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
-
-  * Idea: when we're waiting for the signup deadline, and someone loads a page that shows that deadline (e.g. <http://localhost:9000/tournament/5/>), we should see if that viewer (or their partner) are the only non-synthetic players signed up for that tournament.  (Unless people discover this site and start using it For Realz, this is overwhelmingly likely to be true at all times.)  In that case: display a button that says "Aw man, miss me with this signup deadline; I wanna play NOW".
-
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
@@ -226,6 +190,42 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
+
+  * One is the "joining deadline" -- after this time, no more tables can join the tournament.
+
+    If this deadline passes, and there isn't a reasonable number of players (eight?) for a tournament, then make some up with synths.
+
+    How would players "sign up" for an upcoming tournament? 🤔
+    *Who* would sign up for a tournament -- a player, or a pair?
+      - If a player, I might want to enforce that they have a partner at signup time
+        Or maybe not!  If not, then when they search for a suitable partner, it should exclude players who are already signed up for some other tournament.  Or maybe it should include them, but *indicate* that they are so signed up (so that they can chat and perhaps agree on a tournament to enter)
+
+        OK here's an idea.
+        New model: TournamentSignups.  The table is basically a tournament ID and a player ID.
+        Unique constraint on that pair of columns, or perhaps just the player ID (since it seems wrong to sign up for more than one tournament).
+        When a player signs up, we
+        - reject them if the tournament is not in OpenForSignup
+        - reject them if they have no partner
+        - automatically sign up their partner as well
+        When the signup deadline passes, the tournament code
+        - seats all the players who are signed up (confirming that each still has the same partner who is also signed up)
+        - deletes the corresponding entry from the TournamentSignups table
+
+    - Should it be possible to cancel a signup?  If so, what happens?
+      Seems like if a tournament is complete, we shouldn't have people signed up for it.
+
+    - Should splitsville un-sign-up the relevant players?
+      Yes, since I go to some effort to prevent singles from joining the tournament in the first place.
+
+  * The other is the "play deadline" -- after this time, any tables that haven't finished all their boards are rudely ejected.  Dunno what to do about the hand that they *have* finished (maybe exclude them from appearing in the board-archive view?).
+
+    This time should be the joining deadline + however much time seems reasonable to play all the boards in this tournament.
+
+    This way, when you join a tournament, you'll know for sure when you'll be able to see your results (assuming you finish up in a reasonable time).
+
+  * Idea: when we're waiting for the signup deadline, and someone loads a page that shows that deadline (e.g. <http://localhost:9000/tournament/5/>), we should see if that viewer (or their partner) are the only non-synthetic players signed up for that tournament.  (Unless people discover this site and start using it For Realz, this is overwhelmingly likely to be true at all times.)  In that case: display a button that says "Aw man, miss me with this signup deadline; I wanna play NOW".
+
 * On [the tournament list page](/tournament/), have the English timestamps (e.g. "two minutes from now") update in real time
 
 * Hands should have nice consecutive display numbers, just like ... uh ... tables do.

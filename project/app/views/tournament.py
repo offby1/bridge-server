@@ -34,27 +34,32 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
 
-    if viewer.partner is not None and not viewer_signup.exists():
-        logger.debug("%s's status is %s", t.display_number, t.status())
-        if t.status() is app.models.tournament.OpenForSignup:
-            context["button"] = format_html(
-                """<button class="btn btn-primary" type="submit">Sign Me Up, Daddy-O</button>"""
-            )
-    else:
-        relevant_signups = app.models.TournamentSignup.objects.filter(tournament=t)
+    if viewer.partner is not None:
+        if not viewer_signup.exists():
+            logger.debug("%s's status is %s", t.display_number, t.status())
+            if t.status() is app.models.tournament.OpenForSignup:
+                context["button"] = format_html(
+                    """<button class="btn btn-primary" type="submit">Sign Me Up, Daddy-O</button>"""
+                )
+        else:
+            relevant_signups = app.models.TournamentSignup.objects.filter(tournament=t)
 
-        non_synths_signed_up_besides_us = (
-            relevant_signups.filter(player__synthetic=False)
-            .exclude(player__in={viewer, viewer.partner})
-            .select_related("player")
-        )
-        comment = f"Say, {[s.player.name for s in non_synths_signed_up_besides_us]=} and none of those are you {viewer.name} or your partner {viewer.partner.name}"
-
-        if not non_synths_signed_up_besides_us.exists():
-            context["speed_things_up_button"] = format_html(
-                """<button class="btn btn-primary" type="submit">Miss Me With This Signup Deadline Shit</button>"""
+            non_synths_signed_up_besides_us = (
+                relevant_signups.filter(player__synthetic=False)
+                .exclude(player__in={viewer, viewer.partner})
+                .select_related("player")
             )
-        context["comment"] = comment
+            names = [su.player.name for su in non_synths_signed_up_besides_us]
+            logger.debug(f"{names=}")
+            comment = f"Say, {names=} and none of those are you {viewer.name} or your partner {viewer.partner.name}"
+            logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
+            if not non_synths_signed_up_besides_us.exists():
+                text_shmext = format_html(
+                    """<button class="btn btn-primary" type="submit">Miss Me With This Signup Deadline Shit</button>"""
+                )
+                comment += text_shmext
+                context["speed_things_up_button"] = text_shmext
+            context["comment"] = comment
 
     context["signed_up_players"] = app.models.TournamentSignup.objects.filter(tournament=t)
     return TemplateResponse(request=request, template="tournament.html", context=context)
@@ -94,3 +99,14 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
 def new_tournament_view(request: AuthedHttpRequest) -> HttpResponse:
     app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
     return HttpResponseRedirect(reverse("app:tournament-list") + "?open_for_signups=True")
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+    t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
+    logger.debug("%s", f"{t.is_complete=} {t.signup_deadline=} {t.signup_deadline_has_passed()=}")
+    if not t.is_complete and t.signup_deadline is not None and not t.signup_deadline_has_passed():
+        t.signup_deadline = timezone.now()
+        t.save()
+    return HttpResponseRedirect(reverse("app:tournament", kwargs={"pk": pk}))
