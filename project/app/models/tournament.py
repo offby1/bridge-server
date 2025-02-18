@@ -222,7 +222,9 @@ class TournamentManager(models.Manager):
                 logger.debug("... namely %s", new_tournament)
                 return new_tournament, True
 
-            first_incomplete: Tournament | None = incomplete_and_open_tournaments_qs.first()
+            first_incomplete: Tournament | None = incomplete_and_open_tournaments_qs.order_by(
+                "signup_deadline"
+            ).first()
             logger.debug(
                 "An incomplete tournament (%s) exists, so we didn't need to create a new one",
                 first_incomplete,
