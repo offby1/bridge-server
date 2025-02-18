@@ -61,17 +61,6 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
     }
 
 
-def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
-    assert request.user.player is not None
-    return {
-        "button_content": "Kinda bogus at this point",
-        "button_submit_value": "",
-        "form_action": reverse(
-            "app:dev-null",
-        ),
-    }
-
-
 def _find_a_partner_link():
     return format_html(
         """<a style="font-size: 5em;"
@@ -149,8 +138,6 @@ def _get_partner_action_from_context(
     } and not subject.currently_seated:
         if subject.partner == as_viewed_by:
             return _splitsville_context(request=request, player_pk=subject.pk)
-        elif subject.partner is not None:
-            return _tableup_context(request=request, subject_pk=subject.pk)
 
     return None
 

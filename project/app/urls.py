@@ -31,7 +31,6 @@ urlpatterns = [
     path("board/", board_list_view, name="board-list"),
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
-    path("dev/null/", table.details.dev_null_view, name="dev-null"),
     path("hand/", hand_list_view, name="hand-list"),
     path("hand/<int:pk>/", hand_detail_view, name="hand-detail"),
     path(

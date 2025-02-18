@@ -180,7 +180,6 @@ def test_tournament_end(
         for t in Tournament.objects.all():
             assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
 
-        logger.debug("Ok, this next buncha spew should complete tournament #1")
         play_out_hand(t2)
 
         t2.tournament.maybe_complete()
@@ -266,7 +265,6 @@ def test_deadline_via_view(usual_setup, rf) -> None:
 @pytest.mark.django_db(transaction=True)
 def test_that_new_unique_constraint() -> None:
     the_tournament = Tournament.objects.create(display_number=1)
-    logger.debug("created %s", the_tournament)
 
     the_tournament._add_boards_internal(n=2)
     with pytest.raises(IntegrityError):
@@ -289,7 +287,6 @@ def test_concurrency() -> None:
 
     class BoardAdder(threading.Thread):
         def run(self):
-            logger.debug("Hiya")
             try:
                 the_tournament.add_boards(n=2, barrier=the_barrier)
             except Exception as e:
@@ -302,9 +299,7 @@ def test_concurrency() -> None:
 
         for t in threads:
             t.start()
-            logger.debug("Started thread %s", t)
 
-        logger.debug("Now ... we wait")
         the_barrier.wait()
 
         for t in threads:
