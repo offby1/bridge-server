@@ -15,7 +15,16 @@ from django.urls import reverse
 
 import app.views.hand
 import app.views.table.details
-from app.models import Board, Hand, NoMoreBoards, Player, Table, TableException, Tournament
+from app.models import (
+    Board,
+    Hand,
+    NoMoreBoards,
+    Player,
+    Table,
+    TableException,
+    Tournament,
+    TournamentSignup,
+)
 import app.models.board
 from app.models.tournament import (
     check_for_expirations,
@@ -88,6 +97,44 @@ def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> Non
     request.user = Player.objects.get_by_name("Adam West").user
     response = app.views.hand.hand_serialized_view(request, pk=1)
     print(f"{response=}")
+
+
+def test_completing_one_tournament_deletes_related_signups(
+    two_boards_one_of_which_is_played_almost_to_completion,
+    everybodys_password,
+) -> None:
+    Board.objects.filter(pk=2).delete()  # speeds the test up
+
+    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+    DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
+
+    h1 = Hand.objects.get(pk=1)
+    the_tournament: Tournament = h1.table.tournament
+    the_tournament.signup_deadline = Tomorrow
+    the_tournament.play_completion_deadline = DayAfter
+
+    Ricky = Player.objects.create(
+        user=auth.models.User.objects.create(username="Ricky Ricardo", password=everybodys_password)
+    )
+    Lucy = Player.objects.create(
+        user=auth.models.User.objects.create(username="Lucy Ricardo", password=everybodys_password)
+    )
+    Ricky.partner = Lucy
+    Lucy.partner = Ricky
+    Ricky.save()
+    Lucy.save()
+
+    with freeze_time(Today):
+        the_tournament.sign_up(Ricky)
+
+        assert TournamentSignup.objects.filter(player=Ricky).exists()
+
+        west = Player.objects.get_by_name("Adam West")
+        # hm, I wondder: can we start playing early? Or do I need to scoot the clock forward to Tomorrow?
+        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+
+        assert not TournamentSignup.objects.filter(player=Ricky).exists()
 
 
 def test_tournament_end(

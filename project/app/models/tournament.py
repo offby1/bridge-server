@@ -99,10 +99,6 @@ def _do_signup_expired_stuff(t: "Tournament") -> None:
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
-    TournamentSignup.objects.filter(
-        tournament__in=Tournament.objects.filter(is_complete=True)
-    ).delete()
-
     with transaction.atomic():
         incompletes = Tournament.objects.filter(is_complete=False)
 
@@ -420,6 +416,11 @@ class Tournament(models.Model):
                 h = t.current_hand
                 h.abandoned_because = explanation
                 h.save()
+
+    def save(self, *args, **kwargs) -> None:
+        if self.is_complete:
+            TournamentSignup.objects.filter(tournament=self).delete()
+        super().save(*args, **kwargs)
 
     class Meta:
         constraints = [
