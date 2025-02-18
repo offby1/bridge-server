@@ -173,9 +173,9 @@ class Player(models.Model):
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
 
-set -euxo pipefail
+set -euo pipefail
 
-printf "%s %s %s " $$ $(date -u +%FT%T%z) $(pwd)
+printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
             run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
