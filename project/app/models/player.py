@@ -42,6 +42,26 @@ MAX_BOT_PROCESSES = 40
 
 
 class PlayerManager(models.Manager):
+    @staticmethod
+    def _find_unused_username(prefix=""):
+        fake = Faker()
+        Faker.seed(0)
+        fake.add_provider(WireCharacterProvider)
+
+        while True:
+            # Ensure neither the prefixed, nor the unprefixed, version exists.
+            unprefixed_candidate = fake.unique.playa().lower()
+            candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
+            if not auth.models.User.objects.filter(username__in=candidates).exists():
+                return candidates[-1]
+            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
+
+    def create_synthetic(self) -> Player:
+        new_user = auth.models.User.objects.create_user(
+            username=self._find_unused_username(prefix="synthetic_")
+        )
+        return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
+
     def get_from_user(self, user):
         return self.get(user=user)
 
@@ -406,20 +426,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             name,
         )
 
-    @staticmethod
-    def _find_unused_username(prefix=""):
-        fake = Faker()
-        Faker.seed(0)
-        fake.add_provider(WireCharacterProvider)
-
-        while True:
-            # Ensure neither the prefixed, nor the unprefixed, version exists.
-            unprefixed_candidate = fake.unique.playa().lower()
-            candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
-            if not auth.models.User.objects.filter(username__in=candidates).exists():
-                return candidates[-1]
-            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
-
     def create_synthetic_partner(self) -> Player:
         with transaction.atomic():
             if self.partner is not None:
@@ -430,14 +436,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 raise PartnerException(
                     f"There are already existing synths {[s.name for s in existing.all()]}"
                 )
-            new_user = auth.models.User.objects.create_user(
-                username=self._find_unused_username(prefix="synthetic_")
-            )
-            new_player = Player.objects.create(
-                synthetic=True, allow_bot_to_play_for_me=True, partner=self, user=new_user
-            )
+            new_player = Player.objects.create_synthetic()
+            new_player.partner = self
             self.partner = new_player
             self.save()
+            new_player.save()
             return self.partner
 
     def create_synthetic_opponents(self) -> list[Player]:
@@ -455,13 +458,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             rv: list[Player] = []
 
             while len(rv) < 2:
-                new_user = auth.models.User.objects.create_user(
-                    username=self._find_unused_username(prefix="synthetic_")
-                )
-                new_player = Player.objects.create(
-                    synthetic=True, allow_bot_to_play_for_me=True, user=new_user
-                )
-                rv.append(new_player)
+                rv.append(Player.objects.create_synthetic())
 
             rv[0].partner = rv[1]
             rv[1].partner = rv[0]
