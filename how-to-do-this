@@ -1,0 +1,10 @@
+OK, so how do I take a server full of users and bots, most of whom are in the lobby, and put them to work stressing the server?
+
+Just running "big_bot_stress" doesn't do it, because that only activates *seated* players, and we have too few of those.
+
+I assume I gotta
+
+* create a new tournament
+* get all the players signed up into it
+* set the signup deadline to now
+* *then* turn the bots on (and speed up all the tables)
