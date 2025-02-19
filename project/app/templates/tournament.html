@@ -13,19 +13,23 @@
     {% endif %}
     <h1>Tournament #{{ tournament.display_number }}</h1>
     {% if tournament.status_str == "Complete" %}
-        <span style="font-size: 2em;">Completed
+        <span style="font-size: 2em;">
             {% if tournament.play_completion_deadline %}
-                at {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}
+                Completed at {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
+            {% else %}
+                Completed.
             {% endif %}
-        .</span>
+        </span>
         <hr />
         <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
     {% elif tournament.status_str == "Running" %}
-        <span style="font-size: 2em;">Running
+        <span style="font-size: 2em;">
             {% if tournament.play_completion_deadline %}
-                until {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}
+                Running until {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
+            {% else %}
+                Running.
             {% endif %}
-        .</span>
+        </span>
         <hr />
         <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">{{ tournament.table_set.count }} Tables</a>.
     {% elif tournament.status_str == "OpenForSignup" %}
