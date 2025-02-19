@@ -25,27 +25,20 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class PlayerNeedsPartnerError(Exception):
+class TournamentSignupError(Exception):
     pass
 
 
-class NotOpenForSignupError(Exception):
+class PlayerNotSeatedError(TournamentSignupError):
     pass
 
 
-def _do_completion_stuff(t: "Tournament") -> None:
-    logger.warning("Ejecting players")
+class PlayerNeedsPartnerError(TournamentSignupError):
+    pass
 
-    t.is_complete = True
-    t.save()
-    t.eject_all_pairs(
-        explanation=f"Tournament's play deadline {t.play_completion_deadline} has passed"
-    )
-    logger.debug(
-        "Marked myself %s as complete, and ejected all pairs from %s",
-        t,
-        t.tables(),
-    )
+
+class NotOpenForSignupError(TournamentSignupError):
+    pass
 
 
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
@@ -128,7 +121,8 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                _do_completion_stuff(t)
+                t.is_complete = True
+                t.save()
                 continue
 
             if t.signup_deadline_has_passed():
@@ -257,10 +251,10 @@ class Tournament(models.Model):
     display_number = models.SmallIntegerField(unique=True)
 
     signup_deadline = models.DateTimeField(
-        null=True, default=None, db_comment="NULL means 'infintely far in the future'"
+        null=True, blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
     )  # type: ignore[call-overload]
     play_completion_deadline = models.DateTimeField(
-        null=True, default=None, db_comment="NULL means 'infintely far in the future'"
+        null=True, blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
@@ -332,6 +326,10 @@ class Tournament(models.Model):
             raise NotOpenForSignupError(msg)
         if player.partner is None:
             raise PlayerNeedsPartnerError(f"{player.name} has no partner")
+        if any(p.currently_seated for p in (player, player.partner)):
+            raise PlayerNotSeatedError(
+                f"At least one of {(player, player.partner)} is currently seated"
+            )
         for p in (player, player.partner):
             TournamentSignup.objects.get_or_create(tournament=self, player=p)
             logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
@@ -344,6 +342,9 @@ class Tournament(models.Model):
                 "player", flat=True
             )
         )
+
+    def __repr__(self) -> str:
+        return f"<Tournament #{self.display_number} pk={self.pk}>"
 
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
@@ -387,20 +388,16 @@ class Tournament(models.Model):
                 logger.debug(explanation)
                 self.is_complete = True
                 self.save()
-                self.eject_all_pairs(explanation=explanation)
-                logger.debug(
-                    f"Marked myself %s as complete, and ejected all pairs from {self.tables()}",
-                    self,
-                )
+
                 return
 
             logger.debug(
                 f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
             )
 
-    def eject_all_pairs(self, explanation: str) -> None:
+    def _eject_all_pairs(self, explanation: str) -> None:
         logger.debug(
-            f"{explanation=}; I should go around ejecting partnerships from tables.",
+            f"{explanation=}; ejecting partnerships from tables.",
         )
         with transaction.atomic():
             for t in self.tables():
@@ -423,6 +420,14 @@ class Tournament(models.Model):
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
             TournamentSignup.objects.filter(tournament=self).delete()
+            self._eject_all_pairs(
+                explanation=f"Tournament's play deadline {self.play_completion_deadline} has passed"
+            )
+            logger.debug(
+                "Marked myself %s as complete, and ejected all pairs from %s",
+                self,
+                self.tables(),
+            )
         super().save(*args, **kwargs)
 
     class Meta:

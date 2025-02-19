@@ -203,11 +203,12 @@ class Hand(models.Model):
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
-            msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
-            tour.eject_all_pairs(explanation=msg)
+            tour.is_complete = True
+            tour.save()
 
             from .table import TableException
 
+            msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
             raise TableException(msg)
 
     @property

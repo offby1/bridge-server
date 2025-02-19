@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
+from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
 
 import app.models
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @logged_in_as_player_required()
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
-    viewer = request.user.player
+    viewer: app.models.Player | None = request.user.player
     assert viewer is not None
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     context = {
@@ -34,7 +35,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
 
-    if viewer.partner is not None:
+    if viewer.partner is not None and not viewer.currently_seated:
         if not viewer_signup.exists():
             logger.debug("%s's status is %s", t.display_number, t.status())
             if t.status() is app.models.tournament.OpenForSignup:
@@ -55,7 +56,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
             if not non_synths_signed_up_besides_us.exists():
                 text_shmext = format_html(
-                    """<button class="btn btn-primary" type="submit">Miss Me With This Signup Deadline Shit</button>"""
+                    """<button class="btn btn-primary" type="submit">Miss Me With This Deadline Shit</button>"""
                 )
                 comment += text_shmext
                 context["speed_things_up_button"] = text_shmext
@@ -72,7 +73,10 @@ def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     assert viewer is not None
 
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
-    t.sign_up(viewer)
+    try:
+        t.sign_up(viewer)
+    except app.models.tournament.TournamentSignupError as e:
+        return Forbid(e)
     return HttpResponseRedirect(reverse("app:tournament", kwargs=dict(pk=t.pk)))
 
 
@@ -105,8 +109,14 @@ def new_tournament_view(request: AuthedHttpRequest) -> HttpResponse:
 @logged_in_as_player_required()
 def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
-    logger.debug("%s", f"{t.is_complete=} {t.signup_deadline=} {t.signup_deadline_has_passed()=}")
+    logger.debug(
+        "%s",
+        f"#{t.display_number} {t.is_complete=} {t.signup_deadline=} {t.signup_deadline_has_passed()=}",
+    )
     if not t.is_complete and t.signup_deadline is not None and not t.signup_deadline_has_passed():
         t.signup_deadline = timezone.now()
         t.save()
+        logger.debug(
+            "%s", f"#{t.display_number} just set signup deadline to 'now': {t.signup_deadline=}"
+        )
     return HttpResponseRedirect(reverse("app:tournament", kwargs={"pk": pk}))
