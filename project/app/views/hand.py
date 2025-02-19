@@ -550,10 +550,10 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
 
 def _terse_description(hand: Hand) -> str:
     tourney = format_html(
-        '<a href="{}?tournament={}">Tournament {}</a>',
+        '<a href="{}?tournament={}">Tournament #{}</a>',
         reverse("app:board-list"),
         hand.board.tournament.pk,
-        hand.board.tournament.pk,
+        hand.board.tournament.display_number,
     )
 
     table = format_html(

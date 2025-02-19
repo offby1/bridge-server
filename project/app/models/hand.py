@@ -777,7 +777,7 @@ class Hand(models.Model):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Tournament {self.table.tournament.pk}, table {self.table.pk}, board#{self.board.display_number}"
+        return f"Tournament #{self.table.tournament.display_number}, table {self.table.pk}, board#{self.board.display_number}"
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):
