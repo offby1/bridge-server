@@ -91,6 +91,12 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
         table.next_board()
 
+    # It expired without any signups -- just nuke it
+    if tour.table_set.count() == 0:
+        logger.warning("%s has no tables; deleting it", tour)
+        tour.delete()
+        return
+
 
 # TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
 # "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
