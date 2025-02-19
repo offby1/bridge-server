@@ -1,5 +1,6 @@
 import logging
 
+from django.db.models import Case, Value, When
 from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -82,7 +83,17 @@ def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
 
 @logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
-    all_ = app.models.Tournament.objects.order_by("pk")
+    now = timezone.now()
+
+    BROWN = Value("background-color: sandybrown;")
+    WHITE = Value("background-color: white;")
+    all_ = app.models.Tournament.objects.order_by("pk").annotate(
+        signup_deadline_style=Case(When(signup_deadline__lt=now, then=BROWN), default=WHITE),
+        play_completion_deadline_style=Case(
+            When(play_completion_deadline__lt=now, then=BROWN),
+            default=WHITE,
+        ),
+    )
 
     # TODO -- sort the items so that openforsignups come first; then in descending order by signup deadline.
 
