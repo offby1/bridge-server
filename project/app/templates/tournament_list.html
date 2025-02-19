@@ -72,8 +72,8 @@ function updateDurations() {
             suffix = " ago";
          }
          span.innerHTML = then;
-         span.nextElementSibling.innerHTML = " (" + 
-                                             humanizeDuration(durationMS, { units: ["h", "m", "s"], round: true }) + suffix
+         span.nextElementSibling.innerHTML = " (" +
+                                             humanizeDuration(durationMS, { units: ["h", "m", "s"], round: true, largest: 2 }) + suffix
           + ")";
       };
 

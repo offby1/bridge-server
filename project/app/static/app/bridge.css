@@ -45,3 +45,7 @@ caption {
 body {
   padding-top: var(--navbar-height);
 }
+
+.humanize-me {
+    font-family: monospace;
+}
