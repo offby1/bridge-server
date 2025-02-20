@@ -98,15 +98,21 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         return
 
 
-# TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
-# "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
-# every second.
+_last_check_unix_time = datetime.datetime(
+    year=datetime.MINYEAR, month=1, day=1, tzinfo=datetime.UTC
+)
 
 
-# Also TODO -- replace this entire mess with a scheduled solution -- see the "django-q2" branch
+# TODO -- replace this entire mess with a scheduled solution -- see the "django-q2" branch
 @receiver(request_started)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
+
+    # Don't run too often
+    global _last_check_unix_time
+
+    if timezone.now() - _last_check_unix_time < timezone.timedelta(seconds=60):
+        return
 
     with transaction.atomic():
         incompletes = Tournament.objects.filter(is_complete=False)
@@ -133,6 +139,8 @@ def check_for_expirations(sender, **kwargs) -> None:
 
             if t.signup_deadline_has_passed():
                 _do_signup_expired_stuff(t)
+
+    _last_check_unix_time = timezone.now()
 
 
 class TournamentStatus:
