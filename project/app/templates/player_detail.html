@@ -18,7 +18,8 @@
                 {% ifexists button_context %}
                 <form method="post" action="{{ button_context.form_action }}">
                     {% csrf_token %}
-                    <button type="submit"
+                    <button class="btn btn-primary"
+                            type="submit"
                             name="action"
                             value="{{ button_context.button_submit_value }}">
                         {{ button_context.button_content }}

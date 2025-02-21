@@ -7,10 +7,15 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
+from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
+from .misc import logged_in_as_player_required
 
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
@@ -72,11 +77,3 @@ def board_list_view(request: HttpRequest) -> TemplateResponse:
         context |= {"tournament": tournament}
 
     return TemplateResponse(request=request, template="board_list.html", context=context)
-
-
-def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
-    tournament_list = app.models.Tournament.objects.order_by("pk")
-
-    context = {"tournament_list": tournament_list}
-
-    return TemplateResponse(request=request, template="tournament_list.html", context=context)

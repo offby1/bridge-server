@@ -85,6 +85,14 @@ class BoardManager(models.Manager):
     def create_from_attributes(self, *, attributes, tournament) -> Board:
         return self.create(**attributes, tournament=tournament)
 
+    def create(self, *args, **kwargs) -> Board:
+        tournament = kwargs.get("tournament")
+        if tournament:
+            assert (
+                not tournament.is_complete
+            ), f"Wassup! Don't add boards to a completed tournament!! {tournament}"
+        return super().create(*args, **kwargs)
+
 
 class Board(models.Model):
     class PlayerVisibility(enum.Enum):
@@ -188,6 +196,10 @@ class Board(models.Model):
             models.CheckConstraint(  # type: ignore[call-arg]
                 name="%(app_label)s_%(class)s_dealer_must_be_compass_letter",
                 condition=models.Q(dealer__in="NESW"),
+            ),
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
+                fields=["display_number", "tournament_id"],
             ),
         ]
 

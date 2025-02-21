@@ -33,7 +33,7 @@ def test_already_logged_in(usual_setup, monkeypatch) -> None:
     assert response.status_code == 200
 
 
-def test_no_credentials_at_all() -> None:
+def test_no_credentials_at_all(db) -> None:
     c = Client()
 
     response = c.get(

@@ -2,6 +2,7 @@ import base64
 import collections
 import importlib
 import json
+import logging
 import re
 
 import pytest
@@ -11,7 +12,7 @@ from bridge.seat import Seat as libSeat
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.test import Client
 from django.urls import reverse
 
@@ -28,11 +29,13 @@ from .models import (
     Table,
     Tournament,
 )
-from .testutils import set_auction_to
+from .testutils import play_out_hand, set_auction_to
 from .views import hand, player, table
 
+logger = logging.getLogger(__name__)
 
-def test_we_gots_a_home_page():
+
+def test_we_gots_a_home_page(db):
     c = Client()
     response = c.get("/", follow=True)
     assert b"Welcome" in response.content
@@ -67,10 +70,10 @@ def test_synthetic_player_text(usual_setup) -> None:
 
 
 def test_splitsville_ejects_that_partnership_from_table(usual_setup):
-    table = Table.objects.first()
+    the_table = Table.objects.first()
 
-    north = table.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    south = table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
+    north = the_table.current_hand.modPlayer_by_seat(libSeat.NORTH)
+    south = the_table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
     assert north.partner == south
@@ -82,8 +85,8 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
     table_count_before = Table.objects.count()
     assert table_count_before == 1
 
-    east = table.current_hand.modPlayer_by_seat(libSeat.EAST)
-    west = table.current_hand.modPlayer_by_seat(libSeat.WEST)
+    east = the_table.current_hand.modPlayer_by_seat(libSeat.EAST)
+    west = the_table.current_hand.modPlayer_by_seat(libSeat.WEST)
 
     north.break_partnership()
 
@@ -101,8 +104,8 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
 
     assert north.current_table is None
     assert south.current_table is None
-    assert east.current_table == table
-    assert west.current_table == table
+    assert east.current_table == the_table
+    assert west.current_table == the_table
 
 
 def test_one_partnerships_splitting_does_not_remove_table(usual_setup):
@@ -174,7 +177,7 @@ def test_player_cannot_be_in_two_tables(usual_setup):
     t1 = Table.objects.first()
     north = t1.current_hand.modPlayer_by_seat(libSeat.NORTH)
 
-    t2 = Table.objects.create()
+    t2 = Table.objects.create(tournament=t1.tournament)
 
     with pytest.raises(SeatException) as e:
         Seat.objects.create(direction=libSeat.EAST.value, table=t2, player=north)
@@ -190,7 +193,7 @@ def test_cant_just_make_up_directions(j_northam, everybodys_password):
     )
     j_northam.partner_with(partner)
 
-    t = Table.objects.create()
+    t = Table.objects.create(tournament=Tournament.objects.create(display_number=1))
     with pytest.raises(Exception) as e:
         Seat.objects.create(direction=1234, player=j_northam, table=t)
 
@@ -399,7 +402,7 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
     assert h.player_who_may_play is None
 
 
-def test_table_creation(j_northam, rf, everybodys_password):
+def test_table_creation(j_northam, everybodys_password):
     players_by_name = {"bob": j_northam}
     sam = Player.objects.create(
         user=auth.models.User.objects.create(
@@ -412,14 +415,14 @@ def test_table_creation(j_northam, rf, everybodys_password):
 
     assert j_northam.partner is not None
 
-    request = rf.post(
-        "/woteva/",
-        data={"pk1": j_northam.pk, "pk2": j_northam.pk},
-    )
+    client = Client()
+    assert client.login(username=j_northam.name, password=".")
 
-    request.user = j_northam.user
-    response = table.details.new_table_for_two_partnerships(request, j_northam.pk, j_northam.pk)
-    assert response.status_code == 403
+    t = Tournament.objects.create()
+
+    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
+
+    assert type(response) is HttpResponseForbidden
     assert b"four distinct" in response.content
 
     for name in ("tina", "tony"):
@@ -431,20 +434,12 @@ def test_table_creation(j_northam, rf, everybodys_password):
         )
         players_by_name[name] = p
 
-    players_by_name["tina"].partner_with(players_by_name["tony"])
+    tina = players_by_name["tina"]
+    tina.partner_with(players_by_name["tony"])
 
-    Tournament.objects.create()
+    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
 
-    request = rf.post(
-        "/woteva/",
-        data={"pk1": j_northam.pk, "pk2": players_by_name["tina"].pk},
-    )
-    request.user = j_northam.user
-    response = table.details.new_table_for_two_partnerships(
-        request, j_northam.pk, players_by_name["tina"].pk
-    )
-
-    assert response.status_code == 302
+    assert type(response) is HttpResponseRedirect
 
 
 def test_max_boards(two_boards_one_is_complete, monkeypatch):
@@ -466,13 +461,14 @@ def test_no_bogus_tables(usual_setup):
         Table.objects.create_with_two_partnerships(
             p1=Player.objects.get_by_name("Jeremy Northam"),
             p2=Player.objects.get_by_name("Clint Eastwood"),
+            tournament=Tournament.objects.first(),
         )
     count_after = Table.objects.count()
 
     assert count_after == count_before
 
 
-def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
+def test_random_dude_cannot_create_table(usual_setup, everybodys_password):
     number_of_tables_before = Table.objects.count()
 
     t = Table.objects.first()
@@ -514,17 +510,19 @@ def test_random_dude_cannot_create_table(usual_setup, rf, everybodys_password):
         ),
     )
 
-    def seat_em_dano(player=None):
-        request = rf.post("/woteva/")
+    client = Client()
 
-        request.user = player.user
-        return table.details.new_table_for_two_partnerships(request, North.pk, East.pk)
+    tournament, _ = Tournament.objects.get_or_create(display_number=1)
 
-    response = seat_em_dano(RandomDude)
+    def new_table(*, requester=None) -> HttpResponse:
+        client.login(username=requester.user, password=".")
+        return client.post(path=f"/table/new/{tournament.pk}/{North.pk}/{East.pk}/", data={})
+
+    response = new_table(requester=RandomDude)
     assert response.status_code == 403
     assert b"isn&#x27;t one of" in response.content
 
-    response = seat_em_dano(North)
+    response = new_table(requester=North)
     assert response.status_code == 302
 
     assert Table.objects.count() == number_of_tables_before + 1
@@ -573,64 +571,16 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
         assert expected_html in actual_html
 
 
-def test_find_unplayed_board(two_boards_one_is_complete, monkeypatch) -> None:
+def test_find_unplayed_board(two_boards_one_is_complete) -> None:
+    # Just checking that we are in sync with the fixture
+    assert set(Board.objects.values_list("pk", flat=True)) == {1, 2}
+
     t1 = Table.objects.first()
     assert t1 is not None
     assert t1.current_board.pk == 1
+    assert t1.find_unplayed_board().pk == 2
 
+    play_out_hand(t1)
     t1.next_board()
-    assert t1.current_board.pk == 2
-
-    North, East, South, West = [s.player for s in t1.seats]
-
-    # now we splitsville
-    North.break_partnership()
-    East.break_partnership()
-
-    South.refresh_from_db()
-    West.refresh_from_db()
-
-    assert not North.currently_seated
-    assert not East.currently_seated
-    assert not South.currently_seated
-    assert not West.currently_seated
-
-    North.partner_with(South)
-    East.partner_with(West)
-
-    South.refresh_from_db()
-    West.refresh_from_db()
-
-    assert not North.currently_seated
-    assert not East.currently_seated
-    assert not South.currently_seated
-    assert not West.currently_seated
-
-    # Create a third board in this tournament (our test fixture only has two)
-    with monkeypatch.context() as m:
-        m.setattr(
-            app.models.board,
-            "BOARDS_PER_TOURNAMENT",
-            max(3, app.models.board.BOARDS_PER_TOURNAMENT),
-        )
-        third_board = Board.objects.create(
-            dealer="S",
-            display_number=12345,
-            ns_vulnerable=False,
-            ew_vulnerable=False,
-            tournament=t1.current_board.tournament,
-            east_cards="♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
-            north_cards="♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
-            south_cards="♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
-            west_cards="♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
-        )
-
-    # now we re-partner, creating a new table
-    t2 = Table.objects.create_with_two_partnerships(North, East)
-
-    # now ask for an unplayed board
-    b = t2.find_unplayed_board()
-    # There aren't any, because creating the new table automatically assigned it the new board, and we consider the
-    # players to have played it.
-    assert t2.current_board == third_board
-    assert b is None
+    play_out_hand(t1)
+    assert t1.find_unplayed_board() is None

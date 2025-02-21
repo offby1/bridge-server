@@ -57,19 +57,7 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
         "button_content": "Partner 'em Up, Boss",
         "button_submit_value": JOIN,
         "form_action": player_detail_endpoint(player_pk=subject_pk),
-        "input_hidden_value": reverse("app:players")
-        + "?has_partner=True&seated=False&exclude_me=True",
-    }
-
-
-def _tableup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[str, Any]:
-    assert request.user.player is not None
-    return {
-        "button_content": "Table Up With Yon Dudes",
-        "button_submit_value": "",
-        "form_action": reverse(
-            "app:new-table", kwargs=dict(pk1=subject_pk, pk2=request.user.player.pk)
-        ),
+        "input_hidden_value": reverse("app:tournament-list") + "?open_for_signups=True",
     }
 
 
@@ -150,8 +138,6 @@ def _get_partner_action_from_context(
     } and not subject.currently_seated:
         if subject.partner == as_viewed_by:
             return _splitsville_context(request=request, player_pk=subject.pk)
-        elif subject.partner is not None:
-            return _tableup_context(request=request, subject_pk=subject.pk)
 
     return None
 
@@ -447,7 +433,7 @@ def player_list_view(request):
     ):
         context["create_synth_partner_button"] = _create_synth_partner_button(request)
         context["create_synth_partner_next"] = (
-            reverse("app:players") + "?has_partner=True&seated=False&exclude_me=True"
+            reverse("app:tournament-list") + "?open_for_signups=True"
         )
     # similarly for opponents.
     elif (

@@ -17,6 +17,7 @@
                     <th scope="col">Who</th>
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
+                    <th scope="col">Signed Up For</th>
                     <th scope="col">Action</th>
                 </tr>
             </thead>
@@ -39,10 +40,18 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if player.tournamentsignup %}
+                                <a href="{% url 'app:tournament' pk=player.tournamentsignup.tournament.pk %}">
+                                    {{ player.tournamentsignup.tournament }}
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
                             {% if player.action_button %}
                                 <form method="post" action="{{ player.action_button.form_action }}">
                                     {% csrf_token %}
-                                    <button type="submit"
+                                    <button class="btn btn-primary"
+                                            type="submit"
                                             name="action"
                                             value="{{ player.action_button.button_submit_value }}">
                                         {{ player.action_button.button_content }}

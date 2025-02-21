@@ -10,6 +10,7 @@
             <thead>
                 <tr>
                     <th>Table #</th>
+                    <th>Tournament #</th>
                     <th>Current Status</th>
                     <th>Number of Boards played</th>
                 </tr>
@@ -18,10 +19,15 @@
                 {% for table in page_obj %}
                     <tr>
                         <th>{{ table.pk }}</th>
+                        <td>{{ table.tournament.display_number }}</td>
                         <td>
-                            <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
-                                {{ table.current_hand }}: {{ table.summary_for_this_viewer }}
-                            </a>
+                            {% if table.has_hand %}
+                                <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
+                                    {{ table.current_hand }}: {{ table.summary_for_this_viewer }}
+                                </a>
+                            {% else %}
+                                {{ table.summary_for_this_viewer }}
+                            {% endif %}
                         </td>
                         <td>{{ table.played_hands_string }}</td>
                     </tr>

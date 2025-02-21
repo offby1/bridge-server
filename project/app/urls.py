@@ -1,7 +1,10 @@
 from django.urls import path
 
 from .views import home_view, lobby, player, signup_view, table, three_way_login
-from .views.board import board_archive_view, board_list_view, tournament_list_view
+from .views.board import (
+    board_archive_view,
+    board_list_view,
+)
 from .views.hand import (
     auction_partial_view,
     bidding_box_partial_view,
@@ -14,6 +17,13 @@ from .views.hand import (
     open_access_toggle_view,
 )
 from .views.table import set_table_tempo_view
+from .views.tournament import (
+    new_tournament_view,
+    tournament_list_view,
+    tournament_signup_view,
+    tournament_view,
+    tournament_void_signup_deadline_view,
+)
 
 app_name = "app"
 
@@ -81,7 +91,19 @@ urlpatterns = [
         name="new-board-plz",
     ),
     path("table/<table_pk>/set-table-tempo/", set_table_tempo_view, name="set-table-tempo"),
-    path("table/new/<pk1>/<pk2>/", table.details.new_table_for_two_partnerships, name="new-table"),
+    path(
+        "table/new/<tournament_pk>/<pk1>/<pk2>/",
+        table.details.new_table_for_two_partnerships,
+        name="new-table",
+    ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
+    path("tournament/<int:pk>/", tournament_view, name="tournament"),
+    path("tournament/signup/<int:pk>/", tournament_signup_view, name="tournament-signup"),
+    path("tournament/new/", new_tournament_view, name="new-tournament"),
+    path(
+        "tournament/void-signup-deadline/<int:pk>",
+        tournament_void_signup_deadline_view,
+        name="tournament-void-signup-deadline",
+    ),
 ]

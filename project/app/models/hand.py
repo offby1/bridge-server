@@ -199,15 +199,16 @@ class Hand(models.Model):
 
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament
-        if tour.play_completion_deadline_is_past():
+        if tour.play_completion_deadline_has_passed():
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
-            msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
-            tour.eject_all_pairs(explanation=msg)
+            tour.is_complete = True
+            tour.save()
 
             from .table import TableException
 
+            msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
             raise TableException(msg)
 
     @property
@@ -433,7 +434,7 @@ class Hand(models.Model):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            Tournament.objects.get_or_create_running_tournament()
+            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -492,7 +493,9 @@ class Hand(models.Model):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            Tournament.objects.get_or_create_running_tournament()
+            self.table.tournament.maybe_complete()
+
+            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -774,7 +777,7 @@ class Hand(models.Model):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Tournament {self.table.tournament.pk}, table {self.table.pk}, board#{self.board.display_number}"
+        return f"Tournament #{self.table.tournament.display_number}, table {self.table.pk}, board#{self.board.display_number}"
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):

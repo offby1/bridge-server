@@ -39,30 +39,12 @@ class NoMoreBoards(Exception):
 
 
 class TableManager(models.Manager):
-    def create(self, *args, **kwargs) -> Table:
-        if "tournament" not in kwargs:
-            tournament, created = Tournament.objects.get_or_create_running_tournament()
-            logger.debug(
-                "%s new tournament %s",
-                "created" if created else "didn't need to create",
-                tournament.pk,
-            )
-            kwargs["tournament"] = tournament
-
-        tournament = kwargs["tournament"]
-
-        # TODO -- maybe create or find a new tournament?
-        if tournament.signup_deadline_is_past():
-            assert tournament.signup_deadline is not None
-            msg = f"oops -- {tournament=}'s signup deadline ({tournament.signup_deadline.isoformat()}) has passed"
-            raise TableException(msg)
-
-        return super().create(*args, **kwargs)
-
-    def create_with_two_partnerships(self, p1: Player, p2: Player) -> Table:
+    def create_with_two_partnerships(
+        self, p1: Player, p2: Player, tournament: Tournament | None = None
+    ) -> Table:
         with transaction.atomic():
-            t: Table = self.create()
-            logger.debug("Created %s, tournament %s", t, t.tournament)
+            t: Table = self.create(tournament=tournament)
+            logger.debug("Created %s", t)
             if p1.partner is None or p2.partner is None:
                 raise TableException(
                     f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
@@ -78,8 +60,6 @@ class TableManager(models.Manager):
                     player=player,
                     table=t,
                 )
-
-            t.next_board()
 
         send_event(
             channel="all-tables",
@@ -125,6 +105,10 @@ class Table(models.Model):
     @property
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
+
+    @property
+    def has_hand(self) -> bool:
+        return self.hand_set.exists()
 
     @property
     def current_hand(self) -> Hand:
@@ -187,11 +171,16 @@ class Table(models.Model):
 
         for seat in seats:
             bp = seat.player.boards_played.order_by("id").all()
-            logger.debug("Player %s has played %s", seat.player.name, [b.pk for b in bp])
+            logger.debug(
+                "Player %s has played (or at least, been seated at a table with) %s",
+                seat.player.name,
+                [b.pk for b in bp],
+            )
             expression |= models.Q(pk__in=bp)
 
         assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
         unplayed_boards = self.tournament.board_set.exclude(expression)
+        logger.debug("Thus, by my calculations, that leaves us %s", unplayed_boards)
         return unplayed_boards.first()
 
     def next_board(self) -> Board:
@@ -208,7 +197,8 @@ class Table(models.Model):
                 raise TableException(msg)
 
             if (b := self.find_unplayed_board()) is None:
-                msg = f"Some players at {self} have played all the boards, so we cannot get a new board"
+                t = self.tournament
+                msg = f"Some players at table {self.pk} (tournament {t.display_number}) have played all {t.board_set.count()} boards, so we cannot get a new board"
                 logger.debug("%s", msg)
                 raise NoMoreBoards(msg)
 
@@ -246,11 +236,13 @@ class Table(models.Model):
         return None
 
     def as_link(self):
-        return format_html(
-            "<a href='{}'>{}</a>",
-            reverse("app:hand-detail", kwargs={"pk": self.current_hand.pk}),
-            str(self),
-        )
+        if self.has_hand:
+            return format_html(
+                "<a href='{}'>{}</a>",
+                reverse("app:hand-detail", kwargs={"pk": self.current_hand.pk}),
+                str(self),
+            )
+        return format_html("At {}, waiting for a board!!", self)
 
     def as_tuples(self):
         return [(SEAT_CHOICES[d], p) for d, p in self.current_hand.players_by_direction.items()]

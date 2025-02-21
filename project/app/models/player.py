@@ -173,9 +173,9 @@ class Player(models.Model):
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
 
-set -euxo pipefail
+set -euo pipefail
 
-printf "%s %s %s " $$ $(date -u +%FT%T%z) $(pwd)
+printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
             run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
@@ -305,6 +305,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 )
 
             old_partner_pk = self.partner.pk
+
+            import app.models
+
+            evictees = app.models.TournamentSignup.objects.filter(player__in={self, self.partner})
+            logger.debug(
+                "About to remove %s",
+                ", ".join(
+                    [
+                        f"{su.player.name} from signups for t#{su.tournament.display_number}"
+                        for su in evictees
+                    ]
+                ),
+            )
+            evictees.delete()
 
             self.partner.partner = None
             self.partner.unseat_me()

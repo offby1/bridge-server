@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.paginator import Paginator
 import django.db.utils
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
@@ -22,6 +23,7 @@ from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.types import PK
+from app.models.tournament import Running
 from app.models.utils import assert_type
 from app.views import Forbid, NotFound
 from app.views.misc import (
@@ -49,11 +51,15 @@ def table_list_view(request) -> HttpResponse:
 
     t: app.models.Table
     for t in page_obj.object_list:
-        t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
-            as_viewed_by=getattr(request.user, "player", None)
-        )
-        completed, in_progress = t.played_hands_count()
-        t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
+        if t.has_hand:
+            t.summary_for_this_viewer = t.current_hand.summary_as_viewed_by(
+                as_viewed_by=getattr(request.user, "player", None)
+            )
+            completed, in_progress = t.played_hands_count()
+            t.played_hands_string = f"{completed}{'+' if in_progress else ''}"
+        else:
+            t.summary_for_this_viewer = "No hands played yet", "-"
+            t.played_hands_string = "0"
     context = {
         "page_obj": page_obj,
         "page_title": page_title,
@@ -142,7 +148,10 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: str) -> HttpResponse:
+def new_table_for_two_partnerships(
+    request: AuthedHttpRequest, tournament_pk: str, pk1: str, pk2: str
+) -> HttpResponse:
+    tournament = get_object_or_404(app.models.Tournament, pk=tournament_pk)
     assert request.user.player is not None
 
     p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
@@ -165,18 +174,17 @@ def new_table_for_two_partnerships(request: AuthedHttpRequest, pk1: str, pk2: st
             f"Hey man {request.user.player.name} isn't one of {[p.name for p in all_four]}"
         )
 
-    try:
-        t = app.models.Table.objects.create_with_two_partnerships(p1, p2)
-    except app.models.NoMoreBoards as e:
-        msg = f"You cannot get a new table in this tournament because {e}"
-        messages.info(request, msg)
-        logger.info("%s", msg)
-        return HttpResponseRedirect(reverse("app:table-list"))
+    logger.debug("OK, %s is one of %s", request.user.player.name, [p.name for p in all_four])
 
-    except app.models.TableException as e:
-        return Forbid(str(e))
+    t = app.models.Table.objects.create_with_two_partnerships(p1, p2, tournament=tournament)
+    if t.tournament.status() is Running:
+        t.next_board()
+        return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
 
-    return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
+    msg = f"{t.tournament} isn't running, so y'all just gotta wait until the signup deadline {t.tournament.signup_deadline} has passed"
+    messages.info(request, msg)
+    logger.info(msg)
+    return HttpResponseRedirect(reverse("app:table-list") + f"?tournament={t.tournament.pk}")
 
 
 @require_http_methods(["POST"])
@@ -186,7 +194,9 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         assert (
             table.tournament.is_complete
         ), f"Hey man why'd you call me if {table.tournament} isn't complete"
-        tournament, created = app.models.Tournament.objects.get_or_create_running_tournament()
+        tournament, created = (
+            app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
+        )
         assert not tournament.is_complete
         assert tournament != table.tournament
         msg = f"{table.tournament} is complete"
@@ -208,8 +218,13 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     if request.user.player.current_table_pk() != pk:
         msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
-        logger.warning("%s", msg)
-        return Forbid(msg)
+        logger.info("%s", msg)
+        messages.error(request, msg)
+        # Perhaps they were just playing at that table, and the tournament ended, so we ejected them.  In that case,
+        # they might want to at least watch the rest of the tournament.
+        return HttpResponseRedirect(
+            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
+        )
 
     if table.tournament.is_complete:
         return deal_with_completed_tournament()
