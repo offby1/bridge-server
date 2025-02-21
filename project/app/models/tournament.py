@@ -88,6 +88,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             p2.partner.save()
             p2.save()
 
+            # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
+            # list view *shows* them as signed up.
+            for p in (p2, p2.partner):
+                TournamentSignup.objects.create(tournament=tour, player=p)
+
         table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
         table.next_board()
 
