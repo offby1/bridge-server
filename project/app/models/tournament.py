@@ -15,6 +15,7 @@ from django.utils import timezone
 import more_itertools
 
 from app.models.signups import TournamentSignup
+from app.models.throttle import throttle
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -103,21 +104,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         return
 
 
-_last_check_unix_time = datetime.datetime(
-    year=datetime.MINYEAR, month=1, day=1, tzinfo=datetime.UTC
-)
-
-
-# TODO -- replace this entire mess with a scheduled solution -- see the "django-q2" branch
+# TODO -- replace this with a scheduled solution -- see the "django-q2" branch
 @receiver(request_started)
+@throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
-
-    # Don't run too often
-    global _last_check_unix_time
-
-    if timezone.now() - _last_check_unix_time < timezone.timedelta(seconds=60):
-        return
 
     with transaction.atomic():
         incompletes = Tournament.objects.filter(is_complete=False)
@@ -144,8 +135,6 @@ def check_for_expirations(sender, **kwargs) -> None:
 
             if t.signup_deadline_has_passed():
                 _do_signup_expired_stuff(t)
-
-    _last_check_unix_time = timezone.now()
 
 
 class TournamentStatus:
