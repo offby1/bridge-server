@@ -11,8 +11,8 @@ STILL TODO:
   Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
 
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
-  I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
-  [Django-tasks](https://github.com/realOrangeOne/django-tasks) looks like it'll become the Official Way to do this sort of thing; here's a [Django Enhancement Proposal](  https://github.com/django/deps/blob/5746805dfb062a99555b5e5bbc5b1685212aba2c/accepted/0014-background-workers.rst#L26) for it.
+  - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
+  - I've also got a [Django-tasks](https://github.com/realOrangeOne/django-tasks) branch; that was a struggle from start to finish, and I never got it working. There's a [Django Enhancement Proposal](  https://github.com/django/deps/blob/5746805dfb062a99555b5e5bbc5b1685212aba2c/accepted/0014-background-workers.rst#L26) for it.
 
 * Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to
   match up the bot's logs with the server's.
