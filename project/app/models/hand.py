@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import dataclasses
+import datetime
 import logging
 import time
 from typing import TYPE_CHECKING, Any
@@ -197,6 +198,20 @@ class Hand(TimeStampedModel):
     )  # type: ignore
 
     abandoned_because = models.CharField(max_length=100, null=True)
+
+    def last_action(self) -> tuple[datetime.datetime, str]:
+        rv = (self.created, "joined hand")
+        if (
+            most_recent_call_time := self.calls.aggregate(models.Min("created"))["created__min"]
+        ) is not None:
+            if most_recent_call_time > rv[0]:  # it better be, but you never know
+                rv = (most_recent_call_time, "called")
+        if (
+            most_recent_play_time := self.plays.aggregate(models.Min("created"))["created__min"]
+        ) is not None:
+            if most_recent_play_time > rv[0]:
+                rv = (most_recent_play_time, "played")
+        return rv
 
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament

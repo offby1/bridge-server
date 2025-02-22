@@ -123,12 +123,15 @@ class Player(TimeStampedModel):
     boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
 
     def last_action(self) -> tuple[datetime.datetime, str]:
-        rv = (self.created, "date joined")
-        if self.user.last_login:
-            rv = (self.user.last_login, "last logged in")
+        rv = (self.created, "joined")
+        if self.user.last_login and self.user.last_login > rv[0]:
+            rv = (self.user.last_login, "logged in")
         if (h := self.hands_played.order_by("-id").first()) is not None:
-            rv = (h.created, f"played hand {h}")
-            # TODO: grovel calls and plays for ones made by this player; return latest associated creation timestamp
+            # TODO: somehow narrow stuff down to the most recent action that *we* took in this hand, as opposed to my
+            # partner or opponents
+            hand_last_action = h.last_action()
+            if hand_last_action[0] > rv[0]:
+                rv = hand_last_action
 
         return rv
 

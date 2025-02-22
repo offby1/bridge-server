@@ -92,4 +92,4 @@ def test_player_timestamp_updates(db, everybodys_password) -> None:
 
     assert new_guy.created == new_guy.modified == Today
 
-    assert new_guy.last_action() == (Today, "date joined")
+    assert new_guy.last_action() == (Today, "joined")

@@ -18,6 +18,7 @@
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
                     <th scope="col">Signed Up For</th>
+                    <th scope="col">Last Activity</th>
                     <th scope="col">Action</th>
                 </tr>
             </thead>
@@ -46,6 +47,7 @@
                                 </a>
                             {% endif %}
                         </td>
+                        <td>{{ player.last_action.0 }}: {{ player.last_action.1 }}</td>
                         <td>
                             {% if player.action_button %}
                                 <form method="post" action="{{ player.action_button.form_action }}">
