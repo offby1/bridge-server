@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import logging
 import pathlib
 import subprocess
@@ -17,6 +18,7 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from faker import Faker
 
 from .board import Board
@@ -81,7 +83,7 @@ class PartnerException(PlayerException):
     pass
 
 
-class Player(models.Model):
+class Player(TimeStampedModel):
     if TYPE_CHECKING:
         historical_seat_set = RelatedManager["Seat"]()
 
@@ -119,6 +121,16 @@ class Player(models.Model):
     )
 
     boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+
+    def last_action(self) -> tuple[datetime.datetime, str]:
+        rv = (self.created, "date joined")
+        if self.user.last_login:
+            rv = (self.user.last_login, "last logged in")
+        if (h := self.hands_played.order_by("-id").first()) is not None:
+            rv = (h.created, f"played hand {h}")
+            # grovel calls and plays for ones made by this player; return associated creation timestamp
+
+        return rv
 
     def unseat_me(self) -> None:
         self.currently_seated = False

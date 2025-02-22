@@ -24,6 +24,7 @@ from django.core.cache import cache
 from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 
 from . import Board
 from .player import Player
@@ -169,7 +170,7 @@ class HandManager(models.Manager):
         return super().create(*args, **kwargs)
 
 
-class Hand(models.Model):
+class Hand(TimeStampedModel):
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
@@ -827,7 +828,7 @@ class CallManager(models.Manager):
         return rv
 
 
-class Call(models.Model):
+class Call(TimeStampedModel):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
@@ -885,7 +886,7 @@ class PlayManager(models.Manager):
         return rv
 
 
-class Play(models.Model):
+class Play(TimeStampedModel):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.

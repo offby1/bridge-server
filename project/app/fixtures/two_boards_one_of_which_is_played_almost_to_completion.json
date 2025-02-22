@@ -156,7 +156,9 @@
       "boards_played": [
         1
       ],
+      "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": false,
       "user": 1
@@ -170,7 +172,9 @@
       "boards_played": [
         1
       ],
+      "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
       "user": 2
@@ -184,7 +188,9 @@
       "boards_played": [
         1
       ],
+      "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
       "user": 3
@@ -198,7 +204,9 @@
       "boards_played": [
         1
       ],
+      "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,
       "user": 4
@@ -209,6 +217,8 @@
   {
     "fields": {
       "board": 1,
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
       "open_access": false,
       "table": 1
     },
@@ -217,7 +227,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "1♣"
     },
     "model": "app.call",
@@ -225,7 +237,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "Pass"
     },
     "model": "app.call",
@@ -233,7 +247,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "Pass"
     },
     "model": "app.call",
@@ -241,7 +257,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "Pass"
     },
     "model": "app.call",
@@ -249,7 +267,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦2"
     },
     "model": "app.play",
@@ -257,7 +277,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥2"
     },
     "model": "app.play",
@@ -265,7 +287,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠2"
     },
     "model": "app.play",
@@ -273,7 +297,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣2"
     },
     "model": "app.play",
@@ -281,7 +307,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣3"
     },
     "model": "app.play",
@@ -289,7 +317,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦3"
     },
     "model": "app.play",
@@ -297,7 +327,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥3"
     },
     "model": "app.play",
@@ -305,7 +337,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠3"
     },
     "model": "app.play",
@@ -313,7 +347,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣4"
     },
     "model": "app.play",
@@ -321,7 +357,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦4"
     },
     "model": "app.play",
@@ -329,7 +367,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥4"
     },
     "model": "app.play",
@@ -337,7 +377,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠4"
     },
     "model": "app.play",
@@ -345,7 +387,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣5"
     },
     "model": "app.play",
@@ -353,7 +397,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦5"
     },
     "model": "app.play",
@@ -361,7 +407,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥5"
     },
     "model": "app.play",
@@ -369,7 +417,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠5"
     },
     "model": "app.play",
@@ -377,7 +427,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣6"
     },
     "model": "app.play",
@@ -385,7 +437,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦6"
     },
     "model": "app.play",
@@ -393,7 +447,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥6"
     },
     "model": "app.play",
@@ -401,7 +457,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠6"
     },
     "model": "app.play",
@@ -409,7 +467,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣7"
     },
     "model": "app.play",
@@ -417,7 +477,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦7"
     },
     "model": "app.play",
@@ -425,7 +487,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥7"
     },
     "model": "app.play",
@@ -433,7 +497,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠7"
     },
     "model": "app.play",
@@ -441,7 +507,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣8"
     },
     "model": "app.play",
@@ -449,7 +517,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦8"
     },
     "model": "app.play",
@@ -457,7 +527,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥8"
     },
     "model": "app.play",
@@ -465,7 +537,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠8"
     },
     "model": "app.play",
@@ -473,7 +547,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣9"
     },
     "model": "app.play",
@@ -481,7 +557,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦9"
     },
     "model": "app.play",
@@ -489,7 +567,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥9"
     },
     "model": "app.play",
@@ -497,7 +577,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠9"
     },
     "model": "app.play",
@@ -505,7 +587,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣T"
     },
     "model": "app.play",
@@ -513,7 +597,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦T"
     },
     "model": "app.play",
@@ -521,7 +607,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥T"
     },
     "model": "app.play",
@@ -529,7 +617,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠T"
     },
     "model": "app.play",
@@ -537,7 +627,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣J"
     },
     "model": "app.play",
@@ -545,7 +637,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦J"
     },
     "model": "app.play",
@@ -553,7 +647,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥J"
     },
     "model": "app.play",
@@ -561,7 +657,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠J"
     },
     "model": "app.play",
@@ -569,7 +667,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣Q"
     },
     "model": "app.play",
@@ -577,7 +677,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦Q"
     },
     "model": "app.play",
@@ -585,7 +687,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥Q"
     },
     "model": "app.play",
@@ -593,7 +697,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠Q"
     },
     "model": "app.play",
@@ -601,7 +707,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣K"
     },
     "model": "app.play",
@@ -609,7 +717,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦K"
     },
     "model": "app.play",
@@ -617,7 +727,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥K"
     },
     "model": "app.play",
@@ -625,7 +737,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♠K"
     },
     "model": "app.play",
@@ -633,7 +747,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♣A"
     },
     "model": "app.play",
@@ -641,7 +757,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♦A"
     },
     "model": "app.play",
@@ -649,7 +767,9 @@
   },
   {
     "fields": {
+      "created": "2000-01-01T00:00:00Z",
       "hand": 1,
+      "modified": "2000-01-01T00:00:00Z",
       "serialized": "♥A"
     },
     "model": "app.play",
