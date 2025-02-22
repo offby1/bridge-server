@@ -1,7 +1,8 @@
-# Tests for the "tainting" mechanism.
+import datetime
 import importlib
 
 import pytest
+from freezegun import freeze_time
 from django.conf import settings
 from django.contrib import auth
 
@@ -79,3 +80,16 @@ def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
     )
 
     assert not cm.can_read_channel(j_random_user, the_hand.event_channel_name)
+
+
+def test_player_timestamp_updates(db, everybodys_password) -> None:
+    Today = datetime.datetime.fromisoformat("2020-02-20T20:20:20Z")
+
+    with freeze_time(Today):
+        new_guy = Player.objects.create(
+            user=auth.models.User.objects.create(username="new guy", password=everybodys_password),
+        )
+
+    assert new_guy.created == new_guy.modified == Today
+
+    assert new_guy.last_action() == (Today, "date joined")

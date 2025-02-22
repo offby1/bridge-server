@@ -128,7 +128,7 @@ class Player(TimeStampedModel):
             rv = (self.user.last_login, "last logged in")
         if (h := self.hands_played.order_by("-id").first()) is not None:
             rv = (h.created, f"played hand {h}")
-            # grovel calls and plays for ones made by this player; return associated creation timestamp
+            # TODO: grovel calls and plays for ones made by this player; return latest associated creation timestamp
 
         return rv
 
