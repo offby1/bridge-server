@@ -24,7 +24,7 @@
             </thead>
             <tbody class="table-group-divider">
                 {% for player in page_obj %}
-                    <tr style="border: 1px dotted">
+                    <tr style="border: 1px dotted; {{ player.age_style }}">
                         <th>{{ player|sedate_link:user }}</th>
                         <td>
                             {% if player.partner %}

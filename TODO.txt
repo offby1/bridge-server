@@ -1,6 +1,8 @@
 IN PROGRESS:
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
+  Also: player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
+
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
