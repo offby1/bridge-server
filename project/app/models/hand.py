@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import dataclasses
+import datetime
 import logging
 import time
 from typing import TYPE_CHECKING, Any
@@ -24,6 +25,7 @@ from django.core.cache import cache
 from django.db import Error, models
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 
 from . import Board
 from .player import Player
@@ -169,7 +171,7 @@ class HandManager(models.Manager):
         return super().create(*args, **kwargs)
 
 
-class Hand(models.Model):
+class Hand(TimeStampedModel):
     """All the calls and plays for a given hand."""
 
     if TYPE_CHECKING:
@@ -196,6 +198,20 @@ class Hand(models.Model):
     )  # type: ignore
 
     abandoned_because = models.CharField(max_length=100, null=True)
+
+    def last_action(self) -> tuple[datetime.datetime, str]:
+        rv = (self.created, "joined hand")
+        if (
+            most_recent_call_time := self.calls.aggregate(models.Min("created"))["created__min"]
+        ) is not None:
+            if most_recent_call_time > rv[0]:  # it better be, but you never know
+                rv = (most_recent_call_time, "called")
+        if (
+            most_recent_play_time := self.plays.aggregate(models.Min("created"))["created__min"]
+        ) is not None:
+            if most_recent_play_time > rv[0]:
+                rv = (most_recent_play_time, "played")
+        return rv
 
     def _check_for_expired_tournament(self) -> None:
         tour = self.table.tournament
@@ -827,7 +843,7 @@ class CallManager(models.Manager):
         return rv
 
 
-class Call(models.Model):
+class Call(TimeStampedModel):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.
@@ -885,7 +901,7 @@ class PlayManager(models.Manager):
         return rv
 
 
-class Play(models.Model):
+class Play(TimeStampedModel):
     id = models.BigAutoField(
         primary_key=True,
     )  # it's the default, but it can't hurt to be explicit.

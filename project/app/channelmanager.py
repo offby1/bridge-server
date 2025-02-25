@@ -14,6 +14,7 @@ class MyChannelManager(DefaultChannelManager):
         if user is None:
             return False
 
+        player: models.Player | None
         if isinstance(user, models.Player):
             player = user
         elif (player := getattr(user, "player", None)) is None:

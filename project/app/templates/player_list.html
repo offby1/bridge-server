@@ -18,12 +18,13 @@
                     <th scope="col">Partner</th>
                     <th scope="col">Where</th>
                     <th scope="col">Signed Up For</th>
+                    <th scope="col">Last Activity</th>
                     <th scope="col">Action</th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
                 {% for player in page_obj %}
-                    <tr style="border: 1px dotted">
+                    <tr style="border: 1px dotted; {{ player.age_style }}">
                         <th>{{ player|sedate_link:user }}</th>
                         <td>
                             {% if player.partner %}
@@ -46,6 +47,7 @@
                                 </a>
                             {% endif %}
                         </td>
+                        <td>{{ player.last_action.0 }}: {{ player.last_action.1 }}</td>
                         <td>
                             {% if player.action_button %}
                                 <form method="post" action="{{ player.action_button.form_action }}">

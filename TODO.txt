@@ -1,4 +1,8 @@
 IN PROGRESS:
+* Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
+
+  Also: player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
+
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
@@ -179,8 +183,6 @@ STILL TODO:
 * django_web_messages (as opposed to my chat messages) aren't displayed as soon as they're generated; instead, I only notice them when I refresh the page, and then there's a backlog.
 
   I assume django_web_messages is designed to display only when I refresh the page; although istr seeing something somewhere that makes them pop up as alerts or something.
-
-* Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
 * when bob logs out, his name should vanish from the "lobby"
 

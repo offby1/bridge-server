@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import json
 import logging
 import time
@@ -13,7 +14,6 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
-    HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
     HttpResponseRedirect,
@@ -21,6 +21,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_http_methods
@@ -371,6 +372,19 @@ def player_create_synthetic_opponents_view(request: AuthedHttpRequest) -> HttpRe
     return HttpResponseRedirect(next_)
 
 
+def _background_css_color(player: Player) -> str:
+    now = timezone.now()
+    when, what = player.last_action()
+
+    if now - when < datetime.timedelta(seconds=3600):
+        return "white"
+
+    if now - when < datetime.timedelta(seconds=3600 * 24):
+        return "lightgrey"
+
+    return "darkgrey"
+
+
 def player_list_view(request):
     has_partner = request.GET.get("has_partner")
     seated = request.GET.get("seated")
@@ -415,6 +429,10 @@ def player_list_view(request):
             _get_partner_action_from_context(request=request, subject=other, as_viewed_by=player)
             or None
         )
+
+    # Smuggle a style in there.
+    for other in page_obj:
+        other.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(other))
 
     context = {
         "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
