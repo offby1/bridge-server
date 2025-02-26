@@ -15,6 +15,7 @@ from django.utils import timezone
 import more_itertools
 
 from app.models.signups import TournamentSignup
+from app.models.throttle import throttle
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -88,6 +89,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             p2.partner.save()
             p2.save()
 
+            # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
+            # list view *shows* them as signed up.
+            for p in (p2, p2.partner):
+                TournamentSignup.objects.create(tournament=tour, player=p)
+
         table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
         table.next_board()
 
@@ -98,13 +104,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         return
 
 
-# TODO -- look at the arguments, and do nothing if the URL requested is irrelevant.  Specifically, it might be
-# "/metrics" once we've wired up Prometheus.  Prometheus GETs /metrics every second, and we don't need to poke the DB
-# every second.
-
-
-# Also TODO -- replace this entire mess with a scheduled solution -- see the "django-q2" branch
+# TODO -- replace this with a scheduled solution -- see the "django-q2" branch
 @receiver(request_started)
+@throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 

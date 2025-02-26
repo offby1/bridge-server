@@ -94,3 +94,5 @@ It said basically Digital Ocean App Platform, or Heroku.  I'm pretty sure it ign
 It appears to be a container that polls the docker image registry, and restarts another container if it finds updates.
 ### Github actions (and gitlab's equivalent)
 I know shockingly little about these but they're the obvious choice.
+### [django-simple-deploy](https://django-simple-deploy.readthedocs.io/en/latest/general_documentation/choosing_platform/)
+Aims to automate deployments to fly.io, heroku, and "platform.sh" (which I've never heard of until now).  Looks slick.

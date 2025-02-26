@@ -73,7 +73,7 @@ function updateDurations() {
          }
          span.innerHTML = then;
          span.nextElementSibling.innerHTML = " (" +
-                                             humanizeDuration(durationMS, { units: ["h", "m", "s"], round: true, largest: 2 }) + suffix
+                                             humanizeDuration(durationMS, { units: ["d", "h", "m", "s"], round: true, largest: 2 }) + suffix
           + ")";
       };
 
