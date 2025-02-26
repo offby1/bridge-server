@@ -16,7 +16,7 @@ class Command(BaseCommand):
             self.stderr.write(f"{bp.name} ... ", ending="")
 
             try:
-                bp.control_bot()
+                bp.toggle_bot(True)
             except OSError as e:
                 self.stderr.write(
                     f"{e}; I assume we're not running under docker, so ... outta here",

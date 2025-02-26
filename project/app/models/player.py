@@ -137,8 +137,7 @@ class Player(TimeStampedModel):
 
     def unseat_me(self) -> None:
         self.currently_seated = False
-        if self.synthetic:
-            self.control_bot()
+        self._control_bot()
 
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
@@ -160,7 +159,7 @@ class Player(TimeStampedModel):
         return PK_from_str(pieces[1])
 
     # https://cr.yp.to/daemontools/svc.html
-    def control_bot(self) -> None:
+    def _control_bot(self) -> None:
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
             return
@@ -174,7 +173,7 @@ class Player(TimeStampedModel):
             )
 
         def svc(flags: str) -> None:
-            # might not want to block here, who knows how long it'll take
+            # No problem blocking here -- experience shows this doesn't take long
             run_in_slash_service(
                 [
                     "svc",
@@ -225,7 +224,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.allow_bot_to_play_for_me = desired_state
             self.save()
-            self.control_bot()
+            self._control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
