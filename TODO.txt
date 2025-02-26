@@ -199,6 +199,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* If I've set "allow the bot to play for me", and then get seated in a new tournament, the bot does not, in fact, play for me.  Seems I need to flip the button back and forth in order to make it happen.
+
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
 * Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:

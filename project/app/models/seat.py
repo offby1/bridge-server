@@ -23,9 +23,8 @@ class SeatException(Exception):
 class SeatManager(models.Manager):
     def create(self, *args, **kwargs):
         rv = super().create(*args, **kwargs)
-        player = rv.player
-        if player.synthetic:
-            player.control_bot()
+        player: Player = rv.player
+        player.toggle_bot(player.allow_bot_to_play_for_me)
         return rv
 
 
