@@ -183,8 +183,17 @@ class Player(TimeStampedModel):
                 ],
             )
 
-        if self.allow_bot_to_play_for_me and self.currently_seated:
-            shell_script_text = """#!/bin/bash
+        if not self.allow_bot_to_play_for_me:
+            logger.info(f"{self.allow_bot_to_play_for_me=}; outta here")
+            return
+
+        if not self.currently_seated:
+            logger.info(f"{self.currently_seated=}; outta here")
+            svc("-d")
+            logger.info("Stopped bot for %s", self)
+            return
+
+        shell_script_text = """#!/bin/bash
 
 # wrapper script for [daemontools](https://cr.yp.to/daemontools/)
 
@@ -193,18 +202,15 @@ set -euo pipefail
 printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
-            run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
-            run_file = run_dir / "run.notyet"
-            run_file.parent.mkdir(parents=True, exist_ok=True)
-            run_file.write_text(shell_script_text)
-            run_file.chmod(0o755)
-            run_file = run_file.rename(run_dir / "run")
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
+        run_file = run_dir / "run.notyet"
+        run_file.parent.mkdir(parents=True, exist_ok=True)
+        run_file.write_text(shell_script_text)
+        run_file.chmod(0o755)
+        run_file = run_file.rename(run_dir / "run")
 
-            svc("-u")
-            logger.info("Started bot for %s", self)
-        else:
-            svc("-d")
-            logger.info("Stopped bot for %s", self)
+        svc("-u")
+        logger.info("Started bot for %s", self)
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():

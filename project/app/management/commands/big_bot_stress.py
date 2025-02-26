@@ -1,7 +1,9 @@
+import datetime
 import os
 
 from app.models.player import Player, TooManyBots
 from app.models.table import Table
+from app.models.tournament import Tournament
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -23,6 +25,19 @@ class Command(BaseCommand):
                 "I dunno, creating a fleet of killer bots, in production, seems like a bad idea?"
             )
 
+        t: Tournament
+        t, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+
+        for p in (
+            Player.objects.filter(currently_seated=False)
+            .filter(partner__currently_seated=False)
+            .all()
+        ):
+            t.sign_up(p)
+
+        t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
+        t.save()
+
         num_tables_updated: int = Table.objects.all().update(tempo_seconds=0)
         self.stderr.write(f"Sped up {num_tables_updated} tables")
 
@@ -41,7 +56,6 @@ class Command(BaseCommand):
                 break
             else:
                 num_bots_enabled += 1
-
-            self.stderr.write(f"{player.name} done")
+                self.stderr.write(f"{player.name} done")
 
         self.stderr.write(f"Enabled {num_bots_enabled} bots")
