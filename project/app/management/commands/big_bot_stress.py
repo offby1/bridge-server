@@ -27,10 +27,10 @@ class Command(BaseCommand):
         self.stderr.write(f"Sped up {num_tables_updated} tables")
 
         num_bots_enabled = 0
+        player: Player
         for player in Player.objects.filter(currently_seated=True):
             try:
                 player.toggle_bot(True)
-                num_bots_enabled += 1
             except TooManyBots:
                 self.stderr.write("Huh, I guess you *can* have too many bots")
                 break
@@ -39,6 +39,8 @@ class Command(BaseCommand):
                     f"{e}; I assume we're not running under docker, so ... outta here",
                 )
                 break
+            else:
+                num_bots_enabled += 1
 
             self.stderr.write(f"{player.name} done")
 
