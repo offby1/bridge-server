@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load player_extras %}
 {% block title %}
-    Hands {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
+    Hands {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
@@ -9,7 +9,7 @@
             <caption>
                 Hands
                 {% if player %}played by {{ player|styled_link:user }},{% endif %}
-                {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}
+                {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}
             </caption>
             <thead>
                 <tr>

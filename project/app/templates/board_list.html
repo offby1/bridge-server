@@ -5,7 +5,7 @@
 {% block content %}
     {% block board_list %}
         <table class="table caption-top">
-            <caption>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ total_count }}</caption>
+            <caption>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}</caption>
             <thead>
                 <tr>
                     <th>Board #</th>

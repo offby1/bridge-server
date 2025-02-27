@@ -61,9 +61,9 @@ def table_list_view(request) -> HttpResponse:
             t.summary_for_this_viewer = "No hands played yet", "-"
             t.played_hands_string = "0"
     context = {
+        "filtered_count": paginator.count,
         "page_obj": page_obj,
         "page_title": page_title,
-        "total_count": app.models.Table.objects.count(),
         "tournament_pk": tournament_pk,
     }
 

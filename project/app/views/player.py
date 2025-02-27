@@ -418,7 +418,6 @@ def player_list_view(request):
             ),
         )
 
-    total_count = qs.count()
     paginator = Paginator(qs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -435,7 +434,7 @@ def player_list_view(request):
         other.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(other))
 
     context = {
-        "extra_crap": {"total_count": total_count, "filtered_count": filtered_count},
+        "filtered_count": filtered_count,
         "page_obj": page_obj,
         "this_pages_players": json.dumps([p.pk for p in page_obj]),
         "title": ("Players " + ", ".join(filter_description)) if filter_description else "",

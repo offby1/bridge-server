@@ -667,10 +667,10 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
             as_viewed_by=getattr(request.user, "player", None),
         )
     context = {
+        "filtered_count": paginator.count,
         "page_obj": page_obj,
-        "player": player,
         "played_by": "" if player is None else f"played_by={player.pk}",
-        "total_count": paginator.count,
+        "player": player,
     }
 
     return render(request, "hand_list.html", context=context)

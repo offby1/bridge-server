@@ -70,8 +70,8 @@ def board_list_view(request: HttpRequest) -> TemplateResponse:
     page_obj = paginator.get_page(page_number)
 
     context = {
+        "filtered_count": paginator.count,
         "page_obj": page_obj,
-        "total_count": app.models.Board.objects.count(),
     }
     if tournament is not None:
         context |= {"tournament": tournament}
