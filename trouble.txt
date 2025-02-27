@@ -1,0 +1,18 @@
+Sometimes when I run "just stress", it works nicely (i.e., the django process spews logs rapidly), whereas sometimes it just sits there.
+
+I wonder ... perhaps the bots, when they finish a tournament, get sent to the lobby ... and there's no mechanism to automatically set them.  This activity suggests that ...
+
+   2751:2025-02-27T18:51:00+0000 DEBUG request_id=334abf1e3003413c8bec953a662fcf87 details.py(215) new_board_view slob wants the next_board on table 13
+   2757:2025-02-27T18:51:00+0000 DEBUG request_id=334abf1e3003413c8bec953a662fcf87 table.py(174) find_unplayed_board Player slob has played (or at least, been seated at a table with) [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23, 27, 28, 29, 31, 32]
+   2780:2025-02-27T18:51:00+0000 DEBUG apibot (   178) slob      : apibot.py 260 <module> Hand is over; POSTed empty thingy to http://localhost:9000/table/13/new-board-plz/ => <Response [200]>
+   4237:2025-02-27T18:52:50+0000 INFO  request_id=none player.py(193) _control_bot Stopped bot for slob
+   4238:2025-02-27T18:52:50+0000 INFO  apibot (   178) slob      : apibot.py 197 sayonara Exiting due to signum=15.
+   4239:2025-02-27T18:52:50+0000 DEBUG request_id=none tournament.py(422) _eject_all_pairs slob is now in the lobby, and unbottified
+   4286:2025-02-27T18:53:02+0000 DEBUG request_id=3a7652036a444fb19fd48609fa2432bc details.py(215) new_board_view slob wants the next_board on table 14
+   4287:2025-02-27T18:53:02+0000 INFO  request_id=3a7652036a444fb19fd48609fa2432bc details.py(221) new_board_view slob may not get the next board at Table 14 in tournament #8; Complete because they ain't sittin' there (request.user.player.current_table_pk()=None != pk=14)
+   4302:2025-02-27T18:53:10+0000 DEBUG request_id=4f90971777a04917bd40c441741f1566 three_way_login.py(79) three_way_login_view Oh look, slob used the skeleton key
+   4319:2025-02-27T18:53:10+0000 DEBUG apibot (   965) ?         : apibot.py 210 <module> player_blob is {'player-name': 'slob', 'player_pk': 9, 'comment': 'Oh look, slob used the skeleton key'}
+   4320:2025-02-27T18:53:10+0000 DEBUG apibot (   965) slob      : apibot.py 215 <module> Oh look, my name isn't really 9; it's slob
+   4321:2025-02-27T18:53:10+0000 INFO  apibot (   965) slob      : apibot.py 232 <module> About to start event-fetching loop from http://localhost:9000/events/player/system:player:9/, last_id None
+
+... crickets

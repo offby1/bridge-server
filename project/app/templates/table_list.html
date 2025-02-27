@@ -9,8 +9,8 @@
             <caption>{{ page_title }}; {{ filtered_count }} total</caption>
             <thead>
                 <tr>
-                    <th>Table #</th>
                     <th>Tournament #</th>
+                    <th>Table #</th>
                     <th>Current Status</th>
                     <th>Number of Boards played</th>
                 </tr>
@@ -18,8 +18,8 @@
             <tbody class="table-group-divider">
                 {% for table in page_obj %}
                     <tr>
+                        <th>{{ table.tournament.display_number }}</th>
                         <th>{{ table.pk }}</th>
-                        <td>{{ table.tournament.display_number }}</td>
                         <td>
                             {% if table.has_hand %}
                                 <a href="{% url 'app:hand-archive' table.current_hand.pk %}">
