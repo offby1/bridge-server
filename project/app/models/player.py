@@ -162,6 +162,7 @@ class Player(TimeStampedModel):
     def _control_bot(self) -> None:
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
+            logger.debug(f"Bailing out early because {service_directory=} is not a directory")
             return
 
         def run_in_slash_service(command: list[str]) -> None:
