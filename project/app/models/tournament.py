@@ -180,7 +180,8 @@ class TournamentManager(models.Manager):
         kwargs = kwargs.copy()
         with transaction.atomic():
             if ("display_number") not in kwargs:
-                kwargs["display_number"] = self.count() + 1
+                max_ = self.aggregate(models.Max("display_number"))["display_number__max"] or 0
+                kwargs["display_number"] = max_ + 1
 
             now = timezone.now()
             kwargs.setdefault("signup_deadline", now + datetime.timedelta(seconds=300))
