@@ -1,138 +1,18 @@
-at 2025-02-26T14:56:10-08:00  ❯ just --no-deps manage big_bot_stress
-cd project && poetry run python manage.py big_bot_stress
-settings.DEBUG=True orbstack
-2025-02-26T22:56:55+0000 DEBUG request_id=none tournament.py(214) get_or_create_tournament_open_for_signups a_few_seconds_from_now=datetime.datetime(2025, 2, 26, 22, 57, 5, 390206, tzinfo=datetime.timezone.utc) incomplete_and_open_tournaments_qs=<QuerySet []>
-2025-02-26T22:56:55+0000 DEBUG request_id=none tournament.py(216) get_or_create_tournament_open_for_signups No tournament exists that is incomplete, and open for signup through 2025-02-26 22:57:05.390206+00:00, so we will create a new one
-2025-02-26T22:56:55+0000 DEBUG request_id=none tournament.py(193) create Just created tournament #5; OpenForSignup; 0 hands played out of 0
-2025-02-26T22:56:55+0000 DEBUG request_id=none tournament.py(194) create Now it's 2025-02-26 22:56:55.395777+00:00; signup_deadline is 2025-02-26 23:01:55.395777+00:00; play_completion_deadline is 2025-02-26 23:06:55.395777+00:00
-2025-02-26T22:56:55+0000 DEBUG request_id=none tournament.py(221) get_or_create_tournament_open_for_signups ... namely tournament #5; OpenForSignup; 0 hands played out of 0
-Traceback (most recent call last):
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 948, in get_or_create
-    return self.get(**kwargs), False
-           ~~~~~~~~^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django_fastdev/apps.py", line 404, in fast_dev_get
-    return orig_queryset_get(self, *args, **kwargs)
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 649, in get
-    raise self.model.DoesNotExist(
-        "%s matching query does not exist." % self.model._meta.object_name
-    )
-app.models.signups.TournamentSignup.DoesNotExist: TournamentSignup matching query does not exist.
+Sometimes when I run "just stress", it works nicely (i.e., the django process spews logs rapidly), whereas sometimes it just sits there.
 
-Query kwargs:
+I wonder ... perhaps the bots, when they finish a tournament, get sent to the lobby ... and there's no mechanism to automatically set them.  This activity suggests that ...
 
-    tournament: <Tournament #5 pk=7>
-    player: modelPlayer{'_state': <django.db.models.base.ModelState object at 0x109aae780>, 'id': 13, 'created': datetime.datetime(1, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), 'modified': datetime.datetime(2025, 2, 26, 22, 55, 52, 284200, tzinfo=datetime.timezone.utc), 'user_id': 14, 'partner_id': 14, 'currently_seated': False, 'allow_bot_to_play_for_me': False, 'synthetic': False}
+   2751:2025-02-27T18:51:00+0000 DEBUG request_id=334abf1e3003413c8bec953a662fcf87 details.py(215) new_board_view slob wants the next_board on table 13
+   2757:2025-02-27T18:51:00+0000 DEBUG request_id=334abf1e3003413c8bec953a662fcf87 table.py(174) find_unplayed_board Player slob has played (or at least, been seated at a table with) [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23, 27, 28, 29, 31, 32]
+   2780:2025-02-27T18:51:00+0000 DEBUG apibot (   178) slob      : apibot.py 260 <module> Hand is over; POSTed empty thingy to http://localhost:9000/table/13/new-board-plz/ => <Response [200]>
+   4237:2025-02-27T18:52:50+0000 INFO  request_id=none player.py(193) _control_bot Stopped bot for slob
+   4238:2025-02-27T18:52:50+0000 INFO  apibot (   178) slob      : apibot.py 197 sayonara Exiting due to signum=15.
+   4239:2025-02-27T18:52:50+0000 DEBUG request_id=none tournament.py(422) _eject_all_pairs slob is now in the lobby, and unbottified
+   4286:2025-02-27T18:53:02+0000 DEBUG request_id=3a7652036a444fb19fd48609fa2432bc details.py(215) new_board_view slob wants the next_board on table 14
+   4287:2025-02-27T18:53:02+0000 INFO  request_id=3a7652036a444fb19fd48609fa2432bc details.py(221) new_board_view slob may not get the next board at Table 14 in tournament #8; Complete because they ain't sittin' there (request.user.player.current_table_pk()=None != pk=14)
+   4302:2025-02-27T18:53:10+0000 DEBUG request_id=4f90971777a04917bd40c441741f1566 three_way_login.py(79) three_way_login_view Oh look, slob used the skeleton key
+   4319:2025-02-27T18:53:10+0000 DEBUG apibot (   965) ?         : apibot.py 210 <module> player_blob is {'player-name': 'slob', 'player_pk': 9, 'comment': 'Oh look, slob used the skeleton key'}
+   4320:2025-02-27T18:53:10+0000 DEBUG apibot (   965) slob      : apibot.py 215 <module> Oh look, my name isn't really 9; it's slob
+   4321:2025-02-27T18:53:10+0000 INFO  apibot (   965) slob      : apibot.py 232 <module> About to start event-fetching loop from http://localhost:9000/events/player/system:player:9/, last_id None
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
-    raise ex.with_traceback(None)
-psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "app_tournamentsignups_player_id_29adbee4_uniq"
-DETAIL:  Key (player_id)=(13) already exists.
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/not-workme/git-repositories/me/bridge/server/project/manage.py", line 26, in <module>
-    main()
-    ~~~~^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/project/manage.py", line 22, in main
-    execute_from_command_line(sys.argv)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
-    utility.execute()
-    ~~~~~~~~~~~~~~~^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/management/__init__.py", line 436, in execute
-    self.fetch_command(subcommand).run_from_argv(self.argv)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/management/base.py", line 413, in run_from_argv
-    self.execute(*args, **cmd_options)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/core/management/base.py", line 459, in execute
-    output = self.handle(*args, **options)
-  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/management/commands/big_bot_stress.py", line 36, in handle
-    t.sign_up(p)
-    ~~~~~~~~~^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/project/app/models/tournament.py", line 342, in sign_up
-    TournamentSignup.objects.get_or_create(tournament=self, player=p)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 955, in get_or_create
-    return self.create(**params), True
-           ~~~~~~~~~~~^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 679, in create
-    obj.save(force_insert=True, using=self.db)
-    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
-    self.save_base(
-    ~~~~~~~~~~~~~~^
-        using=using,
-        ^^^^^^^^^^^^
-    ...<2 lines>...
-        update_fields=update_fields,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
-    updated = self._save_table(
-        raw,
-    ...<4 lines>...
-        update_fields,
-    )
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
-    results = self._do_insert(
-        cls._base_manager, using, fields, returning_fields, raw
-    )
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
-    return manager._insert(
-           ~~~~~~~~~~~~~~~^
-        [self],
-        ^^^^^^^
-    ...<3 lines>...
-        raw=raw,
-        ^^^^^^^^
-    )
-    ^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 1847, in _insert
-    return query.get_compiler(using=using).execute_sql(returning_fields)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
-    cursor.execute(sql, params)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        sql, params, many=False, executor=self._execute
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
-    raise ex.with_traceback(None)
-django.db.utils.IntegrityError: duplicate key value violates unique constraint "app_tournamentsignups_player_id_29adbee4_uniq"
-DETAIL:  Key (player_id)=(13) already exists.
-error: Recipe `manage` failed on line 126 with exit code 1
-
-server on  stress-this-mess via 🐳 orbstack via  v3.13.2
-at 2025-02-26T14:56:55-08:00 ❌1  ❯
+... crickets
