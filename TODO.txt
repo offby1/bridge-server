@@ -1,11 +1,19 @@
 IN PROGRESS:
 * Somehow stress the "expiring-deadlines" branch.  I won't feel comfortable merging it into main until then.
 
-* player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
-
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* MOVEMENTS
+
+  I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
+
+  There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
+
+* When a tournament's signup deadline has passed, but the play deadline hasn't; *and* all of the signed-up players have played as much as they can play (whatever that means), then force the tournament to complete.  Otherwise, everyone has to sit around waiting for the play deadline to expire before they can see the boards/hands.
+
+* player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
+
 * Ensure that timestamps (in particular, tournament deadlines) show up in the browser in the user's preferred time zone.
   - https://docs.djangoproject.com/en/dev/topics/i18n/timezones/#selecting-the-current-time-zone is one (rather tedious) way to do that;
   - maybe I can just embed calls to the Javascript `Date` function in the web pages, thereby letting the browser handle it
@@ -26,6 +34,7 @@ STILL TODO:
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
 
   Maybe change `player_who_may_call` and `player_who_may_play` to return directions instead of players.
+
 * After finding a partner, the next step should be a choice:
   - join a tournament
     Maybe you should get a chance to choose a tournament style, or the time it starts, or something
@@ -37,12 +46,6 @@ STILL TODO:
   I guess our constraint about tournaments should change from "only one running tournament at a time" to, I dunno, "no more than one tournament whose signup deadline hasn't passed".  Might be OK to have two or more tournaments whose *play* deadlines haven't yet passed, though.
 
   OTOH, perhaps there should be *three* tournaments signing up at a time, spaced 8 hours apart, so that people around the world can find a convenient time to play.  Gotta plan for success!
-
-* MOVEMENTS
-
-  I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
-
-  There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
 
 * God Mode doesn't show all four hands during the auction; only during play.
 
