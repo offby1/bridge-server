@@ -38,7 +38,7 @@ class Command(BaseCommand):
                     p.unseat_me()
                     self.stderr.write(f"Unseated {p.name}")
 
-                if p.partner.currently_seated:
+                if p.partner is not None and p.partner.currently_seated:
                     p.partner.unseat_me()
                     self.stderr.write(f"Unseated {p.partner.name}")
 
