@@ -32,16 +32,26 @@ class Command(BaseCommand):
         with transaction.atomic():
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
 
-            for p in (
-                Player.objects.filter(currently_seated=False)
-                .filter(partner__currently_seated=False)
-                .all()
-            ):
+            for p in Player.objects.order_by("user__username").all():
+                if p.currently_seated:
+                    self.stderr.write(
+                        f"Not signing up {p.name} because {p.currently_seated=} at {p.current_table}"
+                    )
+                    continue
+
+                if p.partner.currently_seated:
+                    self.stderr.write(
+                        f"Not signing up {p.name} because their partner {p.partner.name} {p.partner.currently_seated=}"
+                    )
+                    continue
+
                 if TournamentSignup.objects.filter(player__in={p, p.partner}).exists():
                     # TODO -- maybe yoink 'em outta that tournament and into this one?
                     self.stderr.write(f"{p.name} is already signed up for some tournament")
-                else:
-                    t.sign_up(p)
+                    continue
+
+                t.sign_up(p)
+                self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
 
             t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
 
