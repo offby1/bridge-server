@@ -51,7 +51,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
     else:
         logger.warning("TODO: adding a hard-coded number (namely, 2) of boards to %s", tour)
         logger.warning("TODO: this needs to be computed from a movement")
-        tour.add_boards(n=2)
+        tour.add_boards(boards_per_round=3)
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
@@ -269,7 +269,9 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     # The barrier is just for unit testing
-    def add_boards(self, *, n: int, barrier: threading.Barrier | None = None) -> None:
+    def add_boards(
+        self, *, boards_per_round: int, barrier: threading.Barrier | None = None
+    ) -> None:
         if barrier is not None:
             logger.debug("Waiting on %s", barrier)
             barrier.wait()
@@ -283,15 +285,16 @@ class Tournament(models.Model):
                 not self.is_complete
             ), f"Wassup! Don't add boards to a completed tournament!! {self}"
 
-            self._add_boards_internal(n=n)
+            self._add_boards_internal(boards_per_round=boards_per_round)
 
             logger.debug("Added %d boards to %s", self.board_set.count(), self)
 
     # This is easier to test than add_boards, because it doesn't raise those assertions
-    def _add_boards_internal(self, *, n: int) -> None:
+    def _add_boards_internal(self, *, boards_per_round: int) -> None:
         from app.models.board import Board, board_attributes_from_display_number
 
-        for display_number in range(1, n + 1):
+        for display_number in range(boards_per_round * self.table_set.count()):
+            display_number += 1
             board_attributes = board_attributes_from_display_number(
                 display_number=display_number,
                 rng_seeds=[

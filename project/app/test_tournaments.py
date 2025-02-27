@@ -265,10 +265,12 @@ def test_deadline_via_view(usual_setup, rf) -> None:
 @pytest.mark.django_db(transaction=True)
 def test_that_new_unique_constraint() -> None:
     the_tournament = Tournament.objects.create(display_number=1)
+    Table.objects.create(tournament=the_tournament)
 
-    the_tournament._add_boards_internal(n=2)
+    print(f"{the_tournament.table_set.count()=}")
+    the_tournament._add_boards_internal(boards_per_round=2)
     with pytest.raises(IntegrityError):
-        the_tournament._add_boards_internal(n=2)
+        the_tournament._add_boards_internal(boards_per_round=2)
 
     assert the_tournament.board_set.count() == 2
 
@@ -282,13 +284,15 @@ def test_concurrency() -> None:
     the_tournament = Tournament.objects.create(
         signup_deadline=ThePast, play_completion_deadline=TheFuture
     )
+    assert not the_tournament.table_set.exists()
+    Table.objects.create(tournament=the_tournament)
 
     the_barrier = threading.Barrier(parties=3)
 
     class BoardAdder(threading.Thread):
         def run(self):
             try:
-                the_tournament.add_boards(n=2, barrier=the_barrier)
+                the_tournament.add_boards(boards_per_round=2, barrier=the_barrier)
             except Exception as e:
                 logger.debug("Oy! %s", e)
             finally:
@@ -314,6 +318,8 @@ def test_signups(nobody_seated) -> None:
     assert north.partner == south
 
     running_tournament, _ = Tournament.objects.get_or_create(display_number=1)
+    assert not running_tournament.table_set.exists()
+
     assert not running_tournament.is_complete
     assert running_tournament.status() is Running
 
@@ -323,6 +329,7 @@ def test_signups(nobody_seated) -> None:
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
+
     open_tournament.sign_up(north)
     actual = set(open_tournament.signed_up_players())
     expected = {north, south}
@@ -341,13 +348,15 @@ def test_signups(nobody_seated) -> None:
     east.partner_with(west)
     open_tournament.sign_up(east)
 
+    Table.objects.create(tournament=open_tournament)
+
     actual = set(open_tournament.signed_up_players())
     expected = {north, south, east, west}
     assert actual == expected
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         check_for_expirations(__name__)
-        assert open_tournament.table_set.count() == 1
+        assert open_tournament.table_set.count() == 2
 
     with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
         east.break_partnership()
@@ -368,6 +377,8 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
     open_tournament.sign_up(north)
+    assert not open_tournament.table_set.exists()
+    Table.objects.create(tournament=open_tournament)
     app.models.tournament._do_signup_expired_stuff(open_tournament)
 
     current_player_pks = set([p.pk for p in Player.objects.all()])
