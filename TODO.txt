@@ -1,6 +1,4 @@
 IN PROGRESS:
-* Somehow stress the "expiring-deadlines" branch.  I won't feel comfortable merging it into main until then.
-
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
@@ -204,6 +202,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Somehow stress the "expiring-deadlines" branch.  I won't feel comfortable merging it into main until then.
+
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.
 
 * Another idea for end-of-tournament: when we create a tournament, we associate with it two timestamps in the future:
