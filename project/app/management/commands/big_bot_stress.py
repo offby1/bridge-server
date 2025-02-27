@@ -3,9 +3,11 @@ import os
 
 from app.models.player import Player, TooManyBots
 from app.models.table import Table
+from app.models.signups import TournamentSignup
 from app.models.tournament import Tournament
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 
 class Command(BaseCommand):
@@ -28,15 +30,19 @@ class Command(BaseCommand):
         t: Tournament
         t, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
 
-        for p in (
-            Player.objects.filter(currently_seated=False)
-            .filter(partner__currently_seated=False)
-            .all()
-        ):
-            t.sign_up(p)
+        with transaction.atomic():
+            for p in (
+                Player.objects.filter(currently_seated=False)
+                .filter(partner__currently_seated=False)
+                .all()
+            ):
+                if TournamentSignup.objects.filter(player__in={p, p.partner}).exists():
+                    self.stderr.write(f"{p.name} is already signed up for some tournament")
+                else:
+                    t.sign_up(p)
 
-        t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
-        t.save()
+            t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
+            t.save()
 
         num_tables_updated: int = Table.objects.all().update(tempo_seconds=0)
         self.stderr.write(f"Sped up {num_tables_updated} tables")
