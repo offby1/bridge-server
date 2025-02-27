@@ -17,7 +17,7 @@ class Command(BaseCommand):
         if settings.DEBUG:
             is_safe = True
 
-        if os.environ.get("DOCKER_CONTEXT") == "hetz":
+        if os.environ.get("DOCKER_CONTEXT") in {"hetz", "orbstack"}:
             is_safe = True
 
         self.stderr.write(f"{settings.DEBUG=} {os.environ.get('DOCKER_CONTEXT')}")
