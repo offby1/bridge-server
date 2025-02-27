@@ -4,7 +4,7 @@ import os
 from app.models.player import Player, TooManyBots
 from app.models.table import Table
 from app.models.signups import TournamentSignup
-from app.models.tournament import Tournament
+from app.models.tournament import Tournament, check_for_expirations
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -44,10 +44,9 @@ class Command(BaseCommand):
             t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
             t.save()
 
-        num_tables_updated: int = Table.objects.all().update(tempo_seconds=0)
-        self.stderr.write(f"Sped up {num_tables_updated} tables")
+        check_for_expirations(sender="big_bot_stress")
 
-        num_bots_enabled = 0
+        bots_enabled = []
         player: Player
         for player in Player.objects.filter(currently_seated=True):
             try:
@@ -61,7 +60,15 @@ class Command(BaseCommand):
                 )
                 break
             else:
-                num_bots_enabled += 1
+                bots_enabled.append(f"{player.name} ({player.pk})")
                 self.stderr.write(f"{player.name} done")
 
-        self.stderr.write(f"Enabled {num_bots_enabled} bots")
+        tables_updated: list[str] = []
+        for table in Table.objects.all():
+            table.tempo_seconds = 0
+            table.save()
+            tables_updated.append(str(table.pk))
+
+        self.stderr.write(f"Sped up tables {', '.join(tables_updated)}")
+
+        self.stderr.write(f"Enabled bots for players {', '.join(bots_enabled)} ")
