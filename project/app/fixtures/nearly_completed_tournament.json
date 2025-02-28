@@ -2144,6 +2144,7 @@
   },
   {
     "fields": {
+      "display_number": 1,
       "tempo_seconds": 1.0,
       "tournament": 1
     },

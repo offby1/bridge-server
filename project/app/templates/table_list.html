@@ -19,7 +19,7 @@
                 {% for table in page_obj %}
                     <tr>
                         <th>{{ table.tournament.display_number }}</th>
-                        <th>{{ table.pk }}</th>
+                        <th>{{ table.display_number }}</th>
                         <td>
                             {% if table.has_hand %}
                                 <a href="{% url 'app:hand-archive' table.current_hand.pk %}">

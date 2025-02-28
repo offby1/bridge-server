@@ -162,9 +162,9 @@ class HandManager(models.Manager):
             p.save()
 
         logger.debug(
-            "New hand: board #%s at table %s with %s",
+            "New hand: board #%s at %s with %s",
             board.display_number,
-            table.pk,
+            table,
             [p.name for p in players_qs],
         )
 
@@ -793,7 +793,7 @@ class Hand(TimeStampedModel):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Tournament #{self.table.tournament.display_number}, table {self.table.pk}, board#{self.board.display_number}"
+        return f"Tournament #{self.table.tournament.display_number}, {self.table}, board#{self.board.display_number}"
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):

@@ -39,7 +39,7 @@
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.display_number }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.pk }}</a>
+                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table.display_number }}</a>
                         </td>
                         <td>
                             <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.display_number }}</a>

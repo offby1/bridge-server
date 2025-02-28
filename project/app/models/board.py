@@ -48,6 +48,7 @@ def board_attributes_from_display_number(
         1 <= display_number <= BOARDS_PER_TOURNAMENT
     ), f"{display_number=} gotta be <= {BOARDS_PER_TOURNAMENT=}"
 
+    # TODO -- all this computation will need to be flexible, in case we have more than 16 boards
     # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
     dealer = "NESW"[(display_number - 1) % 4]
     only_ns_vuln = display_number in (2, 5, 12, 15)

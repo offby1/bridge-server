@@ -29,10 +29,10 @@ class Command(BaseCommand):
                     check()
                 except AssertionError:
                     self.stderr.write(
-                        f"    ****    {seat.direction} at {seat.table.pk} failed {c=}    ****"
+                        f"    ****    {seat.direction} at {seat.table.display_number} failed {c=}    ****"
                     )
                 else:
-                    self.stderr.write(f"{seat.direction} at {seat.table.pk} {c} done")
+                    self.stderr.write(f"{seat.direction} at {seat.table.display_number} {c} done")
 
         for tournament in app.models.Tournament.objects.all():
             for c in ["_check_no_more_than_one_running_tournament"]:

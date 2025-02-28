@@ -428,7 +428,7 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         tournament=Tournament.objects.first(),
     )
     for p in Player.objects.all():
-        print(f"{p.name}: {p.current_seat.direction} at table {p.current_seat.table.pk}")
+        print(f"{p.name}: {p.current_seat.direction} at {p.current_seat.table}")
 
     h.refresh_from_db()
     del h.is_abandoned

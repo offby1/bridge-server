@@ -43,6 +43,12 @@ class TableHasNoHand(TableException):
 
 
 class TableManager(models.Manager):
+    def create(self, *args, **kwargs) -> Table:
+        max_ = self.aggregate(models.Max("display_number"))["display_number__max"] or 0
+        display_number = max_ + 1
+        kwargs.setdefault("display_number", display_number)
+        return super().create(*args, **kwargs)
+
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, tournament: Tournament | None = None
     ) -> Table:
@@ -93,6 +99,8 @@ class Table(models.Model):
     )  # type: ignore
 
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+
+    display_number = models.SmallIntegerField()
 
     # View code adds these
     summary_for_this_viewer: tuple[str, str | int]
@@ -261,7 +269,15 @@ class Table(models.Model):
         return all(p is not None for p in self.players_by_direction.values())
 
     def __str__(self):
-        return f"Table {self.id} in {self.tournament}"
+        return f"Table #{self.display_number} in {self.tournament}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
+                fields=["display_number", "tournament_id"],
+            ),
+        ]
 
 
 @admin.register(Table)

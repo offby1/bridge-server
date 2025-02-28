@@ -553,8 +553,8 @@ def _terse_description(hand: Hand) -> str:
     )
 
     table = format_html(
-        "Table #{}",
-        hand.table.pk,
+        "{}",
+        hand.table,
     )
 
     board = format_html(
