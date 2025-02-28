@@ -262,56 +262,6 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert b"has passed" in response.content
 
 
-@pytest.mark.django_db(transaction=True)
-def test_that_new_unique_constraint() -> None:
-    the_tournament = Tournament.objects.create(display_number=1)
-    Table.objects.create(tournament=the_tournament)
-
-    print(f"{the_tournament.table_set.count()=}")
-    the_tournament._add_boards_internal(boards_per_round=2)
-    with pytest.raises(IntegrityError):
-        the_tournament._add_boards_internal(boards_per_round=2)
-
-    assert the_tournament.board_set.count() == 2
-
-
-@pytest.mark.django_db(transaction=True)
-def test_concurrency() -> None:
-    ThePast = datetime.datetime.fromisoformat("2001-01-01T00:00:00Z")
-    TheFuture = datetime.datetime.fromisoformat("2112-01-01T00:00:00Z")
-    InBetween = ThePast + datetime.timedelta(seconds=(TheFuture - ThePast).total_seconds() // 2)
-
-    the_tournament = Tournament.objects.create(
-        signup_deadline=ThePast, play_completion_deadline=TheFuture
-    )
-    assert not the_tournament.table_set.exists()
-    Table.objects.create(tournament=the_tournament)
-
-    the_barrier = threading.Barrier(parties=3)
-
-    class BoardAdder(threading.Thread):
-        def run(self):
-            try:
-                the_tournament.add_boards(boards_per_round=2, barrier=the_barrier)
-            except Exception as e:
-                logger.debug("Oy! %s", e)
-            finally:
-                connection.close()
-
-    with freeze_time(InBetween):
-        threads = [BoardAdder() for _ in range(2)]
-
-        for t in threads:
-            t.start()
-
-        the_barrier.wait()
-
-        for t in threads:
-            t.join()
-
-    assert the_tournament.board_set.count() == 2
-
-
 def test_signups(nobody_seated) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")

@@ -17,6 +17,8 @@ import more_itertools
 
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
+import app.utils.movements
+
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -46,38 +48,33 @@ class NotOpenForSignupError(TournamentSignupError):
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
 
-    if tour.board_set.count() > 0:
-        logger.warning(
-            "Alas, I already pre-created %d boards, which probably isn't the right number.",
-            tour.board_set.count(),
-        )
-    else:
-        import app.utils.movements
+    assert not tour.board_set.exists()
 
-        signed_up_pairs = []
+    signed_up_pairs = []
 
-        for su in TournamentSignup.objects.filter(tournament=tour).all():
-            p = su.player
-            if p is not None and p.partner is not None:
-                signed_up_pairs.append(
-                    app.utils.movements.Pair(
-                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
-                    )
+    for su in TournamentSignup.objects.filter(tournament=tour).all():
+        p = su.player
+        if p is not None and p.partner is not None:
+            signed_up_pairs.append(
+                app.utils.movements.Pair(
+                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
                 )
+            )
 
-        logger.debug(
-            "I wonder how many pairs have signed up for %s ... %d",
-            tour,
-            len(signed_up_pairs),
-        )
-        movement = app.utils.movements.Movement.from_boards_and_pairs(
-            boards=list(tour.board_set.all()), pairs=signed_up_pairs, tournament=tour
-        )
-        logger.debug("%s", movement)
+    logger.debug(
+        "I wonder how many pairs have signed up for %s ... %d",
+        tour,
+        len(signed_up_pairs),
+    )
+    movement = app.utils.movements.Movement.from_pairs(
+        boards_per_round=3,  # arbitrary
+        pairs=signed_up_pairs,
+        tournament=tour,
+    )
+    logger.debug("%s", movement)
 
-        boards_per_round = len(movement.table_settings_by_table_number[0][0].board_group.boards)
-        logger.debug(f"{boards_per_round=}")
-        tour.add_boards(boards_per_round=boards_per_round)
+    boards_per_round = len(movement.table_settings_by_table_number[0][0].board_group.boards)
+    logger.debug(f"{boards_per_round=}")
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
@@ -292,35 +289,6 @@ class Tournament(models.Model):
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
-
-    # The barrier is just for unit testing
-    def add_boards(
-        self, *, boards_per_round: int, barrier: threading.Barrier | None = None
-    ) -> None:
-        if barrier is not None:
-            logger.debug("Waiting on %s", barrier)
-            barrier.wait()
-            logger.debug("OK! Now we get to work.")
-
-        with transaction.atomic():
-            assert (
-                not self.board_set.exists()
-            ), f"Don't add boards to {self}; it already has {self.board_set.count()}!!"
-            assert (
-                not self.is_complete
-            ), f"Wassup! Don't add boards to a completed tournament!! {self}"
-
-            self._add_boards_internal(boards_per_round=boards_per_round)
-
-            logger.debug("Added %d boards to %s", self.board_set.count(), self)
-
-    # This is easier to test than add_boards, because it doesn't raise those assertions
-    def _add_boards_internal(self, *, boards_per_round: int) -> None:
-        from app.models.board import Board, board_attributes_from_display_number
-
-        for display_number in range(boards_per_round * self.table_set.count()):
-            display_number += 1
-            Board.objects.create_from_display_number(display_number=display_number, tournament=self)
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:

@@ -4,13 +4,15 @@ import collections
 import dataclasses
 import itertools
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import more_itertools
 import tabulate
 
-from app.models import Board, Tournament
 from app.models.types import PK
+
+if TYPE_CHECKING:
+    from app.models import Board, Tournament
 
 
 @dataclasses.dataclass(frozen=True)
@@ -96,6 +98,22 @@ class Movement:
                     )
             tabulate_me.append(this_table)
         print(tabulate.tabulate(tabulate_me))
+
+    @classmethod
+    def from_pairs(
+        cls, *, boards_per_round: int, pairs: Sequence[Pair], tournament: Tournament
+    ) -> Movement:
+        from app.models import Board
+
+        num_tables, _ = cls.num_tables(num_pairs=len(pairs))
+        return cls.from_boards_and_pairs(
+            boards=[
+                Board.objects.create_from_display_number(display_number=n, tournament=tournament)
+                for n in range(1, boards_per_round * num_tables + 1)
+            ],
+            pairs=pairs,
+            tournament=tournament,
+        )
 
     @classmethod
     def from_boards_and_pairs(

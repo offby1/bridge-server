@@ -4,16 +4,7 @@ import pytest
 
 from app.models import Tournament
 import app.models.board
-from app.utils.movements import Board, BoardGroup, Movement, Pair
-
-
-@pytest.mark.django_db
-def test_movements_smoke() -> None:
-    a_board = Board(123)
-    a_pair = Pair("hi, I'm a pair", id=frozenset([1, 2]))
-    a_tournament = Tournament.objects.create()
-    m = Movement.from_boards_and_pairs(boards=[a_board], pairs=[a_pair], tournament=a_tournament)
-    m.display()
+from app.utils.movements import BoardGroup, Movement, Pair
 
 
 @pytest.mark.django_db
@@ -46,15 +37,11 @@ def test_movements_for_realz(monkeypatch) -> None:
         for boards_per_round in (2, 3, 4, 5):
             t = Tournament.objects.create()
             print(f"\n\n{num_pairs=} {boards_per_round=}\n")
-            boards = [
-                Board.objects.create_from_display_number(display_number=n, tournament=t)
-                for n in range(1, boards_per_round * num_tables + 1)
-            ]
 
             all_pairs: set[Pair] = set()
 
-            da_movement = Movement.from_boards_and_pairs(
-                boards=boards, pairs=pairs[0:num_pairs], tournament=t
+            da_movement = Movement.from_pairs(
+                boards_per_round=boards_per_round, pairs=pairs[0:num_pairs], tournament=t
             )
             da_movement.display()
 
