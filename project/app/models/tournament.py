@@ -48,7 +48,9 @@ class NotOpenForSignupError(TournamentSignupError):
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
-        assert not tour.board_set.exists()
+        if tour.board_set.exists():
+            logger.debug("%s looks like it's had boards assigned already; bailing", tour)
+            return
 
         signed_up_pairs = []
 
