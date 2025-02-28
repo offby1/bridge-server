@@ -36,14 +36,18 @@ services:
     volumes:
       - django_static_root:/bridge/project/static_root
 
-    # mount the work tree into the image, so we can edit normally, and those edits are immediately visible in the container
-    # Note that you'll still have to manually restart daphne, though.
-    # volumes:
-    #   - ./project:/bridge/project
     labels:
       caddy: ${CADDY_HOSTNAME:-}
       caddy.reverse_proxy: "{{upstreams 9000}}"
 
+    develop:
+      # Create a `watch` configuration to update the app
+      # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: sync+restart
+          path: ./project
+          target: /bridge/project
   django-collected-static:
     <<: *django
     command: "poetry run python manage.py collectstatic --no-input"
