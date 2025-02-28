@@ -21,6 +21,7 @@ import app.utils.movements
 
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from django.db.models.manager import RelatedManager
 
     from app.models import Player, Table
@@ -73,14 +74,15 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
                 )
             )
 
-        movement = app.utils.movements.Movement.from_pairs(
+        movement = tour.movement_from_pairs(
             boards_per_round=3,  # arbitrary
             pairs=signed_up_pairs,
-            tournament=tour,
         )
         movement.display()
 
         # Now seat everyone who's signed up.
+        # TODO -- consult the movement to see whom to seat where.
+        # and then TODO -- keep doing that as the movement's "rounds" progress.
         waiting_pairs = set()
 
         for p in tour.signed_up_players():
@@ -287,6 +289,11 @@ class Tournament(models.Model):
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
+
+    def movement_from_pairs(self, boards_per_round: int, pairs: Sequence[app.utils.movements.Pair]):
+        return app.utils.movements.Movement.from_pairs(
+            boards_per_round=boards_per_round, pairs=pairs, tournament=self
+        )
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
