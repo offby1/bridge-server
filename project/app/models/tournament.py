@@ -47,83 +47,79 @@ class NotOpenForSignupError(TournamentSignupError):
 
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
+    with transaction.atomic():
+        assert not tour.board_set.exists()
 
-    assert not tour.board_set.exists()
+        signed_up_pairs = []
 
-    signed_up_pairs = []
+        for su in TournamentSignup.objects.filter(tournament=tour).all():
+            p = su.player
 
-    for su in TournamentSignup.objects.filter(tournament=tour).all():
-        p = su.player
-        if p is not None and p.partner is not None:
+            assert p is not None
+
+            if p.partner is None:
+                logger.warning(f"Not signing up {p.name} because they have no partner")
+                continue
+
+            if p.currently_seated:
+                logger.warning(f"Not signing up {p.name} because they are currently seated")
+                continue
+
             signed_up_pairs.append(
                 app.utils.movements.Pair(
                     id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
                 )
             )
 
-    logger.debug(
-        "I wonder how many pairs have signed up for %s ... %d",
-        tour,
-        len(signed_up_pairs),
-    )
-    movement = app.utils.movements.Movement.from_pairs(
-        boards_per_round=3,  # arbitrary
-        pairs=signed_up_pairs,
-        tournament=tour,
-    )
-    logger.debug("%s", movement)
-
-    boards_per_round = len(movement.table_settings_by_table_number[0][0].board_group.boards)
-    logger.debug(f"{boards_per_round=}")
-
-    # Now seat everyone who's signed up.
-    waiting_pairs = set()
-
-    singles = [p for p in tour.signed_up_players().filter(partner__isnull=True)]
-    if singles:
-        logger.warning(
-            "Somehow, %s got signed up despite not having partners", [p.name for p in singles]
+        movement = app.utils.movements.Movement.from_pairs(
+            boards_per_round=3,  # arbitrary
+            pairs=signed_up_pairs,
+            tournament=tour,
         )
+        movement.display()
 
-    for p in tour.signed_up_players().filter(partner__isnull=False).exclude(currently_seated=True):
-        waiting_pairs.add(frozenset([p, p.partner]))
+        # Now seat everyone who's signed up.
+        waiting_pairs = set()
 
-    logger.debug("%d pairs are waiting", len(waiting_pairs))
+        for p in tour.signed_up_players():
+            waiting_pairs.add(frozenset([p, p.partner]))
 
-    # Group them into pairs of pairs.
-    # Create a table for each such quartet.
-    from app.models.table import Table
+        logger.debug("%d pairs are waiting", len(waiting_pairs))
 
-    for quartet in more_itertools.chunked(waiting_pairs, 2):
-        pair1 = quartet.pop()
-        p1 = next(iter(pair1))
-        assert p1 is not None
-        if quartet:
-            pair2 = quartet.pop()
-            p2 = next(iter(pair2))
-            assert p2 is not None
-        else:
-            from app.models import Player
+        # Group them into pairs of pairs.
+        # Create a table for each such quartet.
+        from app.models.table import Table
 
-            p2 = Player.objects.create_synthetic()
-            p2.partner = Player.objects.create_synthetic()
-            p2.partner.partner = p2
-            p2.partner.save()
-            p2.save()
+        for quartet in more_itertools.chunked(waiting_pairs, 2):
+            pair1 = quartet.pop()
+            p1 = next(iter(pair1))
+            assert p1 is not None
+            if quartet:
+                pair2 = quartet.pop()
+                p2 = next(iter(pair2))
+                assert p2 is not None
+            else:
+                from app.models import Player
 
-            # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
-            # list view *shows* them as signed up.
-            for p in (p2, p2.partner):
-                TournamentSignup.objects.create(tournament=tour, player=p)
+                p2 = Player.objects.create_synthetic()
+                p2.partner = Player.objects.create_synthetic()
+                p2.partner.partner = p2
+                p2.partner.save()
+                p2.save()
 
-        table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
-        table.next_board()
+                # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
+                # list view *shows* them as signed up.
+                for p in (p2, p2.partner):
+                    TournamentSignup.objects.create(tournament=tour, player=p)
 
-    # It expired without any signups -- just nuke it
-    if tour.table_set.count() == 0:
-        logger.warning("%s has no tables; deleting it", tour)
-        tour.delete()
-        return
+            table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
+            table.next_board()
+
+        # It expired without any signups -- just nuke it
+        if tour.table_set.count() == 0:
+            logger.warning("%s has no tables; deleting it", tour)
+            tour.delete()
+            return
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch

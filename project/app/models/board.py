@@ -22,7 +22,7 @@ from .common import SEAT_CHOICES
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player
+    from app.models import Player, Tournament
 
 BOARDS_PER_TOURNAMENT = 16
 
@@ -83,8 +83,7 @@ class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
 
-    def create_from_display_number(self, *, display_number: int, **kwargs) -> Board:
-        tournament = kwargs["tournament"]
+    def create_from_display_number(self, *, display_number: int, tournament: Tournament) -> Board:
         board_attributes = board_attributes_from_display_number(
             display_number=display_number,
             rng_seeds=[
