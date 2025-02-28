@@ -7,19 +7,18 @@ from typing import Any
 import more_itertools
 import tabulate
 
+from app.models import Board, Tournament
+from app.models.types import PK
+
 
 @dataclasses.dataclass(frozen=True)
 class Pair:
     names: str
+    id: frozenset[PK]
 
 
 class PhantomPair(Pair):
     pass
-
-
-@dataclasses.dataclass(frozen=True)
-class Board:
-    number: int
 
 
 def _are_consecutive(numbers: Sequence[int]) -> bool:
@@ -38,8 +37,10 @@ class BoardGroup:
     boards: tuple[Board, ...]
 
     def __post_init__(self) -> None:
+        for b in self.boards:
+            print(f"{vars(b)=}")
         assert len(self.letter) == 1
-        assert _are_consecutive([b.number for b in self.boards])
+        assert _are_consecutive([b.display_number for b in self.boards])
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,13 +59,6 @@ class Quartet:
         return (phantoms, normals)
 
 
-def _num_tables(*, num_pairs: int) -> tuple[int, bool]:
-    rv, overflow = divmod(num_pairs, 2)
-    if overflow:
-        rv += 1
-    return rv, overflow > 0
-
-
 @dataclasses.dataclass(frozen=True)
 class TableSetting:
     quartet: Quartet
@@ -78,12 +72,37 @@ class Movement:
     def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
         return list(self.table_settings_by_table_number.items())
 
+    @staticmethod
+    def num_tables(*, num_pairs: int) -> tuple[int, bool]:
+        rv, overflow = divmod(num_pairs, 2)
+        if overflow:
+            rv += 1
+        return rv, overflow > 0
 
-def make_movement(*, boards: Sequence[Board], pairs: Sequence[Pair]) -> Movement:
-    num_tables, overflow = _num_tables(num_pairs=len(pairs))
+    def display(self) -> None:
+        tabulate_me = []
+        for table_number, rounds in self.items():
+            this_table: list[Any] = [table_number + 1]
+            for r in rounds:
+                quartet, board_group = r.quartet, r.board_group
+                phantoms, normals = quartet.partition_into_phantoms_and_normals()
+                if phantoms:
+                    this_table.append(f"{normals[0].names} sits this round out")
+                else:
+                    this_table.append(
+                        f"{quartet.ew.names}/{quartet.ns.names} boards {','.join((str(b.display_number) for b in board_group.boards))}"
+                    )
+            tabulate_me.append(this_table)
+        print(tabulate.tabulate(tabulate_me))
+
+
+def make_movement(
+    *, boards: Sequence[Board], pairs: Sequence[Pair], tournament: Tournament
+) -> Movement:
+    num_tables, overflow = Movement.num_tables(num_pairs=len(pairs))
     pairs = list(pairs)
     if overflow:
-        pairs.append(PhantomPair(names="The Fabulous Phantoms"))
+        pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))
 
     ns_pairs = pairs[0:num_tables]
     ew_pairs = pairs[num_tables:]
@@ -108,7 +127,10 @@ def make_movement(*, boards: Sequence[Board], pairs: Sequence[Pair]) -> Movement
         BoardGroup(letter=letter, boards=tuple(boards))
         for letter, boards in zip(
             "ABCDEFGHIJKLMNOP",
-            more_itertools.chunked([Board(n) for n in range(1, num_boards + 1)], boards_per_round),
+            more_itertools.chunked(
+                boards,
+                boards_per_round,
+            ),
         )
     ]
 
@@ -123,87 +145,3 @@ def make_movement(*, boards: Sequence[Board], pairs: Sequence[Pair]) -> Movement
             TableSetting(quartet=q, board_group=board_groups[round_number - 1])
         )
     return Movement(table_settings_by_table_number=temp_rv)
-
-
-# fmt: off
-
-# fmt: on
-if __name__ == "__main__":
-    pairs = [
-        Pair(s)
-        for s in (
-            "NS 1",
-            "NS 2",
-            "NS 3",
-            "NS 4",
-            "NS 5",
-            "NS 6",
-            "NS 7",
-            "EW 1",
-            "EW 2",
-            "EW 3",
-            "EW 4",
-            "EW 5",
-            "EW 6",
-        )
-    ]
-
-    for num_pairs in range(3, len(pairs) + 1):
-        num_tables, _ = _num_tables(num_pairs=num_pairs)
-        for boards_per_round in (2, 3, 4, 5):
-            print(f"\n\n{num_pairs=} {boards_per_round=}\n")
-            boards = [Board(n) for n in range(1, boards_per_round * num_tables + 1)]
-
-            all_pairs: set[Pair] = set()
-
-            da_movement = make_movement(boards=boards, pairs=pairs[0:num_pairs])
-
-            tabulate_me = []
-            for table_number, rounds in da_movement.items():
-                this_table: list[Any] = [table_number + 1]
-                for r in rounds:
-                    quartet, board_group = r.quartet, r.board_group
-                    phantoms, normals = quartet.partition_into_phantoms_and_normals()
-                    if phantoms:
-                        assert len(normals) == 1
-                        assert len(phantoms) == 1
-                        this_table.append(f"{normals[0].names} sits this round out")
-                    else:
-                        assert len(normals) == 2
-                        this_table.append(
-                            f"{quartet.ew.names}/{quartet.ns.names} boards {','.join((str(b.number) for b in board_group.boards))}"
-                        )
-                tabulate_me.append(this_table)
-            print(
-                tabulate.tabulate(
-                    tabulate_me,
-                    headers=["Table"] + [f"Round {r}" for r in range(1, len(rounds) + 1)],
-                )
-            )
-
-            for table_number, rounds in da_movement.items():
-                for r in rounds:
-                    quartet, board_group = r.quartet, r.board_group
-                    pairs_in_this_round = set()
-                    pairs_in_this_round.add(quartet.ns)
-                    pairs_in_this_round.add(quartet.ew)
-
-            if all_pairs:
-                import pprint
-
-                # Ensure every pair plays in every round
-                assert (
-                    all_pairs == pairs_in_this_round
-                ), f"{pprint.pformat(all_pairs)} but {pprint.pformat(pairs_in_this_round)}"
-            else:
-                all_pairs = pairs_in_this_round
-
-            pair_board_combos: collections.Counter[tuple[Pair, BoardGroup]] = collections.Counter()
-            for table_number, rounds in da_movement.items():
-                for r in rounds:
-                    quartet, board_group = r.quartet, r.board_group
-                    pair_board_combos[(quartet.ns, board_group)] += 1
-                    pair_board_combos[(quartet.ew, board_group)] += 1
-
-            [(pair, count)] = pair_board_combos.most_common(1)
-            assert count == 1

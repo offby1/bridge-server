@@ -13,6 +13,7 @@ from bridge.seat import Seat
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
 # indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
+from django.conf import settings
 from django.contrib import admin
 from django.db import models
 
@@ -82,8 +83,17 @@ class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
 
-    def create_from_attributes(self, *, attributes, tournament) -> Board:
-        return self.create(**attributes, tournament=tournament)
+    def create_from_display_number(self, *, display_number: int, **kwargs) -> Board:
+        tournament = kwargs["tournament"]
+        board_attributes = board_attributes_from_display_number(
+            display_number=display_number,
+            rng_seeds=[
+                str(display_number).encode(),
+                str(tournament.pk).encode(),
+                settings.SECRET_KEY.encode(),
+            ],
+        )
+        return self.create(**board_attributes, tournament=tournament)
 
     def create(self, *args, **kwargs) -> Board:
         tournament = kwargs.get("tournament")
@@ -187,6 +197,9 @@ class Board(models.Model):
             vuln = "East/West"
 
         return f"{vuln} vulnerable"
+
+    def __repr__(self) -> str:
+        return f"<Board #{self.display_number} pk={self.pk}>"
 
     def __str__(self) -> str:
         return f"{self.short_string()}, {self.vulnerability_string()}, dealt by {self.fancy_dealer}"

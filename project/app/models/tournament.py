@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+from operator import attrgetter
 import threading
 from typing import TYPE_CHECKING
 
@@ -43,6 +44,8 @@ class NotOpenForSignupError(TournamentSignupError):
 
 
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
+    p: Player
+
     if tour.board_set.count() > 0:
         logger.warning(
             "Alas, I already pre-created %d boards, which probably isn't the right number.",
@@ -54,12 +57,32 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         tour.add_boards(boards_per_round=3)
         import app.utils.movements
 
-        logger.debug("%s", app.utils.movements.make_movement(boards=[], pairs=[]))
+        signed_up_pairs = []
+
+        for su in TournamentSignup.objects.filter(tournament=tour).all():
+            p = su.player
+            if p is not None and p.partner is not None:
+                signed_up_pairs.append(
+                    app.utils.movements.Pair(
+                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+                    )
+                )
+
+        logger.debug(
+            "I wonder how many pairs have signed up for %s ... %d",
+            tour,
+            len(signed_up_pairs),
+        )
+        logger.debug(
+            "%s",
+            app.utils.movements.make_movement(
+                boards=list(tour.board_set.all()), pairs=signed_up_pairs, tournament=tour
+            ),
+        )
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
 
-    p: Player
     singles = [p for p in tour.signed_up_players().filter(partner__isnull=True)]
     if singles:
         logger.warning(
@@ -298,15 +321,7 @@ class Tournament(models.Model):
 
         for display_number in range(boards_per_round * self.table_set.count()):
             display_number += 1
-            board_attributes = board_attributes_from_display_number(
-                display_number=display_number,
-                rng_seeds=[
-                    str(display_number).encode(),
-                    str(self.pk).encode(),
-                    settings.SECRET_KEY.encode(),
-                ],
-            )
-            Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
+            Board.objects.create_from_display_number(display_number=display_number, tournament=self)
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
