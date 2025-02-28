@@ -206,6 +206,7 @@ class Table(models.Model):
                 t = self.tournament
                 msg = f"Some players at table {self.pk} (tournament {t.display_number}) have played all {t.board_set.count()} boards, so we cannot get a new board"
                 logger.debug("%s", msg)
+                t.next_movement_round()
                 raise NoMoreBoards(msg)
 
             new_hand = Hand.objects.create(board=b, table=self)

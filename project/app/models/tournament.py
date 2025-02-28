@@ -290,6 +290,14 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def next_movement_round(self) -> None:
+        if self.is_complete:
+            logger.info("%s is complete; no next round for you", self)
+        else:
+            logger.debug(
+                f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroying them and creating new ones"
+            )
+
     def movement_from_pairs(self, boards_per_round: int, pairs: Sequence[app.utils.movements.Pair]):
         return app.utils.movements.Movement.from_pairs(
             boards_per_round=boards_per_round, pairs=pairs, tournament=self
