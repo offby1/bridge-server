@@ -54,7 +54,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         tour.add_boards(boards_per_round=3)
         import app.utils.movements
 
-        logger.debug("%s", app.utils.movements.make_movement(tour.board_set.all(), []))
+        logger.debug("%s", app.utils.movements.make_movement(boards=[], pairs=[]))
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
