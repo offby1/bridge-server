@@ -52,6 +52,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         logger.warning("TODO: adding a hard-coded number (namely, 2) of boards to %s", tour)
         logger.warning("TODO: this needs to be computed from a movement")
         tour.add_boards(boards_per_round=3)
+        import app.utils.movements
+
+        logger.debug("%s", app.utils.movements.make_movement(tour.board_set.all(), []))
 
     # Now seat everyone who's signed up.
     waiting_pairs = set()
