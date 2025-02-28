@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 import dataclasses
 import itertools
@@ -95,53 +97,53 @@ class Movement:
             tabulate_me.append(this_table)
         print(tabulate.tabulate(tabulate_me))
 
+    @classmethod
+    def from_boards_and_pairs(
+        cls, *, boards: Sequence[Board], pairs: Sequence[Pair], tournament: Tournament
+    ) -> Movement:
+        num_tables, overflow = cls.num_tables(num_pairs=len(pairs))
+        pairs = list(pairs)
+        if overflow:
+            pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))
 
-def make_movement(
-    *, boards: Sequence[Board], pairs: Sequence[Pair], tournament: Tournament
-) -> Movement:
-    num_tables, overflow = Movement.num_tables(num_pairs=len(pairs))
-    pairs = list(pairs)
-    if overflow:
-        pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))
+        ns_pairs = pairs[0:num_tables]
+        ew_pairs = pairs[num_tables:]
 
-    ns_pairs = pairs[0:num_tables]
-    ew_pairs = pairs[num_tables:]
+        def ns(table_number: int, round_number: int) -> Pair:
+            assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
+            assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
+            # Standard Mitchell movement: the NS pair at each table stays put
+            return ns_pairs[table_number - 1]
 
-    def ns(table_number: int, round_number: int) -> Pair:
-        assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
-        assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
-        # Standard Mitchell movement: the NS pair at each table stays put
-        return ns_pairs[table_number - 1]
+        def ew(table_number: int, round_number: int) -> Pair:
+            assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
+            assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
 
-    def ew(table_number: int, round_number: int) -> Pair:
-        assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
-        assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
+            # Standard Mitchell movement: the EW pair at each table "rotates" each round
+            return ew_pairs[(table_number - round_number) % num_tables]
 
-        # Standard Mitchell movement: the EW pair at each table "rotates" each round
-        return ew_pairs[(table_number - round_number) % num_tables]
+        num_boards = len(boards)
+        boards_per_round = num_boards // num_tables
 
-    num_boards = len(boards)
-    boards_per_round = num_boards // num_tables
+        board_groups = [
+            BoardGroup(letter=letter, boards=tuple(boards))
+            for letter, boards in zip(
+                "ABCDEFGHIJKLMNOP",
+                more_itertools.chunked(
+                    boards,
+                    boards_per_round,
+                ),
+            )
+        ]
 
-    board_groups = [
-        BoardGroup(letter=letter, boards=tuple(boards))
-        for letter, boards in zip(
-            "ABCDEFGHIJKLMNOP",
-            more_itertools.chunked(
-                boards,
-                boards_per_round,
-            ),
-        )
-    ]
+        temp_rv: dict[int, list[TableSetting]] = collections.defaultdict(list)
+        for table_number, round_number in itertools.product(range(1, num_tables + 1), repeat=2):
+            q = Quartet(
+                ns=ns(table_number=table_number, round_number=round_number),
+                ew=ew(table_number=table_number, round_number=round_number),
+            )
 
-    temp_rv: dict[int, list[TableSetting]] = collections.defaultdict(list)
-    for table_number, round_number in itertools.product(range(1, num_tables + 1), repeat=2):
-        q = Quartet(
-            ns=ns(table_number=table_number, round_number=round_number),
-            ew=ew(table_number=table_number, round_number=round_number),
-        )
-
-        temp_rv[table_number - 1].append(
-            TableSetting(quartet=q, board_group=board_groups[round_number - 1])
-        )
-    return Movement(table_settings_by_table_number=temp_rv)
+            temp_rv[table_number - 1].append(
+                TableSetting(quartet=q, board_group=board_groups[round_number - 1])
+            )
+        return cls(table_settings_by_table_number=temp_rv)

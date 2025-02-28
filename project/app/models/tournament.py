@@ -70,7 +70,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             tour,
             len(signed_up_pairs),
         )
-        movement = app.utils.movements.make_movement(
+        movement = app.utils.movements.Movement.from_boards_and_pairs(
             boards=list(tour.board_set.all()), pairs=signed_up_pairs, tournament=tour
         )
         logger.debug("%s", movement)

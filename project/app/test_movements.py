@@ -4,7 +4,7 @@ import pytest
 
 from app.models import Tournament
 import app.models.board
-from app.utils.movements import make_movement, Board, BoardGroup, Movement, Pair
+from app.utils.movements import Board, BoardGroup, Movement, Pair
 
 
 @pytest.mark.django_db
@@ -12,7 +12,7 @@ def test_movements_smoke() -> None:
     a_board = Board(123)
     a_pair = Pair("hi, I'm a pair", id=frozenset([1, 2]))
     a_tournament = Tournament.objects.create()
-    m = make_movement(boards=[a_board], pairs=[a_pair], tournament=a_tournament)
+    m = Movement.from_boards_and_pairs(boards=[a_board], pairs=[a_pair], tournament=a_tournament)
     m.display()
 
 
@@ -53,7 +53,9 @@ def test_movements_for_realz(monkeypatch) -> None:
 
             all_pairs: set[Pair] = set()
 
-            da_movement = make_movement(boards=boards, pairs=pairs[0:num_pairs], tournament=t)
+            da_movement = Movement.from_boards_and_pairs(
+                boards=boards, pairs=pairs[0:num_pairs], tournament=t
+            )
             da_movement.display()
 
             for table_number, rounds in da_movement.items():
