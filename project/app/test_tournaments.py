@@ -328,7 +328,7 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert open_tournament.status() is OpenForSignup
     open_tournament.sign_up(north)
     assert not open_tournament.table_set.exists()
-    Table.objects.create(tournament=open_tournament)
+
     app.models.tournament._do_signup_expired_stuff(open_tournament)
 
     current_player_pks = set([p.pk for p in Player.objects.all()])

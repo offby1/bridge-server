@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import dataclasses
 import itertools
+import logging
 from collections.abc import Sequence
 from typing import Any, TYPE_CHECKING
 
@@ -13,6 +14,9 @@ from app.models.types import PK
 
 if TYPE_CHECKING:
     from app.models import Board, Tournament
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -72,6 +76,12 @@ class TableSetting:
 @dataclasses.dataclass(frozen=True)
 class Movement:
     table_settings_by_table_number: dict[int, list[TableSetting]]
+
+    def start_round(self, *, round_number: int) -> None:
+        assert 0 <= round_number < len(self.table_settings_by_table_number[0])
+        logger.debug(
+            f"Pretend I'm, I dunno, creating tables and seating players and whatnot for {round_number=}"
+        )
 
     def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
         return list(self.table_settings_by_table_number.items())

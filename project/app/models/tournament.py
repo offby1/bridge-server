@@ -118,9 +118,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
                 for p in (p2, p2.partner):
                     TournamentSignup.objects.create(tournament=tour, player=p)
 
+                logger.debug("Created synths %s and %s for %s", p2, p2.partner, tour)
+
         # It expired without any signups -- just nuke it
-        if tour.table_set.count() == 0:
-            logger.warning("%s has no tables; deleting it", tour)
+        if not TournamentSignup.objects.filter(tournament=tour).exists():
+            logger.warning("%s has no signups; deleting it", tour)
             tour.delete()
             return
 
@@ -129,6 +131,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             pairs=signed_up_pairs,
         )
         movement.display()
+
+        # This creates tables, and seats players.
+        movement.start_round(round_number=0)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
