@@ -48,12 +48,11 @@ def board_attributes_from_display_number(
         1 <= display_number <= BOARDS_PER_TOURNAMENT
     ), f"{display_number=} gotta be <= {BOARDS_PER_TOURNAMENT=}"
 
-    # TODO -- all this computation will need to be flexible, in case we have more than 16 boards
-    # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-    dealer = "NESW"[(display_number - 1) % 4]
-    only_ns_vuln = display_number in (2, 5, 12, 15)
-    only_ew_vuln = display_number in (3, 6, 9, 16)
-    all_vuln = display_number in (4, 7, 10, 13)
+    disp_mod_16 = display_number % 16
+    dealer = "NESW"[(disp_mod_16 - 1) % 4]
+    only_ns_vuln = disp_mod_16 in (2, 5, 12, 15)
+    only_ew_vuln = disp_mod_16 in (3, 6, 9, 16)
+    all_vuln = disp_mod_16 in (4, 7, 10, 13)
 
     def deserialize_hand(cards: list[Card]) -> str:
         # sorted only so that they look purty in the Admin site.
