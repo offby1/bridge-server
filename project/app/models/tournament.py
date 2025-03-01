@@ -46,13 +46,6 @@ class NotOpenForSignupError(TournamentSignupError):
     pass
 
 
-def one_player_from_pair(pair: app.utils.movements.Pair) -> Player:
-    from app.models import Player
-
-    pk = next(iter(pair.id))
-    return Player.objects.get(pk=pk)
-
-
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
@@ -98,11 +91,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         for quartet in more_itertools.chunked(signed_up_pairs, 2):
             print(f"{quartet=}")
             pair1 = quartet.pop()
-            p1 = one_player_from_pair(pair1)
+            p1 = app.utils.movements.one_player_from_pair(pair1)
             assert p1 is not None
             if quartet:
                 pair2 = quartet.pop()
-                p2 = one_player_from_pair(pair2)
+                p2 = app.utils.movements.one_player_from_pair(pair2)
                 assert p2 is not None
             else:
                 from app.models import Player
@@ -133,7 +126,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         movement.display()
 
         # This creates tables, and seats players.
-        movement.start_round(round_number=0)
+        movement.start_round(round_number=0, tournament=tour)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch

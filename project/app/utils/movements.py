@@ -13,7 +13,7 @@ import tabulate
 from app.models.types import PK
 
 if TYPE_CHECKING:
-    from app.models import Board, Tournament
+    from app.models import Board, Player, Tournament
 
 
 logger = logging.getLogger(__name__)
@@ -73,19 +73,56 @@ class TableSetting:
     board_group: BoardGroup
 
 
+def one_player_from_pair(pair: Pair) -> Player:
+    from app.models import Player
+
+    pk = next(iter(pair.id))
+    return Player.objects.get(pk=pk)
+
+
 @dataclasses.dataclass(frozen=True)
 class Movement:
     table_settings_by_table_number: dict[int, list[TableSetting]]
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round boards.
-    def start_round(self, *, round_number: int) -> None:
-        assert 0 <= round_number < len(self.table_settings_by_table_number[0])
+    def start_round(self, *, tournament: Tournament, round_number: int) -> None:
+        from app.models import Player, Table
+
+        assert 0 <= round_number < len(self.table_settings_by_table_number[round_number])
         logger.debug(
             f"Pretend I'm, I dunno, creating tables and seating players and whatnot for {round_number=}"
         )
-        for tn, ts in sorted(self.table_settings_by_table_number.items()):
-            logger.debug(f"{tn=} {ts[round_number]=}")
+        tn: int
+        table_settings: list[TableSetting]
+        for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
+            table: Table
+            ts = table_settings[round_number]
+            phantom_pairs, normal_pairs = ts.quartet.partition_into_phantoms_and_normals()
+
+            if phantom_pairs:
+                # Don't create a table; just (TODO) inform the normal pair that they're sitting out this round
+                logger.warning(
+                    f"Imagine I somehow informed {normal_pairs[0]} that they had to sit out {round_number=}"
+                )
+                for pk in normal_pairs[0].id:
+                    Player.objects.get(pk=pk).unseat_me(
+                        reason=f"You're sitting out round {round_number}"
+                    )
+                continue
+
+            pair1, pair2 = normal_pairs
+
+            pk1 = next(iter(pair1.id))
+            player1 = Player.objects.get(pk=pk1)
+
+            pk2 = next(iter(pair2.id))
+            player2 = Player.objects.get(pk=pk2)
+
+            table = Table.objects.create_with_two_partnerships(
+                player1, player2, tournament=tournament, display_number=tn
+            )
+            logger.debug(f"{tn=} {table_settings[round_number]=} created {table}")
 
     def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
         return list(self.table_settings_by_table_number.items())

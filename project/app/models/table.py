@@ -50,10 +50,10 @@ class TableManager(models.Manager):
         return super().create(*args, **kwargs)
 
     def create_with_two_partnerships(
-        self, p1: Player, p2: Player, tournament: Tournament | None = None
+        self, p1: Player, p2: Player, tournament: Tournament | None = None, **kwargs
     ) -> Table:
         with transaction.atomic():
-            t: Table = self.create(tournament=tournament)
+            t: Table = self.create(tournament=tournament, **kwargs)
             logger.debug("Created %s", t)
             if p1.partner is None or p2.partner is None:
                 raise TableException(
