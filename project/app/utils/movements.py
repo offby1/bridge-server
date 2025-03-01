@@ -77,11 +77,15 @@ class TableSetting:
 class Movement:
     table_settings_by_table_number: dict[int, list[TableSetting]]
 
+    # a "round" is a period where players and boards stay where they are (i.e., at a given table).
+    # *within* a round, we play boards_per_round boards.
     def start_round(self, *, round_number: int) -> None:
         assert 0 <= round_number < len(self.table_settings_by_table_number[0])
         logger.debug(
             f"Pretend I'm, I dunno, creating tables and seating players and whatnot for {round_number=}"
         )
+        for tn, ts in sorted(self.table_settings_by_table_number.items()):
+            logger.debug(f"{tn=} {ts[round_number]=}")
 
     def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
         return list(self.table_settings_by_table_number.items())
