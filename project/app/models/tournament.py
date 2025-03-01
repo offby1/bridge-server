@@ -118,9 +118,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
                 for p in (p2, p2.partner):
                     TournamentSignup.objects.create(tournament=tour, player=p)
 
-            table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
-            table.next_board()
-
         # It expired without any signups -- just nuke it
         if tour.table_set.count() == 0:
             logger.warning("%s has no tables; deleting it", tour)

@@ -306,7 +306,7 @@ def test_signups(nobody_seated) -> None:
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         check_for_expirations(__name__)
-        assert open_tournament.table_set.count() == 2
+        assert open_tournament.table_set.count() == 1
 
     with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
         east.break_partnership()
