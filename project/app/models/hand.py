@@ -350,25 +350,11 @@ class Hand(TimeStampedModel):
             "misses": "cache_stats_misses",
         }
 
-    @staticmethod
-    def _cache_stats() -> dict[str, int]:
-        return {k: cache.get(k) for k in ("hits", "misses")}
-
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
 
     def _cache_get(self) -> Any:
         return cache.get(self._cache_key())
-
-    def _cache_note_hit(self) -> None:
-        key = "hits"
-        old = cache.get(key, default=0)
-        cache.set(key, old + 1)
-
-    def _cache_note_miss(self) -> None:
-        key = "misses"
-        old = cache.get(key, default=0)
-        cache.set(key, old + 1)
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -377,8 +363,6 @@ class Hand(TimeStampedModel):
                 yield (player, call.libraryThing)
 
         if (_xscript := self._cache_get()) is None:
-            self._cache_note_miss()
-
             lib_table = self.lib_table_with_cards_as_dealt
             auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
@@ -401,8 +385,6 @@ class Hand(TimeStampedModel):
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
             self._cache_set(_xscript)
-        else:
-            self._cache_note_hit()
 
         return _xscript
 
