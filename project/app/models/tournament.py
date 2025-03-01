@@ -46,6 +46,13 @@ class NotOpenForSignupError(TournamentSignupError):
     pass
 
 
+def one_player_from_pair(pair: app.utils.movements.Pair) -> Player:
+    from app.models import Player
+
+    pk = next(iter(pair.id))
+    return Player.objects.get(pk=pk)
+
+
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
@@ -53,6 +60,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             logger.debug("%s looks like it's had boards assigned already; bailing", tour)
             return
 
+        signed_up_players = set()
         signed_up_pairs = []
 
         for su in TournamentSignup.objects.filter(tournament=tour).all():
@@ -68,39 +76,33 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
                 logger.warning(f"Not signing up {p.name} because they are currently seated")
                 continue
 
-            signed_up_pairs.append(
-                app.utils.movements.Pair(
-                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+            if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
+                signed_up_pairs.append(
+                    app.utils.movements.Pair(
+                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+                    )
                 )
-            )
-
-        movement = tour.movement_from_pairs(
-            boards_per_round=3,  # arbitrary
-            pairs=signed_up_pairs,
-        )
-        movement.display()
+                signed_up_players.add(p.pk)
+                signed_up_players.add(p.partner.pk)
 
         # Now seat everyone who's signed up.
         # TODO -- consult the movement to see whom to seat where.
         # and then TODO -- keep doing that as the movement's "rounds" progress.
-        waiting_pairs = set()
 
-        for p in tour.signed_up_players():
-            waiting_pairs.add(frozenset([p, p.partner]))
-
-        logger.debug("%d pairs are waiting", len(waiting_pairs))
+        logger.debug("%d pairs are waiting", len(signed_up_pairs))
 
         # Group them into pairs of pairs.
         # Create a table for each such quartet.
         from app.models.table import Table
 
-        for quartet in more_itertools.chunked(waiting_pairs, 2):
+        for quartet in more_itertools.chunked(signed_up_pairs, 2):
+            print(f"{quartet=}")
             pair1 = quartet.pop()
-            p1 = next(iter(pair1))
+            p1 = one_player_from_pair(pair1)
             assert p1 is not None
             if quartet:
                 pair2 = quartet.pop()
-                p2 = next(iter(pair2))
+                p2 = one_player_from_pair(pair2)
                 assert p2 is not None
             else:
                 from app.models import Player
@@ -124,6 +126,12 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             logger.warning("%s has no tables; deleting it", tour)
             tour.delete()
             return
+
+        movement = tour.movement_from_pairs(
+            boards_per_round=3,  # arbitrary
+            pairs=signed_up_pairs,
+        )
+        movement.display()
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch

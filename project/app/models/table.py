@@ -62,7 +62,7 @@ class TableManager(models.Manager):
             player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
             if len(player_pks) != 4:
                 raise TableException(
-                    f"Cannot create a table with seats {player_pks} --we need exactly four"
+                    f"Cannot create a table with players {player_pks} --we need exactly four"
                 )
             for seat, player in zip(SEAT_CHOICES, (p1, p2, p1.partner, p2.partner)):
                 modelSeat.objects.create(
