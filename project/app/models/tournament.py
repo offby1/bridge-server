@@ -297,6 +297,15 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
+        from app.models import Board
+
+        logger.debug(
+            "Imagine that I somehow knew which boards had been played at %s, which round it was, and therefore knew which boards for this round had *not* been played.",
+            table,
+        )
+        return Board.objects.none()
+
     def next_movement_round(self) -> None:
         if self.is_complete:
             logger.info("%s is complete; no next round for you", self)
@@ -305,7 +314,9 @@ class Tournament(models.Model):
                 f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroying them and creating new ones"
             )
 
-    def movement_from_pairs(self, boards_per_round: int, pairs: Sequence[app.utils.movements.Pair]):
+    def movement_from_pairs(
+        self, boards_per_round: int, pairs: Sequence[app.utils.movements.Pair]
+    ) -> app.utils.movements.Movement:
         return app.utils.movements.Movement.from_pairs(
             boards_per_round=boards_per_round, pairs=pairs, tournament=self
         )

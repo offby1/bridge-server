@@ -170,6 +170,7 @@ class Table(models.Model):
         # https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ might help
         completed = 0
         in_progress = 0
+        h: Hand
         for h in Hand.objects.filter(table=self):
             if h.is_complete:
                 completed += 1
@@ -178,6 +179,10 @@ class Table(models.Model):
         return (completed, in_progress > 0)
 
     def find_unplayed_board(self) -> Board | None:
+        # TODO -- filter boards_to just those in the current tournament's current rounds' current board group.  We might
+        # be able to do without the complex, incrementally-built exclusion expresion, and instead just assume that the
+        # movment keeps things straight for us.
+
         seats = self.seat_set.all()
 
         # What I *really* wanted to write here was `models.Q(False)`, but that doesn't work.
@@ -188,13 +193,17 @@ class Table(models.Model):
             logger.debug(
                 "Player %s has played (or at least, been seated at a table with) %s",
                 seat.player.name,
-                [b.pk for b in bp],
+                list(bp),
             )
             expression |= models.Q(pk__in=bp)
 
         assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
         unplayed_boards = self.tournament.board_set.exclude(expression)
         logger.debug("Thus, by my calculations, that leaves us %s", unplayed_boards)
+        logger.debug("I know we've played %s hands with %s in progress", *self.played_hands_count())
+        logger.debug(
+            f"Although in a perfect world, we'd ask {self.tournament.unplayed_boards_for(table=self)}"
+        )
         return unplayed_boards.first()
 
     def next_board(self) -> Board:
@@ -275,6 +284,8 @@ class Table(models.Model):
 
     class Meta:
         constraints = [
+            # TODO -- this might be too strict.  Rather than mutating tables each time we start a new round, I might
+            # want to create new Table instances, with the same display number.
             models.UniqueConstraint(  # type: ignore[call-arg]
                 name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
                 fields=["display_number", "tournament_id"],
