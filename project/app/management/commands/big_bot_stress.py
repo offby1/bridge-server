@@ -50,6 +50,7 @@ class Command(BaseCommand):
 
                 t.sign_up(p)
                 self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
+                p.toggle_bot(True)
 
             t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
 
