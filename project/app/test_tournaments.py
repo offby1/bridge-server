@@ -298,8 +298,6 @@ def test_signups(nobody_seated) -> None:
     east.partner_with(west)
     open_tournament.sign_up(east)
 
-    Table.objects.create(tournament=open_tournament)
-
     actual = set(open_tournament.signed_up_players())
     expected = {north, south, east, west}
     assert actual == expected
