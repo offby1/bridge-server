@@ -100,7 +100,7 @@ class Table(models.Model):
 
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
 
-    display_number = models.SmallIntegerField()
+    display_number = models.SmallIntegerField(null=True)
 
     # View code adds these
     summary_for_this_viewer: tuple[str, str | int]
@@ -271,13 +271,13 @@ class Table(models.Model):
     def __str__(self):
         return f"Table #{self.display_number} in {self.tournament}"
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(  # type: ignore[call-arg]
-                name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
-                fields=["display_number", "tournament_id"],
-            ),
-        ]
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(  # type: ignore[call-arg]
+    #             name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
+    #             fields=["display_number", "tournament_id"],
+    #         ),
+    #     ]
 
 
 @admin.register(Table)
