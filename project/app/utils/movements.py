@@ -134,7 +134,7 @@ class Movement:
             rv += 1
         return rv, overflow > 0
 
-    def ready_for_tabulation(self) -> None:
+    def ready_for_tabulation(self) -> Sequence[Sequence[str]]:
         tabulate_me = []
         for table_number, rounds in self.items():
             this_table: list[Any] = [table_number + 1]
