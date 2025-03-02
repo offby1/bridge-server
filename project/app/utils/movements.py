@@ -121,6 +121,7 @@ class Movement:
                 player1, player2, tournament=tournament, display_number=tn + 1
             )
             logger.debug(f"{tn=} {table_settings[round_number]=} created {table}")
+            table.next_board()
 
     def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
         return list(self.table_settings_by_table_number.items())
