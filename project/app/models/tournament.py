@@ -111,6 +111,11 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
                 for p in (p2, p2.partner):
                     TournamentSignup.objects.create(tournament=tour, player=p)
 
+                signed_up_pairs.append(
+                    app.utils.movements.Pair(
+                        id=frozenset([p2.pk, p2.partner.pk]), names=f"{p2.name}, {p2.partner.name}"
+                    )
+                )
                 logger.debug("Created synths %s and %s for %s", p2, p2.partner, tour)
 
         # It expired without any signups -- just nuke it
