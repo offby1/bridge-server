@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import datetime
 import logging
-from operator import attrgetter
-import threading
 from typing import TYPE_CHECKING
 
-from django.conf import settings
 from django.contrib import admin
 from django.core.signals import request_started
 from django.db import models, transaction
 from django.dispatch import receiver
 from django.utils import timezone
-
-import more_itertools
 
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
@@ -53,81 +48,39 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             logger.debug("%s looks like it's had boards assigned already; bailing", tour)
             return
 
-        signed_up_players = set()
-        signed_up_pairs = []
-
-        for su in TournamentSignup.objects.filter(tournament=tour).all():
-            p = su.player
-
-            assert p is not None
-
-            if p.partner is None:
-                logger.warning(f"Not signing up {p.name} because they have no partner")
-                continue
-
-            if p.currently_seated:
-                logger.warning(f"Not signing up {p.name} because they are currently seated")
-                continue
-
-            if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
-                signed_up_pairs.append(
-                    app.utils.movements.Pair(
-                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
-                    )
-                )
-                signed_up_players.add(p.pk)
-                signed_up_players.add(p.partner.pk)
-
-        # Now seat everyone who's signed up.
-        # TODO -- consult the movement to see whom to seat where.
-        # and then TODO -- keep doing that as the movement's "rounds" progress.
-
-        logger.debug("%d pairs are waiting", len(signed_up_pairs))
-
-        # Group them into pairs of pairs.
-        # Create a table for each such quartet.
-        from app.models.table import Table
-
-        for quartet in more_itertools.chunked(signed_up_pairs, 2):
-            print(f"{quartet=}")
-            pair1 = quartet.pop()
-            p1 = app.utils.movements.one_player_from_pair(pair1)
-            assert p1 is not None
-            if quartet:
-                pair2 = quartet.pop()
-                p2 = app.utils.movements.one_player_from_pair(pair2)
-                assert p2 is not None
-            else:
-                from app.models import Player
-
-                p2 = Player.objects.create_synthetic()
-                p2.partner = Player.objects.create_synthetic()
-                p2.partner.partner = p2
-                p2.partner.save()
-                p2.save()
-
-                # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
-                # list view *shows* them as signed up.
-                for p in (p2, p2.partner):
-                    TournamentSignup.objects.create(tournament=tour, player=p)
-
-                signed_up_pairs.append(
-                    app.utils.movements.Pair(
-                        id=frozenset([p2.pk, p2.partner.pk]), names=f"{p2.name}, {p2.partner.name}"
-                    )
-                )
-                logger.debug("Created synths %s and %s for %s", p2, p2.partner, tour)
-
         # It expired without any signups -- just nuke it
-        if not TournamentSignup.objects.filter(tournament=tour).exists():
+        if not tour.signed_up_pairs():
             logger.warning("%s has no signups; deleting it", tour)
             tour.delete()
             return
 
-        movement = tour.movement_from_pairs(
-            boards_per_round=3,  # arbitrary
-            pairs=signed_up_pairs,
-        )
+        # Now seat everyone who's signed up, plus a pair of synths, if needed.
+        # TODO -- consult the movement to see whom to seat where.
+        # and then TODO -- keep doing that as the movement's "rounds" progress.
+
+        for _ in range(2):
+            signed_up_pairs = tour.signed_up_pairs()
+
+            if len(signed_up_pairs) % 2 == 0:
+                break
+
+            from app.models import Player
+
+            p2 = Player.objects.create_synthetic()
+            p2.partner = Player.objects.create_synthetic()
+            p2.partner.partner = p2
+            p2.partner.save()
+            p2.save()
+
+            for p in (p2, p2.partner):
+                TournamentSignup.objects.create(tournament=tour, player=p)
+
+            logger.debug("Created synths %s and %s for %s", p2, p2.partner, tour)
+
+        assert len(signed_up_pairs) % 2 == 0
+        logger.debug("%d pairs are waiting", len(signed_up_pairs))
+
+        movement = tour.get_movement()
 
         # This creates tables, and seats players.
         movement.start_round(round_number=0, tournament=tour)
@@ -297,6 +250,32 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def signed_up_pairs(self) -> Sequence[app.utils.movements.Pair]:
+        signed_up_players = set()
+        rv = []
+
+        for su in TournamentSignup.objects.filter(tournament=self).all():
+            p = su.player
+
+            assert p is not None
+
+            if p.partner is None:
+                continue
+
+            if p.currently_seated:
+                continue
+
+            if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
+                rv.append(
+                    app.utils.movements.Pair(
+                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+                    )
+                )
+                signed_up_players.add(p.pk)
+                signed_up_players.add(p.partner.pk)
+
+        return rv
+
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
         from app.models import Board
 
@@ -314,11 +293,10 @@ class Tournament(models.Model):
                 f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroying them and creating new ones"
             )
 
-    def movement_from_pairs(
-        self, boards_per_round: int, pairs: Sequence[app.utils.movements.Pair]
-    ) -> app.utils.movements.Movement:
+    def get_movement(self) -> app.utils.movements.Movement:
+        boards_per_round = 3  # arbitrary
         return app.utils.movements.Movement.from_pairs(
-            boards_per_round=boards_per_round, pairs=pairs, tournament=self
+            boards_per_round=boards_per_round, pairs=self.signed_up_pairs(), tournament=self
         )
 
     def signup_deadline_has_passed(self) -> bool:
