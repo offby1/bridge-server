@@ -43,7 +43,6 @@ def test_movements_for_realz(monkeypatch) -> None:
             da_movement = Movement.from_pairs(
                 boards_per_round=boards_per_round, pairs=pairs[0:num_pairs], tournament=t
             )
-            da_movement.display()
 
             for table_number, rounds in da_movement.items():
                 for r in rounds:

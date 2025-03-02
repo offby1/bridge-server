@@ -45,8 +45,6 @@ class BoardGroup:
     boards: tuple[Board, ...]
 
     def __post_init__(self) -> None:
-        for b in self.boards:
-            print(f"{vars(b)=}")
         assert len(self.letter) == 1
         assert _are_consecutive([b.display_number for b in self.boards])
 
@@ -136,7 +134,7 @@ class Movement:
             rv += 1
         return rv, overflow > 0
 
-    def display(self) -> None:
+    def ready_for_tabulation(self) -> None:
         tabulate_me = []
         for table_number, rounds in self.items():
             this_table: list[Any] = [table_number + 1]
@@ -150,7 +148,7 @@ class Movement:
                         f"{quartet.ew.names}/{quartet.ns.names} boards {','.join((str(b.display_number) for b in board_group.boards))}"
                     )
             tabulate_me.append(this_table)
-        print(tabulate.tabulate(tabulate_me))
+        return tabulate_me
 
     @classmethod
     def from_pairs(

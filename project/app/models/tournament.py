@@ -123,7 +123,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             boards_per_round=3,  # arbitrary
             pairs=signed_up_pairs,
         )
-        movement.display()
 
         # This creates tables, and seats players.
         movement.start_round(round_number=0, tournament=tour)
