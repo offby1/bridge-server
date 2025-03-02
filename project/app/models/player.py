@@ -55,6 +55,9 @@ class PlayerManager(models.Manager):
             unprefixed_candidate = fake.unique.playa().lower()
             candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
             if not auth.models.User.objects.filter(username__in=candidates).exists():
+                logger.debug(
+                    "None of %s already exists; returning %s", ", ".join(candidates), candidates[-1]
+                )
                 return candidates[-1]
             logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
 

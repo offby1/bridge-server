@@ -130,6 +130,8 @@ class Movement:
     @staticmethod
     def num_tables(*, num_pairs: int) -> tuple[int, bool]:
         rv, overflow = divmod(num_pairs, 2)
+        if rv == 0:
+            logger.warning(f"Hmm, {num_pairs=} so of course {rv=}")
         if overflow:
             rv += 1
         return rv, overflow > 0
@@ -173,6 +175,7 @@ class Movement:
         num_tables, overflow = cls.num_tables(num_pairs=len(pairs))
         pairs = list(pairs)
         if overflow:
+            logger.debug(f"{pairs=}; {num_tables=} but {overflow=}, so appending a phantom pair")
             pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))
 
         ns_pairs = pairs[0:num_tables]
