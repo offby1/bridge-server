@@ -268,8 +268,10 @@ class Table(models.Model):
     def is_full(self):
         return all(p is not None for p in self.players_by_direction.values())
 
-    def __str__(self):
-        return f"Table #{self.display_number} in {self.tournament}"
+    def __repr__(self):
+        return f"Table #{self.display_number} in tournament #{self.tournament.display_number}"
+
+    __str__ = __repr__
 
     class Meta:
         constraints = [

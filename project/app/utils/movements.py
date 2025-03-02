@@ -118,7 +118,7 @@ class Movement:
             player2 = Player.objects.get(pk=pk2)
 
             table = Table.objects.create_with_two_partnerships(
-                player1, player2, tournament=tournament, display_number=tn
+                player1, player2, tournament=tournament, display_number=tn + 1
             )
             logger.debug(f"{tn=} {table_settings[round_number]=} created {table}")
 
