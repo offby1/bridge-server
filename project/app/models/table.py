@@ -179,32 +179,7 @@ class Table(models.Model):
         return (completed, in_progress > 0)
 
     def find_unplayed_board(self) -> Board | None:
-        # TODO -- filter boards_to just those in the current tournament's current rounds' current board group.  We might
-        # be able to do without the complex, incrementally-built exclusion expresion, and instead just assume that the
-        # movment keeps things straight for us.
-
-        seats = self.seat_set.all()
-
-        # What I *really* wanted to write here was `models.Q(False)`, but that doesn't work.
-        expression = models.Q(pk__in=[])
-
-        for seat in seats:
-            bp = seat.player.boards_played.order_by("id").all()
-            logger.debug(
-                "Player %s has played (or at least, been seated at a table with) %s",
-                seat.player.name,
-                list(bp),
-            )
-            expression |= models.Q(pk__in=bp)
-
-        assert self.tournament is not None, "find_unplayed_board notes they ain't no tournament"
-        unplayed_boards = self.tournament.board_set.exclude(expression)
-        logger.debug("Thus, by my calculations, that leaves us %s", unplayed_boards)
-        logger.debug("I know we've played %s hands with %s in progress", *self.played_hands_count())
-        logger.debug(
-            f"Although in a perfect world, we'd ask {self.tournament.unplayed_boards_for(table=self)}"
-        )
-        return unplayed_boards.first()
+        return self.tournament.unplayed_boards_for(table=self).first()
 
     def next_board(self) -> Board:
         with transaction.atomic():
@@ -221,7 +196,7 @@ class Table(models.Model):
 
             if (b := self.find_unplayed_board()) is None:
                 t = self.tournament
-                msg = f"Some players at table {self.pk} (tournament {t.display_number}) have played all {t.board_set.count()} boards, so we cannot get a new board"
+                msg = "find_unplayed_board returned None; I'm no longer sure what that means"
                 logger.debug("%s", msg)
                 t.next_movement_round()
                 raise NoMoreBoards(msg)
