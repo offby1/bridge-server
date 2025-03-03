@@ -293,11 +293,14 @@ class Tournament(models.Model):
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
         from app.models import Board
 
-        played_boards = self.board_set.all()
+        all_boards = self.board_set.all()
+        hands = self.hands().filter(table=table)
+        played_board_pks = hands.values_list("board", flat=True).all()
+        unplayed_boards = all_boards.exclude(pk__in=played_board_pks)
         what_round_is_it = self.what_round_is_it()
         logger.debug(
-            "%s have been played at %s; imagine %d really was the number of completed rounds, and therefore I knew which boards for this round had *not* been played.",
-            ", ".join([f"b#{b.display_number}" for b in played_boards]),
+            "%s are unplayed at %s; imagine I'd grouped them into rounds, and knew that %s is the current round",
+            unplayed_boards,
             table,
             what_round_is_it,
         )
@@ -308,7 +311,7 @@ class Tournament(models.Model):
             logger.info("%s is complete; no next round for you", self)
         else:
             logger.debug(
-                f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroying them and creating new ones"
+                f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroyed them and created new ones"
             )
 
     def get_movement(self) -> app.utils.movements.Movement:
