@@ -80,6 +80,7 @@ def one_player_from_pair(pair: Pair) -> Player:
 
 @dataclasses.dataclass(frozen=True)
 class Movement:
+    boards_per_round: int
     table_settings_by_table_number: dict[int, list[TableSetting]]
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
@@ -163,13 +164,19 @@ class Movement:
                 Board.objects.create_from_display_number(display_number=n, tournament=tournament)
                 for n in range(1, boards_per_round * num_tables + 1)
             ],
+            boards_per_round=boards_per_round,
             pairs=pairs,
             tournament=tournament,
         )
 
     @classmethod
     def from_boards_and_pairs(
-        cls, *, boards: Sequence[Board], pairs: Sequence[Pair], tournament: Tournament
+        cls,
+        *,
+        boards: Sequence[Board],
+        boards_per_round: int,
+        pairs: Sequence[Pair],
+        tournament: Tournament,
     ) -> Movement:
         num_tables, overflow = cls.num_tables(num_pairs=len(pairs))
         pairs = list(pairs)
@@ -193,9 +200,6 @@ class Movement:
             # Standard Mitchell movement: the EW pair at each table "rotates" each round
             return ew_pairs[(table_number - round_number) % num_tables]
 
-        num_boards = len(boards)
-        boards_per_round = num_boards // num_tables
-
         board_groups = [
             BoardGroup(letter=letter, boards=tuple(boards))
             for letter, boards in zip(
@@ -217,4 +221,4 @@ class Movement:
             temp_rv[table_number - 1].append(
                 TableSetting(quartet=q, board_group=board_groups[round_number - 1])
             )
-        return cls(table_settings_by_table_number=temp_rv)
+        return cls(boards_per_round=boards_per_round, table_settings_by_table_number=temp_rv)

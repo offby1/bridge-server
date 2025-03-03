@@ -250,6 +250,18 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def what_round_is_it(self) -> int:
+        num_hands = self.hands().count()
+        mvmt = self.get_movement()
+        num_tables = len(mvmt.table_settings_by_table_number)
+        wat = num_hands // (num_tables * mvmt.boards_per_round)
+        logger.debug(
+            "Well, here's how many hands have been played: %d; I guess that means %d",
+            num_hands,
+            wat,
+        )
+        return 0
+
     def signed_up_pairs(self) -> Sequence[app.utils.movements.Pair]:
         signed_up_players = set()
         rv = []
@@ -279,9 +291,13 @@ class Tournament(models.Model):
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
         from app.models import Board
 
+        played_boards = self.board_set.all()
+        what_round_is_it = self.what_round_is_it()
         logger.debug(
-            "Imagine that I somehow knew which boards had been played at %s, which round it was, and therefore knew which boards for this round had *not* been played.",
+            "%s have been played at %s; imagine %d really was the number of completed rounds, and therefore I knew which boards for this round had *not* been played.",
+            ", ".join([f"b#{b.display_number}" for b in played_boards]),
             table,
+            what_round_is_it,
         )
         return Board.objects.none()
 
