@@ -159,6 +159,7 @@ class Movement:
         from app.models import Board
 
         num_tables, _ = cls.num_tables(num_pairs=len(pairs))
+        logger.debug(f"{boards_per_round=} {len(pairs)=} => {num_tables=}")
         return cls.from_boards_and_pairs(
             boards=[
                 Board.objects.create_from_display_number(display_number=n, tournament=tournament)

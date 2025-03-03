@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from django.contrib import auth
 from django.core.cache import cache
@@ -5,6 +7,9 @@ from django.core.management import call_command
 
 from .models import Hand, Play, Player, Table, Tournament
 from .models.tournament import check_for_expirations
+
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
@@ -63,6 +68,13 @@ def nobody_seated(db: None) -> None:
 @pytest.fixture
 def two_boards_one_of_which_is_played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "two_boards_one_of_which_is_played_almost_to_completion")
+    all_players = ", ".join([p.name for p in Player.objects.all()])
+    the_tournament = Tournament.objects.get_or_create_tournament_open_for_signups()
+    logger.debug(
+        "I wonder if I should sign up all the players (%s) to the tournament (%s)",
+        all_players,
+        the_tournament,
+    )
 
 
 @pytest.fixture

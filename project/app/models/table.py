@@ -188,7 +188,7 @@ class Table(models.Model):
                 logger.debug("%s", msg)
                 raise NoMoreBoards(msg)
 
-            logger.debug("Table %s: someone wants the next board", self.pk)
+            logger.debug("%s: someone wants the next board", self)
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; no next board for you"
                 logger.warning("%s", msg)
