@@ -250,17 +250,12 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def what_round_is_it(self) -> int:
+    def what_round_is_it(self) -> tuple[int, int]:
         num_hands = self.hands().count()
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_table_number)
-        wat = num_hands // (num_tables * mvmt.boards_per_round)
-        logger.debug(
-            "Well, here's how many hands have been played: %d; I guess that means %d",
-            num_hands,
-            wat,
-        )
-        return 0
+        boards_per_round = num_tables * mvmt.boards_per_round_per_table
+        return num_hands // boards_per_round, boards_per_round
 
     def signed_up_pairs(self) -> Sequence[app.utils.movements.Pair]:
         signed_up_players = set()
@@ -291,20 +286,14 @@ class Tournament(models.Model):
         return rv
 
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
-        from app.models import Board
-
-        all_boards = self.board_set.all()
+        all_boards = self.board_set.order_by("display_number").all()
         hands = self.hands().filter(table=table)
         played_board_pks = hands.values_list("board", flat=True).all()
-        unplayed_boards = all_boards.exclude(pk__in=played_board_pks)
-        what_round_is_it = self.what_round_is_it()
-        logger.debug(
-            "%s are unplayed at %s; imagine I'd grouped them into rounds, and knew that %s is the current round",
-            unplayed_boards,
-            table,
-            what_round_is_it,
+        what_round_is_it, boards_per_round = self.what_round_is_it()
+
+        return all_boards.exclude(pk__in=played_board_pks).filter(
+            group="ABCDEFGHIJKLMNOP"[what_round_is_it]
         )
-        return Board.objects.none()
 
     def next_movement_round(self) -> None:
         if self.is_complete:

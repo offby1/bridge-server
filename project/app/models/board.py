@@ -83,7 +83,9 @@ class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
 
-    def create_from_display_number(self, *, display_number: int, tournament: Tournament) -> Board:
+    def create_from_display_number(
+        self, *, display_number: int, tournament: Tournament, **kwargs
+    ) -> Board:
         board_attributes = board_attributes_from_display_number(
             display_number=display_number,
             rng_seeds=[
@@ -92,9 +94,11 @@ class BoardManager(models.Manager):
                 settings.SECRET_KEY.encode(),
             ],
         )
-        return self.create(**board_attributes, tournament=tournament)
+        return self.create(**board_attributes, tournament=tournament, **kwargs)
 
     def create(self, *args, **kwargs) -> Board:
+        group = kwargs.get("group")
+        assert group is not None, "OK, who failed to add a group?!"
         tournament = kwargs.get("tournament")
         if tournament:
             assert (
@@ -203,7 +207,9 @@ class Board(models.Model):
         return f"{vuln} vulnerable"
 
     def __repr__(self) -> str:
-        return f"<Board #{self.display_number} pk={self.pk}>"
+        if self.group is None:
+            return f"<Board #{self.display_number} pk={self.pk}>"
+        return f"<Board #{self.display_number} group {self.group} pk={self.pk}>"
 
     def __str__(self) -> str:
         return f"{self.short_string()}, {self.vulnerability_string()}, dealt by {self.fancy_dealer}"

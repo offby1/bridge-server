@@ -80,7 +80,7 @@ def one_player_from_pair(pair: Pair) -> Player:
 
 @dataclasses.dataclass(frozen=True)
 class Movement:
-    boards_per_round: int
+    boards_per_round_per_table: int
     table_settings_by_table_number: dict[int, list[TableSetting]]
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
@@ -160,11 +160,26 @@ class Movement:
 
         num_tables, _ = cls.num_tables(num_pairs=len(pairs))
         logger.debug(f"{boards_per_round=} {len(pairs)=} => {num_tables=}")
+
+        boards = []
+
+        for group_index, group_o_display_numbers in enumerate(
+            more_itertools.chunked(
+                range(1, boards_per_round * num_tables + 1),
+                boards_per_round,
+            )
+        ):
+            # TODO -- tidy this up, along with the assignment to board_groups in "from_boards_and_pairs"
+            board_group_letter = "ABCDEFGHIJKLMNOP"[group_index]
+            for n in group_o_display_numbers:
+                boards.append(
+                    Board.objects.create_from_display_number(
+                        group=board_group_letter, display_number=n, tournament=tournament
+                    )
+                )
+
         return cls.from_boards_and_pairs(
-            boards=[
-                Board.objects.create_from_display_number(display_number=n, tournament=tournament)
-                for n in range(1, boards_per_round * num_tables + 1)
-            ],
+            boards=boards,
             boards_per_round=boards_per_round,
             pairs=pairs,
             tournament=tournament,
@@ -222,4 +237,6 @@ class Movement:
             temp_rv[table_number - 1].append(
                 TableSetting(quartet=q, board_group=board_groups[round_number - 1])
             )
-        return cls(boards_per_round=boards_per_round, table_settings_by_table_number=temp_rv)
+        return cls(
+            boards_per_round_per_table=boards_per_round, table_settings_by_table_number=temp_rv
+        )
