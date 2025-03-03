@@ -272,9 +272,11 @@ class Tournament(models.Model):
             assert p is not None
 
             if p.partner is None:
+                logger.debug("Not pairing up %s because they have no partner", p.name)
                 continue
 
             if p.currently_seated:
+                logger.debug("Not pairing up %s because they are already seated", p.name)
                 continue
 
             if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
@@ -311,6 +313,7 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         boards_per_round = 3  # arbitrary
+        logger.debug(f"{self.signed_up_pairs()=}")
         return app.utils.movements.Movement.from_pairs(
             boards_per_round=boards_per_round, pairs=self.signed_up_pairs(), tournament=self
         )

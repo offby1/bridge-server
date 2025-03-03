@@ -1,0 +1,182 @@
+[
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.402Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Jeremy Northam"
+    },
+    "model": "auth.user",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.373Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2024-11-06T15:27:39.341Z",
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Clint Eastwood"
+    },
+    "model": "auth.user",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.389Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "J.D. Souther"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "date_joined": "2024-10-02T21:55:20.396Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Adam West"
+    },
+    "model": "auth.user",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "player": 1,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "player": 2,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "player": 3,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "player": 4,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "display_number": 1,
+      "is_complete": false,
+      "play_completion_deadline": "2999-12-31T23:59:59Z",
+      "signup_deadline": "1970-01-01T00:00:00Z"
+    },
+    "model": "app.tournament",
+    "pk": 1
+  },
+  {
+    "fields": {},
+    "model": "app.lobby",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "currently_seated": false,
+      "modified": "2000-01-01T00:00:00Z",
+      "partner": 3,
+      "synthetic": false,
+      "user": 1
+    },
+    "model": "app.player",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "currently_seated": false,
+      "modified": "2000-01-01T00:00:00Z",
+      "partner": 4,
+      "synthetic": false,
+      "user": 2
+    },
+    "model": "app.player",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "currently_seated": false,
+      "modified": "2000-01-01T00:00:00Z",
+      "partner": 1,
+      "synthetic": false,
+      "user": 3
+    },
+    "model": "app.player",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "currently_seated": false,
+      "modified": "2000-01-01T00:00:00Z",
+      "partner": 2,
+      "synthetic": false,
+      "user": 4
+    },
+    "model": "app.player",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "display_number": 1,
+      "tempo_seconds": 1.0,
+      "tournament": 1
+    },
+    "model": "app.table",
+    "pk": 1
+  }
+]

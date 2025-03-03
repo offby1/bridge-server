@@ -71,7 +71,7 @@ def test_sends_final_score() -> None:
     assert any(sought(d.data) for d in cap.events)
 
 
-@pytest.mark.usefixtures("two_boards_one_is_complete")
+@pytest.mark.usefixtures("fresh_tournament")
 def test_sends_new_hand_event_to_table_channel() -> None:
     t1 = Table.objects.first()
     assert t1 is not None
