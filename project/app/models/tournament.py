@@ -427,7 +427,9 @@ class Tournament(models.Model):
         if self.is_complete:
             TournamentSignup.objects.filter(tournament=self).delete()
             self._eject_all_pairs(
-                explanation=f"Tournament's play deadline {self.play_completion_deadline} has passed"
+                # TODO -- distinguish between "all the boards have been played" vs "was aborted because the play
+                # completion deadline passed"
+                explanation=f"Tournament is complete; maybe its play deadline {self.play_completion_deadline} has passed"
             )
             logger.debug(
                 "Marked myself %s as complete, and ejected all pairs from %s",
