@@ -44,10 +44,6 @@ def board_attributes_from_display_number(
     display_number: int,
     rng_seeds: list[bytes],
 ) -> dict[str, Any]:
-    assert (
-        1 <= display_number <= BOARDS_PER_TOURNAMENT
-    ), f"{display_number=} gotta be <= {BOARDS_PER_TOURNAMENT=}"
-
     disp_mod_16 = display_number % 16
     dealer = "NESW"[(disp_mod_16 - 1) % 4]
     only_ns_vuln = disp_mod_16 in (2, 5, 12, 15)
@@ -161,7 +157,7 @@ class Board(models.Model):
             == len(self.west_cards)
             == 26
         ), f"why no cards {vars(self)}"
-        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
+
         return super().save(*args, **kwargs)
 
     @property

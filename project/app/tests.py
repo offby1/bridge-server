@@ -22,6 +22,7 @@ from .models import (
     Board,
     Hand,
     Message,
+    NoMoreBoards,
     Player,
     PlayerException,
     Seat,
@@ -442,17 +443,24 @@ def test_table_creation(j_northam, everybodys_password):
     assert type(response) is HttpResponseRedirect
 
 
-def test_max_boards(two_boards_one_is_complete, monkeypatch):
-    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
+def test_max_boards(two_boards_one_is_complete):
     t = Table.objects.first()
 
     t.next_board()
 
-    board_counts_by_tournament_pk = collections.defaultdict(int)
+    counts_after = collections.defaultdict(int)
     for b in app.models.board.Board.objects.all():
-        board_counts_by_tournament_pk[b.pk] += 1
+        counts_after[b.tournament.pk] += 1
 
-    assert dict(board_counts_by_tournament_pk) == {1: 1, 2: 1}
+    assert dict(counts_after) == {1: 3}
+
+    # TODO -- this hard-codes the knowledge that we ask for three boards per round.
+    play_out_hand(t)
+    t.next_board()
+    play_out_hand(t)
+
+    with pytest.raises(NoMoreBoards):
+        t.next_board()
 
 
 def test_no_bogus_tables(usual_setup):
