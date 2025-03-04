@@ -582,5 +582,11 @@ def test_find_unplayed_board(two_boards_one_is_complete) -> None:
 
     play_out_hand(t1)
     t1.next_board()
+    assert t1.current_board.pk == 2
+
     play_out_hand(t1)
+    t1.next_board()
+    play_out_hand(t1)
+    assert t1.current_board.pk == 3
+
     assert t1.find_unplayed_board() is None
