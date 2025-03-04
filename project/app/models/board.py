@@ -84,17 +84,27 @@ class BoardManager(models.Manager):
         return self.order_by("tournament", "display_number")
 
     def get_or_create_from_display_number(
-        self, *, display_number: int, tournament: Tournament, **kwargs
+        self, *, display_number: int, tournament: Tournament, defaults=None, **kwargs
     ) -> tuple[Board, bool]:
-        board_attributes = board_attributes_from_display_number(
+        if defaults is None:
+            defaults = {}
+
+        # TODO -- in theory, our caller might have specified, I dunno, cards for north and south; and here we'll assign
+        # cards to east and west.  But ... we're not ensuring that every card in the pack appears in exactly one hand
+        # :-|
+        for k, v in board_attributes_from_display_number(
             display_number=display_number,
             rng_seeds=[
                 str(display_number).encode(),
                 str(tournament.pk).encode(),
                 settings.SECRET_KEY.encode(),
             ],
+        ).items():
+            defaults.setdefault(k, v)
+
+        return self.get_or_create(
+            defaults=defaults, tournament=tournament, display_number=display_number
         )
-        return self.get_or_create(**board_attributes, tournament=tournament, **kwargs)
 
     def create(self, *args, **kwargs) -> Board:
         group = kwargs.get("group")

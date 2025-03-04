@@ -164,7 +164,7 @@ class Movement:
             board_group_letter = "ABCDEFGHIJKLMNOP"[group_index]
             for n in group_o_display_numbers:
                 a_board, _ = Board.objects.get_or_create_from_display_number(
-                    group=board_group_letter, display_number=n, tournament=tournament
+                    defaults={"group": board_group_letter}, display_number=n, tournament=tournament
                 )
                 boards.append(a_board)
 
