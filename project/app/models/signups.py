@@ -11,6 +11,9 @@ class TournamentSignup(models.Model):
     tournament = models.ForeignKey["Tournament"]("Tournament", on_delete=models.CASCADE)
     player = models.OneToOneField["Player"]("Player", on_delete=models.CASCADE)
 
+    def __repr__(self) -> str:
+        return f"<TournamentSignup pk={self.pk}: {self.player.name} in #{self.tournament.display_number}>"
+
 
 @admin.register(TournamentSignup)
 class TournamentSignupAdmin(admin.ModelAdmin):
