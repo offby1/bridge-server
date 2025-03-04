@@ -83,9 +83,9 @@ class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
 
-    def create_from_display_number(
+    def get_or_create_from_display_number(
         self, *, display_number: int, tournament: Tournament, **kwargs
-    ) -> Board:
+    ) -> tuple[Board, bool]:
         board_attributes = board_attributes_from_display_number(
             display_number=display_number,
             rng_seeds=[
@@ -94,7 +94,7 @@ class BoardManager(models.Manager):
                 settings.SECRET_KEY.encode(),
             ],
         )
-        return self.create(**board_attributes, tournament=tournament, **kwargs)
+        return self.get_or_create(**board_attributes, tournament=tournament, **kwargs)
 
     def create(self, *args, **kwargs) -> Board:
         group = kwargs.get("group")

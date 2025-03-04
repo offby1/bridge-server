@@ -8,7 +8,6 @@ from collections.abc import Sequence
 from typing import Any, TYPE_CHECKING
 
 import more_itertools
-import tabulate
 
 from app.models.types import PK
 
@@ -19,10 +18,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, order=True)
 class Pair:
-    names: str
+    # Keep id first so that "names" has no effect on the ordering.
     id: frozenset[PK]
+    names: str
 
 
 class PhantomPair(Pair):
@@ -71,13 +71,6 @@ class TableSetting:
     board_group: BoardGroup
 
 
-def one_player_from_pair(pair: Pair) -> Player:
-    from app.models import Player
-
-    pk = next(iter(pair.id))
-    return Player.objects.get(pk=pk)
-
-
 @dataclasses.dataclass(frozen=True)
 class Movement:
     boards_per_round_per_table: int
@@ -89,9 +82,7 @@ class Movement:
         from app.models import Player, Table
 
         assert 0 <= round_number < len(self.table_settings_by_table_number[round_number])
-        logger.debug(
-            f"Pretend I'm, I dunno, creating tables and seating players and whatnot for {round_number=}"
-        )
+        logger.debug(f"Creating tables and seating players and whatnot for {round_number=}")
         tn: int
         table_settings: list[TableSetting]
         for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
@@ -172,11 +163,10 @@ class Movement:
             # TODO -- tidy this up, along with the assignment to board_groups in "from_boards_and_pairs"
             board_group_letter = "ABCDEFGHIJKLMNOP"[group_index]
             for n in group_o_display_numbers:
-                boards.append(
-                    Board.objects.create_from_display_number(
-                        group=board_group_letter, display_number=n, tournament=tournament
-                    )
+                a_board, _ = Board.objects.get_or_create_from_display_number(
+                    group=board_group_letter, display_number=n, tournament=tournament
                 )
+                boards.append(a_board)
 
         return cls.from_boards_and_pairs(
             boards=boards,
@@ -195,7 +185,12 @@ class Movement:
         tournament: Tournament,
     ) -> Movement:
         num_tables, overflow = cls.num_tables(num_pairs=len(pairs))
-        pairs = list(pairs)
+
+        # Sort so that if we later construct movement with the same pairs, albeit perhaps a different order, we get
+        # *exactly* the same movement back.
+        # In practice our callers already sort, but ... it probably can't hurt to be sure.
+        pairs = sorted(pairs)
+
         if overflow:
             logger.debug(f"{pairs=}; {num_tables=} but {overflow=}, so appending a phantom pair")
             pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))

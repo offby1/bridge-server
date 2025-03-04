@@ -11,12 +11,13 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from app.models.signups import TournamentSignup
+from app.models.types import PK
 from app.models.throttle import throttle
 import app.utils.movements
 
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Generator
     from django.db.models.manager import RelatedManager
 
     from app.models import Player, Table
@@ -49,7 +50,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             return
 
         # It expired without any signups -- just nuke it
-        if not tour.signed_up_pairs():
+        if not TournamentSignup.objects.filter(tournament=tour).exists():
             logger.warning("%s has no signups; deleting it", tour)
             tour.delete()
             return
@@ -59,7 +60,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         # and then TODO -- keep doing that as the movement's "rounds" progress.
 
         for _ in range(2):
-            signed_up_pairs = tour.signed_up_pairs()
+            signed_up_pairs = list(tour.signed_up_pairs())
 
             if len(signed_up_pairs) % 2 == 0:
                 break
@@ -257,11 +258,28 @@ class Tournament(models.Model):
         boards_per_round = num_tables * mvmt.boards_per_round_per_table
         return num_hands // boards_per_round, boards_per_round
 
-    def signed_up_pairs(self) -> Sequence[app.utils.movements.Pair]:
-        signed_up_players = set()
-        rv = []
+    # TODO -- refactor this with signed_up_pairs
+    def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
+        seen: set[PK] = set()
+        from app.models import Player, Seat
 
-        for su in TournamentSignup.objects.filter(tournament=self).all():
+        players = Player.objects.order_by("pk").filter(
+            pk__in=Seat.objects.filter(table__in=self.table_set.all()).values_list(
+                "player", flat=True
+            )
+        )
+        for p in players:
+            if p.pk not in seen and p.partner.pk not in seen:
+                yield app.utils.movements.Pair(
+                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+                )
+                seen.add(p.pk)
+                seen.add(p.partner.pk)
+
+    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
+        signed_up_players: set[PK] = set()
+
+        for su in TournamentSignup.objects.order_by("player_id").filter(tournament=self).all():
             p = su.player
 
             assert p is not None
@@ -275,15 +293,12 @@ class Tournament(models.Model):
                 continue
 
             if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
-                rv.append(
-                    app.utils.movements.Pair(
-                        id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
-                    )
+                yield app.utils.movements.Pair(
+                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
                 )
+
                 signed_up_players.add(p.pk)
                 signed_up_players.add(p.partner.pk)
-
-        return rv
 
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
         all_boards = self.board_set.order_by("display_number").all()
@@ -305,9 +320,17 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         boards_per_round = 3  # arbitrary
-        logger.debug(f"{self.signed_up_pairs()=}")
+        if self.table_set.exists():
+            pairs = list(self.seated_pairs())
+            logger.debug(f"signed-up {pairs=}")
+        else:
+            pairs = list(self.signed_up_pairs())
+            logger.debug(f"seated {pairs=}")
+
+        assert pairs, "Can't create a movement with no pairs!"
+
         return app.utils.movements.Movement.from_pairs(
-            boards_per_round=boards_per_round, pairs=self.signed_up_pairs(), tournament=self
+            boards_per_round=boards_per_round, pairs=pairs, tournament=self
         )
 
     def signup_deadline_has_passed(self) -> bool:

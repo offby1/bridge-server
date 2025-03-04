@@ -1,15 +1,12 @@
 import collections
 import datetime
 import logging
-import threading
 
 from freezegun import freeze_time
 import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
-from django.db import connection
-from django.db.utils import IntegrityError
 from django.http.response import HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
