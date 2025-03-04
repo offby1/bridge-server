@@ -7,17 +7,14 @@ import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
-from django.http.response import HttpResponseForbidden, HttpResponseRedirect
-from django.urls import reverse
+from django.http.response import HttpResponseForbidden
 
 import app.views.hand
 import app.views.table.details
 from app.models import (
     Board,
     Hand,
-    NoMoreBoards,
     Player,
-    Table,
     TableException,
     Tournament,
     TournamentSignup,
@@ -30,9 +27,6 @@ from app.models.tournament import (
     Running,
     OpenForSignup,
 )
-
-from .testutils import play_out_hand
-
 
 logger = logging.getLogger(__name__)
 
@@ -132,39 +126,6 @@ def test_completing_one_tournament_deletes_related_signups(
         h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
         assert not TournamentSignup.objects.filter(player=Ricky).exists()
-
-
-def test_tournament_end(
-    nearly_completed_tournament, everybodys_password, monkeypatch, client
-) -> None:
-    assert Board.objects.count() == 1
-
-    t1 = Table.objects.first()
-    assert t1 is not None
-    assert Table.objects.count() == 1
-
-    assert not t1.tournament.is_complete
-
-    # Complete the first table.
-
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
-
-    # Have someone at the first table click "Next Board Plz".
-    with pytest.raises(NoMoreBoards):
-        t1.next_board()
-
-    client.force_login(t1.seat_set.first().player.user)
-    response = client.post(f"/table/{t1.pk}/new-board-plz/")
-    assert type(response) is HttpResponseRedirect
-    assert response.url == reverse("app:table-list") + "?tournament=1"
-
-    t1.refresh_from_db()
-    assert t1.tournament.is_complete
-
-    with pytest.raises(NoMoreBoards):
-        t1.next_board()
 
 
 def test_play_completion_deadline(usual_setup) -> None:

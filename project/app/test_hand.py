@@ -367,9 +367,7 @@ def test_exhaustive_archive_and_detail_redirection(
 
 
 @pytest.mark.django_db
-def test_predictable_shuffles(monkeypatch):
-    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 2)
-
+def test_predictable_shuffles():
     attrs1_empty = board.board_attributes_from_display_number(display_number=1, rng_seeds=[])
     attrs2_empty = board.board_attributes_from_display_number(display_number=2, rng_seeds=[])
 

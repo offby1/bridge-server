@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 
     from app.models import Player, Tournament
 
-BOARDS_PER_TOURNAMENT = 16
-
 logger = logging.getLogger(__name__)
 
 

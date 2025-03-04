@@ -1477,6 +1477,36 @@
     "pk": 1
   },
   {
+    "fields": {
+      "dealer": "E",
+      "display_number": 2,
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "ew_vulnerable": true,
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": false,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "tournament": 1,
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
+    },
+    "model": "app.board",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "dealer": "S",
+      "display_number": 3,
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "ew_vulnerable": true,
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "ns_vulnerable": true,
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "tournament": 1,
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A"
+    },
+    "model": "app.board",
+    "pk": 3
+  },
+  {
     "fields": {},
     "model": "app.lobby",
     "pk": 1

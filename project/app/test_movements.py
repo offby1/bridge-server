@@ -8,9 +8,7 @@ from app.utils.movements import BoardGroup, Movement, Pair
 
 
 @pytest.mark.django_db
-def test_movements_for_realz(monkeypatch) -> None:
-    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 100)
-
+def test_movements_for_realz() -> None:
     pairs = [
         Pair(names=s, id=frozenset([2 * index, 2 * index + 1]))
         for index, s in enumerate(
