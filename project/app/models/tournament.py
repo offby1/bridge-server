@@ -46,12 +46,12 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
         if tour.board_set.exists():
-            logger.debug("%s looks like it's had boards assigned already; bailing", tour)
+            logger.debug("'%s' looks like it's had boards assigned already; bailing", tour)
             return
 
         # It expired without any signups -- just nuke it
         if not TournamentSignup.objects.filter(tournament=tour).exists():
-            logger.warning("%s has no signups; deleting it", tour)
+            logger.warning("'%s' has no signups; deleting it", tour)
             tour.delete()
             return
 
@@ -76,7 +76,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             for p in (p2, p2.partner):
                 TournamentSignup.objects.create(tournament=tour, player=p)
 
-            logger.debug("Created synths %s and %s for %s", p2, p2.partner, tour)
+            logger.debug("Created synths %s and %s for '%s'", p2, p2.partner, tour)
 
         assert len(signed_up_pairs) % 2 == 0
         logger.debug("%d pairs are waiting", len(signed_up_pairs))
@@ -100,7 +100,7 @@ def check_for_expirations(sender, **kwargs) -> None:
 
         for t in incompletes:
             t.maybe_complete()
-            logger.debug("Checking %s: ", t)
+            logger.debug("Checking '%s': ", t)
             logger.debug(
                 "signup deadline %s %s passed",
                 t.signup_deadline,
@@ -202,7 +202,7 @@ class TournamentManager(models.Manager):
                     a_few_seconds_from_now,
                 )
                 new_tournament = self.create()
-                logger.debug("... namely %s", new_tournament)
+                logger.debug("... namely '%s'", new_tournament)
                 return new_tournament, True
 
             first_incomplete: Tournament | None = incomplete_and_open_tournaments_qs.order_by(
@@ -306,13 +306,14 @@ class Tournament(models.Model):
         played_board_pks = hands.values_list("board", flat=True).all()
         what_round_is_it, boards_per_round = self.what_round_is_it()
 
-        return all_boards.exclude(pk__in=played_board_pks).filter(
-            group="ABCDEFGHIJKLMNOP"[what_round_is_it]
-        )
+        group_letter = "ABCDEFGHIJKLMNOP"[what_round_is_it]
+        rv = all_boards.exclude(pk__in=played_board_pks).filter(group=group_letter)
+        logger.debug(f"{all_boards=} {played_board_pks=} {group_letter=} => {rv=}")
+        return rv
 
     def next_movement_round(self) -> None:
         if self.is_complete:
-            logger.info("%s is complete; no next round for you", self)
+            logger.info("'%s' is complete; no next round for you", self)
         else:
             logger.debug(
                 f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroyed them and created new ones"
@@ -403,20 +404,20 @@ class Tournament(models.Model):
         from app.models import Table
 
         rv = Table.objects.filter(hand__in=self.hands()).distinct()
-        logger.debug("%s has %d tables", self, rv.count())
+        logger.debug("'%s' has %d tables", self, rv.count())
         return rv
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
             if self.is_complete:
-                logger.info("Pff, no need to complete %s since it's already complete.", self)
+                logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
             num_hands_needed_for_completion = self.tables().count() * self.board_set.count()
 
             if num_hands_needed_for_completion == 0:
                 logger.info(
-                    "We don't consider %s to be complete because it's never had any tables assigned.",
+                    "We don't consider '%s' to be complete because it's never had any tables assigned.",
                     self,
                 )
                 return
@@ -466,7 +467,7 @@ class Tournament(models.Model):
                 explanation=f"Tournament is complete; maybe its play deadline {self.play_completion_deadline} has passed"
             )
             logger.debug(
-                "Marked myself %s as complete, and ejected all pairs from %s",
+                "Marked myself '%s' as complete, and ejected all pairs from %s",
                 self,
                 self.tables(),
             )
