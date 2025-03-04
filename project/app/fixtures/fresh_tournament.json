@@ -169,14 +169,5 @@
     },
     "model": "app.player",
     "pk": 4
-  },
-  {
-    "fields": {
-      "display_number": 1,
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
-    "pk": 1
   }
 ]

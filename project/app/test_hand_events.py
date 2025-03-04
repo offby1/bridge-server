@@ -7,8 +7,24 @@ import bridge.contract
 import pytest
 from django_eventstream.models import Event  # type: ignore[import-untyped]
 
-from .models import Hand, Player, Table
+from .models import Hand, Player, Table, Tournament
+import app.models.tournament
 from .testutils import set_auction_to
+
+
+class CapturedEvents:
+    def __init__(self) -> None:
+        self.events: list[Event] = []
+        self._message_ids_before = set(
+            Event.objects.values_list("id", flat=True),
+        )
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.events = list(Event.objects.exclude(id__in=self._message_ids_before))
+        return False
 
 
 class CapturedEventsFromChannel:
@@ -73,11 +89,11 @@ def test_sends_final_score() -> None:
 
 @pytest.mark.usefixtures("fresh_tournament")
 def test_sends_new_hand_event_to_table_channel() -> None:
-    t1 = Table.objects.first()
-    assert t1 is not None
+    tour = Tournament.objects.first()
+    assert tour is not None
 
-    with CapturedEventsFromChannel(t1.event_channel_name) as cap:
-        t1.next_board()
+    with CapturedEvents() as cap:
+        app.models.tournament._do_signup_expired_stuff(tour)
 
     assert any("new-hand" in m.data for m in cap.events)
 
