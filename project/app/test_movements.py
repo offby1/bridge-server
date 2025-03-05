@@ -1,14 +1,19 @@
 import collections
 
+import more_itertools
 import pytest
 
-from app.models import Tournament
+from django.contrib import auth
+
+from app.models import Player, Tournament
 import app.models.board
 from app.utils.movements import BoardGroup, Movement, Pair
 
+from .testutils import play_out_hand
+
 
 @pytest.mark.django_db
-def test_movements_for_realz() -> None:
+def test_movement_class() -> None:
     pairs = [
         Pair(names=s, id=frozenset([2 * index, 2 * index + 1]))
         for index, s in enumerate(
@@ -39,7 +44,7 @@ def test_movements_for_realz() -> None:
             all_pairs: set[Pair] = set()
 
             da_movement = Movement.from_pairs(
-                boards_per_round=boards_per_round, pairs=pairs[0:num_pairs], tournament=t
+                boards_per_round_per_table=boards_per_round, pairs=pairs[0:num_pairs], tournament=t
             )
 
             for table_number, rounds in da_movement.items():
@@ -78,3 +83,30 @@ def test_movements_for_realz() -> None:
 
             [(pair, count)] = pair_board_combos.most_common(1)
             assert count == 1
+
+
+def test_pairs_and_boards_move(db, everybodys_password) -> None:
+    # buid up the simplest possible tournament that has more than one round.
+    player_names = ["n1", "e1", "s1", "w1", "n2", "e2", "s2", "w2"]
+    for name in player_names:
+        Player.objects.create(
+            user=auth.models.User.objects.create(username=name, password=everybodys_password),
+        )
+
+    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
+        boards_per_round_per_table=1
+    )
+
+    for p1, p2 in more_itertools.chunked(Player.objects.all(), 2):
+        p1.partner_with(p2)
+        open_tournament.sign_up(p1)  # p2 gets signed up automatically
+
+    for table in open_tournament.table_set.all():
+        play_out_hand(table)
+
+    open_tournament.next_movement_round()
+
+    assert (
+        str("ensure we have a new set of boards, n/s have stayed put, but e/w have swapped tables")
+        == "cat == dog"
+    )

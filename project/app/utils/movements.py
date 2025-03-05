@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Generator
 import dataclasses
 import itertools
 import logging
+import operator
 from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import more_itertools
 
@@ -66,25 +68,35 @@ class Quartet:
 
 
 @dataclasses.dataclass(frozen=True)
-class TableSetting:
+class PlayersAndBoardsForOneRound:
     quartet: Quartet
     board_group: BoardGroup
 
 
+def _group_letter(round_number: int) -> str:
+    return "ABCDEFGHIJKLMNOP"[round_number]
+
+
 @dataclasses.dataclass(frozen=True)
 class Movement:
-    boards_per_round_per_table: int
-    table_settings_by_table_number: dict[int, list[TableSetting]]
+    boards_per_round_per_table: int  # redundant, but handy
+    # The number of tables always equals the number of rounds.
+    table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
-    # *within* a round, we play boards_per_round boards.
+    # *within* a round, we play boards_per_round_per_table boards (per table!).
     def start_round(self, *, tournament: Tournament, round_number: int) -> None:
         from app.models import Player, Table
 
-        assert 0 <= round_number < len(self.table_settings_by_table_number[round_number])
+        assert 0 <= round_number
+        if round_number >= len(self.table_settings_by_table_number[0]):
+            from app.models import NoMoreBoards
+
+            msg = f"Tournament #{tournament.display_number} only has {self.table_settings_by_table_number[0]} rounds, but you asked for {round_number=}"
+            raise NoMoreBoards(msg)
         logger.debug(f"Creating tables and seating players and whatnot for {round_number=}")
         tn: int
-        table_settings: list[TableSetting]
+        table_settings: list[PlayersAndBoardsForOneRound]
         for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
             table: Table
             ts = table_settings[round_number]
@@ -115,7 +127,7 @@ class Movement:
             logger.debug(f"{tn=} {table_settings[round_number]=} created {table}")
             table.next_board()
 
-    def items(self) -> Sequence[tuple[int, list[TableSetting]]]:
+    def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
         return list(self.table_settings_by_table_number.items())
 
     @staticmethod
@@ -127,44 +139,29 @@ class Movement:
             rv += 1
         return rv, overflow > 0
 
-    @classmethod
-    def from_pairs(
-        cls, *, boards_per_round: int, pairs: Sequence[Pair], tournament: Tournament
-    ) -> Movement:
+    @staticmethod
+    def make_boards(
+        *, boards_per_round_per_table: int, num_tables: int, tournament: Tournament
+    ) -> Generator[Board]:
         from app.models import Board
 
-        num_tables, _ = cls.num_tables(num_pairs=len(pairs))
-        logger.debug(f"{boards_per_round=} {len(pairs)=} => {num_tables=}")
-
-        boards = []
-
-        for group_index, group_o_display_numbers in enumerate(
+        for group_index, display_numbers in enumerate(
             more_itertools.chunked(
-                range(1, boards_per_round * num_tables + 1),
-                boards_per_round,
+                range(1, boards_per_round_per_table * num_tables + 1),
+                boards_per_round_per_table,
             )
         ):
-            # TODO -- tidy this up, along with the assignment to board_groups in "from_boards_and_pairs"
-            board_group_letter = "ABCDEFGHIJKLMNOP"[group_index]
-            for n in group_o_display_numbers:
+            for n in display_numbers:
                 a_board, _ = Board.objects.get_or_create_from_display_number(
-                    group=board_group_letter, display_number=n, tournament=tournament
+                    group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
-                boards.append(a_board)
-
-        return cls.from_boards_and_pairs(
-            boards=boards,
-            boards_per_round=boards_per_round,
-            pairs=pairs,
-            tournament=tournament,
-        )
+                yield a_board
 
     @classmethod
-    def from_boards_and_pairs(
+    def from_pairs(
         cls,
         *,
-        boards: Sequence[Board],
-        boards_per_round: int,
+        boards_per_round_per_table: int,
         pairs: Sequence[Pair],
         tournament: Tournament,
     ) -> Movement:
@@ -195,18 +192,15 @@ class Movement:
             # Standard Mitchell movement: the EW pair at each table "rotates" each round
             return ew_pairs[(table_number - round_number) % num_tables]
 
-        board_groups = [
-            BoardGroup(letter=letter, boards=tuple(boards))
-            for letter, boards in zip(
-                "ABCDEFGHIJKLMNOP",
-                more_itertools.chunked(
-                    boards,
-                    boards_per_round,
-                ),
+        boards = list(
+            cls.make_boards(
+                boards_per_round_per_table=boards_per_round_per_table,
+                num_tables=num_tables,
+                tournament=tournament,
             )
-        ]
+        )
 
-        temp_rv: dict[int, list[TableSetting]] = collections.defaultdict(list)
+        temp_rv: dict[int, list[PlayersAndBoardsForOneRound]] = collections.defaultdict(list)
         for table_number, round_number in itertools.product(range(1, num_tables + 1), repeat=2):
             q = Quartet(
                 ns=ns(table_number=table_number, round_number=round_number),
@@ -214,8 +208,9 @@ class Movement:
             )
 
             temp_rv[table_number - 1].append(
-                TableSetting(quartet=q, board_group=board_groups[round_number - 1])
+                PlayersAndBoardsForOneRound(quartet=q, board_group=boards[round_number - 1].group)
             )
         return cls(
-            boards_per_round_per_table=boards_per_round, table_settings_by_table_number=temp_rv
+            boards_per_round_per_table=boards_per_round_per_table,
+            table_settings_by_table_number=temp_rv,
         )

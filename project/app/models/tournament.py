@@ -185,7 +185,7 @@ class TournamentManager(models.Manager):
     def open_for_signups(self) -> models.QuerySet:
         return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
 
-    def get_or_create_tournament_open_for_signups(self) -> tuple[Tournament, bool]:
+    def get_or_create_tournament_open_for_signups(self, **kwargs) -> tuple[Tournament, bool]:
         with transaction.atomic():
             a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
             incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
@@ -197,7 +197,7 @@ class TournamentManager(models.Manager):
                     "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
                     a_few_seconds_from_now,
                 )
-                new_tournament = self.create()
+                new_tournament = self.create(**kwargs)
                 logger.debug("... namely '%s'", new_tournament)
                 return new_tournament, True
 
@@ -213,7 +213,7 @@ class TournamentManager(models.Manager):
             first_incomplete.maybe_complete()
 
             if first_incomplete.is_complete:
-                new_tournament = self.create()
+                new_tournament = self.create(**kwargs)
                 logger.debug(
                     "%s was incomplete but now I just completed it; created a new empty tournament %s",
                     first_incomplete.short_string(),
@@ -235,6 +235,7 @@ class Tournament(models.Model):
         board_set = RelatedManager["Board"]()
         table_set = RelatedManager[Table]()
 
+    boards_per_round_per_table = models.PositiveSmallIntegerField(default=3)
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
 
@@ -306,15 +307,13 @@ class Tournament(models.Model):
 
     def next_movement_round(self) -> None:
         if self.is_complete:
-            logger.info("'%s' is complete; no next round for you", self)
+            logger.warning("'%s' is complete; no next round for you", self)
         else:
-            # TODO -- this is the final piece!
-            logger.debug(
-                f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroyed them and created new ones"
-            )
+            mvmt = self.get_movement()
+            dis_round, _ = self.what_round_is_it()
+            mvmt.start_round(tournament=self, round_number=(dis_round + 1))
 
     def get_movement(self) -> app.utils.movements.Movement:
-        boards_per_round = 3  # arbitrary
         if self.table_set.exists():
             pairs = list(self.seated_pairs())
             logger.debug(f"signed-up {pairs=}")
@@ -325,7 +324,7 @@ class Tournament(models.Model):
         assert pairs, "Can't create a movement with no pairs!"
 
         return app.utils.movements.Movement.from_pairs(
-            boards_per_round=boards_per_round, pairs=pairs, tournament=self
+            boards_per_round_per_table=self.boards_per_round_per_table, pairs=pairs, tournament=self
         )
 
     def signup_deadline_has_passed(self) -> bool:
@@ -366,8 +365,9 @@ class Tournament(models.Model):
                 f"At least one of {(player, player.partner)} is currently seated"
             )
         for p in (player, player.partner):
-            TournamentSignup.objects.get_or_create(tournament=self, player=p)
-            logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
+            _, created = TournamentSignup.objects.get_or_create(tournament=self, player=p)
+            if created:
+                logger.debug("Just signed %s up  for tournament #%s", p.name, self.display_number)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
@@ -457,7 +457,8 @@ class Tournament(models.Model):
             TournamentSignup.objects.filter(tournament=self).delete()
             self._eject_all_pairs(
                 # TODO -- distinguish between "all the boards have been played" vs "was aborted because the play
-                # completion deadline passed"
+                # completion deadline passed".  Maybe the "is_complete" attribute should be a string, instead of a
+                # boolean, and it would contain the explanation.
                 explanation=f"Tournament is complete; maybe its play deadline {self.play_completion_deadline} has passed"
             )
             logger.debug(
