@@ -450,20 +450,20 @@ def test_max_boards(two_boards_one_is_complete):
             t.id: t.num_boards for t in Tournament.objects.annotate(num_boards=Count(F("board")))
         }
 
+    # This count was wholly determined by the fixture.
+    assert board_counts_per_tournament()[1] == 2
+
     t = Table.objects.first()
 
-    assert board_counts_per_tournament() == {1: 2}
+    bpr = t.tournament.get_movement().boards_per_round_per_table
 
-    t.next_board()
+    for board_index in range(bpr):
+        play_out_hand(t)
 
-    assert board_counts_per_tournament() == {1: 3}
+        if board_index < bpr - 1:
+            t.next_board()
 
-    # TODO -- this hard-codes the knowledge that we ask for three boards per round.
-    play_out_hand(t)
-    t.next_board()
-    play_out_hand(t)
-
-    assert board_counts_per_tournament()[1] == 3
+        assert board_counts_per_tournament()[1] == bpr
 
     with pytest.raises(NoMoreBoards):
         t.next_board()
