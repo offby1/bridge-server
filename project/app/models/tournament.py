@@ -254,16 +254,10 @@ class Tournament(models.Model):
         boards_per_round = num_tables * mvmt.boards_per_round_per_table
         return num_hands // boards_per_round, boards_per_round
 
-    # TODO -- refactor this with signed_up_pairs
-    def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
+    @staticmethod
+    def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
         seen: set[PK] = set()
-        from app.models import Player, Seat
 
-        players = Player.objects.order_by("pk").filter(
-            pk__in=Seat.objects.filter(table__in=self.table_set.all()).values_list(
-                "player", flat=True
-            )
-        )
         for p in players:
             if p.pk not in seen and p.partner.pk not in seen:
                 yield app.utils.movements.Pair(
@@ -272,29 +266,32 @@ class Tournament(models.Model):
                 seen.add(p.pk)
                 seen.add(p.partner.pk)
 
-    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
-        signed_up_players: set[PK] = set()
+    def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
+        from app.models import Player, Seat
 
-        for su in TournamentSignup.objects.order_by("player_id").filter(tournament=self).all():
-            p = su.player
-
-            assert p is not None
-
-            if p.partner is None:
-                logger.debug("Not pairing up %s because they have no partner", p.name)
-                continue
-
-            if p.currently_seated:
-                logger.debug("Not pairing up %s because they are already seated", p.name)
-                continue
-
-            if p.pk not in signed_up_players and p.partner.pk not in signed_up_players:
-                yield app.utils.movements.Pair(
-                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+        players = (
+            Player.objects.order_by("pk")
+            .filter(partner__isnull=False)
+            .filter(
+                pk__in=Seat.objects.filter(table__in=self.table_set.all()).values_list(
+                    "player", flat=True
                 )
+            )
+        )
 
-                signed_up_players.add(p.pk)
-                signed_up_players.add(p.partner.pk)
+        yield from self.pair_up_players(players)
+
+    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
+        from app.models import Player
+
+        players = (
+            Player.objects.order_by("pk")
+            .filter(partner__isnull=False)
+            .filter(currently_seated=False)
+            .filter(pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player"))
+        )
+
+        yield from self.pair_up_players(players)
 
     def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
         all_boards = self.board_set.order_by("display_number").all()
