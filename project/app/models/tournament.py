@@ -55,10 +55,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             tour.delete()
             return
 
-        # Now seat everyone who's signed up, plus a pair of synths, if needed.
-        # TODO -- consult the movement to see whom to seat where.
-        # and then TODO -- keep doing that as the movement's "rounds" progress.
-
         for _ in range(2):
             signed_up_pairs = list(tour.signed_up_pairs())
 

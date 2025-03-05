@@ -260,8 +260,6 @@ class Table(models.Model):
 
     class Meta:
         constraints = [
-            # TODO -- this might be too strict.  Rather than mutating tables each time we start a new round, I might
-            # want to create new Table instances, with the same display number.
             models.UniqueConstraint(  # type: ignore[call-arg]
                 name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
                 fields=["display_number", "tournament_id"],
