@@ -315,6 +315,7 @@ class Tournament(models.Model):
         if self.is_complete:
             logger.info("'%s' is complete; no next round for you", self)
         else:
+            # TODO -- this is the final piece!
             logger.debug(
                 f"Imagine I checked all my tables ({self.table_set.all()}), and if they were all complete, destroyed them and created new ones"
             )

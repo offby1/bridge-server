@@ -195,6 +195,7 @@ class Table(models.Model):
                 raise TableException(msg)
 
             if (b := self.find_unplayed_board()) is None:
+                t: Tournament
                 t = self.tournament
                 msg = "find_unplayed_board returned None; I'm no longer sure what that means"
                 logger.debug("%s", msg)
@@ -253,7 +254,7 @@ class Table(models.Model):
         return all(p is not None for p in self.players_by_direction.values())
 
     def __repr__(self):
-        return f"Table #{self.display_number} in tournament #{self.tournament.display_number}"
+        return f"Table #{self.display_number} (pk {self.pk}) in tournament #{self.tournament.display_number}"
 
     __str__ = __repr__
 
