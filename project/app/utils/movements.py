@@ -127,22 +127,6 @@ class Movement:
             rv += 1
         return rv, overflow > 0
 
-    def ready_for_tabulation(self) -> Sequence[Sequence[str]]:
-        tabulate_me = []
-        for table_number, rounds in self.items():
-            this_table: list[Any] = [table_number + 1]
-            for r in rounds:
-                quartet, board_group = r.quartet, r.board_group
-                phantoms, normals = quartet.partition_into_phantoms_and_normals()
-                if phantoms:
-                    this_table.append(f"{normals[0].names} sits this round out")
-                else:
-                    this_table.append(
-                        f"{quartet.ew.names}/{quartet.ns.names} boards {','.join((str(b.display_number) for b in board_group.boards))}"
-                    )
-            tabulate_me.append(this_table)
-        return tabulate_me
-
     @classmethod
     def from_pairs(
         cls, *, boards_per_round: int, pairs: Sequence[Pair], tournament: Tournament
