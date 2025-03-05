@@ -91,10 +91,10 @@ class Movement:
             phantom_pairs, normal_pairs = ts.quartet.partition_into_phantoms_and_normals()
 
             if phantom_pairs:
-                # Don't create a table; just (TODO) inform the normal pair that they're sitting out this round
-                logger.warning(
-                    f"Imagine I somehow informed {normal_pairs[0]} that they had to sit out {round_number=}"
-                )
+                assert len(normal_pairs) == 1
+                assert len(phantom_pairs) == 1
+
+                # Don't create a table; just inform the normal pair that they're sitting out this round
                 for pk in normal_pairs[0].id:
                     Player.objects.get(pk=pk).unseat_me(
                         reason=f"You're sitting out round {round_number}"

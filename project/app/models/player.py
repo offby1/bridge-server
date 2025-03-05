@@ -140,7 +140,7 @@ class Player(TimeStampedModel):
 
     def unseat_me(self, reason: str | None = None) -> None:
         if reason is not None:
-            logger.debug('Imagine that I somehow communicated "%s" to %s', reason, self.name)
+            logger.debug('TODO: Imagine that I somehow communicated "%s" to %s', reason, self.name)
         self.currently_seated = False
         self._control_bot()
 
