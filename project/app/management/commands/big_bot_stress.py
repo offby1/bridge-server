@@ -12,7 +12,10 @@ from django.db import transaction
 
 
 class Command(BaseCommand):
-    def handle(self, *_args, **_options) -> None:
+    def add_arguments(self, parser):
+        parser.add_argument("--min-players", type=int)
+
+    def handle(self, *_args, **options) -> None:
         is_safe = False
 
         if settings.DEBUG:
@@ -33,6 +36,16 @@ class Command(BaseCommand):
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
 
             p: Player
+
+            while Player.objects.order_by("user__username").count() < options["min_players"]:
+                p1 = Player.objects.create_synthetic()
+                p2 = Player.objects.create_synthetic()
+                p1.partner = p2
+                p2.partner = p1
+                p1.save()
+                p2.save()
+                self.stderr.write(f"Created partners {p1.name} and {p2.name}")
+
             for p in Player.objects.order_by("user__username").all():
                 if p.currently_seated:
                     p.unseat_me()
