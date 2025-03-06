@@ -38,6 +38,10 @@ class NoMoreBoards(Exception):
     pass
 
 
+class TableHasNoHand(TableException):
+    pass
+
+
 class TableManager(models.Manager):
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, tournament: Tournament | None = None
@@ -113,7 +117,9 @@ class Table(models.Model):
     @property
     def current_hand(self) -> Hand:
         rv = self.hand_set.order_by("-id").first()
-        assert rv is not None, "current_hand can't find no hands"
+        if rv is None:
+            msg = f"{self} has no hands"
+            raise TableHasNoHand(msg)
         return rv
 
     def current_hand_pk(self) -> PK:

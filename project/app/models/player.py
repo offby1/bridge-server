@@ -184,7 +184,7 @@ class Player(TimeStampedModel):
             )
 
         if not self.allow_bot_to_play_for_me:
-            logger.info(f"{self.allow_bot_to_play_for_me=}; outta here")
+            logger.info(f"{self.name=} {self.allow_bot_to_play_for_me=}; outta here")
             return
 
         if not self.currently_seated:
