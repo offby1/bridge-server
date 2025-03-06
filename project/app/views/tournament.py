@@ -4,6 +4,7 @@ from django.db.models import Case, Value, When
 from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+import django.db.models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -87,7 +88,9 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
 
     BROWN = Value("background-color: sandybrown;")
     WHITE = Value("background-color: white;")
-    all_ = app.models.Tournament.objects.order_by("pk").annotate(
+    all_ = app.models.Tournament.objects.order_by(
+        django.db.models.F("signup_deadline").desc(nulls_last=True)
+    ).annotate(
         signup_deadline_style=Case(When(signup_deadline__lt=now, then=BROWN), default=WHITE),
         play_completion_deadline_style=Case(
             When(play_completion_deadline__lt=now, then=BROWN),
@@ -97,11 +100,9 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
 
     # TODO -- sort the items so that openforsignups come first; then in descending order by signup deadline.
 
-    open_ = app.models.Tournament.objects.open_for_signups()
-
     context = {"tournament_list": all_, "description": "", "button": ""}
 
-    if not open_.exists():
+    if not app.models.Tournament.objects.open_for_signups().exists():
         context["button"] = format_html(
             """<button class="btn btn-primary" type="submit">Gimme new tournament, Yo</button>"""
         )
