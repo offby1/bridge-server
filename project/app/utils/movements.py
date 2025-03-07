@@ -92,7 +92,7 @@ class Movement:
         if round_number >= len(self.table_settings_by_table_number[0]):
             from app.models import NoMoreBoards
 
-            msg = f"Tournament #{tournament.display_number} only has {self.table_settings_by_table_number[0]} rounds, but you asked for {round_number=}"
+            msg = f"Tournament #{tournament.display_number} only has {len(self.table_settings_by_table_number[0])} rounds, but you asked for {round_number=}"
             raise NoMoreBoards(msg)
         logger.debug(f"Creating tables and seating players and whatnot for {round_number=}")
         tn: int
