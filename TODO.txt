@@ -8,6 +8,12 @@ STILL TODO:
 
   There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
 
+* Allow humans to submit feedback via a form or something.
+
+  Only let them do this if I've got a confirmed email address for them; I imagine that'd reduce spam.
+
+  I *think* "Getting a confirmed email address" is something that django, or a widely-used third-party library, can do for me.
+
 * When a tournament's signup deadline has passed, but the play deadline hasn't; *and* all of the signed-up players have played as much as they can play (whatever that means), then force the tournament to complete.  Otherwise, everyone has to sit around waiting for the play deadline to expire before they can see the boards/hands.
 
 * player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
