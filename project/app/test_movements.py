@@ -57,8 +57,6 @@ def test_movement_class() -> None:
                 tournament=t,
             )
 
-            print(f"\n\n{num_pairs=} {boards_per_round=}\n")
-
             # Ensure there's never more than one phantom
             for table_number, rounds in da_movement.items():
                 for r in rounds:
@@ -75,19 +73,19 @@ def test_movement_class() -> None:
             for table_number, rounds in da_movement.items():
                 for r in rounds:
                     quartet, board_group = r.quartet, r.board_group
-                    if not any(isinstance(p, PhantomPair) for p in (quartet.ns, quartet.ew)):
-                        times_played_by_pair_board_combo[(quartet.ns.id, board_group)] += 1
-                        times_played_by_pair_board_combo[(quartet.ew.id, board_group)] += 1
 
-            print(f"{times_played_by_pair_board_combo=}")
+                    times_played_by_pair_board_combo[(quartet.ns.id, board_group)] += 1
+                    times_played_by_pair_board_combo[(quartet.ew.id, board_group)] += 1
 
-            # If there's an odd number of pairs, we get a phantom pair
-            if num_pairs % 2 == 0:
-                expected = {boards_per_round}
-            else:
-                expected = {boards_per_round, boards_per_round - 1}
+            assert set(times_played_by_pair_board_combo.values()) == {1}
 
-            assert set(times_played_by_pair_board_combo.values()) == expected
+            # Ensure every NS pair encounters every EW pair exactly once, and vice-versa.
+            matchups = collections.Counter()
+            for table_number, rounds in da_movement.items():
+                for r in rounds:
+                    matchups[r.quartet] += 1
+
+            assert matchups.most_common(1)[0][1] == 1
 
 
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
