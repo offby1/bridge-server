@@ -5,16 +5,16 @@ from collections.abc import Generator
 import dataclasses
 import itertools
 import logging
-import operator
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import more_itertools
+import tabulate
 
 from app.models.types import PK
 
 if TYPE_CHECKING:
-    from app.models import Board, Player, Tournament
+    from app.models import Board, Tournament
 
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,9 @@ class Quartet:
                 normals.append(p)
         return (phantoms, normals)
 
+    def names(self) -> str:
+        return f"{self.ns.names}/{self.ew.names}"
+
 
 @dataclasses.dataclass(frozen=True)
 class PlayersAndBoardsForOneRound:
@@ -82,6 +85,21 @@ class Movement:
     boards_per_round_per_table: int  # redundant, but handy
     # The number of tables always equals the number of rounds.
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
+
+    def __post_init__(self):
+        tabulate_me = []
+        for tn, rounds in self.table_settings_by_table_number.items():
+            row = [tn]
+
+            for r in rounds:
+                quartet, board_group = r.quartet, r.board_group
+                row.append(f"{quartet.names()} plays {board_group}")
+            tabulate_me.append(row)
+        print(
+            tabulate.tabulate(
+                tabulate_me, headers=["table"] + [f"Round {n + 1}" for n in range(len(rounds))]
+            )
+        )
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
