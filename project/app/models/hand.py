@@ -432,6 +432,7 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
+            # TODO -- this seems wrong.  We should assume a tournament is in progress, and check to see if this hand was the last hand in the current round; if so, advance to the next round.
             Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
@@ -493,6 +494,7 @@ class Hand(TimeStampedModel):
         if final_score is not None:
             self.table.tournament.maybe_complete()
 
+            # see "TODO -- this seems wrong" in add_call_from_player
             Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
