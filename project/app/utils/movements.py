@@ -226,7 +226,10 @@ class Movement:
             )
 
             temp_rv[table_number - 1].append(
-                PlayersAndBoardsForOneRound(quartet=q, board_group=boards[round_number - 1].group)
+                PlayersAndBoardsForOneRound(
+                    quartet=q,
+                    board_group=boards[boards_per_round_per_table * round_number - 1].group,
+                )
             )
         return cls(
             boards_per_round_per_table=boards_per_round_per_table,
