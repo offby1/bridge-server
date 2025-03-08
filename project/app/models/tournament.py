@@ -249,11 +249,15 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     def what_round_is_it(self) -> tuple[int, int]:
-        num_hands = self.hands().count()
+        num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_table_number)
         boards_per_round = num_tables * mvmt.boards_per_round_per_table
-        return num_hands // boards_per_round, boards_per_round
+        logger.debug(
+            f"{num_completed_hands=} {num_tables=} {boards_per_round=} hence it's now round %d",
+            num_completed_hands // boards_per_round,
+        )
+        return num_completed_hands // boards_per_round, boards_per_round
 
     @staticmethod
     def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:

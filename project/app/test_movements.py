@@ -1,15 +1,15 @@
 import collections
-import operator
-from typing import TYPE_CHECKING, Any
+import datetime
 
+from freezegun import freeze_time
 import more_itertools
 import pytest
 
 from django.contrib import auth
 
-from app.models import Player, Tournament
-import app.models.board
-from app.utils.movements import BoardGroup, Movement, Pair, PhantomPair
+from app.models import Player, Seat, Tournament
+from app.models.tournament import _do_signup_expired_stuff
+from app.utils.movements import Movement, Pair
 
 from .testutils import play_out_hand
 
@@ -89,27 +89,53 @@ def test_movement_class() -> None:
 
 
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
+    assert not Seat.objects.exists()
     # buid up the simplest possible tournament that has more than one round.
-    player_names = ["n1", "e1", "s1", "w1", "n2", "e2", "s2", "w2"]
-    for name in player_names:
+    for name in ["n1", "s1", "n2", "s2", "e1", "w1", "e2", "w2"]:
         Player.objects.create(
             user=auth.models.User.objects.create(username=name, password=everybodys_password),
         )
 
-    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
-        boards_per_round_per_table=1
-    )
+    Player.objects.get_by_name("n1").partner_with(Player.objects.get_by_name("s1"))
+    Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
+    Player.objects.get_by_name("e1").partner_with(Player.objects.get_by_name("w1"))
+    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
 
-    for p1, p2 in more_itertools.chunked(Player.objects.all(), 2):
-        p1.partner_with(p2)
-        open_tournament.sign_up(p1)  # p2 gets signed up automatically
+    with freeze_time(datetime.datetime(2000, 1, 1)):
+        open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
+            boards_per_round_per_table=1
+        )
 
-    for table in open_tournament.table_set.all():
-        play_out_hand(table)
+        for n in ("n1", "n2", "e1", "e2"):
+            open_tournament.sign_up(
+                Player.objects.get_by_name(n)
+            )  # partners get signed up automatically
 
-    open_tournament.next_movement_round()
+    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
+        _do_signup_expired_stuff(open_tournament)
+        assert open_tournament.table_set.exists()
 
-    assert (
-        str("ensure we have a new set of boards, n/s have stayed put, but e/w have swapped tables")
-        == "cat == dog"
-    )
+        dis_round, _ = open_tournament.what_round_is_it()
+        assert dis_round == 0, "We haven't played any hands, so this should be round 0"
+
+        for s in Seat.objects.all():
+            print(f"{s.table.display_number}{s.direction}: {s.player.name}")
+
+        for table in open_tournament.table_set.all():
+            play_out_hand(table)
+
+        open_tournament.next_movement_round()
+
+        dis_round, _ = open_tournament.what_round_is_it()
+        assert (
+            dis_round == 1
+        ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
+
+        for s in Seat.objects.all():
+            print(f"{s.table.display_number}{s.direction}: {s.player.name}")
+        assert (
+            str(
+                "ensure we have a new set of boards, n/s have stayed put, but e/w have swapped tables"
+            )
+            == "cat == dog"
+        )

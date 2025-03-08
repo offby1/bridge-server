@@ -97,7 +97,7 @@ class Movement:
             tabulate_me.append(row)
         print(
             tabulate.tabulate(
-                tabulate_me, headers=["table"] + [f"Round {n + 1}" for n in range(len(rounds))]
+                tabulate_me, headers=["table"] + [f"Round {n}" for n in range(len(rounds))]
             )
         )
 
