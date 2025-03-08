@@ -103,7 +103,9 @@ class Movement:
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
-    def start_round(self, *, tournament: Tournament, round_number: int) -> None:
+    def create_tables_and_seat_players_for_round(
+        self, *, tournament: Tournament, round_number: int
+    ) -> None:
         from app.models import Player, Table
 
         assert 0 <= round_number

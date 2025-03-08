@@ -78,9 +78,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         logger.debug("%d pairs are waiting", len(signed_up_pairs))
 
         movement = tour.get_movement()
-
-        # This creates tables, and seats players.
-        movement.start_round(round_number=0, tournament=tour)
+        movement.create_tables_and_seat_players_for_round(round_number=0, tournament=tour)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -315,7 +313,9 @@ class Tournament(models.Model):
         else:
             mvmt = self.get_movement()
             dis_round, _ = self.what_round_is_it()
-            mvmt.start_round(tournament=self, round_number=(dis_round + 1))
+            mvmt.create_tables_and_seat_players_for_round(
+                tournament=self, round_number=(dis_round + 1)
+            )
 
     def get_movement(self) -> app.utils.movements.Movement:
         if self.table_set.exists():

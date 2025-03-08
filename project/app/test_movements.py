@@ -88,6 +88,11 @@ def test_movement_class() -> None:
             assert matchups.most_common(1)[0][1] == 1
 
 
+def dump_seats():
+    for s in Seat.objects.order_by("table__display_number", "direction").all():
+        print(f"{s.table.display_number=}{s.direction=}: {s.player.name=}")
+
+
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
     assert not Seat.objects.exists()
     # buid up the simplest possible tournament that has more than one round.
@@ -118,21 +123,18 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         dis_round, _ = open_tournament.what_round_is_it()
         assert dis_round == 0, "We haven't played any hands, so this should be round 0"
 
-        for s in Seat.objects.all():
-            print(f"{s.table.display_number}{s.direction}: {s.player.name}")
+        dump_seats()
 
         for table in open_tournament.table_set.all():
             play_out_hand(table)
-
-        open_tournament.next_movement_round()
 
         dis_round, _ = open_tournament.what_round_is_it()
         assert (
             dis_round == 1
         ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
 
-        for s in Seat.objects.all():
-            print(f"{s.table.display_number}{s.direction}: {s.player.name}")
+        dump_seats()
+
         assert (
             str(
                 "ensure we have a new set of boards, n/s have stayed put, but e/w have swapped tables"
