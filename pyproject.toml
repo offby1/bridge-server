@@ -73,12 +73,13 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D212"
 
 [tool.ruff]
 line-length = 100
+target-version = "py313"
+unsafe-fixes = true
 
-#https://docs.astral.sh/ruff/rules/unused-import/
 #https://docs.astral.sh/ruff/rules/print/
 #https://docs.astral.sh/ruff/rules/p-print/
 [tool.ruff.lint]
-ignore = ["F401", "T201", "T203"]
+ignore = ["T201", "T203"]
 
 [tool.coverage.run]
 dynamic_context = "test_function"
