@@ -1,5 +1,4 @@
 import base64
-import collections
 import importlib
 import json
 import logging
@@ -17,7 +16,6 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirec
 from django.test import Client
 from django.urls import reverse
 
-import app.models.board
 
 from .models import (
     Board,
@@ -32,7 +30,7 @@ from .models import (
     Tournament,
 )
 from .testutils import play_out_hand, set_auction_to
-from .views import hand, player, table
+from .views import hand, player
 
 logger = logging.getLogger(__name__)
 

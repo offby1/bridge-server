@@ -5,7 +5,7 @@ from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Table, Tournament, TournamentSignup
+from .models import Hand, Play, Player, Table, Tournament
 from .models.tournament import check_for_expirations
 
 

@@ -14,7 +14,6 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-import app.models.board
 from .models import AuctionError, Board, Hand, Player, Table, Tournament, board, hand
 from .testutils import set_auction_to
 from .views.hand import (

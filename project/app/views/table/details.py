@@ -10,7 +10,6 @@ from django.conf import settings
 from django.core.paginator import Paginator
 import django.db.utils
 from django.http import (
-    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
