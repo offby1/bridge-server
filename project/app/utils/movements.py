@@ -72,8 +72,10 @@ class Quartet:
 
 @dataclasses.dataclass(frozen=True)
 class PlayersAndBoardsForOneRound:
-    quartet: Quartet
     board_group: BoardGroup
+    quartet: Quartet
+    round_number: int
+    table_number: int
 
 
 def _group_letter(round_number: int) -> str:
@@ -91,15 +93,18 @@ class Movement:
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
     def tabulate_me(self) -> dict[str, Any]:
-        rv = []
+        rows = []
+        headers = ["table"]
         for tn, rounds in self.table_settings_by_table_number.items():
-            row = [str(tn)]
+            if not rows:
+                headers.extend(list(r.round_number for r in rounds))
+            row = [str(rounds[0].table_number)]
 
             for r in rounds:
                 quartet, board_group = r.quartet, r.board_group
                 row.append(f"{quartet.names()} plays {board_group}")
-            rv.append(row)
-        return {"rows": rv, "headers": ["table"] + [f"Round {n}" for n in range(len(rounds))]}
+            rows.append(row)
+        return {"rows": rows, "headers": headers}
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
@@ -229,8 +234,10 @@ class Movement:
 
             temp_rv[table_number - 1].append(
                 PlayersAndBoardsForOneRound(
-                    quartet=q,
                     board_group=boards[boards_per_round_per_table * round_number - 1].group,
+                    quartet=q,
+                    round_number=round_number,
+                    table_number=table_number,
                 )
             )
         return cls(
