@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
+from django.core.cache import cache
 from django.core.signals import request_started
 from django.db import models, transaction
 from django.dispatch import receiver
@@ -323,19 +324,33 @@ class Tournament(models.Model):
                 tournament=self, round_number=(dis_round + 1)
             )
 
+    def _cache_key(self) -> str:
+        return f"tournament:{self.pk}"
+
+    def _cache_set(self, value: str) -> None:
+        cache.set(self._cache_key(), value)
+
+    def _cache_get(self) -> Any:
+        return cache.get(self._cache_key())
+
     def get_movement(self) -> app.utils.movements.Movement:
-        if self.table_set.exists():
-            pairs = list(self.seated_pairs())
-            logger.debug(f"signed-up {pairs=}")
-        else:
-            pairs = list(self.signed_up_pairs())
-            logger.debug(f"seated {pairs=}")
+        if (_movement := self._cache_get()) is None:
+            if self.table_set.exists():
+                pairs = list(self.seated_pairs())
+                logger.debug(f"seated {pairs=}")
+            else:
+                pairs = list(self.signed_up_pairs())
+                logger.debug(f"signed-up {pairs=}")
 
-        assert pairs, "Can't create a movement with no pairs!"
+            assert pairs, "Can't create a movement with no pairs!"
 
-        return app.utils.movements.Movement.from_pairs(
-            boards_per_round_per_table=self.boards_per_round_per_table, pairs=pairs, tournament=self
-        )
+            _movement = app.utils.movements.Movement.from_pairs(
+                boards_per_round_per_table=self.boards_per_round_per_table,
+                pairs=pairs,
+                tournament=self,
+            )
+            self._cache_set(_movement)
+        return _movement
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:

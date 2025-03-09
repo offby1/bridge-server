@@ -341,14 +341,7 @@ class Hand(TimeStampedModel):
         return libTable(players=players)
 
     def _cache_key(self) -> str:
-        return self.pk
-
-    @staticmethod
-    def _cache_stats_keys() -> dict[str, str]:
-        return {
-            "hits": "cache_stats_hits",
-            "misses": "cache_stats_misses",
-        }
+        return f"hand:{self.pk}"
 
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
