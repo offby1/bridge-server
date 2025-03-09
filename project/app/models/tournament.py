@@ -43,6 +43,10 @@ class NotOpenForSignupError(TournamentSignupError):
     pass
 
 
+class NoPairs(Exception):
+    pass
+
+
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
@@ -340,7 +344,9 @@ class Tournament(models.Model):
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"signed-up {pairs=}")
 
-            assert pairs, "Can't create a movement with no pairs!"
+            if not pairs:
+                msg = "Can't create a movement with no pairs!"
+                raise NoPairs(msg)
 
             _movement = app.utils.movements.Movement.from_pairs(
                 boards_per_round_per_table=self.boards_per_round_per_table,

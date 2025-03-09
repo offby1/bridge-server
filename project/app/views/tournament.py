@@ -27,16 +27,20 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer: app.models.Player | None = request.user.player
     assert viewer is not None
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
-    tab_dict = t.get_movement().tabulate_me()
     context = {
         "tournament": t,
         "button": "",
         "comment": "",
-        "movement_headers": tab_dict["headers"],
-        "movement_rows": tab_dict["rows"],
         "signed_up_players": app.models.TournamentSignup.objects.filter(tournament=t),
         "speed_things_up_button": "",
     }
+    try:
+        tab_dict = t.get_movement().tabulate_me()
+    except app.models.tournament.NoPairs:
+        pass
+    else:
+        context["movement_headers"] = tab_dict["headers"]
+        context["movement_rows"] = tab_dict["rows"]
 
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)

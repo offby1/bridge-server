@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fastdev %}
 {% load player_extras %}
 {% block title %}
     {{ tournament }}
@@ -12,80 +13,80 @@
         </form>
     {% endif %}
     <h1>Tournament #{{ tournament.display_number }}</h1>
-    {% if tournament.status_str != "OpenForSignup" and tournament.play_completion_deadline %}
-        <table id="movement" class="table caption-top">
-            <caption>Movement</caption>
-            <thead>
+    {% ifexists movement_headers %}
+    <table id="movement" class="table caption-top">
+        <caption>Movement</caption>
+        <thead>
+            <tr>
+                {% for h in movement_headers %}<th scope="col">{{ h }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            {% for row in movement_rows %}
                 <tr>
-                    {% for h in movement_headers %}<th scope="col">{{ h }}</th>{% endfor %}
+                    {% for datum in row %}<td>{{ datum }}</td>{% endfor %}
                 </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for row in movement_rows %}
-                    <tr>
-                        {% for datum in row %}<td>{{ datum }}</td>{% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <hr />
-    {% endif %}
-    {% if tournament.status_str == "Complete" %}
-        <span style="font-size: 2em;">
-            {% if tournament.play_completion_deadline %}
-                Completed at {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
-            {% else %}
-                Completed.
-            {% endif %}
-        </span>
-        <hr />
-        <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
-    {% elif tournament.status_str == "Running" %}
-        <span style="font-size: 2em;">
-            {% if tournament.play_completion_deadline %}
-                Running until {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
-            {% else %}
-                Running.
-            {% endif %}
-        </span>
-        <hr />
-        <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">{{ tournament.table_set.count }} Tables</a>.
-    {% elif tournament.status_str == "OpenForSignup" %}
-        <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
-        {% if speed_things_up_button %}
-            <form action="{% url 'app:tournament-void-signup-deadline' pk=tournament.pk %}"
-                  method="post">
-                {% csrf_token %}
-                {{ speed_things_up_button }}
-            </form>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr />
+{% endifexists %}
+{% if tournament.status_str == "Complete" %}
+    <span style="font-size: 2em;">
+        {% if tournament.play_completion_deadline %}
+            Completed at {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
+        {% else %}
+            Completed.
         {% endif %}
-        <hr />
-        {{ comment }}
-        <table id="player-list" class="table caption-top">
-            <caption>Players Signed Up</caption>
-            <thead>
-                <tr>
-                    <th scope="col">Who</th>
-                    <th scope="col">Partner</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for signup in signed_up_players %}
-                    <tr style="border: 1px dotted">
-                        <th>{{ signup.player|sedate_link:user }}</th>
-                        <td>
-                            {% if signup.player.partner %}
-                                {{ signup.player.partner|sedate_link:user }}
-                            {% else %}
-                                😢
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        Please tell your IT dude that I have no idea what to do with "{{ tournament.status_str }}"
+    </span>
+    <hr />
+    <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
+{% elif tournament.status_str == "Running" %}
+    <span style="font-size: 2em;">
+        {% if tournament.play_completion_deadline %}
+            Running until {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
+        {% else %}
+            Running.
+        {% endif %}
+    </span>
+    <hr />
+    <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">{{ tournament.table_set.count }} Tables</a>.
+{% elif tournament.status_str == "OpenForSignup" %}
+    <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
+    {% if speed_things_up_button %}
+        <form action="{% url 'app:tournament-void-signup-deadline' pk=tournament.pk %}"
+              method="post">
+            {% csrf_token %}
+            {{ speed_things_up_button }}
+        </form>
     {% endif %}
-    <hr>
+    <hr />
+    {{ comment }}
+    <table id="player-list" class="table caption-top">
+        <caption>Players Signed Up</caption>
+        <thead>
+            <tr>
+                <th scope="col">Who</th>
+                <th scope="col">Partner</th>
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            {% for signup in signed_up_players %}
+                <tr style="border: 1px dotted">
+                    <th>{{ signup.player|sedate_link:user }}</th>
+                    <td>
+                        {% if signup.player.partner %}
+                            {{ signup.player.partner|sedate_link:user }}
+                        {% else %}
+                            😢
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    Please tell your IT dude that I have no idea what to do with "{{ tournament.status_str }}"
+{% endif %}
+<hr>
 {% endblock content %}
