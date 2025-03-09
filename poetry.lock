@@ -1030,6 +1030,22 @@ files = [
 types-psycopg2 = ">=2.9.21.13"
 
 [[package]]
+name = "django-tz-detect"
+version = "0.5.0"
+description = "Automatic user timezone detection for django"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django-tz-detect-0.5.0.tar.gz", hash = "sha256:b804c562ecd6e1c2a303cc9a88e5ad18df053b07f15453d67984f3f34b038de4"},
+    {file = "django_tz_detect-0.5.0-py3-none-any.whl", hash = "sha256:4dd6e5e4080c2257a205545134f252e51e2c58225de362dc8f05328c88599237"},
+]
+
+[package.dependencies]
+django = ">=2.2"
+pytz = "*"
+
+[[package]]
 name = "docstring-to-markdown"
 version = "0.15"
 description = "On the fly conversion of Python docstrings to markdown"
@@ -2598,6 +2614,18 @@ global = ["platformdirs (>=3.11.0)"]
 validation = ["pydantic (>=2.5.3)"]
 
 [[package]]
+name = "pytz"
+version = "2025.1"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pytz-2025.1-py2.py3-none-any.whl", hash = "sha256:89dd22dca55b46eac6eda23b2d72721bf1bdfef212645d81513ef5d03038de57"},
+    {file = "pytz-2025.1.tar.gz", hash = "sha256:c2db42be2a2518b28e65f9207c4d05e6ff547d1efa4086469ef855e4ab70178e"},
+]
+
+[[package]]
 name = "pywin32"
 version = "308"
 description = "Python for Window Extensions"
@@ -3907,4 +3935,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "bf6f55ab6f5ac8802e84d21b2e2ff0ef67281a95e6c23e6c75d2465f2cd4db65"
+content-hash = "e6ed3bb699f815abdd2689f4f775bb8075de9960b91f1faca092eb8b07cf0760"

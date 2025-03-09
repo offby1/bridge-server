@@ -18,10 +18,6 @@ STILL TODO:
 
 * player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
 
-* Ensure that timestamps (in particular, tournament deadlines) show up in the browser in the user's preferred time zone.
-  - https://docs.djangoproject.com/en/dev/topics/i18n/timezones/#selecting-the-current-time-zone is one (rather tedious) way to do that;
-  - maybe I can just embed calls to the Javascript `Date` function in the web pages, thereby letting the browser handle it
-
 * Make the cards more visible during play, by only showing one hand at a time!
   Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
   Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
@@ -208,6 +204,11 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Ensure that timestamps (in particular, tournament deadlines) show up in the browser in the user's preferred time zone.
+  - https://docs.djangoproject.com/en/dev/topics/i18n/timezones/#selecting-the-current-time-zone is one (rather tedious) way to do that;
+  - maybe I can just embed calls to the Javascript `Date` function in the web pages, thereby letting the browser handle it
+  - django-tz-select seems to work fine!
+
 * Somehow stress the "expiring-deadlines" branch.  I won't feel comfortable merging it into main until then.
 
 * Maybe give some idea of user activity, in the lobby: e.g. if a user's "last_login" was a while ago, make the font dim; or if they last posted a chat message or sat at a table or took an action in a game.

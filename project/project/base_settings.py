@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "django_extensions",
     "template_partials",
+    "tz_detect",
     "app",
 ]
 
@@ -114,6 +115,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "tz_detect.middleware.TimezoneMiddleware",
 ]
 
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}

@@ -41,6 +41,7 @@ urlpatterns = [
         include(django_eventstream.urls),
         kwargs={"channels": ["partnerships"]},
     ),
+    path("tz_detect/", include("tz_detect.urls")),
 ]
 
 urlpatterns.extend(debug_toolbar_urls())

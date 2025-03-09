@@ -2,6 +2,7 @@
 {% load static %}
 {% load partials %}
 {% load base_extras %}
+{% load tz_detect %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -16,6 +17,7 @@
         <link href="{% static "app/bridge.css" %}" rel="stylesheet">
         <link rel="icon" type="image/png" href="{% static "app/spadesuit.png" %}" />
     </head>
+    {% tz_detect %}
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
