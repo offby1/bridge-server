@@ -280,6 +280,9 @@ class Tournament(models.Model):
                     "player", flat=True
                 )
             )
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
         )
 
         yield from self.pair_up_players(players)
@@ -292,6 +295,9 @@ class Tournament(models.Model):
             .filter(partner__isnull=False)
             .filter(currently_seated=False)
             .filter(pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player"))
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
         )
 
         yield from self.pair_up_players(players)
