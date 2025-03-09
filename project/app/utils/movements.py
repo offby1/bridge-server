@@ -93,11 +93,11 @@ class Movement:
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
     def tabulate_me(self) -> dict[str, Any]:
-        rows = []
+        rows: list[list[str]] = []
         headers = ["table"]
         for tn, rounds in self.table_settings_by_table_number.items():
             if not rows:
-                headers.extend(list(r.round_number for r in rounds))
+                headers.extend(list(str(r.round_number) for r in rounds))
             row = [str(rounds[0].table_number)]
 
             for r in rounds:

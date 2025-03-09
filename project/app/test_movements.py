@@ -124,17 +124,17 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         _do_signup_expired_stuff(open_tournament)
         assert open_tournament.table_set.exists()
 
-        dis_round, _ = open_tournament.what_round_is_it()
-        assert dis_round == 0, "We haven't played any hands, so this should be round 0"
+        num_completed_rounds, _ = open_tournament.rounds_played()
+        assert num_completed_rounds == 0, "We haven't played any hands, so this should be round 0"
 
         dump_seats()
 
         for table in open_tournament.table_set.all():
             play_out_hand(table)
 
-        dis_round, _ = open_tournament.what_round_is_it()
+        num_completed_rounds, _ = open_tournament.rounds_played()
         assert (
-            dis_round == 1
+            num_completed_rounds == 1
         ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
 
         dump_seats()

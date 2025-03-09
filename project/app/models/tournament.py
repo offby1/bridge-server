@@ -247,16 +247,15 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def what_round_is_it(self) -> tuple[int, int]:
+    def rounds_played(self) -> tuple[int, int]:
+        """
+        Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
+        """
         num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_table_number)
         boards_per_round = num_tables * mvmt.boards_per_round_per_table
-        logger.debug(
-            f"{num_completed_hands=} {num_tables=} {boards_per_round=} hence it's now round %d",
-            num_completed_hands // boards_per_round,
-        )
-        return num_completed_hands // boards_per_round, boards_per_round
+        return divmod(num_completed_hands, boards_per_round)
 
     @staticmethod
     def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
@@ -307,9 +306,8 @@ class Tournament(models.Model):
         all_boards = self.board_set.order_by("display_number").all()
         hands = self.hands().filter(table=table)
         played_board_pks = hands.values_list("board", flat=True).all()
-        what_round_is_it, boards_per_round = self.what_round_is_it()
-
-        group_letter = "ABCDEFGHIJKLMNOP"[what_round_is_it]
+        num_completed_rounds, _ = self.rounds_played()
+        group_letter = "ABCDEFGHIJKLMNOP"[num_completed_rounds]
         rv = all_boards.exclude(pk__in=played_board_pks).filter(group=group_letter)
         logger.debug(f"{all_boards=} {played_board_pks=} {group_letter=} => {rv=}")
         return rv
@@ -319,9 +317,9 @@ class Tournament(models.Model):
             logger.warning("'%s' is complete; no next round for you", self)
         else:
             mvmt = self.get_movement()
-            dis_round, _ = self.what_round_is_it()
+            num_completed_rounds, _ = self.rounds_played()
             mvmt.create_tables_and_seat_players_for_round(
-                tournament=self, round_number=(dis_round + 1)
+                tournament=self, round_number=(num_completed_rounds + 1)
             )
 
     def _cache_key(self) -> str:
