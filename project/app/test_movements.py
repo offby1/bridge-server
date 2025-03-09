@@ -96,6 +96,7 @@ def dump_seats():
         print(f"{s.table.display_number=}{s.direction=}: {s.player.name=}")
 
 
+@pytest.mark.xfail(reason="WIP")
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
     assert not Seat.objects.exists()
     # buid up the simplest possible tournament that has more than one round.

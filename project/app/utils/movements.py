@@ -6,7 +6,7 @@ import dataclasses
 import itertools
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 import tabulate
@@ -90,10 +90,10 @@ class Movement:
         tab_dict = self.tabulate_me()
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
-    def tabulate_me(self) -> list[list[str]]:
+    def tabulate_me(self) -> dict[str, Any]:
         rv = []
         for tn, rounds in self.table_settings_by_table_number.items():
-            row = [tn]
+            row = [str(tn)]
 
             for r in rounds:
                 quartet, board_group = r.quartet, r.board_group
