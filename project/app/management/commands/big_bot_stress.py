@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from app.models.player import Player, TooManyBots
+from app.models.player import Player
 from app.models.table import Table
 from app.models.signups import TournamentSignup
 from app.models.tournament import Tournament, check_for_expirations
@@ -13,7 +13,7 @@ from django.db import transaction
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("--min-players", type=int)
+        parser.add_argument("--min-players", type=int, default=0)
 
     def handle(self, *_args, **options) -> None:
         is_safe = False
