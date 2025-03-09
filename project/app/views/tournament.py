@@ -27,13 +27,17 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer: app.models.Player | None = request.user.player
     assert viewer is not None
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
+    tab_dict = t.get_movement().tabulate_me()
     context = {
         "tournament": t,
         "button": "",
         "comment": "",
+        "movement_headers": tab_dict["headers"],
+        "movement_rows": tab_dict["rows"],
+        "signed_up_players": app.models.TournamentSignup.objects.filter(tournament=t),
         "speed_things_up_button": "",
     }
-    # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
+
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
 
@@ -64,7 +68,6 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 context["speed_things_up_button"] = text_shmext
             context["comment"] = comment
 
-    context["signed_up_players"] = app.models.TournamentSignup.objects.filter(tournament=t)
     return TemplateResponse(request=request, template="tournament.html", context=context)
 
 

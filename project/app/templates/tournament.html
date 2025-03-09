@@ -12,6 +12,24 @@
         </form>
     {% endif %}
     <h1>Tournament #{{ tournament.display_number }}</h1>
+    {% if tournament.status_str != "OpenForSignup" and tournament.play_completion_deadline %}
+        <table id="movement" class="table caption-top">
+            <caption>Movement</caption>
+            <thead>
+                <tr>
+                    {% for h in movement_headers %}<th scope="col">{{ h }}</th>{% endfor %}
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for row in movement_rows %}
+                    <tr>
+                        {% for datum in row %}<td>{{ datum }}</td>{% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr />
+    {% endif %}
     {% if tournament.status_str == "Complete" %}
         <span style="font-size: 2em;">
             {% if tournament.play_completion_deadline %}

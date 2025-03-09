@@ -87,19 +87,19 @@ class Movement:
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
 
     def __post_init__(self):
-        tabulate_me = []
+        tab_dict = self.tabulate_me()
+        print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
+
+    def tabulate_me(self) -> list[list[str]]:
+        rv = []
         for tn, rounds in self.table_settings_by_table_number.items():
             row = [tn]
 
             for r in rounds:
                 quartet, board_group = r.quartet, r.board_group
                 row.append(f"{quartet.names()} plays {board_group}")
-            tabulate_me.append(row)
-        print(
-            tabulate.tabulate(
-                tabulate_me, headers=["table"] + [f"Round {n}" for n in range(len(rounds))]
-            )
-        )
+            rv.append(row)
+        return {"rows": rv, "headers": ["table"] + [f"Round {n}" for n in range(len(rounds))]}
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).

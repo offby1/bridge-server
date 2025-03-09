@@ -197,7 +197,7 @@ class Table(models.Model):
             if (b := self.find_unplayed_board()) is None:
                 t: Tournament
                 t = self.tournament
-                msg = "find_unplayed_board returned None; I'm no longer sure what that means"
+                msg = "find_unplayed_board returned None; maybe this tournament round is over"
                 logger.debug("%s", msg)
                 t.next_movement_round()
                 raise NoMoreBoards(msg)
