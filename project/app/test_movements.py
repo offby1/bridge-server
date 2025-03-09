@@ -1,5 +1,6 @@
 import collections
 import datetime
+from typing import Generator
 
 from freezegun import freeze_time
 import more_itertools
@@ -9,12 +10,12 @@ from django.contrib import auth
 
 from app.models import Player, Seat, Tournament
 from app.models.tournament import _do_signup_expired_stuff
-from app.utils.movements import Movement, Pair
+from app.utils.movements import BoardGroup, Movement, Pair
 
 from .testutils import play_out_hand
 
 
-def example_pairs(n: int) -> list[Pair]:
+def example_pairs(n: int) -> Generator[Pair]:
     def ns_first(pair_name: str) -> tuple[bool, int]:
         direction, number = pair_name.split()
         return (bool(direction == "EW"), int(number))
@@ -69,7 +70,9 @@ def test_movement_class() -> None:
                         assert len(normals) == 2
 
             # Ensure every pair plays every board exactly once.
-            times_played_by_pair_board_combo = collections.defaultdict(int)
+            times_played_by_pair_board_combo: dict[tuple[frozenset[int], BoardGroup], int] = (
+                collections.defaultdict(int)
+            )
             for table_number, rounds in da_movement.items():
                 for r in rounds:
                     quartet, board_group = r.quartet, r.board_group
@@ -80,7 +83,7 @@ def test_movement_class() -> None:
             assert set(times_played_by_pair_board_combo.values()) == {1}
 
             # Ensure every NS pair encounters every EW pair exactly once, and vice-versa.
-            matchups = collections.Counter()
+            matchups = collections.Counter()  # type: ignore
             for table_number, rounds in da_movement.items():
                 for r in rounds:
                     matchups[r.quartet] += 1

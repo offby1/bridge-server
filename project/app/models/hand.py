@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
     from django.db.models.manager import RelatedManager
 
-    from . import Table
+    from . import Table  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
