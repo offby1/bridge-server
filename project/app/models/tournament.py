@@ -294,14 +294,10 @@ class Tournament(models.Model):
         """
         Returns the hands played by these four players in this tournament.
         """
-        from app.models import Hand, Seat, Player, Table
+        from app.models import Hand, Player, Table
 
         players = Player.objects.filter(pk__in=four_players)
         assert players.count() == 4
-
-        # all the seats these players have ever held.  Might be any number.
-        seats = Seat.objects.filter(id__in=four_players).filter(table__tournament=self)
-        print(", ".join([f"table #{s.table.display_number} {s.direction}" for s in seats]))
 
         tables_at_which_all_four_have_sat = set()
         # TODO -- do this logic in the db, rather than Python

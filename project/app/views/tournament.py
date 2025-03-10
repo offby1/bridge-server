@@ -34,14 +34,17 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
         "signed_up_players": app.models.TournamentSignup.objects.filter(tournament=t),
         "speed_things_up_button": "",
     }
-    try:
-        movement = t.get_movement()
-    except app.models.tournament.NoPairs:
-        pass
-    else:
-        tab_dict = movement.tabulate_me()
-        context["movement_headers"] = tab_dict["headers"]
-        context["movement_rows"] = tab_dict["rows"]
+    # Only display the movement if every board in the tournament was assigned a group -- otherwise it's an old tournament
+    # that didn't have a movement
+    if not t.board_set.filter(group__isnull=True).exists():
+        try:
+            movement = t.get_movement()
+        except app.models.tournament.NoPairs:
+            pass
+        else:
+            tab_dict = movement.tabulate_me()
+            context["movement_headers"] = tab_dict["headers"]
+            context["movement_rows"] = tab_dict["rows"]
 
     viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
     logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
