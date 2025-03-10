@@ -276,20 +276,43 @@ class Tournament(models.Model):
     def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
         from app.models import Player, Seat
 
+        tables = self.table_set.all()
+        seats = Seat.objects.filter(table__in=tables)
+
         players = (
             Player.objects.order_by("pk")
             .filter(partner__isnull=False)
-            .filter(
-                pk__in=Seat.objects.filter(table__in=self.table_set.all()).values_list(
-                    "player", flat=True
-                )
-            )
+            .filter(pk__in=seats.values_list("player", flat=True))
             .select_related("user")
             .select_related("partner")
             .select_related("partner__user")
         )
 
         yield from self.pair_up_players(players)
+
+    def which_hands(self, *, four_players: set[PK]) -> models.QuerySet:
+        """
+        Returns the hands played by these four players in this tournament.
+        """
+        from app.models import Hand, Seat, Player, Table
+
+        players = Player.objects.filter(pk__in=four_players)
+        assert players.count() == 4
+
+        # all the seats these players have ever held.  Might be any number.
+        seats = Seat.objects.filter(id__in=four_players).filter(table__tournament=self)
+        print(", ".join([f"table #{s.table.display_number} {s.direction}" for s in seats]))
+
+        tables_at_which_all_four_have_sat = set()
+        # TODO -- do this logic in the db, rather than Python
+        for t in Table.objects.all():
+            if set(t.seat_set.values_list("player", flat=True).all()) == four_players:
+                tables_at_which_all_four_have_sat.add(t.pk)
+        return (
+            Hand.objects.filter(table__in=tables_at_which_all_four_have_sat)
+            .order_by("pk")
+            .distinct()
+        )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         from app.models import Player
@@ -354,6 +377,12 @@ class Tournament(models.Model):
                 tournament=self,
             )
             self._cache_set(_movement)
+
+            if self.table_set.exists():
+                for tn, settings in _movement.table_settings_by_table_number.items():
+                    for s in settings:
+                        player_pks = s.quartet.ew.id.union(s.quartet.ns.id)
+                        logger.debug("%s", self.which_hands(four_players=player_pks))
         return _movement
 
     def signup_deadline_has_passed(self) -> bool:

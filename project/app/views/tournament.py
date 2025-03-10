@@ -35,10 +35,11 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
         "speed_things_up_button": "",
     }
     try:
-        tab_dict = t.get_movement().tabulate_me()
+        movement = t.get_movement()
     except app.models.tournament.NoPairs:
         pass
     else:
+        tab_dict = movement.tabulate_me()
         context["movement_headers"] = tab_dict["headers"]
         context["movement_rows"] = tab_dict["rows"]
 
