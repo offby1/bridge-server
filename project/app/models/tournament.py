@@ -50,8 +50,8 @@ class NoPairs(Exception):
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     p: Player
     with transaction.atomic():
-        if tour.board_set.exists():
-            logger.debug("'%s' looks like it's had boards assigned already; bailing", tour)
+        if tour.table_set.exists():
+            logger.debug("'%s' looks like it's has tables already; bailing", tour)
             return
 
         # It expired without any signups -- just nuke it
