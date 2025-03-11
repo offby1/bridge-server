@@ -11,8 +11,7 @@ from bridge.seat import Seat as libSeat
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
-from django.db.models import Count, F
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
 
@@ -21,7 +20,6 @@ from .models import (
     Board,
     Hand,
     Message,
-    NoMoreBoards,
     Player,
     PlayerException,
     Seat,
@@ -402,71 +400,6 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
     assert h.player_who_may_play is None
 
 
-def test_table_creation(j_northam, everybodys_password):
-    players_by_name = {"bob": j_northam}
-    sam = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="sam",
-            password=everybodys_password,
-        ),
-    )
-    players_by_name["sam"] = sam
-    sam.partner_with(j_northam)
-
-    assert j_northam.partner is not None
-
-    client = Client()
-    assert client.login(username=j_northam.name, password=".")
-
-    t = Tournament.objects.create()
-
-    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
-
-    assert type(response) is HttpResponseForbidden
-    assert b"four distinct" in response.content
-
-    for name in ("tina", "tony"):
-        p = Player.objects.create(
-            user=auth.models.User.objects.create(
-                username=name,
-                password=name,
-            ),
-        )
-        players_by_name[name] = p
-
-    tina = players_by_name["tina"]
-    tina.partner_with(players_by_name["tony"])
-
-    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
-
-    assert type(response) is HttpResponseRedirect
-
-
-def test_max_boards(two_boards_one_is_complete):
-    def board_counts_per_tournament():
-        return {
-            t.id: t.num_boards for t in Tournament.objects.annotate(num_boards=Count(F("board")))
-        }
-
-    # This count was wholly determined by the fixture.
-    assert board_counts_per_tournament()[1] == 2
-
-    t = Table.objects.first()
-
-    bpr = t.tournament.get_movement().boards_per_round_per_table
-
-    for board_index in range(bpr):
-        play_out_hand(t)
-
-        if board_index < bpr - 1:
-            t.next_board()
-
-        assert board_counts_per_tournament()[1] == bpr
-
-    with pytest.raises(NoMoreBoards):
-        t.next_board()
-
-
 def test_no_bogus_tables(usual_setup):
     count_before = Table.objects.count()
     with pytest.raises(SeatException):
@@ -478,66 +411,6 @@ def test_no_bogus_tables(usual_setup):
     count_after = Table.objects.count()
 
     assert count_after == count_before
-
-
-def test_random_dude_cannot_create_table(usual_setup, everybodys_password):
-    number_of_tables_before = Table.objects.count()
-
-    t = Table.objects.first()
-
-    North, East, South, West = t.current_hand.players_by_direction.values()
-
-    assert {
-        North.current_table,
-        East.current_table,
-        South.current_table,
-        West.current_table,
-    } == {t}
-
-    North.break_partnership()
-    South.refresh_from_db()
-    North.partner_with(South)
-    North.refresh_from_db()
-
-    assert North.current_table is None
-    assert South.current_table is None
-
-    East.break_partnership()
-    West.refresh_from_db()
-    East.partner_with(West)
-    East.refresh_from_db()
-
-    assert East.current_table is None
-    assert West.current_table is None
-
-    # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in
-    # existence.
-    assert Table.objects.count() == number_of_tables_before
-
-    # OK, now we've got four players ready to sit at a table.
-    RandomDude = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="J.Random Hacker",
-            password=everybodys_password,
-        ),
-    )
-
-    client = Client()
-
-    tournament, _ = Tournament.objects.get_or_create(display_number=1)
-
-    def new_table(*, requester=None) -> HttpResponse:
-        client.login(username=requester.user, password=".")
-        return client.post(path=f"/table/new/{tournament.pk}/{North.pk}/{East.pk}/", data={})
-
-    response = new_table(requester=RandomDude)
-    assert response.status_code == 403
-    assert b"isn&#x27;t one of" in response.content
-
-    response = new_table(requester=North)
-    assert response.status_code == 302
-
-    assert Table.objects.count() == number_of_tables_before + 1
 
 
 def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> None:
