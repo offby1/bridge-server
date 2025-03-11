@@ -30,7 +30,6 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 from . import Board
 from .player import Player
 from .seat import Seat
-from .tournament import Tournament
 from .types import PK, PK_from_str
 from .utils import assert_type
 
@@ -435,6 +434,7 @@ class Hand(TimeStampedModel):
             )
         elif self.get_xscript().final_score() is not None:
             self.maybe_finalize_round()
+            self.table.tournament.maybe_complete()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -496,8 +496,6 @@ class Hand(TimeStampedModel):
             self.maybe_finalize_round()
             self.table.tournament.maybe_complete()
 
-            # see "TODO -- this seems wrong" in add_call_from_player
-            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,

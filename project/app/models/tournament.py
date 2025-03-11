@@ -194,6 +194,7 @@ class TournamentManager(models.Manager):
             incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
                 models.Q(signup_deadline__gte=a_few_seconds_from_now)
             )
+
             logger.debug(f"{a_few_seconds_from_now=} {incomplete_and_open_tournaments_qs=}")
             if not incomplete_and_open_tournaments_qs.exists():
                 logger.debug(
@@ -477,19 +478,16 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
-            num_hands_needed_for_completion = self.tables().count() * self.board_set.count()
-
-            if num_hands_needed_for_completion == 0:
+            if not self.table_set.exists():
                 logger.info(
                     "We don't consider '%s' to be complete because it's never had any tables assigned.",
                     self,
                 )
                 return
 
-            complete_hands = [h for h in self.hands() if h.is_complete]
-
-            if len(complete_hands) == num_hands_needed_for_completion:
-                explanation = f"{self.short_string()} has played {num_hands_needed_for_completion} hands, so it is completed"
+            completed_rounds, _ = self.rounds_played()
+            if completed_rounds == self.table_set.count():
+                explanation = f"{self.short_string()} has played {completed_rounds} rounds, so it is completed"
                 logger.debug(explanation)
                 self.is_complete = True
                 self.save()
@@ -497,7 +495,7 @@ class Tournament(models.Model):
                 return
 
             logger.debug(
-                f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
+                f"{completed_rounds=}, which is not == {self.table_set.count()=}, so we're not done"
             )
 
     def _eject_all_pairs(self, explanation: str) -> None:

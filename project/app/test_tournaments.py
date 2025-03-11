@@ -52,25 +52,31 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     return before
 
 
-def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
+def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    Board.objects.filter(pk=2).delete()  # speeds the test up
-
     tally_before = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
     assert tally_before == {False: 1}
 
     before = Tournament.objects.filter(is_complete=False).first()
     assert before is not None
 
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+    table = before.table_set.first()
+    assert table is not None
+
+    play_out_hand(table)
+    table.next_board()
+
+    play_out_hand(table)
+    table.next_board()
+
+    play_out_hand(table)
+
     before.refresh_from_db()
     assert before.is_complete
 
     tally_after = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
-    assert tally_after == {True: 1, False: 1}
+    assert tally_after == {True: 1}
 
 
 def test_completing_one_tournament_ejects_players(
