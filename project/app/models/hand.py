@@ -199,6 +199,15 @@ class Hand(TimeStampedModel):
 
     abandoned_because = models.CharField(max_length=100, null=True)
 
+    def maybe_finalize_round(self) -> None:
+        t = self.table.tournament
+        num_completed_rounds, hands_played_this_round = t.rounds_played()
+        logger.debug("%s", f"{self}: Checking if this round (for {t}) is over.")
+        if hands_played_this_round == 0:
+            logger.warning(f"Gevalt! {hands_played_this_round=}; I guess I gotta do something")
+        else:
+            logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
+
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined hand")
         if (
@@ -425,8 +434,7 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            # TODO -- this seems wrong.  We should assume a tournament is in progress, and check to see if this hand was the last hand in the current round; if so, advance to the next round.
-            Tournament.objects.get_or_create_tournament_open_for_signups()
+            self.maybe_finalize_round()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table.pk,
@@ -485,6 +493,7 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
+            self.maybe_finalize_round()
             self.table.tournament.maybe_complete()
 
             # see "TODO -- this seems wrong" in add_call_from_player

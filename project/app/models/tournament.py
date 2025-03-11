@@ -251,6 +251,17 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def check_consistency(self) -> None:
+        """
+        See if we have all the boards called for by our movement.
+        This might not be the case if we were created from an old json Django fixture.
+        """
+        mvmt = self.get_movement()
+        expected = mvmt.boards_per_round_per_table * len(mvmt.table_settings_by_table_number)
+        assert (
+            self.board_set.count() == expected
+        ), f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
+
     def rounds_played(self) -> tuple[int, int]:
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
@@ -378,7 +389,9 @@ class Tournament(models.Model):
                 for tn, settings in _movement.table_settings_by_table_number.items():
                     for s in settings:
                         player_pks = s.quartet.ew.id.union(s.quartet.ns.id)
-                        logger.debug("%s", self.which_hands(four_players=player_pks))
+                        logger.debug(
+                            "%s will play %s", player_pks, self.which_hands(four_players=player_pks)
+                        )
         return _movement
 
     def signup_deadline_has_passed(self) -> bool:
@@ -437,9 +450,8 @@ class Tournament(models.Model):
 
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
-        if self.status() is not Complete:
-            num_completed = sum([h.is_complete for h in self.hands()])
-            rv += f"; {num_completed} hands played out of {self.board_set.count() * self.table_set.count()}"
+        num_complete_rounds, hands_played_this_round = self.rounds_played()
+        rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
 
         return rv
 

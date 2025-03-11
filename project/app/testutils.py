@@ -41,7 +41,7 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
 
 def play_out_hand(t: app.models.Table) -> None:
     h = t.current_hand
-    logger.info(f"Playing out {h=} of {t=} (tournament #{t.tournament.display_number})")
+    logger.info(f"Playing out {h}")
     while (p := h.player_who_may_call) is not None:
         call = h.get_xscript().auction.legal_calls()[0]
         logger.info(f"{p} calls {call}")

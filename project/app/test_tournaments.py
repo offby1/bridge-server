@@ -28,6 +28,8 @@ from app.models.tournament import (
     OpenForSignup,
 )
 
+from .testutils import play_out_hand
+
 logger = logging.getLogger(__name__)
 
 
@@ -289,3 +291,12 @@ def test_which_hand(usual_setup: None, everybodys_password) -> None:
 
     assert not t.which_hands(four_players={1, 3, 5, 7}).exists()
     assert t.which_hands(four_players={1, 2, 3, 4}).exists()
+
+
+def test_end_of_round_stuff_happens(usual_setup) -> None:
+    tour = Tournament.objects.first()
+    tour.check_consistency()
+    table = tour.table_set.first()
+    for _ in range(3):
+        play_out_hand(table)
+        table.next_board()
