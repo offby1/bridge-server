@@ -22,7 +22,6 @@ from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.types import PK
-from app.models.tournament import Running
 from app.models.utils import assert_type
 from app.views import Forbid, NotFound
 from app.views.misc import (
@@ -143,47 +142,6 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
         return Forbid(str(e))
 
     return HttpResponse()
-
-
-@require_http_methods(["POST"])
-@logged_in_as_player_required()
-def new_table_for_two_partnerships(
-    request: AuthedHttpRequest, tournament_pk: str, pk1: str, pk2: str
-) -> HttpResponse:
-    tournament = get_object_or_404(app.models.Tournament, pk=tournament_pk)
-    assert request.user.player is not None
-
-    p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
-    if p1.partner is None:
-        return Forbid(f"Hey man {p1.name} doesn't have a partner")
-
-    p2: app.models.Player = get_object_or_404(app.models.Player, pk=pk2)
-    if p2.partner is None:
-        return Forbid(f"Hey man {p2.name} doesn't have a partner")
-
-    p3: app.models.Player = get_object_or_404(app.models.Player, pk=p1.partner.pk)
-    p4: app.models.Player = get_object_or_404(app.models.Player, pk=p2.partner.pk)
-
-    all_four = {p1, p2, p3, p4}
-    if len(all_four) != 4:
-        return Forbid(f"Hey man {[p.name for p in all_four]} isn't four distinct players")
-
-    if request.user.player not in all_four:
-        return Forbid(
-            f"Hey man {request.user.player.name} isn't one of {[p.name for p in all_four]}"
-        )
-
-    logger.debug("OK, %s is one of %s", request.user.player.name, [p.name for p in all_four])
-
-    t = app.models.Table.objects.create_with_two_partnerships(p1, p2, tournament=tournament)
-    if t.tournament.status() is Running:
-        t.next_board()
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[t.current_hand.pk]))
-
-    msg = f"{t.tournament} isn't running, so y'all just gotta wait until the signup deadline {t.tournament.signup_deadline} has passed"
-    messages.info(request, msg)
-    logger.info(msg)
-    return HttpResponseRedirect(reverse("app:table-list") + f"?tournament={t.tournament.pk}")
 
 
 @require_http_methods(["POST"])
