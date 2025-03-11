@@ -45,10 +45,11 @@ def innocuous_secret_key(settings):
 @pytest.fixture
 def usual_setup(db: None) -> None:
     call_command("loaddata", "usual_setup")
+    logger.debug("Loaded 'usual_setup', Boss")
 
 
 @pytest.fixture
-def nobody_seated(db: None) -> None:
+def nobody_seated_nobody_signed_up(db: None) -> None:
     call_command(
         "loaddata",
         "usual_setup",
@@ -63,6 +64,13 @@ def nobody_seated(db: None) -> None:
     for p in Player.objects.all():
         for b in p.boards_played.all():
             p.boards_played.remove(b)
+
+
+@pytest.fixture
+def nobody_seated(nobody_seated_nobody_signed_up) -> None:
+    current_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    for p in Player.objects.all():
+        current_tournament.sign_up(p)
 
 
 @pytest.fixture

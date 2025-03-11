@@ -10,7 +10,7 @@ from app.models import Board, Hand, HandError, Player, Seat, Table, Tournament
 
 
 @pytest.fixture
-def seat_em_dano(nobody_seated: None) -> Table:
+def seat_em_dano(nobody_seated_nobody_signed_up: None) -> Table:
     # Just making sure this test isn't out of sync with the fixture
     assert set(Board.objects.values_list("pk", flat=True)) == {1, 2}
 

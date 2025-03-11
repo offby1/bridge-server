@@ -195,7 +195,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert b"has passed" in response.content
 
 
-def test_signups(nobody_seated) -> None:
+def test_signups(nobody_seated_nobody_signed_up) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
     assert north.partner == south
@@ -247,7 +247,7 @@ def test_signups(nobody_seated) -> None:
         ).exists(), f"Hey, {east.name} went splitsville, but is still signed up"
 
 
-def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
+def test_odd_pair_gets_matched_with_synths(nobody_seated_nobody_signed_up) -> None:
     existing_player_pks = set([p.pk for p in Player.objects.all()])
 
     north = Player.objects.get_by_name("Jeremy Northam")
@@ -295,8 +295,18 @@ def test_which_hand(usual_setup: None, everybodys_password) -> None:
 
 def test_end_of_round_stuff_happens(usual_setup) -> None:
     tour = Tournament.objects.first()
+    assert tour is not None
+
     tour.check_consistency()
     table = tour.table_set.first()
-    for _ in range(3):
-        play_out_hand(table)
-        table.next_board()
+
+    play_out_hand(table)
+    assert tour.rounds_played() == (0, 1)
+
+    table.next_board()
+    play_out_hand(table)
+    assert tour.rounds_played() == (0, 2)
+
+    table.next_board()
+    play_out_hand(table)
+    assert tour.rounds_played() == (1, 0)

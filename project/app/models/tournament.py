@@ -262,6 +262,9 @@ class Tournament(models.Model):
             self.board_set.count() == expected
         ), f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
 
+        for b in self.board_set.all():
+            assert b.group is not None, f"Hey! {b=} ain't got no group"
+
     def rounds_played(self) -> tuple[int, int]:
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
@@ -450,8 +453,9 @@ class Tournament(models.Model):
 
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
-        num_complete_rounds, hands_played_this_round = self.rounds_played()
-        rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
+        if self.signup_deadline_has_passed():
+            num_complete_rounds, hands_played_this_round = self.rounds_played()
+            rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
 
         return rv
 
