@@ -14,6 +14,7 @@ import app.views.table.details
 from app.models import (
     Board,
     Hand,
+    NoMoreBoards,
     Player,
     TableException,
     Tournament,
@@ -52,6 +53,23 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     return before
 
 
+def play_out_round(tournament: Tournament) -> None:
+    table = tournament.table_set.first()
+    assert table is not None
+
+    while True:
+        num_completed_rounds, hands_this_round = tournament.rounds_played()
+
+        if num_completed_rounds > 0 and hands_this_round == 0:
+            break
+
+        play_out_hand(table)
+        try:
+            table.next_board()
+        except NoMoreBoards:
+            break
+
+
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
@@ -64,13 +82,7 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
     table = before.table_set.first()
     assert table is not None
 
-    play_out_hand(table)
-    table.next_board()
-
-    play_out_hand(table)
-    table.next_board()
-
-    play_out_hand(table)
+    play_out_round(before)
 
     before.refresh_from_db()
     assert before.is_complete
@@ -82,11 +94,13 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
 def test_completing_one_tournament_ejects_players(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    Board.objects.filter(pk=2).delete()  # speeds the test up
+    tournament = Tournament.objects.filter(is_complete=False).first()
+    assert tournament is not None
+    table = tournament.table_set.first()
+    assert table is not None
 
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+    while not tournament.is_complete:
+        play_out_round(tournament)
 
     assert not Player.objects.filter(currently_seated=True).exists()
 
@@ -129,9 +143,9 @@ def test_completing_one_tournament_deletes_related_signups(
 
         assert TournamentSignup.objects.filter(player=Ricky).exists()
 
-        west = Player.objects.get_by_name("Adam West")
-        # hm, I wondder: can we start playing early? Or do I need to scoot the clock forward to Tomorrow?
-        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+        while not the_tournament.is_complete:
+            # hm, I wondder: can we start playing early? Or do I need to scoot the clock forward to Tomorrow?
+            play_out_round(the_tournament)
 
         assert not TournamentSignup.objects.filter(player=Ricky).exists()
 
