@@ -1,7 +1,6 @@
 import bridge.card
 import bridge.contract
 
-import pytest
 
 from .models import Hand, Player, Table
 from .views.hand import hand_detail_view
@@ -45,7 +44,6 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
         hand_detail_view(request, t.current_hand.pk)
 
 
-@pytest.mark.skip(reason="WIP, yo")
 def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     nearly_completed_tournament, rf, django_assert_max_num_queries
 ) -> None:
@@ -54,5 +52,5 @@ def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(11):
+    with django_assert_max_num_queries(10):
         tournament_view(request, 1)
