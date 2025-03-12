@@ -138,11 +138,21 @@ class Player(TimeStampedModel):
 
         return rv
 
-    def unseat_me(self, reason: str | None = None) -> None:
-        if reason is not None:
-            logger.debug('TODO: Imagine that I somehow communicated "%s" to %s', reason, self.name)
-        self.currently_seated = False
-        self._control_bot()
+    def unseat_partnership(self, reason: str | None = None) -> None:
+        with transaction.atomic():
+            for p in (self, getattr(self, "partner")):
+                if p is not None:
+                    p.currently_seated = False
+                    p.save()
+                    logger.info("Unseated %s", p.name)
+                    p._control_bot()
+        if reason is not None and self.partner is not None:
+            channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
+            send_event(
+                channel=channel,
+                event_type="message",
+                data=reason,
+            )
 
     # Note that this player has been exposed to some information from the given board, which means we will not allow
     # them to play that board later.
@@ -344,13 +354,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             )
             evictees.delete()
 
-            self.partner.partner = None
-            self.partner.unseat_me()
-            self.partner.save(update_fields=["partner", "currently_seated"])
+            self.unseat_partnership()
 
+            self.partner.partner = None
+            self.partner.save()
             self.partner = None
-            self.unseat_me()
-            self.save(update_fields=["partner", "currently_seated"])
+            self.save()
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 

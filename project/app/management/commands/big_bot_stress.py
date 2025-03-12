@@ -48,12 +48,7 @@ class Command(BaseCommand):
 
             for p in Player.objects.order_by("user__username").all():
                 if p.currently_seated:
-                    p.unseat_me()
-                    self.stderr.write(f"Unseated {p.name}")
-
-                if p.partner is not None and p.partner.currently_seated:
-                    p.partner.unseat_me()
-                    self.stderr.write(f"Unseated {p.partner.name}")
+                    p.unseat_partnership()
 
                 if TournamentSignup.objects.filter(player__in={p, p.partner}).exists():
                     TournamentSignup.objects.filter(player__in={p, p.partner}).delete()

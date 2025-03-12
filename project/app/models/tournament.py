@@ -513,13 +513,10 @@ class Tournament(models.Model):
                 for seat in t.seat_set.all():
                     p: Player = seat.player
 
-                    message = f"{p} is now in the lobby"
-                    p.unseat_me()
-                    p.save()
+                    p.unseat_partnership()
 
                     if not p.synthetic:
-                        message += ", and unbottified"
-                    logger.debug("%s", message)
+                        logger.debug("%s is not longer bottified", p.name)
 
                 # oddly, `t.current_hand.save()` seems to have no effect; hence the temp variable `h`
                 h = t.current_hand

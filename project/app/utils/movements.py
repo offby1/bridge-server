@@ -133,9 +133,10 @@ class Movement:
 
                 # Don't create a table; just inform the normal pair that they're sitting out this round
                 for pk in normal_pairs[0].id:
-                    Player.objects.get(pk=pk).unseat_me(
+                    Player.objects.get(pk=pk).unseat_partnership(
                         reason=f"You're sitting out round {round_number}"
                     )
+                    break  # we only need to unseat one of the two partners
                 continue
 
             pair1, pair2 = normal_pairs
