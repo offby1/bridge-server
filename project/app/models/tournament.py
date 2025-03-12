@@ -457,8 +457,12 @@ class Tournament(models.Model):
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
         if self.signup_deadline_has_passed():
-            num_complete_rounds, hands_played_this_round = self.rounds_played()
-            rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
+            try:
+                num_complete_rounds, hands_played_this_round = self.rounds_played()
+            except NoPairs:
+                pass
+            else:
+                rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
 
         return rv
 
