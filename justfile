@@ -253,12 +253,7 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (dcu "--detach")
-    set -euo pipefail
-
-    tput rmam
-    trap "tput smam" EXIT
-    docker compose logs django --follow
+follow: (dcu "--watch")
 
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
