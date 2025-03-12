@@ -191,13 +191,14 @@ class Table(models.Model):
                 logger.warning("%s", msg)
                 raise TableException(msg)
 
-            if (b := self.find_unplayed_board()) is None:
-                t: Tournament
-                t = self.tournament
-                msg = "find_unplayed_board returned None; maybe this tournament round is over"
-                logger.debug("%s", msg)
-                t.next_movement_round()
-                raise NoMoreBoards(msg)
+            t: Tournament = self.tournament
+            mvmt = t.get_movement()
+
+            num_completed_rounds, num_hands_this_round = t.rounds_played()
+            playersandboardsforoneround = mvmt.table_settings_by_table_number[
+                self.display_number - 1
+            ][num_completed_rounds]
+            b = playersandboardsforoneround.board_group.boards[num_hands_this_round - 1]
 
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)

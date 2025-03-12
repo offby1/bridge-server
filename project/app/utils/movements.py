@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 import more_itertools
 import tabulate
 
+from app.models.common import SEAT_CHOICES
 from app.models.types import PK
 
 if TYPE_CHECKING:
@@ -106,9 +107,15 @@ class Movement:
             rows.append(row)
         return {"rows": rows, "headers": headers}
 
+    def allocate_initial_tables(self, tournament) -> None:
+        from app.models import Table
+
+        for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
+            Table.objects.create(tournament=tournament)
+
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
-    def create_tables_and_seat_players_for_round(
+    def update_tables_and_seat_players_for_round(
         self, *, tournament: Tournament, round_number: int
     ) -> None:
         from app.models import Player, Table
@@ -119,7 +126,7 @@ class Movement:
 
             msg = f"Tournament #{tournament.display_number} only has {len(self.table_settings_by_table_number[0])} rounds, but you asked for {round_number=}"
             raise NoMoreBoards(msg)
-        logger.debug(f"Creating tables and seating players and whatnot for {round_number=}")
+        logger.debug(f"Updating tables and seating players and whatnot for {round_number=}")
         tn: int
         table_settings: list[PlayersAndBoardsForOneRound]
         for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
@@ -147,10 +154,24 @@ class Movement:
             pk2 = next(iter(pair2.id))
             player2 = Player.objects.get(pk=pk2)
 
-            table = Table.objects.create_with_two_partnerships(
-                player1, player2, tournament=tournament, display_number=tn + 1
-            )
-            logger.debug(f"{tn=} {table_settings[round_number]=} created {table}")
+            table = Table.objects.get(tournament=tournament, display_number=tn + 1)
+
+            for p in (player1, player2):
+                p.unseat_partnership(reason=f"You're about to be reseated for round {round_number}")
+
+            # TODO -- this is a copy of code in TableManager.create_with_two_partnerships
+            from app.models import Seat
+
+            for seat, player in zip(
+                SEAT_CHOICES, (player1, player2, player1.partner, player2.partner)
+            ):
+                Seat.objects.create(
+                    direction=seat,
+                    player=player,
+                    table=table,
+                )
+
+            logger.debug(f"{tn=} {table_settings[round_number]=} updated seats for {table}")
             table.next_board()
 
     def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
@@ -235,7 +256,10 @@ class Movement:
 
             temp_rv[table_number - 1].append(
                 PlayersAndBoardsForOneRound(
-                    board_group=boards[boards_per_round_per_table * round_number - 1].group,
+                    board_group=BoardGroup(
+                        boards=tuple(boards),
+                        letter=_group_letter(round_number),
+                    ),
                     quartet=q,
                     round_number=round_number,
                     table_number=table_number,

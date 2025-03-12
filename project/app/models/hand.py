@@ -143,7 +143,8 @@ class HandManager(models.Manager):
             board.tournament == table.tournament
         ), f"Nuts, {board.tournament=} != {table.tournament=}"
 
-        seats = table.seat_set
+        seats = table.seat_set.order_by("-id").all()[0:4]
+
         player_pks = seats.values_list("player__id", flat=True)
         players_qs = Player.objects.filter(pk__in=player_pks)
 

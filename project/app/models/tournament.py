@@ -83,7 +83,8 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         logger.debug("%d pairs are waiting", len(signed_up_pairs))
 
         movement = tour.get_movement()
-        movement.create_tables_and_seat_players_for_round(round_number=0, tournament=tour)
+        movement.allocate_initial_tables(tournament=tour)
+        movement.update_tables_and_seat_players_for_round(round_number=0, tournament=tour)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -346,14 +347,9 @@ class Tournament(models.Model):
         if self.is_complete:
             logger.warning("'%s' is complete; no next round for you", self)
         else:
-            # Unseat everyone, even though we'll probably put half of them back right where they were.
-            for table in self.table_set.all():
-                for seat in table.seats.filter(direction__in="NE"):
-                    seat.player.unseat_partnership()
-
             mvmt = self.get_movement()
             num_completed_rounds, _ = self.rounds_played()
-            mvmt.create_tables_and_seat_players_for_round(
+            mvmt.update_tables_and_seat_players_for_round(
                 tournament=self, round_number=(num_completed_rounds)
             )
 
