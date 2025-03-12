@@ -183,12 +183,10 @@ class Player(TimeStampedModel):
                 ],
             )
 
-        if not self.allow_bot_to_play_for_me:
-            logger.info(f"{self.name=} {self.allow_bot_to_play_for_me=}; outta here")
-            return
-
-        if not self.currently_seated:
-            logger.info(f"{self.currently_seated=}; outta here")
+        if not self.allow_bot_to_play_for_me or not self.currently_seated:
+            logger.info(
+                f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
+            )
             svc("-d")
             logger.info("Stopped bot for %s", self)
             return
