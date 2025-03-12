@@ -129,6 +129,10 @@ manage *options: all-but-django-prep ensure-skeleton-key
 collectstatic: (manage "collectstatic --no-input")
 
 [group('django')]
+fixture *options: pg-stop drop migrate (manage "loaddata " + options)
+
+# You can add  --print-sql-location to see a stack trace on *every* *damned* *query* :-)
+[group('django')]
 shell *options: migrate (manage "shell_plus --print-sql " + options)
 
 [group('django')]
