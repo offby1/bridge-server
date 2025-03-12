@@ -178,9 +178,6 @@ class Table(models.Model):
                 in_progress += 1
         return (completed, in_progress > 0)
 
-    def find_unplayed_board(self) -> Board | None:
-        return self.tournament.unplayed_boards_for(table=self).first()
-
     def next_board(self) -> Board:
         with transaction.atomic():
             if self.tournament.is_complete:

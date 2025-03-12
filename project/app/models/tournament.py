@@ -342,16 +342,6 @@ class Tournament(models.Model):
 
         yield from self.pair_up_players(players)
 
-    def unplayed_boards_for(self, *, table: Table) -> models.QuerySet:
-        all_boards = self.board_set.order_by("display_number").all()
-        hands = self.hands().filter(table=table)
-        played_board_pks = hands.values_list("board", flat=True).all()
-        num_completed_rounds, _ = self.rounds_played()
-        group_letter = "ABCDEFGHIJKLMNOP"[num_completed_rounds]
-        rv = all_boards.exclude(pk__in=played_board_pks).filter(group=group_letter)
-        logger.debug(f"{all_boards=} {played_board_pks=} {group_letter=} => {rv=}")
-        return rv
-
     def next_movement_round(self) -> None:
         if self.is_complete:
             logger.warning("'%s' is complete; no next round for you", self)
