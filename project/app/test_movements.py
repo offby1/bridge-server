@@ -95,7 +95,7 @@ def test_movement_class() -> None:
 def dump_seats():
     tabulate_me = []
     for t in Table.objects.order_by("display_number").all():
-        row = [f"Table # {t.display_number}: "]
+        row = [f"Table # {t.display_number}:"]
         for s in t.seats:
             row.append(f"{s.direction}: {s.player.name}")
         tabulate_me.append(row)
@@ -134,7 +134,10 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         assert num_completed_rounds == 0, "We haven't played any hands, so this should be round 0"
 
         before = dump_seats()
-
+        assert before == [
+            ["Table # 1:", "N: n1", "E: e1", "S: s1", "W: w1"],
+            ["Table # 2:", "N: n2", "E: w2", "S: s2", "W: e2"],
+        ]
         for table in open_tournament.table_set.all():
             play_out_hand(table)
 
@@ -144,4 +147,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
 
         after = dump_seats()
-        assert after != before
+        assert after == [
+            ["Table # 1:", "N: n1", "E: w2", "S: s1", "W: e2"],
+            ["Table # 2:", "N: n2", "E: e1", "S: s2", "W: w1"],
+        ]
