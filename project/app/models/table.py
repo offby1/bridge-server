@@ -258,6 +258,14 @@ class Table(models.Model):
 
     __str__ = __repr__
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique_per_tournament",
+                fields=["display_number", "tournament_id"],
+            ),
+        ]
+
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
