@@ -111,8 +111,8 @@ class Table(models.Model):
         return f"table:{self.pk}"
 
     @cached_property
-    def seats(self):
-        return self.seat_set.select_related("player__user").all()
+    def seats(self) -> models.QuerySet:
+        return self.seat_set.select_related("player__user")
 
     @property
     def current_auction(self) -> libAuction:

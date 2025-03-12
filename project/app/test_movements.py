@@ -5,10 +5,11 @@ from typing import Generator
 from freezegun import freeze_time
 import more_itertools
 import pytest
+import tabulate
 
 from django.contrib import auth
 
-from app.models import Player, Seat, Tournament
+from app.models import Player, Seat, Table, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 from app.utils.movements import BoardGroup, Movement, Pair
 
@@ -92,11 +93,16 @@ def test_movement_class() -> None:
 
 
 def dump_seats():
-    for s in Seat.objects.order_by("table__display_number", "direction").all():
-        print(f"{s.table.display_number=}{s.direction=}: {s.player.name=}")
+    tabulate_me = []
+    for t in Table.objects.order_by("display_number").all():
+        row = [f"Table # {t.display_number}: "]
+        for s in t.seats:
+            row.append(f"{s.direction}: {s.player.name}")
+        tabulate_me.append(row)
+    print(tabulate.tabulate(tabulate_me))
+    return tabulate_me
 
 
-@pytest.mark.xfail(reason="WIP")
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
     assert not Seat.objects.exists()
     # buid up the simplest possible tournament that has more than one round.
@@ -127,7 +133,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         num_completed_rounds, _ = open_tournament.rounds_played()
         assert num_completed_rounds == 0, "We haven't played any hands, so this should be round 0"
 
-        dump_seats()
+        before = dump_seats()
 
         for table in open_tournament.table_set.all():
             play_out_hand(table)
@@ -137,11 +143,5 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
             num_completed_rounds == 1
         ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
 
-        dump_seats()
-
-        assert (
-            str(
-                "ensure we have a new set of boards, n/s have stayed put, but e/w have swapped tables"
-            )
-            == "cat == dog"
-        )
+        after = dump_seats()
+        assert after != before
