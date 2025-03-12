@@ -124,7 +124,6 @@ class Table(models.Model):
 
     @property
     def current_hand(self) -> Hand:
-        # TODO -- find a way to do this that doesn't depend on the primary keys monotonically increasing
         rv = self.hand_set.order_by("-id").first()
         if rv is None:
             msg = f"{self} has no hands"

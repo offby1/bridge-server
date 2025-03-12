@@ -309,14 +309,16 @@ class Tournament(models.Model):
         """
         Returns the hands played by these four players in this tournament.
         """
-        from app.models import Hand, Player, Table
+        from app.models import Hand, Player
 
         players = Player.objects.filter(pk__in=four_players)
         assert players.count() == 4
 
         tables_at_which_all_four_have_sat = set()
-        # TODO -- do this logic in the db, rather than Python
-        for t in Table.objects.all():
+
+        # It'd be nice to do this logic in the db, rather than Python; but otoh, there aren't that many tables per
+        # tournament, so ... :shrug:
+        for t in self.table_set.all():
             if set(t.seat_set.values_list("player", flat=True).all()) == four_players:
                 tables_at_which_all_four_have_sat.add(t.pk)
         return (
