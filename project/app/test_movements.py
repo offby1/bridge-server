@@ -91,6 +91,16 @@ def test_movement_class() -> None:
 
             assert matchups.most_common(1)[0][1] == 1
 
+            if (num_pairs, boards_per_round) == (4, 2):
+                rows = da_movement.tabulate_me()["rows"]
+                import pprint
+
+                pprint.pprint(rows)
+                assert rows == [
+                    ["1", "NS 1/EW 1 plays board group A", "NS 1/EW 2 plays board group B"],
+                    ["2", "NS 2/EW 2 plays board group A", "NS 2/EW 1 plays board group B"],
+                ]
+
 
 def dump_seats():
     tabulate_me = []
@@ -105,7 +115,7 @@ def dump_seats():
 
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
     assert not Seat.objects.exists()
-    # buid up the simplest possible tournament that has more than one round.
+    # build up the simplest possible tournament that has more than one round.
     for name in ["n1", "s1", "n2", "s2", "e1", "w1", "e2", "w2"]:
         Player.objects.create(
             user=auth.models.User.objects.create(username=name, password=everybodys_password),

@@ -217,10 +217,6 @@ class Movement:
                 a_board, _ = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
-                logger.info(
-                    "%s",
-                    f"Yielding board for {group_index=} {n=} of {display_numbers=}: {a_board=}",
-                )
                 yield a_board
 
     @classmethod
@@ -255,7 +251,7 @@ class Movement:
             assert 0 <= zb_round_number < num_tables, f"{zb_round_number=} {num_tables=}"
 
             # Standard Mitchell movement: the EW pair at each table "rotates" each round
-            return ew_pairs[(table_number - zb_round_number) % num_tables]
+            return ew_pairs[(table_number - 1 - zb_round_number) % num_tables]
 
         boards_by_group = collections.defaultdict(list)
         for b in cls.make_boards(
@@ -272,11 +268,10 @@ class Movement:
             boards_per_round_per_table,
         )
         temp_rv: dict[int, list[PlayersAndBoardsForOneRound]] = collections.defaultdict(list)
-        product = list(itertools.product(range(1, num_tables + 1), repeat=2))
-        import pprint
 
-        pprint.pprint(product)
-        for table_display_number, displayed_round_number in product:
+        for table_display_number, displayed_round_number in itertools.product(
+            range(1, num_tables + 1), repeat=2
+        ):
             zb_round_number = displayed_round_number - 1
             q = Quartet(
                 ns=ns(table_number=table_display_number),
