@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import os
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING
@@ -175,6 +176,10 @@ class Player(TimeStampedModel):
 
     # https://cr.yp.to/daemontools/svc.html
     def _control_bot(self) -> None:
+        # do nothing when run from a unit test, so as to reduce the noise in the log output.
+        if os.environ.get("PYTEST_VERSION") is not None:
+            return
+
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
             logger.debug(f"Bailing out early because {service_directory=} is not a directory")
