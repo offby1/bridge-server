@@ -138,7 +138,6 @@ class Movement:
         zb_table_index: int
         table_settings: list[PlayersAndBoardsForOneRound]
         for zb_table_index, table_settings in sorted(self.table_settings_by_table_number.items()):
-            table: Table
             ts = table_settings[zb_round_number]
             assert ts.zb_round_number == zb_round_number
             phantom_pairs, normal_pairs = ts.quartet.partition_into_phantoms_and_normals()
@@ -163,14 +162,13 @@ class Movement:
             pk2 = next(iter(pair2.id))
             player2 = Player.objects.get(pk=pk2)
 
-            table = Table.objects.get(tournament=tournament, display_number=zb_table_index + 1)
+            table: Table = Table.objects.get(
+                tournament=tournament, display_number=zb_table_index + 1
+            )
 
-            for p in (player1, player2):
-                p.unseat_partnership(
-                    reason=f"You're about to be reseated for round {zb_round_number + 1}"
-                )
-
-            table.next_board()
+            table.unseat_players(
+                reason=f"You're about to be reseated for round {zb_round_number + 1}"
+            )
 
             # TODO -- this is a copy of code in TableManager.create_with_two_partnerships
             from app.models import Seat
@@ -183,6 +181,8 @@ class Movement:
                     player=player,
                     table=table,
                 )
+
+            table.next_board()
 
             logger.debug(
                 f"{zb_table_index=} {zb_round_number=} {table_settings[zb_round_number]=} updated seats for {table}"

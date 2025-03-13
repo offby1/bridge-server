@@ -114,6 +114,21 @@ class Table(models.Model):
     def seats(self) -> models.QuerySet:
         return self.seat_set.select_related("player__user")
 
+    def unseat_players(self, *, reason=None) -> None:
+        seat: modelSeat
+        victim_names = []
+        for seat in self.seat_set.filter(direction__in="NE"):
+            seat.player.unseat_partnership(reason=reason)
+            victim_names.append(seat.player.name)
+        if victim_names:
+            logger.debug("Unseated %s from table #%s", ", ".join(victim_names), self.display_number)
+        else:
+            logger.warning("Hmm, table #%s has no seats?", self.display_number)
+            for s in modelSeat.objects.all():
+                logger.warning(
+                    "%s sits %s at table #%s", s.player.name, s.direction, s.table.display_number
+                )
+
     @property
     def current_auction(self) -> libAuction:
         return self.current_hand.auction
