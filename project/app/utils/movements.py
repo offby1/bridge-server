@@ -91,6 +91,7 @@ class Movement:
 
     def __post_init__(self):
         tab_dict = self.tabulate_me()
+        print()
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
     def tabulate_me(self) -> dict[str, Any]:
@@ -98,12 +99,12 @@ class Movement:
         headers = ["table"]
         for tn, rounds in self.table_settings_by_table_number.items():
             if not rows:
-                headers.extend(list(str(r.round_number) for r in rounds))
+                headers.extend(list(f"round {r.round_number}" for r in rounds))
             row = [str(rounds[0].table_number)]
 
             for r in rounds:
                 quartet, board_group = r.quartet, r.board_group
-                row.append(f"{quartet.names()} plays {board_group}")
+                row.append(f"{quartet.names()} plays board group {board_group.letter}")
             rows.append(row)
         return {"rows": rows, "headers": headers}
 
