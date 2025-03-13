@@ -49,7 +49,9 @@ class BoardGroup:
 
     def __post_init__(self) -> None:
         assert len(self.letter) == 1
+        assert len(self.boards) > 0
         assert _are_consecutive([b.display_number for b in self.boards])
+        assert all(b.group == self.letter for b in self.boards)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -70,17 +72,22 @@ class Quartet:
     def names(self) -> str:
         return f"{self.ns.names}/{self.ew.names}"
 
+    def __str__(self) -> str:
+        return self.names()
+
+    __repr__ = __str__
+
 
 @dataclasses.dataclass(frozen=True)
 class PlayersAndBoardsForOneRound:
     board_group: BoardGroup
     quartet: Quartet
-    round_number: int
+    zb_round_number: int
     table_number: int
 
 
-def _group_letter(round_number: int) -> str:
-    return "ABCDEFGHIJKLMNOP"[round_number]
+def _group_letter(zb_round_number: int) -> str:
+    return "ABCDEFGHIJKLMNOP"[zb_round_number]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -99,7 +106,7 @@ class Movement:
         headers = ["table"]
         for tn, rounds in self.table_settings_by_table_number.items():
             if not rows:
-                headers.extend(list(f"round {r.round_number}" for r in rounds))
+                headers.extend(list(f"round {r.zb_round_number + 1}" for r in rounds))
             row = [str(rounds[0].table_number)]
 
             for r in rounds:
@@ -117,22 +124,23 @@ class Movement:
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
     def update_tables_and_seat_players_for_round(
-        self, *, tournament: Tournament, round_number: int
+        self, *, tournament: Tournament, zb_round_number: int
     ) -> None:
         from app.models import Player, Table
 
-        assert 0 <= round_number
-        if round_number >= len(self.table_settings_by_table_number[0]):
+        assert 0 <= zb_round_number
+        if zb_round_number >= len(self.table_settings_by_table_number[0]):
             from app.models import NoMoreBoards
 
-            msg = f"Tournament #{tournament.display_number} only has {len(self.table_settings_by_table_number[0])} rounds, but you asked for {round_number=}"
+            msg = f"Tournament #{tournament.display_number} only has {len(self.table_settings_by_table_number[0])} rounds, but you asked for {zb_round_number=}"
             raise NoMoreBoards(msg)
-        logger.debug(f"Updating tables and seating players and whatnot for {round_number=}")
-        tn: int
+
+        zb_table_index: int
         table_settings: list[PlayersAndBoardsForOneRound]
-        for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
+        for zb_table_index, table_settings in sorted(self.table_settings_by_table_number.items()):
             table: Table
-            ts = table_settings[round_number]
+            ts = table_settings[zb_round_number]
+            assert ts.zb_round_number == zb_round_number
             phantom_pairs, normal_pairs = ts.quartet.partition_into_phantoms_and_normals()
 
             if phantom_pairs:
@@ -142,7 +150,7 @@ class Movement:
                 # Don't create a table; just inform the normal pair that they're sitting out this round
                 for pk in normal_pairs[0].id:
                     Player.objects.get(pk=pk).unseat_partnership(
-                        reason=f"You're sitting out round {round_number}"
+                        reason=f"You're sitting out round {zb_round_number + 1}"
                     )
                     break  # we only need to unseat one of the two partners
                 continue
@@ -155,10 +163,14 @@ class Movement:
             pk2 = next(iter(pair2.id))
             player2 = Player.objects.get(pk=pk2)
 
-            table = Table.objects.get(tournament=tournament, display_number=tn + 1)
+            table = Table.objects.get(tournament=tournament, display_number=zb_table_index + 1)
 
             for p in (player1, player2):
-                p.unseat_partnership(reason=f"You're about to be reseated for round {round_number}")
+                p.unseat_partnership(
+                    reason=f"You're about to be reseated for round {zb_round_number + 1}"
+                )
+
+            table.next_board()
 
             # TODO -- this is a copy of code in TableManager.create_with_two_partnerships
             from app.models import Seat
@@ -172,8 +184,9 @@ class Movement:
                     table=table,
                 )
 
-            logger.debug(f"{tn=} {table_settings[round_number]=} updated seats for {table}")
-            table.next_board()
+            logger.debug(
+                f"{zb_table_index=} {zb_round_number=} {table_settings[zb_round_number]=} updated seats for {table}"
+            )
 
     def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
         return list(self.table_settings_by_table_number.items())
@@ -199,9 +212,14 @@ class Movement:
                 boards_per_round_per_table,
             )
         ):
+            logger.info("%s", f"Making boards for {group_index=} {display_numbers=}")
             for n in display_numbers:
                 a_board, _ = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
+                )
+                logger.info(
+                    "%s",
+                    f"Yielding board for {group_index=} {n=} of {display_numbers=}: {a_board=}",
                 )
                 yield a_board
 
@@ -227,43 +245,55 @@ class Movement:
         ns_pairs = pairs[0:num_tables]
         ew_pairs = pairs[num_tables:]
 
-        def ns(table_number: int, round_number: int) -> Pair:
+        def ns(*, table_number: int) -> Pair:
             assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
-            assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
             # Standard Mitchell movement: the NS pair at each table stays put
             return ns_pairs[table_number - 1]
 
-        def ew(table_number: int, round_number: int) -> Pair:
+        def ew(*, table_number: int, zb_round_number: int) -> Pair:
             assert 0 < table_number <= num_tables, f"{table_number=} {num_tables=}"
-            assert 0 < round_number <= num_tables, f"{round_number=} {num_tables=}"
+            assert 0 <= zb_round_number < num_tables, f"{zb_round_number=} {num_tables=}"
 
             # Standard Mitchell movement: the EW pair at each table "rotates" each round
-            return ew_pairs[(table_number - round_number) % num_tables]
+            return ew_pairs[(table_number - zb_round_number) % num_tables]
 
-        boards = list(
-            cls.make_boards(
-                boards_per_round_per_table=boards_per_round_per_table,
-                num_tables=num_tables,
-                tournament=tournament,
-            )
+        boards_by_group = collections.defaultdict(list)
+        for b in cls.make_boards(
+            boards_per_round_per_table=boards_per_round_per_table,
+            num_tables=num_tables,
+            tournament=tournament,
+        ):
+            boards_by_group[b.group].append(b)
+
+        logger.info(
+            "Made %d boards for tournament #%s (%d boards_per_round_per_table)",
+            len(boards_by_group),
+            tournament.display_number,
+            boards_per_round_per_table,
         )
-
         temp_rv: dict[int, list[PlayersAndBoardsForOneRound]] = collections.defaultdict(list)
-        for table_number, round_number in itertools.product(range(1, num_tables + 1), repeat=2):
+        product = list(itertools.product(range(1, num_tables + 1), repeat=2))
+        import pprint
+
+        pprint.pprint(product)
+        for table_display_number, displayed_round_number in product:
+            zb_round_number = displayed_round_number - 1
             q = Quartet(
-                ns=ns(table_number=table_number, round_number=round_number),
-                ew=ew(table_number=table_number, round_number=round_number),
+                ns=ns(table_number=table_display_number),
+                ew=ew(table_number=table_display_number, zb_round_number=zb_round_number),
             )
 
-            temp_rv[table_number - 1].append(
+            letter = _group_letter(zb_round_number)
+
+            temp_rv[table_display_number - 1].append(
                 PlayersAndBoardsForOneRound(
                     board_group=BoardGroup(
-                        boards=tuple(boards),
-                        letter=_group_letter(round_number),
+                        boards=tuple(boards_by_group[letter]),
+                        letter=letter,
                     ),
                     quartet=q,
-                    round_number=round_number,
-                    table_number=table_number,
+                    zb_round_number=zb_round_number,
+                    table_number=table_display_number,
                 )
             )
         return cls(

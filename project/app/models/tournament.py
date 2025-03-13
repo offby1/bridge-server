@@ -84,7 +84,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         movement = tour.get_movement()
         movement.allocate_initial_tables(tournament=tour)
-        movement.update_tables_and_seat_players_for_round(round_number=0, tournament=tour)
+        movement.update_tables_and_seat_players_for_round(zb_round_number=0, tournament=tour)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -350,7 +350,7 @@ class Tournament(models.Model):
             mvmt = self.get_movement()
             num_completed_rounds, _ = self.rounds_played()
             mvmt.update_tables_and_seat_players_for_round(
-                tournament=self, round_number=(num_completed_rounds)
+                tournament=self, zb_round_number=num_completed_rounds
             )
 
     def _cache_key(self) -> str:

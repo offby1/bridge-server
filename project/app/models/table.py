@@ -198,8 +198,11 @@ class Table(models.Model):
             playersandboardsforoneround = mvmt.table_settings_by_table_number[
                 self.display_number - 1
             ][num_completed_rounds]
-            b = playersandboardsforoneround.board_group.boards[num_hands_this_round - 1]
-
+            b = playersandboardsforoneround.board_group.boards[num_hands_this_round]
+            logger.info(
+                "%s",
+                f"{num_completed_rounds=} {num_hands_this_round=} {playersandboardsforoneround=} {b=}",
+            )
             new_hand = Hand.objects.create(board=b, table=self)
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
             for channel in (
