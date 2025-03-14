@@ -49,7 +49,7 @@ class Seat(models.Model):
         return f"{self.named_direction} at {self.table}"
 
     def __repr__(self):
-        return f"Model seat {vars(self)}"
+        return str(self) + f" ({self.player.name})"
 
     @cached_property
     def player_name(self):

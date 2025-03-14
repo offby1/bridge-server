@@ -269,6 +269,7 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
 
 def test_odd_pair_gets_matched_with_synths(nobody_seated_nobody_signed_up) -> None:
     existing_player_pks = set([p.pk for p in Player.objects.all()])
+    assert existing_player_pks == {1, 2, 3, 4}
 
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
@@ -277,10 +278,17 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated_nobody_signed_up) -> No
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
+
     open_tournament.sign_up(north)
+    assert TournamentSignup.objects.filter(player=north).exists()
+    assert TournamentSignup.objects.filter(player=south).exists()
+    assert TournamentSignup.objects.count() == 2
+
     assert not open_tournament.table_set.exists()
 
     app.models.tournament._do_signup_expired_stuff(open_tournament)
+
+    assert TournamentSignup.objects.count() == 4
 
     current_player_pks = set([p.pk for p in Player.objects.all()])
     new_player_pks = current_player_pks - existing_player_pks

@@ -71,15 +71,15 @@ def test_movement_class() -> None:
                         assert len(normals) == 2
 
             # Ensure every pair plays every board exactly once.
-            times_played_by_pair_board_combo: dict[tuple[frozenset[int], BoardGroup], int] = (
+            times_played_by_pair_board_combo: dict[tuple[tuple[int, int], BoardGroup], int] = (
                 collections.defaultdict(int)
             )
             for table_number, rounds in da_movement.items():
                 for r in rounds:
                     quartet, board_group = r.quartet, r.board_group
 
-                    times_played_by_pair_board_combo[(quartet.ns.id, board_group)] += 1
-                    times_played_by_pair_board_combo[(quartet.ew.id, board_group)] += 1
+                    times_played_by_pair_board_combo[(quartet.ns.id_, board_group)] += 1
+                    times_played_by_pair_board_combo[(quartet.ew.id_, board_group)] += 1
 
             assert set(times_played_by_pair_board_combo.values()) == {1}
 
@@ -146,7 +146,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         before = dump_seats()
         assert before == [
             ["Table # 1:", "N: n1", "E: e1", "S: s1", "W: w1"],
-            ["Table # 2:", "N: n2", "E: w2", "S: s2", "W: e2"],
+            ["Table # 2:", "N: n2", "E: e2", "S: s2", "W: w2"],
         ]
         for table in open_tournament.table_set.all():
             play_out_hand(table)
@@ -158,6 +158,6 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
 
         after = dump_seats()
         assert after == [
-            ["Table # 1:", "N: n1", "E: w2", "S: s1", "W: e2"],
+            ["Table # 1:", "N: n1", "E: e2", "S: s1", "W: w2"],
             ["Table # 2:", "N: n2", "E: e1", "S: s2", "W: w1"],
         ]

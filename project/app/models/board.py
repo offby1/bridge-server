@@ -80,6 +80,7 @@ class BoardManager(models.Manager):
     def get_or_create_from_display_number(
         self, *, display_number: int, tournament: Tournament, group: str
     ) -> tuple[Board, bool]:
+        assert len(group) == 1
         defaults = board_attributes_from_display_number(
             display_number=display_number,
             rng_seeds=[

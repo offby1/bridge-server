@@ -146,7 +146,13 @@ class HandManager(models.Manager):
         seats = table.seat_set.order_by("-id").all()[0:4]
 
         player_pks = seats.values_list("player__id", flat=True)
-        players_qs = Player.objects.filter(pk__in=player_pks)
+
+        if len(set(player_pks)) != 4:
+            players = Player.objects.filter(pk__in=player_pks)
+            msg = f"Cannot seat all of {[p.name for p in players]} because there are not exactly four of them"
+            raise HandError(msg)
+
+        players_qs = Player.objects.filter(pk__in=player_pks).order_by("id")
 
         expression = models.Q(pk__in=[])
         for p in players_qs:

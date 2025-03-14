@@ -21,11 +21,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass(frozen=True, order=True)
+@dataclasses.dataclass(order=True)
 class Pair:
-    # Keep id first so that "names" has no effect on the ordering.
-    id: frozenset[PK]
+    id_: tuple[PK, PK]
     names: str
+
+    def __init__(self, *, id, names):
+        self.id_ = tuple(sorted(id))
+        self.names = names
+
+    def __hash__(self) -> int:
+        return hash(tuple([self.id_, self.names]))
 
 
 class PhantomPair(Pair):
@@ -147,7 +153,7 @@ class Movement:
                 assert len(phantom_pairs) == 1
 
                 # Don't create a table; just inform the normal pair that they're sitting out this round
-                for pk in normal_pairs[0].id:
+                for pk in normal_pairs[0].id_:
                     Player.objects.get(pk=pk).unseat_partnership(
                         reason=f"You're sitting out round {zb_round_number + 1}"
                     )
@@ -156,10 +162,9 @@ class Movement:
 
             pair1, pair2 = normal_pairs
 
-            pk1 = next(iter(pair1.id))
+            pk1 = pair1.id_[0]
+            pk2 = pair2.id_[0]
             player1 = Player.objects.get(pk=pk1)
-
-            pk2 = next(iter(pair2.id))
             player2 = Player.objects.get(pk=pk2)
 
             table: Table = Table.objects.get(
@@ -219,7 +224,7 @@ class Movement:
         ):
             logger.info("%s", f"Making boards for {group_index=} {display_numbers=}")
             for n in display_numbers:
-                a_board, _ = Board.objects.get_or_create_from_display_number(
+                a_board, created = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
                 yield a_board
@@ -272,6 +277,7 @@ class Movement:
             tournament.display_number,
             boards_per_round_per_table,
         )
+
         temp_rv: dict[int, list[PlayersAndBoardsForOneRound]] = collections.defaultdict(list)
 
         for table_display_number, displayed_round_number in itertools.product(
@@ -284,6 +290,10 @@ class Movement:
             )
 
             letter = _group_letter(zb_round_number)
+
+            assert (
+                letter in boards_by_group
+            ), f"OK, how come {letter=} isn't a key of {boards_by_group=}"
 
             temp_rv[table_display_number - 1].append(
                 PlayersAndBoardsForOneRound(

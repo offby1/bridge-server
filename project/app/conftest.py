@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
-def dump_django_cache():
+def clear_django_cache():
     cache.clear()
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any
@@ -284,7 +285,7 @@ class Tournament(models.Model):
         for p in players:
             if p.pk not in seen and p.partner.pk not in seen:
                 yield app.utils.movements.Pair(
-                    id=frozenset([p.pk, p.partner.pk]), names=f"{p.name}, {p.partner.name}"
+                    id=[p.pk, p.partner.pk], names=f"{p.name}, {p.partner.name}"
                 )
                 seen.add(p.pk)
                 seen.add(p.partner.pk)
@@ -306,7 +307,7 @@ class Tournament(models.Model):
 
         yield from self.pair_up_players(players)
 
-    def which_hands(self, *, four_players: set[PK]) -> models.QuerySet:
+    def which_hands(self, *, four_players: Collection[PK]) -> models.QuerySet:
         """
         Returns the hands played by these four players in this tournament.
         """
@@ -385,7 +386,7 @@ class Tournament(models.Model):
             if self.table_set.exists():
                 for tn, settings in _movement.table_settings_by_table_number.items():
                     for s in settings:
-                        player_pks = s.quartet.ew.id.union(s.quartet.ns.id)
+                        player_pks = sorted(set(s.quartet.ew.id_).union(s.quartet.ns.id_))
                         logger.debug(
                             "%s will play %s", player_pks, self.which_hands(four_players=player_pks)
                         )
