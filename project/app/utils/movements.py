@@ -166,9 +166,14 @@ class Movement:
                 tournament=tournament, display_number=zb_table_index + 1
             )
 
+            # Whover's currently at the table gotta make room
             table.unseat_players(
                 reason=f"You're about to be reseated for round {zb_round_number + 1}"
             )
+
+            # The new tentants gotta leave their current table
+            player1.unseat_partnership()
+            player2.unseat_partnership()
 
             # TODO -- this is a copy of code in TableManager.create_with_two_partnerships
             from app.models import Seat
