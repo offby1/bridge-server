@@ -120,7 +120,7 @@ class Table(models.Model):
         return self.seat_set.order_by("-id").select_related("player__user")
 
     def current_seats(self) -> list[Seat]:
-        return list(self.all_seats.all()[0:4])
+        return sorted(self.all_seats.all()[0:4], key=lambda s: "NESW".index(s.direction))
 
     def unseat_players(self, *, reason=None) -> None:
         seat: modelSeat
