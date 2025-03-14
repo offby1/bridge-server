@@ -291,7 +291,7 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated_nobody_signed_up) -> No
 
     norths_table = north.current_table
     assert norths_table is not None
-    players_at_the_table = set([s.player.pk for s in norths_table.seats])
+    players_at_the_table = set([s.player.pk for s in norths_table.current_seats()])
     assert len(players_at_the_table) == 4
     assert north.pk in players_at_the_table
     assert south.pk in players_at_the_table

@@ -208,7 +208,8 @@ class Hand(TimeStampedModel):
         if hands_played_this_round == 0:
             logger.warning(f"Gevalt! {hands_played_this_round=}; I guess I gotta do something")
             logger.info("%s", f"{t.rounds_played()=}")
-            t.next_movement_round()
+            if num_completed_rounds < len(t.get_movement().table_settings_by_table_number):
+                t.next_movement_round()
         else:
             logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
 
@@ -252,7 +253,7 @@ class Hand(TimeStampedModel):
         return PK_from_str(pieces[1])
 
     def players(self) -> models.QuerySet:
-        return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
+        return Player.objects.filter(pk__in=(s.player.pk for s in self.table.current_seats()))
 
     # TODO -- maybe https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ has some hints
     # for orm-ifying this
@@ -291,7 +292,7 @@ class Hand(TimeStampedModel):
         if self.abandoned_because is not None:
             return True
 
-        players = [s.player for s in self.table.seats]
+        players = [s.player for s in self.table.current_seats()]
         unseated_players = [p for p in players if not p.currently_seated]
 
         if unseated_players:
@@ -312,7 +313,7 @@ class Hand(TimeStampedModel):
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = self.event_channel_name
-        player_channels = [s.player.event_channel_name for s in self.table.seats]
+        player_channels = [s.player.event_channel_name for s in self.table.current_seats()]
         all_channels = [hand_channel, "all-tables", *player_channels]
 
         data = data.copy()
@@ -337,10 +338,10 @@ class Hand(TimeStampedModel):
     @cached_property
     def libPlayers_by_seat(self) -> dict[libSeat, libPlayer]:
         rv: dict[libSeat, libPlayer] = {}
-        seats = self.table.seats
+        seats = self.table.current_seats()
         for direction_int in self.board.hand_strings_by_direction:
             lib_seat = libSeat(direction_int)
-            seat = seats.filter(direction=direction_int).first()
+            seat = next(s for s in seats if s.direction == direction_int)
             assert seat is not None, f"Alas! No seat {direction_int=} at {self}"
             name = seat.player_name
             rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
@@ -566,7 +567,7 @@ class Hand(TimeStampedModel):
 
     @cached_property
     def players_by_direction(self) -> dict[str, Player]:
-        return {s.direction: s.player for s in self.table.seats}
+        return {s.direction: s.player for s in self.table.current_seats()}
 
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
         rv = {}
@@ -762,7 +763,9 @@ class Hand(TimeStampedModel):
         if as_viewed_by is not None:
             my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
         if my_hand_for_this_board is not None:
-            my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
+            my_seat = next(
+                s for s in my_hand_for_this_board.table.current_seats() if s.player == as_viewed_by
+            )
         fs = self.get_xscript().final_score()
 
         if fs is None:
@@ -852,7 +855,13 @@ class Call(TimeStampedModel):
     def seat_pk(self) -> PK | None:
         for pc in self.hand.get_xscript().auction.player_calls:
             if pc.call.serialize() == self.serialized:
-                return self.hand.table.seats.get(direction=pc.player.seat.value).pk
+                return (
+                    next(
+                        s
+                        for s in self.hand.table.current_seats()
+                        if s.direction == pc.player.seat.value
+                    )
+                ).pk
 
         return None
 
@@ -917,7 +926,13 @@ class Play(TimeStampedModel):
         for t in self.hand.get_xscript().tricks:
             for p in t.plays:
                 if p.card.serialize() == self.serialized:
-                    return self.hand.table.seats.get(direction=p.seat.value).pk
+                    return (
+                        next(
+                            s
+                            for s in self.hand.table.current_seats()
+                            if s.direction == p.seat.value
+                        )
+                    ).pk
         return None
 
     @cached_property

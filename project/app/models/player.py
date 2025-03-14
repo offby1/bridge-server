@@ -451,7 +451,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         direction = ""
         role = ""
         if self.has_played_hand(hand):
-            seat = hand.table.seats.get(player=self)
+            seat = next(s for s in hand.table.current_seats() if s.player == self)
             direction = f" ({seat.named_direction})"
 
             a: bridge.auction.Auction

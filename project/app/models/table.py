@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     import bridge.table
     from bridge.auction import Auction as libAuction
 
-    from app.models.player import Player
+    from app.models.player import Player, Seat
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,9 @@ class TableManager(models.Manager):
         max_ = self.aggregate(models.Max("display_number"))["display_number__max"] or 0
         display_number = max_ + 1
         kwargs.setdefault("display_number", display_number)
-        return super().create(*args, **kwargs)
+        rv = super().create(*args, **kwargs)
+        assert rv.seat_set.count() in {0, 4}
+        return rv
 
     def create_with_two_partnerships(
         self, p1: Player, p2: Player, tournament: Tournament | None = None, **kwargs
@@ -111,8 +113,14 @@ class Table(models.Model):
         return f"table:{self.pk}"
 
     @cached_property
-    def seats(self) -> models.QuerySet:
-        return self.seat_set.select_related("player__user")
+    def all_seats(self) -> models.QuerySet:
+        """
+        After filtering this or whatever, be sure to take a slice of just four items
+        """
+        return self.seat_set.order_by("-id").select_related("player__user")
+
+    def current_seats(self) -> list[Seat]:
+        return list(self.all_seats.all()[0:4])
 
     def unseat_players(self, *, reason=None) -> None:
         seat: modelSeat
@@ -175,7 +183,7 @@ class Table(models.Model):
         board = self.current_board
         if board is None:
             return rv
-        for s in self.seats:
+        for s in self.current_seats():
             if s.player is not None:
                 rv[s] = board.cards_for_direction(s.direction)
 
@@ -222,7 +230,7 @@ class Table(models.Model):
             logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
             for channel in (
                 self.event_channel_name,
-                *[s.player.event_channel_name for s in self.seats],
+                *[s.player.event_channel_name for s in self.current_seats()],
             ):
                 send_event(
                     channel=channel,

@@ -395,10 +395,10 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     h = Hand.objects.first()
     assert not h.is_complete
 
-    seats = h.table.seats.select_related("player")
-    assert seats.count() == 4
+    seats = h.table.current_seats()
+    assert len(seats) == 4
 
-    north = seats.first().player
+    north = seats[0].player
     south = north.partner
     north.break_partnership()
 

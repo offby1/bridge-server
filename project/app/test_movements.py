@@ -106,7 +106,7 @@ def dump_seats():
     tabulate_me = []
     for t in Table.objects.order_by("display_number").all():
         row = [f"Table # {t.display_number}:"]
-        for s in t.seats:
+        for s in t.current_seats():
             row.append(f"{s.direction}: {s.player.name}")
         tabulate_me.append(row)
     print(tabulate.tabulate(tabulate_me))
