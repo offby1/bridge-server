@@ -95,7 +95,9 @@ def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
     with transaction.atomic():
-        incompletes = Tournament.objects.filter(is_complete=False)
+        incompletes = Tournament.objects.filter(
+            is_complete=False, play_completion_deadline__isnull=False
+        )
 
         logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
 
