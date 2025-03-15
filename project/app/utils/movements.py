@@ -272,7 +272,7 @@ class Movement:
             boards_by_group[b.group].append(b)
 
         logger.info(
-            "Made %d boards for tournament #%s (%d boards_per_round_per_table)",
+            "Made %d board groups for tournament #%s (%d boards_per_round_per_table)",
             len(boards_by_group),
             tournament.display_number,
             boards_per_round_per_table,
