@@ -172,9 +172,10 @@ class Board(models.Model):
         return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
     def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:
+        if self.tournament.is_complete:
+            return self.PlayerVisibility.everything
+
         if player is None:
-            if self.tournament.is_complete:
-                return self.PlayerVisibility.everything
             return self.PlayerVisibility.nothing
 
         hand = player.hand_at_which_board_was_played(self)
