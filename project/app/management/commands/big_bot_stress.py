@@ -59,6 +59,13 @@ class Command(BaseCommand):
                 p2.save()
                 self.stderr.write(f"Created partners {p1.name} and {p2.name}")
 
+            for p in Player.objects.filter(partner__isnull=True):
+                self.stderr.write(f"{p.name} has no partner; making another synth")
+                p.partner = Player.objects.create_synthetic()
+                p.partner.partner = p
+                p.save()
+                p.partner.save()
+
             for p in Player.objects.order_by("user__username").all():
                 if p.currently_seated:
                     p.unseat_partnership()
