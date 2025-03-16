@@ -25,6 +25,8 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
 
 
 def expect_visibility(expectation_array, table: Table) -> None:
+    __tracebackhide__ = True
+
     for seat in table.current_hand.players_by_direction:
         for viewer in table.current_hand.players_by_direction:
             actual1 = _display_and_control(
@@ -35,28 +37,26 @@ def expect_visibility(expectation_array, table: Table) -> None:
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
-            assert (
-                actual1["display_cards"] == expectation_array[seat_index][viewer_index]
-            ), f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+            if not (actual1["display_cards"] == expectation_array[seat_index][viewer_index]):
+                pytest.fail(
+                    f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} but {'should not' if actual1['display_cards'] else 'should'}"
+                )
 
 
-def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
+def test_hand_visibility_one(usual_setup: None) -> None:
     t1 = Table.objects.first()
     assert t1 is not None
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
 
     assert str(t1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
-    t2 = second_setup
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
-
     expect_visibility(
         [
-            # n, e, s, w
-            [1, 0, 0, 0],  # n
-            [0, 1, 0, 0],  # e
-            [0, 0, 1, 0],  # s
-            [0, 0, 0, 1],  # w
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
+            [0, 1, 0, 0],  # e  |
+            [0, 0, 1, 0],  # s  |
+            [0, 0, 0, 1],  # w  v
         ],
         table=t1,
     )
@@ -72,9 +72,9 @@ def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
         [
             # n, e, s, w <-- viewers
             [1, 0, 0, 0],  # n seat
-            [0, 1, 0, 0],  # e
-            [1, 1, 1, 1],  # s
-            [0, 0, 0, 1],  # w
+            [0, 1, 0, 0],  # e  |
+            [1, 1, 1, 1],  # s  |
+            [0, 0, 0, 1],  # w  v
         ],
         table=t1,
     )
@@ -88,9 +88,9 @@ def test_hand_visibility_two(two_boards_one_is_complete: None) -> None:
         [
             # n, e, s, w <-- viewers
             [1, 1, 1, 1],  # n seat
-            [1, 1, 1, 1],  # e
-            [1, 1, 1, 1],  # s
-            [1, 1, 1, 1],  # w
+            [1, 1, 1, 1],  # e  |
+            [1, 1, 1, 1],  # s  |
+            [1, 1, 1, 1],  # w  v
         ],
         table=t2,
     )
