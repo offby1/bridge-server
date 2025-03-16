@@ -224,9 +224,14 @@ class Table(models.Model):
             mvmt = t.get_movement()
 
             num_completed_rounds, num_hands_this_round = t.rounds_played()
-            playersandboardsforoneround = mvmt.table_settings_by_table_number[
-                self.display_number - 1
-            ][num_completed_rounds]
+            settings = mvmt.table_settings_by_table_number[self.display_number - 1]
+            if num_completed_rounds > len(settings):
+                raise NoMoreBoards(f"Round {num_completed_rounds + 1} is complete")
+            playersandboardsforoneround = settings[num_completed_rounds - 1]
+
+            if num_hands_this_round >= len(playersandboardsforoneround.board_group.boards):
+                raise NoMoreBoards(f"Round {num_completed_rounds + 1} is complete")
+
             b = playersandboardsforoneround.board_group.boards[num_hands_this_round]
             logger.info(
                 "%s",
