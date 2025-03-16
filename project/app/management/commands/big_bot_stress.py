@@ -13,7 +13,9 @@ from django.db import transaction
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("--min-players", type=int, default=0)
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("--min-players", type=int, default=0)
+        group.add_argument("--tiny", default=False, action="store_true")
 
     def handle(self, *_args, **options) -> None:
         is_safe = False
@@ -33,11 +35,22 @@ class Command(BaseCommand):
 
         t: Tournament
         with transaction.atomic():
-            t, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+            boards_per_round_per_table = 3
+            if options.get("tiny", False):
+                boards_per_round_per_table = 1
+            self.stderr.write(f"{options=}; {boards_per_round_per_table=}")
+
+            t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
+                boards_per_round_per_table=boards_per_round_per_table
+            )
 
             p: Player
 
-            while Player.objects.order_by("user__username").count() < options["min_players"]:
+            if (num_players := options.get("min_players", 0)) == 0:
+                if options.get("tiny", False):
+                    num_players = 8
+
+            while Player.objects.order_by("user__username").count() < num_players:
                 p1 = Player.objects.create_synthetic()
                 p2 = Player.objects.create_synthetic()
                 p1.partner = p2
