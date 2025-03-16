@@ -124,8 +124,13 @@ class Movement:
     def allocate_initial_tables(self, tournament) -> None:
         from app.models import Table
 
+        logger.warning(
+            "%s", f"{tournament.display_number=} {self.table_settings_by_table_number.keys()=}"
+        )
         for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
             Table.objects.create(tournament=tournament)
+        for t in Table.objects.all():
+            logger.warning("%s", f"{t.tournament.display_number=}: {t.display_number=}")
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
@@ -167,6 +172,7 @@ class Movement:
             player1 = Player.objects.get(pk=pk1)
             player2 = Player.objects.get(pk=pk2)
 
+            logger.warning("fetching table #%s", zb_table_index + 1)
             table: Table = Table.objects.get(
                 tournament=tournament, display_number=zb_table_index + 1
             )
