@@ -305,16 +305,18 @@ class Hand(TimeStampedModel):
             self.abandoned_because = (
                 f"{[p.name for p in unseated_players]} left their seats for the lobby"
             )
+            self.save()
             return True
 
-        player_table_tuples = [
+        moved_player_tuples = [
             (s.player.name, s.table.pk)
             for s in self.players_current_seats()
             if s.table.pk != self.table.pk
         ]
-        if not player_table_tuples:
+        if not moved_player_tuples:
             return False
-        self.abandoned_because = f"Some players are now at other tables: {player_table_tuples}"
+        self.abandoned_because = f"Some players are now at other tables: {moved_player_tuples}"
+        self.save()
         return True
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
