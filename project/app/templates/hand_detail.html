@@ -23,7 +23,7 @@
         </div>
         {% if hand.is_abandoned %}
             <div>
-                <h1 style="text-align: center; color: red">This hand was abandoned: {{ hand.is_abandoned }}</h1>
+                <h1 style="text-align: center; color: red">This hand was abandoned: {{ hand.abandoned_because }}</h1>
             </div>
         {% endif %}
     </div>
