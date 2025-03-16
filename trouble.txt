@@ -2,7 +2,7 @@ Starting from scratch (i.e., "just drop" and "just follow"), a stress run ("just
 
 http://localhost:9000/hand/ shows 7 hands, not the expected 15.
 
-
+```table
 | Status | Tournament # | Table | Board | players                                                                          | Result                                                                            |
 |--------+--------------+-------+-------+----------------------------------------------------------------------------------+-----------------------------------------------------------------------------------|
 | ✔      |            1 |     1 |    13 | synthetic_prez, synthetic_freamon, synthetic_rhonda, synthetic_tilghman          | one Club played by synthetic_prez, sitting North: Made contract with 1 overtricks |
@@ -12,3 +12,8 @@ http://localhost:9000/hand/ shows 7 hands, not the expected 15.
 | ✔      |            1 |     4 |    13 | synthetic_randy, synthetic_wallace, synthetic_marla, synthetic_d'angelo          | Passed Out                                                                        |
 | ✔      |            1 |     4 |    15 | synthetic_randy, synthetic_wallace, synthetic_marla, synthetic_d'angelo          | five Spades played by synthetic_marla, sitting South: Down 5                      |
 | ✔      |            1 |     5 |    13 | synthetic_stringer, synthetic_marlo, synthetic_norman, synthetic_bunk            | three Clubs played by synthetic_marlo, sitting East: Down 4                       |
+```
+
+Soooo many things wrong ...
+
+* After "just stress --tiny", and using the admin page to allow logins for _prez, I see at <http://localhost:9000/hand/3/>: `This hand was abandoned: True`
