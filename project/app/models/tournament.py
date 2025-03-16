@@ -385,13 +385,6 @@ class Tournament(models.Model):
             )
             self._cache_set(_movement)
 
-            if self.table_set.exists():
-                for tn, settings in _movement.table_settings_by_table_number.items():
-                    for s in settings:
-                        player_pks = sorted(set(s.quartet.ew.id_).union(s.quartet.ns.id_))
-                        logger.debug(
-                            "%s will play %s", player_pks, self.which_hands(four_players=player_pks)
-                        )
         return _movement
 
     def signup_deadline_has_passed(self) -> bool:
