@@ -44,7 +44,13 @@ class TableHasNoHand(TableException):
 
 class TableManager(models.Manager):
     def create(self, *args, **kwargs) -> Table:
-        max_ = self.aggregate(models.Max("display_number"))["display_number__max"] or 0
+        tournament = kwargs["tournament"]
+        max_ = (
+            self.filter(tournament=tournament).aggregate(models.Max("display_number"))[
+                "display_number__max"
+            ]
+            or 0
+        )
         display_number = max_ + 1
         kwargs.setdefault("display_number", display_number)
         rv = super().create(*args, **kwargs)
