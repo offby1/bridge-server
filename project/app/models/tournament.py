@@ -505,7 +505,7 @@ class Tournament(models.Model):
                     if not p.synthetic:
                         logger.debug("%s is not longer bottified", p.name)
 
-                # oddly, `t.current_hand.save()` seems to have no effect; hence the temp variable `h`
+                # `t.current_hand.save()` has no effect; hence the temp variable `h`
                 h = t.current_hand
                 h.abandoned_because = explanation
                 h.save()
@@ -517,7 +517,7 @@ class Tournament(models.Model):
                 # TODO -- distinguish between "all the boards have been played" vs "was aborted because the play
                 # completion deadline passed".  Maybe the "is_complete" attribute should be a string, instead of a
                 # boolean, and it would contain the explanation.
-                explanation=f"Tournament is complete; maybe its play deadline {self.play_completion_deadline} has passed"
+                explanation=f"Tournament is complete; its play deadline was {self.play_completion_deadline}"
             )
             logger.debug(
                 "Marked myself '%s' as complete, and ejected all pairs from %s",

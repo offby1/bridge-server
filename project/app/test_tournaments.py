@@ -186,8 +186,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         del hand.is_abandoned
 
         assert hand.is_abandoned
-        assert "deadline" in hand.abandoned_because
-        assert "has passed" in hand.abandoned_because
+        assert "play deadline was" in hand.abandoned_because
 
 
 def test_deadline_via_view(usual_setup, rf) -> None:

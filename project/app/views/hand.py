@@ -574,15 +574,11 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
-    if player.current_table_pk() != hand.table.pk:
-        h: app.models.Hand | None
-        if (h := player.hand_at_which_board_was_played(hand.board)) is None or not h.is_complete:
-            assert h is not None  # mypy, why are you so dumb
-            why = "You are not allowed to see neither squat, zip, nada, nor bupkis"
-            if h.abandoned_because:
-                why += " because " + h.abandoned_because
-            return Forbid(why)
+    from app.models.board import Board
+
+    match hand.board.what_can_they_see(player=player):
+        case Board.PlayerVisibility.nothing:
+            return Forbid("You wouldn't be allowed to see anything anyway")
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,
@@ -594,24 +590,18 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
-    # for when player is looking at a hand whose board they've already played.
-    other_hand = player.hand_at_which_board_was_played(hand.board)
-    assert other_hand is not None
-    hand_link = reverse("app:hand-detail", args=[other_hand.pk])
-    hand_description = str(other_hand)
-
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
         | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
-        | {
-            "hand_at_which_I_played_this_board": {
-                "link": hand_link,
-                "description": hand_description,
-            }
-        }
     )
+
+    if (other_hand := player.hand_at_which_board_was_played(hand.board)) is not None:
+        context["hand_at_which_I_played_this_board"] = {
+            "link": reverse("app:hand-detail", args=[other_hand.pk]),
+            "description": str(other_hand),
+        }
 
     return TemplateResponse(request, "hand_detail.html", context=context)
 

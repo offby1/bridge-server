@@ -420,28 +420,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        what_they_can_see = board.what_can_they_see(player=self)
-        if what_they_can_see == Board.PlayerVisibility.nothing:
-            return False
-
-        hand = self.hand_at_which_board_was_played(board)
-        assert (
-            hand is not None
-        )  # what_they_can_see should have been PlayerVisibility.nothing in this case
-
-        if what_they_can_see is Board.PlayerVisibility.own_hand:
-            return hand.players_by_direction[seat.value] == self
-
-        if what_they_can_see == Board.PlayerVisibility.dummys_hand:
-            if hand.players_by_direction[seat.value] == self:
-                return True
-            dummy = hand.dummy
-            return dummy is not None and dummy.seat == seat
-
-        assert (
-            what_they_can_see is Board.PlayerVisibility.everything
-        ), f"{what_they_can_see=} but otta be everything"
-        return True
+        return board.what_can_they_see(player=self) != Board.PlayerVisibility.nothing
 
     @cached_property
     def name(self):

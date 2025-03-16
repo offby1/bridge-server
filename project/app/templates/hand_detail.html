@@ -76,10 +76,12 @@
 </div>
 {% ifexists card_display.current_player %}
 {% else %}
+{% ifexists hand_at_which_I_played_this_board %}
 <h4>
     You played <a href="{% url 'app:board-archive' pk=hand.board.pk %}">this board</a>
     at <a href="{{ hand_at_which_I_played_this_board.link }}">{{ hand_at_which_I_played_this_board.description }}</a>.
 </h4>
+{% endifexists %}
 {% if show_auction_history %}
     <div>{% include "four-hands.html" %}</div>
 {% endif %}

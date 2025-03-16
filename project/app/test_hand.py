@@ -433,4 +433,4 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     message = h.abandoned_because
     assert north.name in message
     assert south.name in message
-    assert "other tables" in message
+    assert "left their seats" in message
