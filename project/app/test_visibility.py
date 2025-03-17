@@ -77,6 +77,24 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
                 ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
+def test_running_tournament_relevant_player_not_yet_played_board(
+    nearly_completed_tournament,
+) -> None:
+    table: Table | None = Table.objects.first()
+    assert table is not None
+
+    for player in table.tournament.seated_players():
+        for board in table.tournament.board_set.all():
+            hand = player.hand_at_which_board_was_played(board)
+            if hand is None:
+                for direction in libSeat:
+                    assert not can_see_cards_at(
+                        None,
+                        board,
+                        direction,
+                    ), f"Whoa -- {player} can see {board} at {direction}?!"
+
+
 def expect_visibility(expectation_array, table: Table) -> None:
     __tracebackhide__ = True
 
