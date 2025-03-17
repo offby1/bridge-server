@@ -15,12 +15,27 @@ from .testutils import play_out_hand, set_auction_to
 # Who can see which cards (and when)?
 # our function under test should look like
 def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
+    print(f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {board=} {direction.value=}")
     if board.tournament.is_complete:
+        print(f"{board.tournament.is_complete=} so everyone can see everything")
         return True
+
     if player is not None:
         if (hand := player.hand_at_which_board_was_played(board)) is not None:
             for d, p in hand.players_by_direction.items():
+                # everyone gets to see their own cards
                 if p == player and d == direction.value:
+                    print(
+                        f"{p.name=} == {player.name=} and {d=} == {direction.value=}: player can see own hand"
+                    )
+                    return True
+
+                # Dummy is visible after the opening lead
+                if (
+                    hand.get_xscript().num_plays > 0
+                    and hand.dummy.seat.value == d == direction.value
+                ):
+                    print(f"{hand.dummy.seat.value=} and {d=}; everyone can see the dummy")
                     return True
     return False
 
@@ -202,6 +217,7 @@ def expect_visibility(expectation_array, table: Table) -> None:
             )
             seat_index = "NESW".index(seat.direction)
             if actual != expectation_array[seat_index][viewer_index]:
+                print(f"{actual=} {seat=} {seat_index=} {viewer.name=} {viewer_index=}")
                 pytest.fail(
                     f"{viewer} {'can' if actual else 'can not'} see {seat.direction} but {'should not' if actual else 'should'}",
                 )
