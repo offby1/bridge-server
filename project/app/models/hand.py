@@ -745,11 +745,10 @@ class Hand(TimeStampedModel):
                 return "Remind me -- who are you, again?", "-"
 
         if as_viewed_by is not None:
-            if self.board.what_can_they_see(
-                player=as_viewed_by
-            ) != self.board.PlayerVisibility.everything and as_viewed_by.name not in {
-                p.name for p in self.players_by_direction.values()
-            }:
+            if (
+                self.board.what_can_they_see(player=as_viewed_by)
+                != self.board.PlayerVisibility.everything
+            ):
                 return (
                     f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
                     "-",

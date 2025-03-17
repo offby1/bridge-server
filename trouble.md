@@ -13,9 +13,3 @@ http://localhost:9000/hand/ shows 7 hands, not the expected 15.
 | ✔      |            1 |     4 |    15 | synthetic_randy, synthetic_wallace, synthetic_marla, synthetic_d'angelo          | five Spades played by synthetic_marla, sitting South: Down 5                      |
 | ✔      |            1 |     5 |    13 | synthetic_stringer, synthetic_marlo, synthetic_norman, synthetic_bunk            | three Clubs played by synthetic_marlo, sitting East: Down 4                       |
 ```
-
-Soooo many things wrong ...
-
-* Just a couple minutes later, still logged in as _prez, <http://localhost:9000/hand/3/> says `You are not allowed to see neither squat, zip, nada, nor bupkis because Tournament is complete; maybe its play deadline 2025-03-16 21:56:30.520555+00:00 has passed`
-
-* After using the admin page to scoot the play deadline into the future: no change :-|
