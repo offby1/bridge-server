@@ -12,52 +12,6 @@ from bridge.seat import Seat as libSeat
 from .testutils import play_out_hand, set_auction_to
 
 
-# Who can see which cards (and when)?
-
-# a "None" player means the anonymous user.
-# cases to check:
-# (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
-# - if the tournament is complete, everyone can see everything.
-# - otherwise the tournament is running, and ...
-#   - if player is None, they can see nothing, since otherwise a player could get a new browser window, peek at the hand they're currently playing, and cheat up the yin-yang
-#   - if it's a Player, and they are not signed up for this tournament: they can see nothing, since again it'd be too easy to cheat (just sign up a new username)
-#   - if it's a Player, and they are in this tournament:
-#     - if they have not yet played this board, nope
-#     - if they have been seated at a hand with this board:
-#       - if it's their own cards, of course they can see them
-#       - if the opening lead has been played, they can also see the dummy
-#       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
-
-
-def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
-    print(f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {board=} {direction.value=}")
-    if board.tournament.is_complete:
-        print(f"{board.tournament.is_complete=} so everyone can see everything")
-        return True
-
-    if player is not None:
-        if (hand := player.hand_at_which_board_was_played(board)) is not None:
-            if hand.get_xscript().final_score() is not None:
-                return True
-
-            for d, p in hand.players_by_direction.items():
-                # everyone gets to see their own cards
-                if p == player and d == direction.value:
-                    print(
-                        f"{p.name=} == {player.name=} and {d=} == {direction.value=}: player can see own hand"
-                    )
-                    return True
-
-                # Dummy is visible after the opening lead
-                if (
-                    hand.get_xscript().num_plays > 0
-                    and hand.dummy.seat.value == d == direction.value
-                ):
-                    print(f"{hand.dummy.seat.value=} and {d=}; everyone can see the dummy")
-                    return True
-    return False
-
-
 @pytest.fixture
 def completed_tournament(nearly_completed_tournament) -> Table:
     # Complete that tournament!
@@ -83,10 +37,9 @@ def test_completed_tournament(completed_tournament) -> None:
     for player in [None, table.tournament.seated_players().first(), non_tournament_player]:
         for board in table.tournament.board_set.all():
             for direction in libSeat:
-                assert can_see_cards_at(
-                    player,
-                    board,
-                    direction,
+                assert board.can_see_cards_at(
+                    player=player,
+                    direction=direction,
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
 
@@ -99,10 +52,9 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
     for player in [None, non_tournament_player]:
         for board in table.tournament.board_set.all():
             for direction in libSeat:
-                assert not can_see_cards_at(
-                    player,
-                    board,
-                    direction,
+                assert not board.can_see_cards_at(
+                    player=player,
+                    direction=direction,
                 ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
@@ -117,10 +69,9 @@ def test_running_tournament_relevant_player_not_yet_played_board(
             hand = player.hand_at_which_board_was_played(board)
             if hand is None:
                 for direction in libSeat:
-                    assert not can_see_cards_at(
-                        player,
-                        board,
-                        direction,
+                    assert not board.can_see_cards_at(
+                        player=player,
+                        direction=direction,
                     ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
@@ -138,21 +89,19 @@ def test_player_has_played_board(
             if hand is None:
                 continue
 
-            for direction in libSeat:
-                for p, d in hand.players_by_direction.items():
-                    if p == player:
-                        assert can_see_cards_at(
-                            p,
-                            board,
-                            direction,
-                        ), f"Hey now -- {player} can't see their own cards ({board} at {direction})?!"
+            for d, p in hand.players_by_direction.items():
+                if p == player:
+                    assert board.can_see_cards_at(
+                        player=p,
+                        direction=libSeat(d),
+                    ), f"Hey now -- {player} can't see their own cards ({board} at {d})?!"
 
 
 def test_zero_cards_played(fresh_tournament) -> None:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
-    the_tournament: Tournament = Tournament.objects.first()
+    the_tournament: Tournament | None = Tournament.objects.first()
     assert the_tournament is not None
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
@@ -178,7 +127,7 @@ def test_one_card_played(fresh_tournament) -> None:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
-    the_tournament: Tournament = Tournament.objects.first()
+    the_tournament: Tournament | None = Tournament.objects.first()
     assert the_tournament is not None
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
@@ -191,6 +140,7 @@ def test_one_card_played(fresh_tournament) -> None:
         set_auction_to(Bid(level=1, denomination=Suit.CLUBS), table.current_hand)
 
         h: Hand = table.current_hand
+        assert h.player_who_may_play is not None
         leader = h.player_who_may_play.libraryThing()
         libCard = h.get_xscript().slightly_less_dumb_play().card
 
@@ -212,7 +162,7 @@ def test_52_cards_played(fresh_tournament) -> None:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
-    the_tournament: Tournament = Tournament.objects.first()
+    the_tournament: Tournament | None = Tournament.objects.first()
     assert the_tournament is not None
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
@@ -243,8 +193,8 @@ def expect_visibility(expectation_array, table: Table) -> None:
 
     for seat in seats:
         for viewer_index, viewer in enumerate([s.player for s in seats]):
-            actual = can_see_cards_at(
-                player=viewer, board=table.current_hand.board, direction=seat.libraryThing
+            actual = table.current_hand.board.can_see_cards_at(
+                player=viewer, direction=seat.libraryThing
             )
             seat_index = "NESW".index(seat.direction)
             if actual != expectation_array[seat_index][viewer_index]:
