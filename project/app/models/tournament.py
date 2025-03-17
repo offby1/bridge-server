@@ -434,7 +434,9 @@ class Tournament(models.Model):
 
         seats = Seat.objects.filter(table__in=self.table_set.all())
 
-        return Player.objects.filter(pk__in=seats.values_list("player", flat=True))
+        qs = Player.objects.filter(pk__in=seats.values_list("player", flat=True))
+        assert qs.count() <= 4
+        return qs
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
