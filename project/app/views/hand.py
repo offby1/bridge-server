@@ -110,7 +110,7 @@ def _display_and_control(
     display_cards = (
         as_dealt  # hand is over and we're reviewing it
         or hand.open_access
-        or ((as_viewed_by is not None) and as_viewed_by.has_seen_board_at(hand.board, seat))
+        or ((as_viewed_by is not None) and as_viewed_by.has_seen_cards_at(hand.board, seat))
     )
     viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 

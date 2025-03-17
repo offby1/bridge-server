@@ -419,7 +419,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
         return qs.first()
 
-    def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
+    def has_seen_cards_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         return board.what_can_they_see(player=self) != Board.PlayerVisibility.nothing
 
     @cached_property
