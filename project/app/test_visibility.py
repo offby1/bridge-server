@@ -205,6 +205,34 @@ def test_one_card_played(fresh_tournament) -> None:
         )
 
 
+def test_52_cards_played(fresh_tournament) -> None:
+    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+
+    the_tournament: Tournament = Tournament.objects.first()
+    assert the_tournament is not None
+    the_tournament.play_completion_deadline = Tomorrow
+    the_tournament.save()
+
+    with freezegun.freeze_time(Today):
+        check_for_expirations(__name__)
+        table: Table | None = Table.objects.first()
+        assert table is not None
+
+        play_out_hand(table)
+
+        expect_visibility(
+            [
+                # n, e, s, w <-- viewers
+                [1, 1, 1, 1],  # n seat
+                [1, 1, 1, 1],  # e  |
+                [1, 1, 1, 1],  # s  | (dummy)
+                [1, 1, 1, 1],  # w  v
+            ],
+            table=table,
+        )
+
+
 def expect_visibility(expectation_array, table: Table) -> None:
     __tracebackhide__ = True
 
