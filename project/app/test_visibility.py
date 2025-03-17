@@ -1,5 +1,5 @@
 import pytest
-from app.models import Board, NoMoreBoards, Player, Table
+from app.models import Board, Hand, NoMoreBoards, Player, Table
 from app.views.hand import _display_and_control
 from bridge.card import Card, Suit
 from bridge.contract import Bid
@@ -93,6 +93,30 @@ def test_running_tournament_relevant_player_not_yet_played_board(
                         board,
                         direction,
                     ), f"Whoa -- {player} can see {board} at {direction}?!"
+
+
+def test_player_has_played_board(
+    nearly_completed_tournament,
+) -> None:
+    table: Table | None = Table.objects.first()
+    assert table is not None
+
+    for player in table.tournament.seated_players():
+        board: Board
+        for board in table.tournament.board_set.all():
+            hand: Hand = player.hand_at_which_board_was_played(board)
+
+            if hand is None:
+                continue
+
+            for direction in libSeat:
+                for p, d in hand.players_by_direction.items():
+                    if p == player:
+                        assert can_see_cards_at(
+                            p,
+                            board,
+                            direction,
+                        ), f"Hey now -- {player} can't see their own cards ({board} at {direction})?!"
 
 
 def expect_visibility(expectation_array, table: Table) -> None:
