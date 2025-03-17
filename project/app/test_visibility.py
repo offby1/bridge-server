@@ -14,6 +14,23 @@ def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) ->
     return True
 
 
+@pytest.fixture
+def completed_tournament(nearly_completed_tournament) -> Table:
+    # Complete that tournament!
+    table: Table | None = Table.objects.first()
+    assert table is not None
+
+    while True:
+        play_out_hand(table)
+        try:
+            table.next_board()
+        except NoMoreBoards:
+            break
+
+    assert table.tournament.is_complete
+    return table
+
+
 # a "None" player means the anonymous user.
 # cases to check:
 # (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
@@ -29,20 +46,8 @@ def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) ->
 #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
 
-def test_completed_tournament(nearly_completed_tournament) -> None:
-    # Complete that tournament!
-    table: Table | None = Table.objects.first()
-    assert table is not None
-
-    while True:
-        play_out_hand(table)
-        try:
-            table.next_board()
-        except NoMoreBoards:
-            break
-
-    assert table.tournament.is_complete
-
+def test_completed_tournament(completed_tournament) -> None:
+    table = completed_tournament
     non_tournament_player = Player.objects.create_synthetic()
 
     # ok now try various flavors of player
