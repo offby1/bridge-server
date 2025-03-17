@@ -11,7 +11,7 @@ from .testutils import play_out_hand, set_auction_to
 # Who can see which cards (and when)?
 # our function under test should look like
 def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
-    return True
+    return board.tournament.is_complete
 
 
 @pytest.fixture
@@ -55,8 +55,26 @@ def test_completed_tournament(completed_tournament) -> None:
         for board in table.tournament.board_set.all():
             for direction in libSeat:
                 assert can_see_cards_at(
-                    None, board, direction
+                    None,
+                    board,
+                    direction,
                 ), f"Uh, {player} can't see {board} at {direction}?!"
+
+
+def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> None:
+    table: Table | None = Table.objects.first()
+    assert table is not None
+
+    non_tournament_player = Player.objects.create_synthetic()
+
+    for player in [None, non_tournament_player]:
+        for board in table.tournament.board_set.all():
+            for direction in libSeat:
+                assert not can_see_cards_at(
+                    None,
+                    board,
+                    direction,
+                ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
 def expect_visibility(expectation_array, table: Table) -> None:
