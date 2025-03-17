@@ -55,7 +55,7 @@ def test_completed_tournament(completed_tournament) -> None:
         for board in table.tournament.board_set.all():
             for direction in libSeat:
                 assert can_see_cards_at(
-                    None,
+                    player,
                     board,
                     direction,
                 ), f"Uh, {player} can't see {board} at {direction}?!"
@@ -71,7 +71,7 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
         for board in table.tournament.board_set.all():
             for direction in libSeat:
                 assert not can_see_cards_at(
-                    None,
+                    player,
                     board,
                     direction,
                 ), f"Whoa -- {player} can see {board} at {direction}?!"
@@ -89,7 +89,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
             if hand is None:
                 for direction in libSeat:
                     assert not can_see_cards_at(
-                        None,
+                        player,
                         board,
                         direction,
                     ), f"Whoa -- {player} can see {board} at {direction}?!"
