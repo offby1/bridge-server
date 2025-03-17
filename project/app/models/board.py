@@ -187,9 +187,9 @@ class Board(models.Model):
     #       - if the opening lead has been played, they can also see the dummy
     #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
-    def can_see_cards_at(self, *, player: Player | None, direction: Seat) -> bool:
+    def can_see_cards_at(self, *, player: Player | None, direction_letter: str) -> bool:
         print(
-            f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {self=} {direction.value=}"
+            f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {self=} {direction_letter=}"
         )
         if self.tournament.is_complete:
             print(f"{self.tournament.is_complete=} so everyone can see everything")
@@ -202,16 +202,16 @@ class Board(models.Model):
 
                 for d, p in hand.players_by_direction.items():
                     # everyone gets to see their own cards
-                    if p == player and d == direction.value:
+                    if p == player and d == direction_letter:
                         print(
-                            f"{p.name=} == {player.name=} and {d=} == {direction.value=}: player can see own hand"
+                            f"{p.name=} == {player.name=} and {d=} == {direction_letter=}: player can see own hand"
                         )
                         return True
 
                     # Dummy is visible after the opening lead
                     if hand.get_xscript().num_plays > 0:
                         assert hand.dummy is not None
-                        if hand.dummy.seat.value == d == direction.value:
+                        if hand.dummy.seat.value == d == direction_letter:
                             print(f"{hand.dummy.seat.value=} and {d=}; everyone can see the dummy")
                             return True
         return False

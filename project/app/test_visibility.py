@@ -39,7 +39,7 @@ def test_completed_tournament(completed_tournament) -> None:
             for direction in libSeat:
                 assert board.can_see_cards_at(
                     player=player,
-                    direction=direction,
+                    direction_letter=direction.value,
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
 
@@ -54,7 +54,7 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
             for direction in libSeat:
                 assert not board.can_see_cards_at(
                     player=player,
-                    direction=direction,
+                    direction_letter=direction.value,
                 ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
@@ -71,7 +71,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
                 for direction in libSeat:
                     assert not board.can_see_cards_at(
                         player=player,
-                        direction=direction,
+                        direction_letter=direction.value,
                     ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
@@ -93,7 +93,7 @@ def test_player_has_played_board(
                 if p == player:
                     assert board.can_see_cards_at(
                         player=p,
-                        direction=libSeat(d),
+                        direction_letter=d,
                     ), f"Hey now -- {player} can't see their own cards ({board} at {d})?!"
 
 
@@ -194,7 +194,7 @@ def expect_visibility(expectation_array, table: Table) -> None:
     for seat in seats:
         for viewer_index, viewer in enumerate([s.player for s in seats]):
             actual = table.current_hand.board.can_see_cards_at(
-                player=viewer, direction=seat.libraryThing
+                player=viewer, direction_letter=seat.direction
             )
             seat_index = "NESW".index(seat.direction)
             if actual != expectation_array[seat_index][viewer_index]:
