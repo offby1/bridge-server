@@ -15,7 +15,14 @@ from .testutils import play_out_hand, set_auction_to
 # Who can see which cards (and when)?
 # our function under test should look like
 def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
-    return board.tournament.is_complete
+    if board.tournament.is_complete:
+        return True
+    if player is not None:
+        if (hand := player.hand_at_which_board_was_played(board)) is not None:
+            for d, p in hand.players_by_direction.items():
+                if p == player and d == direction.value:
+                    return True
+    return False
 
 
 @pytest.fixture
