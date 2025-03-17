@@ -429,6 +429,13 @@ class Tournament(models.Model):
             if created:
                 logger.debug("Just signed %s up  for tournament #%s", p.name, self.display_number)
 
+    def seated_players(self) -> models.QuerySet:
+        from app.models import Player, Seat
+
+        seats = Seat.objects.filter(table__in=self.table_set.all())
+
+        return Player.objects.filter(pk__in=seats.values_list("player", flat=True))
+
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
 

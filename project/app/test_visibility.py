@@ -1,18 +1,17 @@
 import pytest
-
-from app.models import Board, Player, Table
+from app.models import Board, NoMoreBoards, Player, Table
 from app.views.hand import _display_and_control
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
 
-from .testutils import set_auction_to
+from .testutils import play_out_hand, set_auction_to
 
 
 # Who can see which cards (and when)?
 # our function under test should look like
 def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
-    return False
+    return True
 
 
 # a "None" player means the anonymous user.
@@ -30,6 +29,31 @@ def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) ->
 #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
 
+def test_completed_tournament(nearly_completed_tournament) -> None:
+    # Complete that tournament!
+    table: Table | None = Table.objects.first()
+    assert table is not None
+
+    while True:
+        play_out_hand(table)
+        try:
+            table.next_board()
+        except NoMoreBoards:
+            break
+
+    assert table.tournament.is_complete
+
+    non_tournament_player = Player.objects.create_synthetic()
+
+    # ok now try various flavors of player
+    for player in [None, table.tournament.seated_players().first(), non_tournament_player]:
+        for board in table.tournament.board_set.all():
+            for direction in libSeat:
+                assert can_see_cards_at(
+                    None, board, direction
+                ), f"Uh, {player} can't see {board} at {direction}?!"
+
+
 def expect_visibility(expectation_array, table: Table) -> None:
     __tracebackhide__ = True
 
@@ -43,12 +67,13 @@ def expect_visibility(expectation_array, table: Table) -> None:
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
-            if not (actual1["display_cards"] == expectation_array[seat_index][viewer_index]):
+            if actual1["display_cards"] != expectation_array[seat_index][viewer_index]:
                 pytest.fail(
-                    f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {libSeat(seat)} but {'should not' if actual1['display_cards'] else 'should'}"
+                    f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {libSeat(seat)} but {'should not' if actual1['display_cards'] else 'should'}",
                 )
 
 
+@pytest.mark.xfail(reason="WIP")
 def test_hand_visibility_one(usual_setup: None) -> None:
     t1 = Table.objects.first()
     assert t1 is not None

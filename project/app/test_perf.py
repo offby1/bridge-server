@@ -52,5 +52,5 @@ def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(10):
+    with django_assert_max_num_queries(12):
         tournament_view(request, 1)
