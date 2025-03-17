@@ -13,7 +13,22 @@ from .testutils import play_out_hand, set_auction_to
 
 
 # Who can see which cards (and when)?
-# our function under test should look like
+
+# a "None" player means the anonymous user.
+# cases to check:
+# (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
+# - if the tournament is complete, everyone can see everything.
+# - otherwise the tournament is running, and ...
+#   - if player is None, they can see nothing, since otherwise a player could get a new browser window, peek at the hand they're currently playing, and cheat up the yin-yang
+#   - if it's a Player, and they are not signed up for this tournament: they can see nothing, since again it'd be too easy to cheat (just sign up a new username)
+#   - if it's a Player, and they are in this tournament:
+#     - if they have not yet played this board, nope
+#     - if they have been seated at a hand with this board:
+#       - if it's their own cards, of course they can see them
+#       - if the opening lead has been played, they can also see the dummy
+#       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
+
+
 def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) -> bool:
     print(f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {board=} {direction.value=}")
     if board.tournament.is_complete:
@@ -22,6 +37,9 @@ def can_see_cards_at(player: Player | None, board: Board, direction: libSeat) ->
 
     if player is not None:
         if (hand := player.hand_at_which_board_was_played(board)) is not None:
+            if hand.get_xscript().final_score() is not None:
+                return True
+
             for d, p in hand.players_by_direction.items():
                 # everyone gets to see their own cards
                 if p == player and d == direction.value:
@@ -55,21 +73,6 @@ def completed_tournament(nearly_completed_tournament) -> Table:
 
     assert table.tournament.is_complete
     return table
-
-
-# a "None" player means the anonymous user.
-# cases to check:
-# (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
-# - if the tournament is complete, everyone can see everything.
-# - otherwise the tournament is running, and ...
-#   - if player is None, they can see nothing, since otherwise a player could get a new browser window, peek at the hand they're currently playing, and cheat up the yin-yang
-#   - if it's a Player, and they are not signed up for this tournament: they can see nothing, since again it'd be too easy to cheat (just sign up a new username)
-#   - if it's a Player, and they are in this tournament:
-#     - if they have not yet played this board, nope
-#     - if they have been seated at a hand with this board:
-#       - if it's their own cards, of course they can see them
-#       - if the opening lead has been played, they can also see the dummy
-#       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
 
 def test_completed_tournament(completed_tournament) -> None:
