@@ -188,33 +188,31 @@ class Board(models.Model):
     #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
     def can_see_cards_at(self, *, player: Player | None, direction_letter: str) -> bool:
-        print(
-            f"can_see_cards_at: {getattr(player, 'name', 'Noah Buddy')=} {self=} {direction_letter=}"
-        )
-        if self.tournament.is_complete:
-            print(f"{self.tournament.is_complete=} so everyone can see everything")
-            return True
+        match self.what_can_they_see(player=player):
+            case self.PlayerVisibility.everything:
+                return True
+            case self.PlayerVisibility.nothing:
+                return False
+            case self.PlayerVisibility.own_hand:
+                assert player is not None
+                hand = player.hand_at_which_board_was_played(self)
+                assert hand is not None
 
-        if player is not None:
-            if (hand := player.hand_at_which_board_was_played(self)) is not None:
-                if hand.get_xscript().final_score() is not None:
+                return player == hand.players_by_direction[direction_letter]
+            case self.PlayerVisibility.dummys_hand:
+                assert player is not None
+                hand = player.hand_at_which_board_was_played(self)
+                assert hand is not None
+
+                if player == hand.players_by_direction[direction_letter]:
                     return True
 
-                for d, p in hand.players_by_direction.items():
-                    # everyone gets to see their own cards
-                    if p == player and d == direction_letter:
-                        print(
-                            f"{p.name=} == {player.name=} and {d=} == {direction_letter=}: player can see own hand"
-                        )
-                        return True
-
-                    # Dummy is visible after the opening lead
-                    if hand.get_xscript().num_plays > 0:
-                        assert hand.dummy is not None
-                        if hand.dummy.seat.value == d == direction_letter:
-                            print(f"{hand.dummy.seat.value=} and {d=}; everyone can see the dummy")
-                            return True
-        return False
+                return (
+                    hand.get_xscript().num_plays > 0
+                    and hand.players_by_direction[direction_letter].libraryThing() == hand.dummy
+                )
+            case _:
+                assert False, f"Dunno what case {self.what_can_they_see(player)=} is"
 
     def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:
         if self.tournament.is_complete:
@@ -229,7 +227,7 @@ class Board(models.Model):
 
         rv = self.PlayerVisibility.own_hand
 
-        if next(hand.get_xscript().plays(), None) is not None:
+        if hand.get_xscript().num_plays > 0:
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:
