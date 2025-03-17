@@ -1,4 +1,5 @@
 import datetime
+from typing import Generator
 
 import freezegun
 import pytest
@@ -97,7 +98,8 @@ def test_player_has_played_board(
                     ), f"Hey now -- {player} can't see their own cards ({board} at {d})?!"
 
 
-def test_zero_cards_played(fresh_tournament) -> None:
+@pytest.fixture
+def tournament_starting_now(fresh_tournament) -> Generator[Table]:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
@@ -108,82 +110,65 @@ def test_zero_cards_played(fresh_tournament) -> None:
 
     with freezegun.freeze_time(Today):
         check_for_expirations(__name__)
+
         table: Table | None = Table.objects.first()
         assert table is not None
 
-        expect_visibility(
-            [
-                # n, e, s, w <-- viewers
-                [1, 0, 0, 0],  # n seat
-                [0, 1, 0, 0],  # e  |
-                [0, 0, 1, 0],  # s  |
-                [0, 0, 0, 1],  # w  v
-            ],
-            table=table,
-        )
+        yield table
 
 
-def test_one_card_played(fresh_tournament) -> None:
-    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
-    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
-
-    the_tournament: Tournament | None = Tournament.objects.first()
-    assert the_tournament is not None
-    the_tournament.play_completion_deadline = Tomorrow
-    the_tournament.save()
-
-    with freezegun.freeze_time(Today):
-        check_for_expirations(__name__)
-        table: Table | None = Table.objects.first()
-        assert table is not None
-
-        set_auction_to(Bid(level=1, denomination=Suit.CLUBS), table.current_hand)
-
-        h: Hand = table.current_hand
-        assert h.player_who_may_play is not None
-        leader = h.player_who_may_play.libraryThing()
-        libCard = h.get_xscript().slightly_less_dumb_play().card
-
-        h.add_play_from_player(player=leader, card=libCard)
-
-        expect_visibility(
-            [
-                # n, e, s, w <-- viewers
-                [1, 0, 0, 0],  # n seat
-                [0, 1, 0, 0],  # e  |
-                [1, 1, 1, 1],  # s  | (dummy)
-                [0, 0, 0, 1],  # w  v
-            ],
-            table=table,
-        )
+def test_zero_cards_played(tournament_starting_now) -> None:
+    expect_visibility(
+        [
+            # Everyone can see their own hand, but that's all.
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
+            [0, 1, 0, 0],  # e  |
+            [0, 0, 1, 0],  # s  |
+            [0, 0, 0, 1],  # w  v
+        ],
+        table=tournament_starting_now,
+    )
 
 
-def test_52_cards_played(fresh_tournament) -> None:
-    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
-    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+def test_one_card_played(tournament_starting_now) -> None:
+    h: Hand = tournament_starting_now.current_hand
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
 
-    the_tournament: Tournament | None = Tournament.objects.first()
-    assert the_tournament is not None
-    the_tournament.play_completion_deadline = Tomorrow
-    the_tournament.save()
+    assert h.player_who_may_play is not None
 
-    with freezegun.freeze_time(Today):
-        check_for_expirations(__name__)
-        table: Table | None = Table.objects.first()
-        assert table is not None
+    leader = h.player_who_may_play.libraryThing()
+    libCard = h.get_xscript().slightly_less_dumb_play().card
 
-        play_out_hand(table)
+    h.add_play_from_player(player=leader, card=libCard)
 
-        expect_visibility(
-            [
-                # n, e, s, w <-- viewers
-                [1, 1, 1, 1],  # n seat
-                [1, 1, 1, 1],  # e  |
-                [1, 1, 1, 1],  # s  | (dummy)
-                [1, 1, 1, 1],  # w  v
-            ],
-            table=table,
-        )
+    expect_visibility(
+        [
+            # Dummy's hand is visible after the opening lead.
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
+            [0, 1, 0, 0],  # e  |
+            [1, 1, 1, 1],  # s  | (dummy)
+            [0, 0, 0, 1],  # w  v
+        ],
+        table=tournament_starting_now,
+    )
+
+
+def test_52_cards_played(tournament_starting_now) -> None:
+    play_out_hand(tournament_starting_now)
+
+    expect_visibility(
+        [
+            # Eva buddy see eva thang.
+            # n, e, s, w <-- viewers
+            [1, 1, 1, 1],  # n seat
+            [1, 1, 1, 1],  # e  |
+            [1, 1, 1, 1],  # s  | (dummy)
+            [1, 1, 1, 1],  # w  v
+        ],
+        table=tournament_starting_now,
+    )
 
 
 def expect_visibility(expectation_array, table: Table) -> None:
@@ -192,13 +177,14 @@ def expect_visibility(expectation_array, table: Table) -> None:
     seats = table.current_seats()
 
     for seat in seats:
+        seat_index = "NESW".index(seat.direction)
+
         for viewer_index, viewer in enumerate([s.player for s in seats]):
             actual = table.current_hand.board.can_see_cards_at(
                 player=viewer, direction_letter=seat.direction
             )
-            seat_index = "NESW".index(seat.direction)
-            if actual != expectation_array[seat_index][viewer_index]:
-                print(f"{actual=} {seat=} {seat_index=} {viewer.name=} {viewer_index=}")
+            expected = expectation_array[seat_index][viewer_index]
+            if actual != expected:
                 pytest.fail(
                     f"{viewer} {'can' if actual else 'can not'} see {seat.direction} but {'should not' if actual else 'should'}",
                 )
