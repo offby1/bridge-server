@@ -1,6 +1,10 @@
+import datetime
+
+import freezegun
 import pytest
-from app.models import Board, Hand, NoMoreBoards, Player, Table
-from app.views.hand import _display_and_control
+
+from app.models import Board, Hand, NoMoreBoards, Player, Table, Tournament
+from app.models.tournament import check_for_expirations
 from bridge.card import Card, Suit
 from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
@@ -119,22 +123,46 @@ def test_player_has_played_board(
                         ), f"Hey now -- {player} can't see their own cards ({board} at {direction})?!"
 
 
+def test_zero_cards_played(fresh_tournament) -> None:
+    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
+
+    the_tournament: Tournament = Tournament.objects.first()
+    assert the_tournament is not None
+    the_tournament.play_completion_deadline = Tomorrow
+    the_tournament.save()
+
+    with freezegun.freeze_time(Today):
+        check_for_expirations(__name__)
+        table: Table | None = Table.objects.first()
+        assert table is not None
+
+        expect_visibility(
+            [
+                # n, e, s, w <-- viewers
+                [1, 0, 0, 0],  # n seat
+                [0, 1, 0, 0],  # e  |
+                [0, 0, 1, 0],  # s  |
+                [0, 0, 0, 1],  # w  v
+            ],
+            table=table,
+        )
+
+
 def expect_visibility(expectation_array, table: Table) -> None:
     __tracebackhide__ = True
 
-    for seat in table.current_hand.players_by_direction:
-        for viewer in table.current_hand.players_by_direction:
-            actual1 = _display_and_control(
-                hand=table.current_hand,
-                seat=libSeat(seat),
-                as_viewed_by=table.current_hand.players_by_direction[viewer],
-                as_dealt=False,
+    seats = table.current_seats()
+
+    for seat in seats:
+        for viewer_index, viewer in enumerate([s.player for s in seats]):
+            actual = can_see_cards_at(
+                player=viewer, board=table.current_hand.board, direction=seat.libraryThing
             )
-            seat_index = "NESW".index(seat)
-            viewer_index = "NESW".index(viewer)
-            if actual1["display_cards"] != expectation_array[seat_index][viewer_index]:
+            seat_index = "NESW".index(seat.direction)
+            if actual != expectation_array[seat_index][viewer_index]:
                 pytest.fail(
-                    f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {libSeat(seat)} but {'should not' if actual1['display_cards'] else 'should'}",
+                    f"{viewer} {'can' if actual else 'can not'} see {seat.direction} but {'should not' if actual else 'should'}",
                 )
 
 

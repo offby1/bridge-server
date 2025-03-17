@@ -121,7 +121,7 @@ class Table(models.Model):
     @cached_property
     def all_seats(self) -> models.QuerySet:
         """
-        After filtering this or whatever, be sure to take a slice of just four items
+        After filtering this or whatever, be sure to take a slice of the first four items
         """
         return self.seat_set.order_by("-id").select_related("player__user")
 
