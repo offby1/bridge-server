@@ -33,6 +33,8 @@ class Command(BaseCommand):
                 "I dunno, creating a fleet of killer bots, in production, seems like a bad idea?"
             )
 
+        call_command("create_insecure_superuser")
+
         t: Tournament
         with transaction.atomic():
             boards_per_round_per_table = 3
