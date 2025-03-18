@@ -13,3 +13,5 @@ http://localhost:9000/hand/ shows 7 hands, not the expected 15.
 | ✔      |            1 |     4 |    15 | synthetic_randy, synthetic_wallace, synthetic_marla, synthetic_d'angelo          | five Spades played by synthetic_marla, sitting South: Down 5                      |
 | ✔      |            1 |     5 |    13 | synthetic_stringer, synthetic_marlo, synthetic_norman, synthetic_bunk            | three Clubs played by synthetic_marlo, sitting East: Down 4                       |
 ```
+
+... also, after "just superuser", changing _prez to have a password, and logging in as him, I noticed the bots in a loop: noticing they're not seated, so exiting and trying again ... over and over.

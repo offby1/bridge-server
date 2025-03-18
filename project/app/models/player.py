@@ -185,23 +185,19 @@ class Player(TimeStampedModel):
             logger.debug(f"Bailing out early because {service_directory=} is not a directory")
             return
 
-        def run_in_slash_service(command: list[str]) -> None:
-            subprocess.run(
-                command,
-                cwd=service_directory,
-                check=False,
-                capture_output=True,
-            )
-
         def svc(flags: str) -> None:
             # No problem blocking here -- experience shows this doesn't take long
-            run_in_slash_service(
+            proc = subprocess.run(
                 [
                     "svc",
                     flags,
                     str(self.pk),
                 ],
+                cwd=service_directory,
+                check=False,
+                capture_output=True,
             )
+            logger.info("svc %s %s => %s", flags, self.pk, proc.stdout.decode())
 
         if not self.allow_bot_to_play_for_me or not self.currently_seated:
             logger.info(
@@ -243,11 +239,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.allow_bot_to_play_for_me = desired_state
             self.save()
-            self._control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_current_seat()
         self._check_synthetic()
+        self._control_bot()
         super().save(*args, **kwargs)
 
     def _check_synthetic(self) -> None:
