@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.core.cache import cache
-from django.core.signals import request_started
+from django.core.signals import request_finished
 from django.db import models, transaction
 from django.dispatch import receiver
 from django.utils import timezone
@@ -89,7 +89,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
-@receiver(request_started)
+@receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
