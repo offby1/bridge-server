@@ -117,6 +117,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
 ]
+LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
 
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 
