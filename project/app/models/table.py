@@ -38,6 +38,14 @@ class NoMoreBoards(Exception):
     pass
 
 
+class RoundIsOver(NoMoreBoards):
+    pass
+
+
+class TournamentIsComplete(NoMoreBoards):
+    pass
+
+
 class TableHasNoHand(TableException):
     pass
 
@@ -212,7 +220,7 @@ class Table(models.Model):
             if self.tournament.is_complete:
                 msg = f"{self.tournament} is complete; thus there are no more boards"
                 logger.debug("%s", msg)
-                raise NoMoreBoards(msg)
+                raise TournamentIsComplete(msg)
 
             logger.debug("%s: someone wants the next board", self)
             if self.hand_set.exists() and not self.hand_is_complete:
@@ -224,13 +232,16 @@ class Table(models.Model):
             mvmt = t.get_movement()
 
             num_completed_rounds, num_hands_this_round = t.rounds_played()
+            logger.info("%s", f"{num_completed_rounds=} {num_hands_this_round=}")
             settings = mvmt.table_settings_by_table_number[self.display_number - 1]
             if num_completed_rounds > len(settings):
-                raise NoMoreBoards(f"Round {num_completed_rounds + 1} is complete")
+                raise TournamentIsComplete(
+                    f"I think the tournament is over, don't you?  {num_completed_rounds=} > len({settings=})"
+                )
             playersandboardsforoneround = settings[num_completed_rounds - 1]
 
             if num_hands_this_round >= len(playersandboardsforoneround.board_group.boards):
-                raise NoMoreBoards(f"Round {num_completed_rounds + 1} is complete")
+                raise RoundIsOver(f"Round {num_completed_rounds + 1} is complete")
 
             b = playersandboardsforoneround.board_group.boards[num_hands_this_round]
             logger.info(

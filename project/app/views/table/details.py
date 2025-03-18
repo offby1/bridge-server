@@ -198,6 +198,14 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         msg = f"{e}: dunno what's happening here tbh"
         logger.warning(msg)
         return Forbid(e)
+    except app.models.table.RoundIsOver as e:
+        msg = f"{e}: I guess I should move boards and players? TODO"
+        messages.info(request, msg)
+        logger.info(msg)
+
+        return HttpResponseRedirect(
+            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
+        )
     except app.models.table.NoMoreBoards as e:
         msg = f"{e}: I guess you just gotta wait for this tournament to finish"
         messages.info(request, msg)
