@@ -186,7 +186,7 @@ class Player(TimeStampedModel):
 
         def svc(flags: str) -> None:
             # No problem blocking here -- experience shows this doesn't take long
-            proc = subprocess.run(
+            subprocess.run(
                 [
                     "svc",
                     flags,
@@ -196,7 +196,6 @@ class Player(TimeStampedModel):
                 check=False,
                 capture_output=True,
             )
-            logger.info("svc %s %s => %s", flags, self.pk, proc.stdout.decode())
 
         if not self.allow_bot_to_play_for_me or not self.currently_seated:
             logger.info(

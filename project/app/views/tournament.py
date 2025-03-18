@@ -22,10 +22,9 @@ from .misc import logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-@logged_in_as_player_required()
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
-    viewer: app.models.Player | None = request.user.player
-    assert viewer is not None
+    viewer: app.models.Player | None = getattr(request.user, "player", None)
+
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     context = {
         "tournament": t,
@@ -46,10 +45,10 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             context["movement_headers"] = tab_dict["headers"]
             context["movement_rows"] = tab_dict["rows"]
 
-    viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
-    logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
+    if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
+        viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
+        logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
 
-    if viewer.partner is not None and not viewer.currently_seated:
         if not viewer_signup.exists():
             logger.debug("#%s's status is %s", t.display_number, t.status())
             if t.status() is app.models.tournament.OpenForSignup:
@@ -93,7 +92,6 @@ def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
     return HttpResponseRedirect(reverse("app:tournament", kwargs=dict(pk=t.pk)))
 
 
-@logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     now = timezone.now()
 
