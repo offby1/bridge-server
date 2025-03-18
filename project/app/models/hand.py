@@ -212,9 +212,11 @@ class Hand(TimeStampedModel):
         num_completed_rounds, hands_played_this_round = t.rounds_played()
         logger.debug("%s", f"{self}: Checking if this round (for {t}) is over.")
         if hands_played_this_round == 0:
-            logger.warning(f"Gevalt! {hands_played_this_round=}; I guess I gotta do something")
             logger.info("%s", f"{t.rounds_played()=}")
             if num_completed_rounds < len(t.get_movement().table_settings_by_table_number):
+                logger.warning(
+                    f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(t.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
+                )
                 t.next_movement_round()
         else:
             logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")

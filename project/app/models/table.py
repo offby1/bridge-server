@@ -139,9 +139,11 @@ class Table(models.Model):
     def unseat_players(self, *, reason=None) -> None:
         seat: modelSeat
         victim_names = []
+        logger.debug("Unseating players from table #%s", self.display_number)
         for seat in self.seat_set.filter(direction__in="NE"):
             seat.player.unseat_partnership(reason=reason)
             victim_names.append(seat.player.name)
+            victim_names.append(seat.player.partner.name)
         if victim_names:
             logger.debug("Unseated %s from table #%s", ", ".join(victim_names), self.display_number)
         else:

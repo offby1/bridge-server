@@ -137,6 +137,11 @@ class Movement:
     def update_tables_and_seat_players_for_round(
         self, *, tournament: Tournament, zb_round_number: int
     ) -> None:
+        logger.debug(
+            "Hello world! tournament #%d, round_number #%d",
+            tournament.display_number,
+            zb_round_number,
+        )
         from app.models import Player, Table
 
         assert 0 <= zb_round_number

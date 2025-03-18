@@ -26,7 +26,8 @@ class SeatManager(models.Manager):
     def create(self, *args, **kwargs) -> Seat:
         rv = super().create(*args, **kwargs)
         player: Player = rv.player
-        player.toggle_bot(player.allow_bot_to_play_for_me)
+        player.currently_seated = True
+        player.toggle_bot(player.allow_bot_to_play_for_me)  # this saves the player
         logger.debug(
             "New seat! %s %s at table #%s", player.name, rv.direction, rv.table.display_number
         )
