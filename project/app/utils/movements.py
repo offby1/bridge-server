@@ -172,7 +172,7 @@ class Movement:
             player1 = Player.objects.get(pk=pk1)
             player2 = Player.objects.get(pk=pk2)
 
-            logger.warning("fetching table #%s", zb_table_index + 1)
+            logger.debug("fetching table #%s", zb_table_index + 1)
             table: Table = Table.objects.get(
                 tournament=tournament, display_number=zb_table_index + 1
             )
