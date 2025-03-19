@@ -174,7 +174,9 @@ class Table(models.Model):
 
     @property
     def hand_is_complete(self) -> bool:
-        return self.current_hand.is_complete
+        rv = self.current_hand.is_complete
+        logger.debug("%s", f"{self.current_hand=} {self.current_hand.is_complete=}")
+        return rv
 
     @property
     def dealer(self):
@@ -240,7 +242,7 @@ class Table(models.Model):
                 raise TournamentIsComplete(
                     f"I think the tournament is over, don't you?  {num_completed_rounds=} > len({settings=})"
                 )
-            playersandboardsforoneround = settings[num_completed_rounds - 1]
+            playersandboardsforoneround = settings[num_completed_rounds]
 
             if num_hands_this_round >= len(playersandboardsforoneround.board_group.boards):
                 raise RoundIsOver(f"Round {num_completed_rounds + 1} is complete")
