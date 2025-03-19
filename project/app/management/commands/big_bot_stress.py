@@ -1,36 +1,27 @@
 import datetime
-import os
 
 from app.models.player import Player
-from app.models.table import Table
 from app.models.signups import TournamentSignup
+from app.models.table import Table
 from app.models.tournament import Tournament, check_for_expirations
-from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from .utils import is_safe
+
 
 class Command(BaseCommand):
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         group = parser.add_mutually_exclusive_group()
         group.add_argument("--min-players", type=int, default=0)
         group.add_argument("--tiny", default=False, action="store_true")
 
     def handle(self, *_args, **options) -> None:
-        is_safe = False
-
-        if settings.DEBUG:
-            is_safe = True
-
-        if os.environ.get("DOCKER_CONTEXT") in {"hetz", "orbstack"}:
-            is_safe = True
-
-        self.stderr.write(f"{settings.DEBUG=} {os.environ.get('DOCKER_CONTEXT')}")
-
-        if not is_safe:
+        if not is_safe(self.stderr):
+            msg = "I dunno, creating a fleet of killer bots, in production, seems like a bad idea?"
             raise CommandError(
-                "I dunno, creating a fleet of killer bots, in production, seems like a bad idea?"
+                msg,
             )
 
         call_command("create_insecure_superuser")
@@ -43,7 +34,7 @@ class Command(BaseCommand):
             self.stderr.write(f"{options=}; {boards_per_round_per_table=}")
 
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
-                boards_per_round_per_table=boards_per_round_per_table
+                boards_per_round_per_table=boards_per_round_per_table,
             )
 
             p: Player
@@ -75,7 +66,7 @@ class Command(BaseCommand):
                 if TournamentSignup.objects.filter(player__in={p, p.partner}).exists():
                     TournamentSignup.objects.filter(player__in={p, p.partner}).delete()
                     self.stderr.write(
-                        f"{p.name} was already signed up for some tournament, but ain't no' mo'"
+                        f"{p.name} was already signed up for some tournament, but ain't no' mo'",
                     )
 
                 t.sign_up(p)
