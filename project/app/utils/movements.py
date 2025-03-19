@@ -176,6 +176,9 @@ class Movement:
 
             pair1, pair2 = normal_pairs
 
+            assert (
+                len(set(pair1.id_ + pair2.id_)) == 4
+            ), f"Hmm, {normal_pairs} isn't exactly four players"
             pk1 = pair1.id_[0]
             pk2 = pair2.id_[0]
             player1 = Player.objects.get(pk=pk1)
