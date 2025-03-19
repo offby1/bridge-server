@@ -134,6 +134,10 @@ class Movement:
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
+
+    # TODO -- it kinda feels like this method, which is all about side effects, should live in the Tournament class, and
+    # not here; *this* class should be functional, and merely provide information about which players and boards go to
+    # which tables and when.
     def update_tables_and_seat_players_for_round(
         self, *, tournament: Tournament, zb_round_number: int
     ) -> None:

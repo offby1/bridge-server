@@ -277,8 +277,10 @@ class Tournament(models.Model):
         num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_table_number)
-        boards_per_round = num_tables * mvmt.boards_per_round_per_table
-        return divmod(num_completed_hands, boards_per_round)
+        boards_per_round_per_tournament = num_tables * mvmt.boards_per_round_per_table
+        rv = divmod(num_completed_hands, boards_per_round_per_tournament)
+        logger.debug(f"{num_completed_hands=} {boards_per_round_per_tournament=} => {rv=}")
+        return rv
 
     @staticmethod
     def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:

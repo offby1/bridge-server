@@ -144,6 +144,10 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     return HttpResponse()
 
 
+# TODO -- perhaps rename this view to something like
+# "OK_im_done_reviewing_the_recent_hand_now_show_me_the_current_hand", and *not* have it call "table.next_board()"
+# (which has side effects).  Instead, assume that the final call or play in the hand triggers the check for "this
+# tournament round is over; proceed to the next round".
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:

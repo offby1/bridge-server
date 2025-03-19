@@ -12,6 +12,8 @@ After "just drop follow", then "just stress --tiny", <http://localhost:9000/hand
 
 It feels like I'm trying to reseat players after *one* table has finished, whereas I should wait until *all* tables (in that tournament) have finished.
 
+I also get the feeling that there's some important event that I'm failing to communicate to the bots -- "tournament round is over", perhaps.
+
 OK this is getting too complex!  Maybe I should
 
 * add a method to the "movement" class that's basically "gimme boards and players for round 3, table 2", and test that; then it should be easy to invoke it from the django-y stuff
