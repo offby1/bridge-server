@@ -355,7 +355,7 @@ class Hand(TimeStampedModel):
         seats = self.table.current_seats()
         for direction_int in self.board.hand_strings_by_direction:
             lib_seat = libSeat(direction_int)
-            seat = next(s for s in seats if s.direction == direction_int)
+            seat = next((s for s in seats if s.direction == direction_int), None)
             assert seat is not None, f"Alas! No seat {direction_int=} at {self}"
             name = seat.player_name
             rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
