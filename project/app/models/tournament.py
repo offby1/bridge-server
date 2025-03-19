@@ -460,7 +460,11 @@ class Tournament(models.Model):
             except NoPairs:
                 pass
             else:
-                rv += f"; {num_complete_rounds} rounds played out of {self.table_set.count()}"
+                # TODO -- formalize this logic and introduce an actual subclass of TournamentStatus that describes it
+                if num_complete_rounds < self.table_set.count():
+                    rv += f"; expired: {num_complete_rounds} rounds played out of {self.table_set.count()}"
+                else:
+                    rv += f"; all {num_complete_rounds} rounds played"
 
         return rv
 
