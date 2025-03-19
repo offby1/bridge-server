@@ -15,3 +15,7 @@ http://localhost:9000/hand/ shows 7 hands, not the expected 15.
 ```
 
 ... also, after "just superuser", changing _prez to have a password, and logging in as him, I noticed the bots in a loop: noticing they're not seated, so exiting and trying again ... over and over.
+
+OK this is getting too complex!  Maybe I should
+
+* add a method to the "movement" class that's basically "gimme boards and players for round 3, table 2", and test that; then it should be easy to invoke it from the django-y stuff
