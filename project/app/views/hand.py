@@ -66,6 +66,13 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
 
 
 def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
+    if request.user.is_anonymous:
+        # If our caller decided that the anonymouse user can see the hand, then the tournament must be over, so let 'em
+        # see everything.
+        return {
+            "display_bidding_box": False,
+            "show_auction_history": True,
+        }
     player = request.user.player  # type: ignore
     seat = player.current_seat
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
@@ -443,7 +450,7 @@ def _maybe_redirect_or_error(
     player_visibility: app.models.Board.PlayerVisibility,
     request_viewname: str,
 ) -> HttpResponse | None:
-    def redirect_or_none(destination_viewname: str) -> HttpResponseRedirect | None:
+    def redirect_if_different_view(destination_viewname: str) -> HttpResponseRedirect | None:
         if destination_viewname == request_viewname:
             return None
         return HttpResponseRedirect(reverse(destination_viewname, args=[hand_pk]))
@@ -458,16 +465,16 @@ def _maybe_redirect_or_error(
             app.models.Board.PlayerVisibility.dummys_hand
             | app.models.Board.PlayerVisibility.own_hand
         ):
-            if (response := redirect_or_none("app:hand-detail")) is not None:
+            if (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
 
         case app.models.Board.PlayerVisibility.everything:
             if hand_is_complete:
-                if (response := redirect_or_none("app:hand-archive")) is not None:
+                if (response := redirect_if_different_view("app:hand-archive")) is not None:
                     return response
                 return None
 
-            elif (response := redirect_or_none("app:hand-detail")) is not None:
+            elif (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
             else:
                 logger.debug(
@@ -567,12 +574,13 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-@logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    player = request.user.player
-    assert player is not None
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
+    player = None if request.user.is_anonymous else request.user.player
 
     from app.models.board import Board
 
@@ -597,7 +605,10 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         | _bidding_box_context_for_hand(request, hand)
     )
 
-    if (other_hand := player.hand_at_which_board_was_played(hand.board)) is not None:
+    if (
+        player is not None
+        and (other_hand := player.hand_at_which_board_was_played(hand.board)) is not None
+    ):
         context["hand_at_which_I_played_this_board"] = {
             "link": reverse("app:hand-detail", args=[other_hand.pk]),
             "description": str(other_hand),
