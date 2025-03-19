@@ -19,5 +19,4 @@ class SwallowAnnoyingExceptionMiddleware:
             return self.get_response(request)
         except asyncio.exceptions.CancelledError as e:
             msg = f"Ignoring {e=} because I don't know what else to do"
-            logger.warning("%s", msg)
             return HttpResponse(escape(msg))

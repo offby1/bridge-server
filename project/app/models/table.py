@@ -229,7 +229,7 @@ class Table(models.Model):
             logger.debug("%s: someone wants the next board", self)
             if self.hand_set.exists() and not self.hand_is_complete:
                 msg = f"Naw, {self} isn't complete; {self.hand_set.all()}; no next board for you"
-                logger.warning("%s", msg)
+                logger.info("%s", msg)
                 raise TableException(msg)
 
             t: Tournament = self.tournament
