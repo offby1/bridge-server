@@ -307,6 +307,9 @@ class Hand(TimeStampedModel):
             self.abandoned_because = (
                 f"{[p.name for p in unseated_players]} left their seats for the lobby"
             )
+            logger.info(
+                "I just realized that %s is abandoned because %s", self, self.abandoned_because
+            )
             self.save()
             return True
 
@@ -318,6 +321,7 @@ class Hand(TimeStampedModel):
         if not moved_player_tuples:
             return False
         self.abandoned_because = f"Some players are now at other tables: {moved_player_tuples}"
+        logger.info("I just realized that %s is abandoned because %s", self, self.abandoned_because)
         self.save()
         return True
 
@@ -542,6 +546,7 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
+            logger.debug("Nobody may call now because this hand is abandoned.")
             return None
 
         if self.auction.status is libAuction.Incomplete:
@@ -549,6 +554,7 @@ class Hand(TimeStampedModel):
             assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
+        logger.debug("Nobody may call now because the auction is settled.")
         return None
 
     @property
@@ -556,9 +562,11 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
+            logger.debug("Nobody may play now because this hand is abandoned.")
             return None
 
         if not self.auction.found_contract:
+            logger.debug("Nobody may play now because this hand's auction is settled.")
             return None
 
         seat_who_may_play = self.get_xscript().next_seat_to_play()

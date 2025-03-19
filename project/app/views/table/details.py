@@ -87,7 +87,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
         return Forbid(e)
 
     if hand.player_who_may_call is None:
-        return Forbid(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
+        return Forbid(f"Nobody is allowed to call now at hand {hand.pk}")
 
     from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
 
