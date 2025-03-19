@@ -8,7 +8,8 @@ After "just drop follow", then "just stress --tiny", <http://localhost:9000/hand
 | good   |            1 |     2 |     1 | _bodie, _tony gray, _kima, _sydnor | one Club played by _sydnor, sitting West: Made contract with 1 overtricks |
 | X      |            1 |     2 |     2 | _bodie, _tony gray, _kima, _sydnor | Auction incomplete                                                        |
 ```
-... also, after the bots have stopped playing, they go into a loop: noticing they're not seated, so exiting and trying again ... over and over.
+
+... also, after the bots have stopped playing, they go into a loop: noticing they're not seated, so exiting and trying again ... over and over.  I'm supposed to *stop* the bots when they're unseated; somehow I've failed to do this.   Or maybe I'm accidentally restarting the bot when I shouldn't.
 
 It feels like I'm trying to reseat players after *one* table has finished, whereas I should wait until *all* tables (in that tournament) have finished.
 

@@ -197,7 +197,7 @@ class Player(TimeStampedModel):
                 capture_output=True,
             )
 
-        if not self.allow_bot_to_play_for_me or not self.currently_seated:
+        if not (self.allow_bot_to_play_for_me and self.currently_seated):
             logger.info(
                 f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
             )
@@ -222,7 +222,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file = run_file.rename(run_dir / "run")
 
         svc("-u")
-        logger.info("Started bot for %s", self)
+        logger.info(f"Started bot for {self}, {self.current_seat=}")
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
