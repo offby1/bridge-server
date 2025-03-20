@@ -21,6 +21,7 @@ The one time I paid close attention, I notice the bots started looping *after dj
 
 - django restarted because I've got docker running with `--watch` and I edited a file.
 - `bring_up_all_api_bots` indeed checks to see if the players are seated, and "_kima" e.g. was clearly not seated, and yet ... it brought her up.
+- I just rewrote `bring_up_all_api_bots` as `synchronize_bot_states`; let's see if that helps any
 
 I also get the feeling that there's some important event that I'm failing to communicate to the bots -- "tournament round is over", perhaps.
 

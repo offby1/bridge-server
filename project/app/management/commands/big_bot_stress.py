@@ -87,7 +87,7 @@ class Command(BaseCommand):
             # - seat everyone at newly-created tables, creating (and signing up) some synths if necessary
             check_for_expirations(sender="big_bot_stress")
 
-            call_command("bring_up_all_api_bots")
+            call_command("synchronize_bot_states")
 
             tables_updated: list[str] = []
             for table in Table.objects.all():
