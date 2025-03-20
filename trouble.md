@@ -25,7 +25,26 @@ The one time I paid close attention, I notice the bots started looping *after dj
 
 I also get the feeling that there's some important event that I'm failing to communicate to the bots -- "tournament round is over", perhaps.
 
+## single player doesn't get to play
+
+So now I've done `just drop follow`, and rather than `just stress`, I signed up & logged in as my old friend bob.  I got a synthetic partner, created a tournament, and skipped the deadline.  And yet ... I see
+
+    Tournament #1
+    Movement
+
+    | table | round 1                                              |
+    |-------+------------------------------------------------------|
+    |     1 | bob, _prez/The Fabulous Phantoms plays board group A |
+
+    Running until March 20, 2025, 8:15 a.m. PDT.
+
+I.e., rather than create synthetic opponents, I got phantoms :-|
+
+I suspect I should *never* allow phantoms, and instead *always* create synths.
+
 ## overall unmanageable complexity
 OK this is getting too complex!  Maybe I should
 
 * add a method to the "movement" class that's basically "gimme boards and players for round 3, table 2", and test that; then it should be easy to invoke it from the django-y stuff
+
+* remove all references to models in movements.py.  That'd bring it back to how it was when I first was thinking about it, and would make it easier to test.
