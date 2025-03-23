@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("app", "0074_seat_app_seat_no_more_than_four_directions_per_table_and_more"),
+        ("app", "0076_auto_20250323_1630"),
         ("app", "0079_alter_hand_abandoned_because"),
     ]
 

@@ -329,7 +329,7 @@ class Tournament(models.Model):
         players = (
             Player.objects.order_by("pk")
             .filter(partner__isnull=False)
-            .filter(currently_seated=False)
+            .filter(current_seat__isnull=True)
             .filter(pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player"))
             .select_related("user")
             .select_related("partner")
