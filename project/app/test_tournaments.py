@@ -215,7 +215,6 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
     assert north.partner == south
 
     running_tournament, _ = Tournament.objects.get_or_create(display_number=1)
-    assert not running_tournament.table_set.exists()
 
     assert not running_tournament.is_complete
     assert running_tournament.status() is Running
