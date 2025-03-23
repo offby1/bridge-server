@@ -61,6 +61,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             tour.delete()
             return
 
+    for p in tour.signed_up_players().filter(partner__isnull=False, current_seat__isnull=True):
         for _ in range(2):
             signed_up_pairs = list(tour.signed_up_pairs())
 

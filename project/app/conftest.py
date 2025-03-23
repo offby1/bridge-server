@@ -53,14 +53,8 @@ def nobody_seated_nobody_signed_up(db: None) -> None:
     call_command(
         "loaddata",
         "usual_setup",
-        "--exclude",
-        "app.seat",
-        "--exclude",
-        "app.hand",
-        "--exclude",
-        "app.table",
     )
-    Player.objects.all().update(currently_seated=False)
+    Player.objects.all().update(current_seat=None)
     for p in Player.objects.all():
         for b in p.boards_played.all():
             p.boards_played.remove(b)
