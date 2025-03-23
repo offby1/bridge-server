@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 import logging
 import time
 from typing import TYPE_CHECKING
@@ -13,12 +14,12 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 
-from app.models.board import Board
 from app.models.common import SEAT_CHOICES
 from app.models.hand import Hand
 from app.models.seat import Seat as modelSeat
 from app.models.tournament import Tournament
 from app.models.types import PK
+from app.utils import movements
 
 if TYPE_CHECKING:
     import bridge.table
@@ -100,9 +101,15 @@ class TableManager(models.Manager):
 
         return t
 
+    def create_for_tournament(self, tournament) -> Generator[Table]:
+        movement = tournament.get_movement()
+        wat = movement.table_settings_by_table_number
+        logger.warning(f"{wat=}")
+        for tn in sorted(wat.keys()):
+            table, _ = self.get_or_create(display_number=tn + 1, tournament=tournament)
+            yield table
 
-# What, no fields?  Well, Django supplies a primary key for us; and more importantly, it will put a "seat_set" attribute
-# onto each instance.
+
 class Table(models.Model):
     seat_set: models.Manager[modelSeat]
     hand_set: models.Manager[Hand]
@@ -121,6 +128,41 @@ class Table(models.Model):
     # View code adds these
     summary_for_this_viewer: tuple[str, str | int]
     played_hands_string: str
+
+    def next_hand_for_this_round(self, settings: movements.PlayersAndBoardsForOneRound):
+        hand_count = self.hand_set.filter(
+            board__group=settings.board_group.letter
+        ).count()  # assume they're all complete
+        board = settings.board_group.boards[hand_count]
+        from app.models import Player, Seat
+
+        Seat.objects.create(
+            direction="N", table=self, player=Player.objects.get(pk=settings.quartet.ns.id_[0])
+        )
+        Seat.objects.create(
+            direction="S", table=self, player=Player.objects.get(pk=settings.quartet.ns.id_[1])
+        )
+        Seat.objects.create(
+            direction="E", table=self, player=Player.objects.get(pk=settings.quartet.ew.id_[0])
+        )
+        Seat.objects.create(
+            direction="W", table=self, player=Player.objects.get(pk=settings.quartet.ew.id_[1])
+        )
+        new_hand = Hand.objects.create(board=board, table=self)
+        logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
+        for channel in (
+            self.event_channel_name,
+            *[s.player.event_channel_name for s in self.current_seats()],
+        ):
+            send_event(
+                channel=channel,
+                event_type="message",
+                data={
+                    "new-hand": new_hand.pk,
+                    "time": time.time(),
+                    "tempo_seconds": self.tempo_seconds,
+                },
+            )
 
     @property
     def event_channel_name(self):
@@ -218,57 +260,6 @@ class Table(models.Model):
             else:
                 in_progress += 1
         return (completed, in_progress > 0)
-
-    def next_board(self) -> Board:
-        with transaction.atomic():
-            if self.tournament.is_complete:
-                msg = f"{self.tournament} is complete; thus there are no more boards"
-                logger.debug("%s", msg)
-                raise TournamentIsComplete(msg)
-
-            logger.debug("%s: someone wants the next board", self)
-            if self.hand_set.exists() and not self.hand_is_complete:
-                msg = f"Naw, {self} isn't complete; {self.hand_set.all()}; no next board for you"
-                logger.info("%s", msg)
-                raise TableException(msg)
-
-            t: Tournament = self.tournament
-            mvmt = t.get_movement()
-
-            num_completed_rounds, num_hands_this_round = t.rounds_played()
-            logger.info("%s", f"{num_completed_rounds=} {num_hands_this_round=}")
-            settings = mvmt.table_settings_by_table_number[self.display_number - 1]
-            if num_completed_rounds > len(settings):
-                raise TournamentIsComplete(
-                    f"I think the tournament is over, don't you?  {num_completed_rounds=} > len({settings=})"
-                )
-            playersandboardsforoneround = settings[num_completed_rounds]
-
-            if num_hands_this_round >= len(playersandboardsforoneround.board_group.boards):
-                raise RoundIsOver(f"Round {num_completed_rounds + 1} is complete")
-
-            b = playersandboardsforoneround.board_group.boards[num_hands_this_round]
-            logger.info(
-                "%s",
-                f"{num_completed_rounds=} {num_hands_this_round=} {playersandboardsforoneround=} {b=}",
-            )
-            new_hand = Hand.objects.create(board=b, table=self)
-            logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
-            for channel in (
-                self.event_channel_name,
-                *[s.player.event_channel_name for s in self.current_seats()],
-            ):
-                send_event(
-                    channel=channel,
-                    event_type="message",
-                    data={
-                        "new-hand": new_hand.pk,
-                        "time": time.time(),
-                        "tempo_seconds": self.tempo_seconds,
-                    },
-                )
-
-            return b
 
     @property
     def current_board(self):

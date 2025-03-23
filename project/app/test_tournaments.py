@@ -14,7 +14,6 @@ import app.views.table.details
 from app.models import (
     Board,
     Hand,
-    NoMoreBoards,
     Player,
     TableException,
     Tournament,
@@ -64,10 +63,6 @@ def play_out_round(tournament: Tournament) -> None:
             break
 
         play_out_hand(table)
-        try:
-            table.next_board()
-        except NoMoreBoards:
-            break
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(

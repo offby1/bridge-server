@@ -8,13 +8,11 @@ import bridge.contract
 import bridge.seat
 from django.conf import settings
 from django.core.paginator import Paginator
-import django.db.utils
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
 )
-from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -144,51 +142,12 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     return HttpResponse()
 
 
-# TODO -- perhaps rename this view to something like
-# "OK_im_done_reviewing_the_recent_hand_now_show_me_the_current_hand", and *not* have it call "table.next_board()"
-# (which has side effects).  Instead, assume that the final call or play in the hand triggers the check for "this
-# tournament round is over; proceed to the next round".
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    def deal_with_completed_tournament():
-        assert (
-            table.tournament.is_complete
-        ), f"Hey man why'd you call me if {table.tournament} isn't complete"
-        tournament, created = (
-            app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
-        )
-        assert not tournament.is_complete
-        assert tournament != table.tournament
-        msg = f"{table.tournament} is complete"
-
-        if created:
-            msg += f", so created {tournament}"
-        else:
-            msg += f"; {tournament} is the current one"
-
-        messages.info(request, msg)
-        logger.info(msg)
-
-        return HttpResponseRedirect(reverse("app:lobby"))
-
     assert request.user.player is not None
-    logger.debug("%s wants the next_board on table %s", request.user.player.name, pk)
 
     table: app.models.Table = get_object_or_404(app.models.Table, pk=pk)
-
-    if request.user.player.current_table_pk() != pk:
-        msg = f"{request.user.player.name} may not get the next board at {table} because they ain't sittin' there ({request.user.player.current_table_pk()=} != {pk=})"
-        logger.info("%s", msg)
-        messages.error(request, msg)
-        # Perhaps they were just playing at that table, and the tournament ended, so we ejected them.  In that case,
-        # they might want to at least watch the rest of the tournament.
-        return HttpResponseRedirect(
-            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
-        )
-
-    if table.tournament.is_complete:
-        return deal_with_completed_tournament()
 
     # If this table already has an "active" hand, just redirect to that.
     ch = table.current_hand
@@ -196,38 +155,7 @@ def new_board_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         logger.debug("%s has an active hand %s, so redirecting to that", table, ch.pk)
         return HttpResponseRedirect(reverse("app:hand-detail", args=[ch.pk]))
 
-    try:
-        table.next_board()
-    except app.models.hand.HandError as e:
-        msg = f"{e}: dunno what's happening here tbh"
-        logger.warning(msg)
-        return Forbid(e)
-    except app.models.table.RoundIsOver as e:
-        msg = f"{e}: I guess I should move boards and players? TODO"
-        messages.info(request, msg)
-        logger.info(msg)
-
-        return HttpResponseRedirect(
-            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
-        )
-    except app.models.table.NoMoreBoards as e:
-        msg = f"{e}: I guess you just gotta wait for this tournament to finish"
-        messages.info(request, msg)
-        logger.info(msg)
-
-        return HttpResponseRedirect(
-            reverse("app:table-list") + f"?tournament={table.tournament.pk}"
-        )
-    except (django.db.utils.IntegrityError, app.models.table.TableException) as e:
-        msg = f"{e}: I guess someone else requested the next board already, or something"
-        messages.info(request, msg)
-        logger.info(msg)
-
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
-
-    logger.debug('Called "next_board" on %s', table)
-
-    return HttpResponseRedirect(reverse("app:hand-detail", args=[table.current_hand.pk]))
+    return HttpResponseRedirect(reverse("app:hand-archive", args=[table.current_hand.pk]))
 
 
 @require_http_methods(["POST"])

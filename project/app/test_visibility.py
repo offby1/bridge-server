@@ -4,7 +4,7 @@ from typing import Generator
 import freezegun
 import pytest
 
-from app.models import Board, Hand, NoMoreBoards, Player, Table, Tournament
+from app.models import Board, Hand, Player, Table, Tournament
 from app.models.tournament import check_for_expirations
 from bridge.card import Suit
 from bridge.contract import Bid
@@ -21,10 +21,6 @@ def completed_tournament(nearly_completed_tournament) -> Table:
 
     while True:
         play_out_hand(table)
-        try:
-            table.next_board()
-        except NoMoreBoards:
-            break
 
     assert table.tournament.is_complete
     return table

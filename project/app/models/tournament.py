@@ -49,7 +49,6 @@ class NoPairs(Exception):
 
 
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
-    p: Player
     with transaction.atomic():
         if tour.table_set.exists():
             logger.debug("'%s' looks like it's has tables already; bailing", tour)
@@ -61,32 +60,15 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             tour.delete()
             return
 
-    for p in tour.signed_up_players().filter(partner__isnull=False, current_seat__isnull=True):
-        for _ in range(2):
-            signed_up_pairs = list(tour.signed_up_pairs())
-
-            if len(signed_up_pairs) % 2 == 0:
-                break
-
-            from app.models import Player
-
-            p2 = Player.objects.create_synthetic()
-            p2.partner = Player.objects.create_synthetic()
-            p2.partner.partner = p2
-            p2.partner.save()
-            p2.save()
-
-            for p in (p2, p2.partner):
-                TournamentSignup.objects.create(tournament=tour, player=p)
-
-            logger.debug("Created synths %s and %s for '%s'", p2, p2.partner, tour)
-
-        assert len(signed_up_pairs) % 2 == 0
-        logger.debug("%d pairs are waiting", len(signed_up_pairs))
+        TournamentSignup.objects.create_synths_for(tour)
 
         movement = tour.get_movement()
-        movement.allocate_initial_tables(tournament=tour)
-        movement.update_tables_and_seat_players_for_round(zb_round_number=0, tournament=tour)
+
+        from app.models import Table
+
+        for table in Table.objects.create_for_tournament(tour):
+            settings = movement.table_settings_by_table_number[table.display_number - 1]
+            table.next_hand_for_this_round(settings[0])
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -344,9 +326,13 @@ class Tournament(models.Model):
         else:
             mvmt = self.get_movement()
             num_completed_rounds, _ = self.rounds_played()
-            mvmt.update_tables_and_seat_players_for_round(
-                tournament=self, zb_round_number=num_completed_rounds
-            )
+            logger.warning(f"{num_completed_rounds=} {mvmt.num_rounds=}")
+            if num_completed_rounds == mvmt.num_rounds:
+                logger.warning("I guess this tournament is over")
+                return
+            for table in self.table_set.all():
+                settings = mvmt.table_settings_by_table_number[table.display_number - 1]
+                table.next_hand_for_this_round(settings[num_completed_rounds])
 
     def _cache_key(self) -> str:
         return f"tournament:{self.pk}"
@@ -463,13 +449,6 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
-    def tables(self) -> models.QuerySet:
-        from app.models import Table
-
-        rv = Table.objects.filter(hand__in=self.hands()).distinct()
-        logger.debug("'%s' has %d tables", self, rv.count())
-        return rv
-
     def maybe_complete(self) -> None:
         with transaction.atomic():
             if self.is_complete:
@@ -501,7 +480,7 @@ class Tournament(models.Model):
             f"{explanation=}; ejecting partnerships from tables.",
         )
         with transaction.atomic():
-            for t in self.tables():
+            for t in self.table_set.all():
                 for seat in t.seat_set.all():
                     p: Player = seat.player
 
@@ -525,9 +504,9 @@ class Tournament(models.Model):
                 explanation=f"Tournament is complete; its play deadline was {self.play_completion_deadline}"
             )
             logger.debug(
-                "Marked myself '%s' as complete, and ejected all pairs from %s",
+                "Marked myself '%s' as complete, and ejected all pairs from tables %s",
                 self,
-                self.tables(),
+                ", ".join([f"#{t.display_number}" for t in self.table_set.all()]),
             )
         super().save(*args, **kwargs)
 

@@ -149,8 +149,8 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
+                    logger.info("Unseating %s from %s", p.name, p.current_seat)
                     p.unseat_me()
-                    logger.info("Unseated %s", p.name)
         if reason is not None and self.partner is not None:
             channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
             send_event(

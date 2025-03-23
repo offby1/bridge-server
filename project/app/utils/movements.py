@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 import more_itertools
 import tabulate
 
-from app.models.common import SEAT_CHOICES
 from app.models.types import PK
 
 if TYPE_CHECKING:
@@ -107,6 +106,10 @@ class Movement:
         print()
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
+    @property
+    def num_rounds(self) -> int:
+        return len(self.table_settings_by_table_number)
+
     def tabulate_me(self) -> dict[str, Any]:
         rows: list[list[str]] = []
         headers = ["table"]
@@ -121,100 +124,12 @@ class Movement:
             rows.append(row)
         return {"rows": rows, "headers": headers}
 
-    def allocate_initial_tables(self, tournament) -> None:
-        from app.models import Table
-
-        logger.warning(
-            "%s", f"{tournament.display_number=} {self.table_settings_by_table_number.keys()=}"
-        )
-        for tn, table_settings in sorted(self.table_settings_by_table_number.items()):
-            Table.objects.create(tournament=tournament)
-        for t in Table.objects.all():
-            logger.warning("%s", f"{t.tournament.display_number=}: {t.display_number=}")
-
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
 
     # TODO -- it kinda feels like this method, which is all about side effects, should live in the Tournament class, and
     # not here; *this* class should be functional, and merely provide information about which players and boards go to
     # which tables and when.
-    def update_tables_and_seat_players_for_round(
-        self, *, tournament: Tournament, zb_round_number: int
-    ) -> None:
-        logger.debug(
-            "Hello world! tournament #%d, round_number #%d",
-            tournament.display_number,
-            zb_round_number,
-        )
-        from app.models import Player, Table
-
-        assert 0 <= zb_round_number
-        if zb_round_number >= len(self.table_settings_by_table_number[0]):
-            from app.models import NoMoreBoards
-
-            msg = f"Tournament #{tournament.display_number} only has {len(self.table_settings_by_table_number[0])} rounds, but you asked for {zb_round_number=}"
-            raise NoMoreBoards(msg)
-
-        zb_table_index: int
-        table_settings: list[PlayersAndBoardsForOneRound]
-        for zb_table_index, table_settings in sorted(self.table_settings_by_table_number.items()):
-            ts = table_settings[zb_round_number]
-            assert ts.zb_round_number == zb_round_number
-            phantom_pairs, normal_pairs = ts.quartet.partition_into_phantoms_and_normals()
-
-            if phantom_pairs:
-                assert len(normal_pairs) == 1
-                assert len(phantom_pairs) == 1
-
-                # Don't create a table; just inform the normal pair that they're sitting out this round
-                for pk in normal_pairs[0].id_:
-                    Player.objects.get(pk=pk).unseat_partnership(
-                        reason=f"You're sitting out round {zb_round_number + 1}"
-                    )
-                    break  # we only need to unseat one of the two partners
-                continue
-
-            pair1, pair2 = normal_pairs
-
-            assert (
-                len(set(pair1.id_ + pair2.id_)) == 4
-            ), f"Hmm, {normal_pairs} isn't exactly four players"
-            pk1 = pair1.id_[0]
-            pk2 = pair2.id_[0]
-            player1 = Player.objects.get(pk=pk1)
-            player2 = Player.objects.get(pk=pk2)
-
-            logger.debug("fetching table #%s", zb_table_index + 1)
-            table: Table = Table.objects.get(
-                tournament=tournament, display_number=zb_table_index + 1
-            )
-
-            # Whover's currently at the table gotta make room
-            table.unseat_players(
-                reason=f"You're about to be reseated for round {zb_round_number + 1}"
-            )
-
-            # The new tentants gotta leave their current table
-            player1.unseat_partnership()
-            player2.unseat_partnership()
-
-            # TODO -- this is a copy of code in TableManager.create_with_two_partnerships
-            from app.models import Seat
-
-            for seat, player in zip(
-                SEAT_CHOICES, (player1, player2, player1.partner, player2.partner)
-            ):
-                Seat.objects.create(
-                    direction=seat,
-                    player=player,
-                    table=table,
-                )
-
-            table.next_board()
-
-            logger.debug(
-                f"{zb_table_index=} {zb_round_number=} {table_settings[zb_round_number]=} updated seats for {table}"
-            )
 
     def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
         return list(self.table_settings_by_table_number.items())
