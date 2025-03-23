@@ -109,7 +109,9 @@ class Player(TimeStampedModel):
 
     # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
     # partnership splits up.
-    currently_seated = models.BooleanField(default=False)
+    current_seat = models.ForeignKey["Seat"](
+        to="Seat", null=True, on_delete=models.SET_NULL, related_name="I_dunno"
+    )
     allow_bot_to_play_for_me = models.BooleanField(default=False)
     synthetic = models.BooleanField(default=False)
 
@@ -121,6 +123,10 @@ class Player(TimeStampedModel):
     )
 
     boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+
+    @property
+    def currently_seated(self) -> bool:
+        return self.current_seat is not None
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -136,7 +142,8 @@ class Player(TimeStampedModel):
         return rv
 
     def unseat_me(self) -> None:
-        self.currently_seated = False
+        self.current_seat = None
+        self.save()
         self._control_bot()
 
     # Note that this player has been exposed to some information from the given board, which means we will not allow
@@ -238,14 +245,10 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             raise ValidationError("The 'synthetic' field cannot be changed.")
 
     def _check_current_seat(self) -> None:
-        if not self.currently_seated:
+        if self.current_seat is None:
             return
 
-        my_seats = Seat.objects.filter(player=self)
-
-        assert (
-            my_seats.exists()
-        ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
+        assert self.current_seat.player == self, f"Somehow {self.current_seat.player} is not {self}"
 
     def libraryThing(self) -> bridge.table.Player:
         seat = self.current_seat
@@ -341,11 +344,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.partner.partner = None
             self.partner.unseat_me()
-            self.partner.save(update_fields=["partner", "currently_seated"])
+            self.partner.save(update_fields=["partner", "current_seat"])
 
             self.partner = None
             self.unseat_me()
-            self.save(update_fields=["partner", "currently_seated"])
+            self.save(update_fields=["partner", "current_seat"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
@@ -361,13 +364,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             return None
 
         return self.current_seat.table
-
-    @property
-    def current_seat(self) -> Seat | None:
-        if not self.currently_seated:
-            return None
-
-        return Seat.objects.filter(player=self).order_by("-id").first()
 
     def dealt_cards(self) -> list[bridge.card.Card]:
         seat = self.current_seat
@@ -481,7 +477,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             existing = (
                 Player.objects.filter(synthetic=True)
                 .filter(partner__isnull=False)
-                .filter(currently_seated=False)
+                .filter(current_seat=None)
                 .exclude(partner=self)
             )
             if existing.count() >= 2:
@@ -524,5 +520,5 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "currently_seated"]
-    list_filter = ["currently_seated"]
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "current_seat"]
+    list_filter = ["current_seat"]

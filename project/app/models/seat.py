@@ -99,7 +99,7 @@ class Seat(models.Model):
         with transaction.atomic():
             self._check_table_consistency()
             super().save(*args, **kwargs)
-            self.player.currently_seated = True
+            self.player.current_seat = self
             self.player.save()
 
     class Meta:

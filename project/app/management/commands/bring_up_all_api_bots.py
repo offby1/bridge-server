@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
         for bp in Player.objects.filter(
-            currently_seated=True,
+            current_seat=None,
         ).filter(allow_bot_to_play_for_me=True):
             self.stderr.write(f"{bp.name} ... ", ending="")
 

@@ -157,7 +157,7 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
+      "current_seat": 1,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": false,
@@ -173,7 +173,7 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
+      "current_seat": 2,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
@@ -189,7 +189,7 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
+      "current_seat": 3,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
@@ -205,7 +205,7 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
+      "current_seat": 4,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,
