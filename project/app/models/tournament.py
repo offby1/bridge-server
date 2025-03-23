@@ -102,7 +102,6 @@ def check_for_expirations(sender, **kwargs) -> None:
         logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
 
         for t in incompletes:
-            t.maybe_complete()
             logger.debug("Checking '%s': ", t)
             logger.debug(
                 "signup deadline %s %s passed",
@@ -194,16 +193,16 @@ class TournamentManager(models.Manager):
 
     def get_or_create_tournament_open_for_signups(self, **kwargs) -> tuple[Tournament, bool]:
         with transaction.atomic():
-            a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
-            incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
-                models.Q(signup_deadline__gte=a_few_seconds_from_now)
+            now = timezone.now()
+            incomplete_and_open_tournaments_qs = self.filter(
+                models.Q(signup_deadline__gte=now), is_complete=False
             )
 
-            logger.debug(f"{a_few_seconds_from_now=} {incomplete_and_open_tournaments_qs=}")
+            logger.debug(f"{now=} {incomplete_and_open_tournaments_qs=}")
             if not incomplete_and_open_tournaments_qs.exists():
                 logger.debug(
                     "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
-                    a_few_seconds_from_now,
+                    now,
                 )
                 new_tournament = self.create(**kwargs)
                 logger.debug("... namely '%s'", new_tournament)
@@ -218,16 +217,6 @@ class TournamentManager(models.Manager):
             )
 
             assert first_incomplete is not None
-            first_incomplete.maybe_complete()
-
-            if first_incomplete.is_complete:
-                new_tournament = self.create(**kwargs)
-                logger.debug(
-                    "%s was incomplete but now I just completed it; created a new empty tournament %s",
-                    first_incomplete.short_string(),
-                    new_tournament.short_string(),
-                )
-                return new_tournament, True
 
             logger.debug(
                 f"An incomplete tournament (#{first_incomplete.display_number}) already exists; no need to create a new one",
