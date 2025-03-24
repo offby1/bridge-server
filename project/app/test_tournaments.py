@@ -326,10 +326,8 @@ def test_end_of_round_stuff_happens(usual_setup) -> None:
     play_out_hand(table)
     assert tour.rounds_played() == (0, 1)
 
-    table.next_board()
     play_out_hand(table)
     assert tour.rounds_played() == (0, 2)
 
-    table.next_board()
     play_out_hand(table)
     assert tour.rounds_played() == (1, 0)
