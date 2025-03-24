@@ -1,11 +1,10 @@
 import logging
 
 import pytest
-from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Table, Tournament
+from .models import Hand, Play, Player, Tournament
 from .models.tournament import check_for_expirations
 
 
@@ -87,23 +86,3 @@ def two_boards_one_is_complete(two_boards_one_of_which_is_played_almost_to_compl
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
     check_for_expirations(__name__)
-
-
-@pytest.fixture
-def second_setup(usual_setup):
-    new_player_names = ["n2", "e2", "s2", "w2"]
-    for name in new_player_names:
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-
-    Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
-    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-
-    table = Table.objects.create_with_two_partnerships(
-        p1=Player.objects.get_by_name("n2"),
-        p2=Player.objects.get_by_name("e2"),
-        tournament=Tournament.objects.first(),
-    )
-    table.next_board()
-    return table
