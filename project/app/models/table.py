@@ -135,44 +135,41 @@ class Table(models.Model):
         board = settings.board_group.boards[hand_count]
         from app.models import Player, Seat
 
-        def ensure_player_at_seat(*, direction: str, player: Player) -> None:
-            current_seat = getattr(player, "current_seat", None)
+        def ensure_partners_at_seats(*, first_direction: str, first_player: Player) -> None:
+            first_player.unseat_partnership(reason="Some new round is starting")
 
-            if current_seat is None:
-                logger.debug(f"{current_seat=} so we gotta get to work")
-            elif current_seat.table != self:
-                logger.debug(f"{current_seat.table=} != {self=} so we gotta get to work")
-            elif current_seat.direction != direction:
-                logger.debug(f"{current_seat.direction=} != {direction=} so we gotta get to work")
-            else:
-                logger.debug(
-                    f"{player} is already sitting {direction=}  at {self}; no need to do anything"
+            for p, dir_ in zip(
+                [first_player, first_player.partner],
+                [first_direction, {"N": "S", "E": "W"}[first_direction]],
+            ):
+                seat, created = Seat.objects.update_or_create(
+                    player=p, defaults={"direction": dir_, "table": self}
                 )
-                return
+                logger.info(f"{created=} {seat} {seat.player_name}")
 
-            player.unseat_me()
-            player.partner.unseat_me()
-            seat, created = Seat.objects.update_or_create(
-                player=player, defaults={"direction": direction, "table": self}
-            )
-            logger.info(f"{created=} {seat} {seat.player_name}")
+        ensure_partners_at_seats(
+            first_direction="N", first_player=Player.objects.get(pk=settings.quartet.ns.id_[0])
+        )
+        ensure_partners_at_seats(
+            first_direction="E", first_player=Player.objects.get(pk=settings.quartet.ew.id_[0])
+        )
 
-        ensure_player_at_seat(
-            direction="N", player=Player.objects.get(pk=settings.quartet.ns.id_[0])
-        )
-        ensure_player_at_seat(
-            direction="S", player=Player.objects.get(pk=settings.quartet.ns.id_[1])
-        )
-        ensure_player_at_seat(
-            direction="E", player=Player.objects.get(pk=settings.quartet.ew.id_[0])
-        )
-        ensure_player_at_seat(
-            direction="W", player=Player.objects.get(pk=settings.quartet.ew.id_[1])
-        )
         assert self.seat_set.select_related("player").count() == 4
-        for p in Player.objects.all():
-            print(f"{p.name=} {p.pk=} {p.current_seat=} {getattr(p.current_seat, 'table', None)=}")
-        assert Player.objects.filter(current_seat__table=self) == 4
+        for s in Seat.objects.all():
+            logger.debug("%s", f"{s.table} {s.direction}: {s.player.name}")
+        logger.debug("At this table:")
+        for p in Player.objects.filter(current_seat__table=self):
+            logger.debug(
+                "%s",
+                f"{p.name=} {p.pk=} {p.current_seat=} {getattr(p.current_seat, 'table', None)=}",
+            )
+        logger.debug("Elsewhere:")
+        for p in Player.objects.exclude(current_seat__table=self):
+            logger.debug(
+                "%s",
+                f"{p.name=} {p.pk=} {p.current_seat=} {getattr(p.current_seat, 'table', None)=}",
+            )
+        assert Player.objects.filter(current_seat__table=self).count() == 4
         new_hand = Hand.objects.create(board=board, table=self)
         logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
         for channel in (

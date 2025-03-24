@@ -24,10 +24,11 @@ class SeatException(Exception):
 
 class SeatManager(models.Manager):
     @staticmethod
-    def _update_player(seat):
+    def _update_player(seat: Seat) -> None:
         seat.player.current_seat = seat
         seat.player._control_bot()
         seat.player.save()
+        seat._check_consistency()
         logger.debug(
             "New or update seat! %s %s at table #%s",
             seat.player.name,
@@ -92,8 +93,9 @@ class Seat(models.Model):
     def named_direction(self):
         return SEAT_CHOICES[self.direction]
 
-    def _check_table_consistency(self):
+    def _check_consistency(self):
         if self.player is None:
+            logger.warning(f"{self}: no player, no problem")
             return
         if self.table is None:
             return
@@ -104,18 +106,23 @@ class Seat(models.Model):
         if self.player.partner.current_table is None:
             return
 
-        if self.table is None:
-            return
-
         if self.player.partner.current_table != self.table:
             msg = f"Whoa thar friend {self.player}'s partner {self.player.partner} is already seated at {self.player.partner.current_table} but this is {self.table}!!"
             raise SeatException(
                 msg,
             )
 
+        if self.player.current_seat not in (None, self):
+            msg = f"Uh, {self.player.current_seat=} but I am {self=}"
+            raise SeatException(
+                msg,
+            )
+
+        logger.warning(f"Everything looks good -- {self.player.name=}'s current_seat is me")
+
     def save(self, *args, **kwargs):
         with transaction.atomic():
-            self._check_table_consistency()
+            self._check_consistency()
             super().save(*args, **kwargs)
             self.player.current_seat = self
             self.player.save()
