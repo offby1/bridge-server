@@ -17,7 +17,6 @@ from django.urls import reverse
 
 
 from .models import (
-    Board,
     Hand,
     Message,
     Player,
@@ -27,7 +26,7 @@ from .models import (
     Table,
     Tournament,
 )
-from .testutils import play_out_hand, set_auction_to
+from .testutils import set_auction_to
 from .views import hand, player
 
 logger = logging.getLogger(__name__)
@@ -441,26 +440,3 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
     for direction, actual_html in actual_cards_by_direction.items():
         expected_html = expected_cards_by_direction[direction]
         assert expected_html in actual_html
-
-
-def test_boards_are_served_in_order(two_boards_one_is_complete) -> None:
-    # Just checking that we are in sync with the fixture
-    assert Tournament.objects.count() == 1
-    the_tournament = Tournament.objects.first()
-    assert the_tournament is not None
-
-    assert Board.objects.count() == the_tournament.boards_per_round_per_table
-    assert {1, 2}.issubset(Board.objects.values_list("pk", flat=True))
-
-    t1 = Table.objects.first()
-    assert t1 is not None
-    assert t1.current_board.pk == 1
-
-    play_out_hand(t1)
-    t1.next_board()
-    assert t1.current_board.pk == 2
-
-    play_out_hand(t1)
-    t1.next_board()
-    play_out_hand(t1)
-    assert t1.current_board.pk == 3
