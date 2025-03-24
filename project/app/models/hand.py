@@ -437,6 +437,7 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
+            self.table.tournament.maybe_next_board()
             self.table.tournament.maybe_finalize_round()
             self.table.tournament.maybe_complete()
             self.send_event_to_players_and_hand(
@@ -497,6 +498,7 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
+            self.table.tournament.maybe_next_board()
             self.table.tournament.maybe_finalize_round()
             self.table.tournament.maybe_complete()
 

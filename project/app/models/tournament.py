@@ -449,6 +449,33 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
+    def maybe_next_board(self) -> None:
+        logger.info("At least one table just finished a hand.")
+        t: Table
+        all_complete = True
+        for t in self.table_set.all():
+            if t.hand_is_complete:
+                logger.info("%s's hand is complete", t)
+            else:
+                logger.info("%s's hand is not complete", t)
+                all_complete = False
+                break
+        if all_complete:
+            num_completed_rounds, completed_hands_this_round = self.rounds_played()
+            if completed_hands_this_round == 0:
+                logger.debug(
+                    "Well, completed_hands_this_round is zero, so I guess we don't need new boards"
+                )
+                return
+            movement = self.get_movement()
+            logger.info(
+                "Gosh, I guess all %d tables have completed their hands.  If only I knew what to do.",
+                self.table_set.count(),
+            )
+            for t in self.table_set.all():
+                settings = movement.table_settings_by_table_number[t.display_number - 1]
+                t.next_hand_for_this_round(settings[num_completed_rounds])
+
     def maybe_finalize_round(self) -> None:
         num_completed_rounds, hands_played_this_round = self.rounds_played()
         logger.debug("%s", f"{self}: Checking if this round (for {self}) is over.")
