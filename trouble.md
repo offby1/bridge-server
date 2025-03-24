@@ -1,5 +1,9 @@
 # So much trouble
 
+## looping
+
+- `test_completing_one_tournament_deletes_related_signups` causes an endless loop
+
 ## abandoned hands
 After "just drop follow", then "just stress --tiny", <http://localhost:9000/hand/> shows half the hands are abandoned, and the e/w players haven't moved.
 
