@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, MutableMapping
 
 import bridge.seat
 from django.contrib import admin
@@ -23,15 +23,29 @@ class SeatException(Exception):
 
 
 class SeatManager(models.Manager):
-    def create(self, *args, **kwargs) -> Seat:
-        rv = super().create(*args, **kwargs)
-        player: Player = rv.player
-        player.current_seat = rv
+    @staticmethod
+    def _update_player(seat):
+        player: Player = seat.player
+        player.current_seat = seat
         player.toggle_bot(player.allow_bot_to_play_for_me)  # this saves the player
         logger.debug(
-            "New seat! %s %s at table #%s", player.name, rv.direction, rv.table.display_number
+            "New or update seat! %s %s at table #%s",
+            player.name,
+            seat.direction,
+            seat.table.display_number,
         )
+
+    def create(self, *args, **kwargs) -> Seat:
+        rv = super().create(*args, **kwargs)
+        self._update_player(rv)
         return rv
+
+    def update_or_create(
+        self, defaults: MutableMapping[str, Any] | None = None, **kwargs: Any
+    ) -> tuple[Any, bool]:
+        rv1, rv2 = super().update_or_create(defaults, **kwargs)
+        self._update_player(rv1)
+        return rv1, rv2
 
 
 class Seat(models.Model):

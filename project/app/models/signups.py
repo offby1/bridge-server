@@ -21,8 +21,14 @@ class TournamentSignupManager(models.Manager):
             signed_up_pairs = list(tour.signed_up_pairs())
 
             if len(signed_up_pairs) % 2 == 0:
+                logger.debug(
+                    f"{len(signed_up_pairs)=} is even, so there's no need to create any synthetic players."
+                )
                 break
 
+            logger.debug(
+                f"{len(signed_up_pairs)=} is odd, so we will create one synthetic player partnership (i.e., two players)."
+            )
             p2 = Player.objects.create_synthetic()
             p2.partner = Player.objects.create_synthetic()
             p2.partner.partner = p2

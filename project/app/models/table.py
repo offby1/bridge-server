@@ -103,10 +103,9 @@ class TableManager(models.Manager):
 
     def create_for_tournament(self, tournament) -> Generator[Table]:
         movement = tournament.get_movement()
-        wat = movement.table_settings_by_table_number
-        logger.warning(f"{wat=}")
-        for tn in sorted(wat.keys()):
-            table, _ = self.get_or_create(display_number=tn + 1, tournament=tournament)
+        for tn in sorted(movement.table_settings_by_table_number.keys()):
+            table, created = self.get_or_create(display_number=tn + 1, tournament=tournament)
+            logger.debug(f"{created=} {table}")
             yield table
 
 
@@ -136,17 +135,38 @@ class Table(models.Model):
         board = settings.board_group.boards[hand_count]
         from app.models import Player, Seat
 
-        Seat.objects.create(
-            direction="N", table=self, player=Player.objects.get(pk=settings.quartet.ns.id_[0])
+        def ensure_player_at_seat(*, direction: str, player: Player) -> None:
+            current_seat = getattr(player, "current_seat", None)
+
+            if current_seat is None:
+                logger.debug(f"{current_seat=} so we gotta get to work")
+            elif current_seat.table != self:
+                logger.debug(f"{current_seat.table=} != {self=} so we gotta get to work")
+            elif current_seat.direction != direction:
+                logger.debug(f"{current_seat.direction=} != {direction=} so we gotta get to work")
+            else:
+                logger.debug(
+                    f"{player} is already sitting {direction=}  at {self}; no need to do anything"
+                )
+                return
+
+            player.unseat_me()
+            seat, created = Seat.objects.update_or_create(
+                player=player, defaults={"direction": direction, "table": self}
+            )
+            logger.info(f"{created=} {seat} {seat.player_name}")
+
+        ensure_player_at_seat(
+            direction="N", player=Player.objects.get(pk=settings.quartet.ns.id_[0])
         )
-        Seat.objects.create(
-            direction="S", table=self, player=Player.objects.get(pk=settings.quartet.ns.id_[1])
+        ensure_player_at_seat(
+            direction="S", player=Player.objects.get(pk=settings.quartet.ns.id_[1])
         )
-        Seat.objects.create(
-            direction="E", table=self, player=Player.objects.get(pk=settings.quartet.ew.id_[0])
+        ensure_player_at_seat(
+            direction="E", player=Player.objects.get(pk=settings.quartet.ew.id_[0])
         )
-        Seat.objects.create(
-            direction="W", table=self, player=Player.objects.get(pk=settings.quartet.ew.id_[1])
+        ensure_player_at_seat(
+            direction="W", player=Player.objects.get(pk=settings.quartet.ew.id_[1])
         )
         new_hand = Hand.objects.create(board=board, table=self)
         logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
