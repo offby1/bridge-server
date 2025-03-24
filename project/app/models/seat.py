@@ -25,12 +25,12 @@ class SeatException(Exception):
 class SeatManager(models.Manager):
     @staticmethod
     def _update_player(seat):
-        player: Player = seat.player
-        player.current_seat = seat
-        player.toggle_bot(player.allow_bot_to_play_for_me)  # this saves the player
+        seat.player.current_seat = seat
+        seat.player._control_bot()
+        seat.player.save()
         logger.debug(
             "New or update seat! %s %s at table #%s",
-            player.name,
+            seat.player.name,
             seat.direction,
             seat.table.display_number,
         )

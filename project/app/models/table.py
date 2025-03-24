@@ -151,6 +151,7 @@ class Table(models.Model):
                 return
 
             player.unseat_me()
+            player.partner.unseat_me()
             seat, created = Seat.objects.update_or_create(
                 player=player, defaults={"direction": direction, "table": self}
             )
@@ -168,6 +169,10 @@ class Table(models.Model):
         ensure_player_at_seat(
             direction="W", player=Player.objects.get(pk=settings.quartet.ew.id_[1])
         )
+        assert self.seat_set.select_related("player").count() == 4
+        for p in Player.objects.all():
+            print(f"{p.name=} {p.pk=} {p.current_seat=} {getattr(p.current_seat, 'table', None)=}")
+        assert Player.objects.filter(current_seat__table=self) == 4
         new_hand = Hand.objects.create(board=board, table=self)
         logger.debug("Table %s now has a new hand: %s", self.pk, new_hand.pk)
         for channel in (
