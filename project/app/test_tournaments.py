@@ -63,6 +63,8 @@ def play_out_round(tournament: Tournament) -> None:
             break
 
         play_out_hand(table)
+        if (num_completed_rounds, hands_this_round) == tournament.rounds_played():
+            pytest.fail("we seem to not be making any progress")
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
