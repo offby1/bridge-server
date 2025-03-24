@@ -205,22 +205,6 @@ class Hand(TimeStampedModel):
 
     abandoned_because = models.CharField(max_length=200, null=True)
 
-    def maybe_finalize_round(self) -> None:
-        from app.models.tournament import Tournament
-
-        t: Tournament = self.table.tournament
-        num_completed_rounds, hands_played_this_round = t.rounds_played()
-        logger.debug("%s", f"{self}: Checking if this round (for {t}) is over.")
-        if hands_played_this_round == 0:
-            logger.info("%s", f"{t.rounds_played()=}")
-            if num_completed_rounds < len(t.get_movement().table_settings_by_table_number):
-                logger.warning(
-                    f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(t.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
-                )
-                t.next_movement_round()
-        else:
-            logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
-
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined hand")
         if (
@@ -453,7 +437,7 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            self.maybe_finalize_round()
+            self.table.tournament.maybe_finalize_round()
             self.table.tournament.maybe_complete()
             self.send_event_to_players_and_hand(
                 data={
@@ -513,7 +497,7 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            self.maybe_finalize_round()
+            self.table.tournament.maybe_finalize_round()
             self.table.tournament.maybe_complete()
 
             self.send_event_to_players_and_hand(

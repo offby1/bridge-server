@@ -449,6 +449,19 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
+    def maybe_finalize_round(self) -> None:
+        num_completed_rounds, hands_played_this_round = self.rounds_played()
+        logger.debug("%s", f"{self}: Checking if this round (for {self}) is over.")
+        if hands_played_this_round == 0:
+            logger.info("%s", f"{self.rounds_played()=}")
+            if num_completed_rounds < len(self.get_movement().table_settings_by_table_number):
+                logger.warning(
+                    f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(self.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
+                )
+                self.next_movement_round()
+        else:
+            logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
+
     def maybe_complete(self) -> None:
         with transaction.atomic():
             if self.is_complete:
