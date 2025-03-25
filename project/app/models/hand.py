@@ -29,7 +29,6 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 
 from . import Board
 from .player import Player
-from .seat import Seat
 from .tournament import Tournament
 from .types import PK, PK_from_str
 from .utils import assert_type
@@ -38,8 +37,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     from django.db.models.manager import RelatedManager
-
-    from . import Table
 
 logger = logging.getLogger(__name__)
 
@@ -184,26 +181,32 @@ class Hand(TimeStampedModel):
 
     north = models.ForeignKey["Player"](
         "Player",
+        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="north",
     )
     east = models.ForeignKey["Player"](
         "Player",
+        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="east",
     )
     south = models.ForeignKey["Player"](
         "Player",
+        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="south",
     )
     west = models.ForeignKey["Player"](
         "Player",
+        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="west",
     )
 
-    table_display_number = models.SmallIntegerField()
+    table_display_number = models.SmallIntegerField(
+        null=True,  # TODO -- remove this once we've migrated
+    )
 
     open_access = models.BooleanField(
         default=False,
@@ -239,10 +242,8 @@ class Hand(TimeStampedModel):
             tour.is_complete = True
             tour.save()
 
-            from .table import TableException
-
             msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
-            raise TableException(msg)
+            raise Exception(msg)
 
     @property
     def event_channel_name(self):
@@ -258,33 +259,9 @@ class Hand(TimeStampedModel):
     def players(self) -> models.QuerySet:
         return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
 
-    # TODO -- maybe https://www.better-simple.com/django/2025/01/01/complex-django-filters-with-subquery/ has some hints
-    # for orm-ifying this
-    def players_current_seats(self):
-        return Seat.objects.raw(
-            """
-        SELECT
-            MAX(APP_SEAT.ID) AS ID
-        FROM
-            APP_SEAT
-            JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
-        WHERE
-            APP_PLAYER.ID IN (
-                SELECT
-                    APP_PLAYER.ID AS PLAYER_ID
-                FROM
-                    PUBLIC.APP_HAND
-                    JOIN PUBLIC.APP_TABLE ON APP_TABLE.ID = APP_HAND.TABLE_ID
-                    JOIN PUBLIC.APP_SEAT ON APP_SEAT.TABLE_ID = APP_TABLE.ID
-                    JOIN PUBLIC.APP_PLAYER ON APP_PLAYER.ID = APP_SEAT.PLAYER_ID
-                WHERE
-                    APP_HAND.ID = %s
-            )
-        GROUP BY
-            APP_SEAT.PLAYER_ID
-        """,
-            [self.pk],
-        )
+    def players_current_seats(self) -> models.QuerySet:
+        raise Exception("TODO!!")
+        return models.QuerySet.none()
 
     @cached_property
     @admin.display
@@ -325,13 +302,6 @@ class Hand(TimeStampedModel):
         now = time.time()
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data, when=now)
-
-    def libraryThing(self, seat: Seat) -> libHand:
-        from . import Seat
-
-        assert_type(seat, Seat)
-        cards = sorted(self.current_cards_by_seat()[seat.libraryThing])
-        return libHand(cards=cards)
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
@@ -826,15 +796,15 @@ class Hand(TimeStampedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["board", "table"],
-                name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_at_a_given_table",
+                fields=["board", "north", "east", "south", "west"],
+                name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_by_four_players",
             ),
         ]
 
 
 @admin.register(Hand)
 class HandAdmin(admin.ModelAdmin):
-    list_display = ["table", "board", "open_access", "is_abandoned"]
+    list_display = ["board", "open_access", "is_abandoned"]
     list_filter = ["open_access"]
 
 

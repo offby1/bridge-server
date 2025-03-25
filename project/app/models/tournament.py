@@ -70,7 +70,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
     # Group them into pairs of pairs.
     # Create a table for each such quartet.
-    from app.models.table import Table
 
     for quartet in more_itertools.chunked(waiting_pairs, 2):
         pair1 = quartet.pop()
@@ -367,13 +366,6 @@ class Tournament(models.Model):
         from app.models import Hand
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
-
-    def tables(self) -> models.QuerySet:
-        from app.models import Table
-
-        rv = Table.objects.filter(hand__in=self.hands()).distinct()
-        logger.debug("%s has %d tables", self, rv.count())
-        return rv
 
     def maybe_complete(self) -> None:
         with transaction.atomic():

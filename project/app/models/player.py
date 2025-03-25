@@ -24,14 +24,12 @@ from faker import Faker
 from .board import Board
 from .message import Message
 from .playaz import WireCharacterProvider
-from .seat import Seat
 from .types import PK_from_str
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
     from .hand import Hand
-    from .table import Table
     from .types import PK
 
 logger = logging.getLogger(__name__)
@@ -226,7 +224,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             self._control_bot()
 
     def save(self, *args, **kwargs) -> None:
-        self._check_current_seat()
         self._check_synthetic()
         super().save(*args, **kwargs)
 
@@ -236,16 +233,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         original = Player.objects.get(pk=self.pk)
         if self.synthetic != original.synthetic:
             raise ValidationError("The 'synthetic' field cannot be changed.")
-
-    def _check_current_seat(self) -> None:
-        if not self.currently_seated:
-            return
-
-        my_seats = Seat.objects.filter(player=self)
-
-        assert (
-            my_seats.exists()
-        ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
 
     def libraryThing(self) -> bridge.table.Player:
         seat = self.current_seat
@@ -355,20 +342,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             return None
         return ct.pk
 
-    @property
-    def current_table(self) -> Table | None:
-        if self.current_seat is None:
-            return None
-
-        return self.current_seat.table
-
-    @property
-    def current_seat(self) -> Seat | None:
-        if not self.currently_seated:
-            return None
-
-        return Seat.objects.filter(player=self).order_by("-id").first()
-
     def dealt_cards(self) -> list[bridge.card.Card]:
         seat = self.current_seat
         assert seat is not None
@@ -376,26 +349,16 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @property
     def hands_played(self) -> models.QuerySet:
-        from .hand import Hand
-        from .table import Table
-
-        my_seats = Seat.objects.filter(player=self)
-        my_tables = Table.objects.filter(seat__in=my_seats)
-        return Hand.objects.filter(table__in=my_tables)
+        # TODO -- this otta be easy, now that hands link directly to players
+        return models.query.QuerySet.none()
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
     def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
         from .hand import Hand
-        from .table import Table
 
-        qs = Hand.objects.filter(
-            board=board,
-            table__in=Table.objects.filter(
-                pk__in=self.historical_seat_set.values_list("table_id", flat=True).all()
-            ).all(),
-        ).all()
+        qs = Hand.objects.filter(board=board).all()
         if qs.count() > 1:
             logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
         return qs.first()

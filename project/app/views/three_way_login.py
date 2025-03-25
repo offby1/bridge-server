@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from app.models import Player, TableHasNoHand
+from app.models import Player
 from app.models.utils import UserMitPlaya
 from app.views import Forbid
 
@@ -22,8 +22,8 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
         data["table_pk"] = current_table.pk
         try:
             current_hand = current_table.current_hand
-        except TableHasNoHand as e:
-            logging.info("%s", e)
+        except Exception:
+            pass
         else:
             data["hand_pk"] = current_hand.pk
 

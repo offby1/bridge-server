@@ -1,8 +1,7 @@
 import datetime
 import os
 
-from app.models.player import Player, TooManyBots
-from app.models.table import Table
+from app.models.player import Player
 from app.models.signups import TournamentSignup
 from app.models.tournament import Tournament, check_for_expirations
 from django.conf import settings
@@ -66,11 +65,3 @@ class Command(BaseCommand):
             check_for_expirations(sender="big_bot_stress")
 
             call_command("bring_up_all_api_bots")
-
-            tables_updated: list[str] = []
-            for table in Table.objects.all():
-                table.tempo_seconds = 0
-                table.save()
-                tables_updated.append(str(table.pk))
-
-            self.stderr.write(f"Sped up tables {', '.join(tables_updated)}")
