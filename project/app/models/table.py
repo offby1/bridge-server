@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     import bridge.table
     from bridge.auction import Auction as libAuction
 
-    from app.models.player import Player, Seat
+    from app.models.player import Player
 
 
 logger = logging.getLogger(__name__)
@@ -191,14 +191,13 @@ class Table(models.Model):
         return f"table:{self.pk}"
 
     @cached_property
-    def all_seats(self) -> models.QuerySet:
-        """
-        After filtering this or whatever, be sure to take a slice of the first four items
-        """
-        return self.seat_set.order_by("-id").select_related("player__user")
+    def _current_seats(self) -> models.QuerySet:
+        return self.seat_set.select_related("player__user")
 
-    def current_seats(self) -> list[Seat]:
-        return sorted(self.all_seats.all()[0:4], key=lambda s: "NESW".index(s.direction))
+    # I want to cache this because otherwise it's expensive, but I've got a zillion callers that expect it to be a
+    # regular method, not a property :-|
+    def current_seats(self) -> models.QuerySet:
+        return self._current_seats
 
     def unseat_players(self, *, reason=None) -> None:
         seat: modelSeat
