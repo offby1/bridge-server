@@ -180,17 +180,30 @@ class Hand(TimeStampedModel):
 
     objects = HandManager()
 
-    # The "when", and, when combined with knowledge of who dealt, the "who"
-    id = models.BigAutoField(
-        primary_key=True,
-    )  # it's the default, but it can't hurt to be explicit.
-
-    # The "where"
-    table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
-
-    # The "what" is in our implicit "call_set" and "play_set" attributes, along with this board.
-
     board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
+
+    north = models.ForeignKey["Player"](
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="north",
+    )
+    east = models.ForeignKey["Player"](
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="east",
+    )
+    south = models.ForeignKey["Player"](
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="south",
+    )
+    west = models.ForeignKey["Player"](
+        "Player",
+        on_delete=models.CASCADE,
+        related_name="west",
+    )
+
+    table_display_number = models.SmallIntegerField()
 
     open_access = models.BooleanField(
         default=False,
@@ -198,6 +211,10 @@ class Hand(TimeStampedModel):
     )  # type: ignore
 
     abandoned_because = models.CharField(max_length=100, null=True)
+
+    @cached_property
+    def tournament(self) -> Tournament:
+        return self.board.tournament
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined hand")
