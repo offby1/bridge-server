@@ -259,10 +259,6 @@ class Hand(TimeStampedModel):
     def players(self) -> models.QuerySet:
         return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
 
-    def players_current_seats(self) -> models.QuerySet:
-        raise Exception("TODO!!")
-        return models.QuerySet.none()
-
     @cached_property
     @admin.display
     def is_abandoned(self) -> bool:
@@ -272,24 +268,10 @@ class Hand(TimeStampedModel):
         if self.abandoned_because is not None:
             return True
 
-        players = [s.player for s in self.table.seats]
-        unseated_players = [p for p in players if not p.currently_seated]
-
-        if unseated_players:
-            self.abandoned_because = (
-                f"{[p.name for p in unseated_players]} left their seats for the lobby"
-            )
-            return True
-
-        player_table_tuples = [
-            (s.player.name, s.table.pk)
-            for s in self.players_current_seats()
-            if s.table.pk != self.table.pk
-        ]
-        if not player_table_tuples:
-            return False
-        self.abandoned_because = f"Some players are now at other tables: {player_table_tuples}"
-        return True
+        raise Exception(
+            "TODO: Either the tournament play deadline has expired, or else at least one player is associated with some other hand that isn't complete."
+        )
+        return False
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = self.event_channel_name
