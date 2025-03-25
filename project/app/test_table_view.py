@@ -3,18 +3,14 @@ from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
 
-from .models import Player, Table
+from .models import Hand, Player
 from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
 
-def test_table_dataclass_thingy(usual_setup: None) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
-    assert t.current_auction.declarer.seat == Seat.NORTH
-
-    ds = t.current_hand.display_skeleton()
+def test_table_display_skeleton(usual_setup: Hand) -> None:
+    h: Hand = usual_setup
+    ds = h.display_skeleton()
     for dir_ in Seat:
         assert ds[dir_].textual_summary == "13 cards"
 
@@ -24,31 +20,30 @@ def test_table_dataclass_thingy(usual_setup: None) -> None:
     assert not ds[Seat.WEST].this_hands_turn_to_play
 
 
-def expect_visibility(expectation_array, table: Table) -> None:
-    for seat in table.current_hand.players_by_direction:
-        for viewer in table.current_hand.players_by_direction:
+def expect_visibility(expectation_array, hand: Hand) -> None:
+    for seat in hand.players_by_direction:
+        for viewer in hand.players_by_direction:
             actual1 = _display_and_control(
-                hand=table.current_hand,
+                hand=hand,
                 seat=Seat(seat),
-                as_viewed_by=table.current_hand.players_by_direction[viewer],
+                as_viewed_by=hand.players_by_direction[viewer],
                 as_dealt=False,
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
             assert (
                 actual1["display_cards"] == expectation_array[seat_index][viewer_index]
-            ), f"{table.current_hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+            ), f"{hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
 
 
-def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
-    t1 = Table.objects.first()
-    assert t1 is not None
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t1.current_hand)
+def test_hand_visibility_one(usual_setup: Hand, second_setup: Hand) -> None:
+    h1 = usual_setup
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h1)
 
-    assert str(t1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
+    assert str(h1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
 
-    t2 = second_setup
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t2.current_hand)
+    h2 = second_setup
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h2)
 
     expect_visibility(
         [
@@ -58,12 +53,12 @@ def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
             [0, 0, 1, 0],  # s
             [0, 0, 0, 1],  # w
         ],
-        table=t1,
+        hand=h1,
     )
 
     # Make the opening lead
-    t1.current_hand.add_play_from_player(
-        player=t1.current_hand.players_by_direction[Seat.EAST.value].libraryThing(),
+    h1.add_play_from_player(
+        player=h1.players_by_direction[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 
@@ -76,13 +71,12 @@ def test_hand_visibility_one(usual_setup: None, second_setup: Table) -> None:
             [1, 1, 1, 1],  # s
             [0, 0, 0, 1],  # w
         ],
-        table=t1,
+        hand=h1,
     )
 
 
-def test_hand_visibility_two(two_boards_one_is_complete: None) -> None:
-    t2: Table | None = Table.objects.first()
-    assert t2 is not None
+def test_hand_visibility_two(two_boards_one_is_complete: Hand) -> None:
+    h = two_boards_one_is_complete
 
     expect_visibility(
         [
@@ -92,21 +86,20 @@ def test_hand_visibility_two(two_boards_one_is_complete: None) -> None:
             [1, 1, 1, 1],  # s
             [1, 1, 1, 1],  # w
         ],
-        table=t2,
+        hand=h,
     )
 
 
-def test_hand_controlability(usual_setup: None, settings) -> None:
-    t = Table.objects.first()
-    assert t is not None
+def test_hand_controlability(usual_setup: Hand, settings) -> None:
+    h = usual_setup
 
     def expect_controlability(expectation_array):
-        for seat in t.current_hand.players_by_direction:
-            for viewer in t.current_hand.players_by_direction:
+        for seat in h.players_by_direction:
+            for viewer in h.players_by_direction:
                 actual = _display_and_control(
-                    hand=t.current_hand,
+                    hand=h,
                     seat=Seat(seat),
-                    as_viewed_by=t.current_hand.players_by_direction[viewer],
+                    as_viewed_by=h.players_by_direction[viewer],
                     as_dealt=False,
                 )
                 seat_index = "NESW".index(seat)
@@ -114,7 +107,7 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
                 assert (
                     actual["viewer_may_control_this_seat"]
                     == expectation_array[seat_index][viewer_index]
-                ), f"{t.current_hand.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                ), f"{h.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
 
     # Nobody can control any cards, since the auction isn't settled
     expect_controlability(
@@ -127,8 +120,8 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
         ]
     )
 
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
-    assert str(t.current_hand.auction.status) == "one Club played by Jeremy Northam, sitting North"
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
+    assert str(h.auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     # Only opening leader can control his cards
     expect_controlability(
@@ -142,8 +135,8 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     )
 
     # Make the opening lead
-    t.current_hand.add_play_from_player(
-        player=t.current_hand.players_by_direction[Seat.EAST.value].libraryThing(),
+    h.add_play_from_player(
+        player=h.players_by_direction[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 
@@ -159,12 +152,12 @@ def test_hand_controlability(usual_setup: None, settings) -> None:
     )
 
 
-def test_rejects_calls_after_auction_is_settled(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), t.current_hand)
+def test_rejects_calls_after_auction_is_settled(usual_setup: Hand) -> None:
+    h = usual_setup
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
 
     # Not legal because the auction is over
     with pytest.raises(Exception):
-        t.current_had.add_call_from_player(player=Player.objects.first(), call=Pass)
+        player = Player.objects.first()
+        assert player is not None
+        h.add_call_from_player(player=player, call=Pass)

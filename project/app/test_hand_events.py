@@ -7,7 +7,7 @@ import bridge.contract
 import pytest
 from django_eventstream.models import Event  # type: ignore[import-untyped]
 
-from .models import Hand, Player, Table
+from .models import Hand, Player
 from .testutils import set_auction_to
 
 
@@ -32,9 +32,7 @@ class CapturedEventsFromChannel:
 
 
 def test_auction_settled_messages(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    h = t.current_hand
+    h = usual_setup
 
     with CapturedEventsFromChannel(h.event_channel_name) as cap:
         set_auction_to(
@@ -71,21 +69,8 @@ def test_sends_final_score() -> None:
     assert any(sought(d.data) for d in cap.events)
 
 
-@pytest.mark.usefixtures("two_boards_one_is_complete")
-def test_sends_new_hand_event_to_table_channel() -> None:
-    t1 = Table.objects.first()
-    assert t1 is not None
-
-    with CapturedEventsFromChannel(t1.event_channel_name) as cap:
-        t1.next_board()
-
-    assert any("new-hand" in m.data for m in cap.events)
-
-
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    h = t.current_hand
+    h = usual_setup
     set_auction_to(
         bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
         h,
