@@ -425,9 +425,9 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: PK) -> TemplateRespo
 
 
 @logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: PK) -> TemplateResponse:
-    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
-    context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
+def four_hands_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    context = _four_hands_context_for_hand(request=request, hand=hand)
 
     return TemplateResponse(
         request,
@@ -654,9 +654,8 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        players_seats = app.models.Seat.objects.filter(player=player)
-        players_tables = players_seats.values_list("table", flat=True)
-        hand_list = hand_list.filter(table__in=players_tables)
+        raise Exception("TODO")
+        hand_list = []
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")

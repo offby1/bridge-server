@@ -16,7 +16,7 @@ from .views.hand import (
     hand_xscript_updates_view,
     open_access_toggle_view,
 )
-from .views.table import set_table_tempo_view
+
 from .views.tournament import (
     new_tournament_view,
     tournament_list_view,
@@ -49,7 +49,7 @@ urlpatterns = [
     ),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path(
-        "hand/<table_pk>/four-hands",
+        "hand/<hand_pk>/four-hands",
         four_hands_partial_view,
         name="four-hands-partial",
     ),
@@ -83,19 +83,6 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("table/", table.table_list_view, name="table-list"),
-    path("table/<int:pk>/", table.table_json_view, name="table-json"),
-    path(
-        "table/<int:pk>/new-board-plz/",
-        table.details.new_board_view,
-        name="new-board-plz",
-    ),
-    path("table/<table_pk>/set-table-tempo/", set_table_tempo_view, name="set-table-tempo"),
-    path(
-        "table/new/<tournament_pk>/<pk1>/<pk2>/",
-        table.details.new_table_for_two_partnerships,
-        name="new-table",
-    ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
     path("tournament/<int:pk>/", tournament_view, name="tournament"),

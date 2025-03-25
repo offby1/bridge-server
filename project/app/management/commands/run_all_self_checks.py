@@ -22,18 +22,6 @@ class Command(BaseCommand):
                 else:
                     self.stderr.write(f"{player.name} {c} done")
 
-        for seat in app.models.Seat.objects.all():
-            for c in ["_check_table_consistency"]:
-                check = getattr(seat, c)
-                try:
-                    check()
-                except AssertionError:
-                    self.stderr.write(
-                        f"    ****    {seat.direction} at {seat.table.pk} failed {c=}    ****"
-                    )
-                else:
-                    self.stderr.write(f"{seat.direction} at {seat.table.pk} {c} done")
-
         for tournament in app.models.Tournament.objects.all():
             for c in ["_check_no_more_than_one_running_tournament"]:
                 check = getattr(tournament, c)
