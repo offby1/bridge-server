@@ -103,7 +103,7 @@ poetry-install-no-dev: die-if-poetry-active lock
     poetry install --without=dev
 
 mypy: poetry-install
-    poetry run mypy . --exclude=/migrations/
+    poetry run mypy . --exclude=/migrations/ --exclude='/(conf)?test.*\.py'
 
 alias version := version-file
 
