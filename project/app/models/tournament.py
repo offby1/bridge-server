@@ -20,7 +20,7 @@ from app.models.throttle import throttle
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player, Table
+    from app.models import Player
 
 
 logger = logging.getLogger(__name__)
@@ -92,15 +92,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             # list view *shows* them as signed up.
             for p in (p2, p2.partner):
                 TournamentSignup.objects.create(tournament=tour, player=p)
-
-        table = Table.objects.create_with_two_partnerships(p1=p1, p2=p2, tournament=tour)
-        table.next_board()
-
-    # It expired without any signups -- just nuke it
-    if tour.table_set.count() == 0:
-        logger.warning("%s has no tables; deleting it", tour)
-        tour.delete()
-        return
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -253,7 +244,6 @@ class Tournament(models.Model):
         from app.models.board import Board
 
         board_set = RelatedManager["Board"]()
-        table_set = RelatedManager[Table]()
 
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
@@ -358,7 +348,7 @@ class Tournament(models.Model):
         rv = f"{self.short_string()}; {self.status().__name__}"
         if self.status() is not Complete:
             num_completed = sum([h.is_complete for h in self.hands()])
-            rv += f"; {num_completed} hands played out of {self.board_set.count() * self.table_set.count()}"
+            rv += f"; {num_completed} hands played"
 
         return rv
 
@@ -373,62 +363,13 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
-            num_hands_needed_for_completion = self.tables().count() * self.board_set.count()
+            raise Exception("TODO -- I don't even know what this means")
 
-            if num_hands_needed_for_completion == 0:
-                logger.info(
-                    "We don't consider %s to be complete because it's never had any tables assigned.",
-                    self,
-                )
-                return
-
-            complete_hands = [h for h in self.hands() if h.is_complete]
-
-            if len(complete_hands) == num_hands_needed_for_completion:
-                explanation = f"{self.short_string()} has played {num_hands_needed_for_completion} hands, so it is completed"
-                logger.debug(explanation)
-                self.is_complete = True
-                self.save()
-
-                return
-
-            logger.debug(
-                f"{len(complete_hands)=}, which is not == {num_hands_needed_for_completion=} ({self.tables().count()=} * {self.board_set.count()=}), so we're not done"
-            )
-
-    def _eject_all_pairs(self, explanation: str) -> None:
-        logger.debug(
-            f"{explanation=}; ejecting partnerships from tables.",
-        )
-        with transaction.atomic():
-            for t in self.tables():
-                for seat in t.seat_set.all():
-                    p: Player = seat.player
-
-                    message = f"{p} is now in the lobby"
-                    p.unseat_me()
-                    p.save()
-
-                    if not p.synthetic:
-                        message += ", and unbottified"
-                    logger.debug("%s", message)
-
-                # oddly, `t.current_hand.save()` seems to have no effect; hence the temp variable `h`
-                h = t.current_hand
-                h.abandoned_because = explanation
-                h.save()
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
             TournamentSignup.objects.filter(tournament=self).delete()
-            self._eject_all_pairs(
-                explanation=f"Tournament's play deadline {self.play_completion_deadline} has passed"
-            )
-            logger.debug(
-                "Marked myself %s as complete, and ejected all pairs from %s",
-                self,
-                self.tables(),
-            )
+            logger.debug("Deleted signups")
         super().save(*args, **kwargs)
 
     class Meta:

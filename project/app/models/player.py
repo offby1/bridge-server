@@ -82,9 +82,6 @@ class PartnerException(PlayerException):
 
 
 class Player(TimeStampedModel):
-    if TYPE_CHECKING:
-        historical_seat_set = RelatedManager["Seat"]()
-
     display_name: str  # set by a view, from name_dir
     objects = PlayerManager()
 
@@ -121,7 +118,7 @@ class Player(TimeStampedModel):
     @cached_property
     def boards_played(self) -> models.QuerySet:
         raise Exception("TODO -- this should be easy")
-        return models.QuerySet.none()
+        return Board.objects.none()
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -139,14 +136,6 @@ class Player(TimeStampedModel):
     def unseat_me(self) -> None:
         self.currently_seated = False
         self._control_bot()
-
-    # Note that this player has been exposed to some information from the given board, which means we will not allow
-    # them to play that board later.
-    def taint_board(self, *, board_pk: PK) -> None:
-        # TODO -- it seems wrong that I have to fetch the entire Board object, just to store its primary key.
-        board = Board.objects.filter(pk=board_pk).first()
-        if board is not None:
-            self.boards_played.add(board)
 
     @property
     def event_channel_name(self):
@@ -339,21 +328,16 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
-    def current_table_pk(self) -> PK | None:
-        ct = self.current_table
-        if ct is None:
-            return None
-        return ct.pk
-
     def dealt_cards(self) -> list[bridge.card.Card]:
-        seat = self.current_seat
-        assert seat is not None
-        return seat.table.current_hand.board.cards_for_direction(seat.direction)
+        raise Exception(
+            "TODO: Find an incomplete hand at which we're seated; return the cards from the corresponding direction on the board"
+        )
+        return []
 
     @property
     def hands_played(self) -> models.QuerySet:
         # TODO -- this otta be easy, now that hands link directly to players
-        return models.query.QuerySet.none()
+        return Player.objects.none()
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
@@ -367,27 +351,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        what_they_can_see = board.what_can_they_see(player=self)
-        if what_they_can_see == Board.PlayerVisibility.nothing:
-            return False
-
-        hand = self.hand_at_which_board_was_played(board)
-        assert (
-            hand is not None
-        )  # what_they_can_see should have been PlayerVisibility.nothing in this case
-
-        if what_they_can_see is Board.PlayerVisibility.own_hand:
-            return hand.players_by_direction[seat.value] == self
-
-        if what_they_can_see == Board.PlayerVisibility.dummys_hand:
-            if hand.players_by_direction[seat.value] == self:
-                return True
-            dummy = hand.dummy
-            return dummy is not None and dummy.seat == seat
-
-        assert (
-            what_they_can_see is Board.PlayerVisibility.everything
-        ), f"{what_they_can_see=} but otta be everything"
+        raise Exception("TODO: scour hands we've played, accumulate corresponding boards")
         return True
 
     @cached_property
@@ -395,24 +359,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return self.user.username
 
     def name_dir(self, *, hand: Hand) -> str:
-        direction = ""
-        role = ""
-        if self.has_played_hand(hand):
-            seat = hand.table.seats.get(player=self)
-            direction = f" ({seat.named_direction})"
-
-            a: bridge.auction.Auction
-            a = hand.get_xscript().auction
-            if a.found_contract:
-                assert isinstance(a.status, bridge.auction.Contract)
-                assert a.declarer is not None
-                assert a.dummy is not None
-                if self.name == a.declarer.name:
-                    role = "Declarer! "
-                elif self.name == a.dummy.name:
-                    role = "Dummy "
-
-        return f"{self.pk}:{role}{self.as_link()}{direction}"
+        return f"{self.pk}:{self.as_link()}"
 
     def as_link(self, style=""):
         name = self.name
