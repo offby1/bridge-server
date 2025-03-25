@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,7 +25,7 @@ for fn in ("VERSION", "GIT_SYMBOLIC_REF"):
         with open(BASE_DIR / fn) as inf:
             globals()[fn] = inf.read().rstrip()
     except FileNotFoundError as e:
-        print(f"{e}; ignoring")
+        print(f"{e}; ignoring", file=sys.stderr)
 
 del fn
 
