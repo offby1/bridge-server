@@ -118,7 +118,10 @@ class Player(TimeStampedModel):
         object_id_field="recipient_object_id",
     )
 
-    boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+    @cached_property
+    def boards_played(self) -> models.QuerySet:
+        raise Exception("TODO -- this should be easy")
+        return models.QuerySet.none()
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
