@@ -285,6 +285,7 @@ class Hand(TimeStampedModel):
             return True
 
         players = [s.player for s in self.table.current_seats()]
+        logger.warning("%s", f"table #{self.table.display_number} has {[p.name for p in players]}")
         unseated_players = [p for p in players if not p.currently_seated]
 
         if unseated_players:

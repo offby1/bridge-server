@@ -60,7 +60,7 @@ class Seat(models.Model):
         "Player",
         on_delete=models.CASCADE,
         related_name="historical_seat_set",
-        db_comment="this is None *only* if this player has *never* been seated.  Use `Player.currently_seated` for most things.",
+        null=True,  # seats are unoccupied, briefly, between tournament rounds
     )  # type: ignore [call-overload]
     table = models.ForeignKey["Table"]("Table", on_delete=models.CASCADE)
 
@@ -94,7 +94,7 @@ class Seat(models.Model):
         return SEAT_CHOICES[self.direction]
 
     def _check_consistency(self):
-        if self.player is None:
+        if getattr(self, "player", None) is None:
             logger.warning(f"{self}: no player, no problem")
             return
         if self.table is None:
@@ -124,8 +124,9 @@ class Seat(models.Model):
         with transaction.atomic():
             self._check_consistency()
             super().save(*args, **kwargs)
-            self.player.current_seat = self
-            self.player.save()
+            if getattr(self, "player", None) is not None:
+                self.player.current_seat = self
+                self.player.save()
 
     class Meta:
         ordering = [RawSQL("position(DIRECTION in 'NESW')", params=[])]
