@@ -534,12 +534,12 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            self.table.tournament.maybe_complete()
+            self.tournament.maybe_complete()
 
             Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
-                    "table": self.table.pk,
+                    "table": self.table_display_number,
                     "final_score": str(final_score),
                 },
             )
@@ -676,10 +676,6 @@ class Hand(TimeStampedModel):
             .first()
         )
 
-    def seat_from_libseat(self, seat: Seat):
-        assert_type(seat, Seat)
-        return self.table.seat_set.get(direction=seat.value)
-
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
@@ -798,19 +794,16 @@ class Hand(TimeStampedModel):
         if auction_status is self.auction.PassedOut:
             return "Passed Out", 0
 
-        total_score: int | str
+        total_score: int | str = "-"
 
-        my_seat = None
-        my_hand_for_this_board = None
+        my_hand_for_this_board = my_seat_letter = None
 
-        if as_viewed_by is not None:
-            my_hand_for_this_board = as_viewed_by.hand_at_which_board_was_played(self.board)
-        if my_hand_for_this_board is not None:
-            my_seat = my_hand_for_this_board.table.seats.filter(player=as_viewed_by).first()
+        if as_viewed_by is not None and (current_hand := as_viewed_by.current_hand()) is not None:
+            my_hand_for_this_board, my_seat_letter = current_hand
+
         fs = self.get_xscript().final_score()
 
         if fs is None:
-            total_score = "-"
             trick_summary = "still being played"
         elif fs == 0:
             total_score = 0
@@ -818,7 +811,7 @@ class Hand(TimeStampedModel):
         else:
             trick_summary = fs.trick_summary
 
-            if getattr(my_seat, "direction", None) in {None, 1, 3}:  # north/south
+            if my_seat_letter is not None and my_seat_letter in "NS":
                 total_score = fs.north_south_points or -fs.east_west_points
             else:
                 total_score = fs.east_west_points or -fs.north_south_points
