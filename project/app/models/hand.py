@@ -299,21 +299,13 @@ class Hand(TimeStampedModel):
 
         def has_defected(p: Player) -> bool:
             their_hands = p._hands_played().all()
-            logger.debug("%s has played %d hands", p.name, their_hands.count())
+
             for h in their_hands:
                 if h.is_complete:
-                    logger.debug("hand %s is complete, so %s hasn't (yet) defected", h, p.name)
                     continue
                 if h.pk != self.pk:
-                    logger.debug(
-                        "hand %s is incomplete, and isn't %s, so %s has defected", h, self, p.name
-                    )
                     return True
-            logger.debug(
-                "None of %s's hands (other than %s) are incomplete, so they haven't defected",
-                p.name,
-                self,
-            )
+
             return False
 
         defectors = [p for p in self.players() if has_defected(p)]
@@ -694,10 +686,10 @@ class Hand(TimeStampedModel):
     @cached_property
     def is_complete(self):
         x = self.get_xscript()
-        logger.warning("num_plays is %d", x.num_plays)
+
         if x.num_plays == 52:
             return True
-        logger.warning("auction status is %s", x.auction.status)
+
         if x.auction.status is libAuction.PassedOut:
             return True
         return False
