@@ -67,12 +67,15 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
 
 def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
     player = request.user.player  # type: ignore
-    seat = player.current_seat
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
 
-    if not seat or seat.table != hand.table:
+    currently_playing = player.current_hand()
+
+    if not currently_playing:
         buttons = "No bidding box 'cuz you are not at this table"
     else:
+        hand, _ = currently_playing
+
         allowed_caller = hand.auction.allowed_caller()
         if allowed_caller is None:
             disabled_because_out_of_turn = True

@@ -40,7 +40,7 @@ def test_hand_visibility_one(usual_setup: Hand, second_setup: Hand) -> None:
     h1 = usual_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h1)
 
-    assert str(h1.current_auction.status) == "one Club played by Jeremy Northam, sitting North"
+    assert str(h1.auction.status) == "one Club played by Jeremy Northam, sitting North"
 
     h2 = second_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h2)

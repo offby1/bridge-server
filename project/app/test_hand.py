@@ -117,8 +117,8 @@ def test_rejects_illegal_calls(usual_setup: Hand) -> None:
 def test_cards_by_player(usual_setup: Hand) -> None:
     h = usual_setup
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), h)
-    assert h.current_auction.declarer is not None
-    assert h.current_auction.declarer.seat == libSeat.NORTH
+    assert h.auction.declarer is not None
+    assert h.auction.declarer.seat == libSeat.NORTH
 
     east = Player.objects.get_by_name(name="Clint Eastwood")
 
@@ -175,58 +175,70 @@ def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
 
 
 def test_bidding_box_html(usual_setup: Hand, rf) -> None:
-    h = usual_setup
+    h1 = usual_setup
+
     # First case: completed auction, contract is one diamond, not doubled.
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h1)
     # set_auction_to has set the declarer to be the dealer.
 
-    assert h.current_auction.found_contract
+    assert h1.auction.found_contract
 
     # The auction is settled, so no bidding box.
-    assert h.player_who_may_play is not None
-    response = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
+    assert h1.player_who_may_play is not None
+    response = _bidding_box_as_seen_by(h1, h1.player_who_may_play, rf)
     assert b"<button" not in response.content
 
     # Second case: auction in progress, only call is one diamond.
 
-    h = Hand.objects.create(board=Board.objects.first())
+    h2 = Hand.objects.create(
+        board=h1.board, North=h1.North, East=h1.East, South=h1.South, West=h1.West
+    )
 
-    assert h.current_auction.allowed_caller().name == "Jeremy Northam"
+    allowed_caller = h2.auction.allowed_caller()
+    assert allowed_caller is not None
+    assert allowed_caller.name == "Jeremy Northam"
 
     from app.models import logged_queries
 
-    allowed_caller = h.auction.allowed_caller()
+    allowed_caller = h2.auction.allowed_caller()
     assert allowed_caller is not None
 
-    h.add_call_from_player(
+    h2.add_call_from_player(
         player=allowed_caller,
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
 
     with logged_queries():
-        assert h.current_auction.allowed_caller().name == "Clint Eastwood"
+        allowed_caller = h2.auction.allowed_caller()
+        assert allowed_caller is not None
+        assert allowed_caller.name == "Clint Eastwood"
 
     east = Player.objects.get_by_name("Clint Eastwood")
     request = rf.get("/woteva/")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, h2)["bidding_box_buttons"]
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
+    h3 = Hand.objects.create(
+        board=h1.board, North=h1.North, East=h1.East, South=h1.South, West=h1.West
+    )
     # Third case: as above but with one more "Pass".
-    allowed_caller = h.auction.allowed_caller()
+    allowed_caller = h3.auction.allowed_caller()
     assert allowed_caller is not None
 
-    h.add_call_from_player(
+    h3.add_call_from_player(
         player=allowed_caller,
         call=libPass,
     )
 
-    assert h.current_auction.allowed_caller().name == "J.D. Souther"
+    allowed_caller = h3.auction.allowed_caller()
+    assert allowed_caller is not None
+    assert allowed_caller.name == "J.D. Souther"
 
     south = Player.objects.get_by_name("J.D. Souther")
     request.user = south.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, h3)["bidding_box_buttons"]
     # you cannot double your own partner.
     disabled, _active = _partition_button_values(bbc_html)
 
@@ -237,7 +249,7 @@ def test_bidding_box_html(usual_setup: Hand, rf) -> None:
         "Redouble",
     }
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(request, h3)["bidding_box_buttons"]
 
     disabled, _active = _partition_button_values(bbc_html)
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"

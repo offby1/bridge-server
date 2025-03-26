@@ -8,7 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
-from bridge.auction import Auction as libAuction
+from bridge.auction import Auction
 from bridge.auction import AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
@@ -406,7 +406,7 @@ class Hand(TimeStampedModel):
             self._cache_note_miss()
 
             lib_table = self.lib_table_with_cards_as_dealt
-            auction = libAuction(table=lib_table, dealer=Seat(self.board.dealer))
+            auction = Auction(table=lib_table, dealer=Seat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
                 Seat(direction): self.board.cards_for_direction_letter(direction)
                 for direction in "NESW"
@@ -547,7 +547,7 @@ class Hand(TimeStampedModel):
         return rv
 
     @property
-    def auction(self) -> libAuction:
+    def auction(self) -> Auction:
         return self.get_xscript().auction
 
     @property
@@ -569,7 +569,7 @@ class Hand(TimeStampedModel):
         if self.is_abandoned:
             return None
 
-        if self.auction.status is libAuction.Incomplete:
+        if self.auction.status is Auction.Incomplete:
             libAllowed = self.auction.allowed_caller()
             assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
@@ -690,7 +690,7 @@ class Hand(TimeStampedModel):
         if x.num_plays == 52:
             return True
 
-        if x.auction.status is libAuction.PassedOut:
+        if x.auction.status is Auction.PassedOut:
             return True
         return False
 
