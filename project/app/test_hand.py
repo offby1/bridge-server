@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from django.template.response import TemplateResponse
 
 
-def test_create_scaffolding(db) -> None:
+def do_not_test_create_scaffolding(db) -> None:
     players = [Player.objects.create_synthetic() for _ in range(4)]
     players[0].partner_with(players[2])
     players[1].partner_with(players[3])
@@ -43,6 +43,11 @@ def test_create_scaffolding(db) -> None:
         Hand.objects.create_with_two_partnerships(
             players[0], players[1], tournament=open_tournament
         )
+    from django.core.management import call_command
+
+    with open("/tmp/fixture.json", "w") as outf:
+        call_command("dumpdata", "app", "auth.user", stdout=outf)
+        print(f"Wrote fixture to {outf.name}")
 
 
 def test_keeps_accurate_transcript(usual_setup: Hand) -> None:

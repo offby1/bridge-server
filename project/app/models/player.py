@@ -22,6 +22,7 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 from faker import Faker
 
 from .board import Board
+from .common import attribute_names
 from .message import Message
 from .playaz import WireCharacterProvider
 from .types import PK_from_str
@@ -115,10 +116,20 @@ class Player(TimeStampedModel):
         object_id_field="recipient_object_id",
     )
 
+    def _hands_played(self) -> models.QuerySet:
+        from app.models import Hand
+
+        hands = Hand.objects.all()
+
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self})
+
+        return hands.filter(expression)
+
     @cached_property
     def boards_played(self) -> models.QuerySet:
-        raise Exception("TODO -- this should be easy")
-        return Board.objects.none()
+        return Board.objects.filter(id__in=self._hands_played().values_list("board", flat=True))
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")

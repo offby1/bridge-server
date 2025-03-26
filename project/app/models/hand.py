@@ -145,21 +145,21 @@ class HandManager(models.Manager):
                 raise HandError(
                     f"Cannot create a table with seats {player_pks} --we need exactly four"
                 )
-            kwargs = {}
+            kwargs: dict[str, Any] = {}
             for attribute, player in zip(attribute_names, [p1, p2, p1.partner, p2.partner]):
                 kwargs[attribute] = player
 
-            this_tournaments_boards = tournament.board_set.all()
-            logger.warning("I wonder -- from where do I get the board? %s", this_tournaments_boards)
-            # from IPython import embed
+            if tournament is not None:
+                # from IPython import embed
 
-            # embed()
-            board = tournament.board_set.exclude(
-                id__in=tournament.hands().values_list("board", flat=True)
-            ).first()
-            if board is None:
-                raise HandError("No boards available")
-            kwargs["board"] = board
+                # embed()
+                board = tournament.board_set.exclude(
+                    id__in=tournament.hands().values_list("board", flat=True)
+                ).first()
+                if board is None:
+                    raise HandError("No boards available")
+                kwargs["board"] = board
+
             return self.create(**kwargs)
 
         return None
