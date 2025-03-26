@@ -28,6 +28,7 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 
 from . import Board
+from .common import attribute_names
 from .player import Player
 from .tournament import Tournament
 from .types import PK, PK_from_str
@@ -144,42 +145,43 @@ class HandManager(models.Manager):
                 raise HandError(
                     f"Cannot create a table with seats {player_pks} --we need exactly four"
                 )
-            raise HandError("TODO: actually assign the players to the compass locations")
+            kwargs = {}
+            for attribute, player in zip(attribute_names, [p1, p2, p1.partner, p2.partner]):
+                kwargs[attribute] = player
+
+            this_tournaments_boards = tournament.board_set.all()
+            logger.warning("I wonder -- from where do I get the board? %s", this_tournaments_boards)
+            # from IPython import embed
+
+            # embed()
+            board = tournament.board_set.exclude(
+                id__in=tournament.hands().values_list("board", flat=True)
+            ).first()
+            if board is None:
+                raise HandError("No boards available")
+            kwargs["board"] = board
+            return self.create(**kwargs)
 
         return None
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
         assert board is not None
-        table = kwargs.get("table")
-        assert table is not None
 
-        assert (
-            board.tournament == table.tournament
-        ), f"Nuts, {board.tournament=} != {table.tournament=}"
-
-        seats = table.seat_set
-        player_pks = seats.values_list("player__id", flat=True)
-        players_qs = Player.objects.filter(pk__in=player_pks)
+        players = [kwargs[direction] for direction in attribute_names]
 
         expression = models.Q(pk__in=[])
-        for p in players_qs:
+        for p in players:
             expression |= models.Q(pk__in=p.boards_played.all())
 
         if Board.objects.filter(expression).filter(pk=board.pk).exists():
-            players = Player.objects.filter(pk__in=player_pks)
             msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
             raise HandError(msg)
 
-        for p in players_qs:
-            p.taint_board(board_pk=board.pk)
-            p.save()
-
         logger.debug(
-            "New hand: board #%s at table %s with %s",
+            "New hand: board #%s, played by %s",
             board.display_number,
-            table.pk,
-            [p.name for p in players_qs],
+            [p.name for p in players],
         )
 
         return super().create(*args, **kwargs)
