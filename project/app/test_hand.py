@@ -19,7 +19,7 @@ from bridge.table import Player as libPlayer
 import app.models.board
 from .models import AuctionError, Board, Hand, Player, Tournament, board, hand
 from .models.tournament import _do_signup_expired_stuff
-from .testutils import set_auction_to
+from .testutils import play_out_hand, set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
     _maybe_redirect_or_error,
@@ -190,9 +190,23 @@ def test_bidding_box_html(usual_setup: Hand, rf) -> None:
 
     # Second case: auction in progress, only call is one diamond.
 
-    h2 = Hand.objects.create(
-        board=h1.board, North=h1.North, East=h1.East, South=h1.South, West=h1.West
-    )
+    board_kwargs = {
+        attr: getattr(h1.board, attr)
+        for attr in (
+            "dealer",
+            "east_cards",
+            "ew_vulnerable",
+            "north_cards",
+            "ns_vulnerable",
+            "south_cards",
+            "tournament",
+            "west_cards",
+        )
+    }
+    play_out_hand(h1)  # prevents h2 from complaining that it's been abandoned
+
+    b2 = Board.objects.create(**board_kwargs, display_number=h1.board.display_number + 2)
+    h2 = Hand.objects.create(board=b2, North=h1.North, East=h1.East, South=h1.South, West=h1.West)
 
     allowed_caller = h2.auction.allowed_caller()
     assert allowed_caller is not None
@@ -220,9 +234,15 @@ def test_bidding_box_html(usual_setup: Hand, rf) -> None:
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
-    h3 = Hand.objects.create(
-        board=h1.board, North=h1.North, East=h1.East, South=h1.South, West=h1.West
+    b3 = Board.objects.create_from_attributes(
+        attributes=app.models.board.board_attributes_from_display_number(
+            display_number=3,
+            rng_seeds=[b"what", b"ever"],
+        ),
+        tournament=h1.tournament,
     )
+
+    h3 = Hand.objects.create(board=b3, North=h1.North, East=h1.East, South=h1.South, West=h1.West)
     # Third case: as above but with one more "Pass".
     allowed_caller = h3.auction.allowed_caller()
     assert allowed_caller is not None
