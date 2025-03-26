@@ -16,7 +16,7 @@ from bridge.seat import Seat
 from django.contrib import admin
 from django.db import models
 
-from .common import SEAT_CHOICES
+from .common import SEAT_CHOICES, attribute_names
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -105,6 +105,8 @@ class Board(models.Model):
         from app.models import Hand
 
         hand_set = RelatedManager[Hand]()
+
+    direction_names = attribute_names
 
     display_number = models.SmallIntegerField()
 

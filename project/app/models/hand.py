@@ -145,9 +145,10 @@ class HandManager(models.Manager):
                 raise HandError(
                     f"Cannot create a table with seats {player_pks} --we need exactly four"
                 )
-            kwargs: dict[str, Any] = {}
-            for attribute, player in zip(attribute_names, [p1, p2, p1.partner, p2.partner]):
-                kwargs[attribute] = player
+            kwargs: dict[str, Any] = {
+                attribute: player
+                for attribute, player in zip(Hand.direction_names, [p1, p2, p1.partner, p2.partner])
+            }
 
             if tournament is not None:
                 # from IPython import embed
@@ -194,6 +195,7 @@ class Hand(TimeStampedModel):
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
 
+    direction_names = attribute_names
     objects = HandManager()
 
     board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
@@ -310,20 +312,19 @@ class Hand(TimeStampedModel):
     score_for_this_viewer: str | int
 
     @cached_property
-    def libPlayers_by_seat(self) -> dict[libSeat, libPlayer]:
+    def libPlayers_by_libSeat(self) -> dict[libSeat, libPlayer]:
         rv: dict[libSeat, libPlayer] = {}
-        seats = self.table.seats
-        for direction_int in self.board.hand_strings_by_direction:
+
+        for direction_int, direction_name in zip(
+            self.board.hand_strings_by_direction, self.board.direction_names
+        ):
             lib_seat = libSeat(direction_int)
-            seat = seats.filter(direction=direction_int).first()
-            assert seat is not None, f"Alas! No seat {direction_int=} at {self}"
-            name = seat.player_name
-            rv[lib_seat] = libPlayer(seat=lib_seat, name=name)
+            rv[lib_seat] = libPlayer(seat=lib_seat, name=getattr(self, direction_name).name)
         return rv
 
     @cached_property
     def lib_table_with_cards_as_dealt(self) -> libTable:
-        players = list(self.libPlayers_by_seat.values())
+        players = list(self.libPlayers_by_libSeat.values())
         for p in players:
             assert_type(p, libPlayer)
         return libTable(players=players)
@@ -361,7 +362,7 @@ class Hand(TimeStampedModel):
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
             for seat, call in self.annotated_calls:
-                player = self.libPlayers_by_seat[seat]
+                player = self.libPlayers_by_libSeat[seat]
                 yield (player, call.libraryThing)
 
         if (_xscript := self._cache_get()) is None:
@@ -552,7 +553,7 @@ class Hand(TimeStampedModel):
         seat_who_may_play = self.get_xscript().next_seat_to_play()
         if seat_who_may_play is None:
             return None
-        pbs = self.libPlayers_by_seat
+        pbs = self.libPlayers_by_libSeat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:
