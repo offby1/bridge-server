@@ -128,13 +128,13 @@
       "abandoned_because": null,
       "board": 1,
       "created": "2025-03-26T15:40:29.315Z",
-      "east": 2,
+      "East": 2,
       "modified": "2025-03-26T15:40:29.315Z",
-      "north": 1,
+      "North": 1,
       "open_access": false,
-      "south": 3,
+      "South": 3,
       "table_display_number": null,
-      "west": 4
+      "West": 4
     },
     "model": "app.hand",
     "pk": 1

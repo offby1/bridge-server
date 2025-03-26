@@ -106,8 +106,6 @@ class Board(models.Model):
 
         hand_set = RelatedManager[Hand]()
 
-    direction_names = attribute_names
-
     display_number = models.SmallIntegerField()
 
     ns_vulnerable = models.BooleanField()
@@ -143,7 +141,7 @@ class Board(models.Model):
         return SEAT_CHOICES[self.dealer]
 
     @property
-    def hand_strings_by_direction(self) -> dict[str, str]:
+    def hand_strings_by_direction_letter(self) -> dict[str, str]:
         return {
             Seat.NORTH.value: self.north_cards,
             Seat.EAST.value: self.east_cards,
@@ -151,8 +149,16 @@ class Board(models.Model):
             Seat.WEST.value: self.west_cards,
         }
 
-    def cards_for_direction(self, direction_letter: str) -> list[Card]:
-        card_string = self.hand_strings_by_direction[direction_letter]
+    def cards_for_direction_letter(self, direction_letter: str) -> list[Card]:
+        assert direction_letter in "NESW"
+        return self.cards_for_seat(Seat(direction_letter))
+
+    def cards_for_direction_string(self, direction_str: str) -> list[Card]:
+        assert direction_str in [s.name for s in Seat]
+        return self.cards_for_seat(Seat(direction_str[0].upper()))
+
+    def cards_for_seat(self, seat: Seat) -> list[Card]:
+        card_string = self.hand_strings_by_direction_letter[seat.value]
         return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
     def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:

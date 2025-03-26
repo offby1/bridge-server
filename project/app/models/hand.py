@@ -15,7 +15,7 @@ from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
 from bridge.contract import Contract as libContract
-from bridge.seat import Seat as libSeat
+from bridge.seat import Seat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
@@ -56,7 +56,7 @@ class PlayError(Exception):
 
 @dataclasses.dataclass
 class TrickTuple:
-    seat: libSeat
+    seat: Seat
     card: libCard
     winner: bool
 
@@ -113,13 +113,13 @@ class AllFourSuitHoldings:
 
 @dataclasses.dataclass
 class DisplaySkeleton:
-    holdings_by_seat: dict[libSeat, AllFourSuitHoldings]
+    holdings_by_seat: dict[Seat, AllFourSuitHoldings]
 
-    def items(self) -> Iterable[tuple[libSeat, AllFourSuitHoldings]]:
+    def items(self) -> Iterable[tuple[Seat, AllFourSuitHoldings]]:
         return self.holdings_by_seat.items()
 
-    def __getitem__(self, seat: libSeat) -> AllFourSuitHoldings:
-        assert_type(seat, libSeat)
+    def __getitem__(self, seat: Seat) -> AllFourSuitHoldings:
+        assert_type(seat, Seat)
         return self.holdings_by_seat[seat]
 
 
@@ -200,25 +200,25 @@ class Hand(TimeStampedModel):
 
     board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
 
-    north = models.ForeignKey["Player"](
+    North = models.ForeignKey["Player"](
         "Player",
         null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="north",
     )
-    east = models.ForeignKey["Player"](
+    East = models.ForeignKey["Player"](
         "Player",
         null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="east",
     )
-    south = models.ForeignKey["Player"](
+    South = models.ForeignKey["Player"](
         "Player",
         null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="south",
     )
-    west = models.ForeignKey["Player"](
+    West = models.ForeignKey["Player"](
         "Player",
         null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
@@ -342,15 +342,30 @@ class Hand(TimeStampedModel):
     score_for_this_viewer: str | int
 
     @cached_property
-    def libPlayers_by_libSeat(self) -> dict[libSeat, libPlayer]:
-        rv: dict[libSeat, libPlayer] = {}
+    def libPlayers_by_libSeat(self) -> dict[Seat, libPlayer]:
+        assert self.North is not None
+        assert self.East is not None
+        assert self.South is not None
+        assert self.West is not None
 
-        for direction_int, direction_name in zip(
-            self.board.hand_strings_by_direction, self.board.direction_names
-        ):
-            lib_seat = libSeat(direction_int)
-            rv[lib_seat] = libPlayer(seat=lib_seat, name=getattr(self, direction_name).name)
-        return rv
+        return {
+            Seat.NORTH: libPlayer(
+                seat=Seat.NORTH,
+                name=self.North.name,
+            ),
+            Seat.EAST: libPlayer(
+                seat=Seat.EAST,
+                name=self.East.name,
+            ),
+            Seat.SOUTH: libPlayer(
+                seat=Seat.SOUTH,
+                name=self.South.name,
+            ),
+            Seat.WEST: libPlayer(
+                seat=Seat.WEST,
+                name=self.West.name,
+            ),
+        }
 
     @cached_property
     def lib_table_with_cards_as_dealt(self) -> libTable:
@@ -399,9 +414,9 @@ class Hand(TimeStampedModel):
             self._cache_note_miss()
 
             lib_table = self.lib_table_with_cards_as_dealt
-            auction = libAuction(table=lib_table, dealer=libSeat(self.board.dealer))
+            auction = libAuction(table=lib_table, dealer=Seat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
-                libSeat(direction): self.board.cards_for_direction(direction)
+                Seat(direction): self.board.cards_for_direction_letter(direction)
                 for direction in "NESW"
             }
 
@@ -513,7 +528,7 @@ class Hand(TimeStampedModel):
         data: dict[str, Any] = {
             "new-play": {
                 "serialized": card.serialize(),
-                "seat_pk": rv.seat_pk,
+                "hand_pk": self.pk,
             },
         }
 
@@ -585,7 +600,7 @@ class Hand(TimeStampedModel):
         pbs = self.libPlayers_by_libSeat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
-    def modPlayer_by_seat(self, seat: libSeat) -> Player:
+    def modPlayer_by_seat(self, seat: Seat) -> Player:
         modelPlayer = self.players_by_direction_letter[seat.value]
         return Player.objects.get_by_name(modelPlayer.name)
 
@@ -599,10 +614,10 @@ class Hand(TimeStampedModel):
             direction[0].upper(): getattr(self, direction) for direction in self.direction_names
         }
 
-    def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
+    def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[Seat, set[libCard]]:
         rv = {}
-        for direction, cardstring in self.board.hand_strings_by_direction.items():
-            seat = libSeat(direction)
+        for direction_letter, cardstring in self.board.hand_strings_by_direction_letter.items():
+            seat = Seat(direction_letter)
             rv[seat] = {libCard.deserialize(c) for c in more_itertools.sliced(cardstring, 2)}
 
         if as_dealt:
@@ -629,7 +644,7 @@ class Hand(TimeStampedModel):
         rv = {}
         # xscript.legal_cards tells us which cards are legal for the current player.
         for seat, cards in self.current_cards_by_seat(as_dealt=as_dealt).items():
-            assert_type(seat, libSeat)
+            assert_type(seat, Seat)
 
             cards_by_suit = collections.defaultdict(list)
             for c in cards:
@@ -669,8 +684,8 @@ class Hand(TimeStampedModel):
             .first()
         )
 
-    def seat_from_libseat(self, seat: libSeat):
-        assert_type(seat, libSeat)
+    def seat_from_libseat(self, seat: Seat):
+        assert_type(seat, Seat)
         return self.table.seat_set.get(direction=seat.value)
 
     def serialized_calls(self):
@@ -700,7 +715,7 @@ class Hand(TimeStampedModel):
 
     @property
     def _seat_cycle_starting_with_dealer(self):
-        seat_cycle = libSeat.cycle()
+        seat_cycle = Seat.cycle()
         while True:
             s = next(seat_cycle)
 
@@ -709,7 +724,7 @@ class Hand(TimeStampedModel):
                 return seat_cycle
 
     @property
-    def annotated_calls(self) -> Iterable[tuple[libSeat, Call]]:
+    def annotated_calls(self) -> Iterable[tuple[Seat, Call]]:
         return list(
             zip(
                 self._seat_cycle_starting_with_dealer,
@@ -718,7 +733,7 @@ class Hand(TimeStampedModel):
         )
 
     @property
-    def last_annotated_call(self) -> tuple[libSeat, Call]:
+    def last_annotated_call(self) -> tuple[Seat, Call]:
         seat = self.call_set.order_by("-id").first()
         assert seat is not None
         return (next(self._seat_cycle_starting_with_dealer), seat)
@@ -943,16 +958,8 @@ class Play(TimeStampedModel):
             ),
         ]
 
-    @property
-    def seat_pk(self) -> PK | None:
-        for t in self.hand.get_xscript().tricks:
-            for p in t.plays:
-                if p.card.serialize() == self.serialized:
-                    return self.hand.table.seats.get(direction=p.seat.value).pk
-        return None
-
     @cached_property
-    def seat(self) -> libSeat:
+    def seat(self) -> Seat:
         for tt in self.hand.annotated_plays:
             if self.serialized == tt.card.serialize():
                 return tt.seat

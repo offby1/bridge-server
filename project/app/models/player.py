@@ -238,14 +238,16 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             raise ValidationError("The 'synthetic' field cannot be changed.")
 
     def libraryThing(self) -> bridge.table.Player:
-        seat = self.current_seat
+        tmp = self.current_hand()
 
-        if seat is None:
+        if tmp is None:
             msg = f"{self} is not seated, so cannot be converted to a bridge-library Player"
             raise PlayerException(msg)
 
+        _, direction_name = tmp
+
         return bridge.table.Player(
-            seat=seat.libraryThing,
+            seat=bridge.seat.Seat(direction_name[0].upper()),
             name=self.name,
         )
 
@@ -339,11 +341,28 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
+    def current_hand(self) -> tuple[Hand, str] | None:
+        h: Hand
+        direction_name: str
+
+        for h in self._hands_played():
+            if not h.is_complete:
+                for direction_name in h.direction_names:
+                    if getattr(h, direction_name) == self:
+                        return h, direction_name
+
+        return None
+
     def dealt_cards(self) -> list[bridge.card.Card]:
-        raise Exception(
-            "TODO: Find an incomplete hand at which we're seated; return the cards from the corresponding direction on the board"
-        )
-        return []
+        tmp = self.current_hand()
+
+        if tmp is None:
+            msg = f"{self} is not seated, so has no cards"
+            raise PlayerException(msg)
+
+        h, direction_name = tmp
+
+        return h.board.cards_for_direction_string(direction_name)
 
     @property
     def hands_played(self) -> models.QuerySet:

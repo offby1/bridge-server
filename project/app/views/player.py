@@ -322,8 +322,10 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
 
     payload = {
         "pk": p.pk,
-        "current_table_pk": p.current_table_pk(),
-        "current_seat_pk": p.current_seat.pk if p.current_seat is not None else None,
+        "current_table_number": p.current_hand.table_display_number
+        if p.current_hand is not None
+        else None,
+        "current_hand_pk": p.current_hand.pk if p.current_hand is not None else None,
         "name": p.name,
     }
 

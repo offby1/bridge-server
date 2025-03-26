@@ -365,7 +365,6 @@ class Tournament(models.Model):
 
             raise Exception("TODO -- I don't even know what this means")
 
-
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
             TournamentSignup.objects.filter(tournament=self).delete()
