@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import collections
+import datetime
 import enum
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import auth
 
+from freezegun import freeze_time
 import pytest
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
@@ -16,6 +18,7 @@ from bridge.table import Player as libPlayer
 
 import app.models.board
 from .models import AuctionError, Board, Hand, Player, Tournament, board, hand
+from .models.tournament import _do_signup_expired_stuff
 from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
@@ -25,6 +28,21 @@ from .views.hand import (
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
+
+
+def test_create_scaffolding(db) -> None:
+    players = [Player.objects.create_synthetic() for _ in range(4)]
+    players[0].partner_with(players[2])
+    players[1].partner_with(players[3])
+    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
+        for p in players[0:2]:
+            open_tournament.sign_up(p)
+    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=10)):
+        _do_signup_expired_stuff(open_tournament)
+        Hand.objects.create_with_two_partnerships(
+            players[0], players[1], tournament=open_tournament
+        )
 
 
 def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
