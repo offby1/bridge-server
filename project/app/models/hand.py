@@ -844,7 +844,7 @@ class Hand(TimeStampedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["board", "north", "east", "south", "west"],
+                fields=["board", "North", "East", "South", "West"],
                 name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_by_four_players",
             ),
         ]
