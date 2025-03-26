@@ -10,18 +10,15 @@ from bridge.contract import Call
 from django.contrib import auth
 from django.db import connection
 from django.db.utils import IntegrityError
-from django.http.response import HttpResponseForbidden, HttpResponseRedirect
-from django.urls import reverse
+from django.http.response import HttpResponseForbidden
 
 import app.views.hand
 import app.views.table.details
 from app.models import (
     Board,
     Hand,
-    NoMoreBoards,
     Player,
-    Table,
-    TableException,
+    HandError,
     Tournament,
     TournamentSignup,
 )
@@ -137,66 +134,6 @@ def test_completing_one_tournament_deletes_related_signups(
         assert not TournamentSignup.objects.filter(player=Ricky).exists()
 
 
-def test_tournament_end(
-    nearly_completed_tournament, everybodys_password, monkeypatch, client
-) -> None:
-    assert Board.objects.count() == 1
-    with monkeypatch.context() as m:
-        t1 = Table.objects.first()
-        assert t1 is not None
-        assert Table.objects.count() == 1
-
-        m.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
-        assert app.models.board.BOARDS_PER_TOURNAMENT == 1
-
-        # Create a second table in this tournament.
-        for name in ("n2", "e2", "s2", "w2"):
-            u = auth.models.User.objects.create(username=name, password=everybodys_password)
-            Player.objects.create(user=u)
-        n2 = Player.objects.get_by_name("n2")
-        n2.partner_with(Player.objects.get_by_name("s2"))
-
-        e2 = Player.objects.get_by_name("e2")
-        e2.partner_with(Player.objects.get_by_name("w2"))
-
-        t2 = Table.objects.create_with_two_partnerships(n2, e2, tournament=t1.tournament)
-        t2.next_board()
-
-        # Complete the first table.
-
-        h1 = Hand.objects.get(pk=1)
-        west = Player.objects.get_by_name("Adam West")
-        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
-
-        # Have someone at the first table click "Next Board Plz".
-        with pytest.raises(NoMoreBoards):
-            t1.next_board()
-
-        client.force_login(t1.seat_set.first().player.user)
-        response = client.post(f"/table/{t1.pk}/new-board-plz/")
-        assert type(response) is HttpResponseRedirect
-        assert response.url == reverse("app:table-list") + "?tournament=1"
-
-        for t in Tournament.objects.all():
-            assert t.board_set.count() <= app.models.board.BOARDS_PER_TOURNAMENT
-
-        play_out_hand(t2)
-
-        t2.tournament.maybe_complete()
-        t1.refresh_from_db()
-        assert (
-            t1.tournament.is_complete
-        ), f"Why is {t1.tournament=} ({t1.tournament.status()}) not complete"
-
-        with pytest.raises(NoMoreBoards):
-            t1.next_board()
-
-        t2.refresh_from_db()
-
-        with pytest.raises(NoMoreBoards):
-            t2.next_board()
-
-
 def test_play_completion_deadline(usual_setup) -> None:
     # All players are initially seated
     assert not Player.objects.filter(currently_seated=False).exists()
@@ -220,7 +157,7 @@ def test_play_completion_deadline(usual_setup) -> None:
 
     east = Player.objects.get_by_name("Clint Eastwood")
     with freeze_time(DayAfter):
-        with pytest.raises(TableException) as e:
+        with pytest.raises(HandError) as e:
             hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
 
         assert "deadline" in str(e.value)
@@ -344,10 +281,6 @@ def test_signups(nobody_seated) -> None:
     actual = set(open_tournament.signed_up_players())
     expected = {north, south, east, west}
     assert actual == expected
-
-    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
-        check_for_expirations(__name__)
-        assert open_tournament.table_set.count() == 1
 
     with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
         east.break_partnership()

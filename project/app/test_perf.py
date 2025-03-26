@@ -1,16 +1,14 @@
 import bridge.card
 import bridge.contract
 
-from .models import Hand, Player, Table
+from .models import Hand, Player
 from .views.hand import hand_detail_view
 
 
 def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
-    usual_setup, rf, django_assert_max_num_queries
+    usual_setup: Hand, rf, django_assert_max_num_queries
 ) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    h = t.current_hand
+    h = usual_setup
 
     def next_caller(current_caller):
         table = h.auction.table
@@ -33,10 +31,10 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
     c(bridge.contract.Pass)
     c(bridge.contract.Pass)
 
-    request = rf.get("/woteva/", data={"pk": t.pk})
+    request = rf.get("/woteva/", data={"pk": h.pk})
     p = Player.objects.first()
     assert p is not None
     request.user = p.user
 
     with django_assert_max_num_queries(76):
-        hand_detail_view(request, t.current_hand.pk)
+        hand_detail_view(request, h.pk)

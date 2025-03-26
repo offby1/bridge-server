@@ -1,5 +1,4 @@
 import base64
-import collections
 import importlib
 import json
 import logging
@@ -16,21 +15,17 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirec
 from django.test import Client
 from django.urls import reverse
 
-import app.models.board
-
 from .models import (
     Board,
     Hand,
+    HandError,
     Message,
     Player,
     PlayerException,
-    Seat,
-    SeatException,
-    Table,
     Tournament,
 )
 from .testutils import play_out_hand, set_auction_to
-from .views import hand, player, table
+from .views import hand, player
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +64,11 @@ def test_synthetic_player_text(usual_setup) -> None:
     assert "🤖" not in str(hooman)
 
 
-def test_splitsville_ejects_that_partnership_from_table(usual_setup):
-    the_table = Table.objects.first()
+def test_splitsville_ejects_that_partnership_from_table(usual_setup: Hand):
+    h = usual_setup
 
-    north = the_table.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    south = the_table.current_hand.modPlayer_by_seat(libSeat.SOUTH)
+    north = h.modPlayer_by_seat(libSeat.NORTH)
+    south = h.modPlayer_by_seat(libSeat.SOUTH)
 
     # duh
     assert north.partner == south
@@ -82,11 +77,8 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
     assert north.current_table is not None
     assert north.current_table == south.current_table
 
-    table_count_before = Table.objects.count()
-    assert table_count_before == 1
-
-    east = the_table.current_hand.modPlayer_by_seat(libSeat.EAST)
-    west = the_table.current_hand.modPlayer_by_seat(libSeat.WEST)
+    east = h.modPlayer_by_seat(libSeat.EAST)
+    west = h.modPlayer_by_seat(libSeat.WEST)
 
     north.break_partnership()
 
@@ -99,22 +91,6 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup):
     assert south.partner is None
     assert west.partner == east
     assert east.partner == west
-
-    assert Table.objects.count() == table_count_before
-
-    assert north.current_table is None
-    assert south.current_table is None
-    assert east.current_table == the_table
-    assert west.current_table == the_table
-
-
-def test_one_partnerships_splitting_does_not_remove_table(usual_setup):
-    assert Table.objects.count() == 1
-    t = Table.objects.first()
-    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
-
-    north.break_partnership()
-    assert Table.objects.count() == 1
 
 
 def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
@@ -135,16 +111,15 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     assert re.search(r"href='/player/.*>.*Jeremy Northam.*</a>", link)
 
 
-def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
+def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) -> None:
+    h = usual_setup
+    north = h.modPlayer_by_seat(libSeat.NORTH)
     norths_cards = north.dealt_cards()
 
     client = Client()
 
     def r():
-        return client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
+        return client.get(reverse("app:hand-detail", kwargs={"pk": h.pk}), follow=True)
 
     response = r()
     for c in norths_cards:
@@ -157,55 +132,41 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup) -> None:
         assert c.serialize() in response.content.decode()
 
 
-def test_legal_cards(usual_setup, rf):
-    t = Table.objects.first()
-    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), t.current_hand)
-    h = t.current_hand
+def test_legal_cards(usual_setup: Hand, rf) -> None:
+    h = usual_setup
+    set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), h)
+
     declarer = h.declarer
-    leader = t.current_hand.modPlayer_by_seat(declarer.seat.lho()).libraryThing()
+    assert declarer is not None
+    leader = h.modPlayer_by_seat(declarer.seat.lho()).libraryThing()
 
     client = Client()
     client.login(username=leader.name, password=".")
 
-    response = client.get(reverse("app:hand-detail", kwargs={"pk": t.current_hand.pk}), follow=True)
+    response = client.get(reverse("app:hand-detail", kwargs={"pk": h.pk}), follow=True)
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
 
 
-def test_player_cannot_be_in_two_tables(usual_setup):
-    t1 = Table.objects.first()
-    north = t1.current_hand.modPlayer_by_seat(libSeat.NORTH)
+def test_player_cannot_be_in_two_hands(usual_setup: Hand) -> None:
+    h1 = usual_setup
 
-    t2 = Table.objects.create(tournament=t1.tournament)
+    with pytest.raises(HandError) as e:
+        Hand.objects.create(
+            tournament=h1.tournament, north=h1.north, east=h1.east, south=h1.south, west=h1.west
+        )
 
-    with pytest.raises(SeatException) as e:
-        Seat.objects.create(direction=libSeat.EAST.value, table=t2, player=north)
     assert "already seated at" in str(e.value)
 
 
-def test_cant_just_make_up_directions(j_northam, everybodys_password):
-    partner = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="partner",
-            password=everybodys_password,
-        ),
-    )
-    j_northam.partner_with(partner)
+def test_breaking_up_is_hard_to_do(usual_setup: Hand) -> None:
+    h = usual_setup
 
-    t = Table.objects.create(tournament=Tournament.objects.create(display_number=1))
-    with pytest.raises(Exception) as e:
-        Seat.objects.create(direction=1234, player=j_northam, table=t)
-
-    assert "app_seat_direction_valid" in str(e.value)
-
-
-def test_breaking_up_is_hard_to_do(usual_setup):
-    t = Table.objects.first()
-    North = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
-    East = t.current_hand.modPlayer_by_seat(libSeat.EAST)
-    South = t.current_hand.modPlayer_by_seat(libSeat.SOUTH)
-    West = t.current_hand.modPlayer_by_seat(libSeat.WEST)
+    North = h.modPlayer_by_seat(libSeat.NORTH)
+    East = h.modPlayer_by_seat(libSeat.EAST)
+    South = h.modPlayer_by_seat(libSeat.SOUTH)
+    West = h.modPlayer_by_seat(libSeat.WEST)
 
     assert North.partner == South
     assert South.partner == North
@@ -250,7 +211,9 @@ def quickly_auth_test_client(c: Client, player: Player) -> None:
     )
 
 
-def test_sending_lobby_messages(usual_setup):
+def test_sending_lobby_messages(usual_setup: Hand) -> None:
+    h = usual_setup
+
     def say_hey_from(player=None):
         c = Client()
 
@@ -273,15 +236,14 @@ def test_sending_lobby_messages(usual_setup):
             msg = f"OK, {response.status_code=} makes no sense"
             raise AssertionError(msg)
 
-    t = Table.objects.first()
-    response = say_hey_from(player=t.current_hand.modPlayer_by_seat(libSeat.NORTH))
+    response = say_hey_from(player=h.modPlayer_by_seat(libSeat.NORTH))
 
     assert response.status_code == 200
 
 
-def test_sending_player_messages(usual_setup, rf, everybodys_password):
-    t = Table.objects.first()
-    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
+def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
+    h = usual_setup
+    north = h.modPlayer_by_seat(libSeat.NORTH)
 
     def hey_bob(*, target=None, sender_player=None) -> HttpResponse:
         c = Client()
@@ -301,7 +263,7 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     assert response.status_code == 403  # client isn't authenticated
     assert response.content == b"Go away, anonymous scoundrel"
 
-    response = hey_bob(sender_player=t.current_hand.modPlayer_by_seat(libSeat.SOUTH))
+    response = hey_bob(sender_player=h.modPlayer_by_seat(libSeat.SOUTH))
     assert response.status_code == 403  # we're both at a table, so we can't talk
     assert b"already seated" in response.content
 
@@ -324,12 +286,12 @@ def test_sending_player_messages(usual_setup, rf, everybodys_password):
     assert response.status_code == 200
 
 
-def test_only_recipient_can_read_messages(usual_setup):
+def test_only_recipient_can_read_messages(usual_setup: Hand):
+    h = usual_setup
     module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
-    t = Table.objects.first()
-    Bob, Ted, Carol, _ = t.current_hand.players_by_direction.values()
+    Bob, Ted, Carol, _ = h.players_by_direction.values()
 
     channel = Message.channel_name_from_players(Ted, Bob)
 
@@ -337,14 +299,9 @@ def test_only_recipient_can_read_messages(usual_setup):
     assert not cm.can_read_channel(Carol.user, channel)
 
 
-def test_seat_ordering(usual_setup):
-    t = Table.objects.first()
-    assert " ".join([t[0] for t in t.as_tuples()]) == "North East South West"
-
-
-def test_splitsville_side_effects(usual_setup, rf, monkeypatch):
-    t = Table.objects.first()
-    north = t.current_hand.modPlayer_by_seat(libSeat.NORTH)
+def test_splitsville_side_effects(usual_setup: Hand, rf, monkeypatch) -> None:
+    h = usual_setup
+    north = h.modPlayer_by_seat(libSeat.NORTH)
     assert north.partner is not None
     north_pk = north.pk
     north_partner_pk = north.partner.pk
@@ -389,11 +346,8 @@ def test_splitsville_side_effects(usual_setup, rf, monkeypatch):
     assert len(send_event_kwargs_log) == 0
 
 
-def test_splitsville_prevents_others_at_table_from_playing(usual_setup) -> None:
-    t = Table.objects.first()
-    assert t is not None
-
-    h: Hand = t.current_hand
+def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) -> None:
+    h = usual_setup
     assert h.player_who_may_call is not None
     north = h.modPlayer_by_seat(libSeat.NORTH)
     north.break_partnership()
@@ -442,116 +396,28 @@ def test_table_creation(j_northam, everybodys_password):
     assert type(response) is HttpResponseRedirect
 
 
-def test_max_boards(two_boards_one_is_complete, monkeypatch):
-    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 1)
-    t = Table.objects.first()
-
-    t.next_board()
-
-    board_counts_by_tournament_pk = collections.defaultdict(int)
-    for b in app.models.board.Board.objects.all():
-        board_counts_by_tournament_pk[b.pk] += 1
-
-    assert dict(board_counts_by_tournament_pk) == {1: 1, 2: 1}
-
-
-def test_no_bogus_tables(usual_setup):
-    count_before = Table.objects.count()
-    with pytest.raises(SeatException):
-        Table.objects.create_with_two_partnerships(
-            p1=Player.objects.get_by_name("Jeremy Northam"),
-            p2=Player.objects.get_by_name("Clint Eastwood"),
-            tournament=Tournament.objects.first(),
-        )
-    count_after = Table.objects.count()
-
-    assert count_after == count_before
-
-
-def test_random_dude_cannot_create_table(usual_setup, everybodys_password):
-    number_of_tables_before = Table.objects.count()
-
-    t = Table.objects.first()
-
-    North, East, South, West = t.current_hand.players_by_direction.values()
-
-    assert {
-        North.current_table,
-        East.current_table,
-        South.current_table,
-        West.current_table,
-    } == {t}
-
-    North.break_partnership()
-    South.refresh_from_db()
-    North.partner_with(South)
-    North.refresh_from_db()
-
-    assert North.current_table is None
-    assert South.current_table is None
-
-    East.break_partnership()
-    West.refresh_from_db()
-    East.partner_with(West)
-    East.refresh_from_db()
-
-    assert East.current_table is None
-    assert West.current_table is None
-
-    # Breaking a partnership, or for that matter, creating a new partnership, doesn't alter the number of tables in
-    # existence.
-    assert Table.objects.count() == number_of_tables_before
-
-    # OK, now we've got four players ready to sit at a table.
-    RandomDude = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="J.Random Hacker",
-            password=everybodys_password,
-        ),
-    )
-
-    client = Client()
-
-    tournament, _ = Tournament.objects.get_or_create(display_number=1)
-
-    def new_table(*, requester=None) -> HttpResponse:
-        client.login(username=requester.user, password=".")
-        return client.post(path=f"/table/new/{tournament.pk}/{North.pk}/{East.pk}/", data={})
-
-    response = new_table(requester=RandomDude)
-    assert response.status_code == 403
-    assert b"isn&#x27;t one of" in response.content
-
-    response = new_table(requester=North)
-    assert response.status_code == 302
-
-    assert Table.objects.count() == number_of_tables_before + 1
-
-
-def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> None:
+def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) -> None:
     request = rf.get("/woteva/")
-    t = Table.objects.first()
+    h = usual_setup
 
     # Nobody done played nothin'
-    assert t is not None
-    assert not t.current_hand.current_trick
+    assert not h.current_trick
 
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), t.current_hand)
-    h = t.current_hand
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h)
     declarer = h.declarer
+    assert declarer is not None
 
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = t.current_hand.modPlayer_by_seat(first_players_seat)
+    first_player = h.modPlayer_by_seat(first_players_seat)
     first_players_cards = first_player.dealt_cards()
 
     first_card = first_players_cards[0]
 
     h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
-    t = Table.objects.first()
-    h = t.current_hand
 
     expected_cards_by_direction = {dir_.value: "__" for dir_ in libSeat}
+    assert h.current_trick is not None
     for tt in h.current_trick:
         expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
@@ -569,18 +435,3 @@ def test__three_by_three_trick_display_context_for_table(usual_setup, rf) -> Non
     for direction, actual_html in actual_cards_by_direction.items():
         expected_html = expected_cards_by_direction[direction]
         assert expected_html in actual_html
-
-
-def test_find_unplayed_board(two_boards_one_is_complete) -> None:
-    # Just checking that we are in sync with the fixture
-    assert set(Board.objects.values_list("pk", flat=True)) == {1, 2}
-
-    t1 = Table.objects.first()
-    assert t1 is not None
-    assert t1.current_board.pk == 1
-    assert t1.find_unplayed_board().pk == 2
-
-    play_out_hand(t1)
-    t1.next_board()
-    play_out_hand(t1)
-    assert t1.find_unplayed_board() is None

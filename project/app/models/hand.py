@@ -22,7 +22,7 @@ from bridge.table import Table as libTable
 from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
-from django.db import Error, models
+from django.db import Error, models, transaction
 from django.utils.functional import cached_property
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
@@ -131,6 +131,23 @@ def send_timestamped_event(
 
 
 class HandManager(models.Manager):
+    def create_with_two_partnerships(
+        self, p1: Player, p2: Player, tournament: Tournament | None = None
+    ) -> Hand:
+        with transaction.atomic():
+            if p1.partner is None or p2.partner is None:
+                raise HandError(
+                    f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
+                )
+            player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
+            if len(player_pks) != 4:
+                raise HandError(
+                    f"Cannot create a table with seats {player_pks} --we need exactly four"
+                )
+            raise HandError("TODO: actually assign the players to the compass locations")
+
+        return None
+
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
         assert board is not None
