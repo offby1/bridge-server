@@ -291,7 +291,7 @@ def test_only_recipient_can_read_messages(usual_setup: Hand):
     module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
-    Bob, Ted, Carol, _ = h.players_by_direction.values()
+    Bob, Ted, Carol, _ = h.players_by_direction_letter.values()
 
     channel = Message.channel_name_from_players(Ted, Bob)
 

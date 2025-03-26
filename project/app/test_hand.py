@@ -59,7 +59,7 @@ def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
     declarer = h.declarer
     assert declarer is not None
     first_players_seat = declarer.seat.lho()
-    first_player = h.players_by_direction[first_players_seat.value]
+    first_player = h.players_by_direction_letter[first_players_seat.value]
     first_players_cards = first_player.dealt_cards()
 
     first_card = first_players_cards[0]
@@ -253,10 +253,10 @@ def test_current_trick(usual_setup: Hand) -> None:
     assert declarer is not None
     # TODO -- add a "lho" method to model.Player
     first_players_seat = declarer.seat.lho()
-    first_player = h.players_by_direction[first_players_seat.value]
+    first_player = h.players_by_direction_letter[first_players_seat.value]
     first_players_cards = first_player.dealt_cards()
 
-    second_player = h.players_by_direction[first_players_seat.lho().value]
+    second_player = h.players_by_direction_letter[first_players_seat.lho().value]
     second_players_cards = second_player.dealt_cards()
 
     first_card = first_players_cards[0]

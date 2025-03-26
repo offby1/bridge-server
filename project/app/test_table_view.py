@@ -21,19 +21,19 @@ def test_table_display_skeleton(usual_setup: Hand) -> None:
 
 
 def expect_visibility(expectation_array, hand: Hand) -> None:
-    for seat in hand.players_by_direction:
-        for viewer in hand.players_by_direction:
+    for seat in hand.players_by_direction_letter:
+        for viewer in hand.players_by_direction_letter:
             actual1 = _display_and_control(
                 hand=hand,
                 seat=Seat(seat),
-                as_viewed_by=hand.players_by_direction[viewer],
+                as_viewed_by=hand.players_by_direction_letter[viewer],
                 as_dealt=False,
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
             assert (
                 actual1["display_cards"] == expectation_array[seat_index][viewer_index]
-            ), f"{hand.players_by_direction[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+            ), f"{hand.players_by_direction_letter[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
 
 
 def test_hand_visibility_one(usual_setup: Hand, second_setup: Hand) -> None:
@@ -58,7 +58,7 @@ def test_hand_visibility_one(usual_setup: Hand, second_setup: Hand) -> None:
 
     # Make the opening lead
     h1.add_play_from_player(
-        player=h1.players_by_direction[Seat.EAST.value].libraryThing(),
+        player=h1.players_by_direction_letter[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 
@@ -94,12 +94,12 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
     h = usual_setup
 
     def expect_controlability(expectation_array):
-        for seat in h.players_by_direction:
-            for viewer in h.players_by_direction:
+        for seat in h.players_by_direction_letter:
+            for viewer in h.players_by_direction_letter:
                 actual = _display_and_control(
                     hand=h,
                     seat=Seat(seat),
-                    as_viewed_by=h.players_by_direction[viewer],
+                    as_viewed_by=h.players_by_direction_letter[viewer],
                     as_dealt=False,
                 )
                 seat_index = "NESW".index(seat)
@@ -107,7 +107,7 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
                 assert (
                     actual["viewer_may_control_this_seat"]
                     == expectation_array[seat_index][viewer_index]
-                ), f"{h.players_by_direction[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                ), f"{h.players_by_direction_letter[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
 
     # Nobody can control any cards, since the auction isn't settled
     expect_controlability(
@@ -136,7 +136,7 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
 
     # Make the opening lead
     h.add_play_from_player(
-        player=h.players_by_direction[Seat.EAST.value].libraryThing(),
+        player=h.players_by_direction_letter[Seat.EAST.value].libraryThing(),
         card=Card.deserialize("D2"),
     )
 

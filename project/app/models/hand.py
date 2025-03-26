@@ -255,7 +255,7 @@ class Hand(TimeStampedModel):
         return rv
 
     def _check_for_expired_tournament(self) -> None:
-        tour = self.table.tournament
+        tour = self.board.tournament
         if tour.play_completion_deadline_has_passed():
             deadline = tour.play_completion_deadline
             assert deadline is not None
@@ -278,7 +278,9 @@ class Hand(TimeStampedModel):
         return PK_from_str(pieces[1])
 
     def players(self) -> models.QuerySet:
-        return Player.objects.filter(pk__in=self.table.seats.values_list("player", flat=True))
+        return Player.objects.filter(
+            pk__in=[getattr(self, direction).pk for direction in self.direction_names]
+        )
 
     @cached_property
     @admin.display
@@ -289,18 +291,46 @@ class Hand(TimeStampedModel):
         if self.abandoned_because is not None:
             return True
 
-        raise Exception(
-            "TODO: Either the tournament play deadline has expired, or else at least one player is associated with some other hand that isn't complete."
-        )
+        tournament: Tournament = self.board.tournament
+        if not tournament.is_complete and tournament.play_completion_deadline_has_passed():
+            self.abandoned_because = "The tournament's play deadline has passed"
+            self.save()
+            return True
+
+        def has_defected(p: Player) -> bool:
+            their_hands = p._hands_played().all()
+            logger.debug("%s has played %d hands", p.name, their_hands.count())
+            for h in their_hands:
+                if h.is_complete:
+                    logger.debug("hand %s is complete, so %s hasn't (yet) defected", h, p.name)
+                    continue
+                if h.pk != self.pk:
+                    logger.debug(
+                        "hand %s is incomplete, and isn't %s, so %s has defected", h, self, p.name
+                    )
+                    return True
+            logger.debug(
+                "None of %s's hands (other than %s) are incomplete, so they haven't defected",
+                p.name,
+                self,
+            )
+            return False
+
+        defectors = [p for p in self.players() if has_defected(p)]
+        if defectors:
+            self.abandoned_because = (
+                f"{[p.name for p in defectors]} have started playing some other hand(s)"
+            )
+            return True
+
         return False
 
     def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         hand_channel = self.event_channel_name
-        player_channels = [s.player.event_channel_name for s in self.table.seats]
+        player_channels = [p.event_channel_name for p in self.players()]
         all_channels = [hand_channel, "all-tables", *player_channels]
 
         data = data.copy()
-        data["tempo_seconds"] = self.table.tempo_seconds
         data["hand_pk"] = self.pk
         now = time.time()
         for channel in all_channels:
@@ -414,13 +444,12 @@ class Hand(TimeStampedModel):
         except AuctionException as e:
             raise AuctionError(str(e)) from e
 
-        modelCall = self.call_set.create(serialized=call.serialize())
+        self.call_set.create(serialized=call.serialize())
 
         self.send_event_to_players_and_hand(
             data={
                 "new-call": {
                     "serialized": call.serialize(),
-                    "seat_pk": modelCall.seat_pk,
                 },
             },
         )
@@ -431,7 +460,7 @@ class Hand(TimeStampedModel):
             assert contract.declarer is not None
             self.send_event_to_players_and_hand(
                 data={
-                    "table": self.table.pk,
+                    "table": self.table_display_number,
                     "contract_text": str(contract),
                     "contract": {
                         "opening_leader": contract.declarer.seat.lho().value,
@@ -442,7 +471,7 @@ class Hand(TimeStampedModel):
             Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
-                    "table": self.table.pk,
+                    "table": self.table_display_number,
                     "final_score": "Passed Out",
                 },
             )
@@ -557,16 +586,18 @@ class Hand(TimeStampedModel):
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
     def modPlayer_by_seat(self, seat: libSeat) -> Player:
-        modelPlayer = self.players_by_direction[seat.value]
+        modelPlayer = self.players_by_direction_letter[seat.value]
         return Player.objects.get_by_name(modelPlayer.name)
 
     @property
     def player_names_string(self) -> str:
-        return ", ".join([p.name for p in self.players_by_direction.values()])
+        return ", ".join([p.name for p in self.players_by_direction_letter.values()])
 
     @cached_property
-    def players_by_direction(self) -> dict[str, Player]:
-        return {s.direction: s.player for s in self.table.seats}
+    def players_by_direction_letter(self) -> dict[str, Player]:
+        return {
+            direction[0].upper(): getattr(self, direction) for direction in self.direction_names
+        }
 
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[libSeat, set[libCard]]:
         rv = {}
@@ -648,7 +679,13 @@ class Hand(TimeStampedModel):
     @cached_property
     def is_complete(self):
         x = self.get_xscript()
-        return x.num_plays == 52 or x.auction.status is libAuction.PassedOut
+        logger.warning("num_plays is %d", x.num_plays)
+        if x.num_plays == 52:
+            return True
+        logger.warning("auction status is %s", x.auction.status)
+        if x.auction.status is libAuction.PassedOut:
+            return True
+        return False
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
@@ -739,7 +776,7 @@ class Hand(TimeStampedModel):
             if self.board.what_can_they_see(
                 player=as_viewed_by
             ) != self.board.PlayerVisibility.everything and as_viewed_by.name not in {
-                p.name for p in self.players_by_direction.values()
+                p.name for p in self.players_by_direction_letter.values()
             }:
                 return (
                     f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
@@ -782,7 +819,9 @@ class Hand(TimeStampedModel):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Tournament #{self.table.tournament.display_number}, table {self.table.pk}, board#{self.board.display_number}"
+        return (
+            f"Tournament #{self.board.tournament.display_number}, board#{self.board.display_number}"
+        )
 
     @staticmethod
     def untaint_board(*, instance, **kwargs):
@@ -847,14 +886,6 @@ class Call(TimeStampedModel):
     )
 
     objects = CallManager()
-
-    @property
-    def seat_pk(self) -> PK | None:
-        for pc in self.hand.get_xscript().auction.player_calls:
-            if pc.call.serialize() == self.serialized:
-                return self.hand.table.seats.get(direction=pc.player.seat.value).pk
-
-        return None
 
     @property
     def libraryThing(self):

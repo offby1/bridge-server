@@ -50,7 +50,7 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
 
 def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
     context = {}
-    p_b_d_list = list(hand.players_by_direction.items())
+    p_b_d_list = list(hand.players_by_direction_letter.items())
     # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
     p_b_d_list.insert(0, p_b_d_list.pop(-1))
     # Hightlight whoever's turn it is
@@ -623,7 +623,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    if player not in hand.players_by_direction.values():
+    if player not in hand.players_by_direction_letter.values():
         return Forbid("You're not at that table")
 
     if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
@@ -682,7 +682,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
     player = request.user.player
     assert player is not None
 
-    if player not in hand.players_by_direction.values():
+    if player not in hand.players_by_direction_letter.values():
         return Forbid("You're not at that table")
 
     whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
