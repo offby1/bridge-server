@@ -23,6 +23,8 @@ def test_table_display_skeleton(usual_setup: Hand) -> None:
 
 
 def expect_visibility(expectation_array, hand: Hand) -> None:
+    __tracebackhide__ = True
+
     for seat in hand.players_by_direction_letter:
         for viewer in hand.players_by_direction_letter:
             actual1 = _display_and_control(
@@ -33,24 +35,22 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
-            assert (
-                actual1["display_cards"] == expectation_array[seat_index][viewer_index]
-            ), f"{hand.players_by_direction_letter[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+            if actual1["display_cards"] != expectation_array[seat_index][viewer_index]:
+                pytest.fail(
+                    f"{hand.players_by_direction_letter[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+                )
 
 
-def test_hand_visibility_one(usual_setup: Hand, second_setup: Hand) -> None:
+def test_hand_visibility_one(usual_setup: Hand) -> None:
     h1 = usual_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h1)
 
     assert str(h1.auction.status) == "one Club played by Jeremy Northam, sitting North"
 
-    h2 = second_setup
-    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h2)
-
     expect_visibility(
         [
-            # n, e, s, w
-            [1, 0, 0, 0],  # n
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
             [0, 1, 0, 0],  # e
             [0, 0, 1, 0],  # s
             [0, 0, 0, 1],  # w
