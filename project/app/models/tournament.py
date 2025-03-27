@@ -357,6 +357,18 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
+    def eject_all_players(self) -> None:
+        with transaction.atomic():
+            import app.models
+
+            b: app.models.Board
+            for b in self.board_set.all():
+                h: app.models.Hand
+                for h in b.hand_set.all():
+                    for _, player in h.players_by_direction_letter.items():
+                        player.unseat_me()
+                        player.save()
+
     def maybe_complete(self) -> None:
         with transaction.atomic():
             if self.is_complete:
@@ -367,6 +379,7 @@ class Tournament(models.Model):
                 if not h.is_complete:
                     return
             self.is_complete = True
+            self.eject_all_players()
             self.save()
 
     def save(self, *args, **kwargs) -> None:
