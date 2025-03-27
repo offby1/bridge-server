@@ -644,8 +644,8 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             {
                 "xscript": xscript.serializable(),
                 "current_event_ids_by_player_name": {
-                    s.player_name: get_current_event_id([s.player.event_channel_name])
-                    for s in hand.table.seats
+                    p.name: get_current_event_id([p.event_channel_name])
+                    for _, p in hand.players_by_direction_letter.items()
                 },
             }
         ),
