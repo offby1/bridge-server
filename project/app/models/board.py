@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import functools
 import hashlib
 import logging
 import random
@@ -95,11 +96,15 @@ class BoardManager(models.Manager):
 
 
 class Board(models.Model):
+    @functools.total_ordering
     class PlayerVisibility(enum.Enum):
         nothing = enum.auto()
         own_hand = enum.auto()
         dummys_hand = enum.auto()
         everything = enum.auto()
+
+        def __lt__(self, other) -> bool:
+            return self.value < other.value
 
     if TYPE_CHECKING:
         from app.models import Hand

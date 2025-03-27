@@ -108,20 +108,33 @@ def _display_and_control(
     if as_viewed_by is not None:
         assert_type(as_viewed_by, app.models.Player)
     assert_type(as_dealt, bool)
+
+    board: app.models.Board = hand.board
     is_dummy = hand.dummy and seat == hand.dummy.seat
 
+    wat = board.what_can_they_see(player=as_viewed_by)
     display_cards = (
-        as_dealt  # hand is over and we're reviewing it
+        as_dealt  # hand is over and we're reviewing it; i.e., the hand is complete
         or hand.open_access
-        or ((as_viewed_by is not None) and as_viewed_by.has_seen_board_at(hand.board, seat))
+        or wat == board.PlayerVisibility.everything
     )
+
+    ch = None
+    if as_viewed_by is not None:
+        ch = as_viewed_by.current_hand()
+    if ch is not None:
+        current_hand, current_direction = ch
+        if current_direction == seat.name:
+            display_cards |= wat >= board.PlayerVisibility.own_hand
+        if is_dummy:
+            display_cards |= wat >= board.PlayerVisibility.dummys_hand
+
     viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
     is_viewers_turn_to_play = (
         hand.player_who_may_play is not None and hand.player_who_may_play == as_viewed_by
     )
     if as_viewed_by is not None and is_viewers_turn_to_play and display_cards:
-        ch = as_viewed_by.current_hand()
         if ch is not None:
             current_hand, current_direction = ch
             if hand == current_hand and seat.name == current_direction:  # it's our hand, duuude
