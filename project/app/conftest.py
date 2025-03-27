@@ -74,7 +74,11 @@ def nearly_completed_tournament(db: None) -> None:
 
 
 @pytest.fixture
-def two_boards_one_is_complete(two_boards_one_of_which_is_played_almost_to_completion) -> None:
+def two_boards_one_is_complete(
+    two_boards_one_of_which_is_played_almost_to_completion: None,
+) -> Hand:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
     check_for_expirations(__name__)
+
+    return h1
