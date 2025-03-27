@@ -96,6 +96,7 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
     h = usual_setup
 
     def expect_controlability(expectation_array):
+        __tracebackhide__ = True
         for seat in h.players_by_direction_letter:
             for viewer in h.players_by_direction_letter:
                 actual = _display_and_control(
@@ -106,10 +107,14 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
                 )
                 seat_index = "NESW".index(seat)
                 viewer_index = "NESW".index(viewer)
-                assert (
+
+                if (
                     actual["viewer_may_control_this_seat"]
-                    == expectation_array[seat_index][viewer_index]
-                ), f"{h.players_by_direction_letter[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                    != expectation_array[seat_index][viewer_index]
+                ):
+                    pytest.fail(
+                        f"{h.players_by_direction_letter[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                    )
 
     # Nobody can control any cards, since the auction isn't settled
     expect_controlability(
