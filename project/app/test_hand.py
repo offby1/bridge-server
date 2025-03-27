@@ -317,7 +317,7 @@ def test_next_seat_to_play(usual_setup: Hand) -> None:
     assert h.declarer is not None
     assert h.declarer.seat == libSeat.NORTH
     assert h.next_seat_to_play is not None
-    assert h.next_seat_to_play.named_direction == "East"
+    assert h.next_seat_to_play.name == "East"
 
 
 def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> None:

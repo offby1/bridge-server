@@ -592,6 +592,14 @@ class Hand(TimeStampedModel):
         pbs = self.libPlayers_by_libSeat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
+    @property
+    def next_seat_to_play(self) -> Seat | None:
+        if not self.auction.found_contract:
+            return None
+
+        xscript = self.get_xscript()
+        return xscript.next_seat_to_play()
+
     def modPlayer_by_seat(self, seat: Seat) -> Player:
         modelPlayer = self.players_by_direction_letter[seat.value]
         return Player.objects.get_by_name(modelPlayer.name)
