@@ -27,7 +27,7 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
 
     for seat in hand.players_by_direction_letter:
         for viewer in hand.players_by_direction_letter:
-            actual1 = _display_and_control(
+            actual = _display_and_control(
                 hand=hand,
                 seat=Seat(seat),
                 as_viewed_by=hand.players_by_direction_letter[viewer],
@@ -35,9 +35,9 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
-            if actual1["display_cards"] != expectation_array[seat_index][viewer_index]:
+            if actual["display_cards"] != expectation_array[seat_index][viewer_index]:
                 pytest.fail(
-                    f"{hand.players_by_direction_letter[viewer]} {'can' if actual1['display_cards'] else 'can not'} see {Seat(seat)} "
+                    f"{hand.players_by_direction_letter[viewer]} {'can' if actual['display_cards'] else 'can not'} see {Seat(seat)} "
                 )
 
 
