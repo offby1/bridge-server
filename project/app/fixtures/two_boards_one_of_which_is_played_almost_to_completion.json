@@ -116,46 +116,7 @@
   },
   {
     "fields": {
-      "direction": "N",
-      "player": 1,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "direction": "E",
-      "player": 2,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "direction": "S",
-      "player": 3,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "direction": "W",
-      "player": 4,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 4
-  },
-  {
-    "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
@@ -169,9 +130,6 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
@@ -185,9 +143,6 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
@@ -201,9 +156,6 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
       "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
@@ -216,11 +168,16 @@
   },
   {
     "fields": {
+      "East": 2,
+      "North": 1,
+      "South": 3,
+      "West": 4,
+      "abandoned_because": null,
       "board": 1,
       "created": "2000-01-01T00:00:00Z",
       "modified": "2000-01-01T00:00:00Z",
       "open_access": false,
-      "table": 1
+      "table_display_number": null
     },
     "model": "app.hand",
     "pk": 1
@@ -774,13 +731,5 @@
     },
     "model": "app.play",
     "pk": 51
-  },
-  {
-    "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
-    "pk": 1
   }
 ]
