@@ -10,6 +10,8 @@ from .views.hand import _display_and_control
 
 def test_table_display_skeleton(usual_setup: Hand) -> None:
     h: Hand = usual_setup
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
+
     ds = h.display_skeleton()
     for dir_ in Seat:
         assert ds[dir_].textual_summary == "13 cards"
