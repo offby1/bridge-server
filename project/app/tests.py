@@ -24,6 +24,7 @@ from .models import (
     PlayerException,
     Tournament,
 )
+from .models.board import board_attributes_from_display_number
 from .testutils import play_out_hand, set_auction_to
 from .views import hand, player
 
@@ -149,15 +150,25 @@ def test_legal_cards(usual_setup: Hand, rf) -> None:
     # TODO -- play a card, ensure various holdings are now indeed disabled
 
 
-def test_player_cannot_be_in_two_hands(usual_setup: Hand) -> None:
+def test_player_cannot_be_in_two_incomplete_hands(usual_setup: Hand) -> None:
     h1 = usual_setup
 
     with pytest.raises(HandError) as e:
         Hand.objects.create(
-            tournament=h1.tournament, north=h1.north, east=h1.east, south=h1.south, west=h1.west
+            board=Board.objects.create_from_attributes(
+                attributes=board_attributes_from_display_number(
+                    display_number=Board.objects.count() + 1,
+                    rng_seeds=[b"is she really going out with him"],
+                ),
+                tournament=h1.tournament,
+            ),
+            North=h1.North,
+            East=h1.East,
+            South=h1.South,
+            West=h1.West,
         )
 
-    assert "already seated at" in str(e.value)
+    assert "Cannot seat" in str(e.value)
 
 
 def test_breaking_up_is_hard_to_do(usual_setup: Hand) -> None:

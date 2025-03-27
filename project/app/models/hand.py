@@ -173,6 +173,10 @@ class HandManager(models.Manager):
 
         expression = models.Q(pk__in=[])
         for p in players:
+            if (ch := p.current_hand()) is not None:
+                msg = f"Cannot seat {p.name} because they are already playing {ch[1]} in {ch[0]}"
+                raise HandError(msg)
+
             expression |= models.Q(pk__in=p.boards_played.all())
 
         if Board.objects.filter(expression).filter(pk=board.pk).exists():
