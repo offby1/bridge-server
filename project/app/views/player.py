@@ -320,12 +320,12 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
             logger.debug(f"Nuttin' from pk={name_or_pk=}")
             return HttpResponseNotFound()
 
+    ch = p.current_hand()
+
     payload = {
         "pk": p.pk,
-        "current_table_number": p.current_hand.table_display_number
-        if p.current_hand is not None
-        else None,
-        "current_hand_pk": p.current_hand.pk if p.current_hand is not None else None,
+        "current_table_number": ch[0].table_display_number if ch is not None else None,
+        "current_hand_pk": ch[0].pk if ch is not None else None,
         "name": p.name,
     }
 
