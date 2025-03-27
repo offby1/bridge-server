@@ -450,22 +450,24 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     h = Hand.objects.first()
     assert not h.is_complete
 
-    seats = h.table.seats.select_related("player")
-    assert seats.count() == 4
+    for dir_ in h.direction_names:
+        assert getattr(h, dir_, None) is not None
 
-    north = seats.first().player
+    north = h.North
     south = north.partner
     north.break_partnership()
 
+    h = Hand.objects.get(pk=h.pk)
     assert h.is_abandoned
+
     message = h.abandoned_because
-    assert "left their seats for the lobby" in message
+    assert "left their seat" in message
     assert north.name in message
     assert south.name in message
 
     north.partner_with(south)
 
-    # Now reseat north and south at some other table
+    # Now put north and south into some other hand
     new_player_names = ["e2", "w2"]
     for name in new_player_names:
         Player.objects.create(
@@ -479,13 +481,11 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         p2=Player.objects.get_by_name("e2"),
         tournament=Tournament.objects.first(),
     )
-    for p in Player.objects.all():
-        print(f"{p.name}: {p.current_seat.direction} at table {p.current_seat.table.pk}")
 
-    h.refresh_from_db()
-    del h.is_abandoned
+    h = Hand.objects.get(pk=h.pk)
     assert h.is_abandoned
+
     message = h.abandoned_because
     assert north.name in message
     assert south.name in message
-    assert "other tables" in message
+    assert "left their seat" in message

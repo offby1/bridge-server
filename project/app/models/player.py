@@ -28,8 +28,6 @@ from .playaz import WireCharacterProvider
 from .types import PK_from_str
 
 if TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager
-
     from .hand import Hand
     from .types import PK
 
@@ -145,8 +143,18 @@ class Player(TimeStampedModel):
         return rv
 
     def unseat_me(self) -> None:
-        self.currently_seated = False
-        self._control_bot()
+        with transaction.atomic():
+            if (ch := self.current_hand()) is not None:
+                if ch[0].abandoned_because is None:
+                    why = []
+                else:
+                    why = ch[0].abandoned_because.split("; ")
+                why.append(f"{self} left their seat")
+                ch[0].abandoned_because = "; ".join(why)
+                ch[0].save()
+
+            self.currently_seated = False
+            self._control_bot()
 
     @property
     def event_channel_name(self):
