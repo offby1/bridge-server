@@ -117,26 +117,24 @@ def _display_and_control(
     )
     viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
-    is_this_seats_turn_to_play = (
-        hand.player_who_may_play is not None
-        and hand.player_who_may_play.current_seat is not None
-        and hand.player_who_may_play.current_seat.direction == seat.value
+    is_viewers_turn_to_play = (
+        hand.player_who_may_play is not None and hand.player_who_may_play == as_viewed_by
     )
-    if (
-        as_viewed_by is not None
-        and display_cards
-        and as_viewed_by.current_seat is not None
-        and is_this_seats_turn_to_play
-    ):
-        if seat.value == as_viewed_by.current_seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat |= not is_dummy  # declarer controls this hand, not dummy
-        elif hand.dummy is not None and hand.declarer is not None:
-            the_declarer: bridge.seat.Seat = hand.declarer.seat
-            if (
-                seat == hand.dummy.seat
-                and the_declarer.value == as_viewed_by.current_seat.direction
-            ):
-                viewer_may_control_this_seat = True
+    if as_viewed_by is not None and is_viewers_turn_to_play and display_cards:
+        ch = as_viewed_by.current_hand()
+        if ch is not None:
+            current_hand, current_direction = ch
+            if hand == current_hand and seat.name == current_direction:  # it's our hand, duuude
+                viewer_may_control_this_seat |= (
+                    not is_dummy
+                )  # declarer controls this hand, not dummy
+            elif hand.dummy is not None and hand.declarer is not None:
+                the_declarer: bridge.seat.Seat = hand.declarer.seat
+                if (
+                    seat == hand.dummy.seat
+                    and the_declarer.value == as_viewed_by.current_seat.direction
+                ):
+                    viewer_may_control_this_seat = True
 
     return {
         "display_cards": bool(display_cards),
@@ -557,7 +555,7 @@ def _terse_description(hand: Hand) -> str:
 
     table = format_html(
         "Table #{}",
-        hand.table.pk,
+        hand.table_display_number,
     )
 
     board = format_html(
@@ -577,15 +575,8 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
-    if player.current_table_pk() != hand.table.pk:
-        h: app.models.Hand | None
-        if (h := player.hand_at_which_board_was_played(hand.board)) is None or not h.is_complete:
-            assert h is not None  # mypy, why are you so dumb
-            why = "You are not allowed to see neither squat, zip, nada, nor bupkis"
-            if h.abandoned_because:
-                why += " because " + h.abandoned_because
-            return Forbid(why)
+    # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
+    # exactly when
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,

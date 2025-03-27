@@ -387,9 +387,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
         return qs.first()
 
+    def _boards_played(self) -> models.QuerySet:
+        return Board.objects.filter(pk__in=self.hands_played.values_list("board", flat=True))
+
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        raise Exception("TODO: scour hands we've played, accumulate corresponding boards")
-        return True
+        return board in self._boards_played()
 
     @cached_property
     def name(self):
