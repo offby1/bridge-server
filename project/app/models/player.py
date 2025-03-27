@@ -374,8 +374,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @property
     def hands_played(self) -> models.QuerySet:
-        # TODO -- this otta be easy, now that hands link directly to players
-        return Player.objects.none()
+        return self._hands_played()
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
