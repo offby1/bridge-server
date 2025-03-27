@@ -107,7 +107,7 @@ def test_completing_one_tournament_deletes_related_signups(
     DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
 
     h1 = Hand.objects.get(pk=1)
-    the_tournament: Tournament = h1.table.tournament
+    the_tournament: Tournament = h1.tournament
     the_tournament.signup_deadline = Tomorrow
     the_tournament.play_completion_deadline = DayAfter
 
