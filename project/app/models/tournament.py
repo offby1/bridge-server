@@ -363,7 +363,11 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
-            raise Exception("TODO -- I don't even know what this means")
+            for h in self.hands():
+                if not h.is_complete:
+                    return
+            self.is_complete = True
+            self.save()
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:

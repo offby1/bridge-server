@@ -17,15 +17,10 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
     assert user.player is not None
     data = {"player-name": user.username, "player_pk": user.player.pk, "comment": comment}
 
-    current_table = user.player.current_table
-    if current_table is not None:
-        data["table_pk"] = current_table.pk
-        try:
-            current_hand = current_table.current_hand
-        except Exception:
-            pass
-        else:
-            data["hand_pk"] = current_hand.pk
+    ch = user.player.current_hand()
+    if ch is not None:
+        current_hand, _ = ch
+        data["hand_pk"] = current_hand.pk
 
     return JsonResponse(data)
 
