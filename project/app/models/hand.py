@@ -831,17 +831,6 @@ class Hand(TimeStampedModel):
             f"Tournament #{self.board.tournament.display_number}, board#{self.board.display_number}"
         )
 
-    @staticmethod
-    def untaint_board(*, instance, **kwargs):
-        for p in instance.players():
-            p.boards_played.remove(instance.board)
-        logger.debug(
-            "Hand %s un-tainted board %s from %s.",
-            instance.pk,
-            instance.board.pk,
-            [p.name for p in instance.players()],
-        )
-
     class Meta:
         constraints = [
             models.UniqueConstraint(

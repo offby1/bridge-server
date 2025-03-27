@@ -31,7 +31,7 @@
             {% endif %}
         </span>
         <hr />
-        <a href="{% url 'app:table-list' %}?tournament={{ tournament.pk }}">{{ tournament.table_set.count }} Tables</a>.
+        TODO -- put here a link to the list of hands
     {% elif tournament.status_str == "OpenForSignup" %}
         <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
         {% if speed_things_up_button %}
