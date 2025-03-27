@@ -150,7 +150,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "",
-      "password": "!KvaDk5ak5Dnv3QNr18uxEWrl4QYu3SNFkZBvhdMq",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
       "user_permissions": [],
       "username": "Jeremy Northam"
     },
@@ -168,7 +168,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "",
-      "password": "!bKRg87w9nuuQZuxkVBfJBisCy8fu57Eequ6rt3vf",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
       "user_permissions": [],
       "username": "Clint Eastwood"
     },
@@ -186,7 +186,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "",
-      "password": "!PnJ47hivnZupsGzsYL0ICu9kX4ZCcWi9bOehurut",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
       "user_permissions": [],
       "username": "J.D. Souther"
     },
@@ -204,7 +204,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "",
-      "password": "!gHsjdfEyiSGNxOLJ4YFIhjd05xEj5W2OcjhZAg3x",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
       "user_permissions": [],
       "username": "Adam West"
     },
