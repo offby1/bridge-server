@@ -146,13 +146,8 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             if (ch := self.current_hand()) is not None:
                 if ch[0].abandoned_because is None:
-                    why = []
-                else:
-                    why = ch[0].abandoned_because.split("; ")
-                why.append(f"{self} left their seat")
-                ch[0].abandoned_because = "; ".join(why)
-                ch[0].abandoned_because = ch[0].abandoned_because[0:100]
-                ch[0].save()
+                    ch[0].abandoned_because = f"{self.name} left"
+                    ch[0].save()
 
             self.currently_seated = False
             self._control_bot()
