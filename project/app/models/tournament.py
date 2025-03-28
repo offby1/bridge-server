@@ -393,7 +393,7 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
-            all_hands_are_complete = True
+            all_hands_are_complete = self.hands().exists()
             for h in self.hands():
                 if not h.is_complete:
                     all_hands_are_complete = False
