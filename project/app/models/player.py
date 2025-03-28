@@ -370,13 +370,13 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return None
 
     def dealt_cards(self) -> list[bridge.card.Card]:
-        tmp = self.current_hand()
+        ch = self.current_hand()
 
-        if tmp is None:
+        if ch is None:
             msg = f"{self} is not seated, so has no cards"
             raise PlayerException(msg)
 
-        h, direction_name = tmp
+        h, direction_name = ch
 
         return h.board.cards_for_direction_string(direction_name)
 
@@ -392,7 +392,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        return board in self.boards_played
+        return board in self.boards_played.all()
 
     @cached_property
     def name(self):
