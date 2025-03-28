@@ -389,11 +389,13 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete %s since it's already complete.", self)
                 return
 
+            all_hands_are_complete = True
             for h in self.hands():
                 if not h.is_complete:
-                    return
+                    all_hands_are_complete = False
+                    break
 
-            if self.play_completion_deadline_has_passed():
+            if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.is_complete = True
                 self.eject_all_players()
                 self.save()
