@@ -137,7 +137,7 @@ def _display_and_control(
 
     if not display_cards or hand.player_who_may_play is None:
         return {
-            "display_cards": False,
+            "display_cards": display_cards,
             "viewer_may_control_this_seat": False,
         }
 
