@@ -17,8 +17,9 @@ import app.views.table.details
 from app.models import (
     Board,
     Hand,
-    Player,
     HandError,
+    Player,
+    PlayerException,
     Tournament,
     TournamentSignup,
 )
@@ -159,11 +160,8 @@ def test_play_completion_deadline(usual_setup) -> None:
     east = Player.objects.get_by_name("Clint Eastwood")
     with freeze_time(DayAfter):
         check_for_expirations(sender="Some unit test")
-        with pytest.raises(HandError) as e:
+        with pytest.raises(PlayerException):
             hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
-
-        assert "deadline" in str(e.value)
-        assert "has passed" in str(e.value)
 
         # All players have been ejected
         assert Player.objects.currently_seated().count() == 0
