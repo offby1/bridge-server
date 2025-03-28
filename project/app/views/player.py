@@ -180,22 +180,22 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
     who_clicked = request.user.player  # aka "as_viewed_by"
-    redirect_to_table = False
+    redirect_to_hand = False
 
     if pk is None:
         if request.method != "GET":
             return HttpResponseNotAllowed(["GET"])
 
         pk = request.user.player.pk
-        redirect_to_table = True
+        redirect_to_hand = True
 
     subject: Player = get_object_or_404(Player, pk=pk)
 
-    if redirect_to_table and subject.currently_seated:
-        assert subject.current_table is not None
-        return HttpResponseRedirect(
-            reverse("app:hand-detail", kwargs={"pk": subject.current_table.current_hand.pk})
-        )
+    if redirect_to_hand and subject.currently_seated:
+        ch = subject.current_hand()
+        assert ch is not None
+        current_hand, _ = ch
+        return HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": current_hand.pk}))
 
     common_context = {
         "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
