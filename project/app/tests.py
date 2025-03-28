@@ -364,7 +364,7 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) ->
     assert h.player_who_may_play is None
 
 
-def test_table_creation(j_northam, everybodys_password):
+def test_hand_creation(j_northam, everybodys_password):
     players_by_name = {"bob": j_northam}
     sam = Player.objects.create(
         user=auth.models.User.objects.create(
@@ -382,9 +382,11 @@ def test_table_creation(j_northam, everybodys_password):
 
     t = Tournament.objects.create()
 
-    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
+    response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
 
     assert type(response) is HttpResponseForbidden
+
+    # Can't create a hand with fewer than four players.
     assert b"four distinct" in response.content
 
     for name in ("tina", "tony"):
@@ -399,8 +401,9 @@ def test_table_creation(j_northam, everybodys_password):
     tina = players_by_name["tina"]
     tina.partner_with(players_by_name["tony"])
 
-    response = client.post(path=f"/table/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
+    response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
 
+    # Now that we've got four players, it shudda worked.
     assert type(response) is HttpResponseRedirect
 
 

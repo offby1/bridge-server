@@ -706,3 +706,13 @@ def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResp
 
     hand.toggle_open_access()
     return HttpResponse(f"{hand=} {hand.open_access=}")
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required()
+def new_hand_view(
+    request: AuthedHttpRequest, tournament_pk: PK, north_pk: PK, east_pk: PK
+) -> HttpResponse:
+    msg = f"Imagine I created a hand in {tournament_pk} with {north_pk} and {east_pk} and their partners"
+    logger.warning("%s", msg)
+    return HttpResponse(format_html(msg))
