@@ -244,7 +244,7 @@ class Hand(TimeStampedModel):
         db_comment='For debugging only! Settable via the admin site, and maaaaybe by a special "god-mode" switch in the UI',
     )  # type: ignore
 
-    abandoned_because = models.CharField(max_length=100, null=True)
+    abandoned_because = models.CharField(max_length=200, null=True)
 
     @cached_property
     def tournament(self) -> Tournament:
