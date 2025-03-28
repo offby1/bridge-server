@@ -401,6 +401,8 @@ def test_hand_creation(j_northam, everybodys_password):
     tina = players_by_name["tina"]
     tina.partner_with(players_by_name["tony"])
 
+    assert not t.is_complete
+
     response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
 
     # Now that we've got four players, it shudda worked.

@@ -708,11 +708,32 @@ def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResp
     return HttpResponse(f"{hand=} {hand.open_access=}")
 
 
+# Note that this will go away when we do proper movements, since the whole point of a movement is to determine, ahead of
+# time, who plays which board with which opponents.
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_hand_view(
     request: AuthedHttpRequest, tournament_pk: PK, north_pk: PK, east_pk: PK
 ) -> HttpResponse:
-    msg = f"Imagine I created a hand in {tournament_pk} with {north_pk} and {east_pk} and their partners"
-    logger.warning("%s", msg)
-    return HttpResponse(format_html(msg))
+    tournament = get_object_or_404(app.models.Tournament, pk=tournament_pk)
+    north = get_object_or_404(app.models.Player, pk=north_pk)
+    east = get_object_or_404(app.models.Player, pk=east_pk)
+
+    all_pks = set(
+        [north.pk, getattr(north.partner, "pk", None), east.pk, getattr(east.partner, "pk", None)]
+    )
+    if len(all_pks) < 4:
+        return Forbid("Now just a cotton pickin' minute; I need four distinct players")
+
+    if north.partner is None:
+        return Forbid(f"{north.name} has no partner!!")
+
+    if east.partner is None:
+        return Forbid(f"{east.name} has no partner!!")
+
+    try:
+        h = app.models.Hand.objects.create_with_two_partnerships(north, east, tournament=tournament)
+    except app.models.HandError as e:
+        return Forbid(e)
+
+    return HttpResponseRedirect(reverse("app:hand-detail", args=[h.pk]))

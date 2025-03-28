@@ -393,9 +393,10 @@ class Tournament(models.Model):
                 if not h.is_complete:
                     return
 
-            self.is_complete = True
-            self.eject_all_players()
-            self.save()
+            if self.play_completion_deadline_has_passed():
+                self.is_complete = True
+                self.eject_all_players()
+                self.save()
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:

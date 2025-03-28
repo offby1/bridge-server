@@ -154,6 +154,9 @@ class HandManager(models.Manager):
                 # from IPython import embed
 
                 # embed()
+                if not tournament.board_set.exists():
+                    tournament.add_boards(n=2)
+
                 board = tournament.board_set.exclude(
                     id__in=tournament.hands().values_list("board", flat=True)
                 ).first()
