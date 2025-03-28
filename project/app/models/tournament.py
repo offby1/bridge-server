@@ -343,7 +343,7 @@ class Tournament(models.Model):
                 f"At least one of {(player.name, player.partner.name)} is currently seated"
             )
         for p in (player, player.partner):
-            TournamentSignup.objects.get_or_create(tournament=self, player=p)
+            TournamentSignup.objects.get_or_create(defaults=dict(tournament=self), player=p)
             logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
 
     def signed_up_players(self) -> models.QuerySet:
