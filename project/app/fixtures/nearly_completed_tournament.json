@@ -1524,7 +1524,6 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": false,
@@ -1540,7 +1539,6 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
@@ -1556,7 +1554,6 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
@@ -1572,7 +1569,6 @@
         1
       ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,

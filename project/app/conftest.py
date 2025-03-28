@@ -57,7 +57,7 @@ def nobody_seated(db: None) -> None:
         "--exclude",
         "app.table",
     )
-    Player.objects.all().update(currently_seated=False)
+
     for p in Player.objects.all():
         for b in p.boards_played.all():
             p.boards_played.remove(b)

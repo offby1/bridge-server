@@ -10,9 +10,10 @@ from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
-        for bp in Player.objects.filter(
-            currently_seated=True,
-        ).filter(allow_bot_to_play_for_me=True):
+        for bp in Player.objects.filter(allow_bot_to_play_for_me=True):
+            if not bp.currently_seated:
+                continue
+
             self.stderr.write(f"{bp.name} ... ", ending="")
 
             try:

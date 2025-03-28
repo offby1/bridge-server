@@ -86,7 +86,7 @@ def test_completing_one_tournament_ejects_players(
     west = Player.objects.get_by_name("Adam West")
     h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
-    assert not Player.objects.filter(currently_seated=True).exists()
+    assert not Player.objects.currently_seated().exists()
 
 
 def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> None:
@@ -136,7 +136,7 @@ def test_completing_one_tournament_deletes_related_signups(
 
 def test_play_completion_deadline(usual_setup) -> None:
     # All players are initially seated
-    assert not Player.objects.filter(currently_seated=False).exists()
+    assert Player.objects.currently_seated().count() == Player.objects.count()
 
     north = Player.objects.get_by_name("Jeremy Northam")
 
@@ -166,7 +166,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         assert "has passed" in str(e.value)
 
         # All players have been ejected
-        assert Player.objects.filter(currently_seated=True).count() == 0
+        assert Player.objects.currently_seated().count() == 0
 
         hand.refresh_from_db()
         del hand.is_abandoned

@@ -406,14 +406,14 @@ def player_list_view(request):
         filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
     if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
-        qs = qs.filter(currently_seated=seated_filter)
+        qs = qs.exclude(current_hand__isnull=seated_filter)
         filter_description.append("currently seated" if seated_filter else "in the lobby")
 
     filtered_count = qs.count()
     if player is not None and player.partner is not None:
         qs = qs.annotate(
             maybe_a_link=(
-                Q(currently_seated=False)
+                Q(current_hand__isnull=True)
                 & Q(partner__isnull=False)
                 & ~Q(pk=player.pk)
                 & ~Q(pk=player.partner.pk)

@@ -63,8 +63,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             "Somehow, %s got signed up despite not having partners", [p.name for p in singles]
         )
 
-    for p in tour.signed_up_players().filter(partner__isnull=False).exclude(currently_seated=True):
-        waiting_pairs.add(frozenset([p, p.partner]))
+    for p in tour.signed_up_players().filter(partner__isnull=False):
+        if not p.currently_seated:
+            waiting_pairs.add(frozenset([p, p.partner]))
 
     logger.debug("%d pairs are waiting", len(waiting_pairs))
 

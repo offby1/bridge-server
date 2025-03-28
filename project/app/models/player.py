@@ -67,6 +67,10 @@ class PlayerManager(models.Manager):
     def get_by_name(self, name):
         return self.get(user__username=name)
 
+    def currently_seated(self) -> models.QuerySet:
+        seated_pks = set([p.pk for p in self.all() if p.currently_seated])
+        return self.filter(pk__in=seated_pks)
+
 
 class PlayerException(Exception):
     pass
@@ -101,9 +105,6 @@ class Player(TimeStampedModel):
     # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
     # those seats are historical, and I've since left my last table, and not chosen a new one.
 
-    # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
-    # partnership splits up.
-    currently_seated = models.BooleanField(default=False)
     allow_bot_to_play_for_me = models.BooleanField(default=False)
     synthetic = models.BooleanField(default=False)
 
@@ -114,7 +115,8 @@ class Player(TimeStampedModel):
         object_id_field="recipient_object_id",
     )
 
-    def _hands_played(self) -> models.QuerySet:
+    # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
+    def _hands(self) -> models.QuerySet:
         from app.models import Hand
 
         hands = Hand.objects.all()
@@ -127,7 +129,7 @@ class Player(TimeStampedModel):
 
     @cached_property
     def boards_played(self) -> models.QuerySet:
-        return Board.objects.filter(id__in=self._hands_played().values_list("board", flat=True))
+        return Board.objects.filter(id__in=self._hands().values_list("board", flat=True))
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -143,13 +145,19 @@ class Player(TimeStampedModel):
         return rv
 
     def unseat_me(self) -> None:
+        # TODO -- refactor this with "current_hand"
         with transaction.atomic():
-            if (ch := self.current_hand()) is not None:
-                if ch[0].abandoned_because is None:
-                    ch[0].abandoned_because = f"{self.name} left"
-                    ch[0].save()
+            h: Hand
+            direction_name: str
 
-            self.currently_seated = False
+            for h in self._hands().filter(abandoned_because__isnull=True):
+                if not h.is_complete:
+                    for direction_name in h.direction_names:
+                        if getattr(h, direction_name) == self:
+                            if h.abandoned_because is None:
+                                h.abandoned_because = f"{self.name} left"
+                                h.save()
+                                break
             self._control_bot()
 
     @property
@@ -167,7 +175,6 @@ class Player(TimeStampedModel):
     def _control_bot(self) -> None:
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
-            logger.debug(f"Bailing out early because {service_directory=} is not a directory")
             return
 
         def run_in_slash_service(command: list[str]) -> None:
@@ -337,20 +344,24 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.partner.partner = None
             self.partner.unseat_me()
-            self.partner.save(update_fields=["partner", "currently_seated"])
+            self.partner.save(update_fields=["partner"])
 
             self.partner = None
             self.unseat_me()
-            self.save(update_fields=["partner", "currently_seated"])
+            self.save(update_fields=["partner"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
+
+    @cached_property
+    def currently_seated(self) -> bool:
+        return self.current_hand() is not None
 
     def current_hand(self) -> tuple[Hand, str] | None:
         h: Hand
         direction_name: str
 
-        for h in self._hands_played():
-            if not h.is_complete:
+        for h in self._hands():
+            if not h.is_complete and h.abandoned_because is None:
                 for direction_name in h.direction_names:
                     if getattr(h, direction_name) == self:
                         return h, direction_name
@@ -370,7 +381,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @property
     def hands_played(self) -> models.QuerySet:
-        return self._hands_played()
+        return self._hands()
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
@@ -429,7 +440,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             existing = (
                 Player.objects.filter(synthetic=True)
                 .filter(partner__isnull=False)
-                .filter(currently_seated=False)
+                .filter(current_hand__isnull=True)
                 .exclude(partner=self)
             )
             if existing.count() >= 2:
@@ -472,5 +483,4 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "currently_seated"]
-    list_filter = ["currently_seated"]
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]

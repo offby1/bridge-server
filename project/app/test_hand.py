@@ -441,9 +441,15 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     for dir_ in h.direction_names:
         assert getattr(h, dir_, None) is not None
 
-    north = h.North
-    south = north.partner
+    north: Player | None = h.North
+    assert north is not None
+
+    south: Player | None = north.partner
+    assert south is not None
+
     north.break_partnership()
+    assert not north.currently_seated
+    assert not south.currently_seated
 
     h = Hand.objects.get(pk=h.pk)
     assert h.is_abandoned
@@ -462,6 +468,10 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         )
 
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
+    assert not north.currently_seated
+    assert not south.currently_seated
+    assert not Player.objects.get_by_name("e2").currently_seated
+    assert not Player.objects.get_by_name("w2").currently_seated
 
     Hand.objects.create_with_two_partnerships(
         p1=north,
