@@ -151,6 +151,7 @@ class Player(TimeStampedModel):
                     why = ch[0].abandoned_because.split("; ")
                 why.append(f"{self} left their seat")
                 ch[0].abandoned_because = "; ".join(why)
+                ch[0].abandoned_because = ch[0].abandoned_because[0:100]
                 ch[0].save()
 
             self.currently_seated = False

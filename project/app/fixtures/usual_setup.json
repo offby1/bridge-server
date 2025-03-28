@@ -75,7 +75,7 @@
     "fields": {
       "allow_bot_to_play_for_me": true,
       "created": "2025-03-26T15:35:19.216Z",
-      "currently_seated": false,
+      "currently_seated": true,
       "modified": "2025-03-26T15:35:19.273Z",
       "partner": 3,
       "synthetic": true,
@@ -88,7 +88,7 @@
     "fields": {
       "allow_bot_to_play_for_me": true,
       "created": "2025-03-26T15:35:19.233Z",
-      "currently_seated": false,
+      "currently_seated": true,
       "modified": "2025-03-26T15:35:19.306Z",
       "partner": 4,
       "synthetic": true,
@@ -101,7 +101,7 @@
     "fields": {
       "allow_bot_to_play_for_me": true,
       "created": "2025-03-26T15:35:19.254Z",
-      "currently_seated": false,
+      "currently_seated": true,
       "modified": "2025-03-26T15:35:19.275Z",
       "partner": 1,
       "synthetic": true,
@@ -114,7 +114,7 @@
     "fields": {
       "allow_bot_to_play_for_me": true,
       "created": "2025-03-26T15:35:19.272Z",
-      "currently_seated": false,
+      "currently_seated": true,
       "modified": "2025-03-26T15:35:19.306Z",
       "partner": 2,
       "synthetic": true,

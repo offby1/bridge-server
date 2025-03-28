@@ -268,7 +268,7 @@ class Hand(TimeStampedModel):
             tour.save()
 
             msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
-            raise Exception(msg)
+            raise HandError(msg)
 
     @property
     def event_channel_name(self):

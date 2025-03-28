@@ -119,7 +119,15 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
+                reason = None
+                for h in t.hands():
+                    if not h.is_complete:
+                        reason = f"Play completion deadline ({t.play_completion_deadline}) has passed with {h} incomplete"
+                        logger.info("%s", reason)
+                        break
+
                 t.is_complete = True
+                t.eject_all_players(reason=reason)
                 t.save()
                 continue
 
@@ -326,7 +334,7 @@ class Tournament(models.Model):
             raise PlayerNeedsPartnerError(f"{player.name} has no partner")
         if any(p.currently_seated for p in (player, player.partner)):
             raise PlayerNotSeatedError(
-                f"At least one of {(player, player.partner)} is currently seated"
+                f"At least one of {(player.name, player.partner.name)} is currently seated"
             )
         for p in (player, player.partner):
             TournamentSignup.objects.get_or_create(tournament=self, player=p)
@@ -357,7 +365,7 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
-    def eject_all_players(self) -> None:
+    def eject_all_players(self, *, reason=None) -> None:
         with transaction.atomic():
             import app.models
 
@@ -368,6 +376,8 @@ class Tournament(models.Model):
                     for _, player in h.players_by_direction_letter.items():
                         player.unseat_me()
                         player.save()
+                    h.abandoned_because = reason[0:100]
+                    h.save()
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
@@ -378,6 +388,7 @@ class Tournament(models.Model):
             for h in self.hands():
                 if not h.is_complete:
                     return
+
             self.is_complete = True
             self.eject_all_players()
             self.save()

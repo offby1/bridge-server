@@ -174,133 +174,93 @@ def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
     return disabled_buttons, active_buttons
 
 
-# TODO -- either split this test into three pieces, or at least parametrize it.
-# That way it won't have to delete tournament signups and hands.
-def test_bidding_box_html(usual_setup: Hand, rf) -> None:
-    yesterday = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
-    today = datetime.datetime.fromisoformat("2500-05-05T05:05:05Z")
-    tomorrow = datetime.datetime.fromisoformat("2999-12-31T23:59:59Z")
-
-    h1 = usual_setup
+def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
+    h = usual_setup
 
     # First case: completed auction, contract is one diamond, not doubled.
-    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h1)
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h)
     # set_auction_to has set the declarer to be the dealer.
 
-    assert h1.auction.found_contract
+    assert h.auction.found_contract
 
     # The auction is settled, so no bidding box.
-    assert h1.player_who_may_play is not None
-    response = _bidding_box_as_seen_by(h1, h1.player_who_may_play, rf)
+    assert h.player_who_may_play is not None
+    response = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
     assert b"<button" not in response.content
 
+
+def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
+    h = usual_setup
+
     # Second case: auction in progress, only call is one diamond.
+    allowed_caller = h.auction.allowed_caller()
+    assert allowed_caller is not None
+    assert allowed_caller.name == "Jeremy Northam"
 
-    def _same_board_but_new_tournament():
-        board_kwargs = {
-            attr: getattr(h1.board, attr)
-            for attr in (
-                "dealer",
-                "display_number",
-                "east_cards",
-                "ew_vulnerable",
-                "north_cards",
-                "ns_vulnerable",
-                "south_cards",
-                "west_cards",
-            )
-        }
-        signup_deadline = yesterday
-        play_completion_deadline = tomorrow
-        fresh_tournament = Tournament.objects.create(
-            signup_deadline=signup_deadline, play_completion_deadline=play_completion_deadline
-        )
-        with freeze_time(yesterday - datetime.timedelta(seconds=3600)):
-            from app.models.signups import TournamentSignup
+    from app.models import logged_queries
 
-            TournamentSignup.objects.all().delete()
-            for name in ("Jeremy Northam", "Clint Eastwood"):
-                fresh_tournament.sign_up(Player.objects.get_by_name(name))
+    allowed_caller = h.auction.allowed_caller()
+    assert allowed_caller is not None
 
-        return Board.objects.create(**board_kwargs, tournament=fresh_tournament)
+    h.add_call_from_player(
+        player=allowed_caller,
+        call=libBid(level=1, denomination=libSuit.DIAMONDS),
+    )
 
-    with freeze_time(today):
-        h1.delete()
-
-        b2 = _same_board_but_new_tournament()
-        h2 = Hand.objects.create(
-            board=b2, North=h1.North, East=h1.East, South=h1.South, West=h1.West
-        )
-
-        allowed_caller = h2.auction.allowed_caller()
+    with logged_queries():
+        allowed_caller = h.auction.allowed_caller()
         assert allowed_caller is not None
-        assert allowed_caller.name == "Jeremy Northam"
+        assert allowed_caller.name == "Clint Eastwood"
 
-        from app.models import logged_queries
+    east = Player.objects.get_by_name("Clint Eastwood")
+    request = rf.get("/woteva/")
+    request.user = east.user
+    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    disabled, _active = _partition_button_values(bbc_html)
+    assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
-        allowed_caller = h2.auction.allowed_caller()
-        assert allowed_caller is not None
 
-        h2.add_call_from_player(
-            player=allowed_caller,
-            call=libBid(level=1, denomination=libSuit.DIAMONDS),
-        )
+def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
+    h = usual_setup
+    # Third case: as above but with one more "Pass".
 
-        with logged_queries():
-            allowed_caller = h2.auction.allowed_caller()
-            assert allowed_caller is not None
-            assert allowed_caller.name == "Clint Eastwood"
+    def ac() -> libPlayer:
+        rv = h.auction.allowed_caller()
+        assert rv is not None
+        return rv
 
-        east = Player.objects.get_by_name("Clint Eastwood")
-        request = rf.get("/woteva/")
-        request.user = east.user
-        bbc_html = _bidding_box_context_for_hand(request, h2)["bidding_box_buttons"]
-        disabled, _active = _partition_button_values(bbc_html)
-        assert set(disabled) == {"1♣", "1♦", "Redouble"}
+    h.add_call_from_player(
+        player=ac(),
+        call=libBid(level=1, denomination=libSuit.DIAMONDS),
+    )
+    h.add_call_from_player(
+        player=ac(),
+        call=libPass,
+    )
 
-        b3 = _same_board_but_new_tournament()
+    allowed_caller = h.auction.allowed_caller()
+    assert allowed_caller is not None
+    assert allowed_caller.name == "J.D. Souther"
 
-        h3 = Hand.objects.create(
-            board=b3, North=h1.North, East=h1.East, South=h1.South, West=h1.West
-        )
-        # Third case: as above but with one more "Pass".
-        h2.delete()
+    south = Player.objects.get_by_name("J.D. Souther")
+    request = rf.get("/woteva/", data={"hand_pk": h.pk})
+    request.user = south.user
+    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    # you cannot double your own partner.
+    disabled, _active = _partition_button_values(bbc_html)
 
-        def ac() -> libPlayer:
-            rv = h3.auction.allowed_caller()
-            assert rv is not None
-            return rv
+    assert set(disabled) == {
+        "1♣",
+        "1♦",
+        "Double",
+        "Redouble",
+    }
+    east = Player.objects.get_by_name("Clint Eastwood")
+    request.user = east.user
+    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
 
-        h3.add_call_from_player(
-            player=ac(),
-            call=libBid(level=1, denomination=libSuit.DIAMONDS),
-        )
-        h3.add_call_from_player(
-            player=ac(),
-            call=libPass,
-        )
-
-        allowed_caller = h3.auction.allowed_caller()
-        assert allowed_caller is not None
-        assert allowed_caller.name == "J.D. Souther"
-
-        south = Player.objects.get_by_name("J.D. Souther")
-        request.user = south.user
-        bbc_html = _bidding_box_context_for_hand(request, h3)["bidding_box_buttons"]
-        # you cannot double your own partner.
-        disabled, _active = _partition_button_values(bbc_html)
-
-        assert set(disabled) == {
-            "1♣",
-            "1♦",
-            "Double",
-            "Redouble",
-        }
-        request.user = east.user
-        bbc_html = _bidding_box_context_for_hand(request, h3)["bidding_box_buttons"]
-
-        disabled, _active = _partition_button_values(bbc_html)
-        assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
+    disabled, _active = _partition_button_values(bbc_html)
+    assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
 
 
 def test_current_trick(usual_setup: Hand) -> None:

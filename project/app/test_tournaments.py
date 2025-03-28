@@ -140,23 +140,25 @@ def test_play_completion_deadline(usual_setup) -> None:
 
     north = Player.objects.get_by_name("Jeremy Northam")
 
-    Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
-    Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
-    DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
+    SignupDeadlineDay = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
+    PlayCompletionDeadline = SignupDeadlineDay + datetime.timedelta(seconds=3600 * 24)
+    DayAfter = PlayCompletionDeadline + datetime.timedelta(seconds=3600 * 24)
 
-    table = north.current_table
-    the_tournament = table.tournament
-    hand = table.current_hand
+    ch = north.current_hand()
+    assert ch is not None
+    hand, _ = ch
+    the_tournament = hand.tournament
 
-    with freeze_time(Today):
-        the_tournament.signup_deadline = Today
-        the_tournament.play_completion_deadline = Tomorrow
+    with freeze_time(SignupDeadlineDay):
+        the_tournament.signup_deadline = SignupDeadlineDay
+        the_tournament.play_completion_deadline = PlayCompletionDeadline
         the_tournament.save()
 
         hand.add_call_from_player(player=north.libraryThing(), call=Call.deserialize("Pass"))
 
     east = Player.objects.get_by_name("Clint Eastwood")
     with freeze_time(DayAfter):
+        check_for_expirations(sender="Some unit test")
         with pytest.raises(HandError) as e:
             hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
 
@@ -164,7 +166,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         assert "has passed" in str(e.value)
 
         # All players have been ejected
-        assert not Player.objects.filter(currently_seated=True).exists()
+        assert Player.objects.filter(currently_seated=True).count() == 0
 
         hand.refresh_from_db()
         del hand.is_abandoned
