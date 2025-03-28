@@ -126,7 +126,7 @@ def check_for_expirations(sender, **kwargs) -> None:
                 h: Hand
                 for h in t.hands():
                     if not h.is_complete:
-                        reason = f"Play completion deadline ({t.play_completion_deadline}) has passed with {h} incomplete"
+                        reason = f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed with {h} incomplete"
                         logger.info("%s", reason)
                         h.abandoned_because = reason
                         h.save()
