@@ -657,12 +657,13 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     player_pk = request.GET.get("played_by")
     player: app.models.Player | None = None
 
-    hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "table__pk", "id")
+    hand_list = app.models.Hand.objects.order_by(
+        "board__tournament__display_number", "board__display_number", "id"
+    )
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        raise Exception("TODO")
-        hand_list = []
+        hand_list = player.hands_played
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")
