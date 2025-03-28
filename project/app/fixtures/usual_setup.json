@@ -91,7 +91,7 @@
       "currently_seated": true,
       "modified": "2025-03-26T15:35:19.306Z",
       "partner": 4,
-      "synthetic": true,
+      "synthetic": false,
       "user": 2
     },
     "model": "app.player",
@@ -104,7 +104,7 @@
       "currently_seated": true,
       "modified": "2025-03-26T15:35:19.275Z",
       "partner": 1,
-      "synthetic": true,
+      "synthetic": false,
       "user": 3
     },
     "model": "app.player",
@@ -117,7 +117,7 @@
       "currently_seated": true,
       "modified": "2025-03-26T15:35:19.306Z",
       "partner": 2,
-      "synthetic": true,
+      "synthetic": false,
       "user": 4
     },
     "model": "app.player",
