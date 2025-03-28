@@ -116,7 +116,8 @@ class Player(TimeStampedModel):
     )
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
-    def _hands(self) -> models.QuerySet:
+    @property
+    def hands_played(self) -> models.QuerySet:
         from app.models import Hand
 
         hands = Hand.objects.all()
@@ -127,9 +128,9 @@ class Player(TimeStampedModel):
 
         return hands.filter(expression)
 
-    @cached_property
+    @property
     def boards_played(self) -> models.QuerySet:
-        return Board.objects.filter(id__in=self._hands().values_list("board", flat=True))
+        return Board.objects.filter(pk__in=self.hands_played.values_list("board", flat=True))
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -150,7 +151,7 @@ class Player(TimeStampedModel):
             h: Hand
             direction_name: str
 
-            for h in self._hands().filter(abandoned_because__isnull=True):
+            for h in self.hands_played.filter(abandoned_because__isnull=True):
                 if not h.is_complete:
                     for direction_name in h.direction_names:
                         if getattr(h, direction_name) == self:
@@ -360,7 +361,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         h: Hand
         direction_name: str
 
-        for h in self._hands():
+        for h in self.hands_played:
             if not h.is_complete and h.abandoned_because is None:
                 for direction_name in h.direction_names:
                     if getattr(h, direction_name) == self:
@@ -379,10 +380,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         return h.board.cards_for_direction_string(direction_name)
 
-    @property
-    def hands_played(self) -> models.QuerySet:
-        return self._hands()
-
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
@@ -394,11 +391,8 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
         return qs.first()
 
-    def _boards_played(self) -> models.QuerySet:
-        return Board.objects.filter(pk__in=self.hands_played.values_list("board", flat=True))
-
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        return board in self._boards_played()
+        return board in self.boards_played
 
     @cached_property
     def name(self):

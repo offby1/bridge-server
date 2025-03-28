@@ -305,7 +305,7 @@ class Hand(TimeStampedModel):
             return True
 
         def has_defected(p: Player) -> bool:
-            their_hands = p._hands().all()
+            their_hands = p.hands_played.all()
 
             for h in their_hands:
                 if h.is_complete:
