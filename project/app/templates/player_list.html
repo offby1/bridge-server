@@ -34,8 +34,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if player.current_table %}
-                                {{ player.current_table.as_link }}
+                            {% if player.ch %}
+                                <a href="{% url 'app:hand-detail' pk=player.ch.pk %}">Table {{ player.ch.table_display_number }}</a>
                             {% else %}
                                 <a href="{% url 'app:lobby' %}">lobby</a>
                             {% endif %}
