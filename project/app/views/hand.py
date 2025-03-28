@@ -722,6 +722,7 @@ def new_hand_view(
     all_pks = set(
         [north.pk, getattr(north.partner, "pk", None), east.pk, getattr(east.partner, "pk", None)]
     )
+    # TODO -- if exactly one of them is None, this won't trigger :-(
     if len(all_pks) < 4:
         return Forbid("Now just a cotton pickin' minute; I need four distinct players")
 

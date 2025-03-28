@@ -151,6 +151,7 @@ class HandManager(models.Manager):
             }
 
             if tournament is not None:
+                assert not tournament.is_complete
                 # from IPython import embed
 
                 # embed()

@@ -381,7 +381,7 @@ def test_hand_creation(j_northam, everybodys_password):
     assert client.login(username=j_northam.name, password=".")
 
     t = Tournament.objects.create()
-
+    assert not t.board_set.exists()
     response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
 
     assert type(response) is HttpResponseForbidden
