@@ -1483,42 +1483,6 @@
   },
   {
     "fields": {
-      "direction": "N",
-      "player": 1,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "direction": "E",
-      "player": 2,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "direction": "S",
-      "player": 3,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "direction": "W",
-      "player": 4,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 4
-  },
-  {
-    "fields": {
       "allow_bot_to_play_for_me": false,
       "boards_played": [
         1
@@ -2137,13 +2101,5 @@
     },
     "model": "app.play",
     "pk": 51
-  },
-  {
-    "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
-    "pk": 1
   }
 ]

@@ -51,11 +51,7 @@ def nobody_seated(db: None) -> None:
         "loaddata",
         "usual_setup",
         "--exclude",
-        "app.seat",
-        "--exclude",
         "app.hand",
-        "--exclude",
-        "app.table",
     )
 
     for p in Player.objects.all():
