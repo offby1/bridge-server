@@ -52,6 +52,9 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     except app.models.PlayerException as e:
         return Forbid(e)
 
+    if hand.board.tournament.play_completion_deadline_has_passed():
+        return Forbid(f"{hand.board.tournament}'s play completion deadline has passed, sorry")
+
     if hand.player_who_may_call is None:
         return Forbid(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
 

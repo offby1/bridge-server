@@ -182,20 +182,20 @@ def test_deadline_via_view(usual_setup, rf) -> None:
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
     DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
 
-    table = north.current_table
-    the_tournament = table.tournament
+    ch = north.current_hand()
+    current_hand, current_direction = ch
+
+    the_tournament = current_hand.tournament
 
     the_tournament.signup_deadline = Today
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
 
-    table = north.current_table
-
     with freeze_time(DayAfter):
         request = rf.post("/", data={"call": "Pass"})
         request.user = north.user
 
-        response = app.views.table.details.call_post_view(request, table.current_hand.pk)
+        response = app.views.table.details.call_post_view(request, current_hand.pk)
         assert response.status_code == HttpResponseForbidden.status_code
         assert b"deadline" in response.content
         assert b"has passed" in response.content
