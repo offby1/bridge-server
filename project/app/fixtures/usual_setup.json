@@ -1,38 +1,6 @@
 [
   {
     "fields": {
-      "player": 1,
-      "tournament": 1
-    },
-    "model": "app.tournamentsignup",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "player": 3,
-      "tournament": 1
-    },
-    "model": "app.tournamentsignup",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "player": 2,
-      "tournament": 1
-    },
-    "model": "app.tournamentsignup",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "player": 4,
-      "tournament": 1
-    },
-    "model": "app.tournamentsignup",
-    "pk": 4
-  },
-  {
-    "fields": {
       "display_number": 1,
       "is_complete": false,
       "play_completion_deadline": "2999-12-31T23:49:49.999Z",

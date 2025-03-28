@@ -291,6 +291,8 @@ def test_signups(nobody_seated) -> None:
 
 
 def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
+    assert not TournamentSignup.objects.exists()
+
     existing_player_pks = set([p.pk for p in Player.objects.all()])
 
     north = Player.objects.get_by_name("Jeremy Northam")
@@ -310,12 +312,15 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     north.refresh_from_db()
     south.refresh_from_db()
 
-    norths_table = north.current_table
-    assert norths_table is not None
-    players_at_the_table = set([s.player.pk for s in norths_table.seats])
-    assert len(players_at_the_table) == 4
-    assert north.pk in players_at_the_table
-    assert south.pk in players_at_the_table
+    ch = north.current_hand()
+    assert ch is not None
+    norths_hand, _ = ch
+    players_in_the_hand = set(
+        [norths_hand.East.pk, norths_hand.North.pk, norths_hand.South.pk, norths_hand.West.pk]
+    )
+    assert len(players_in_the_hand) == 4
+    assert north.pk in players_in_the_hand
+    assert south.pk in players_in_the_hand
     for pk in new_player_pks:
-        assert pk in players_at_the_table
+        assert pk in players_in_the_hand
         assert Player.objects.get(pk=pk).synthetic

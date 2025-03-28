@@ -14,7 +14,7 @@ from django.utils import timezone
 
 import more_itertools
 
-from app.models.signups import TournamentSignup
+import app.models
 from app.models.throttle import throttle
 
 if TYPE_CHECKING:
@@ -92,7 +92,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
             # list view *shows* them as signed up.
             for p in (p2, p2.partner):
-                TournamentSignup.objects.create(tournament=tour, player=p)
+                app.models.TournamentSignup.objects.create(tournament=tour, player=p)
+
+        app.models.Hand.objects.create_with_two_partnerships(p1, p2, tournament=tour)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -343,14 +345,16 @@ class Tournament(models.Model):
                 f"At least one of {(player.name, player.partner.name)} is currently seated"
             )
         for p in (player, player.partner):
-            TournamentSignup.objects.get_or_create(defaults=dict(tournament=self), player=p)
+            app.models.TournamentSignup.objects.get_or_create(
+                defaults=dict(tournament=self), player=p
+            )
             logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
 
         return Player.objects.filter(
-            player__in=TournamentSignup.objects.filter(tournament=self).values_list(
+            player__in=app.models.TournamentSignup.objects.filter(tournament=self).values_list(
                 "player", flat=True
             )
         )
@@ -402,7 +406,7 @@ class Tournament(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
-            TournamentSignup.objects.filter(tournament=self).delete()
+            app.models.TournamentSignup.objects.filter(tournament=self).delete()
             logger.debug("Deleted signups")
         super().save(*args, **kwargs)
 
