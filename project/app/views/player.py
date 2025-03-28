@@ -167,10 +167,10 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
     if sender == recipient:
         return None
 
-    if recipient.current_seat:
+    if recipient.current_hand() is not None:
         return f"{recipient.name} is already seated"
-    if sender.current_seat:
-        return "You are already seated"
+    if sender.current_hand() is not None:
+        return f"You, {sender.name}, are already seated"
 
     return None
 
