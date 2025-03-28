@@ -65,7 +65,7 @@ def test_synthetic_player_text(usual_setup) -> None:
     assert "🤖" not in str(hooman)
 
 
-def test_splitsville_ejects_that_partnership_from_table(usual_setup: Hand):
+def test_splitsville_doesnt_affect_opponents(usual_setup: Hand):
     h = usual_setup
 
     north = h.modPlayer_by_seat(libSeat.NORTH)
@@ -74,9 +74,6 @@ def test_splitsville_ejects_that_partnership_from_table(usual_setup: Hand):
     # duh
     assert north.partner == south
     assert south.partner == north
-
-    assert north.current_table is not None
-    assert north.current_table == south.current_table
 
     east = h.modPlayer_by_seat(libSeat.EAST)
     west = h.modPlayer_by_seat(libSeat.WEST)
