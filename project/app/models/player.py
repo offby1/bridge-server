@@ -250,13 +250,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             raise ValidationError("The 'synthetic' field cannot be changed.")
 
     def libraryThing(self) -> bridge.table.Player:
-        tmp = self.current_hand()
+        direction_name = self.current_direction()
 
-        if tmp is None:
+        if direction_name is None:
             msg = f"{self} is not seated, so cannot be converted to a bridge-library Player"
             raise PlayerException(msg)
-
-        _, direction_name = tmp
 
         return bridge.table.Player(
             seat=bridge.seat.Seat(direction_name[0].upper()),
@@ -355,9 +353,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @cached_property
     def currently_seated(self) -> bool:
-        return self.current_hand() is not None
+        return self.current_hand_and_direction() is not None
 
-    def current_hand(self) -> tuple[Hand, str] | None:
+    def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         h: Hand
         direction_name: str
 
@@ -369,16 +367,27 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         return None
 
+    def current_hand(self) -> Hand | None:
+        ch = self.current_hand_and_direction()
+        if ch is None:
+            return None
+        return ch[0]
+
+    def current_direction(self) -> str | None:
+        ch = self.current_hand_and_direction()
+        if ch is None:
+            return None
+        return ch[1]
+
     def dealt_cards(self) -> list[bridge.card.Card]:
-        ch = self.current_hand()
+        ch = self.current_hand_and_direction()
 
         if ch is None:
             msg = f"{self} is not seated, so has no cards"
             raise PlayerException(msg)
 
-        h, direction_name = ch
-
-        return h.board.cards_for_direction_string(direction_name)
+        current_hand, direction_name = ch
+        return current_hand.board.cards_for_direction_string(direction_name)
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()

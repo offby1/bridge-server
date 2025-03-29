@@ -177,7 +177,7 @@ class HandManager(models.Manager):
 
         expression = models.Q(pk__in=[])
         for p in players:
-            if (ch := p.current_hand()) is not None:
+            if (ch := p.current_hand_and_direction()) is not None:
                 msg = f"Cannot seat {p.name} because they are already playing {ch[1]} in {ch[0]}"
                 import pprint
 
@@ -815,10 +815,10 @@ class Hand(TimeStampedModel):
 
         total_score: int | str = "-"
 
-        my_hand_for_this_board = my_seat_letter = None
+        my_seat_letter = None
 
-        if as_viewed_by is not None and (current_hand := as_viewed_by.current_hand()) is not None:
-            my_hand_for_this_board, my_seat_letter = current_hand
+        if as_viewed_by is not None:
+            my_seat_letter = as_viewed_by.current_direction()
 
         fs = self.get_xscript().final_score()
 

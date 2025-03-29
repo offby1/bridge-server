@@ -145,9 +145,8 @@ def test_play_completion_deadline(usual_setup) -> None:
     PlayCompletionDeadline = SignupDeadlineDay + datetime.timedelta(seconds=3600 * 24)
     DayAfter = PlayCompletionDeadline + datetime.timedelta(seconds=3600 * 24)
 
-    ch = north.current_hand()
-    assert ch is not None
-    hand, _ = ch
+    hand = north.current_hand()
+    assert hand is not None
     the_tournament = hand.tournament
 
     with freeze_time(SignupDeadlineDay):
@@ -180,9 +179,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
     DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
 
-    ch = north.current_hand()
-    current_hand, current_direction = ch
-
+    current_hand = north.current_hand()
     the_tournament = current_hand.tournament
 
     the_tournament.signup_deadline = Today
@@ -312,9 +309,9 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     north.refresh_from_db()
     south.refresh_from_db()
 
-    ch = north.current_hand()
-    assert ch is not None
-    norths_hand, _ = ch
+    norths_hand = north.current_hand()
+    assert norths_hand is not None
+
     players_in_the_hand = set(
         [norths_hand.East.pk, norths_hand.North.pk, norths_hand.South.pk, norths_hand.West.pk]
     )

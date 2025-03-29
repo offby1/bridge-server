@@ -167,9 +167,9 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
     if sender == recipient:
         return None
 
-    if recipient.current_hand() is not None:
+    if recipient.current_hand_and_direction() is not None:
         return f"{recipient.name} is already seated"
-    if sender.current_hand() is not None:
+    if sender.current_hand_and_direction() is not None:
         return f"You, {sender.name}, are already seated"
 
     return None
@@ -192,9 +192,8 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
     subject: Player = get_object_or_404(Player, pk=pk)
 
     if redirect_to_hand and subject.currently_seated:
-        ch = subject.current_hand()
-        assert ch is not None
-        current_hand, _ = ch
+        current_hand = subject.current_hand()
+        assert current_hand is not None
         return HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": current_hand.pk}))
 
     common_context = {
@@ -320,12 +319,14 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
             logger.debug(f"Nuttin' from pk={name_or_pk=}")
             return HttpResponseNotFound()
 
-    ch = p.current_hand()
+    current_hand = p.current_hand()
 
     payload = {
         "pk": p.pk,
-        "current_table_number": ch[0].table_display_number if ch is not None else None,
-        "current_hand_pk": ch[0].pk if ch is not None else None,
+        "current_table_number": current_hand.table_display_number
+        if current_hand is not None
+        else None,
+        "current_hand_pk": current_hand.pk if current_hand is not None else None,
         "name": p.name,
     }
 
@@ -387,8 +388,10 @@ def _background_css_color(player: Player) -> str:
     return "darkgrey"
 
 
-def player_list_view(request):
+@logged_in_as_player_required(redirect=False)
+def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
     has_partner = request.GET.get("has_partner")
+    has_partner_filter = None
     exclude_me = request.GET.get("exclude_me")
 
     qs = Player.objects.all()
@@ -396,11 +399,18 @@ def player_list_view(request):
 
     viewer = getattr(request.user, "player", None)
 
-    if viewer is not None and {"True": True, "False": False}.get(exclude_me) is True:
+    if (
+        viewer is not None
+        and exclude_me is not None
+        and {"True": True, "False": False}.get(exclude_me) is True
+    ):
         qs = qs.exclude(pk=viewer.pk).exclude(partner=viewer)
         filter_description.append(f"excluding {viewer}")
 
-    if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
+    if (
+        has_partner is not None
+        and (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None
+    ):
         qs = qs.exclude(partner__isnull=has_partner_filter)
         filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
@@ -422,11 +432,6 @@ def player_list_view(request):
             or None
         )
         player.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(player))
-        ch = player.current_hand()
-        if ch is not None:
-            player.ch = ch[0]
-        else:
-            player.ch = None
 
     context = {
         "filtered_count": filtered_count,

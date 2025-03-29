@@ -31,7 +31,27 @@
             {% endif %}
         </span>
         <hr />
-        TODO -- put here a link to the list of hands
+        <table id="hand-list" class="table caption-top">
+            <caption>Hands</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Table Number</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for h in tournament.hands %}
+                    <tr style="border: 1px dotted">
+                        <th>
+                            <a href="{% url 'app:hand-detail' pk=h.pk %}">{{ h.table_display_number }}</a>
+                        </th>
+                        <td>
+                            <a href="{% url 'app:hand-detail' pk=h.pk %}">{{ h }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% elif tournament.status_str == "OpenForSignup" %}
         <span style="font-size: 2em;">Open for Signups until {{ tournament.signup_deadline }} {{ tournament.signup_deadline|date:"e" }}</span>.
         {% if speed_things_up_button %}

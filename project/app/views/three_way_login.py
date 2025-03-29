@@ -17,9 +17,8 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
     assert user.player is not None
     data = {"player-name": user.username, "player_pk": user.player.pk, "comment": comment}
 
-    ch = user.player.current_hand()
-    if ch is not None:
-        current_hand, _ = ch
+    current_hand = user.player.current_hand()
+    if current_hand is not None:
         data["hand_pk"] = current_hand.pk
 
     return JsonResponse(data)

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from bridge.xscript import HandTranscript
-
+    from django.db.models import QuerySet
     from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
 
 
@@ -69,13 +69,11 @@ def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str,
     player = request.user.player  # type: ignore
     display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
 
-    currently_playing = player.current_hand()
+    hand = player.current_hand()
 
-    if not currently_playing:
+    if hand is None:
         buttons = "No bidding box 'cuz you are not at this table"
     else:
-        hand, _ = currently_playing
-
         allowed_caller = hand.auction.allowed_caller()
         if allowed_caller is None:
             disabled_because_out_of_turn = True
@@ -119,11 +117,10 @@ def _display_and_control(
         or wat == board.PlayerVisibility.everything
     )
 
-    ch = None
+    current_direction = None
     if as_viewed_by is not None:
-        ch = as_viewed_by.current_hand()
-    if ch is not None:
-        current_hand, current_direction = ch
+        current_direction = as_viewed_by.current_direction()
+    if current_direction is not None:
         if current_direction == seat.name:
             display_cards |= wat >= board.PlayerVisibility.own_hand
         if seat_is_dummy:
@@ -657,13 +654,14 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     player_pk = request.GET.get("played_by")
     player: app.models.Player | None = None
 
+    hand_list: QuerySet[Hand]
     hand_list = app.models.Hand.objects.order_by(
         "board__tournament__display_number", "board__display_number", "id"
     )
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        hand_list = player.hands_played
+        hand_list = player.hands_played.all()
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")
