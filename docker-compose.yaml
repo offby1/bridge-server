@@ -78,7 +78,7 @@ services:
     # client)
 
     # "--log_statement=all", "--log_min_duration_statement=0" are handy for exploring performance
-    command: ["postgres", "--max_connections=100"]
+    command: ["postgres", "--max_connections=100", "--log_statement=all", "--log_min_duration_statement=0"]
 
     volumes:
       - postgres_data:/var/lib/postgresql/data

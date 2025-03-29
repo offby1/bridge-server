@@ -15,6 +15,7 @@
       "display_number": 1,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": false,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -30,6 +31,7 @@
       "display_number": 2,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": true,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -42,8 +44,8 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": true,
-      "created": "2025-03-26T15:35:19.216Z",
-      "modified": "2025-03-26T15:35:19.273Z",
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": true,
       "user": 1
@@ -53,9 +55,10 @@
   },
   {
     "fields": {
-      "allow_bot_to_play_for_me": true,
-      "created": "2025-03-26T15:35:19.233Z",
-      "modified": "2025-03-26T15:35:19.306Z",
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "currently_seated": true,
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
       "user": 2
@@ -65,9 +68,9 @@
   },
   {
     "fields": {
-      "allow_bot_to_play_for_me": true,
-      "created": "2025-03-26T15:35:19.254Z",
-      "modified": "2025-03-26T15:35:19.275Z",
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
       "user": 3
@@ -77,9 +80,9 @@
   },
   {
     "fields": {
-      "allow_bot_to_play_for_me": true,
-      "created": "2025-03-26T15:35:19.272Z",
-      "modified": "2025-03-26T15:35:19.306Z",
+      "allow_bot_to_play_for_me": false,
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,
       "user": 4

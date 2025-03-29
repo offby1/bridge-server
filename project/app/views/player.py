@@ -9,7 +9,6 @@ from typing import Any
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -415,10 +414,6 @@ def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
         filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
     filtered_count = qs.count()
-    if viewer is not None and viewer.partner is not None:
-        qs = qs.annotate(
-            maybe_a_link=(Q(partner__isnull=False) & ~Q(pk=viewer.pk) & ~Q(pk=viewer.partner.pk)),
-        )
 
     paginator = Paginator(qs, 15)
     page_number = request.GET.get("page")

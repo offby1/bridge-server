@@ -47,6 +47,6 @@ def play_out_hand(h: app.models.Hand) -> None:
         h.add_call_from_player(player=p.libraryThing(), call=call)
     while (p := h.player_who_may_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
-        h.add_play_from_player(player=p.libraryThing(), card=play.card)
         logger.info(f"{p} plays {play}")
+        h.add_play_from_player(player=p.libraryThing(), card=play.card)
         h.get_xscript().add_card(play.card)

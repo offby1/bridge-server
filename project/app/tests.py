@@ -26,8 +26,9 @@ from .models import (
     PlayerException,
     Tournament,
 )
+
 from .models.board import board_attributes_from_display_number
-from .testutils import play_out_hand, set_auction_to
+from .testutils import set_auction_to
 from .views import hand, player
 
 logger = logging.getLogger(__name__)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import os
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING
@@ -52,12 +53,15 @@ class PlayerManager(models.Manager):
             unprefixed_candidate = fake.unique.playa().lower()
             candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
             if not auth.models.User.objects.filter(username__in=candidates).exists():
+                logger.debug(
+                    "None of %s already exists; returning %s", ", ".join(candidates), candidates[-1]
+                )
                 return candidates[-1]
             logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
 
     def create_synthetic(self) -> Player:
         new_user = auth.models.User.objects.create_user(
-            username=self._find_unused_username(prefix="synthetic_")
+            username=self._find_unused_username(prefix="_")
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
@@ -101,10 +105,6 @@ class Player(TimeStampedModel):
         "Player", null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
-    # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
-    # those seats are historical, and I've since left my last table, and not chosen a new one.
-
     allow_bot_to_play_for_me = models.BooleanField(default=False)
     synthetic = models.BooleanField(default=False)
 
@@ -145,6 +145,19 @@ class Player(TimeStampedModel):
 
         return rv
 
+    def unseat_partnership(self, reason: str | None = None) -> None:
+        with transaction.atomic():
+            for p in (self, getattr(self, "partner")):
+                if p is not None and p.currently_seated:
+                    p.unseat_me()
+        if reason is not None and self.partner is not None:
+            channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
+            send_event(
+                channel=channel,
+                event_type="message",
+                data=reason,
+            )
+
     def unseat_me(self) -> None:
         # TODO -- refactor this with "current_hand"
         with transaction.atomic():
@@ -174,29 +187,28 @@ class Player(TimeStampedModel):
 
     # https://cr.yp.to/daemontools/svc.html
     def _control_bot(self) -> None:
+        # do nothing when run from a unit test, so as to reduce the noise in the log output.
+        if os.environ.get("PYTEST_VERSION") is not None:
+            return
+
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
             return
 
-        def run_in_slash_service(command: list[str]) -> None:
-            subprocess.run(
-                command,
-                cwd=service_directory,
-                check=False,
-                capture_output=True,
-            )
-
         def svc(flags: str) -> None:
             # No problem blocking here -- experience shows this doesn't take long
-            run_in_slash_service(
+            subprocess.run(
                 [
                     "svc",
                     flags,
                     str(self.pk),
                 ],
+                cwd=service_directory,
+                check=False,
+                capture_output=True,
             )
 
-        if not self.allow_bot_to_play_for_me or not self.currently_seated:
+        if not (self.allow_bot_to_play_for_me and self.currently_seated):
             logger.info(
                 f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
             )
@@ -221,7 +233,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file = run_file.rename(run_dir / "run")
 
         svc("-u")
-        logger.info("Started bot for %s", self)
+        logger.info(f"Started bot for {self}")
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
@@ -236,10 +248,10 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.allow_bot_to_play_for_me = desired_state
             self.save()
-            self._control_bot()
 
     def save(self, *args, **kwargs) -> None:
         self._check_synthetic()
+        self._control_bot()
         super().save(*args, **kwargs)
 
     def _check_synthetic(self) -> None:
@@ -407,6 +419,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def name(self):
         return self.user.username
 
+    # TODO -- wtf is this for?  At the very least, the name doesn't describe what it does.
     def name_dir(self, *, hand: Hand) -> str:
         return f"{self.pk}:{self.as_link()}"
 
@@ -479,8 +492,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        if self.synthetic:
-            return f"🤖🤖{self.name}🤖🤖"
         return self.name
 
 

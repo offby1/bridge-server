@@ -16,10 +16,10 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-import app.models.board
 from .models import AuctionError, Board, Hand, Player, Tournament, board, hand
 from .models.tournament import _do_signup_expired_stuff
-from .testutils import play_out_hand, set_auction_to
+from .testutils import set_auction_to
+
 from .views.hand import (
     _bidding_box_context_for_hand,
     _maybe_redirect_or_error,
@@ -407,9 +407,7 @@ def test_exhaustive_archive_and_detail_redirection(
 
 
 @pytest.mark.django_db
-def test_predictable_shuffles(monkeypatch):
-    monkeypatch.setattr(app.models.board, "BOARDS_PER_TOURNAMENT", 2)
-
+def test_predictable_shuffles():
     attrs1_empty = board.board_attributes_from_display_number(display_number=1, rng_seeds=[])
     attrs2_empty = board.board_attributes_from_display_number(display_number=2, rng_seeds=[])
 
@@ -483,5 +481,6 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     assert h.is_abandoned
 
     message = h.abandoned_because
+
     assert north.name in message or south.name in message
     assert "left" in message

@@ -457,7 +457,7 @@ def _maybe_redirect_or_error(
     player_visibility: app.models.Board.PlayerVisibility,
     request_viewname: str,
 ) -> HttpResponse | None:
-    def redirect_or_none(destination_viewname: str) -> HttpResponseRedirect | None:
+    def redirect_if_different_view(destination_viewname: str) -> HttpResponseRedirect | None:
         if destination_viewname == request_viewname:
             return None
         return HttpResponseRedirect(reverse(destination_viewname, args=[hand_pk]))
@@ -472,16 +472,16 @@ def _maybe_redirect_or_error(
             app.models.Board.PlayerVisibility.dummys_hand
             | app.models.Board.PlayerVisibility.own_hand
         ):
-            if (response := redirect_or_none("app:hand-detail")) is not None:
+            if (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
 
         case app.models.Board.PlayerVisibility.everything:
             if hand_is_complete:
-                if (response := redirect_or_none("app:hand-archive")) is not None:
+                if (response := redirect_if_different_view("app:hand-archive")) is not None:
                     return response
                 return None
 
-            elif (response := redirect_or_none("app:hand-detail")) is not None:
+            elif (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
             else:
                 logger.debug(
@@ -581,15 +581,18 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-@logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
     player = request.user.player
-    assert player is not None
 
     # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
     # exactly when
+    # e.g.
+    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,
@@ -601,24 +604,21 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
-    # for when player is looking at a hand whose board they've already played.
-    other_hand = player.hand_at_which_board_was_played(hand.board)
-    assert other_hand is not None
-    hand_link = reverse("app:hand-detail", args=[other_hand.pk])
-    hand_description = str(other_hand)
-
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
         | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
-        | {
-            "hand_at_which_I_played_this_board": {
-                "link": hand_link,
-                "description": hand_description,
-            }
-        }
     )
+
+    if (
+        player is not None
+        and (other_hand := player.hand_at_which_board_was_played(hand.board)) is not None
+    ):
+        context["hand_at_which_I_played_this_board"] = {
+            "link": reverse("app:hand-detail", args=[other_hand.pk]),
+            "description": str(other_hand),
+        }
 
     return TemplateResponse(request, "hand_detail.html", context=context)
 

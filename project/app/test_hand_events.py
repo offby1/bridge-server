@@ -11,6 +11,21 @@ from .models import Hand, Player
 from .testutils import set_auction_to
 
 
+class CapturedEvents:
+    def __init__(self) -> None:
+        self.events: list[Event] = []
+        self._message_ids_before = set(
+            Event.objects.values_list("id", flat=True),
+        )
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.events = list(Event.objects.exclude(id__in=self._message_ids_before))
+        return False
+
+
 class CapturedEventsFromChannel:
     def __init__(self, channel_name: str) -> None:
         self._channel_name = channel_name

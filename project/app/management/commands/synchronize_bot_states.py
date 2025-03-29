@@ -10,6 +10,8 @@ from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
+        self.stderr.write("Synchronizing bot states.")
+
         for bp in Player.objects.filter(allow_bot_to_play_for_me=True):
             if not bp.currently_seated:
                 continue
@@ -17,7 +19,7 @@ class Command(BaseCommand):
             self.stderr.write(f"{bp.name} ... ", ending="")
 
             try:
-                bp.toggle_bot(True)
+                bp._control_bot()
             except TooManyBots:
                 self.stderr.write("Huh, I guess you *can* have too many bots")
                 break

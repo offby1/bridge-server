@@ -1,5 +1,6 @@
+import logging
+
 import pytest
-from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
@@ -7,8 +8,11 @@ from .models import Hand, Play, Player, Tournament
 from .models.tournament import check_for_expirations
 
 
+logger = logging.getLogger(__name__)
+
+
 @pytest.fixture(autouse=True)
-def dump_django_cache():
+def clear_django_cache():
     cache.clear()
 
 
@@ -40,28 +44,40 @@ def innocuous_secret_key(settings):
 @pytest.fixture
 def usual_setup(db: None) -> Hand:
     call_command("loaddata", "usual_setup")
+
     h = Hand.objects.first()
     assert h is not None
     return h
 
 
 @pytest.fixture
-def nobody_seated(db: None) -> None:
+def nobody_seated_nobody_signed_up(db: None) -> None:
     call_command(
         "loaddata",
         "usual_setup",
         "--exclude",
         "app.hand",
     )
-
     for p in Player.objects.all():
         for b in p.boards_played.all():
             p.boards_played.remove(b)
 
 
 @pytest.fixture
+def nobody_seated(nobody_seated_nobody_signed_up) -> None:
+    current_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    for p in Player.objects.all():
+        current_tournament.sign_up(p)
+
+
+@pytest.fixture
 def two_boards_one_of_which_is_played_almost_to_completion(db: None) -> None:
     call_command("loaddata", "two_boards_one_of_which_is_played_almost_to_completion")
+
+
+@pytest.fixture
+def fresh_tournament(db: None) -> None:
+    call_command("loaddata", "fresh_tournament")
 
 
 @pytest.fixture

@@ -6,26 +6,16 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 import bridge.seat
-from django.conf import settings
-from django.core.paginator import Paginator
-import django.db.utils
 from django.http import (
-    HttpRequest,
     HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseRedirect,
 )
-from django.contrib import messages
 from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
-from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 import app.models
 from app.models.types import PK
-from app.models.tournament import Running
 from app.models.utils import assert_type
-from app.views import Forbid, NotFound
+from app.views import Forbid
 from app.views.misc import (
     AuthedHttpRequest,
     logged_in_as_player_required,
@@ -56,7 +46,7 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
         return Forbid(f"{hand.board.tournament}'s play completion deadline has passed, sorry")
 
     if hand.player_who_may_call is None:
-        return Forbid(f"Oddly, nobody is allowed to call now at hand {hand.pk}")
+        return Forbid(f"Nobody is allowed to call now at hand {hand.pk}")
 
     from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
 
@@ -110,36 +100,3 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
         return Forbid(str(e))
 
     return HttpResponse()
-
-
-@require_http_methods(["POST"])
-@logged_in_as_player_required()
-def new_table_for_two_partnerships(
-    request: AuthedHttpRequest, tournament_pk: str, pk1: str, pk2: str
-) -> HttpResponse:
-    assert request.user.player is not None
-
-    p1: app.models.Player = get_object_or_404(app.models.Player, pk=pk1)
-    if p1.partner is None:
-        return Forbid(f"Hey man {p1.name} doesn't have a partner")
-
-    p2: app.models.Player = get_object_or_404(app.models.Player, pk=pk2)
-    if p2.partner is None:
-        return Forbid(f"Hey man {p2.name} doesn't have a partner")
-
-    p3: app.models.Player = get_object_or_404(app.models.Player, pk=p1.partner.pk)
-    p4: app.models.Player = get_object_or_404(app.models.Player, pk=p2.partner.pk)
-
-    all_four = {p1, p2, p3, p4}
-    if len(all_four) != 4:
-        return Forbid(f"Hey man {[p.name for p in all_four]} isn't four distinct players")
-
-    if request.user.player not in all_four:
-        return Forbid(
-            f"Hey man {request.user.player.name} isn't one of {[p.name for p in all_four]}"
-        )
-
-    logger.debug("OK, %s is one of %s", request.user.player.name, [p.name for p in all_four])
-
-    raise Exception("TODO")
-    return Forbid("Oh whoops")

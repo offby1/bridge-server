@@ -1,15 +1,13 @@
 import collections
 import datetime
 import logging
-import threading
 
 from freezegun import freeze_time
 import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
-from django.db import connection
-from django.db.utils import IntegrityError
+
 from django.http.response import HttpResponseForbidden
 
 import app.views.hand
@@ -17,7 +15,6 @@ import app.views.table.details
 from app.models import (
     Board,
     Hand,
-    HandError,
     Player,
     PlayerException,
     Tournament,
@@ -33,7 +30,6 @@ from app.models.tournament import (
 )
 
 from .testutils import play_out_hand
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,35 +53,54 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     return before
 
 
-def test_completing_one_tournament_causes_a_new_one_to_magically_appear(
+def play_out_round(tournament: Tournament) -> None:
+    table = tournament.table_set.first()
+    assert table is not None
+
+    while True:
+        num_completed_rounds, hands_this_round = tournament.rounds_played()
+
+        if num_completed_rounds > 0 and hands_this_round == 0:
+            break
+
+        play_out_hand(table)
+        if (num_completed_rounds, hands_this_round) == tournament.rounds_played():
+            pytest.fail(
+                f"we seem to not be making any progress: {num_completed_rounds=}, {hands_this_round=}"
+            )
+
+
+def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    Board.objects.filter(pk=2).delete()  # speeds the test up
-
     tally_before = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
     assert tally_before == {False: 1}
 
     before = Tournament.objects.filter(is_complete=False).first()
     assert before is not None
 
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+    table = before.table_set.first()
+    assert table is not None
+
+    play_out_round(before)
+
     before.refresh_from_db()
     assert before.is_complete
 
     tally_after = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
-    assert tally_after == {True: 1, False: 1}
+    assert tally_after == {True: 1}
 
 
 def test_completing_one_tournament_ejects_players(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    Board.objects.filter(pk=2).delete()  # speeds the test up
+    tournament = Tournament.objects.filter(is_complete=False).first()
+    assert tournament is not None
+    table = tournament.table_set.first()
+    assert table is not None
 
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+    while not tournament.is_complete:
+        play_out_round(tournament)
 
     assert not Player.objects.currently_seated().exists()
 
@@ -128,15 +143,16 @@ def test_completing_one_tournament_deletes_related_signups(
 
         assert TournamentSignup.objects.filter(player=Ricky).exists()
 
-        west = Player.objects.get_by_name("Adam West")
-        # hm, I wondder: can we start playing early? Or do I need to scoot the clock forward to Tomorrow?
-        h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+        while not the_tournament.is_complete:
+            # hm, I wondder: can we start playing early? Or do I need to scoot the clock forward to Tomorrow?
+            play_out_round(the_tournament)
 
         assert not TournamentSignup.objects.filter(player=Ricky).exists()
 
 
 def test_play_completion_deadline(usual_setup) -> None:
     # All players are initially seated
+
     assert Player.objects.currently_seated().count() == Player.objects.count()
 
     north = Player.objects.get_by_name("Jeremy Northam")
@@ -169,8 +185,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         del hand.is_abandoned
 
         assert hand.is_abandoned
-        assert "deadline" in hand.abandoned_because
-        assert "has passed" in hand.abandoned_because
+        assert "play deadline was" in hand.abandoned_because
 
 
 def test_deadline_via_view(usual_setup, rf) -> None:
@@ -196,58 +211,13 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert b"has passed" in response.content
 
 
-@pytest.mark.django_db(transaction=True)
-def test_that_new_unique_constraint() -> None:
-    the_tournament = Tournament.objects.create(display_number=1)
-
-    the_tournament._add_boards_internal(n=2)
-    with pytest.raises(IntegrityError):
-        the_tournament._add_boards_internal(n=2)
-
-    assert the_tournament.board_set.count() == 2
-
-
-@pytest.mark.django_db(transaction=True)
-def test_concurrency() -> None:
-    ThePast = datetime.datetime.fromisoformat("2001-01-01T00:00:00Z")
-    TheFuture = datetime.datetime.fromisoformat("2112-01-01T00:00:00Z")
-    InBetween = ThePast + datetime.timedelta(seconds=(TheFuture - ThePast).total_seconds() // 2)
-
-    the_tournament = Tournament.objects.create(
-        signup_deadline=ThePast, play_completion_deadline=TheFuture
-    )
-
-    the_barrier = threading.Barrier(parties=3)
-
-    class BoardAdder(threading.Thread):
-        def run(self):
-            try:
-                the_tournament.add_boards(n=2, barrier=the_barrier)
-            except Exception as e:
-                logger.debug("Oy! %s", e)
-            finally:
-                connection.close()
-
-    with freeze_time(InBetween):
-        threads = [BoardAdder() for _ in range(2)]
-
-        for t in threads:
-            t.start()
-
-        the_barrier.wait()
-
-        for t in threads:
-            t.join()
-
-    assert the_tournament.board_set.count() == 2
-
-
-def test_signups(nobody_seated) -> None:
+def test_signups(nobody_seated_nobody_signed_up) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
     assert north.partner == south
 
     running_tournament, _ = Tournament.objects.get_or_create(display_number=1)
+
     assert not running_tournament.is_complete
     assert running_tournament.status() is Running
 
@@ -257,6 +227,7 @@ def test_signups(nobody_seated) -> None:
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
+
     open_tournament.sign_up(north)
     actual = set(open_tournament.signed_up_players())
     expected = {north, south}
@@ -291,6 +262,7 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert not TournamentSignup.objects.exists()
 
     existing_player_pks = set([p.pk for p in Player.objects.all()])
+    assert existing_player_pks == {1, 2, 3, 4}
 
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
@@ -299,8 +271,17 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
+
     open_tournament.sign_up(north)
+    assert TournamentSignup.objects.filter(player=north).exists()
+    assert TournamentSignup.objects.filter(player=south).exists()
+    assert TournamentSignup.objects.count() == 2
+
+    assert not open_tournament.table_set.exists()
+
     app.models.tournament._do_signup_expired_stuff(open_tournament)
+
+    assert TournamentSignup.objects.count() == 4
 
     current_player_pks = set([p.pk for p in Player.objects.all()])
     new_player_pks = current_player_pks - existing_player_pks
@@ -321,3 +302,33 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     for pk in new_player_pks:
         assert pk in players_in_the_hand
         assert Player.objects.get(pk=pk).synthetic
+
+
+def test_which_hand(usual_setup: None, everybodys_password) -> None:
+    t = Tournament.objects.first()
+    assert t is not None
+
+    for name in ["n2", "e2", "s2", "w2"]:
+        Player.objects.create(
+            user=auth.models.User.objects.create(username=name, password=everybodys_password),
+        )
+
+    assert not t.which_hands(four_players={1, 3, 5, 7}).exists()
+    assert t.which_hands(four_players={1, 2, 3, 4}).exists()
+
+
+def test_end_of_round_stuff_happens(usual_setup) -> None:
+    tour = Tournament.objects.first()
+    assert tour is not None
+
+    tour.check_consistency()
+    table = tour.table_set.first()
+
+    play_out_hand(table)
+    assert tour.rounds_played() == (0, 1)
+
+    play_out_hand(table)
+    assert tour.rounds_played() == (0, 2)
+
+    play_out_hand(table)
+    assert tour.rounds_played() == (1, 0)

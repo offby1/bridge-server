@@ -33,6 +33,7 @@ from . import Board
 from .common import attribute_names
 from .player import Player
 from .tournament import Tournament
+
 from .types import PK, PK_from_str
 from .utils import assert_type
 
@@ -170,6 +171,9 @@ class HandManager(models.Manager):
             return self.create(**kwargs)
 
         return None
+
+    def create_for_tournament(self, tournament: Tournament, round_number: int) -> None:
+        raise Exception("TODO")
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
@@ -334,6 +338,10 @@ class Hand(TimeStampedModel):
             self.abandoned_because = (
                 f"{[p.name for p in defectors]} have started playing some other hand(s)"
             )
+            logger.info(
+                "I just realized that %s is abandoned because %s", self, self.abandoned_because
+            )
+            self.save()
             return True
 
         return False
@@ -388,34 +396,13 @@ class Hand(TimeStampedModel):
         return libTable(players=players)
 
     def _cache_key(self) -> str:
-        return self.pk
-
-    @staticmethod
-    def _cache_stats_keys() -> dict[str, str]:
-        return {
-            "hits": "cache_stats_hits",
-            "misses": "cache_stats_misses",
-        }
-
-    @staticmethod
-    def _cache_stats() -> dict[str, int]:
-        return {k: cache.get(k) for k in ("hits", "misses")}
+        return f"hand:{self.pk}"
 
     def _cache_set(self, value: str) -> None:
         cache.set(self._cache_key(), value)
 
     def _cache_get(self) -> Any:
         return cache.get(self._cache_key())
-
-    def _cache_note_hit(self) -> None:
-        key = "hits"
-        old = cache.get(key, default=0)
-        cache.set(key, old + 1)
-
-    def _cache_note_miss(self) -> None:
-        key = "misses"
-        old = cache.get(key, default=0)
-        cache.set(key, old + 1)
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -424,8 +411,6 @@ class Hand(TimeStampedModel):
                 yield (player, call.libraryThing)
 
         if (_xscript := self._cache_get()) is None:
-            self._cache_note_miss()
-
             lib_table = self.lib_table_with_cards_as_dealt
             auction = Auction(table=lib_table, dealer=Seat(self.board.dealer))
             dealt_cards_by_seat: CBS = {
@@ -448,8 +433,6 @@ class Hand(TimeStampedModel):
                 _xscript.add_card(libCard.deserialize(play.serialized))
 
             self._cache_set(_xscript)
-        else:
-            self._cache_note_hit()
 
         return _xscript
 
@@ -496,7 +479,9 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            Tournament.objects.get_or_create_tournament_open_for_signups()
+            self.table.tournament.maybe_next_board()
+            self.table.tournament.maybe_finalize_round()
+            self.table.tournament.maybe_complete()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table_display_number,
@@ -555,9 +540,10 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            self.tournament.maybe_complete()
+            self.table.tournament.maybe_next_board()
+            self.table.tournament.maybe_finalize_round()
+            self.table.tournament.maybe_complete()
 
-            Tournament.objects.get_or_create_tournament_open_for_signups()
             self.send_event_to_players_and_hand(
                 data={
                     "table": self.table_display_number,
@@ -588,6 +574,7 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
+            logger.debug("Nobody may call now because this hand is abandoned.")
             return None
 
         if self.auction.status is Auction.Incomplete:
@@ -595,6 +582,7 @@ class Hand(TimeStampedModel):
             assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
+        logger.debug("Nobody may call now because the auction is settled.")
         return None
 
     @property
@@ -602,9 +590,11 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
+            logger.debug("Nobody may play now because this hand is abandoned.")
             return None
 
         if not self.auction.found_contract:
+            logger.debug("Nobody may play now because this hand's auction is settled.")
             return None
 
         seat_who_may_play = self.get_xscript().next_seat_to_play()

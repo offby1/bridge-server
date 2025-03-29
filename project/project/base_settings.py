@@ -214,9 +214,17 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        # "file": {
+        #     "level": "DEBUG",
+        #     "class": "logging.FileHandler",
+        #     "filename": "/tmp/django.log",
+        # },
     },
     "root": {
-        "handlers": ["console"],
+        "handlers": [
+            "console",
+            # "file"
+        ],
     },
     "loggers": {
         "app": {

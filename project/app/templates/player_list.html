@@ -47,7 +47,7 @@
                                 </a>
                             {% endif %}
                         </td>
-                        <td>{{ player.last_action.0 }}: {{ player.last_action.1 }}</td>
+                        <td>{{ player.last_action.0 }}{{ player.last_action.0|date:"e" }}: {{ player.last_action.1 }}</td>
                         <td>
                             {% if player.action_button %}
                                 <form method="post" action="{{ player.action_button.form_action }}">

@@ -1,23 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 import datetime
 import logging
-import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from django.conf import settings
 from django.contrib import admin
-from django.core.signals import request_started
+from django.core.cache import cache
+from django.core.signals import request_finished
 from django.db import models, transaction
 from django.dispatch import receiver
 from django.utils import timezone
 
-import more_itertools
 
 import app.models
+from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
+from app.models.types import PK
+import app.utils.movements
+
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from django.db.models.manager import RelatedManager
 
     from app.models import Player
@@ -42,75 +46,42 @@ class NotOpenForSignupError(TournamentSignupError):
     pass
 
 
+class NoPairs(Exception):
+    pass
+
+
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
-    if tour.board_set.count() > 0:
-        logger.warning(
-            "Alas, I already pre-created %d boards, which probably isn't the right number.",
-            tour.board_set.count(),
-        )
-    else:
-        logger.warning("TODO: adding a hard-coded number (namely, 2) of boards to %s", tour)
-        logger.warning("TODO: this needs to be computed from a movement")
-        tour.add_boards(n=2)
+    with transaction.atomic():
+        if tour.table_set.exists():
+            logger.debug("'%s' looks like it's has tables already; bailing", tour)
+            return
 
-    # Now seat everyone who's signed up.
-    waiting_pairs = set()
+        # It expired without any signups -- just nuke it
+        if not TournamentSignup.objects.filter(tournament=tour).exists():
+            logger.warning("'%s' has no signups; deleting it", tour)
+            tour.delete()
+            return
 
-    p: Player
-    singles = [p for p in tour.signed_up_players().filter(partner__isnull=True)]
-    if singles:
-        logger.warning(
-            "Somehow, %s got signed up despite not having partners", [p.name for p in singles]
-        )
+        TournamentSignup.objects.create_synths_for(tour)
 
-    for p in tour.signed_up_players().filter(partner__isnull=False):
-        if not p.currently_seated:
-            waiting_pairs.add(frozenset([p, p.partner]))
-
-    logger.debug("%d pairs are waiting", len(waiting_pairs))
-
-    # Group them into pairs of pairs.
-    # Create a table for each such quartet.
-
-    for quartet in more_itertools.chunked(waiting_pairs, 2):
-        pair1 = quartet.pop()
-        p1 = next(iter(pair1))
-        assert p1 is not None
-        if quartet:
-            pair2 = quartet.pop()
-            p2 = next(iter(pair2))
-            assert p2 is not None
-        else:
-            from app.models import Player
-
-            p2 = Player.objects.create_synthetic()
-            p2.partner = Player.objects.create_synthetic()
-            p2.partner.partner = p2
-            p2.partner.save()
-            p2.save()
-
-            # Now sign the new players up.  This doesn't make much difference -- it's only to ensure that the player
-            # list view *shows* them as signed up.
-            for p in (p2, p2.partner):
-                app.models.TournamentSignup.objects.create(tournament=tour, player=p)
-
-        app.models.Hand.objects.create_with_two_partnerships(p1, p2, tournament=tour)
+        app.models.Hand.objects.create_for_tournament(tour, round_number=0)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
-@receiver(request_started)
+@receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
     with transaction.atomic():
-        incompletes = Tournament.objects.filter(is_complete=False)
+        incompletes = Tournament.objects.filter(
+            is_complete=False, play_completion_deadline__isnull=False
+        )
 
         logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
 
         for t in incompletes:
-            t.maybe_complete()
-            logger.debug("Checking %s: ", t)
+            logger.debug("Checking '%s': ", t)
             logger.debug(
                 "signup deadline %s %s passed",
                 t.signup_deadline,
@@ -212,20 +183,21 @@ class TournamentManager(models.Manager):
     def open_for_signups(self) -> models.QuerySet:
         return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
 
-    def get_or_create_tournament_open_for_signups(self) -> tuple[Tournament, bool]:
+    def get_or_create_tournament_open_for_signups(self, **kwargs) -> tuple[Tournament, bool]:
         with transaction.atomic():
-            a_few_seconds_from_now = timezone.now() + datetime.timedelta(seconds=10)
-            incomplete_and_open_tournaments_qs = self.filter(is_complete=False).filter(
-                models.Q(signup_deadline__gte=a_few_seconds_from_now)
+            now = timezone.now()
+            incomplete_and_open_tournaments_qs = self.filter(
+                models.Q(signup_deadline__gte=now), is_complete=False
             )
-            logger.debug(f"{a_few_seconds_from_now=} {incomplete_and_open_tournaments_qs=}")
+
+            logger.debug(f"{now=} {incomplete_and_open_tournaments_qs=}")
             if not incomplete_and_open_tournaments_qs.exists():
                 logger.debug(
                     "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
-                    a_few_seconds_from_now,
+                    now,
                 )
-                new_tournament = self.create()
-                logger.debug("... namely %s", new_tournament)
+                new_tournament = self.create(**kwargs)
+                logger.debug("... namely '%s'", new_tournament)
                 return new_tournament, True
 
             first_incomplete: Tournament | None = incomplete_and_open_tournaments_qs.order_by(
@@ -237,16 +209,6 @@ class TournamentManager(models.Manager):
             )
 
             assert first_incomplete is not None
-            first_incomplete.maybe_complete()
-
-            if first_incomplete.is_complete:
-                new_tournament = self.create()
-                logger.debug(
-                    "%s was incomplete but now I just completed it; created a new empty tournament %s",
-                    first_incomplete.short_string(),
-                    new_tournament.short_string(),
-                )
-                return new_tournament, True
 
             logger.debug(
                 f"An incomplete tournament (#{first_incomplete.display_number}) already exists; no need to create a new one",
@@ -261,6 +223,7 @@ class Tournament(models.Model):
 
         board_set = RelatedManager["Board"]()
 
+    boards_per_round_per_table = models.PositiveSmallIntegerField(default=3)
     is_complete = models.BooleanField(default=False)
     display_number = models.SmallIntegerField(unique=True)
 
@@ -273,39 +236,142 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    # The barrier is just for unit testing
-    def add_boards(self, *, n: int, barrier: threading.Barrier | None = None) -> None:
-        if barrier is not None:
-            logger.debug("Waiting on %s", barrier)
-            barrier.wait()
-            logger.debug("OK! Now we get to work.")
+    def check_consistency(self) -> None:
+        """
+        See if we have all the boards called for by our movement.
+        This might not be the case if we were created from an old json Django fixture.
+        """
+        mvmt = self.get_movement()
+        expected = mvmt.boards_per_round_per_table * len(mvmt.table_settings_by_table_number)
+        assert (
+            self.board_set.count() == expected
+        ), f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
 
-        with transaction.atomic():
-            assert (
-                not self.board_set.exists()
-            ), f"Don't add boards to {self}; it already has {self.board_set.count()}!!"
-            assert (
-                not self.is_complete
-            ), f"Wassup! Don't add boards to a completed tournament!! {self}"
+        for b in self.board_set.all():
+            assert b.group is not None, f"Hey! {b=} ain't got no group"
 
-            self._add_boards_internal(n=n)
+    def rounds_played(self) -> tuple[int, int]:
+        """
+        Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
+        """
+        num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
+        mvmt = self.get_movement()
+        num_tables = len(mvmt.table_settings_by_table_number)
+        boards_per_round_per_tournament = num_tables * mvmt.boards_per_round_per_table
+        rv = divmod(num_completed_hands, boards_per_round_per_tournament)
+        logger.debug(f"{num_completed_hands=} {boards_per_round_per_tournament=} => {rv=}")
+        return rv
 
-            logger.debug("Added %d boards to %s", self.board_set.count(), self)
+    @staticmethod
+    def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
+        seen: set[PK] = set()
 
-    # This is easier to test than add_boards, because it doesn't raise those assertions
-    def _add_boards_internal(self, *, n: int) -> None:
-        from app.models.board import Board, board_attributes_from_display_number
+        for p in players:
+            if p.pk not in seen and p.partner.pk not in seen:
+                yield app.utils.movements.Pair(
+                    id=[p.pk, p.partner.pk], names=f"{p.name}, {p.partner.name}"
+                )
+                seen.add(p.pk)
+                seen.add(p.partner.pk)
 
-        for display_number in range(1, n + 1):
-            board_attributes = board_attributes_from_display_number(
-                display_number=display_number,
-                rng_seeds=[
-                    str(display_number).encode(),
-                    str(self.pk).encode(),
-                    settings.SECRET_KEY.encode(),
-                ],
+    def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
+        from app.models import Player, Seat
+
+        tables = self.table_set.all()
+        seats = Seat.objects.filter(table__in=tables)
+
+        players = (
+            Player.objects.order_by("pk")
+            .filter(partner__isnull=False)
+            .filter(pk__in=seats.values_list("player", flat=True))
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
+        )
+
+        yield from self.pair_up_players(players)
+
+    def which_hands(self, *, four_players: Collection[PK]) -> models.QuerySet:
+        """
+        Returns the hands played by these four players in this tournament.
+        """
+        from app.models import Hand, Player
+
+        players = Player.objects.filter(pk__in=four_players)
+        assert players.count() == 4
+
+        tables_at_which_all_four_have_sat = set()
+
+        # It'd be nice to do this logic in the db, rather than Python; but otoh, there aren't that many tables per
+        # tournament, so ... :shrug:
+        for t in self.table_set.all():
+            if set(t.seat_set.values_list("player", flat=True).all()) == four_players:
+                tables_at_which_all_four_have_sat.add(t.pk)
+        return (
+            Hand.objects.filter(table__in=tables_at_which_all_four_have_sat)
+            .order_by("pk")
+            .distinct()
+        )
+
+    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
+        from app.models import Player
+
+        players = (
+            Player.objects.order_by("pk")
+            .filter(partner__isnull=False)
+            .filter(current_seat__isnull=True)
+            .filter(pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player"))
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
+        )
+
+        yield from self.pair_up_players(players)
+
+    def next_movement_round(self) -> None:
+        if self.is_complete:
+            logger.warning("'%s' is complete; no next round for you", self)
+        else:
+            mvmt = self.get_movement()
+            num_completed_rounds, _ = self.rounds_played()
+            logger.warning(f"{num_completed_rounds=} {mvmt.num_rounds=}")
+            if num_completed_rounds == mvmt.num_rounds:
+                logger.warning("I guess this tournament is over")
+                return
+            for table in self.table_set.all():
+                settings = mvmt.table_settings_by_table_number[table.display_number - 1]
+                table.next_hand_for_this_round(settings[num_completed_rounds])
+
+    def _cache_key(self) -> str:
+        return f"tournament:{self.pk}"
+
+    def _cache_set(self, value: str) -> None:
+        cache.set(self._cache_key(), value)
+
+    def _cache_get(self) -> Any:
+        return cache.get(self._cache_key())
+
+    def get_movement(self) -> app.utils.movements.Movement:
+        if (_movement := self._cache_get()) is None:
+            if self.table_set.exists():
+                pairs = list(self.seated_pairs())
+                logger.debug(f"seated {pairs=}")
+            else:
+                pairs = list(self.signed_up_pairs())
+                logger.debug(f"signed-up {pairs=}")
+
+            if not pairs:
+                msg = "Can't create a movement with no pairs!"
+                raise NoPairs(msg)
+
+            _movement = app.utils.movements.Movement.from_pairs(
+                boards_per_round_per_table=self.boards_per_round_per_table,
+                pairs=pairs,
+                tournament=self,
             )
-            Board.objects.create_from_attributes(attributes=board_attributes, tournament=self)
+            self._cache_set(_movement)
+
+        return _movement
 
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
@@ -377,8 +443,6 @@ class Tournament(models.Model):
 
     def eject_all_players(self) -> None:
         with transaction.atomic():
-            import app.models
-
             b: app.models.Board
             for b in self.board_set.all():
                 h: app.models.Hand
@@ -387,10 +451,23 @@ class Tournament(models.Model):
                         player.unseat_me()
                         player.save()
 
+    def maybe_finalize_round(self) -> None:
+        num_completed_rounds, hands_played_this_round = self.rounds_played()
+        logger.debug("%s", f"{self}: Checking if this round (for {self}) is over.")
+        if hands_played_this_round == 0:
+            logger.info("%s", f"{self.rounds_played()=}")
+            if num_completed_rounds < len(self.get_movement().table_settings_by_table_number):
+                logger.warning(
+                    f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(self.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
+                )
+                self.next_movement_round()
+        else:
+            logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
+
     def maybe_complete(self) -> None:
         with transaction.atomic():
             if self.is_complete:
-                logger.info("Pff, no need to complete %s since it's already complete.", self)
+                logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
             all_hands_are_complete = self.hands().exists()

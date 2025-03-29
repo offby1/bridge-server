@@ -73,8 +73,42 @@
   },
   {
     "fields": {
+      "player": 1,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "player": 2,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "player": 3,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "player": 4,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 4
+  },
+  {
+    "fields": {
       "display_number": 1,
-      "is_complete": false
+      "is_complete": false,
+      "play_completion_deadline": "2999-12-31T23:59:59Z",
+      "signup_deadline": "1970-01-01T00:00:00Z"
     },
     "model": "app.tournament",
     "pk": 1
@@ -85,6 +119,7 @@
       "display_number": 1,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": false,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -100,6 +135,7 @@
       "display_number": 2,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": true,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",

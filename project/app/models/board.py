@@ -14,17 +14,16 @@ from bridge.seat import Seat
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
 # indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
+from django.conf import settings
 from django.contrib import admin
 from django.db import models
 
-from .common import SEAT_CHOICES, attribute_names
+from .common import SEAT_CHOICES
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player
-
-BOARDS_PER_TOURNAMENT = 16
+    from app.models import Player, Tournament
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +43,11 @@ def board_attributes_from_display_number(
     display_number: int,
     rng_seeds: list[bytes],
 ) -> dict[str, Any]:
-    assert (
-        1 <= display_number <= BOARDS_PER_TOURNAMENT
-    ), f"{display_number=} gotta be <= {BOARDS_PER_TOURNAMENT=}"
-
-    # https://en.wikipedia.org/wiki/Board_(bridge)#Set_of_boards
-    dealer = "NESW"[(display_number - 1) % 4]
-    only_ns_vuln = display_number in (2, 5, 12, 15)
-    only_ew_vuln = display_number in (3, 6, 9, 16)
-    all_vuln = display_number in (4, 7, 10, 13)
+    disp_mod_16 = display_number % 16
+    dealer = "NESW"[(disp_mod_16 - 1) % 4]
+    only_ns_vuln = disp_mod_16 in (2, 5, 12, 15)
+    only_ew_vuln = disp_mod_16 in (3, 6, 9, 16)
+    all_vuln = disp_mod_16 in (4, 7, 10, 13)
 
     def deserialize_hand(cards: list[Card]) -> str:
         # sorted only so that they look purty in the Admin site.
@@ -83,10 +78,28 @@ class BoardManager(models.Manager):
     def nicely_ordered(self) -> models.QuerySet:
         return self.order_by("tournament", "display_number")
 
-    def create_from_attributes(self, *, attributes, tournament) -> Board:
-        return self.create(**attributes, tournament=tournament)
+    def get_or_create_from_display_number(
+        self, *, display_number: int, tournament: Tournament, group: str
+    ) -> tuple[Board, bool]:
+        assert len(group) == 1
+        defaults = board_attributes_from_display_number(
+            display_number=display_number,
+            rng_seeds=[
+                str(display_number).encode(),
+                str(tournament.pk).encode(),
+                settings.SECRET_KEY.encode(),
+            ],
+        )
+
+        defaults["group"] = group
+
+        return self.get_or_create(
+            defaults=defaults, tournament=tournament, display_number=display_number
+        )
 
     def create(self, *args, **kwargs) -> Board:
+        group = kwargs.get("group")
+        assert group is not None, "OK, who failed to add a group?!"
         tournament = kwargs.get("tournament")
         if tournament:
             assert (
@@ -126,6 +139,11 @@ class Board(models.Model):
     from app.models.tournament import Tournament
 
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+    group = models.CharField(
+        max_length=1,
+        null=True,
+        db_comment=""" A, B, C &c, NULL means not yet assigned """,  # type: ignore [call-overload]
+    )
 
     objects = BoardManager()
 
@@ -138,7 +156,7 @@ class Board(models.Model):
             == len(self.west_cards)
             == 26
         ), f"why no cards {vars(self)}"
-        assert Board.objects.filter(tournament=self.tournament).count() < BOARDS_PER_TOURNAMENT
+
         return super().save(*args, **kwargs)
 
     @property
@@ -166,10 +184,54 @@ class Board(models.Model):
         card_string = self.hand_strings_by_direction_letter[seat.value]
         return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
+    # Who can see which cards (and when)?
+
+    # a "None" player means the anonymous user.
+    # cases to check:
+    # (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
+    # - if the tournament is complete, everyone can see everything.
+    # - otherwise the tournament is running, and ...
+    #   - if player is None, they can see nothing, since otherwise a player could get a new browser window, peek at the hand they're currently playing, and cheat up the yin-yang
+    #   - if it's a Player, and they are not signed up for this tournament: they can see nothing, since again it'd be too easy to cheat (just sign up a new username)
+    #   - if it's a Player, and they are in this tournament:
+    #     - if they have not yet played this board, nope
+    #     - if they have been seated at a hand with this board:
+    #       - if it's their own cards, of course they can see them
+    #       - if the opening lead has been played, they can also see the dummy
+    #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
+
+    def can_see_cards_at(self, *, player: Player | None, direction_letter: str) -> bool:
+        match self.what_can_they_see(player=player):
+            case self.PlayerVisibility.everything:
+                return True
+            case self.PlayerVisibility.nothing:
+                return False
+            case self.PlayerVisibility.own_hand:
+                assert player is not None
+                hand = player.hand_at_which_board_was_played(self)
+                assert hand is not None
+
+                return player == hand.players_by_direction[direction_letter]
+            case self.PlayerVisibility.dummys_hand:
+                assert player is not None
+                hand = player.hand_at_which_board_was_played(self)
+                assert hand is not None
+
+                if player == hand.players_by_direction[direction_letter]:
+                    return True
+
+                return (
+                    hand.get_xscript().num_plays > 0
+                    and hand.players_by_direction[direction_letter].libraryThing() == hand.dummy
+                )
+            case _:
+                assert False, f"Dunno what case {self.what_can_they_see(player)=} is"
+
     def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:
+        if self.tournament.is_complete:
+            return self.PlayerVisibility.everything
+
         if player is None:
-            if self.tournament.is_complete:
-                return self.PlayerVisibility.everything
             return self.PlayerVisibility.nothing
 
         hand = player.hand_at_which_board_was_played(self)
@@ -178,7 +240,7 @@ class Board(models.Model):
 
         rv = self.PlayerVisibility.own_hand
 
-        if next(hand.get_xscript().plays(), None) is not None:
+        if hand.get_xscript().num_plays > 0:
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:
@@ -187,7 +249,9 @@ class Board(models.Model):
         return rv
 
     def short_string(self) -> str:
-        return f"Board #{self.display_number} ({self.tournament})"
+        return (
+            f"Board #{self.display_number} t#{self.tournament.display_number}, group {self.group}"
+        )
 
     def vulnerability_string(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:
@@ -200,6 +264,11 @@ class Board(models.Model):
             vuln = "East/West"
 
         return f"{vuln} vulnerable"
+
+    def __repr__(self) -> str:
+        if self.group is None:
+            return f"<Board #{self.display_number} pk={self.pk}>"
+        return f"<Board #{self.display_number} group {self.group} pk={self.pk}>"
 
     def __str__(self) -> str:
         return f"{self.short_string()}, {self.vulnerability_string()}, dealt by {self.fancy_dealer}"

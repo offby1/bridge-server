@@ -142,8 +142,8 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate: makemigrations create-cache (manage "migrate")
 
 [group('django')]
-stress:
-    docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress
+stress *options:
+    docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
 [group('bs')]
 [script('bash')]

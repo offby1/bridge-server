@@ -3,6 +3,7 @@ import bridge.contract
 
 from .models import Hand, Player
 from .views.hand import hand_detail_view
+from .views.tournament import tournament_view
 
 
 def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
@@ -38,3 +39,15 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
 
     with django_assert_max_num_queries(76):
         hand_detail_view(request, h.pk)
+
+
+def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
+    nearly_completed_tournament, rf, django_assert_max_num_queries
+) -> None:
+    request = rf.get("/woteva/")
+    p = Player.objects.first()
+    assert p is not None
+    request.user = p.user
+
+    with django_assert_max_num_queries(12):
+        tournament_view(request, "1")
