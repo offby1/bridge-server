@@ -23,7 +23,9 @@ from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import Error, models, transaction
+from django.urls import reverse
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 
@@ -246,6 +248,13 @@ class Hand(TimeStampedModel):
     )  # type: ignore
 
     abandoned_because = models.CharField(max_length=200, null=True)
+
+    def as_link(self):
+        return format_html(
+            "<a href='{}'>{}</a>",
+            reverse("app:hand-detail", kwargs={"pk": self.pk}),
+            str(self),
+        )
 
     @cached_property
     def tournament(self) -> Tournament:
