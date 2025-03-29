@@ -65,32 +65,35 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
     return context.items()
 
 
-def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
-    player = request.user.player  # type: ignore
-    display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
+def _bidding_box_context_for_hand(request: AuthedHttpRequest, hand: Hand) -> dict[str, Any]:
+    as_viewed_by: app.models.Player | None = request.user.player
+    assert as_viewed_by is not None
 
-    hand = player.current_hand()
+    display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
 
-    if hand is None:
+    if not as_viewed_by.has_played_hand(hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
-        if allowed_caller is None:
-            disabled_because_out_of_turn = True
+        disabled = True
+
+        if hand.open_access:
+            disabled = False
         else:
-            disabled_because_out_of_turn = (
-                player.name != allowed_caller.name and not hand.open_access
-            )
+            if allowed_caller is not None and (as_viewed_by.name == allowed_caller.name):
+                disabled = False
+
         buttons = bidding_box_buttons(
             auction=hand.auction,
             call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
-            disabled_because_out_of_turn=disabled_because_out_of_turn,
+            disabled_because_out_of_turn=disabled,
         )
+
     return {
         "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
         "display_bidding_box": display_bidding_box,
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "show_auction_history": display_bidding_box,
     }
 
 
@@ -423,7 +426,7 @@ def bidding_box_buttons(
 
 
 @logged_in_as_player_required()
-def bidding_box_partial_view(request: HttpRequest, hand_pk: PK) -> TemplateResponse:
+def bidding_box_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     context = _bidding_box_context_for_hand(request, hand)
