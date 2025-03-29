@@ -320,8 +320,9 @@ class Hand(TimeStampedModel):
         def has_defected(p: Player) -> bool:
             their_hands = p.hands_played.all()
 
+            h: Hand
             for h in their_hands:
-                if h.is_complete:
+                if h.is_complete or h.abandoned_because is not None:
                     continue
                 if h.pk != self.pk:
                     return True
