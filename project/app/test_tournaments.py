@@ -79,7 +79,7 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
     before = Tournament.objects.filter(is_complete=False).first()
     assert before is not None
 
-    hand = before.table_set.first()
+    hand = before.hands().first()
     assert hand is not None
 
     play_out_round(before)
@@ -322,7 +322,7 @@ def test_end_of_round_stuff_happens(usual_setup) -> None:
     assert tour is not None
 
     tour.check_consistency()
-    hand = tour.table_set.first()
+    hand = tour.hands().first()
 
     play_out_hand(hand)
     assert tour.rounds_played() == (0, 1)
