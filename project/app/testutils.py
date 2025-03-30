@@ -43,10 +43,8 @@ def play_out_hand(h: app.models.Hand) -> None:
     logger.info(f"Playing out {h=} (tournament #{h.tournament.display_number})")
     while (p := h.player_who_may_call) is not None:
         call = h.get_xscript().auction.legal_calls()[0]
-        logger.info(f"{p} calls {call}")
         h.add_call_from_player(player=p.libraryThing(), call=call)
     while (p := h.player_who_may_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
-        logger.info(f"{p} plays {play}")
         h.add_play_from_player(player=p.libraryThing(), card=play.card)
         h.get_xscript().add_card(play.card)

@@ -266,12 +266,8 @@ class Tournament(models.Model):
         seen: set[PK] = set()
 
         for p in players:
-            if not p.currently_seated:
-                logger.debug("Just FYI: %s is not currently seated", p.name)
-
             if p.pk not in seen and p.partner.pk not in seen:
                 names = f"{p.name}, {p.partner.name}"
-                logger.debug("Pairing up %s", names)
                 yield app.utils.movements.Pair(id=[p.pk, p.partner.pk], names=names)
                 seen.add(p.pk)
                 seen.add(p.partner.pk)
@@ -393,13 +389,11 @@ class Tournament(models.Model):
         )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
-        players = self.signed_up_players()
-        logger.debug("signed_up_players: %s", [p.name for p in players])
-        with_partners = players.filter(partner__isnull=False)
-        logger.debug("with partners: %s", [p.name for p in with_partners])
-
         players = (
-            players.select_related("user").select_related("partner").select_related("partner__user")
+            self.signed_up_players()
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
         )
 
         yield from self.pair_up_players(players)

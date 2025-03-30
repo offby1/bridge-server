@@ -174,7 +174,7 @@ class HandManager(models.Manager):
         self, tournament: Tournament, zb_round_number: int, zb_table_number: int
     ) -> None:
         mvmt = tournament.get_movement()
-        logger.debug(f"OK so it's {mvmt}, {zb_round_number=}, and {zb_table_number=}")
+
         pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
