@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player
+    from app.models import Hand, Player
 
 
 logger = logging.getLogger(__name__)
@@ -92,8 +92,6 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                from app.models import Hand
-
                 reason = None
                 h: Hand
                 for h in t.hands():
@@ -291,11 +289,15 @@ class Tournament(models.Model):
                 set_of_pks.add(h.pk)
         return Hand.objects.filter(pk__in=set_of_pks).distinct()
 
-    def create_hands_for_round(self, *, zb_round_number: int) -> None:
+    def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
+        rv: list[Hand] = []
         for zb_table_number in range(self.get_movement().num_rounds):
-            app.models.Hand.objects.create_for_tournament(
-                self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+            rv.append(
+                app.models.Hand.objects.create_for_tournament(
+                    self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+                )
             )
+        return rv
 
     def next_movement_round(self) -> None:
         if self.is_complete:

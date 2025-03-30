@@ -141,13 +141,12 @@ class HandManager(models.Manager):
     # we'll do them as-needed.  But in that case, we'll want to know which table needs a new hand.
     def create_for_tournament(
         self, tournament: Tournament, zb_round_number: int, zb_table_number: int
-    ) -> None:
+    ) -> Hand:
         mvmt = tournament.get_movement()
 
         pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
-        logger.debug("By golly it's gotta be one of these: %s", pnb.board_group.boards)
         table_display_number = zb_table_number + 1
         boards_in_this_group_played_so_far = self.filter(
             table_display_number=table_display_number, board__group=pnb.board_group.letter
@@ -171,7 +170,8 @@ class HandManager(models.Manager):
             West=West,
             table_display_number=table_display_number,
         )
-        logger.info("Created %s", new_hand)
+        logger.info("Created hand %s", new_hand.pk)
+        return new_hand
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
@@ -530,8 +530,19 @@ class Hand(TimeStampedModel):
         return rv
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
-        msg = "TODO -- I dunno, maybe generate some new hands"
-        logger.error("%s", msg)
+        # How many hands have been played in this round?
+        # That's the same as asking: how many boards have been played in this board group
+        num_completed_rounds, num_hands_completed_this_round = self.tournament.rounds_played()
+
+        if num_hands_completed_this_round == 0:
+            logger.info(f"Ooh ooh Mr Kotter, the round is over ({num_completed_rounds=})")
+            new_hands = list(
+                self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
+            )
+
+            logger.info(f"Ooh ooh Mr Kotter, created {new_hands}")
+            # TODO -- send some suitable event?
+
         self.send_event_to_players_and_hand(
             data={
                 "table": self.table_display_number,
