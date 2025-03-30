@@ -371,21 +371,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         h: Hand
         direction_name: str
 
-        logger.debug(
-            f"{self.name} -- what's my current hand, eh what? {self.hands_played.count()=}"
-        )
         for h in self.hands_played:
-            logger.debug(f"{h=} {h.is_complete=} {h.abandoned_because=}")
             if not h.is_complete and h.abandoned_because is None:
                 for direction_name in h.direction_names:
-                    logger.debug(
-                        f"{direction_name=} {getattr(h, direction_name).name=} {self.name=}"
-                    )
                     if getattr(h, direction_name) == self:
-                        logger.debug(f"Yay, returning {h} and {direction_name}")
                         return h, direction_name
 
-        logger.debug("Boo, returning None")
         return None
 
     def current_hand(self) -> Hand | None:
