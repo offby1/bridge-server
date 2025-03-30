@@ -490,10 +490,6 @@ class Hand(TimeStampedModel):
             msg = "For some crazy reason, nobody is allowed to play a card! Maybe the auction is incomplete, or the hand is over"
             raise PlayError(msg)
 
-        assert (
-            self.player_who_may_play.current_hand() == self
-        ), f"OK so like I am {self=} but {self.player_who_may_play.current_hand()=}"
-
         # TODO -- compare primary keys, not names
         if player.name != legit_player.name:
             msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"

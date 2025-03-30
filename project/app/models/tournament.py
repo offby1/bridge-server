@@ -267,6 +267,8 @@ class Tournament(models.Model):
         seen: set[PK] = set()
 
         for p in players:
+            if not p.currently_seated:
+                continue
             if p.pk not in seen and p.partner.pk not in seen:
                 yield app.utils.movements.Pair(
                     id=[p.pk, p.partner.pk], names=f"{p.name}, {p.partner.name}"
@@ -292,21 +294,6 @@ class Tournament(models.Model):
             if set(h.players()) == four_players:
                 set_of_pks.add(h.pk)
         return Hand.objects.filter(pk__in=set_of_pks).distinct()
-
-    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
-        from app.models import Player
-
-        players = (
-            Player.objects.order_by("pk")
-            .filter(partner__isnull=False)
-            .filter(current_seat__isnull=True)
-            .filter(pk__in=TournamentSignup.objects.filter(tournament=self).values_list("player"))
-            .select_related("user")
-            .select_related("partner")
-            .select_related("partner__user")
-        )
-
-        yield from self.pair_up_players(players)
 
     def next_movement_round(self) -> None:
         if self.is_complete:
@@ -396,6 +383,17 @@ class Tournament(models.Model):
                 defaults=dict(tournament=self), player=p
             )
             logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
+
+    def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
+        players = (
+            self.signed_up_players()
+            .filter(partner__isnull=False)
+            .select_related("user")
+            .select_related("partner")
+            .select_related("partner__user")
+        )
+
+        yield from self.pair_up_players(players)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
