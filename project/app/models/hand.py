@@ -167,6 +167,8 @@ class HandManager(models.Manager):
         return None
 
     def create_for_tournament(self, tournament: Tournament, round_number: int) -> None:
+        mvmt = tournament.get_movement()
+        logger.error(f"OK so it's {mvmt} and {round_number=}")
         raise Exception("TODO")
 
     def create(self, *args, **kwargs) -> Hand:
