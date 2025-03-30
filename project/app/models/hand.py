@@ -329,11 +329,6 @@ class Hand(TimeStampedModel):
             return None
         return PK_from_str(pieces[1])
 
-    def players(self) -> models.QuerySet:
-        return Player.objects.filter(
-            pk__in=[getattr(self, direction).pk for direction in self.direction_names]
-        )
-
     @cached_property
     @admin.display
     def is_abandoned(self) -> bool:
@@ -636,6 +631,11 @@ class Hand(TimeStampedModel):
     def modPlayer_by_seat(self, seat: Seat) -> Player:
         modelPlayer = self.players_by_direction_letter[seat.value]
         return Player.objects.get_by_name(modelPlayer.name)
+
+    def players(self) -> models.QuerySet:
+        return Player.objects.filter(
+            pk__in=[getattr(self, direction).pk for direction in self.direction_names]
+        )
 
     @property
     def player_names_string(self) -> str:
