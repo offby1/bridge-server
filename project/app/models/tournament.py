@@ -336,10 +336,10 @@ class Tournament(models.Model):
         if (_movement := self._cache_get()) is None:
             if self.hands().exists():
                 pairs = list(self.seated_pairs())
-                logger.debug(f"seated {pairs=}")
+                logger.debug(f"{self.hands().count()} hands; seated {pairs=}")
             else:
                 pairs = list(self.signed_up_pairs())
-                logger.debug(f"signed-up {pairs=}")
+                logger.debug(f"No hands; signed-up {pairs=}")
 
             if not pairs:
                 msg = "Can't create a movement with no pairs!"
