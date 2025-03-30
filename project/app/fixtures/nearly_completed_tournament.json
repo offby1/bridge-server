@@ -182,6 +182,11 @@
   },
   {
     "fields": {
+      "East": 2,
+      "North": 1,
+      "South": 3,
+      "West": 4,
+      "abandoned_because": null,
       "board": 1,
       "created": "2000-01-01T00:00:00Z",
       "modified": "2000-01-01T00:00:00Z",
