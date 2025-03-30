@@ -473,15 +473,7 @@ class Hand(TimeStampedModel):
                 },
             )
         elif self.get_xscript().final_score() is not None:
-            self.table.tournament.maybe_next_board()
-            self.table.tournament.maybe_finalize_round()
-            self.table.tournament.maybe_complete()
-            self.send_event_to_players_and_hand(
-                data={
-                    "table": self.table_display_number,
-                    "final_score": "Passed Out",
-                },
-            )
+            self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -539,17 +531,19 @@ class Hand(TimeStampedModel):
         final_score = self.get_xscript().final_score()
 
         if final_score is not None:
-            self.tournament.maybe_finalize_round()
-            self.tournament.maybe_complete()
-
-            self.send_event_to_players_and_hand(
-                data={
-                    "table": self.table_display_number,
-                    "final_score": str(final_score),
-                },
-            )
+            self.do_end_of_hand_stuff(final_score_text=str(final_score))
 
         return rv
+
+    def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
+        msg = "TODO -- I dunno, maybe generate some new hands"
+        logger.error("%s", msg)
+        self.send_event_to_players_and_hand(
+            data={
+                "table": self.table_display_number,
+                "final_score": final_score_text,
+            },
+        )
 
     @property
     def auction(self) -> Auction:
