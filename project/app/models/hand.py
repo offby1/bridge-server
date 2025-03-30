@@ -840,9 +840,7 @@ class Hand(TimeStampedModel):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return (
-            f"Tournament #{self.board.tournament.display_number}, board#{self.board.display_number}"
-        )
+        return f"Tournament #{self.board.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
 
     class Meta:
         constraints = [

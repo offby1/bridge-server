@@ -64,6 +64,7 @@ def play_out_round(tournament: Tournament) -> None:
             break
 
         play_out_hand(hand)
+
         if (num_completed_rounds, hands_this_round) == tournament.rounds_played():
             pytest.fail(
                 f"we seem to not be making any progress: {num_completed_rounds=}, {hands_this_round=}"
