@@ -14,7 +14,6 @@ from .views.hand import (
     hand_list_view,
     hand_serialized_view,
     hand_xscript_updates_view,
-    new_hand_view,
     open_access_toggle_view,
 )
 
@@ -34,9 +33,6 @@ urlpatterns = [
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
-    path(
-        "hand/new/<int:tournament_pk>/<int:north_pk>/<int:east_pk>/", new_hand_view, name="new-hand"
-    ),
     path("hand/<int:pk>/", hand_detail_view, name="hand-detail"),
     path(
         "hand/<int:pk>/updates/<int:calls>/<int:plays>/",

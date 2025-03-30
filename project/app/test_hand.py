@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import collections
-import datetime
 import enum
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import auth
 
-from freezegun import freeze_time
 import pytest
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
@@ -16,8 +14,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Player, Tournament, board, hand
-from .models.tournament import _do_signup_expired_stuff
+from .models import AuctionError, Board, Hand, Player, board, hand
 from .testutils import set_auction_to
 
 from .views.hand import (
@@ -28,26 +25,6 @@ from .views.hand import (
 
 if TYPE_CHECKING:
     from django.template.response import TemplateResponse
-
-
-def do_not_test_create_scaffolding(db) -> None:
-    players = [Player.objects.create_synthetic() for _ in range(4)]
-    players[0].partner_with(players[2])
-    players[1].partner_with(players[3])
-    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
-    with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
-        for p in players[0:2]:
-            open_tournament.sign_up(p)
-    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=10)):
-        _do_signup_expired_stuff(open_tournament)
-        Hand.objects.create_with_two_partnerships(
-            players[0], players[1], tournament=open_tournament
-        )
-    from django.core.management import call_command
-
-    with open("/tmp/fixture.json", "w") as outf:
-        call_command("dumpdata", "app", "auth.user", stdout=outf)
-        print(f"Wrote fixture to {outf.name}")
 
 
 def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
@@ -471,10 +448,17 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     assert not Player.objects.get_by_name("e2").currently_seated
     assert not Player.objects.get_by_name("w2").currently_seated
 
-    Hand.objects.create_with_two_partnerships(
-        p1=north,
-        p2=Player.objects.get_by_name("e2"),
-        tournament=Tournament.objects.first(),
+    board, _ = Board.objects.get_or_create_from_display_number(
+        display_number=Board.objects.count() + 1,
+        group="A",
+        tournament=h.board.tournament,
+    )
+    Hand.objects.create(
+        board=board,
+        North=north,
+        East=Player.objects.get_by_name("e2"),
+        South=south,
+        West=Player.objects.get_by_name("w2"),
     )
 
     h = Hand.objects.get(pk=h.pk)

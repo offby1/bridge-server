@@ -22,7 +22,7 @@ from bridge.table import Table as libTable
 from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
-from django.db import Error, models, transaction
+from django.db import Error, models
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -136,37 +136,6 @@ def send_timestamped_event(
 
 
 class HandManager(models.Manager):
-    def create_with_two_partnerships(
-        self, p1: Player, p2: Player, tournament: Tournament | None = None
-    ) -> Hand:
-        with transaction.atomic():
-            if p1.partner is None or p2.partner is None:
-                raise HandError(
-                    f"Cannot create a table with players {p1} and {p2} because at least one of them lacks a partner "
-                )
-            player_pks = set(p.pk for p in (p1, p2, p1.partner, p2.partner))
-            if len(player_pks) != 4:
-                raise HandError(
-                    f"Cannot create a table with seats {player_pks} --we need exactly four"
-                )
-            kwargs: dict[str, Any] = {
-                attribute: player
-                for attribute, player in zip(Hand.direction_names, [p1, p2, p1.partner, p2.partner])
-            }
-
-            if tournament is not None:
-                assert not tournament.is_complete
-                board = tournament.board_set.exclude(
-                    id__in=tournament.hands().values_list("board", flat=True)
-                ).first()
-                if board is None:
-                    raise HandError("No boards available")
-                kwargs["board"] = board
-
-            return self.create(**kwargs)
-
-        return None
-
     # This method's name seems misleading.  We don't want to create a *single* hand for a particular round; instead we
     # want to create a bunch (one for each board for each table).  But we probably won't do them all at once; instead
     # we'll do them as-needed.  But in that case, we'll want to know which table needs a new hand.
