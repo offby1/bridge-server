@@ -106,6 +106,11 @@ class Movement:
         print()
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
+    def players_and_boards_for(
+        self, *, zb_round_number: int, zb_table_number: int
+    ) -> PlayersAndBoardsForOneRound:
+        return self.table_settings_by_table_number[zb_table_number][zb_round_number]
+
     @property
     def num_rounds(self) -> int:
         return len(self.table_settings_by_table_number)

@@ -36,6 +36,7 @@ from .tournament import Tournament
 
 from .types import PK, PK_from_str
 from .utils import assert_type
+from app.utils.movements import PlayersAndBoardsForOneRound
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -174,6 +175,10 @@ class HandManager(models.Manager):
     ) -> None:
         mvmt = tournament.get_movement()
         logger.error(f"OK so it's {mvmt}, {zb_round_number=}, and {zb_table_number=}")
+        pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
+            zb_round_number=zb_round_number, zb_table_number=zb_table_number
+        )
+        logger.error("By golly it's gotta be one of these: %s", pnb.board_group.boards)
         raise Exception("TODO")
 
     def create(self, *args, **kwargs) -> Hand:
