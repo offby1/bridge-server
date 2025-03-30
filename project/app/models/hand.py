@@ -166,9 +166,14 @@ class HandManager(models.Manager):
 
         return None
 
-    def create_for_tournament(self, tournament: Tournament, round_number: int) -> None:
+    # This method's name seems misleading.  We don't want to create a *single* hand for a particular round; instead we
+    # want to create a bunch (one for each board for each table).  But we probably won't do them all at once; instead
+    # we'll do them as-needed.  But in that case, we'll want to know which table needs a new hand.
+    def create_for_tournament(
+        self, tournament: Tournament, zb_round_number: int, zb_table_number: int
+    ) -> None:
         mvmt = tournament.get_movement()
-        logger.error(f"OK so it's {mvmt} and {round_number=}")
+        logger.error(f"OK so it's {mvmt}, {zb_round_number=}, and {zb_table_number=}")
         raise Exception("TODO")
 
     def create(self, *args, **kwargs) -> Hand:

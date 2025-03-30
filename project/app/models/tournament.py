@@ -63,8 +63,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             return
 
         TournamentSignup.objects.create_synths_for(tour)
-
-        app.models.Hand.objects.create_for_tournament(tour, round_number=0)
+        tour.create_hands_for_round(zb_round_number=0)
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -268,11 +267,12 @@ class Tournament(models.Model):
 
         for p in players:
             if not p.currently_seated:
-                continue
+                logger.debug("Just FYI: %s is not currently seated", p.name)
+
             if p.pk not in seen and p.partner.pk not in seen:
-                yield app.utils.movements.Pair(
-                    id=[p.pk, p.partner.pk], names=f"{p.name}, {p.partner.name}"
-                )
+                names = f"{p.name}, {p.partner.name}"
+                logger.debug("Pairing up %s", names)
+                yield app.utils.movements.Pair(id=[p.pk, p.partner.pk], names=names)
                 seen.add(p.pk)
                 seen.add(p.partner.pk)
 
@@ -295,6 +295,12 @@ class Tournament(models.Model):
                 set_of_pks.add(h.pk)
         return Hand.objects.filter(pk__in=set_of_pks).distinct()
 
+    def create_hands_for_round(self, *, zb_round_number: int) -> None:
+        for zb_table_number in range(self.get_movement().num_rounds):
+            app.models.Hand.objects.create_for_tournament(
+                self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+            )
+
     def next_movement_round(self) -> None:
         if self.is_complete:
             logger.warning("'%s' is complete; no next round for you", self)
@@ -305,10 +311,7 @@ class Tournament(models.Model):
             if num_completed_rounds == mvmt.num_rounds:
                 logger.warning("I guess this tournament is over")
                 return
-            for table_number in range(1, mvmt.num_rounds + 1):
-                app.models.Hand.objects.create_for_tournament(
-                    self, round_number=num_completed_rounds
-                )
+            self.create_hands_for_round(zb_round_number=num_completed_rounds)
 
     def _cache_key(self) -> str:
         return f"tournament:{self.pk}"
@@ -329,7 +332,7 @@ class Tournament(models.Model):
                 logger.debug(f"No hands; signed-up {pairs=}")
 
             if not pairs:
-                msg = "Can't create a movement with no pairs!"
+                msg = f"Tournament #{self.display_number}: Can't create a movement with no pairs!"
                 raise NoPairs(msg)
 
             _movement = app.utils.movements.Movement.from_pairs(
@@ -382,15 +385,21 @@ class Tournament(models.Model):
             app.models.TournamentSignup.objects.get_or_create(
                 defaults=dict(tournament=self), player=p
             )
-            logger.debug("Just signed %s up for tournament #%s", p.name, self.display_number)
+        logger.debug(
+            "Just signed up partners %s and %s for tournament #%s",
+            player.name,
+            player.partner.name,
+            self.display_number,
+        )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
+        players = self.signed_up_players()
+        logger.debug("signed_up_players: %s", [p.name for p in players])
+        with_partners = players.filter(partner__isnull=False)
+        logger.debug("with partners: %s", [p.name for p in with_partners])
+
         players = (
-            self.signed_up_players()
-            .filter(partner__isnull=False)
-            .select_related("user")
-            .select_related("partner")
-            .select_related("partner__user")
+            players.select_related("user").select_related("partner").select_related("partner__user")
         )
 
         yield from self.pair_up_players(players)
