@@ -104,12 +104,13 @@ def test_movement_class() -> None:
 
 def dump_seats():
     tabulate_me = []
+    h: Hand
     for h in Hand.objects.order_by("table_display_number").all():
         if h.is_complete:
             continue
         row = [f"Table # {h.table_display_number}:"]
-        for p in h.players():
-            row.append(f"{p.current_direction()}: {p.name}")
+        for letter, p in h.players_by_direction_letter.items():
+            row.append(f"{letter}: {p.name}")
         tabulate_me.append(row)
     print(tabulate.tabulate(tabulate_me))
     return tabulate_me

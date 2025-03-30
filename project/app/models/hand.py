@@ -174,12 +174,35 @@ class HandManager(models.Manager):
         self, tournament: Tournament, zb_round_number: int, zb_table_number: int
     ) -> None:
         mvmt = tournament.get_movement()
-        logger.error(f"OK so it's {mvmt}, {zb_round_number=}, and {zb_table_number=}")
+        logger.debug(f"OK so it's {mvmt}, {zb_round_number=}, and {zb_table_number=}")
         pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
-        logger.error("By golly it's gotta be one of these: %s", pnb.board_group.boards)
-        raise Exception("TODO")
+        logger.debug("By golly it's gotta be one of these: %s", pnb.board_group.boards)
+        table_display_number = zb_table_number + 1
+        boards_in_this_group_played_so_far = self.filter(
+            table_display_number=table_display_number, board__group=pnb.board_group.letter
+        ).count()
+        the_board = pnb.board_group.boards[boards_in_this_group_played_so_far]
+        q = pnb.quartet
+        ns = q.ns
+        ew = q.ew
+        n_k, s_k = ns.id_
+        e_k, w_k = ew.id_
+        North = Player.objects.get(pk=n_k)
+        East = Player.objects.get(pk=e_k)
+        South = Player.objects.get(pk=s_k)
+        West = Player.objects.get(pk=w_k)
+        logger.debug("%s/%s and %s/%s play %s", North, South, East, West, the_board)
+        new_hand = self.create(
+            board=the_board,
+            North=North,
+            East=East,
+            South=South,
+            West=West,
+            table_display_number=table_display_number,
+        )
+        logger.info("Created %s", new_hand)
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
@@ -217,7 +240,6 @@ class Hand(TimeStampedModel):
     if TYPE_CHECKING:
         call_set = RelatedManager["Call"]()
         play_set = RelatedManager["Play"]()
-
     direction_names = attribute_names
     objects = HandManager()
 
