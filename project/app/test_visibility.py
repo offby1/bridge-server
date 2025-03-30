@@ -4,7 +4,7 @@ from typing import Generator
 import freezegun
 import pytest
 
-from app.models import Board, Hand, Player, Table, Tournament
+from app.models import Board, Hand, Player, Tournament
 from app.models.tournament import check_for_expirations
 from bridge.card import Suit
 from bridge.contract import Bid
@@ -14,16 +14,16 @@ from .testutils import play_out_hand, set_auction_to
 
 
 @pytest.fixture
-def completed_tournament(nearly_completed_tournament) -> Table:
+def completed_tournament(nearly_completed_tournament) -> Hand:
     # Complete that tournament!
-    table: Table | None = Table.objects.first()
-    assert table is not None
+    hand: Hand | None = Hand.objects.first()
+    assert hand is not None
 
     while True:
-        play_out_hand(table)
+        play_out_hand(hand)
 
-    assert table.tournament.is_complete
-    return table
+    assert hand.tournament.is_complete
+    return hand
 
 
 def test_completed_tournament(completed_tournament) -> None:
@@ -41,13 +41,13 @@ def test_completed_tournament(completed_tournament) -> None:
 
 
 def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> None:
-    table: Table | None = Table.objects.first()
-    assert table is not None
+    hand: Hand | None = Hand.objects.first()
+    assert hand is not None
 
     non_tournament_player = Player.objects.create_synthetic()
 
     for player in [None, non_tournament_player]:
-        for board in table.tournament.board_set.all():
+        for board in hand.tournament.board_set.all():
             for direction in libSeat:
                 assert not board.can_see_cards_at(
                     player=player,
@@ -58,11 +58,11 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
 def test_running_tournament_relevant_player_not_yet_played_board(
     nearly_completed_tournament,
 ) -> None:
-    table: Table | None = Table.objects.first()
-    assert table is not None
+    hand: Hand | None = Hand.objects.first()
+    assert hand is not None
 
-    for player in table.tournament.seated_players():
-        for board in table.tournament.board_set.all():
+    for player in Player.objects.all():
+        for board in Board.objects.all():
             hand = player.hand_at_which_board_was_played(board)
             if hand is None:
                 for direction in libSeat:
@@ -75,12 +75,9 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 def test_player_has_played_board(
     nearly_completed_tournament,
 ) -> None:
-    table: Table | None = Table.objects.first()
-    assert table is not None
-
-    for player in table.tournament.seated_players():
+    for player in Player.objects.all():
         board: Board
-        for board in table.tournament.board_set.all():
+        for board in Board.objects.all():
             hand: Hand = player.hand_at_which_board_was_played(board)
 
             if hand is None:
@@ -95,7 +92,7 @@ def test_player_has_played_board(
 
 
 @pytest.fixture
-def tournament_starting_now(fresh_tournament) -> Generator[Table]:
+def tournament_starting_now(fresh_tournament) -> Generator[Hand]:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
@@ -107,10 +104,10 @@ def tournament_starting_now(fresh_tournament) -> Generator[Table]:
     with freezegun.freeze_time(Today):
         check_for_expirations(__name__)
 
-        table: Table | None = Table.objects.first()
-        assert table is not None
+        hand: Hand | None = Hand.objects.first()
+        assert hand is not None
 
-        yield table
+        yield hand
 
 
 def test_zero_cards_played(tournament_starting_now) -> None:
@@ -123,7 +120,7 @@ def test_zero_cards_played(tournament_starting_now) -> None:
             [0, 0, 1, 0],  # s  |
             [0, 0, 0, 1],  # w  v
         ],
-        table=tournament_starting_now,
+        hand=tournament_starting_now,
     )
 
 
@@ -147,7 +144,7 @@ def test_one_card_played(tournament_starting_now) -> None:
             [1, 1, 1, 1],  # s  | (dummy)
             [0, 0, 0, 1],  # w  v
         ],
-        table=tournament_starting_now,
+        hand=tournament_starting_now,
     )
 
 
@@ -163,20 +160,20 @@ def test_52_cards_played(tournament_starting_now) -> None:
             [1, 1, 1, 1],  # s  | (dummy)
             [1, 1, 1, 1],  # w  v
         ],
-        table=tournament_starting_now,
+        hand=tournament_starting_now,
     )
 
 
-def expect_visibility(expectation_array, table: Table) -> None:
+def expect_visibility(expectation_array, hand: Hand) -> None:
     __tracebackhide__ = True
 
-    seats = table.current_seats()
+    seats = hand.current_seats()
 
     for seat in seats:
         seat_index = "NESW".index(seat.direction)
 
         for viewer_index, viewer in enumerate([s.player for s in seats]):
-            actual = table.current_hand.board.can_see_cards_at(
+            actual = hand.current_hand.board.can_see_cards_at(
                 player=viewer, direction_letter=seat.direction
             )
             expected = expectation_array[seat_index][viewer_index]

@@ -54,8 +54,8 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
 
 
 def play_out_round(tournament: Tournament) -> None:
-    table = tournament.table_set.first()
-    assert table is not None
+    hand = tournament.hands().first()
+    assert hand is not None
 
     while True:
         num_completed_rounds, hands_this_round = tournament.rounds_played()
@@ -63,7 +63,7 @@ def play_out_round(tournament: Tournament) -> None:
         if num_completed_rounds > 0 and hands_this_round == 0:
             break
 
-        play_out_hand(table)
+        play_out_hand(hand)
         if (num_completed_rounds, hands_this_round) == tournament.rounds_played():
             pytest.fail(
                 f"we seem to not be making any progress: {num_completed_rounds=}, {hands_this_round=}"
@@ -79,8 +79,8 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
     before = Tournament.objects.filter(is_complete=False).first()
     assert before is not None
 
-    table = before.table_set.first()
-    assert table is not None
+    hand = before.table_set.first()
+    assert hand is not None
 
     play_out_round(before)
 
@@ -96,8 +96,8 @@ def test_completing_one_tournament_ejects_players(
 ) -> None:
     tournament = Tournament.objects.filter(is_complete=False).first()
     assert tournament is not None
-    table = tournament.table_set.first()
-    assert table is not None
+    hand = tournament.hands().first()
+    assert hand is not None
 
     while not tournament.is_complete:
         play_out_round(tournament)
@@ -277,7 +277,7 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert TournamentSignup.objects.filter(player=south).exists()
     assert TournamentSignup.objects.count() == 2
 
-    assert not open_tournament.table_set.exists()
+    assert not open_tournament.hands().exists()
 
     app.models.tournament._do_signup_expired_stuff(open_tournament)
 
@@ -322,13 +322,13 @@ def test_end_of_round_stuff_happens(usual_setup) -> None:
     assert tour is not None
 
     tour.check_consistency()
-    table = tour.table_set.first()
+    hand = tour.table_set.first()
 
-    play_out_hand(table)
+    play_out_hand(hand)
     assert tour.rounds_played() == (0, 1)
 
-    play_out_hand(table)
+    play_out_hand(hand)
     assert tour.rounds_played() == (0, 2)
 
-    play_out_hand(table)
+    play_out_hand(hand)
     assert tour.rounds_played() == (1, 0)

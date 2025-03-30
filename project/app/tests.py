@@ -27,7 +27,6 @@ from .models import (
     Tournament,
 )
 
-from .models.board import board_attributes_from_display_number
 from .testutils import set_auction_to
 from .views import hand, player
 
@@ -155,11 +154,9 @@ def test_player_cannot_be_in_two_incomplete_hands(usual_setup: Hand) -> None:
 
     with pytest.raises(HandError) as e:
         Hand.objects.create(
-            board=Board.objects.create_from_attributes(
-                attributes=board_attributes_from_display_number(
-                    display_number=Board.objects.count() + 1,
-                    rng_seeds=[b"is she really going out with him"],
-                ),
+            board=Board.objects.get_or_create_from_display_number(
+                display_number=Board.objects.count() + 1,
+                group="A",
                 tournament=h1.tournament,
             ),
             North=h1.North,

@@ -9,7 +9,7 @@ import tabulate
 
 from django.contrib import auth
 
-from app.models import Player, Seat, Table, Tournament
+from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 from app.utils.movements import BoardGroup, Movement, Pair
 
@@ -104,17 +104,18 @@ def test_movement_class() -> None:
 
 def dump_seats():
     tabulate_me = []
-    for t in Table.objects.order_by("display_number").all():
-        row = [f"Table # {t.display_number}:"]
-        for s in t.current_seats():
-            row.append(f"{s.direction}: {s.player.name}")
+    for h in Hand.objects.order_by("table_display_number").all():
+        if h.is_complete:
+            continue
+        row = [f"Table # {h.table_display_number}:"]
+        for p in h.players():
+            row.append(f"{p.current_direction()}: {p.name}")
         tabulate_me.append(row)
     print(tabulate.tabulate(tabulate_me))
     return tabulate_me
 
 
 def test_pairs_and_boards_move(db, everybodys_password) -> None:
-    assert not Seat.objects.exists()
     # build up the simplest possible tournament that has more than one round.
     for name in ["n1", "s1", "n2", "s2", "e1", "w1", "e2", "w2"]:
         Player.objects.create(
@@ -138,7 +139,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         _do_signup_expired_stuff(open_tournament)
-        assert open_tournament.table_set.exists()
+        assert open_tournament.hands().exists()
 
         num_completed_rounds, _ = open_tournament.rounds_played()
         assert num_completed_rounds == 0, "We haven't played any hands, so this should be round 0"
@@ -148,8 +149,8 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
             ["Table # 1:", "N: n1", "E: e1", "S: s1", "W: w1"],
             ["Table # 2:", "N: n2", "E: e2", "S: s2", "W: w2"],
         ]
-        for table in open_tournament.table_set.all():
-            play_out_hand(table)
+        for hand in open_tournament.hands().all():
+            play_out_hand(hand)
 
         num_completed_rounds, _ = open_tournament.rounds_played()
         assert (

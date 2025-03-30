@@ -52,8 +52,8 @@ class NoPairs(Exception):
 
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     with transaction.atomic():
-        if tour.table_set.exists():
-            logger.debug("'%s' looks like it's has tables already; bailing", tour)
+        if tour.hands().exists():
+            logger.debug("'%s' looks like it has hands already; bailing", tour)
             return
 
         # It expired without any signups -- just nuke it
@@ -275,21 +275,9 @@ class Tournament(models.Model):
                 seen.add(p.partner.pk)
 
     def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
-        from app.models import Player, Seat
+        from app.models import Player
 
-        tables = self.table_set.all()
-        seats = Seat.objects.filter(table__in=tables)
-
-        players = (
-            Player.objects.order_by("pk")
-            .filter(partner__isnull=False)
-            .filter(pk__in=seats.values_list("player", flat=True))
-            .select_related("user")
-            .select_related("partner")
-            .select_related("partner__user")
-        )
-
-        yield from self.pair_up_players(players)
+        yield from self.pair_up_players(Player.objects.currently_seated())
 
     def which_hands(self, *, four_players: Collection[PK]) -> models.QuerySet:
         """
@@ -299,19 +287,11 @@ class Tournament(models.Model):
 
         players = Player.objects.filter(pk__in=four_players)
         assert players.count() == 4
-
-        tables_at_which_all_four_have_sat = set()
-
-        # It'd be nice to do this logic in the db, rather than Python; but otoh, there aren't that many tables per
-        # tournament, so ... :shrug:
-        for t in self.table_set.all():
-            if set(t.seat_set.values_list("player", flat=True).all()) == four_players:
-                tables_at_which_all_four_have_sat.add(t.pk)
-        return (
-            Hand.objects.filter(table__in=tables_at_which_all_four_have_sat)
-            .order_by("pk")
-            .distinct()
-        )
+        set_of_pks = set()
+        for h in self.hands().order_by("pk").all():
+            if set(h.players()) == four_players:
+                set_of_pks.add(h.pk)
+        return Hand.objects.filter(pk__in=set_of_pks).distinct()
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         from app.models import Player
@@ -338,9 +318,10 @@ class Tournament(models.Model):
             if num_completed_rounds == mvmt.num_rounds:
                 logger.warning("I guess this tournament is over")
                 return
-            for table in self.table_set.all():
-                settings = mvmt.table_settings_by_table_number[table.display_number - 1]
-                table.next_hand_for_this_round(settings[num_completed_rounds])
+            for table_number in range(1, mvmt.num_rounds + 1):
+                app.models.Hand.objects.create_for_tournament(
+                    self, round_number=num_completed_rounds
+                )
 
     def _cache_key(self) -> str:
         return f"tournament:{self.pk}"
@@ -353,7 +334,7 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:
-            if self.table_set.exists():
+            if self.hands().exists():
                 pairs = list(self.seated_pairs())
                 logger.debug(f"seated {pairs=}")
             else:
