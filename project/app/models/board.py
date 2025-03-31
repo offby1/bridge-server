@@ -217,12 +217,13 @@ class Board(models.Model):
                 hand = player.hand_at_which_board_was_played(self)
                 assert hand is not None
 
-                if player == hand.players_by_direction[direction_letter]:
+                if player == hand.players_by_direction_letter[direction_letter]:
                     return True
 
                 return (
                     hand.get_xscript().num_plays > 0
-                    and hand.players_by_direction[direction_letter].libraryThing() == hand.dummy
+                    and hand.players_by_direction_letter[direction_letter].libraryThing()
+                    == hand.dummy
                 )
             case _:
                 assert False, f"Dunno what case {self.what_can_they_see(player)=} is"

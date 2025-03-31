@@ -102,7 +102,7 @@ def test_movement_class() -> None:
                 ]
 
 
-def dump_seats():
+def dump_seats() -> list[list[str]]:
     tabulate_me = []
     h: Hand
     for h in Hand.objects.order_by("table_display_number").all():
