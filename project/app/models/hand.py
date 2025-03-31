@@ -276,7 +276,7 @@ class Hand(TimeStampedModel):
         return rv
 
     def _check_for_expired_tournament(self) -> None:
-        tour = self.board.tournament
+        tour = self.tournament
         if tour.play_completion_deadline_has_passed():
             deadline = tour.play_completion_deadline
             assert deadline is not None
@@ -307,7 +307,7 @@ class Hand(TimeStampedModel):
         if self.abandoned_because is not None:
             return True
 
-        tournament: Tournament = self.board.tournament
+        tournament: Tournament = self.tournament
         if not tournament.is_complete and tournament.play_completion_deadline_has_passed():
             self.abandoned_because = "The tournament's play deadline has passed"
             self.save()
@@ -800,7 +800,7 @@ class Hand(TimeStampedModel):
     # None, in which case we (arbitrarily) summarize in terms of North.
     def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
         if as_viewed_by is None:
-            if not self.board.tournament.is_complete:
+            if not self.tournament.is_complete:
                 return "Remind me -- who are you, again?", "-"
 
         if as_viewed_by is not None:
@@ -847,7 +847,7 @@ class Hand(TimeStampedModel):
         return (f"{auction_status}: {trick_summary}", total_score)
 
     def __str__(self) -> str:
-        return f"Tournament #{self.board.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
+        return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
 
     class Meta:
         constraints = [
