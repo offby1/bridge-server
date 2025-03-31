@@ -53,22 +53,31 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     return before
 
 
+def _find_incomplete_hand(tournament: Tournament) -> Hand | None:
+    for h in tournament.hands():
+        if not h.is_complete:
+            return h
+
+
 def play_out_round(tournament: Tournament) -> None:
-    hand = tournament.hands().first()
-    assert hand is not None
+    num_completed_rounds, _ = tournament.rounds_played()
 
     while True:
-        num_completed_rounds, hands_this_round = tournament.rounds_played()
-
-        if num_completed_rounds > 0 and hands_this_round == 0:
-            break
-
+        hand = _find_incomplete_hand(tournament)
+        if hand is None:
+            if not tournament.is_complete:
+                pytest.fail(
+                    f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament.is_complete=}"
+                )
+        before = tournament.rounds_played()
         play_out_hand(hand)
+        after = tournament.rounds_played()
 
-        if (num_completed_rounds, hands_this_round) == tournament.rounds_played():
-            pytest.fail(
-                f"we seem to not be making any progress: {num_completed_rounds=}, {hands_this_round=}"
-            )
+        if not after > before:
+            pytest.fail(f"After playing a hand, {after=} should be greater than {before=}")
+
+        if after[1] == 0:
+            break
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
