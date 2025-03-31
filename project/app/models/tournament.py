@@ -213,7 +213,9 @@ class TournamentManager(models.Manager):
             return first_incomplete, False
 
 
-# This might actually be a "session" as per https://en.wikipedia.org/wiki/Duplicate_bridge#Pairs_game
+# fmt:off
+
+# fmt:on
 class Tournament(models.Model):
     if TYPE_CHECKING:
         from app.models.board import Board

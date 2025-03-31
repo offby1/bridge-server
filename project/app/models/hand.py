@@ -203,6 +203,9 @@ class HandManager(models.Manager):
         return super().create(*args, **kwargs)
 
 
+# fmt:off
+
+# fmt:on
 class Hand(TimeStampedModel):
     """All the calls and plays for a given hand."""
 
