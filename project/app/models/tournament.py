@@ -451,6 +451,8 @@ class Tournament(models.Model):
                     f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(self.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
                 )
                 self.next_movement_round()
+            else:
+                self.maybe_complete()
         else:
             logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
 

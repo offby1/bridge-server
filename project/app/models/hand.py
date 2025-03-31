@@ -533,6 +533,7 @@ class Hand(TimeStampedModel):
         self.is_complete = True
         self.save()
         logger.info("Just marked hand with pk %s as complete", self.pk)
+        self.tournament.maybe_finalize_round()
 
         # How many hands have been played in this round?
         # That's the same as asking: how many boards have been played in this board group
