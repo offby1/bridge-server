@@ -14,7 +14,7 @@ from .testutils import play_out_hand, set_auction_to
 
 
 @pytest.fixture
-def completed_tournament(nearly_completed_tournament) -> Hand:
+def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
     # Complete that tournament!
     hand: Hand | None = Hand.objects.first()
     assert hand is not None

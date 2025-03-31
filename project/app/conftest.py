@@ -81,8 +81,11 @@ def fresh_tournament(db: None) -> None:
 
 
 @pytest.fixture
-def nearly_completed_tournament(db: None) -> None:
+def nearly_completed_tournament(db: None) -> Tournament:
     call_command("loaddata", "nearly_completed_tournament")
+    t = Tournament.objects.first()
+    assert t is not None
+    return t
 
 
 @pytest.fixture
