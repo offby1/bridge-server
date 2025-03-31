@@ -44,11 +44,20 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
     hand = find_incomplete_hand(nearly_completed_tournament)
     assert hand is not None
 
+    assert not hand.tournament.is_complete
+    assert not hand.is_complete
+
     non_tournament_player = Player.objects.create_synthetic()
 
     for player in [None, non_tournament_player]:
-        for board in hand.tournament.board_set.all():
-            for direction in libSeat:
+        board: Board = hand.board
+        for direction in libSeat:
+            if player is not None and hand.dummy == hand.libPlayers_by_libSeat[direction]:
+                assert board.can_see_cards_at(
+                    player=player,
+                    direction_letter=direction.value,
+                ), f"Whoa -- {player} can't see the dummy at {board}?!"
+            else:
                 assert not board.can_see_cards_at(
                     player=player,
                     direction_letter=direction.value,
@@ -83,12 +92,12 @@ def test_player_has_played_board(
             if hand is None:
                 continue
 
-            for d, p in hand.players_by_direction.items():
+            for d_letter, p in hand.players_by_direction_letter.items():
                 if p == player:
                     assert board.can_see_cards_at(
                         player=p,
-                        direction_letter=d,
-                    ), f"Hey now -- {player} can't see their own cards ({board} at {d})?!"
+                        direction_letter=d_letter,
+                    ), f"Hey now -- {player} can't see their own cards ({board} at {d_letter})?!"
 
 
 @pytest.fixture

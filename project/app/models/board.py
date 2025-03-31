@@ -201,6 +201,7 @@ class Board(models.Model):
     #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
 
     def can_see_cards_at(self, *, player: Player | None, direction_letter: str) -> bool:
+        # logger.error(f"{self.what_can_they_see(player=player)=}")
         match self.what_can_they_see(player=player):
             case self.PlayerVisibility.everything:
                 return True
@@ -211,14 +212,21 @@ class Board(models.Model):
                 hand = player.hand_at_which_board_was_played(self)
                 assert hand is not None
 
-                return player == hand.players_by_direction[direction_letter]
+                # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter]=} ? ...")
+                return player == hand.players_by_direction_letter[direction_letter]
             case self.PlayerVisibility.dummys_hand:
                 assert player is not None
                 hand = player.hand_at_which_board_was_played(self)
                 assert hand is not None
 
+                # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter].name=} ? ...")
                 if player == hand.players_by_direction_letter[direction_letter]:
                     return True
+
+                # lt = hand.players_by_direction_letter[direction_letter].libraryThing()
+                # logger.debug(f"{lt=} ...")
+                # dummy = hand.dummy
+                # logger.debug(f"{dummy=}...")
 
                 return (
                     hand.get_xscript().num_plays > 0
@@ -230,21 +238,27 @@ class Board(models.Model):
 
     def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:
         if self.tournament.is_complete:
+            # logger.error(f"{self.tournament.is_complete=} => {self.PlayerVisibility.everything=}")
             return self.PlayerVisibility.everything
 
         if player is None:
+            # logger.error(f"{player=} is None => {self.PlayerVisibility.nothing=}")
             return self.PlayerVisibility.nothing
 
         hand = player.hand_at_which_board_was_played(self)
         if hand is None:
+            # logger.error(f"{hand=} is None => {self.PlayerVisibility.nothing=}")
             return self.PlayerVisibility.nothing
 
         rv = self.PlayerVisibility.own_hand
+        # logger.error(f"{hand=} is not None, so at least {self.PlayerVisibility.own_hand=}")
 
         if hand.get_xscript().num_plays > 0:
+            # logger.error(f"{hand.get_xscript().num_plays=} > 0, so at least {self.PlayerVisibility.dummys_hand=}")
             rv = self.PlayerVisibility.dummys_hand
 
         if hand.is_complete:
+            # logger.error(f"{hand.is_complete=}, so {self.PlayerVisibility.everything=}")
             rv = self.PlayerVisibility.everything
 
         return rv
