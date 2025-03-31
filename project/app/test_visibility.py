@@ -139,7 +139,7 @@ def test_zero_cards_played(tournament_starting_now: Hand) -> None:
 
 
 def test_one_card_played(tournament_starting_now: Hand) -> None:
-    h: Hand = tournament_starting_now.current_hand
+    h: Hand = tournament_starting_now
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
 
     assert h.player_who_may_play is not None
