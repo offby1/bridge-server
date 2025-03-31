@@ -185,7 +185,8 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
         viewer_index = "NESW".index(viewer_letter)
         for target_index, target_letter in enumerate("NESW"):
             actual = hand.board.can_see_cards_at(player=viewer, direction_letter=target_letter)
-            expected = expectation_array[viewer_index][target_index]
+            expected = expectation_array[target_index][viewer_index]
+            print(f"{viewer} {target_letter} {actual=} {expected=}")
             if actual != expected:
                 pytest.fail(
                     f"{viewer} {'can' if actual else 'can not'} see {target_letter} but {'should not' if actual else 'should'}",
