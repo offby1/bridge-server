@@ -10,20 +10,15 @@ from bridge.card import Suit
 from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
 
-from .testutils import find_incomplete_hand, play_out_hand, set_auction_to
+from .testutils import find_incomplete_hand, play_out_hand, play_out_round, set_auction_to
 
 
 @pytest.fixture
 def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
-    # Complete that tournament!
-    hand: Hand | None = Hand.objects.first()
-    assert hand is not None
+    play_out_round(nearly_completed_tournament)
 
-    while True:
-        play_out_hand(hand)
-
-    assert hand.tournament.is_complete
-    return hand
+    assert nearly_completed_tournament.is_complete
+    return nearly_completed_tournament.hands().first()
 
 
 def test_completed_tournament(completed_tournament: Tournament) -> None:

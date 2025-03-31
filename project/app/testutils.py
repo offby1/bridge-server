@@ -62,6 +62,28 @@ def play_out_hand(h: app.models.Hand) -> None:
     pytest.fail(f"Uh oh, we didn't make any calls or plays in {h}")
 
 
+def play_out_round(tournament: app.models.Tournament) -> None:
+    num_completed_rounds, _ = tournament.rounds_played()
+
+    while True:
+        hand = find_incomplete_hand(tournament)
+        if hand is None:
+            if not tournament.is_complete:
+                pytest.fail(
+                    f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament.is_complete=}"
+                )
+        before = tournament.rounds_played()
+        assert hand is not None
+        play_out_hand(hand)
+        after = tournament.rounds_played()
+
+        if not after > before:
+            pytest.fail(f"After playing a hand, {after=} should be greater than {before=}")
+
+        if after[1] == 0:
+            break
+
+
 def find_incomplete_hand(tournament: app.models.Tournament) -> app.models.Hand | None:
     for h in tournament.hands():
         if not h.is_complete:

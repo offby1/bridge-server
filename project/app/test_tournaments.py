@@ -29,7 +29,7 @@ from app.models.tournament import (
     OpenForSignup,
 )
 
-from .testutils import play_out_hand, find_incomplete_hand
+from .testutils import play_out_hand, play_out_round
 
 logger = logging.getLogger(__name__)
 
@@ -51,28 +51,6 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
 
     return before
-
-
-def play_out_round(tournament: Tournament) -> None:
-    num_completed_rounds, _ = tournament.rounds_played()
-
-    while True:
-        hand = find_incomplete_hand(tournament)
-        if hand is None:
-            if not tournament.is_complete:
-                pytest.fail(
-                    f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament.is_complete=}"
-                )
-        before = tournament.rounds_played()
-        assert hand is not None
-        play_out_hand(hand)
-        after = tournament.rounds_played()
-
-        if not after > before:
-            pytest.fail(f"After playing a hand, {after=} should be greater than {before=}")
-
-        if after[1] == 0:
-            break
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
