@@ -176,17 +176,12 @@ def test_52_cards_played(tournament_starting_now) -> None:
 def expect_visibility(expectation_array, hand: Hand) -> None:
     __tracebackhide__ = True
 
-    seats = hand.current_seats()
-
-    for seat in seats:
-        seat_index = "NESW".index(seat.direction)
-
-        for viewer_index, viewer in enumerate([s.player for s in seats]):
-            actual = hand.current_hand.board.can_see_cards_at(
-                player=viewer, direction_letter=seat.direction
-            )
-            expected = expectation_array[seat_index][viewer_index]
+    for viewer_letter, viewer in hand.players_by_direction_letter.items():
+        viewer_index = "NESW".index(viewer_letter)
+        for target_index, target_letter in enumerate("NESW"):
+            actual = hand.board.can_see_cards_at(player=viewer, direction_letter=target_letter)
+            expected = expectation_array[viewer_index][target_index]
             if actual != expected:
                 pytest.fail(
-                    f"{viewer} {'can' if actual else 'can not'} see {seat.direction} but {'should not' if actual else 'should'}",
+                    f"{viewer} {'can' if actual else 'can not'} see {target_letter} but {'should not' if actual else 'should'}",
                 )
