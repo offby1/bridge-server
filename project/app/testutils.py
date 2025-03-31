@@ -60,3 +60,11 @@ def play_out_hand(h: app.models.Hand) -> None:
         return
 
     pytest.fail(f"Uh oh, we didn't make any calls or plays in {h}")
+
+
+def find_incomplete_hand(tournament: app.models.Tournament) -> app.models.Hand | None:
+    for h in tournament.hands():
+        if not h.is_complete:
+            return h
+
+    return None

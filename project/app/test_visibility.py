@@ -10,7 +10,7 @@ from bridge.card import Suit
 from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
 
-from .testutils import play_out_hand, set_auction_to
+from .testutils import find_incomplete_hand, play_out_hand, set_auction_to
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def test_completed_tournament(completed_tournament) -> None:
 
 
 def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> None:
-    hand: Hand | None = Hand.objects.first()
+    hand = find_incomplete_hand(nearly_completed_tournament)
     assert hand is not None
 
     non_tournament_player = Player.objects.create_synthetic()

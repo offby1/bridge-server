@@ -29,7 +29,7 @@ from app.models.tournament import (
     OpenForSignup,
 )
 
-from .testutils import play_out_hand
+from .testutils import play_out_hand, find_incomplete_hand
 
 logger = logging.getLogger(__name__)
 
@@ -53,23 +53,18 @@ def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> To
     return before
 
 
-def _find_incomplete_hand(tournament: Tournament) -> Hand | None:
-    for h in tournament.hands():
-        if not h.is_complete:
-            return h
-
-
 def play_out_round(tournament: Tournament) -> None:
     num_completed_rounds, _ = tournament.rounds_played()
 
     while True:
-        hand = _find_incomplete_hand(tournament)
+        hand = find_incomplete_hand(tournament)
         if hand is None:
             if not tournament.is_complete:
                 pytest.fail(
                     f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament.is_complete=}"
                 )
         before = tournament.rounds_played()
+        assert hand is not None
         play_out_hand(hand)
         after = tournament.rounds_played()
 
