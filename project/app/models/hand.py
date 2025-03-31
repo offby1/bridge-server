@@ -530,6 +530,10 @@ class Hand(TimeStampedModel):
         return rv
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
+        self.is_complete = True
+        self.save()
+        logger.info("Just marked hand with pk %s as complete", self.pk)
+
         # How many hands have been played in this round?
         # That's the same as asking: how many boards have been played in this board group
         num_completed_rounds, num_hands_completed_this_round = self.tournament.rounds_played()
