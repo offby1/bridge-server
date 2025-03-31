@@ -26,13 +26,18 @@ def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
     return hand
 
 
-def test_completed_tournament(completed_tournament) -> None:
-    table = completed_tournament
+def test_completed_tournament(completed_tournament: Tournament) -> None:
     non_tournament_player = Player.objects.create_synthetic()
+    assert non_tournament_player is not None
+    some_active_board = completed_tournament.board_set.filter(hand_set__exists=True).first()
+    assert some_active_board is not None
+    some_hand = some_active_board.hand_set.first()
+    assert some_hand is not None
+    some_tournament_player = some_hand.North
 
     # ok now try various flavors of player
-    for player in [None, table.tournament.seated_players().first(), non_tournament_player]:
-        for board in table.tournament.board_set.all():
+    for player in [None, some_tournament_player, non_tournament_player]:
+        for board in completed_tournament.board_set.all():
             for direction in libSeat:
                 assert board.can_see_cards_at(
                     player=player,
@@ -40,7 +45,7 @@ def test_completed_tournament(completed_tournament) -> None:
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
 
-def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> None:
+def test_running_tournament_irrelevant_players(nearly_completed_tournament: Tournament) -> None:
     hand = find_incomplete_hand(nearly_completed_tournament)
     assert hand is not None
 
@@ -65,7 +70,7 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament) -> N
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(
-    nearly_completed_tournament,
+    nearly_completed_tournament: Tournament,
 ) -> None:
     hand: Hand | None = Hand.objects.first()
     assert hand is not None
@@ -82,7 +87,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 
 
 def test_player_has_played_board(
-    nearly_completed_tournament,
+    nearly_completed_tournament: Tournament,
 ) -> None:
     for player in Player.objects.all():
         board: Board
@@ -101,7 +106,7 @@ def test_player_has_played_board(
 
 
 @pytest.fixture
-def tournament_starting_now(fresh_tournament) -> Generator[Hand]:
+def tournament_starting_now(fresh_tournament: Hand) -> Generator[Hand]:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
@@ -119,7 +124,7 @@ def tournament_starting_now(fresh_tournament) -> Generator[Hand]:
         yield hand
 
 
-def test_zero_cards_played(tournament_starting_now) -> None:
+def test_zero_cards_played(tournament_starting_now: Hand) -> None:
     expect_visibility(
         [
             # Everyone can see their own hand, but that's all.
@@ -133,7 +138,7 @@ def test_zero_cards_played(tournament_starting_now) -> None:
     )
 
 
-def test_one_card_played(tournament_starting_now) -> None:
+def test_one_card_played(tournament_starting_now: Hand) -> None:
     h: Hand = tournament_starting_now.current_hand
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
 
@@ -157,7 +162,7 @@ def test_one_card_played(tournament_starting_now) -> None:
     )
 
 
-def test_52_cards_played(tournament_starting_now) -> None:
+def test_52_cards_played(tournament_starting_now: Hand) -> None:
     play_out_hand(tournament_starting_now)
 
     expect_visibility(
