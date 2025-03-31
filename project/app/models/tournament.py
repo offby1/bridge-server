@@ -260,7 +260,7 @@ class Tournament(models.Model):
         return rv
 
     @staticmethod
-    def pair_up_players(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
+    def pairs_from_partnerships(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
         seen: set[PK] = set()
 
         for p in players:
@@ -273,7 +273,7 @@ class Tournament(models.Model):
     def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
         from app.models import Player
 
-        yield from self.pair_up_players(Player.objects.currently_seated())
+        yield from self.pairs_from_partnerships(Player.objects.currently_seated())
 
     def which_hands(self, *, four_players: Collection[PK]) -> models.QuerySet:
         """
@@ -323,8 +323,14 @@ class Tournament(models.Model):
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:
             if self.hands().exists():
-                pairs = list(self.seated_pairs())
-                logger.debug(f"{self.hands().count()} hands; seated {pairs=}")
+                # Collect all players who have played the hands.
+                player_pks: set[PK] = set()
+                for h in self.hands():
+                    player_pks = player_pks.union(h.player_pks())
+                from app.models import Player
+
+                pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
+                logger.debug(f"{self.hands().count()} hands; {pairs=}")
             else:
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"No hands; signed-up {pairs=}")
@@ -398,7 +404,7 @@ class Tournament(models.Model):
             .select_related("partner__user")
         )
 
-        yield from self.pair_up_players(players)
+        yield from self.pairs_from_partnerships(players)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player

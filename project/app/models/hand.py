@@ -613,9 +613,12 @@ class Hand(TimeStampedModel):
         return Player.objects.get_by_name(modelPlayer.name)
 
     def players(self) -> models.QuerySet:
-        return Player.objects.filter(
-            pk__in=[getattr(self, direction).pk for direction in self.direction_names]
-        )
+        return Player.objects.filter(pk__in=self.player_pks())
+
+    def player_pks(self) -> list[PK]:
+        # Slight kludge -- I used to have `getattr(self, direction).pk`, but that fetched each player from the db, then
+        # threw away everything but the pk.
+        return [getattr(self, f"{direction}_id") for direction in self.direction_names]
 
     @property
     def player_names_string(self) -> str:
