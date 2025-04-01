@@ -301,18 +301,6 @@ class Tournament(models.Model):
             )
         return rv
 
-    def next_movement_round(self) -> None:
-        if self.is_complete:
-            logger.warning("'%s' is complete; no next round for you", self)
-        else:
-            mvmt = self.get_movement()
-            num_completed_rounds, _ = self.rounds_played()
-            logger.warning(f"{num_completed_rounds=} {mvmt.num_rounds=}")
-            if num_completed_rounds == mvmt.num_rounds:
-                logger.warning("I guess this tournament is over")
-                return
-            self.create_hands_for_round(zb_round_number=num_completed_rounds)
-
     def _cache_key(self) -> str:
         return f"tournament:{self.pk}"
 
@@ -448,12 +436,7 @@ class Tournament(models.Model):
         logger.debug("%s", f"{self}: Checking if this round (for {self}) is over.")
         if hands_played_this_round == 0:
             logger.info("%s", f"{self.rounds_played()=}")
-            if num_completed_rounds < len(self.get_movement().table_settings_by_table_number):
-                logger.warning(
-                    f"Gevalt! {hands_played_this_round=}; and {num_completed_rounds=} < {len(self.get_movement().table_settings_by_table_number)=}; calling next_movement_round"
-                )
-                self.next_movement_round()
-            else:
+            if num_completed_rounds == len(self.get_movement().table_settings_by_table_number):
                 self.maybe_complete()
         else:
             logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")

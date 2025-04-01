@@ -149,7 +149,6 @@ class HandManager(models.Manager):
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
 
-        # Find a board in this group which has not been played at this table.
         all_boards_in_this_group = Board.objects.filter(
             pk__in=[b.pk for b in pnb.board_group.boards],
         )
@@ -157,16 +156,14 @@ class HandManager(models.Manager):
             f"All the boards in the movement for {zb_round_number=}: {all_boards_in_this_group=}"
         )
 
+        # Find a board in this group which has not been played at this table.
         hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
         logger.warning(f"{hands_played_at_this_table=}")
 
-        boards_played_at_this_table = Board.objects.filter(
-            pk__in=hands_played_at_this_table.values_list("board", flat=True)
-        )
         boards_not_played_at_this_table = Board.objects.exclude(
             pk__in=hands_played_at_this_table.values_list("board", flat=True)
         )
-        logger.warning(f"{boards_played_at_this_table=} {boards_not_played_at_this_table=}")
+        logger.warning(f"{boards_not_played_at_this_table=}")
 
         the_board = boards_not_played_at_this_table.first()
         if the_board is None:
@@ -568,9 +565,7 @@ class Hand(TimeStampedModel):
 
         if num_hands_completed_this_round == 0:
             logger.info(f"Ooh ooh Mr Kotter, the round is over ({num_completed_rounds=})")
-            new_hands = list(
-                self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
-            )
+            new_hands = self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
 
             logger.info(f"Ooh ooh Mr Kotter, created {new_hands}")
             # TODO -- send some suitable event?
