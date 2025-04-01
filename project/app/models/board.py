@@ -108,6 +108,9 @@ class BoardManager(models.Manager):
         return super().create(*args, **kwargs)
 
 
+# fmt:off
+
+# fmt:on
 class Board(models.Model):
     @functools.total_ordering
     class PlayerVisibility(enum.Enum):
@@ -299,6 +302,12 @@ class Board(models.Model):
                 fields=["display_number", "tournament_id"],
             ),
         ]
+
+
+# fmt:off
+
+
+# fmt:on
 
 
 admin.site.register(Board)
