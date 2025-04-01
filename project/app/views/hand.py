@@ -623,14 +623,19 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     player = request.user.player
     assert player is not None
 
-    if player not in hand.players_by_direction.values():
-        return Forbid("You're not at that table")
-
-    if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
-        logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
-        xscript = hand.get_xscript()
-    else:
-        xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+    match hand.board.what_can_they_see(player=player):
+        case hand.board.PlayerVisibility.everything:
+            logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
+            xscript = hand.get_xscript()
+        case (
+            app.models.Board.PlayerVisibility.dummys_hand
+            | app.models.Board.PlayerVisibility.own_hand
+        ):
+            xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+        case _:
+            return Forbid(
+                "You are not allowed to see neither squat, zip, nada, nor bupkis",
+            )
 
     return HttpResponse(
         json.dumps(
