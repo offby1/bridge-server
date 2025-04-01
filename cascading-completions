@@ -1,0 +1,8 @@
+We create hands in two different circumstances:
+
+1) when a tournament starts (rather, when the signup dealine expires), we create one hand per table
+2) when any hand ends, we create another hand at that same table, assuming they haven't all been already created.
+
+Every time we create a call or a play, we need to check if the hand is complete.
+Every time a hand is completed, we need to check if that tournament round (at that table) is complete.
+Every time a tournament round completes, we need to check if the tournament itself is complete.
