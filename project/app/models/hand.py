@@ -58,6 +58,10 @@ class PlayError(Exception):
     pass
 
 
+class TournamentIsOver(HandError):
+    pass
+
+
 @dataclasses.dataclass
 class TrickTuple:
     seat: Seat
@@ -136,9 +140,6 @@ def send_timestamped_event(
 
 
 class HandManager(models.Manager):
-    # This method's name seems misleading.  We don't want to create a *single* hand for a particular round; instead we
-    # want to create a bunch (one for each board for each table).  But we probably won't do them all at once; instead
-    # we'll do them as-needed.  But in that case, we'll want to know which table needs a new hand.
     def create_for_tournament(
         self, tournament: Tournament, zb_round_number: int, zb_table_number: int
     ) -> Hand:
@@ -147,11 +148,34 @@ class HandManager(models.Manager):
         pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
-        table_display_number = zb_table_number + 1
-        boards_in_this_group_played_so_far = self.filter(
-            table_display_number=table_display_number, board__group=pnb.board_group.letter
-        ).count()
-        the_board = pnb.board_group.boards[boards_in_this_group_played_so_far]
+
+        # Find a board in this group which has not been played at this table.
+        all_boards_in_this_group = Board.objects.filter(
+            pk__in=[b.pk for b in pnb.board_group.boards],
+        )
+        logger.warning(
+            f"All the boards in the movement for {zb_round_number=}: {all_boards_in_this_group=}"
+        )
+
+        hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
+        logger.warning(f"{hands_played_at_this_table=}")
+
+        boards_played_at_this_table = Board.objects.filter(
+            pk__in=hands_played_at_this_table.values_list("board", flat=True)
+        )
+        boards_not_played_at_this_table = Board.objects.exclude(
+            pk__in=hands_played_at_this_table.values_list("board", flat=True)
+        )
+        logger.warning(f"{boards_played_at_this_table=} {boards_not_played_at_this_table=}")
+
+        the_board = boards_not_played_at_this_table.first()
+        if the_board is None:
+            logger.warning("All boards this round: %s", pnb.board_group.boards)
+            logger.warning("All hands: %s", self.annotate(board_group=models.F("board__group")))
+            raise HandError(
+                f"Cannot find unplayed board for {zb_round_number=}, {zb_table_number=}"
+            )
+
         q = pnb.quartet
         ns = q.ns
         ew = q.ew
@@ -168,7 +192,7 @@ class HandManager(models.Manager):
             East=East,
             South=South,
             West=West,
-            table_display_number=table_display_number,
+            table_display_number=zb_table_number + 1,
         )
         logger.info("Created hand %s", new_hand.pk)
         return new_hand
@@ -537,7 +561,7 @@ class Hand(TimeStampedModel):
         self.save()
         logger.info("Just marked hand with pk %s as complete", self.pk)
         self.tournament.maybe_finalize_round()
-
+        logger.error(f"After maybe_finalize_round, {self.tournament.is_complete=}")
         # How many hands have been played in this round?
         # That's the same as asking: how many boards have been played in this board group
         num_completed_rounds, num_hands_completed_this_round = self.tournament.rounds_played()

@@ -9,7 +9,6 @@ from django.contrib import admin
 from django.core.cache import cache
 from django.core.signals import request_finished
 from django.db import models, transaction
-from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -65,16 +64,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
-
-
-@receiver(post_save)
-def log_changes(sender, instance, created, raw, using, update_fields, **kwargs):
-    # if not isinstance(instance, Tournament):
-    #     return
-    # import IPython
-    # IPython.embed()
-    if sender.__module__.startswith("app."):
-        logger.debug(f"{sender=} {instance=} {raw=} {update_fields=}")
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch

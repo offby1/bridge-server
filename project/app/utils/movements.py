@@ -106,6 +106,10 @@ class Movement:
         print()
         print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
+    # TODO -- this method is only used by tests.  Nix it?
+    def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
+        return list(self.table_settings_by_table_number.items())
+
     def players_and_boards_for(
         self, *, zb_round_number: int, zb_table_number: int
     ) -> PlayersAndBoardsForOneRound:
@@ -131,13 +135,6 @@ class Movement:
 
     # a "round" is a period where players and boards stay where they are (i.e., at a given table).
     # *within* a round, we play boards_per_round_per_table boards (per table!).
-
-    # TODO -- it kinda feels like this method, which is all about side effects, should live in the Tournament class, and
-    # not here; *this* class should be functional, and merely provide information about which players and boards go to
-    # which tables and when.
-
-    def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
-        return list(self.table_settings_by_table_number.items())
 
     @staticmethod
     def num_tables(*, num_pairs: int) -> tuple[int, bool]:
