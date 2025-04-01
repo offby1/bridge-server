@@ -196,6 +196,10 @@ django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser
 [group('bs')]
 t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
+# Run individual tests with no dependencies
+k *options:
+    cd project && poetry run pytest --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG  -vv -k {{ options }}
+
 # Draw a nice entity-relationship diagram
 [group('django')]
 graph: migrate
