@@ -18,7 +18,9 @@ def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
     play_out_round(nearly_completed_tournament)
 
     assert nearly_completed_tournament.is_complete
-    return nearly_completed_tournament.hands().first()
+    rv = nearly_completed_tournament.hands().first()
+    assert rv is not None
+    return rv
 
 
 def test_completed_tournament(completed_tournament: Tournament) -> None:
