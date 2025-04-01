@@ -862,6 +862,9 @@ class Hand(TimeStampedModel):
         ]
 
 
+# fmt:off
+
+# fmt:on
 @admin.register(Hand)
 class HandAdmin(admin.ModelAdmin):
     list_display = ["board", "open_access", "is_abandoned"]
@@ -878,12 +881,13 @@ class CallManager(models.Manager):
             msg = f"wtf: {kwargs=}"
             raise Exception(msg)
 
-        x = h.get_xscript()
+        x: HandTranscript = h.get_xscript()
 
         rv = super().create(*args, **kwargs)
 
         c = libBid.deserialize(kwargs["serialized"])
 
+        logger.debug("%s called %s", x.auction.allowed_caller(), c)
         x.add_call(c)
         rv.hand._cache_set(x)
 
@@ -929,12 +933,15 @@ class PlayManager(models.Manager):
             msg = f"wtf: {kwargs=}"
             raise Exception(msg)
 
-        x = h.get_xscript()
+        x: HandTranscript = h.get_xscript()
 
         rv = super().create(*args, **kwargs)
 
+        card = libCard.deserialize(kwargs["serialized"])
+
+        logger.debug("%s played %s", x.next_seat_to_play(), card)
         # See corresponding TODO in CallManager
-        x.add_card(libCard.deserialize(kwargs["serialized"]))
+        x.add_card(card)
         rv.hand._cache_set(x)
 
         return rv
