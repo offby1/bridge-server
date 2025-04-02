@@ -254,8 +254,8 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     def save(self, *args, **kwargs) -> None:
         self._check_synthetic()
-        self._control_bot()
         super().save(*args, **kwargs)
+        self._control_bot()
 
     def _check_synthetic(self) -> None:
         if not self.pk:
