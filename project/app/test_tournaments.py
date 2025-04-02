@@ -271,18 +271,27 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert len(new_player_pks) == 4
 
 
-def test_end_of_round_stuff_happens(usual_setup) -> None:
+def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     tour = Tournament.objects.first()
     assert tour is not None
 
     tour.check_consistency()
-    hand = tour.hands().first()
 
+    def some_incomplete_hand() -> Hand:
+        for h in tour.hands():
+            if not h.is_complete:
+                return h
+
+        raise Exception("I should have never gotten here.  I am mollifying mypy.")
+
+    hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (0, 1)
 
+    hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (0, 2)
 
+    hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (1, 0)
