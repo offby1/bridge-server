@@ -233,7 +233,7 @@ ft: (t "-n 8")
 # Display coverage from a test run
 [group('bs')]
 [script('bash')]
-cover: test
+cover *options: (test options)
     set -euox pipefail
     cd project
     poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
