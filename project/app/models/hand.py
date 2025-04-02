@@ -182,6 +182,15 @@ class HandManager(models.Manager):
         East = Player.objects.get(pk=e_k)
         South = Player.objects.get(pk=s_k)
         West = Player.objects.get(pk=w_k)
+        for p in (North, East):
+            for x in (p, p.partner):
+                if x.current_hand() is not None:
+                    new_hand_description = ", ".join([str(p) for p in (North, East, South, West)])
+                    new_hand_description += f" play {the_board} at {zb_table_number + 1}"
+                    raise Exception(
+                        f"Uh oh, how can {new_hand_description} when {x} is still playing {x.current_hand()}"
+                    )
+            p.unseat_partnership(reason=f"New hand for round {zb_round_number + 1}")
         logger.debug("%s/%s and %s/%s play %s", North, South, East, West, the_board)
         new_hand = self.create(
             board=the_board,

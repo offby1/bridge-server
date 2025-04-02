@@ -88,6 +88,9 @@ class PartnerException(PlayerException):
     pass
 
 
+# fmt:off
+
+# fmt:on
 class Player(TimeStampedModel):
     display_name: str  # set by a view, from name_dir
     objects = PlayerManager()
