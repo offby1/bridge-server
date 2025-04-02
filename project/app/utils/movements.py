@@ -95,6 +95,10 @@ def _group_letter(zb_round_number: int) -> str:
     return "ABCDEFGHIJKLMNOP"[zb_round_number]
 
 
+def _zb_round_number(group_letter: str) -> int:
+    return "ABCDEFGHIJKLMNOP".index(group_letter)
+
+
 @dataclasses.dataclass(frozen=True)
 class Movement:
     boards_per_round_per_table: int  # redundant, but handy
@@ -114,6 +118,14 @@ class Movement:
         self, *, zb_round_number: int, zb_table_number: int
     ) -> PlayersAndBoardsForOneRound:
         return self.table_settings_by_table_number[zb_table_number][zb_round_number]
+
+    @property
+    def total_hands(self) -> int:
+        return (
+            self.num_rounds
+            * len(self.table_settings_by_table_number)
+            * self.boards_per_round_per_table
+        )
 
     @property
     def num_rounds(self) -> int:

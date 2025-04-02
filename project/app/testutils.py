@@ -68,13 +68,17 @@ def play_out_round(tournament: app.models.Tournament) -> None:
     while True:
         hand = find_incomplete_hand(tournament)
         if hand is None:
-            if not tournament.is_complete:
+            if (
+                not tournament.is_complete
+                and tournament.hands().count() == tournament.get_movement().total_hands
+            ):
                 pytest.fail(
-                    f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament.is_complete=}"
+                    f"since we found no incomplete hands (out of {tournament.hands().count()}), why is {tournament=} not complete?"
                 )
         before = tournament.rounds_played()
         assert hand is not None
         play_out_hand(hand)
+        tournament.refresh_from_db()
         after = tournament.rounds_played()
 
         if not after > before:
@@ -85,8 +89,28 @@ def play_out_round(tournament: app.models.Tournament) -> None:
 
 
 def find_incomplete_hand(tournament: app.models.Tournament) -> app.models.Hand | None:
-    for h in tournament.hands():
-        if not h.is_complete:
-            return h
+    hands_created = tournament.hands().count()
+    total = tournament.get_movement().total_hands
+    logger.debug("%s has created %d hands out of %d", tournament, hands_created, total)
 
-    return None
+    completes = []
+    incompletes = []
+    for h in tournament.hands():
+        if h.is_complete:
+            completes.append(h)
+        else:
+            incompletes.append(h)
+
+    logger.debug(
+        "%s has %d complete hands, and %d incomplete hands",
+        tournament,
+        len(completes),
+        len(incompletes),
+    )
+    for h in completes:
+        logger.debug("%s is complete", h)
+    for h in incompletes:
+        logger.debug("%s is not complete", h)
+    if not incompletes:
+        return None
+    return incompletes[0]

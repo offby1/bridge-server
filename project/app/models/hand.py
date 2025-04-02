@@ -36,7 +36,7 @@ from .tournament import Tournament
 
 from .types import PK, PK_from_str
 from .utils import assert_type
-from app.utils.movements import PlayersAndBoardsForOneRound
+from app.utils.movements import PlayersAndBoardsForOneRound, _zb_round_number
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -558,17 +558,43 @@ class Hand(TimeStampedModel):
         self.save()
         logger.info("Just marked hand with pk %s as complete", self.pk)
         self.tournament.maybe_finalize_round()
-        logger.error(f"After maybe_finalize_round, {self.tournament.is_complete=}")
-        # How many hands have been played in this round?
-        # That's the same as asking: how many boards have been played in this board group
-        num_completed_rounds, num_hands_completed_this_round = self.tournament.rounds_played()
+        logger.error(
+            f"After maybe_finalize_round, {self.tournament} {self.tournament.is_complete=}"
+        )
 
-        if num_hands_completed_this_round == 0:
-            logger.info(f"Ooh ooh Mr Kotter, the round is over ({num_completed_rounds=})")
-            new_hands = self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
+        if self.tournament.is_complete:
+            logger.error("I guess we don't need to do anything more")
+            return
 
-            logger.info(f"Ooh ooh Mr Kotter, created {new_hands}")
-            # TODO -- send some suitable event?
+        hands_played_at_this_table = Hand.objects.filter(
+            table_display_number=self.table_display_number
+        ).count()
+        mvmt = self.tournament.get_movement()
+        round_number_for_new_hand = _zb_round_number(self.board.group)
+
+        if hands_played_at_this_table == mvmt.boards_per_round_per_table:
+            round_number_for_new_hand += 1
+            logger.debug(
+                f"{hands_played_at_this_table=} == {mvmt.boards_per_round_per_table=}, so {round_number_for_new_hand=} got bumped"
+            )
+        else:
+            logger.debug(
+                f"{hands_played_at_this_table=} < {mvmt.boards_per_round_per_table=}, so {round_number_for_new_hand=} is unchanged"
+            )
+
+        assert (
+            self.table_display_number is not None
+        ), "OK we gotta ensure table_display_number is set always"
+
+        h = Hand.objects.create_for_tournament(
+            tournament=self.tournament,
+            zb_round_number=round_number_for_new_hand,
+            zb_table_number=self.table_display_number - 1,
+        )
+
+        logger.error("Created %s", h)
+
+        # TODO -- send some suitable event?
 
         self.send_event_to_players_and_hand(
             data={
