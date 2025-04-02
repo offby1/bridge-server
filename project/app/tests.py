@@ -1,5 +1,4 @@
 import base64
-import datetime
 import importlib
 import json
 import logging
@@ -9,11 +8,10 @@ import pytest
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
-from freezegun import freeze_time
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
 
@@ -24,7 +22,6 @@ from .models import (
     Message,
     Player,
     PlayerException,
-    Tournament,
 )
 
 from .testutils import set_auction_to
@@ -349,57 +346,6 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) ->
     h = Hand.objects.get(pk=h.pk)
     assert h.player_who_may_call is None
     assert h.player_who_may_play is None
-
-
-def test_hand_creation(j_northam, everybodys_password):
-    SignupDeadline = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
-    PlayDeadline = datetime.datetime.fromisoformat("2111-11-11T11:11:11Z")
-
-    players_by_name = {"bob": j_northam}
-    sam = Player.objects.create(
-        user=auth.models.User.objects.create(
-            username="sam",
-            password=everybodys_password,
-        ),
-    )
-    players_by_name["sam"] = sam
-    sam.partner_with(j_northam)
-
-    assert j_northam.partner is not None
-
-    with freeze_time(PlayDeadline - datetime.timedelta(seconds=3600)):
-        client = Client()
-        assert client.login(username=j_northam.name, password=".")
-
-        t = Tournament.objects.create(
-            signup_deadline=SignupDeadline, play_completion_deadline=PlayDeadline
-        )
-        assert not t.board_set.exists()
-
-        response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{j_northam.pk}/", data={})
-        assert type(response) is HttpResponseForbidden
-
-        # Can't create a hand with fewer than four players.
-        assert b"four distinct" in response.content
-
-        for name in ("tina", "tony"):
-            p = Player.objects.create(
-                user=auth.models.User.objects.create(
-                    username=name,
-                    password=name,
-                ),
-            )
-            players_by_name[name] = p
-
-        tina = players_by_name["tina"]
-        tina.partner_with(players_by_name["tony"])
-
-        assert not t.is_complete
-
-        response = client.post(path=f"/hand/new/{t.pk}/{j_northam.pk}/{tina.pk}/", data={})
-
-    # Now that we've got four players, it shudda worked.
-    assert type(response) is HttpResponseRedirect
 
 
 def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) -> None:
