@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Collection
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any
@@ -276,20 +275,6 @@ class Tournament(models.Model):
         from app.models import Player
 
         yield from self.pairs_from_partnerships(Player.objects.currently_seated())
-
-    def which_hands(self, *, four_players: Collection[PK]) -> models.QuerySet:
-        """
-        Returns the hands played by these four players in this tournament.
-        """
-        from app.models import Hand, Player
-
-        players = Player.objects.filter(pk__in=four_players)
-        assert players.count() == 4
-        set_of_pks = set()
-        for h in self.hands().order_by("pk").all():
-            if set(h.players()) == four_players:
-                set_of_pks.add(h.pk)
-        return Hand.objects.filter(pk__in=set_of_pks).distinct()
 
     def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
         rv: list[Hand] = []

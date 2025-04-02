@@ -288,19 +288,6 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
         assert Player.objects.get(pk=pk).synthetic
 
 
-def test_which_hand(usual_setup: None, everybodys_password) -> None:
-    t = Tournament.objects.first()
-    assert t is not None
-
-    for name in ["n2", "e2", "s2", "w2"]:
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-
-    assert not t.which_hands(four_players={1, 3, 5, 7}).exists()
-    assert t.which_hands(four_players={1, 2, 3, 4}).exists()
-
-
 def test_end_of_round_stuff_happens(usual_setup) -> None:
     tour = Tournament.objects.first()
     assert tour is not None
