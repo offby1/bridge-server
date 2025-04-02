@@ -68,7 +68,7 @@ class Command(BaseCommand):
                         f"{p.name} was already signed up for some tournament, but ain't no' mo'",
                     )
 
-                t.sign_up(p)
+                t.sign_up_player_and_partner(p)
                 self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
                 p.toggle_bot(True)
 

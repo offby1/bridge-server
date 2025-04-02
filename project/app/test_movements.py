@@ -134,9 +134,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         )
 
         for n in ("n1", "n2", "e1", "e2"):
-            open_tournament.sign_up(
-                Player.objects.get_by_name(n)
-            )  # partners get signed up automatically
+            open_tournament.sign_up_player_and_partner(Player.objects.get_by_name(n))
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         _do_signup_expired_stuff(open_tournament)

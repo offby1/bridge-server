@@ -67,7 +67,7 @@ def nobody_seated_nobody_signed_up(db: None) -> None:
 def nobody_seated(nobody_seated_nobody_signed_up) -> None:
     current_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     for p in Player.objects.all():
-        current_tournament.sign_up(p)
+        current_tournament.sign_up_player_and_partner(p)
 
 
 @pytest.fixture

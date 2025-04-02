@@ -86,7 +86,7 @@ def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
 
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     try:
-        t.sign_up(viewer)
+        t.sign_up_player_and_partner(viewer)
     except app.models.tournament.TournamentSignupError as e:
         return Forbid(e)
     return HttpResponseRedirect(reverse("app:tournament", kwargs=dict(pk=t.pk)))

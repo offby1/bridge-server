@@ -350,7 +350,7 @@ class Tournament(models.Model):
     def short_string(self) -> str:
         return f"tournament #{self.display_number}"
 
-    def sign_up(self, player: Player) -> None:
+    def sign_up_player_and_partner(self, player: Player) -> None:
         if self.status() is not OpenForSignup:
             msg = f"Tournament #{self.display_number} is {self.status_str()}, not open for signup; the signup deadline was {self.signup_deadline}"
             raise NotOpenForSignupError(msg)

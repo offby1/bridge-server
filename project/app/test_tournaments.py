@@ -122,7 +122,7 @@ def test_completing_one_tournament_deletes_related_signups(
     Lucy.save()
 
     with freeze_time(Today):
-        the_tournament.sign_up(Ricky)
+        the_tournament.sign_up_player_and_partner(Ricky)
 
         assert TournamentSignup.objects.filter(player=Ricky).exists()
 
@@ -206,13 +206,13 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
     assert running_tournament.status() is Running
 
     with pytest.raises(NotOpenForSignupError):
-        running_tournament.sign_up(north)
+        running_tournament.sign_up_player_and_partner(north)
 
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
 
-    open_tournament.sign_up(north)
+    open_tournament.sign_up_player_and_partner(north)
     actual = set(open_tournament.signed_up_players())
     expected = {north, south}
     assert actual == expected
@@ -221,14 +221,14 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
     west = Player.objects.get_by_name("Adam West")
     east.break_partnership()
     with pytest.raises(PlayerNeedsPartnerError):
-        open_tournament.sign_up(east)
+        open_tournament.sign_up_player_and_partner(east)
 
     with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
         with pytest.raises(NotOpenForSignupError):
-            open_tournament.sign_up(east)
+            open_tournament.sign_up_player_and_partner(east)
 
     east.partner_with(west)
-    open_tournament.sign_up(east)
+    open_tournament.sign_up_player_and_partner(east)
 
     actual = set(open_tournament.signed_up_players())
     expected = {north, south, east, west}
