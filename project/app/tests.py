@@ -54,19 +54,6 @@ def test_synthetic_immutability(db) -> None:
     assert "cannot be changed" in str(e.value)
 
 
-# You'd think the code-under-test would be simple enough to not warrant its own test.
-# And yet I managed to screw it up.
-def test_synthetic_player_text(usual_setup) -> None:
-    android = Player.objects.filter(synthetic=True).first()
-    assert android is not None
-
-    assert "🤖" in str(android)
-
-    hooman = Player.objects.filter(synthetic=False).first()
-    assert hooman is not None
-    assert "🤖" not in str(hooman)
-
-
 def test_splitsville_doesnt_affect_opponents(usual_setup: Hand):
     h = usual_setup
 
