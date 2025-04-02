@@ -634,6 +634,8 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                 | app.models.Board.PlayerVisibility.own_hand
             ):
                 xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+            case app.models.Board.PlayerVisibility.everything:
+                xscript = hand.get_xscript()
             case _:
                 return Forbid(
                     "You are not allowed to see neither squat, zip, nada, nor bupkis",
