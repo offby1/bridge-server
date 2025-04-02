@@ -14,7 +14,7 @@ from .testutils import find_incomplete_hand, play_out_hand, play_out_round, set_
 
 
 @pytest.fixture
-def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
+def completed_tournament(nearly_completed_tournament: Hand) -> Hand:
     play_out_round(nearly_completed_tournament)
 
     assert nearly_completed_tournament.is_complete
@@ -23,18 +23,16 @@ def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
     return rv
 
 
-def test_completed_tournament(completed_tournament: Tournament) -> None:
+def test_completed_tournament(completed_tournament: Hand) -> None:
     non_tournament_player = Player.objects.create_synthetic()
     assert non_tournament_player is not None
-    some_active_board = completed_tournament.board_set.filter(hand_set__exists=True).first()
-    assert some_active_board is not None
-    some_hand = some_active_board.hand_set.first()
-    assert some_hand is not None
-    some_tournament_player = some_hand.North
+
+    h = completed_tournament
+    some_tournament_player = h.North
 
     # ok now try various flavors of player
     for player in [None, some_tournament_player, non_tournament_player]:
-        for board in completed_tournament.board_set.all():
+        for board in h.tournament.board_set.all():
             for direction in libSeat:
                 assert board.can_see_cards_at(
                     player=player,
@@ -42,7 +40,7 @@ def test_completed_tournament(completed_tournament: Tournament) -> None:
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
 
-def test_running_tournament_irrelevant_players(nearly_completed_tournament: Tournament) -> None:
+def test_running_tournament_irrelevant_players(nearly_completed_tournament: Hand) -> None:
     hand = find_incomplete_hand(nearly_completed_tournament)
     assert hand is not None
 
@@ -67,7 +65,7 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament: Tour
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(
-    nearly_completed_tournament: Tournament,
+    nearly_completed_tournament: Hand,
 ) -> None:
     hand: Hand | None = Hand.objects.first()
     assert hand is not None
@@ -84,7 +82,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 
 
 def test_player_has_played_board(
-    nearly_completed_tournament: Tournament,
+    nearly_completed_tournament: Hand,
 ) -> None:
     for player in Player.objects.all():
         board: Board
