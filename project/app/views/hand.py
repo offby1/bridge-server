@@ -623,21 +623,30 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
-@logged_in_as_player_required(redirect=False)
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    player = request.user.player
-    assert player is not None
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return Forbid("You are anonymous, and this tournament isn't complete")
 
-    if player not in hand.players_by_direction_letter.values():
-        return Forbid("You're not at that table")
-
-    if hand.board.tournament.is_complete:  # completed tournaments are visible to everyone
-        logger.debug("I guess I don't need to do the 'as_viewed_by' thing")
+    if request.user.is_anonymous:
         xscript = hand.get_xscript()
     else:
-        xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+        player = request.user.player
+        assert player is not None
+
+        match hand.board.what_can_they_see(player=player):
+            case (
+                app.models.Board.PlayerVisibility.dummys_hand
+                | app.models.Board.PlayerVisibility.own_hand
+            ):
+                xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+            case app.models.Board.PlayerVisibility.everything:
+                xscript = hand.get_xscript()
+            case _:
+                return Forbid(
+                    "You are not allowed to see neither squat, zip, nada, nor bupkis",
+                )
 
     return HttpResponse(
         json.dumps(
