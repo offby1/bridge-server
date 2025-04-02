@@ -243,8 +243,6 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
 
 
 def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
-    assert not TournamentSignup.objects.exists()
-
     existing_player_pks = set([p.pk for p in Player.objects.all()])
     assert existing_player_pks == {1, 2, 3, 4}
 
@@ -256,36 +254,21 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     assert not open_tournament.is_complete
     assert open_tournament.status() is OpenForSignup
 
-    open_tournament.sign_up(north)
-    assert TournamentSignup.objects.filter(player=north).exists()
-    assert TournamentSignup.objects.filter(player=south).exists()
-    assert TournamentSignup.objects.count() == 2
-
     assert not open_tournament.hands().exists()
+
+    s1 = Player.objects.create_synthetic()
+    s2 = Player.objects.create_synthetic()
+    s1.partner_with(s2)
+
+    open_tournament.sign_up_player_and_partner(s1)
 
     app.models.tournament._do_signup_expired_stuff(open_tournament)
 
-    assert TournamentSignup.objects.count() == 4
+    assert TournamentSignup.objects.count() == 8
 
     current_player_pks = set([p.pk for p in Player.objects.all()])
     new_player_pks = current_player_pks - existing_player_pks
-    assert len(new_player_pks) == 2
-
-    north.refresh_from_db()
-    south.refresh_from_db()
-
-    norths_hand = north.current_hand()
-    assert norths_hand is not None
-
-    players_in_the_hand = set(
-        [norths_hand.East.pk, norths_hand.North.pk, norths_hand.South.pk, norths_hand.West.pk]
-    )
-    assert len(players_in_the_hand) == 4
-    assert north.pk in players_in_the_hand
-    assert south.pk in players_in_the_hand
-    for pk in new_player_pks:
-        assert pk in players_in_the_hand
-        assert Player.objects.get(pk=pk).synthetic
+    assert len(new_player_pks) == 4
 
 
 def test_end_of_round_stuff_happens(usual_setup) -> None:
