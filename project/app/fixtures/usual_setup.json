@@ -99,7 +99,7 @@
       "North": 1,
       "open_access": false,
       "South": 3,
-      "table_display_number": null,
+      "table_display_number": 1,
       "West": 4
     },
     "model": "app.hand",

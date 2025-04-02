@@ -209,7 +209,7 @@
       "created": "2000-01-01T00:00:00Z",
       "modified": "2000-01-01T00:00:00Z",
       "open_access": false,
-      "table_display_number": null
+      "table_display_number": 1
     },
     "model": "app.hand",
     "pk": 1
