@@ -36,7 +36,7 @@ from .tournament import Tournament
 
 from .types import PK, PK_from_str
 from .utils import assert_type
-from app.utils.movements import PlayersAndBoardsForOneRound, _zb_round_number
+from app.utils.movements import PlayersAndBoardsForOneRound, _group_letter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -165,13 +165,21 @@ class HandManager(models.Manager):
         )
         logger.warning(f"{boards_not_played_at_this_table=}")
 
-        the_board = boards_not_played_at_this_table.first()
-        if the_board is None:
-            logger.warning("All boards this round: %s", pnb.board_group.boards)
-            logger.warning("All hands: %s", self.annotate(board_group=models.F("board__group")))
+        if not boards_not_played_at_this_table.exists():
             raise HandError(
                 f"Cannot find unplayed board for {zb_round_number=}, {zb_table_number=}"
             )
+
+        # Now narrow further to boards in the current group.
+        boards_not_played_at_this_table = boards_not_played_at_this_table.filter(
+            group=_group_letter(zb_round_number)
+        )
+        the_board = boards_not_played_at_this_table.first()
+
+        if the_board is None:
+            # If there are none, then the round is over.
+            # proceed only if all of our players are either not seated, or are seated at completed hands.
+            raise Exception("TODO")
 
         q = pnb.quartet
         ns = q.ns
@@ -566,44 +574,11 @@ class Hand(TimeStampedModel):
         self.is_complete = True
         self.save()
         logger.info("Just marked hand with pk %s as complete", self.pk)
+
         self.tournament.maybe_finalize_round()
         logger.error(
             f"After maybe_finalize_round, {self.tournament} {self.tournament.is_complete=}"
         )
-
-        if self.tournament.is_complete:
-            logger.error("I guess we don't need to do anything more")
-            return
-
-        hands_played_at_this_table = Hand.objects.filter(
-            table_display_number=self.table_display_number
-        ).count()
-        mvmt = self.tournament.get_movement()
-        round_number_for_new_hand = _zb_round_number(self.board.group)
-
-        if hands_played_at_this_table == mvmt.boards_per_round_per_table:
-            round_number_for_new_hand += 1
-            logger.debug(
-                f"{hands_played_at_this_table=} == {mvmt.boards_per_round_per_table=}, so {round_number_for_new_hand=} got bumped"
-            )
-        else:
-            logger.debug(
-                f"{hands_played_at_this_table=} < {mvmt.boards_per_round_per_table=}, so {round_number_for_new_hand=} is unchanged"
-            )
-
-        assert (
-            self.table_display_number is not None
-        ), "OK we gotta ensure table_display_number is set always"
-
-        h = Hand.objects.create_for_tournament(
-            tournament=self.tournament,
-            zb_round_number=round_number_for_new_hand,
-            zb_table_number=self.table_display_number - 1,
-        )
-
-        logger.error("Created %s", h)
-
-        # TODO -- send some suitable event?
 
         self.send_event_to_players_and_hand(
             data={
@@ -612,9 +587,39 @@ class Hand(TimeStampedModel):
             },
         )
 
+        if self.tournament.is_complete:
+            logger.error("I guess we don't need to do anything more")
+            return
+
+        # If any hands are incomplete, do nothing.
+        for h in self.tournament.hands():
+            if not h.is_complete:
+                logger.debug(f"{h=} is incomplete; not creating hands for new round")
+                return
+
+        mvmt = self.tournament.get_movement()
+        round_number_for_new_hand = (
+            self.tournament.hands().count()
+            // mvmt.boards_per_round_per_table
+            // len(mvmt.table_settings_by_table_number)
+        )
+
+        for zb_table_number in range(len(mvmt.table_settings_by_table_number)):
+            h = Hand.objects.create_for_tournament(
+                tournament=self.tournament,
+                zb_round_number=round_number_for_new_hand,
+                zb_table_number=zb_table_number,
+            )
+
+            logger.error("Created %s", h)
+
+        # TODO -- send some suitable event?
+
     @property
     def auction(self) -> Auction:
-        return self.get_xscript().auction
+        auction = self.get_xscript().auction
+        logger.debug(f"{self}: {auction.status=}")
+        return auction
 
     @property
     def declarer(self) -> libPlayer | None:
@@ -633,7 +638,7 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
-            logger.debug("Nobody may call now because this hand is abandoned.")
+            logger.debug(f"Nobody may call now at {self} because this hand is abandoned.")
             return None
 
         if self.auction.status is Auction.Incomplete:
@@ -641,7 +646,7 @@ class Hand(TimeStampedModel):
             assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
-        logger.debug("Nobody may call now because the auction is settled.")
+        logger.debug(f"Nobody may call now at {self} because the auction is settled.")
         return None
 
     @property
@@ -649,11 +654,13 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
-            logger.debug("Nobody may play now because this hand is abandoned.")
+            logger.debug(f"Nobody may play now at {self} because this hand is abandoned.")
             return None
 
         if not self.auction.found_contract:
-            logger.debug("Nobody may play now because this hand's auction is settled.")
+            logger.debug(
+                f"Nobody may play now at {self} because {self.auction.status} has not found a contract."
+            )
             return None
 
         seat_who_may_play = self.get_xscript().next_seat_to_play()
