@@ -8,6 +8,10 @@ IN PROGRESS:
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
+* Have "tempo seconds" apply to an entire tournament, not just a "table" (which concept no longer exists, anyway).
+  That would allow us to automatically determine a play deadline for the tournament: that duration times the maximum number of calls and plays, plus the signup deadline.
+  Note that there are always either exactly 0, or exactly 52, plays; there are always at least four calls, but up to (I dunno) 7 * 4 * 35 calls (3 passes, one club, followed by passes, double, redouble, one diamod, more passes & doubles, &c)
+
 * Allow humans to submit feedback via a form or something.
 
   Only let them do this if I've got a confirmed email address for them; I imagine that'd reduce spam.
