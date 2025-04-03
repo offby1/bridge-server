@@ -52,16 +52,10 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament: Hand
     for player in [None, non_tournament_player]:
         board: Board = hand.board
         for direction in libSeat:
-            if player is not None and hand.dummy == hand.libPlayers_by_libSeat[direction]:
-                assert board.can_see_cards_at(
-                    player=player,
-                    direction_letter=direction.value,
-                ), f"Whoa -- {player} can't see the dummy at {board}?!"
-            else:
-                assert not board.can_see_cards_at(
-                    player=player,
-                    direction_letter=direction.value,
-                ), f"Whoa -- {player} can see {board} at {direction}?!"
+            assert not board.can_see_cards_at(
+                player=player,
+                direction_letter=direction.value,
+            ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(

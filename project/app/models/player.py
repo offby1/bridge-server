@@ -410,9 +410,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
         from .hand import Hand
 
-        qs = Hand.objects.filter(board=board).all()
-        if qs.count() > 1:
-            logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self.pk})
+
+        qs = Hand.objects.filter(board=board).filter(expression)
+        assert qs.count() < 2
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
