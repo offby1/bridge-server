@@ -136,13 +136,14 @@ def test_legal_cards(usual_setup: Hand, rf) -> None:
 def test_player_cannot_be_in_two_incomplete_hands(usual_setup: Hand) -> None:
     h1 = usual_setup
 
+    board, _ = Board.objects.get_or_create_from_display_number(
+        display_number=Board.objects.count() + 1,
+        group="A",
+        tournament=h1.tournament,
+    )
     with pytest.raises(HandError) as e:
         Hand.objects.create(
-            board=Board.objects.get_or_create_from_display_number(
-                display_number=Board.objects.count() + 1,
-                group="A",
-                tournament=h1.tournament,
-            ),
+            board=board,
             North=h1.North,
             East=h1.East,
             South=h1.South,
