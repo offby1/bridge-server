@@ -119,6 +119,7 @@ MIDDLEWARE = [
     "tz_detect.middleware.TimezoneMiddleware",
 ]
 LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
+GENERATE_REQUEST_ID_IF_NOT_IN_HEADER = True
 
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 

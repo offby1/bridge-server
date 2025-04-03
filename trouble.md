@@ -1,7 +1,5 @@
 # Now what
 
-## most (all?) request_ids in the logs are "none"
-
 ## Whole lotta flappin' goin' on
 
 i.e., when I did "just follow" and then "just stress", afaict the bots all just exited and tried again
