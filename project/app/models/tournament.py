@@ -307,6 +307,7 @@ class Tournament(models.Model):
                 pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
                 logger.debug(f"{self.hands().count()} hands; {pairs=}")
             else:
+                assert self.signup_deadline_has_passed(), f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"No hands; signed-up {pairs=}")
 

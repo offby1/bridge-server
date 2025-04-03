@@ -7,7 +7,7 @@ import pytest
 from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
-
+from django.utils.timezone import now
 from django.http.response import HttpResponseForbidden
 
 import app.views.hand
@@ -261,6 +261,7 @@ def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
     s1.partner_with(s2)
 
     open_tournament.sign_up_player_and_partner(s1)
+    open_tournament.signup_deadline = now() - datetime.timedelta(seconds=10)
 
     app.models.tournament._do_signup_expired_stuff(open_tournament)
 
