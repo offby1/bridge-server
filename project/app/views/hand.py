@@ -613,7 +613,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     if (
         player is not None
-        and (other_hand := player.hand_at_which_board_was_played(hand.board)) is not None
+        and (other_hand := player.hand_at_which_we_played_board(hand.board)) is not None
     ):
         context["hand_at_which_I_played_this_board"] = {
             "link": reverse("app:hand-detail", args=[other_hand.pk]),

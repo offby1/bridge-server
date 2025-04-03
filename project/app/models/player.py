@@ -407,7 +407,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
-    def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
+    def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
         from .hand import Hand
 
         qs = Hand.objects.filter(board=board).all()

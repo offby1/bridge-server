@@ -7,15 +7,9 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
-from django.urls import reverse
-from django.utils import timezone
-from django.utils.html import format_html
-from django.views.decorators.http import require_http_methods
 
 import app.models
-from app.views.misc import AuthedHttpRequest
 from app.models.types import PK
-from .misc import logged_in_as_player_required
 
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
@@ -27,7 +21,7 @@ def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
 
     if not request.user.is_anonymous:
         if (player := getattr(request.user, "player", None)) is not None:
-            my_hand = player.hand_at_which_board_was_played(board)
+            my_hand = player.hand_at_which_we_played_board(board)
 
     annotated_hands: list[app.models.Hand] = []
 

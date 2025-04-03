@@ -212,14 +212,14 @@ class Board(models.Model):
                 return False
             case self.PlayerVisibility.own_hand:
                 assert player is not None
-                hand = player.hand_at_which_board_was_played(self)
+                hand = player.hand_at_which_we_played_board(self)
                 assert hand is not None
 
                 # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter]=} ? ...")
                 return player == hand.players_by_direction_letter[direction_letter]
             case self.PlayerVisibility.dummys_hand:
                 assert player is not None
-                hand = player.hand_at_which_board_was_played(self)
+                hand = player.hand_at_which_we_played_board(self)
                 assert hand is not None
 
                 # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter].name=} ? ...")
@@ -248,7 +248,7 @@ class Board(models.Model):
             # logger.error(f"{player=} is None => {self.PlayerVisibility.nothing=}")
             return self.PlayerVisibility.nothing
 
-        hand = player.hand_at_which_board_was_played(self)
+        hand = player.hand_at_which_we_played_board(self)
         if hand is None:
             # logger.error(f"{hand=} is None => {self.PlayerVisibility.nothing=}")
             return self.PlayerVisibility.nothing
@@ -306,6 +306,8 @@ class Board(models.Model):
 
 # fmt:off
 
+
+
 
 # fmt:on
 

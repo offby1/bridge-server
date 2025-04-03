@@ -72,7 +72,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 
     for player in Player.objects.all():
         for board in Board.objects.all():
-            hand = player.hand_at_which_board_was_played(board)
+            hand = player.hand_at_which_we_played_board(board)
             if hand is None:
                 for direction in libSeat:
                     assert not board.can_see_cards_at(
@@ -87,7 +87,7 @@ def test_player_has_played_board(
     for player in Player.objects.all():
         board: Board
         for board in Board.objects.all():
-            hand: Hand = player.hand_at_which_board_was_played(board)
+            hand: Hand = player.hand_at_which_we_played_board(board)
 
             if hand is None:
                 continue
