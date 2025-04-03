@@ -217,6 +217,13 @@ class HandManager(models.Manager):
 
         players = [kwargs[direction] for direction in attribute_names]
 
+        p: Player
+        for p in players:
+            h = p.hand_at_which_we_played_board(board)
+            assert (
+                h is None
+            ), f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
+
         expression = models.Q(pk__in=[])
         for p in players:
             if (ch := p.current_hand_and_direction()) is not None:
