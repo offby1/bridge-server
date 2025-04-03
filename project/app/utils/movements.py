@@ -64,6 +64,7 @@ class Quartet:
     ns: Pair
     ew: Pair
 
+    # Only used for tests
     def partition_into_phantoms_and_normals(self) -> tuple[list[Pair], list[Pair]]:
         phantoms: list[Pair] = []
         normals: list[Pair] = []
@@ -104,6 +105,7 @@ class Movement:
     boards_per_round_per_table: int  # redundant, but handy
     # The number of tables always equals the number of rounds.
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
+    num_phantoms: int = 0
 
     def __post_init__(self):
         tab_dict = self.tabulate_me()
@@ -184,6 +186,7 @@ class Movement:
         pairs: Sequence[Pair],
         tournament: Tournament,
     ) -> Movement:
+        num_phantoms = 0
         num_tables, overflow = cls.num_tables(num_pairs=len(pairs))
 
         # Sort so that if we later construct movement with the same pairs, albeit perhaps a different order, we get
@@ -194,6 +197,7 @@ class Movement:
         if overflow:
             logger.debug(f"{pairs=}; {num_tables=} but {overflow=}, so appending a phantom pair")
             pairs.append(PhantomPair(names="The Fabulous Phantoms", id_=frozenset({-1, -2})))
+            num_phantoms += 1
 
         ns_pairs = pairs[0:num_tables]
         ew_pairs = pairs[num_tables:]
@@ -255,5 +259,6 @@ class Movement:
             )
         return cls(
             boards_per_round_per_table=boards_per_round_per_table,
+            num_phantoms=num_phantoms,
             table_settings_by_table_number=temp_rv,
         )

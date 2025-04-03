@@ -319,6 +319,7 @@ class Tournament(models.Model):
                 pairs=pairs,
                 tournament=self,
             )
+            assert _movement.num_phantoms == 0
             self._cache_set(_movement)
 
         return _movement
