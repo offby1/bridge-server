@@ -896,10 +896,7 @@ class Hand(TimeStampedModel):
 
         total_score: int | str = "-"
 
-        my_seat_letter = None
-
-        if as_viewed_by is not None:
-            my_seat_letter = as_viewed_by.current_direction()
+        my_seat_letter = as_viewed_by.current_direction() if as_viewed_by is not None else "N"
 
         fs = self.get_xscript().final_score()
 
@@ -911,7 +908,7 @@ class Hand(TimeStampedModel):
         else:
             trick_summary = fs.trick_summary
 
-            if my_seat_letter is not None and my_seat_letter in "NS":
+            if my_seat_letter in "NS":
                 total_score = fs.north_south_points or -fs.east_west_points
             else:
                 total_score = fs.east_west_points or -fs.north_south_points
