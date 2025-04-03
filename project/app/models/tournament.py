@@ -267,7 +267,7 @@ class Tournament(models.Model):
         for p in players:
             if p.pk not in seen and p.partner.pk not in seen:
                 names = f"{p.name}, {p.partner.name}"
-                yield app.utils.movements.Pair(id=[p.pk, p.partner.pk], names=names)
+                yield app.utils.movements.Pair(id_=[p.pk, p.partner.pk], names=names)
                 seen.add(p.pk)
                 seen.add(p.partner.pk)
 

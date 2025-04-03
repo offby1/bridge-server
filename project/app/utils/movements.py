@@ -25,8 +25,8 @@ class Pair:
     id_: tuple[PK, PK]
     names: str
 
-    def __init__(self, *, id, names):
-        self.id_ = tuple(sorted(id))
+    def __init__(self, *, id_, names):
+        self.id_ = tuple(sorted(id_))
         self.names = names
 
     def __hash__(self) -> int:
@@ -193,7 +193,7 @@ class Movement:
 
         if overflow:
             logger.debug(f"{pairs=}; {num_tables=} but {overflow=}, so appending a phantom pair")
-            pairs.append(PhantomPair(names="The Fabulous Phantoms", id=frozenset({-1, -2})))
+            pairs.append(PhantomPair(names="The Fabulous Phantoms", id_=frozenset({-1, -2})))
 
         ns_pairs = pairs[0:num_tables]
         ew_pairs = pairs[num_tables:]

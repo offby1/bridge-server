@@ -45,7 +45,7 @@ def example_pairs(n: int) -> Generator[Pair]:
             list(more_itertools.interleave(north_south_names, east_west_names))[0:n], key=ns_first
         )
     ):
-        yield Pair(names=name, id=frozenset([2 * index, 2 * index + 1]))
+        yield Pair(names=name, id_=frozenset([2 * index, 2 * index + 1]))
 
 
 @pytest.mark.django_db
