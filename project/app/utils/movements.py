@@ -9,7 +9,6 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
-import tabulate
 
 from app.models.types import PK
 
@@ -106,11 +105,6 @@ class Movement:
     # The number of tables always equals the number of rounds.
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
     num_phantoms: int = 0
-
-    def __post_init__(self):
-        tab_dict = self.tabulate_me()
-        print()
-        print(tabulate.tabulate(tab_dict["rows"], headers=tab_dict["headers"]))
 
     # TODO -- this method is only used by tests.  Nix it?
     def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
