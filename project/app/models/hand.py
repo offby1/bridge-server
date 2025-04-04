@@ -236,7 +236,12 @@ class HandManager(models.Manager):
             [p.name for p in players],
         )
 
-        return super().create(*args, **kwargs)
+        rv = super().create(*args, **kwargs)
+
+        for p in players:
+            p._control_bot()
+
+        return rv
 
 
 # fmt:off

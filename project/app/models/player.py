@@ -366,7 +366,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
-    @cached_property
+    @property
     def currently_seated(self) -> bool:
         return self.current_hand_and_direction() is not None
 
