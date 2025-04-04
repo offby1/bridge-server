@@ -149,21 +149,12 @@ class HandManager(models.Manager):
             zb_round_number=zb_round_number, zb_table_number=zb_table_number
         )
 
-        all_boards_in_this_group = Board.objects.filter(
-            pk__in=[b.pk for b in pnb.board_group.boards],
-        )
-        logger.warning(
-            f"All the boards in the movement for {zb_round_number=}: {all_boards_in_this_group=}"
-        )
-
         # Find a board in this group which has not been played at this table.
         hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
-        logger.warning(f"{hands_played_at_this_table=}")
 
         boards_not_played_at_this_table = Board.objects.exclude(
             pk__in=hands_played_at_this_table.values_list("board", flat=True)
         )
-        logger.warning(f"{boards_not_played_at_this_table=}")
 
         if not boards_not_played_at_this_table.exists():
             raise HandError(
@@ -583,9 +574,6 @@ class Hand(TimeStampedModel):
         logger.info("Just marked hand with pk %s as complete", self.pk)
 
         self.tournament.maybe_finalize_round()
-        logger.error(
-            f"After maybe_finalize_round, {self.tournament} {self.tournament.is_complete=}"
-        )
 
         self.send_event_to_players_and_hand(
             data={
@@ -595,7 +583,6 @@ class Hand(TimeStampedModel):
         )
 
         if self.tournament.is_complete:
-            logger.error("I guess we don't need to do anything more")
             return
 
         # If any hands are incomplete, do nothing.
@@ -617,8 +604,6 @@ class Hand(TimeStampedModel):
                 zb_round_number=round_number_for_new_hand,
                 zb_table_number=zb_table_number,
             )
-
-            logger.error("Created %s", h)
 
         # TODO -- send some suitable event?
 
@@ -1008,8 +993,6 @@ class PlayManager(models.Manager):
 
         card = libCard.deserialize(kwargs["serialized"])
 
-        logger.debug("%s played %s", x.next_seat_to_play(), card)
-        # See corresponding TODO in CallManager
         x.add_card(card)
         rv.hand._cache_set(x)
 
