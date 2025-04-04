@@ -15,7 +15,7 @@
     <h1>Tournament #{{ tournament.display_number }}</h1>
     {% ifexists movement_headers %}
     <table id="movement" class="table caption-top">
-        <caption>Movement</caption>
+        <caption>Movement -- {{ movement_boards_per_round }} boards per round</caption>
         <thead>
             <tr>
                 {% for h in movement_headers %}<th scope="col">{{ h }}</th>{% endfor %}

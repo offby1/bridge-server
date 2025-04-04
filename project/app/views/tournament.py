@@ -41,6 +41,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
         except app.models.tournament.NoPairs:
             pass
         else:
+            context["movement_boards_per_round"] = movement.boards_per_round_per_table
             tab_dict = movement.tabulate_me()
             context["movement_headers"] = tab_dict["headers"]
             context["movement_rows"] = tab_dict["rows"]
