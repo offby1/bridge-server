@@ -5,13 +5,19 @@ IN PROGRESS:
 
   There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
 
-Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
-
-STILL TODO:
-* The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
 * Have "tempo seconds" apply to an entire tournament, not just a "table" (which concept no longer exists, anyway).
   That would allow us to automatically determine a play deadline for the tournament: that duration times the maximum number of calls and plays, plus the signup deadline.
   Note that there are always either exactly 0, or exactly 52, plays; there are always at least four calls, but up to (I dunno) 7 * 4 * 35 calls (3 passes, one club, followed by passes, double, redouble, one diamod, more passes & doubles, &c)
+
+* The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
+Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
+
+STILL TODO:
+* Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
+
+  The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands.
+
+  Maybe make the "who looked at which hands when" information visible to everyone, as further disincentive.
 
 * Allow humans to submit feedback via a form or something.
 
@@ -31,6 +37,16 @@ STILL TODO:
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
   - I've also got a [Django-tasks](https://github.com/realOrangeOne/django-tasks) branch; that was a struggle from start to finish, and I never got it working. There's a [Django Enhancement Proposal](  https://github.com/django/deps/blob/5746805dfb062a99555b5e5bbc5b1685212aba2c/accepted/0014-background-workers.rst#L26) for it.
   - [Some dude on discord](https://discord.com/channels/856567261900832808/857643169046462475/1349500371378372640) wrote <https://tkte.ch/chancy/>, and mentioned it to me as a possible alternative
+  - <https://django-tasks-scheduler.readthedocs.io/en/latest/> also exists! Ai yi yi, paradox of choice
+
+  [Tyler Kennedy](https://github.com/tktech/) says:
+
+    > (I'm biased, Chancy is my project)
+    >
+    > IMO, It's a common problem and they all tend to have their own tradeoffs - throughput and parallelism vs features, easy of use vs flexibility. My chancy isn't django-specific, has lots of features out of the box, and you can customize it extensively. The trade off is that it won't scale to hundreds of millions of jobs a day like celery+rabbit, and has more complexity in the initial setup (since it's all plugins)
+    > django-tasks possibly has the smallest feature set of all of them, but it's goal I believe is to be a reliably available, simple option with strong integration. Eventually you can write your own django extensions that need simple background workers and as long as you target django-tasks it'll work regardless of what the end project is actually running.
+    > Django-q2 looks like it lands in the middle for features but has strong support for several different backends
+
 
 * Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to
   match up the bot's logs with the server's.
