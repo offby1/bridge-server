@@ -150,8 +150,7 @@ stress *options:
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
-    trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
-    poetry run coverage  run --rcfile={{ justfile_dir() }}/pyproject.toml --branch manage.py runserver 9000 {{ options }}
+    poetry run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
 
