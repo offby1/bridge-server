@@ -604,9 +604,7 @@ class Hand(TimeStampedModel):
 
     @property
     def auction(self) -> Auction:
-        auction = self.get_xscript().auction
-        logger.debug(f"{self}: {auction.status=}")
-        return auction
+        return self.get_xscript().auction
 
     @property
     def declarer(self) -> libPlayer | None:

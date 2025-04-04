@@ -63,6 +63,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
+        if tour.play_completion_deadline is None:
+            tour.play_completion_deadline = tour.compute_play_completion_deadline()
+            tour.save()
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -72,9 +75,7 @@ def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
     with transaction.atomic():
-        incompletes = Tournament.objects.filter(
-            is_complete=False, play_completion_deadline__isnull=False
-        )
+        incompletes = Tournament.objects.filter(is_complete=False, signup_deadline__isnull=False)
 
         logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
 
@@ -126,6 +127,11 @@ class OpenForSignup(TournamentStatus):
     pass
 
 
+# Hopefully our tournament won't be in the state for more than a millisecond
+class ComputingPlayCompletionDeadline(TournamentStatus):
+    pass
+
+
 def _status(
     *,
     is_complete: bool,
@@ -137,9 +143,10 @@ def _status(
         return Complete
     if signup_deadline is None:
         return Running
-    assert play_completion_deadline is not None
     if as_of < signup_deadline:
         return OpenForSignup
+    if play_completion_deadline is None:
+        return ComputingPlayCompletionDeadline
     if as_of > play_completion_deadline:
         logger.warning(
             "Some tournament's play_completion_deadline has passed, but it hasn't (yet) been marked is_complete"
@@ -158,10 +165,6 @@ class TournamentManager(models.Manager):
 
             now = timezone.now()
             kwargs.setdefault("signup_deadline", now + datetime.timedelta(seconds=300))
-            kwargs.setdefault(
-                "play_completion_deadline",
-                kwargs["signup_deadline"] + datetime.timedelta(seconds=300),
-            )
 
             rv: Tournament = super().create(*args, **kwargs)
             logger.debug("Just created %s", rv)
@@ -233,6 +236,25 @@ class Tournament(models.Model):
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
+
+    def compute_play_completion_deadline(self) -> datetime.datetime:
+        # Compute the play deadline from
+
+        # - the signup deadline
+
+        # - 7.5 minutes per hand (https://web2.acbl.org/documentlibrary/clubs/cdHandbook.pdf says "The guideline for
+        # - ACBL events is 15 minutes per two boards.")
+
+        # - the number of boards any individual will play -- namely, the number of rounds times the number of boards per
+        # - round.
+
+        mvmt = self.get_movement()
+        return (
+            self.signup_deadline
+            + mvmt.num_rounds
+            * mvmt.boards_per_round_per_table
+            * datetime.timedelta(seconds=450)  # 7.5 minutes
+        )
 
     def check_consistency(self) -> None:
         """
@@ -456,23 +478,9 @@ class Tournament(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(  # type: ignore[call-arg]
-                name="%(app_label)s_%(class)s_cant_have_just_one_deadline",
-                condition=(
-                    (
-                        models.Q(signup_deadline__isnull=True)
-                        & models.Q(play_completion_deadline__isnull=True)
-                    )
-                    | models.Q(signup_deadline__isnull=False)
-                    & models.Q(play_completion_deadline__isnull=False)
-                ),
-            ),
-            models.CheckConstraint(  # type: ignore[call-arg]
                 name="%(app_label)s_%(class)s_play_deadline_must_follow_signup_deadline",
                 condition=(
-                    (
-                        models.Q(signup_deadline__isnull=True)
-                        & models.Q(play_completion_deadline__isnull=True)
-                    )
+                    models.Q(play_completion_deadline__isnull=True)
                     | models.Q(play_completion_deadline__gt=models.F("signup_deadline"))
                 ),
             ),

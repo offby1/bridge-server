@@ -5,11 +5,10 @@ IN PROGRESS:
 
   There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
 
-* Have "tempo seconds" apply to an entire tournament, not just a "table" (which concept no longer exists, anyway).
-  That would allow us to automatically determine a play deadline for the tournament: that duration times the maximum number of calls and plays, plus the signup deadline.
-  Note that there are always either exactly 0, or exactly 52, plays; there are always at least four calls, but up to (I dunno) 7 * 4 * 35 calls (3 passes, one club, followed by passes, double, redouble, one diamod, more passes & doubles, &c)
-
 * The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
+
+* At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
+
 Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
 
 STILL TODO:
