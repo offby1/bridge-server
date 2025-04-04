@@ -268,13 +268,27 @@ ensure_git_repo_clean:
 ensure_branch_is_main:
     [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
 
+[script('bash')]
+ensure_bot_is_on_same_branch:
+    set -euo pipefail
+
+    our_branch="$(git symbolic-ref HEAD)"
+    cd ../api-bot
+    bot_branch="$(git symbolic-ref HEAD)"
+
+    if ! [[ "${our_branch}" = "${bot_branch}" ]]
+    then
+      echo our branch $our_branch is not the same as the bot\'s branch $bot_branch
+      false
+    fi
+
 [group('docker')]
-prod *options: ensure_branch_is_main ensure_git_repo_clean
+prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
     CADDY_HOSTNAME=bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }} --detach
     COMPOSE_PROFILES=prod                                   DOCKER_CONTEXT=ls docker compose logs django --follow
 
 [group('docker')]
-hetz *options: ensure_git_repo_clean
+hetz *options: ensure_git_repo_clean ensure_bot_is_on_same_branch
     CADDY_HOSTNAME=beta.bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
     COMPOSE_PROFILES=prod                                        DOCKER_CONTEXT=hetz docker compose logs django --follow
 
