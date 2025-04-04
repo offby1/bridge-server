@@ -598,12 +598,7 @@ class Hand(TimeStampedModel):
             // len(mvmt.table_settings_by_table_number)
         )
 
-        for zb_table_number in range(len(mvmt.table_settings_by_table_number)):
-            h = Hand.objects.create_for_tournament(
-                tournament=self.tournament,
-                zb_round_number=round_number_for_new_hand,
-                zb_table_number=zb_table_number,
-            )
+        self.tournament.create_hands_for_round(zb_round_number=round_number_for_new_hand)
 
         # TODO -- send some suitable event?
 
