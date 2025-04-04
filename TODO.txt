@@ -9,7 +9,20 @@ IN PROGRESS:
 
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
 
-Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
+* app:hand-list should have a way to filter the rows by tournament number
+
+* A completed tournament should have a summary showing each pair along with some score.  Maybe I'll have to learn matchpoints or something.
+
+  `Laws-of-Duplicate-Bridge.pdf`, on the page that shows as "90" but for which you have to type "114" in the PDF viewer, has
+
+      LAW 78
+      METHODS OF SCORING AND CONDITIONS OF CONTEST
+      A. Matchpoint Scoring
+      B. International Matchpoint Scoring
+      C. Total Point Scoring
+
+  All three of those seem to be easy; perhaps I could just compute all three, put each score in its own column, and allow sorting by those columns.
+
 
 STILL TODO:
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.

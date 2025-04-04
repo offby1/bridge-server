@@ -152,7 +152,7 @@ class HandManager(models.Manager):
         # Find a board in this group which has not been played at this table.
         hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
 
-        boards_not_played_at_this_table = Board.objects.exclude(
+        boards_not_played_at_this_table = Board.objects.filter(tournament=tournament).exclude(
             pk__in=hands_played_at_this_table.values_list("board", flat=True)
         )
 
@@ -199,7 +199,7 @@ class HandManager(models.Manager):
             West=West,
             table_display_number=zb_table_number + 1,
         )
-        logger.info("Created hand %s", new_hand.pk)
+        logger.info("Created hand %s", new_hand)
         return new_hand
 
     def create(self, *args, **kwargs) -> Hand:
@@ -911,6 +911,11 @@ class Hand(TimeStampedModel):
                 fields=["board", "North", "East", "South", "West"],
                 name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_by_four_players",
             ),
+        ]
+        ordering = [
+            "board__tournament__display_number",
+            "table_display_number",
+            "board__display_number",
         ]
 
 

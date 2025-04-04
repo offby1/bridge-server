@@ -129,7 +129,7 @@ def _display_and_control(
         if seat_is_dummy:
             display_cards |= wat >= board.PlayerVisibility.dummys_hand
 
-    if as_viewed_by is None:
+    if as_viewed_by is None or not as_viewed_by.currently_seated:
         return {
             "display_cards": bool(display_cards),
             "viewer_may_control_this_seat": False,
