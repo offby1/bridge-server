@@ -689,6 +689,10 @@ class Hand(TimeStampedModel):
             direction[0].upper(): getattr(self, direction) for direction in self.direction_names
         }
 
+    @cached_property
+    def direction_letters_by_player(self) -> dict[Player, str]:
+        return {v: k for k, v in self.players_by_direction_letter.items()}
+
     def current_cards_by_seat(self, *, as_dealt: bool = False) -> dict[Seat, set[libCard]]:
         rv = {}
         for direction_letter, cardstring in self.board.hand_strings_by_direction_letter.items():
@@ -851,9 +855,34 @@ class Hand(TimeStampedModel):
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
-    # TODO -- this should be combined with summary_as_viewed_by
-    def score_for_partnership(self, *, one_player: Player) -> int:
-        return 0
+    def _score_by_player(self, *, player: Player) -> int:
+        fs = self.get_xscript().final_score()
+        assert fs is not None
+
+        if fs == 0:
+            return 0
+
+        letter = self.direction_letters_by_player[player]
+        return fs.north_south_points if letter in "NS" else fs.east_west_points
+
+    def matchpoints_for_partnership(self, *, one_player: Player) -> int:
+        if one_player not in self.players():
+            return 0
+
+        our_score = self._score_by_player(player=one_player)
+
+        matchpoints = 0
+
+        for oh in self.board.hand_set.exclude(pk=self.pk):
+            other_player = oh.players_by_direction_letter[
+                self.direction_letters_by_player[one_player]
+            ]
+            if our_score > oh._score_by_player(player=other_player):
+                matchpoints += 2
+            elif our_score == oh._score_by_player(player=other_player):
+                matchpoints += 1
+
+        return matchpoints
 
     # The summary is phrased in terms of the player, who is presumed to have played the board already -- except if it's
     # None, in which case we (arbitrarily) summarize in terms of North.

@@ -416,12 +416,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         qs = Hand.objects.filter(board=board).filter(expression)
         assert qs.count() < 2
-        rv = qs.first()
-        if rv is not None:
-            for d in attribute_names:
-                if getattr(rv, d, None) == self:
-                    logger.error(f"{self.name} played {rv} at {d}")
-        return rv
+        return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         return board in self.boards_played.all()

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any
@@ -238,18 +237,14 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def score_for_partnership(self, *, one_player: app.models.Player) -> int:
-        results_by_board = collections.defaultdict(list)
+    def matchpoints_for_partnership_by_board(
+        self, *, one_player: app.models.Player
+    ) -> dict[PK, int]:
+        rv = {}
         for h in one_player.hands_played:
-            for other_hand in h.board.hand_set.all():
-                results_by_board[h.board.pk].append(
-                    other_hand.score_for_partnership(one_player=one_player)
-                )
-        import pprint
+            rv[h.board.pk] = h.matchpoints_for_partnership(one_player=one_player)
 
-        print(one_player.name)
-        pprint.pprint(results_by_board)
-        return 0
+        return rv
 
     def players(self) -> models.QuerySet:
         # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
