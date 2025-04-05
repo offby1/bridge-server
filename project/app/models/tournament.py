@@ -238,15 +238,19 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     def score_for(self, *, player: app.models.Player) -> int:
-        raise Exception("TODO")
         return 0
 
     def players(self) -> models.QuerySet:
-        """
-        Only valid if signup completion deadline has passed (otherwise more people might sign up after you call this).
-        """
-        raise Exception("TODO")
-        return Tournament.objects.none()
+        # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
+        pks = set()
+        b: app.models.Board
+        for b in self.board_set.all():
+            h: app.models.Hand
+            for h in b.hand_set.all():
+                for _, player in h.players_by_direction_letter.items():
+                    pks.add(player.pk)
+
+        return app.models.Player.objects.filter(pk__in=pks)
 
     def compute_play_completion_deadline(self) -> datetime.datetime:
         # Compute the play deadline from
@@ -443,13 +447,9 @@ class Tournament(models.Model):
 
     def eject_all_players(self) -> None:
         with transaction.atomic():
-            b: app.models.Board
-            for b in self.board_set.all():
-                h: app.models.Hand
-                for h in b.hand_set.all():
-                    for _, player in h.players_by_direction_letter.items():
-                        player.unseat_me()
-                        player.save()
+            for player in self.players():
+                player.unseat_me()
+                player.save()
 
     def maybe_finalize_round(self) -> None:
         num_completed_rounds, hands_played_this_round = self.rounds_played()

@@ -2,7 +2,7 @@ from .models import Tournament
 
 
 def test_tournament_players(just_completed: Tournament) -> None:
-    assert just_completed.players().count == 4
+    assert set(just_completed.players().values_list("pk", flat=True)) == {1, 2, 3, 4}
 
 
 def test_scoring(just_completed: Tournament) -> None:
