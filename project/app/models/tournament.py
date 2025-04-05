@@ -237,6 +237,17 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def score_for(self, *, player: app.models.Player) -> int:
+        raise Exception("TODO")
+        return 0
+
+    def players(self) -> models.QuerySet:
+        """
+        Only valid if signup completion deadline has passed (otherwise more people might sign up after you call this).
+        """
+        raise Exception("TODO")
+        return Tournament.objects.none()
+
     def compute_play_completion_deadline(self) -> datetime.datetime:
         # Compute the play deadline from
 

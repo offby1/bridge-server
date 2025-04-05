@@ -4,6 +4,7 @@ import pytest
 from django.core.cache import cache
 from django.core.management import call_command
 
+from bridge.card import Card
 from .models import Hand, Play, Player, Tournament
 from .models.tournament import check_for_expirations
 
@@ -97,3 +98,18 @@ def two_boards_one_is_complete(
     check_for_expirations(__name__)
 
     return h1
+
+
+@pytest.fixture
+def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
+    for p in Player.objects.all():
+        print(f"{p.name}: {p.currently_seated=}")
+
+    before = Tournament.objects.filter(is_complete=False).first()
+    assert before is not None
+
+    h1 = Hand.objects.get(pk=1)
+    west = Player.objects.get_by_name("Adam West")
+    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
+
+    return before
