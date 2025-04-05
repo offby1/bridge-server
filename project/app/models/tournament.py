@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any
@@ -238,6 +239,15 @@ class Tournament(models.Model):
     objects = TournamentManager()
 
     def score_for(self, *, player: app.models.Player) -> int:
+        results_by_board = collections.defaultdict(list)
+        for h in player.hands_played:
+            for other_hand in h.board.hand_set.all():
+                _, total_score = other_hand.summary_as_viewed_by(as_viewed_by=player)
+                results_by_board[h.board.pk].append(total_score)
+        import pprint
+
+        print(player.name)
+        pprint.pprint(results_by_board)
         return 0
 
     def players(self) -> models.QuerySet:
