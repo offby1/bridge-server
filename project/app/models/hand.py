@@ -851,6 +851,10 @@ class Hand(TimeStampedModel):
         self.save()
         self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
 
+    # TODO -- this should be combined with summary_as_viewed_by
+    def score_for_partnership(self, *, one_player: Player) -> int:
+        return 0
+
     # The summary is phrased in terms of the player, who is presumed to have played the board already -- except if it's
     # None, in which case we (arbitrarily) summarize in terms of North.
     def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:

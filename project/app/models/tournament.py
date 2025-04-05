@@ -238,15 +238,16 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def score_for(self, *, player: app.models.Player) -> int:
+    def score_for_partnership(self, *, one_player: app.models.Player) -> int:
         results_by_board = collections.defaultdict(list)
-        for h in player.hands_played:
+        for h in one_player.hands_played:
             for other_hand in h.board.hand_set.all():
-                _, total_score = other_hand.summary_as_viewed_by(as_viewed_by=player)
-                results_by_board[h.board.pk].append(total_score)
+                results_by_board[h.board.pk].append(
+                    other_hand.score_for_partnership(one_player=one_player)
+                )
         import pprint
 
-        print(player.name)
+        print(one_player.name)
         pprint.pprint(results_by_board)
         return 0
 
