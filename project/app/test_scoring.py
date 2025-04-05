@@ -12,4 +12,6 @@ def test_scoring(just_completed: Tournament) -> None:
         player: just_completed.score_for(player=player) for player in just_completed.players()
     }
 
-    assert len(set(scores_by_player.values())) > 0
+    values = set(list(scores_by_player.values()))
+
+    assert len(values) > 1
