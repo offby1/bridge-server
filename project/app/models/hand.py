@@ -560,46 +560,54 @@ class Hand(TimeStampedModel):
 
         self.send_event_to_players_and_hand(data=data)
 
-        final_score = self.get_xscript().final_score()
-
-        if final_score is not None:
+        if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
 
         return rv
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
-        self.is_complete = True
-        self.save()
-        logger.info("Just marked hand with pk %s as complete", self.pk)
+        with transaction.atomic():
+            self.is_complete = True
+            self.save()
+            logger.info("Just marked hand with pk %s as complete", self.pk)
 
-        self.tournament.maybe_finalize_round()
+            num_completed_rounds, hands_played_this_round = self.tournament.rounds_played()
 
-        self.send_event_to_players_and_hand(
-            data={
-                "table": self.table_display_number,
-                "final_score": final_score_text,
-            },
-        )
+            if hands_played_this_round == 0:
+                logger.info("%s", f"{self.tournament.rounds_played()=}")
+                if num_completed_rounds == len(
+                    self.tournament.get_movement().table_settings_by_table_number
+                ):
+                    self.tournament.maybe_complete()
+            else:
+                logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
 
-        if self.tournament.is_complete:
-            return
+            self.send_event_to_players_and_hand(
+                data={
+                    "table": self.table_display_number,
+                    "final_score": final_score_text,
+                },
+            )
 
-        # If any hands are incomplete, do nothing.
-        for h in self.tournament.hands():
-            if not h.is_complete:
-                logger.debug(f"{h=} is incomplete; not creating hands for new round")
+            if self.tournament.is_complete:
                 return
 
-        mvmt = self.tournament.get_movement()
-        round_number_for_new_hand = (
-            self.tournament.hands().count()
-            // mvmt.boards_per_round_per_table
-            // len(mvmt.table_settings_by_table_number)
-        )
+            # If any hands are incomplete, do nothing.
+            for h in self.tournament.hands():
+                if not h.is_complete:
+                    logger.debug(f"{h=} is incomplete; not creating hands for new round")
+                    return
 
-        self.tournament.create_hands_for_round(zb_round_number=round_number_for_new_hand)
+            mvmt = self.tournament.get_movement()
+            round_number_for_new_hand = (
+                self.tournament.hands().count()
+                // mvmt.boards_per_round_per_table
+                // len(mvmt.table_settings_by_table_number)
+            )
 
-        # TODO -- send some suitable event?
+            self.tournament.create_hands_for_round(zb_round_number=round_number_for_new_hand)
+
+            # TODO -- send some suitable event?
 
     @property
     def auction(self) -> Auction:
