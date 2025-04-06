@@ -47,6 +47,21 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 context["movement_headers"] = tab_dict["headers"]
                 context["movement_rows"] = tab_dict["rows"]
 
+                if t.is_complete:
+                    context_by_pk = {}
+                    for pair in movement.pairs:
+                        matchpoints = sum(
+                            t.matchpoints_for_partnership_by_board(
+                                one_player=app.models.Player.objects.get(pk=pair.id_[0])
+                            ).values()
+                        )
+                        context_by_pk[pair.id_[0]] = {
+                            "matchpoints": matchpoints,
+                            "names": pair.names,
+                        }
+
+                    context["pairs"] = context_by_pk.values()
+
     if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
         viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
         logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)

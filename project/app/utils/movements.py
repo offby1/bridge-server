@@ -102,6 +102,7 @@ def _zb_round_number(group_letter: str) -> int:
 @dataclasses.dataclass(frozen=True)
 class Movement:
     boards_per_round_per_table: int  # redundant, but handy
+    pairs: list[Pair]  # also redundant
     # The number of tables always equals the number of rounds.
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
     num_phantoms: int = 0
@@ -254,5 +255,6 @@ class Movement:
         return cls(
             boards_per_round_per_table=boards_per_round_per_table,
             num_phantoms=num_phantoms,
+            pairs=pairs,
             table_settings_by_table_number=temp_rv,
         )

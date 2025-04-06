@@ -40,6 +40,24 @@
         {% endif %}
     </span>
     <hr />
+    <table class="table caption-top">
+        <caption>Scores</caption>
+        <thead>
+            <tr>
+                <th>Partnership</th>
+                <th>Matchpoints</th>
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            {% for pair in pairs %}
+                <tr {% if pair == viewers_pair %}class="table-warning"{% endif %}>
+                    <th>{{ pair.names }}</th>
+                    <td>{{ pair.matchpoints }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr />
     <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
 {% elif tournament.status_str == "Running" %}
     <span style="font-size: 2em;">
