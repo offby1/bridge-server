@@ -97,17 +97,6 @@ class BoardManager(models.Manager):
             defaults=defaults, tournament=tournament, display_number=display_number
         )
 
-    def create(self, *args, **kwargs) -> Board:
-        group = kwargs.get("group")
-        assert group is not None, "OK, who failed to add a group?!"
-        tournament = kwargs.get("tournament")
-        if tournament:
-            assert (
-                not tournament.is_complete
-            ), f"Wassup! Don't add boards to a completed tournament!! {tournament}"
-        return super().create(*args, **kwargs)
-
-
 # fmt:off
 
 # fmt:on
