@@ -22,7 +22,7 @@ from bridge.table import Table as libTable
 from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
-from django.db import Error, models
+from django.db import Error, models, transaction
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -143,64 +143,58 @@ class HandManager(models.Manager):
     def create_for_tournament(
         self, tournament: Tournament, zb_round_number: int, zb_table_number: int
     ) -> Hand:
-        mvmt = tournament.get_movement()
+        with transaction.atomic():
+            mvmt = tournament.get_movement()
 
-        pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
-            zb_round_number=zb_round_number, zb_table_number=zb_table_number
-        )
-
-        # Find a board in this group which has not been played at this table.
-        hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
-
-        boards_not_played_at_this_table = Board.objects.filter(tournament=tournament).exclude(
-            pk__in=hands_played_at_this_table.values_list("board", flat=True)
-        )
-
-        if not boards_not_played_at_this_table.exists():
-            raise HandError(
-                f"Cannot find unplayed board for {zb_round_number=}, {zb_table_number=}"
+            pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
+                zb_round_number=zb_round_number, zb_table_number=zb_table_number
             )
 
-        # Now narrow further to boards in the current group.
-        boards_not_played_at_this_table = boards_not_played_at_this_table.filter(
-            group=_group_letter(zb_round_number)
-        )
-        the_board = boards_not_played_at_this_table.first()
+            # Find a board in this group which has not been played at this table.
+            hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
 
-        if the_board is None:
-            # If there are none, then the round is over.
-            # proceed only if all of our players are either not seated, or are seated at completed hands.
-            raise Exception("TODO")
+            boards_not_played_at_this_table = (
+                Board.objects.filter(tournament=tournament)
+                .exclude(
+                    pk__in=hands_played_at_this_table.values_list("board", flat=True),
+                )
+                .filter(group=_group_letter(zb_round_number))
+            )
 
-        q = pnb.quartet
-        ns = q.ns
-        ew = q.ew
-        n_k, s_k = ns.id_
-        e_k, w_k = ew.id_
-        North = Player.objects.get(pk=n_k)
-        East = Player.objects.get(pk=e_k)
-        South = Player.objects.get(pk=s_k)
-        West = Player.objects.get(pk=w_k)
-        for p in (North, East):
-            for x in (p, p.partner):
-                if x.current_hand() is not None:
-                    new_hand_description = ", ".join([str(p) for p in (North, East, South, West)])
-                    new_hand_description += f" play {the_board} at {zb_table_number + 1}"
-                    raise Exception(
-                        f"Uh oh, how can {new_hand_description} when {x} is still playing {x.current_hand()}"
-                    )
-            p.unseat_partnership(reason=f"New hand for round {zb_round_number + 1}")
-        logger.debug("%s/%s and %s/%s play %s", North, South, East, West, the_board)
-        new_hand = self.create(
-            board=the_board,
-            North=North,
-            East=East,
-            South=South,
-            West=West,
-            table_display_number=zb_table_number + 1,
-        )
-        logger.info("Created hand %s", new_hand)
-        return new_hand
+            if not boards_not_played_at_this_table.exists():
+                raise HandError(
+                    f"Cannot find unplayed board for {zb_round_number=}, {zb_table_number=}"
+                )
+
+            the_board = boards_not_played_at_this_table.first()
+
+            if the_board is None:
+                # If there are none, then the round is over.
+                # proceed only if all of our players are either not seated, or are seated at completed hands.
+                raise Exception("TODO")
+
+            q = pnb.quartet
+            ns = q.ns
+            ew = q.ew
+            n_k, s_k = ns.id_
+            e_k, w_k = ew.id_
+            North = Player.objects.get(pk=n_k)
+            East = Player.objects.get(pk=e_k)
+            South = Player.objects.get(pk=s_k)
+            West = Player.objects.get(pk=w_k)
+            for p in (North, East):
+                p.unseat_partnership(reason=f"New hand for round {zb_round_number + 1}")
+            logger.debug("%s/%s and %s/%s play %s", North, South, East, West, the_board)
+            new_hand = self.create(
+                board=the_board,
+                North=North,
+                East=East,
+                South=South,
+                West=West,
+                table_display_number=zb_table_number + 1,
+            )
+            logger.info("Created hand %s", new_hand)
+            return new_hand
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
