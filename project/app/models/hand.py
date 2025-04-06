@@ -910,7 +910,7 @@ class Hand(TimeStampedModel):
         if as_viewed_by is not None:
             cd = as_viewed_by.current_direction()
             if cd is not None:
-                my_seat_letter = cd
+                my_seat_letter = cd[0]
 
         fs = self.get_xscript().final_score()
 
