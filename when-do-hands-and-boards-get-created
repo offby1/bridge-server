@@ -1,0 +1,15 @@
+1) when a tournament round starts:
+   - we create all boards for all tables in that round
+   - we create one hand per table with those newly-created boards
+2) when any of those hands ends:
+   - if all the other hands in the round have also ended:
+     - if the tournament is over:
+       - eject all pairs
+       - send suitable SSE event
+     - otherwise:
+       - start a new tournament round
+   - otherwise:
+     - if there are unplayed boards for this table & round:
+       - we create another hand at that same table, using the next board for this table & round
+     - otherwise:
+       - do nothing for this table
