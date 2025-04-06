@@ -52,7 +52,7 @@ class NoPairs(Exception):
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     with transaction.atomic():
         if tour.hands().exists():
-            logger.debug("'%s' looks like it has hands already; bailing", tour)
+            logger.warning("'%s' looks like it has hands already; bailing", tour)
             return
 
         # It expired without any signups -- just nuke it
