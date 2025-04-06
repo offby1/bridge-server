@@ -42,7 +42,7 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
 
 
 def play_out_hand(h: app.models.Hand) -> None:
-    logger.info(f"Playing out {h} (tournament #{h.tournament.display_number})")
+    logger.info(f"Playing out {h}")
     if h.is_complete:
         pytest.fail(f"Yo Vinnie: y u want to play out {h=} which is already complete?!")
 

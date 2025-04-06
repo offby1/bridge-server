@@ -63,6 +63,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
+        assert tour.hands().count() == tour.get_movement().num_rounds
         if tour.play_completion_deadline is None:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
@@ -340,6 +341,7 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:
+            logger.debug(f"{self.hands().count()} hands exist.")
             if self.hands().exists():
                 # Collect all players who have played the hands.
                 player_pks: set[PK] = set()
@@ -348,11 +350,11 @@ class Tournament(models.Model):
                 from app.models import Player
 
                 pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
-                logger.debug(f"{self.hands().count()} hands; {pairs=}")
+                logger.debug(f"self.pairs_from_partnerships => {pairs=}")
             else:
                 assert self.signup_deadline_has_passed(), f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
                 pairs = list(self.signed_up_pairs())
-                logger.debug(f"No hands; signed-up {pairs=}")
+                logger.debug(f"signed_up_pairs => {pairs=}")
 
             if not pairs:
                 msg = f"Tournament #{self.display_number}: Can't create a movement with no pairs!"

@@ -155,7 +155,7 @@ class Movement:
         return rv, overflow > 0
 
     @staticmethod
-    def make_boards(
+    def ensure_boards(
         *, boards_per_round_per_table: int, num_tables: int, tournament: Tournament
     ) -> Generator[Board]:
         from app.models import Board
@@ -166,12 +166,21 @@ class Movement:
                 boards_per_round_per_table,
             )
         ):
-            logger.info("%s", f"Making boards for {group_index=} {display_numbers=}")
+            new = old = 0
+
             for n in display_numbers:
                 a_board, created = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
                 yield a_board
+                if created:
+                    new += 1
+                else:
+                    old += 1
+
+            logger.info(
+                f"Created {new} new, and fetched {old} existing, boards for {group_index=} {display_numbers=}"
+            )
 
     @classmethod
     def from_pairs(
@@ -210,7 +219,7 @@ class Movement:
             return ew_pairs[(table_number - 1 - zb_round_number) % num_tables]
 
         boards_by_group = collections.defaultdict(list)
-        for b in cls.make_boards(
+        for b in cls.ensure_boards(
             boards_per_round_per_table=boards_per_round_per_table,
             num_tables=num_tables,
             tournament=tournament,
@@ -218,7 +227,7 @@ class Movement:
             boards_by_group[b.group].append(b)
 
         logger.info(
-            "Made %d board groups for tournament #%s (%d boards_per_round_per_table)",
+            "Ensured we have %d board groups for tournament #%s (%d boards_per_round_per_table)",
             len(boards_by_group),
             tournament.display_number,
             boards_per_round_per_table,
