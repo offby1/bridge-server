@@ -596,7 +596,7 @@ class Hand(TimeStampedModel):
             else:
                 # If there are unplayed boards for this table, create a hand for one of them.
                 pnb: PlayersAndBoardsForOneRound = mvmt.table_settings_by_table_number[
-                    self.table_display_number
+                    self.table_display_number - 1
                 ][num_completed_rounds]
                 all_boards_this_table_this_round = pnb.board_group.boards
                 logger.info(f"hands_completed_this_round != 0; {all_boards_this_table_this_round=}")
@@ -608,6 +608,7 @@ class Hand(TimeStampedModel):
                             East=self.East,
                             South=self.South,
                             West=self.West,
+                            table_display_number=self.table_display_number,
                         )
                         logger.info(f"Just created {new_hand=}")
                         break
