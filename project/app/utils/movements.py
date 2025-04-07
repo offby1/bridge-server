@@ -107,10 +107,6 @@ class Movement:
     table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
     num_phantoms: int = 0
 
-    # TODO -- this method is only used by tests.  Nix it?
-    def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
-        return list(self.table_settings_by_table_number.items())
-
     def players_and_boards_for(
         self, *, zb_round_number: int, zb_table_number: int
     ) -> PlayersAndBoardsForOneRound:
