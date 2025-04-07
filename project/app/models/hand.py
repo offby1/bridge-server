@@ -581,14 +581,38 @@ class Hand(TimeStampedModel):
 
             num_completed_rounds, hands_completed_this_round = self.tournament.rounds_played()
 
+            logger.info("%s", f"{self.tournament.rounds_played()=}")
+
+            mvmt = self.tournament.get_movement()
+
             if hands_completed_this_round == 0:
-                logger.info("%s", f"{self.tournament.rounds_played()=}")
-                if num_completed_rounds == len(
-                    self.tournament.get_movement().table_settings_by_table_number
-                ):
+                logger.info(
+                    "hands_completed_this_round is 0, so I guess we just completed a round?"
+                )
+                if num_completed_rounds == len(mvmt.table_settings_by_table_number):
                     self.tournament.maybe_complete()
                 else:
                     self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
+            else:
+                # If there are unplayed boards for this table, create a hand for one of them.
+                pnb: PlayersAndBoardsForOneRound = mvmt.table_settings_by_table_number[
+                    self.table_display_number
+                ][num_completed_rounds]
+                all_boards_this_table_this_round = pnb.board_group.boards
+                logger.info(f"hands_completed_this_round != 0; {all_boards_this_table_this_round=}")
+                for b in all_boards_this_table_this_round:
+                    if not b.hand_set.exists():
+                        new_hand = Hand.objects.create(
+                            board=b,
+                            North=self.North,
+                            East=self.East,
+                            South=self.South,
+                            West=self.West,
+                        )
+                        logger.info(f"Just created {new_hand=}")
+                        break
+                else:
+                    logger.info(f"Hmm, no unplayed boards in {all_boards_this_table_this_round=}")
 
             self.send_event_to_players_and_hand(
                 data={
