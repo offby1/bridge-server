@@ -14,6 +14,9 @@ import pytest
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 
+from .testutils import play_out_hand
+
+
 SIGNUP_DEADLINE = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
 PLAY_COMPLETION_DEADLINE = SIGNUP_DEADLINE + datetime.timedelta(seconds=3600)
 
@@ -65,3 +68,16 @@ def test_start_of_round_creates_one_hand_per_table(
 
         hand = hands[0]
         assert hand.board.group == "A"  # first round, first letter.
+
+
+def test_first_hand_to_end_in_a_round(small_tournament_during_play: Tournament) -> None:
+    num_hands_before = small_tournament_during_play.hands().count()
+    h = small_tournament_during_play.hands().first()
+    assert h is not None
+    play_out_hand(h)
+
+    mvmt = small_tournament_during_play.get_movement()
+    assert mvmt.boards_per_round_per_table > 1
+
+    num_hands_after = small_tournament_during_play.hands().count()
+    assert num_hands_after == num_hands_before + 1
