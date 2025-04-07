@@ -595,6 +595,7 @@ class Hand(TimeStampedModel):
                     self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
             else:
                 # If there are unplayed boards for this table, create a hand for one of them.
+                assert self.table_display_number is not None
                 pnb: PlayersAndBoardsForOneRound = mvmt.table_settings_by_table_number[
                     self.table_display_number - 1
                 ][num_completed_rounds]
