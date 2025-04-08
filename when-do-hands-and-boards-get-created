@@ -14,7 +14,7 @@ when any of those hands ends:
   - otherwise:
     - start a new tournament round (item #1 above)
 - otherwise:
-  - if there are unplayed boards for this table & round:
+  - if there are unplayed boards for this table & round ("test_first_hand_to_end_in_a_round"):
     - we create another hand at that same table, using the next board for this table & round
-  - otherwise:
+  - otherwise ("test_last_hand_in_a_group"):
     - do nothing for this table

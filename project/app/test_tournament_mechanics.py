@@ -27,7 +27,7 @@ def small_tournament_at_signup_deadline(db) -> Generator[Tournament]:
         # set signup deadline to be more or less "now"
         t: Tournament
         t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
-            play_completion_deadline=PLAY_COMPLETION_DEADLINE
+            boards_per_round_per_table=2, play_completion_deadline=PLAY_COMPLETION_DEADLINE
         )
 
         # Create 8 players
@@ -81,3 +81,30 @@ def test_first_hand_to_end_in_a_round(small_tournament_during_play: Tournament) 
 
     num_hands_after = small_tournament_during_play.hands().count()
     assert num_hands_after == num_hands_before + 1
+
+
+def test_last_hand_in_a_group(small_tournament_during_play: Tournament) -> None:
+    mvmt = small_tournament_during_play.get_movement()
+    import pprint
+
+    pprint.pprint(mvmt)
+
+    h1 = small_tournament_during_play.hands().get(table_display_number=1, board__display_number=1)
+    assert h1.board.display_number == 1
+    play_out_hand(h1)
+    assert h1.is_complete
+
+    h2 = small_tournament_during_play.hands().get(table_display_number=1, board__display_number=2)
+    assert h2.board.display_number == 2
+    play_out_hand(h2)
+    assert h2.is_complete
+
+    assert small_tournament_during_play.rounds_played() == (0, 2)
+
+    other_hands = small_tournament_during_play.hands().exclude(pk__in=[h1.pk, h2.pk])
+    assert other_hands.count() == 1
+    oh = other_hands.first()
+    assert oh is not None  # mypy, y u so dumb
+    assert oh.board.tournament.display_number == 1
+    assert oh.table_display_number == 2
+    assert oh.board.display_number == 1
