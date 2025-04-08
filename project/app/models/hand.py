@@ -602,7 +602,7 @@ class Hand(TimeStampedModel):
                 all_boards_this_table_this_round = pnb.board_group.boards
                 logger.info(f"hands_completed_this_round != 0; {all_boards_this_table_this_round=}")
                 for b in all_boards_this_table_this_round:
-                    if not b.hand_set.exists():
+                    if not b.was_played_at_table(table_display_number=self.table_display_number):
                         new_hand = Hand.objects.create(
                             board=b,
                             North=self.North,
@@ -614,7 +614,9 @@ class Hand(TimeStampedModel):
                         logger.info(f"Just created {new_hand=}")
                         break
                 else:
-                    logger.info(f"Hmm, no unplayed boards in {all_boards_this_table_this_round=}")
+                    logger.info(
+                        f"Hmm, no unplayed boards in {self.table_display_number=} {all_boards_this_table_this_round=}"
+                    )
 
             self.send_event_to_players_and_hand(
                 data={

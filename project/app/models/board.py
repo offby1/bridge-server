@@ -139,6 +139,9 @@ class Board(models.Model):
 
     objects = BoardManager()
 
+    def was_played_at_table(self, *, table_display_number: int) -> models.QuerySet:
+        return self.hand_set.filter(table_display_number=table_display_number)
+
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         assert (

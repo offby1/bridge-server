@@ -14,7 +14,7 @@ import pytest
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 
-from .testutils import play_out_hand
+from .testutils import play_out_hand, play_out_round
 
 
 SIGNUP_DEADLINE = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
@@ -108,3 +108,16 @@ def test_last_hand_in_a_group(small_tournament_during_play: Tournament) -> None:
     assert oh.board.tournament.display_number == 1
     assert oh.table_display_number == 2
     assert oh.board.display_number == 1
+
+
+def test_last_hand_in_a_round(small_tournament_during_play: Tournament) -> None:
+    play_out_round(small_tournament_during_play)
+
+    assert small_tournament_during_play.rounds_played() == (1, 0)
+
+    hands_by_round = collections.defaultdict(list)
+    for h in Hand.objects.all():
+        hands_by_round[h.board.group].append(h)
+
+    assert len(hands_by_round["A"]) == 4
+    assert len(hands_by_round["B"]) == 2
