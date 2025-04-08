@@ -19,18 +19,24 @@ def test_tournament_players(two_by_two: Tournament) -> None:
 def test_scoring_two_by_two(two_by_two: Tournament) -> None:
     assert two_by_two.is_complete
 
-    matchpoints_by_board_by_player_pk = {
-        player.pk: two_by_two.matchpoints_for_partnership_by_board(one_player=player)
-        for player in two_by_two.players()
+    actual = two_by_two.matchpoints_by_partnership_by_hand()
+    expected = {
+        1: {
+            1: {"matchpoints": 2, "names": ["_prez", "_rhonda"]},
+            5: {"matchpoints": 0, "names": ["_tony gray", "_sydnor"]},
+        },
+        2: {
+            3: {"matchpoints": 0, "names": ["_bodie", "_kima"]},
+            7: {"matchpoints": 2, "names": ["_randy", "_marla"]},
+        },
+        3: {
+            1: {"matchpoints": 1, "names": ["_prez", "_rhonda"]},
+            7: {"matchpoints": 1, "names": ["_randy", "_marla"]},
+        },
+        4: {
+            3: {"matchpoints": 1, "names": ["_bodie", "_kima"]},
+            5: {"matchpoints": 1, "names": ["_tony gray", "_sydnor"]},
+        },
     }
 
-    assert matchpoints_by_board_by_player_pk == {
-        1: {1: 2, 2: 1},
-        2: {1: 2, 2: 1},
-        3: {1: 0, 2: 1},
-        4: {1: 0, 2: 1},
-        5: {1: 0, 2: 1},
-        6: {1: 0, 2: 1},
-        7: {1: 2, 2: 1},
-        8: {1: 2, 2: 1},
-    }
+    assert actual == expected

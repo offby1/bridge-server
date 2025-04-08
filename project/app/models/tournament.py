@@ -230,13 +230,27 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def matchpoints_for_partnership_by_board(
-        self, *, one_player: app.models.Player
-    ) -> dict[PK, int]:
+    def matchpoints_by_partnership_by_hand(
+        self,
+    ) -> dict[
+        PK,  # hand
+        dict[
+            PK,  # player
+            dict[str, Any],
+        ],
+    ]:
         rv = {}
-        for h in one_player.hands_played:
-            rv[h.board.pk] = h.matchpoints_for_partnership(one_player=one_player)
 
+        for h in app.models.Hand.objects.select_related(*app.models.common.attribute_names).all():
+            # I just made up the term "Captain" -- it means "North" or "East" :-)
+            by_captain = {}
+            for one_player in [h.North, h.East]:
+                matchpoints = h.matchpoints_for_partnership(one_player=one_player)
+                by_captain[one_player.pk] = {
+                    "matchpoints": matchpoints,
+                    "names": [p.name for p in (one_player, one_player.partner)],
+                }
+            rv[h.pk] = by_captain
         return rv
 
     def players(self) -> models.QuerySet:
