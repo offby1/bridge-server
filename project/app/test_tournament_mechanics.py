@@ -141,3 +141,15 @@ def test_last_hand_in_a_round(small_tournament_during_play: Tournament) -> None:
 
     assert len(hands_by_round["A"]) == 4
     assert len(hands_by_round["B"]) == 2
+
+
+def test_tournament_is_over(small_tournament_during_play: Tournament) -> None:
+    assert not small_tournament_during_play.is_complete
+
+    play_out_round(small_tournament_during_play)
+    assert not small_tournament_during_play.is_complete
+
+    play_out_round(small_tournament_during_play)
+    assert small_tournament_during_play.is_complete
+
+    assert small_tournament_during_play.rounds_played() == (2, 0)
