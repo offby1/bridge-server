@@ -52,7 +52,7 @@ class NoPairs(Exception):
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     with transaction.atomic():
         if tour.hands().exists():
-            logger.warning("'%s' looks like it has hands already; bailing", tour)
+            logger.debug("'%s' looks like it has hands already; bailing", tour)
             return
 
         # It expired without any signups -- just nuke it
@@ -448,12 +448,6 @@ class Tournament(models.Model):
     def abandon_all_hands(self, reason: str) -> None:
         with transaction.atomic():
             for player in self.players():
-                if player.currently_seated:
-                    logger.error("Hey, how come %s is still seated?", player.name)
-                else:
-                    logger.error(
-                        "Fine, %s isn't seated (but we're gonna unseat 'em anyway?)", player.name
-                    )
                 player.unseat_me(reason=reason)
                 player.save()
 
