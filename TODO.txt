@@ -11,17 +11,9 @@ IN PROGRESS:
 
 * app:hand-list should have a way to filter the rows by tournament number
 
-* A completed tournament should have a summary showing each pair along with some score.  Maybe I'll have to learn matchpoints or something.
+* Completed tournaments have a summary showing each pair along with their score in matchpoints; however for a decent-sized tournament (75 hands; 5 tables; 5 rounds, got via `just stress --min-players=20`), loading [the page with the scores](http://localhost:9000/tournament/1/) takes a couple of seconds! The SQL tab of the debug toolbar says about 4,000 queries(!) in 4 seconds.
 
-  `Laws-of-Duplicate-Bridge.pdf`, on the page that shows as "90" but for which you have to type "114" in the PDF viewer, has
-
-      LAW 78
-      METHODS OF SCORING AND CONDITIONS OF CONTEST
-      A. Matchpoint Scoring
-      B. International Matchpoint Scoring
-      C. Total Point Scoring
-
-  All three of those seem to be easy; perhaps I could just compute all three, put each score in its own column, and allow sorting by those columns.
+  Oh: allow sorting by various columns -- partners and score, certainly.
 
 
 STILL TODO:
