@@ -13,6 +13,7 @@ from django.utils import timezone
 
 
 import app.models
+import app.models.common
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
 from app.models.types import PK
@@ -230,28 +231,56 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def matchpoints_by_partnership_by_hand(
-        self,
-    ) -> dict[
-        PK,  # hand
-        dict[
-            PK,  # player
-            dict[str, Any],
-        ],
-    ]:
+    def matchpoints_by_pair_by_board(self):
+        return {
+            b: self.matchpoints_from_raw_scores_for_one_board(rs)
+            for b, rs in self.raw_scores_by_pair_names_by_board().items()
+        }
+
+    # O(n^2) but woteva
+    @staticmethod
+    def matchpoints_from_raw_scores_for_one_board(
+        raw_scores_by_pair_name: dict[str, int],
+    ) -> dict[str, int]:
         rv = {}
 
-        for h in app.models.Hand.objects.select_related(*app.models.common.attribute_names).all():
-            # I just made up the term "Captain" -- it means "North" or "East" :-)
-            by_captain = {}
-            for one_player in [h.North, h.East]:
-                matchpoints = h.matchpoints_for_partnership(one_player=one_player)
-                by_captain[one_player.pk] = {
-                    "matchpoints": matchpoints,
-                    "names": [p.name for p in (one_player, one_player.partner)],
-                }
-            rv[h.pk] = by_captain
+        def matchpoints_for_score(pairs, score):
+            if not pairs:
+                return 0
+            if score > pairs[0][1]:
+                return 2 + matchpoints_for_score(pairs[1:], score)
+            elif score == pairs[0][1]:
+                return 1 + matchpoints_for_score(pairs[1:], score)
+
+            return matchpoints_for_score(pairs[1:], score)
+
+        flattened = list(raw_scores_by_pair_name.items())
+        for pair, raw in flattened:
+            rv[pair] = matchpoints_for_score(flattened, raw)
+
         return rv
+
+    def raw_scores_by_pair_names_by_board(self):
+        scores_by_pair_names_by_board = {}
+        for h in (
+            app.models.Hand.objects.select_related(*app.models.common.attribute_names)
+            .select_related("board")
+            .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
+            .all()
+        ):
+            if h.board.display_number not in scores_by_pair_names_by_board:
+                scores_by_pair_names_by_board[h.board.display_number] = {}
+
+            ns_names = f"{h.North.name}/{h.South.name}"
+            ew_names = f"{h.East.name}/{h.West.name}"
+            scores_by_pair_names_by_board[h.board.display_number][ns_names] = h._score_by_player(
+                player=h.North
+            )
+            scores_by_pair_names_by_board[h.board.display_number][ew_names] = h._score_by_player(
+                player=h.East
+            )
+
+        return scores_by_pair_names_by_board
 
     def players(self) -> models.QuerySet:
         # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
