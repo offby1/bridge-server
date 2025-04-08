@@ -148,7 +148,7 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
-                    p.unseat_me()
+                    p.unseat_me(reason=reason)
         if reason is not None and self.partner is not None:
             channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
             send_event(
@@ -157,7 +157,7 @@ class Player(TimeStampedModel):
                 data=reason,
             )
 
-    def unseat_me(self) -> None:
+    def unseat_me(self, reason: str | None = None) -> None:
         # TODO -- refactor this with "current_hand"
         with transaction.atomic():
             h: Hand
@@ -167,10 +167,9 @@ class Player(TimeStampedModel):
                 if not h.is_complete:
                     for direction_name in h.direction_names:
                         if getattr(h, direction_name) == self:
-                            if h.abandoned_because is None:
-                                h.abandoned_because = f"{self.name} left"
-                                h.save()
-                                break
+                            h.abandoned_because = reason or f"{self.name} left"
+                            h.save()
+                            break
             self._control_bot()
 
     @property

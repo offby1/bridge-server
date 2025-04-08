@@ -93,18 +93,10 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                reason = None
-                h: Hand
-                for h in t.hands():
-                    if not h.is_complete:
-                        reason = f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed with {h} incomplete"
-                        logger.info("%s", reason)
-                        h.abandoned_because = reason
-                        h.save()
-                        break
-
                 t.is_complete = True
-                t.eject_all_players()
+                t.eject_all_players(
+                    reason=f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed"
+                )
                 t.save()
                 continue
 
@@ -453,16 +445,16 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
-    def eject_all_players(self) -> None:
+    def eject_all_players(self, reason: str | None = None) -> None:
         with transaction.atomic():
             for player in self.players():
-                if player.currently_seated():
+                if player.currently_seated:
                     logger.error("Hey, how come %s is still seated?", player.name)
                 else:
                     logger.error(
                         "Fine, %s isn't seated (but we're gonna unseat 'em anyway?)", player.name
                     )
-                player.unseat_me()
+                player.unseat_me(reason=reason)
                 player.save()
 
     def maybe_complete(self) -> None:
