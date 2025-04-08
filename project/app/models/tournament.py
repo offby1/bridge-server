@@ -94,7 +94,7 @@ def check_for_expirations(sender, **kwargs) -> None:
             )
             if t.play_completion_deadline_has_passed():
                 t.is_complete = True
-                t.eject_all_players(
+                t.abandon_all_hands(
                     reason=f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed"
                 )
                 t.save()
@@ -445,7 +445,7 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
-    def eject_all_players(self, reason: str | None = None) -> None:
+    def abandon_all_hands(self, reason: str) -> None:
         with transaction.atomic():
             for player in self.players():
                 if player.currently_seated:
@@ -471,7 +471,6 @@ class Tournament(models.Model):
 
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.is_complete = True
-                self.eject_all_players()
                 self.save()
 
     def save(self, *args, **kwargs) -> None:
