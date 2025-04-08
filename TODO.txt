@@ -11,9 +11,7 @@ IN PROGRESS:
 
 * app:hand-list should have a way to filter the rows by tournament number
 
-* Completed tournaments have a summary showing each pair along with their score in matchpoints; however for a decent-sized tournament (75 hands; 5 tables; 5 rounds, got via `just stress --min-players=20`), loading [the page with the scores](http://localhost:9000/tournament/1/) takes a couple of seconds! The SQL tab of the debug toolbar says about 4,000 queries(!) in 4 seconds.
-
-  Oh: allow sorting by various columns -- partners and score, certainly.
+* Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.
 
 
 STILL TODO:
