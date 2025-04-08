@@ -456,6 +456,12 @@ class Tournament(models.Model):
     def eject_all_players(self) -> None:
         with transaction.atomic():
             for player in self.players():
+                if player.currently_seated():
+                    logger.error("Hey, how come %s is still seated?", player.name)
+                else:
+                    logger.error(
+                        "Fine, %s isn't seated (but we're gonna unseat 'em anyway?)", player.name
+                    )
                 player.unseat_me()
                 player.save()
 
