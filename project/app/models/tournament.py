@@ -231,12 +231,6 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def matchpoints_by_pair_by_board(self):
-        return {
-            b: self.matchpoints_from_raw_scores_for_one_board(rs)
-            for b, rs in self.raw_scores_by_pair_names_by_board().items()
-        }
-
     # O(n^2) but woteva
     @staticmethod
     def matchpoints_from_raw_scores_for_one_board(
@@ -244,43 +238,68 @@ class Tournament(models.Model):
     ) -> dict[str, int]:
         rv = {}
 
-        def matchpoints_for_score(pairs, score):
+        def matchpoints_for_score(pairs, pair_id, score):
             if not pairs:
                 return 0
-            if score > pairs[0][1]:
-                return 2 + matchpoints_for_score(pairs[1:], score)
-            elif score == pairs[0][1]:
-                return 1 + matchpoints_for_score(pairs[1:], score)
+            rv = 0
+            for p in pairs:
+                other_pair, raw_score = p
+                if pair_id == other_pair:
+                    continue
+                if score > raw_score:
+                    rv += 2
+                elif score == raw_score:
+                    rv += 1
 
-            return matchpoints_for_score(pairs[1:], score)
+            print(f"{pairs=} {pair_id=} {score=} => {rv=}")
+            return rv
 
         flattened = list(raw_scores_by_pair_name.items())
+
         for pair, raw in flattened:
-            rv[pair] = matchpoints_for_score(flattened, raw)
+            mp = matchpoints_for_score(flattened, pair, raw)
+            print(f"{flattened=} {raw=} {mp=}")
+            rv[pair] = mp
 
         return rv
 
+    def matchpoints_by_pair_by_board(self):
+        ns, ew = self.raw_scores_by_pair_names_by_board()
+        return {
+            "n/s": {b: self.matchpoints_from_raw_scores_for_one_board(rs) for b, rs in ns.items()},
+            "e/w": {b: self.matchpoints_from_raw_scores_for_one_board(rs) for b, rs in ew.items()},
+        }
+
     def raw_scores_by_pair_names_by_board(self):
-        scores_by_pair_names_by_board = {}
+        ns_scores_by_pair_names_by_board = {}
+        ew_scores_by_pair_names_by_board = {}
         for h in (
             app.models.Hand.objects.select_related(*app.models.common.attribute_names)
             .select_related("board")
             .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
             .all()
         ):
-            if h.board.display_number not in scores_by_pair_names_by_board:
-                scores_by_pair_names_by_board[h.board.display_number] = {}
+            print(
+                f"board {h.board.display_number}: ns {h._score_by_player(player=h.North)}; ew {h._score_by_player(player=h.East)}"
+            )
+            if h.board.display_number not in ns_scores_by_pair_names_by_board:
+                ns_scores_by_pair_names_by_board[h.board.display_number] = {}
+
+            if h.board.display_number not in ew_scores_by_pair_names_by_board:
+                ew_scores_by_pair_names_by_board[h.board.display_number] = {}
 
             ns_names = f"{h.North.name}/{h.South.name}"
             ew_names = f"{h.East.name}/{h.West.name}"
-            scores_by_pair_names_by_board[h.board.display_number][ns_names] = h._score_by_player(
+            ns_scores_by_pair_names_by_board[h.board.display_number][ns_names] = h._score_by_player(
                 player=h.North
             )
-            scores_by_pair_names_by_board[h.board.display_number][ew_names] = h._score_by_player(
+            ew_scores_by_pair_names_by_board[h.board.display_number][ew_names] = h._score_by_player(
                 player=h.East
             )
 
-        return scores_by_pair_names_by_board
+        print(f"{ns_scores_by_pair_names_by_board=}")
+        print(f"{ew_scores_by_pair_names_by_board=}")
+        return ns_scores_by_pair_names_by_board, ew_scores_by_pair_names_by_board
 
     def players(self) -> models.QuerySet:
         # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
