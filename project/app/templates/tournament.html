@@ -41,11 +41,7 @@
         {% endif %}
     </span>
     <hr />
-    {% with pairs=ns_pairs title="North/South Scores" %}
-        {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
-    {% endwith %}
-    <hr />
-    {% with pairs=ew_pairs title="East/West Scores" %}
+    {% with pairs=pairs title="Matchpoint Scores" %}
         {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
     {% endwith %}
     <hr />
