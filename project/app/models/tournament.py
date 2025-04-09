@@ -248,6 +248,7 @@ class Tournament(models.Model):
                 **consistent_score(h.get_xscript().final_score()),
             )
             for h in self.hands()
+            .filter(abandoned_because__isnull=True)
             .select_related(*app.models.common.attribute_names)
             .select_related("board")
             .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])

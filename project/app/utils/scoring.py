@@ -74,6 +74,8 @@ class Scorer:
                     mps_by_pair[pair] = [0, 0.0]
 
                 mps_by_pair[pair][0] += mps
-                mps_by_pair[pair][1] += 100 * mps / total_available
+                mps_by_pair[pair][1] += (
+                    float("nan") if total_available == 0 else 100 * mps / total_available
+                )
 
         return {k: (int(v[0]), float(v[1])) for k, v in mps_by_pair.items()}
