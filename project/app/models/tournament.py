@@ -333,11 +333,14 @@ class Tournament(models.Model):
     def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
         rv: list[Hand] = []
         for zb_table_number in range(self.get_movement().num_rounds):
-            rv.append(
-                app.models.Hand.objects.create_for_tournament(
-                    self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+            try:
+                rv.append(
+                    app.models.Hand.objects.create_for_tournament(
+                        self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+                    )
                 )
-            )
+            except app.models.hand.HandError:
+                logger.exception("Continuing")
         return rv
 
     def _cache_key(self) -> str:

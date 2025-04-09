@@ -189,7 +189,7 @@ class HandManager(models.Manager):
                             [str(p) for p in (North, East, South, West)]
                         )
                         new_hand_description += f" play {the_board} at {zb_table_number + 1}"
-                        raise Exception(
+                        raise HandError(
                             f"Uh oh, how can {new_hand_description} when {x} is still playing {x.current_hand()}"
                         )
 
