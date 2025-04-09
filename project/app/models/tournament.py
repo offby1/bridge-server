@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any
@@ -264,10 +265,21 @@ class Tournament(models.Model):
         return rv
 
     def matchpoints_by_pair_by_board(self):
-        ns, ew = self.raw_scores_by_pair_names_by_board()
+        ns_scores, ew_scores = self.raw_scores_by_pair_names_by_board()
+
+        ns_sums = collections.defaultdict(int)
+        for rs in ns_scores.values():
+            for pair, scores in rs.items():
+                ns_sums[pair] += self.matchpoints_from_raw_scores_for_one_board(rs)[pair]
+
+        ew_sums = collections.defaultdict(int)
+        for rs in ew_scores.values():
+            for pair, scores in rs.items():
+                ew_sums[pair] += self.matchpoints_from_raw_scores_for_one_board(rs)[pair]
+
         return {
-            "n/s": {b: self.matchpoints_from_raw_scores_for_one_board(rs) for b, rs in ns.items()},
-            "e/w": {b: self.matchpoints_from_raw_scores_for_one_board(rs) for b, rs in ew.items()},
+            "n/s": dict(ns_sums),
+            "e/w": dict(ew_sums),
         }
 
     def raw_scores_by_pair_names_by_board(self):

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load fastdev %}
+{% load partials %}
 {% load player_extras %}
 {% block title %}
     {{ tournament }}
@@ -40,23 +41,13 @@
         {% endif %}
     </span>
     <hr />
-    <table class="table caption-top">
-        <caption>Scores</caption>
-        <thead>
-            <tr>
-                <th>Partnership</th>
-                <th>Matchpoints</th>
-            </tr>
-        </thead>
-        <tbody class="table-group-divider">
-            {% for pair in pairs %}
-                <tr {% if pair == viewers_pair %}class="table-warning"{% endif %}>
-                    <th>{{ pair.names }}</th>
-                    <td>{{ pair.matchpoints }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% with pairs=ns_pairs title="North/South Scores" %}
+        {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
+    {% endwith %}
+    <hr />
+    {% with pairs=ew_pairs title="East/West Scores" %}
+        {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
+    {% endwith %}
     <hr />
     <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
 {% elif tournament.status_str == "Running" %}
