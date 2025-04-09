@@ -104,11 +104,6 @@ def test_first_hand_to_end_in_a_round(small_tournament_during_play: Tournament) 
 
 
 def test_last_hand_in_a_group(small_tournament_during_play: Tournament) -> None:
-    mvmt = small_tournament_during_play.get_movement()
-    import pprint
-
-    pprint.pprint(mvmt)
-
     h1 = small_tournament_during_play.hands().get(table_display_number=1, board__display_number=1)
     assert h1.board.display_number == 1
     play_out_hand(h1)

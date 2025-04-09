@@ -76,8 +76,4 @@ class Scorer:
                 mps_by_pair[pair][0] += mps
                 mps_by_pair[pair][1] += 100 * mps / total_available
 
-        import pprint
-
-        pprint.pprint(mps_by_pair)
-
         return {k: (int(v[0]), float(v[1])) for k, v in mps_by_pair.items()}
