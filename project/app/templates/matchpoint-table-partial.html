@@ -9,10 +9,10 @@
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% for pairname, matchpoints in pairs.items %}
+        {% for pairname, tuple in pairs.items %}
             <tr {% if pairname == viewers_pair %}class="table-warning"{% endif %}>
                 <th>{{ pairname }}</th>
-                <td>{{ matchpoints }}</td>
+                <td>{{ tuple.0 }} ({{ tuple.1 | floatformat:0 }}%)</td>
             </tr>
         {% endfor %}
     </tbody>

@@ -37,8 +37,6 @@ class Scorer:
             elif my_score > o:
                 matchpoints += 2
 
-        print(f"{subject_id=} {my_score=} {other_scores=} => {matchpoints=}")
-
         return matchpoints
 
     def from_one_board(self, *, hands: collections.abc.Collection[Hand]) -> dict[ID, int]:
@@ -58,25 +56,28 @@ class Scorer:
             for id_ in ew_raw_scores_by_id.keys()
         }
 
-        import pprint
+        return ns_matchpoints_by_id | ew_matchpoints_by_id
 
-        pprint.pprint(("ns", ns_matchpoints_by_id))
-        pprint.pprint(("ew", ew_matchpoints_by_id))
-        rv = ns_matchpoints_by_id | ew_matchpoints_by_id
-        pprint.pprint(("rv", rv))
-        return rv
-
-    def matchpoints_by_pairs(self) -> dict[ID, int]:
+    def matchpoints_by_pairs(self) -> dict[ID, tuple[int, float]]:
         by_board = collections.defaultdict(list)
 
         for h in self.hands:
             by_board[h.board_id].append(h)
 
-        mps_by_pair: dict[ID, int] = collections.defaultdict(int)
+        total_available = 2 * sum(len(hands) - 1 for hands in by_board.values())
+
+        mps_by_pair = {}
 
         for b, hands in by_board.items():
-            print(f"Computing matchpoints for board {b}")
             for pair, mps in self.from_one_board(hands=hands).items():
-                mps_by_pair[pair] += mps
+                if pair not in mps_by_pair:
+                    mps_by_pair[pair] = [0, 0.0]
 
-        return mps_by_pair
+                mps_by_pair[pair][0] += mps
+                mps_by_pair[pair][1] += 100 * mps / total_available
+
+        import pprint
+
+        pprint.pprint(mps_by_pair)
+
+        return {k: (int(v[0]), float(v[1])) for k, v in mps_by_pair.items()}

@@ -233,7 +233,7 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def matchpoints_by_pair(self) -> dict[str, int]:
+    def matchpoints_by_pair(self) -> dict[str, tuple[int, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
         def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
             if fs == 0:

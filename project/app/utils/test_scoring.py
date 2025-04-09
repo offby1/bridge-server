@@ -1,3 +1,4 @@
+from collections.abc import Hashable
 from .scoring import Hand, Scorer
 
 
@@ -19,19 +20,22 @@ def test_from_ACBL_example() -> None:
     ]
 
     scorer = Scorer(hands=hands)
-    assert scorer.matchpoints_by_pairs() == {
-        1: 5,
-        2: 8,
-        3: 12,
-        4: 5,
-        5: 10,
-        6: 0,
-        7: 2,
-        8: 7,
-        13: 4,
-        11: 0,
-        9: 7,
-        14: 2,
-        12: 12,
-        10: 10,
+    approximate_expected: dict[Hashable, tuple[int, float]] = {
+        1: (5, 42),
+        2: (8, 67),
+        3: (12, 100),
+        4: (5, 42),
+        5: (10, 83),
+        6: (0, 0),
+        7: (2, 17),
+        8: (7, 58),
+        13: (4, 33),
+        11: (0, 0),
+        9: (7, 58),
+        14: (2, 17),
+        12: (12, 100),
+        10: (10, 83),
     }
+    for pair_id, (mps, appx_pct) in scorer.matchpoints_by_pairs().items():
+        assert mps == approximate_expected[pair_id][0]
+        assert round(appx_pct) == approximate_expected[pair_id][1]
