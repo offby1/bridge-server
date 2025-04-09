@@ -4,7 +4,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base_settings import *  # noqa
-from .base_settings import ALLOWED_HOSTS, VERSION
+from .base_settings import ALLOWED_HOSTS, LOGGING, VERSION
 
 DEBUG = False
 
@@ -14,6 +14,9 @@ ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-com
 # "staging": running on my laptop with docker
 # "production": running on my EC2 box or some other cloud server, with docker
 DEPLOYMENT_ENVIRONMENT = "production" if os.getenv("COMPOSE_PROFILES") == "prod" else "staging"
+
+if DEPLOYMENT_ENVIRONMENT == "production":
+    LOGGING["handlers"]["console"]["level"] = "INFO"
 
 sentry_sdk.init(  # type: ignore
     dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
