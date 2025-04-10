@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import sys
+from typing import Any
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -191,7 +192,7 @@ STATIC_ROOT = BASE_DIR / "static_root"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGGING = {
+LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -203,15 +204,12 @@ LOGGING = {
         },
     },
     "filters": {
-        "require_debug_true_or_environment_staging": {
-            "()": "app.utils.log.RequireDebugTrueOrEnvironmentStaging",
-        },
         "request_id": {"()": "log_request_id.filters.RequestIDFilter"},
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
-            "filters": ["require_debug_true_or_environment_staging", "request_id"],
+            "filters": ["request_id"],
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
