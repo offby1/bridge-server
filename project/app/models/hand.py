@@ -264,32 +264,26 @@ class Hand(TimeStampedModel):
 
     North = models.ForeignKey["Player"](
         "Player",
-        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="north",
     )
     East = models.ForeignKey["Player"](
         "Player",
-        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="east",
     )
     South = models.ForeignKey["Player"](
         "Player",
-        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="south",
     )
     West = models.ForeignKey["Player"](
         "Player",
-        null=True,  # TODO -- remove this once we've migrated
         on_delete=models.CASCADE,
         related_name="west",
     )
 
-    table_display_number = models.SmallIntegerField(
-        null=True,  # TODO -- remove this once we've migrated
-    )
+    table_display_number = models.SmallIntegerField()
 
     open_access = models.BooleanField(
         default=False,

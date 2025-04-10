@@ -459,6 +459,7 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         East=Player.objects.get_by_name("e2"),
         South=south,
         West=Player.objects.get_by_name("w2"),
+        table_display_number=h.table_display_number,
     )
 
     h = Hand.objects.get(pk=h.pk)
