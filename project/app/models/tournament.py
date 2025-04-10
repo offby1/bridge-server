@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -12,12 +12,15 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 
+from bridge.xscript import BrokenDownScore
+
 import app.models
+import app.models.common
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
 from app.models.types import PK
 import app.utils.movements
-
+import app.utils.scoring
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -63,6 +66,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
+        assert tour.hands().count() == tour.get_movement().num_rounds
         if tour.play_completion_deadline is None:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
@@ -72,6 +76,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 @receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
+    logger.debug(f"{sender=} {kwargs=}")
     t: Tournament
 
     with transaction.atomic():
@@ -92,18 +97,10 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
-                reason = None
-                h: Hand
-                for h in t.hands():
-                    if not h.is_complete:
-                        reason = f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed with {h} incomplete"
-                        logger.info("%s", reason)
-                        h.abandoned_because = reason
-                        h.save()
-                        break
-
                 t.is_complete = True
-                t.eject_all_players()
+                t.abandon_all_hands(
+                    reason=f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed"
+                )
                 t.save()
                 continue
 
@@ -237,6 +234,42 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
+    def matchpoints_by_pair(self) -> dict[str, tuple[int, float]]:
+        # Convert the final score, which might be zero, into a dict of kwargs
+        def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
+            if fs == 0:
+                return {"ns_raw_score": 0, "ew_raw_score": 0}
+            return {"ns_raw_score": fs.north_south_points, "ew_raw_score": fs.east_west_points}
+
+        hands = (
+            app.utils.scoring.Hand(
+                ns_id=(h.North.name, h.South.name),
+                ew_id=(h.East.name, h.West.name),
+                board_id=h.board.pk,
+                **consistent_score(h.get_xscript().final_score()),
+            )
+            for h in self.hands()
+            .filter(abandoned_because__isnull=True)
+            .select_related(*app.models.common.attribute_names)
+            .select_related("board")
+            .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
+        )
+
+        scorer = app.utils.scoring.Scorer(hands=list(hands))
+        return {str(k): v for k, v in scorer.matchpoints_by_pairs().items()}
+
+    def players(self) -> models.QuerySet:
+        # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
+        pks = set()
+        b: app.models.Board
+        for b in self.board_set.all():
+            h: app.models.Hand
+            for h in b.hand_set.all():
+                for _, player in h.players_by_direction_letter.items():
+                    pks.add(player.pk)
+
+        return app.models.Player.objects.filter(pk__in=pks)
+
     def compute_play_completion_deadline(self) -> datetime.datetime:
         # Compute the play deadline from
 
@@ -301,11 +334,15 @@ class Tournament(models.Model):
     def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
         rv: list[Hand] = []
         for zb_table_number in range(self.get_movement().num_rounds):
-            rv.append(
-                app.models.Hand.objects.create_for_tournament(
-                    self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+            try:
+                rv.append(
+                    app.models.Hand.objects.create_for_tournament(
+                        self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
+                    )
                 )
-            )
+            # TODO -- figure out why we get these exceptions :-|  So far they're benign, but ...
+            except app.models.hand.HandError as e:
+                logger.warning(f"{e}: Continuing")
         return rv
 
     def _cache_key(self) -> str:
@@ -319,6 +356,7 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:
+            logger.debug(f"{self.hands().count()} hands exist.")
             if self.hands().exists():
                 # Collect all players who have played the hands.
                 player_pks: set[PK] = set()
@@ -327,11 +365,11 @@ class Tournament(models.Model):
                 from app.models import Player
 
                 pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
-                logger.debug(f"{self.hands().count()} hands; {pairs=}")
+                logger.debug(f"self.pairs_from_partnerships => {pairs=}")
             else:
                 assert self.signup_deadline_has_passed(), f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
                 pairs = list(self.signed_up_pairs())
-                logger.debug(f"No hands; signed-up {pairs=}")
+                logger.debug(f"signed_up_pairs => {pairs=}")
 
             if not pairs:
                 msg = f"Tournament #{self.display_number}: Can't create a movement with no pairs!"
@@ -430,25 +468,11 @@ class Tournament(models.Model):
 
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
-    def eject_all_players(self) -> None:
+    def abandon_all_hands(self, reason: str) -> None:
         with transaction.atomic():
-            b: app.models.Board
-            for b in self.board_set.all():
-                h: app.models.Hand
-                for h in b.hand_set.all():
-                    for _, player in h.players_by_direction_letter.items():
-                        player.unseat_me()
-                        player.save()
-
-    def maybe_finalize_round(self) -> None:
-        num_completed_rounds, hands_played_this_round = self.rounds_played()
-        logger.debug("%s", f"{self}: Checking if this round (for {self}) is over.")
-        if hands_played_this_round == 0:
-            logger.info("%s", f"{self.rounds_played()=}")
-            if num_completed_rounds == len(self.get_movement().table_settings_by_table_number):
-                self.maybe_complete()
-        else:
-            logger.debug(f"Nah, {hands_played_this_round=}; go back to sleep")
+            for player in self.players():
+                player.unseat_me(reason=reason)
+                player.save()
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
@@ -464,7 +488,6 @@ class Tournament(models.Model):
 
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.is_complete = True
-                self.eject_all_players()
                 self.save()
 
     def save(self, *args, **kwargs) -> None:

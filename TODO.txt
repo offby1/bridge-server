@@ -11,17 +11,7 @@ IN PROGRESS:
 
 * app:hand-list should have a way to filter the rows by tournament number
 
-* A completed tournament should have a summary showing each pair along with some score.  Maybe I'll have to learn matchpoints or something.
-
-  `Laws-of-Duplicate-Bridge.pdf`, on the page that shows as "90" but for which you have to type "114" in the PDF viewer, has
-
-      LAW 78
-      METHODS OF SCORING AND CONDITIONS OF CONTEST
-      A. Matchpoint Scoring
-      B. International Matchpoint Scoring
-      C. Total Point Scoring
-
-  All three of those seem to be easy; perhaps I could just compute all three, put each score in its own column, and allow sorting by those columns.
+* Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.  Also include a percentage, as per https://en.wikipedia.org/wiki/Bridge_scoring#Matchpoint_scoring
 
 
 STILL TODO:

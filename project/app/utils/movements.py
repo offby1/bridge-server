@@ -102,13 +102,10 @@ def _zb_round_number(group_letter: str) -> int:
 @dataclasses.dataclass(frozen=True)
 class Movement:
     boards_per_round_per_table: int  # redundant, but handy
+    pairs: list[Pair]  # also redundant
     # The number of tables always equals the number of rounds.
-    table_settings_by_table_number: dict[int, list[PlayersAndBoardsForOneRound]]
+    table_settings_by_table_number: tuple[list[PlayersAndBoardsForOneRound], ...]
     num_phantoms: int = 0
-
-    # TODO -- this method is only used by tests.  Nix it?
-    def items(self) -> Sequence[tuple[int, list[PlayersAndBoardsForOneRound]]]:
-        return list(self.table_settings_by_table_number.items())
 
     def players_and_boards_for(
         self, *, zb_round_number: int, zb_table_number: int
@@ -130,7 +127,7 @@ class Movement:
     def tabulate_me(self) -> dict[str, Any]:
         rows: list[list[str]] = []
         headers = ["table"]
-        for tn, rounds in self.table_settings_by_table_number.items():
+        for tn, rounds in enumerate(self.table_settings_by_table_number):
             if not rows:
                 headers.extend(list(f"round {r.zb_round_number + 1}" for r in rounds))
             row = [str(rounds[0].table_number)]
@@ -154,7 +151,7 @@ class Movement:
         return rv, overflow > 0
 
     @staticmethod
-    def make_boards(
+    def ensure_boards(
         *, boards_per_round_per_table: int, num_tables: int, tournament: Tournament
     ) -> Generator[Board]:
         from app.models import Board
@@ -165,12 +162,21 @@ class Movement:
                 boards_per_round_per_table,
             )
         ):
-            logger.info("%s", f"Making boards for {group_index=} {display_numbers=}")
+            new = old = 0
+
             for n in display_numbers:
                 a_board, created = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
                 yield a_board
+                if created:
+                    new += 1
+                else:
+                    old += 1
+
+            logger.info(
+                f"Created {new} new, and fetched {old} existing, boards for {group_index=} {display_numbers=}"
+            )
 
     @classmethod
     def from_pairs(
@@ -209,7 +215,7 @@ class Movement:
             return ew_pairs[(table_number - 1 - zb_round_number) % num_tables]
 
         boards_by_group = collections.defaultdict(list)
-        for b in cls.make_boards(
+        for b in cls.ensure_boards(
             boards_per_round_per_table=boards_per_round_per_table,
             num_tables=num_tables,
             tournament=tournament,
@@ -217,7 +223,7 @@ class Movement:
             boards_by_group[b.group].append(b)
 
         logger.info(
-            "Made %d board groups for tournament #%s (%d boards_per_round_per_table)",
+            "Ensured we have %d board groups for tournament #%s (%d boards_per_round_per_table)",
             len(boards_by_group),
             tournament.display_number,
             boards_per_round_per_table,
@@ -251,8 +257,10 @@ class Movement:
                     table_number=table_display_number,
                 )
             )
+
         return cls(
             boards_per_round_per_table=boards_per_round_per_table,
             num_phantoms=num_phantoms,
-            table_settings_by_table_number=temp_rv,
+            pairs=pairs,
+            table_settings_by_table_number=tuple([v for k, v in sorted(temp_rv.items())]),
         )

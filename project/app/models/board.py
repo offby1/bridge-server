@@ -97,17 +97,6 @@ class BoardManager(models.Manager):
             defaults=defaults, tournament=tournament, display_number=display_number
         )
 
-    def create(self, *args, **kwargs) -> Board:
-        group = kwargs.get("group")
-        assert group is not None, "OK, who failed to add a group?!"
-        tournament = kwargs.get("tournament")
-        if tournament:
-            assert (
-                not tournament.is_complete
-            ), f"Wassup! Don't add boards to a completed tournament!! {tournament}"
-        return super().create(*args, **kwargs)
-
-
 # fmt:off
 
 # fmt:on
@@ -149,6 +138,9 @@ class Board(models.Model):
     )
 
     objects = BoardManager()
+
+    def was_played_at_table(self, *, table_display_number: int) -> models.QuerySet:
+        return self.hand_set.filter(table_display_number=table_display_number)
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"

@@ -96,3 +96,4 @@ It appears to be a container that polls the docker image registry, and restarts 
 I know shockingly little about these but they're the obvious choice.
 ### [django-simple-deploy](https://django-simple-deploy.readthedocs.io/en/latest/general_documentation/choosing_platform/)
 Aims to automate deployments to fly.io, heroku, and "platform.sh" (which I've never heard of until now).  Looks slick.
+### [Thoughtful, opinionated essay](https://blog.ploetzli.ch/2024/docker-deployment-best-practices/)

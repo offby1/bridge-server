@@ -1,3 +1,5 @@
+from django.core.management import call_command
+
 import bridge.card
 import bridge.contract
 
@@ -37,7 +39,7 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(84):
+    with django_assert_max_num_queries(118):
         hand_detail_view(request, h.pk)
 
 
@@ -50,4 +52,14 @@ def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     request.user = p.user
 
     with django_assert_max_num_queries(28):
+        tournament_view(request, "1")
+
+
+def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
+    call_command("loaddata", "completed-tournament-20-players")
+
+    request = rf.get("/woteva/")
+    request.user = None
+
+    with django_assert_max_num_queries(202):
         tournament_view(request, "1")

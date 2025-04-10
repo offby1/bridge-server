@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -53,11 +54,7 @@ class PlayerManager(models.Manager):
             unprefixed_candidate = fake.unique.playa().lower()
             candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
             if not auth.models.User.objects.filter(username__in=candidates).exists():
-                logger.debug(
-                    "None of %s already exists; returning %s", ", ".join(candidates), candidates[-1]
-                )
                 return candidates[-1]
-            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
 
     def create_synthetic(self) -> Player:
         new_user = auth.models.User.objects.create_user(
@@ -152,7 +149,7 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
-                    p.unseat_me()
+                    p.unseat_me(reason=reason)
         if reason is not None and self.partner is not None:
             channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
             send_event(
@@ -161,8 +158,9 @@ class Player(TimeStampedModel):
                 data=reason,
             )
 
-    def unseat_me(self) -> None:
+    def unseat_me(self, reason: str | None = None) -> None:
         # TODO -- refactor this with "current_hand"
+        logger.info("Unseating %s because %s", self.name, reason)
         with transaction.atomic():
             h: Hand
             direction_name: str
@@ -171,11 +169,10 @@ class Player(TimeStampedModel):
                 if not h.is_complete:
                     for direction_name in h.direction_names:
                         if getattr(h, direction_name) == self:
-                            if h.abandoned_because is None:
-                                h.abandoned_because = f"{self.name} left"
-                                h.save()
-                                break
-            self._control_bot()
+                            h.abandoned_because = reason or f"{self.name} left"
+                            h.save()
+                            break
+        self._control_bot()
 
     @property
     def event_channel_name(self):
@@ -199,6 +196,8 @@ class Player(TimeStampedModel):
             return
 
         def svc(flags: str) -> None:
+            logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
+
             # No problem blocking here -- experience shows this doesn't take long
             subprocess.run(
                 [
@@ -211,12 +210,15 @@ class Player(TimeStampedModel):
                 capture_output=True,
             )
 
+        logger.info(
+            f"{self.name} ({self.pk}): {self.allow_bot_to_play_for_me=} {self.currently_seated=}"
+        )
+
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
+
         if not (self.allow_bot_to_play_for_me and self.currently_seated):
-            logger.info(
-                f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
-            )
             svc("-d")
-            logger.info("Stopped bot for %s", self)
+            shutil.rmtree(run_dir, ignore_errors=True)
             return
 
         shell_script_text = """#!/bin/bash
@@ -228,7 +230,6 @@ set -euo pipefail
 printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
-        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
         run_file = run_dir / "run.notyet"
         run_file.parent.mkdir(parents=True, exist_ok=True)
         run_file.write_text(shell_script_text)
@@ -236,7 +237,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file = run_file.rename(run_dir / "run")
 
         svc("-u")
-        logger.info(f"Started bot for {self}")
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():

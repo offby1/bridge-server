@@ -6,7 +6,7 @@ from django.core.management import call_command
 
 from .models import Hand, Play, Player, Tournament
 from .models.tournament import check_for_expirations
-
+from .testutils import play_out_round
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +97,12 @@ def two_boards_one_is_complete(
     check_for_expirations(__name__)
 
     return h1
+
+
+@pytest.fixture
+def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
+    before: Tournament | None = Tournament.objects.filter(is_complete=False).first()
+    assert before is not None
+
+    play_out_round(before)
+    return before

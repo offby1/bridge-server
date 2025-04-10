@@ -14,6 +14,7 @@ from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
 
 import app.models
+import app.models.common
 import app.models.tournament
 
 from .misc import logged_in_as_player_required
@@ -46,6 +47,9 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 tab_dict = movement.tabulate_me()
                 context["movement_headers"] = tab_dict["headers"]
                 context["movement_rows"] = tab_dict["rows"]
+
+                if t.is_complete:
+                    context["pairs"] = t.matchpoints_by_pair()
 
     if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
         viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)

@@ -4,7 +4,6 @@ import logging
 
 from freezegun import freeze_time
 import pytest
-from bridge.card import Card
 from bridge.contract import Call
 from django.contrib import auth
 from django.utils.timezone import now
@@ -36,21 +35,6 @@ logger = logging.getLogger(__name__)
 
 def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup) -> None:
     assert Tournament.objects.filter(is_complete=False).count() < 2
-
-
-@pytest.fixture
-def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
-    for p in Player.objects.all():
-        print(f"{p.name}: {p.currently_seated=}")
-
-    before = Tournament.objects.filter(is_complete=False).first()
-    assert before is not None
-
-    h1 = Hand.objects.get(pk=1)
-    west = Player.objects.get_by_name("Adam West")
-    h1.add_play_from_player(player=west.libraryThing(), card=Card.deserialize("♠A"))
-
-    return before
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(

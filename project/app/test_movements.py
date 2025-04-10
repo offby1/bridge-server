@@ -11,7 +11,7 @@ from django.contrib import auth
 
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
-from app.utils.movements import BoardGroup, Movement, Pair
+from app.utils.movements import BoardGroup, Movement, Pair, PlayersAndBoardsForOneRound
 
 from .testutils import play_out_hand
 
@@ -60,7 +60,8 @@ def test_movement_class() -> None:
             )
 
             # Ensure there's never more than one phantom
-            for table_number, rounds in da_movement.items():
+            rounds: list[PlayersAndBoardsForOneRound]
+            for table_number, rounds in enumerate(da_movement.table_settings_by_table_number):
                 for r in rounds:
                     quartet, board_group = r.quartet, r.board_group
                     phantoms, normals = quartet.partition_into_phantoms_and_normals()
@@ -74,7 +75,7 @@ def test_movement_class() -> None:
             times_played_by_pair_board_combo: dict[tuple[tuple[int, int], BoardGroup], int] = (
                 collections.defaultdict(int)
             )
-            for table_number, rounds in da_movement.items():
+            for table_number, rounds in enumerate(da_movement.table_settings_by_table_number):
                 for r in rounds:
                     quartet, board_group = r.quartet, r.board_group
 
@@ -85,7 +86,7 @@ def test_movement_class() -> None:
 
             # Ensure every NS pair encounters every EW pair exactly once, and vice-versa.
             matchups = collections.Counter()  # type: ignore
-            for table_number, rounds in da_movement.items():
+            for table_number, rounds in enumerate(da_movement.table_settings_by_table_number):
                 for r in rounds:
                     matchups[r.quartet] += 1
 
