@@ -242,9 +242,9 @@ class Movement:
 
             letter = _group_letter(zb_round_number)
 
-            assert (
-                letter in boards_by_group
-            ), f"OK, how come {letter=} isn't a key of {boards_by_group=}"
+            assert letter in boards_by_group, (
+                f"OK, how come {letter=} isn't a key of {boards_by_group=}"
+            )
 
             temp_rv[table_display_number - 1].append(
                 PlayersAndBoardsForOneRound(

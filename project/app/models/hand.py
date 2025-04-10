@@ -215,9 +215,9 @@ class HandManager(models.Manager):
         p: Player
         for p in players:
             h = p.hand_at_which_we_played_board(board)
-            assert (
-                h is None
-            ), f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
+            assert h is None, (
+                f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
+            )
 
         expression = models.Q(pk__in=[])
         for p in players:

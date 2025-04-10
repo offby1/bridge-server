@@ -153,9 +153,9 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
             play_out_hand(hand)
 
         num_completed_rounds, _ = open_tournament.rounds_played()
-        assert (
-            num_completed_rounds == 1
-        ), "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
+        assert num_completed_rounds == 1, (
+            "We have played exactly one hand at each table, and advanced to the next round, so this should be round 1"
+        )
 
         after = dump_seats()
         assert after == [

@@ -15,9 +15,9 @@ class Hand:
     board_id: ID
 
     def __post_init__(self) -> None:
-        assert any(
-            s == 0 for s in (self.ns_raw_score, self.ew_raw_score)
-        ), "At least one score must be zero"
+        assert any(s == 0 for s in (self.ns_raw_score, self.ew_raw_score)), (
+            "At least one score must be zero"
+        )
 
 
 @dataclasses.dataclass

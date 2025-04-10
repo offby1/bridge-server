@@ -296,9 +296,9 @@ class Tournament(models.Model):
         """
         mvmt = self.get_movement()
         expected = mvmt.boards_per_round_per_table * len(mvmt.table_settings_by_table_number)
-        assert (
-            self.board_set.count() == expected
-        ), f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
+        assert self.board_set.count() == expected, (
+            f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
+        )
 
         for b in self.board_set.all():
             assert b.group is not None, f"Hey! {b=} ain't got no group"
@@ -367,7 +367,9 @@ class Tournament(models.Model):
                 pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
                 logger.debug(f"self.pairs_from_partnerships => {pairs=}")
             else:
-                assert self.signup_deadline_has_passed(), f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
+                assert self.signup_deadline_has_passed(), (
+                    f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
+                )
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"signed_up_pairs => {pairs=}")
 
