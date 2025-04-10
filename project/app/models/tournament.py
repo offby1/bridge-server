@@ -76,6 +76,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 @receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
+    logger.debug(f"{sender=} {kwargs=}")
     t: Tournament
 
     with transaction.atomic():
@@ -339,8 +340,9 @@ class Tournament(models.Model):
                         self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
                     )
                 )
-            except app.models.hand.HandError:
-                logger.exception("Continuing")
+            # TODO -- figure out why we get these exceptions :-|  So far they're benign, but ...
+            except app.models.hand.HandError as e:
+                logger.warning(f"{e}: Continuing")
         return rv
 
     def _cache_key(self) -> str:
