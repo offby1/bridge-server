@@ -202,7 +202,7 @@ k *options:
 # Draw a nice entity-relationship diagram
 [group('django')]
 graph: migrate
-    cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
+    cd project && poetry run python manage.py graph_models --no-inheritance app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
 # Run all the tests
