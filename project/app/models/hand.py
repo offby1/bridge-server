@@ -579,6 +579,9 @@ class Hand(TimeStampedModel):
         with transaction.atomic():
             assert self.is_complete
 
+            for p in self.players():
+                p._control_bot()
+
             num_completed_rounds, hands_completed_this_round = self.tournament.rounds_played()
 
             mvmt = self.tournament.get_movement()

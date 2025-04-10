@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -159,6 +160,7 @@ class Player(TimeStampedModel):
 
     def unseat_me(self, reason: str | None = None) -> None:
         # TODO -- refactor this with "current_hand"
+        logger.info("Unseating %s because %s", self.name, reason)
         with transaction.atomic():
             h: Hand
             direction_name: str
@@ -170,7 +172,7 @@ class Player(TimeStampedModel):
                             h.abandoned_because = reason or f"{self.name} left"
                             h.save()
                             break
-            self._control_bot()
+        self._control_bot()
 
     @property
     def event_channel_name(self):
@@ -194,6 +196,8 @@ class Player(TimeStampedModel):
             return
 
         def svc(flags: str) -> None:
+            logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
+
             # No problem blocking here -- experience shows this doesn't take long
             subprocess.run(
                 [
@@ -206,12 +210,15 @@ class Player(TimeStampedModel):
                 capture_output=True,
             )
 
+        logger.info(
+            f"{self.name} ({self.pk}): {self.allow_bot_to_play_for_me=} {self.currently_seated=}"
+        )
+
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
+
         if not (self.allow_bot_to_play_for_me and self.currently_seated):
-            logger.info(
-                f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
-            )
             svc("-d")
-            logger.info("Stopped bot for %s", self)
+            shutil.rmtree(run_dir, ignore_errors=True)
             return
 
         shell_script_text = """#!/bin/bash
@@ -223,7 +230,6 @@ set -euo pipefail
 printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
-        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
         run_file = run_dir / "run.notyet"
         run_file.parent.mkdir(parents=True, exist_ok=True)
         run_file.write_text(shell_script_text)
@@ -231,7 +237,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file = run_file.rename(run_dir / "run")
 
         svc("-u")
-        logger.info(f"Started bot for {self}")
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
