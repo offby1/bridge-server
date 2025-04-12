@@ -89,7 +89,6 @@ class PartnerException(PlayerException):
 
 # fmt:on
 class Player(TimeStampedModel):
-    display_name: str  # set by a view, from name_dir
     objects = PlayerManager()
 
     user = models.OneToOneField(
@@ -425,8 +424,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def name(self):
         return self.user.username
 
-    # TODO -- wtf is this for?  At the very least, the name doesn't describe what it does.
-    def name_dir(self, *, hand: Hand) -> str:
+    def display_name(self) -> str:
         return f"{self.pk}:{self.as_link()}"
 
     def as_link(self, style=""):

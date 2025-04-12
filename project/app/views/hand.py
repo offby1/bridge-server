@@ -307,7 +307,6 @@ def _four_hands_context_for_hand(
     libSeat: bridge.seat.Seat
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
-        this_seats_player.display_name = this_seats_player.name_dir(hand=hand)
 
         visibility_and_control = _display_and_control(
             hand=hand,
