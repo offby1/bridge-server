@@ -550,6 +550,8 @@ class Hand(TimeStampedModel):
         except Error as e:
             raise PlayError(str(e)) from e
 
+        logger.debug("%s played %s", legit_player, card)
+
         data: dict[str, Any] = {
             "new-play": {
                 "serialized": card.serialize(),
