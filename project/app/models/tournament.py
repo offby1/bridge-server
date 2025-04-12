@@ -222,7 +222,10 @@ class Tournament(models.Model):
         board_set = RelatedManager["Board"]()
 
     boards_per_round_per_table = models.PositiveSmallIntegerField(default=3)
+
+    # TODO -- replace this with a nullable `completed_at` DateTimefield
     is_complete = models.BooleanField(default=False)
+
     display_number = models.SmallIntegerField(unique=True)
 
     signup_deadline = models.DateTimeField(
