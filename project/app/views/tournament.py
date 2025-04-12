@@ -25,7 +25,7 @@ from .misc import logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def annotate_movement_with_hand_links(
+def annotate_grid_with_hand_links(
     request: AuthedHttpRequest, t: app.models.Tournament, mvmt: Movement
 ) -> dict[str, Any]:
     tabulate_me = mvmt.tabulate_me()
@@ -35,33 +35,21 @@ def annotate_movement_with_hand_links(
         for one_based_round, column in enumerate(row):
             # the first entry here is just the table number.
             if one_based_round == 0:
-                annotated_column = format_html("Table {}", zb_table + 1)
+                annotated_column = column
             else:
-                filter_kwargs = dict(
-                    table_display_number=zb_table + 1,
-                    board__group=_group_letter(one_based_round - 1),
+                annotated_column = format_html(
+                    "<a href='{}'>{}</a>",
+                    reverse(
+                        "app:hands-by-table-and-board-group",
+                        kwargs=dict(
+                            tournament_pk=t.pk,
+                            table_display_number=zb_table + 1,
+                            board_group=_group_letter(one_based_round - 1),
+                        ),
+                    ),
+                    column,
                 )
-                # TODO -- replace this one-query-per-cell with one giant query, somehow
 
-                qs = (
-                    app.models.Hand.objects.filter(**filter_kwargs)
-                    .values_list("pk", flat=True)
-                    .all()
-                )
-                logger.debug("%s => %s", filter_kwargs, qs)
-                hands = ",".join([str(pk) for pk in qs])
-                if qs.exists():
-                    # TODO -- don't pass hand primary keys to the view -- those change over time (as hands are
-                    # completed). Instead, pass the table display number, and the board group, and let the view do the
-                    # query.  That will eliminate the queries from loading this page, and fob them off onto queries when
-                    # someone actually clicks a link.
-                    annotated_column = format_html(
-                        "<a href='{}'>{}</a>",
-                        reverse("app:hand-list", query=dict(hand_pks=hands)),  # type: ignore[call-arg]
-                        column,
-                    )
-                else:
-                    annotated_column = column
             annotated_row.append(annotated_column)
         annotated_rows.append(annotated_row)
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
@@ -88,7 +76,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 pass
             else:
                 context["movement_boards_per_round"] = movement.boards_per_round_per_table
-                tab_dict = annotate_movement_with_hand_links(request, t, movement)
+                tab_dict = annotate_grid_with_hand_links(request, t, movement)
                 context["movement_headers"] = tab_dict["headers"]
                 context["movement_rows"] = tab_dict["rows"]
 

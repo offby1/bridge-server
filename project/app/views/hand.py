@@ -9,6 +9,7 @@ import bridge.xscript
 from bridge.auction import Auction
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Value
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -691,6 +692,37 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
         "page_obj": page_obj,
         "played_by": "" if player is None else f"played_by={player.pk}",
         "player": player,
+    }
+
+    return render(request, "hand_list.html", context=context)
+
+
+def hands_by_table_and_board_group(
+    request: HttpRequest, tournament_pk: PK, table_display_number: int, board_group: str
+) -> HttpResponse:
+    filter_kwargs = dict(
+        board__group=board_group,
+        table_display_number=table_display_number,
+        board__tournament=tournament_pk,
+    )
+
+    qs = (
+        app.models.Hand.objects.filter(**filter_kwargs)
+        .annotate(summary_for_this_viewer=Value("wtf"))
+        .all()
+    )
+    logger.debug("%s => %s", filter_kwargs, qs)
+
+    hands = list(qs)
+
+    paginator = Paginator(hands, 16)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "filtered_count": paginator.count,
+        "page_obj": page_obj,
+        "player": None,
     }
 
     return render(request, "hand_list.html", context=context)
