@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from django.db.models import Case, Value, When
 from django.template.response import TemplateResponse
@@ -16,11 +17,30 @@ from app.views.misc import AuthedHttpRequest
 import app.models
 import app.models.common
 import app.models.tournament
+from app.utils.movements import Movement
 
 from .misc import logged_in_as_player_required
 
 
 logger = logging.getLogger(__name__)
+
+
+def annotate_movement_with_hand_links(t: app.models.Tournament, mvmt: Movement) -> dict[str, Any]:
+    tabulate_me = mvmt.tabulate_me()
+    annotated_rows = []
+    for zb_table, row in enumerate(tabulate_me["rows"]):
+        annotated_row = []
+        for zb_round, column in enumerate(row):
+            # the first entry here is just the table number.
+            if zb_round == 0:
+                annotated_column = format_html("Table {}", zb_table + 1)
+            else:
+                annotated_column = format_html(
+                    "Round {}, <a href='/foo/bar/baz'>{}</a>", zb_round, column
+                )
+            annotated_row.append(annotated_column)
+        annotated_rows.append(annotated_row)
+    return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
 
 
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
@@ -44,7 +64,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 pass
             else:
                 context["movement_boards_per_round"] = movement.boards_per_round_per_table
-                tab_dict = movement.tabulate_me()
+                tab_dict = annotate_movement_with_hand_links(t, movement)
                 context["movement_headers"] = tab_dict["headers"]
                 context["movement_rows"] = tab_dict["rows"]
 
