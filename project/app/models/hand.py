@@ -550,7 +550,7 @@ class Hand(TimeStampedModel):
         except Error as e:
             raise PlayError(str(e)) from e
 
-        logger.debug("%s played %s", legit_player, card)
+        logger.debug("%s: %s played %s", self, legit_player, card)
 
         data: dict[str, Any] = {
             "new-play": {
@@ -990,7 +990,7 @@ class CallManager(models.Manager):
 
         c = libBid.deserialize(kwargs["serialized"])
 
-        logger.debug("%s called %s", x.auction.allowed_caller(), c)
+        logger.debug("%s: %s called %s", rv.hand, x.auction.allowed_caller(), c)
         x.add_call(c)
         rv.hand._cache_set(x)
 
