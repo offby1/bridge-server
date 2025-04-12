@@ -17,7 +17,7 @@ from app.views.misc import AuthedHttpRequest
 import app.models
 import app.models.common
 import app.models.tournament
-from app.utils.movements import Movement
+from app.utils.movements import Movement, _group_letter
 
 from .misc import logged_in_as_player_required
 
@@ -25,18 +25,35 @@ from .misc import logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-def annotate_movement_with_hand_links(t: app.models.Tournament, mvmt: Movement) -> dict[str, Any]:
+def annotate_movement_with_hand_links(
+    request: AuthedHttpRequest, t: app.models.Tournament, mvmt: Movement
+) -> dict[str, Any]:
     tabulate_me = mvmt.tabulate_me()
     annotated_rows = []
     for zb_table, row in enumerate(tabulate_me["rows"]):
         annotated_row = []
-        for zb_round, column in enumerate(row):
+        for one_based_round, column in enumerate(row):
             # the first entry here is just the table number.
-            if zb_round == 0:
+            if one_based_round == 0:
                 annotated_column = format_html("Table {}", zb_table + 1)
             else:
+                filter_kwargs = dict(
+                    table_display_number=zb_table + 1,
+                    board__group=_group_letter(one_based_round - 1),
+                )
+                # TODO -- replace this one-query-per-cell with one giant query, somehow
+                qs = (
+                    app.models.Hand.objects.filter(**filter_kwargs)
+                    .values_list("pk", flat=True)
+                    .all()
+                )
+                logger.debug("%s => %s", filter_kwargs, qs)
+                hands = ",".join([str(pk) for pk in qs])
                 annotated_column = format_html(
-                    "Round {}, <a href='/foo/bar/baz'>{}</a>", zb_round, column
+                    "Round {}, <a href='{}'>{}</a>",
+                    one_based_round,
+                    reverse("app:hand-list", query=dict(hand_pks=hands)),  # type: ignore[call-arg]
+                    column,
                 )
             annotated_row.append(annotated_column)
         annotated_rows.append(annotated_row)
@@ -64,7 +81,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 pass
             else:
                 context["movement_boards_per_round"] = movement.boards_per_round_per_table
-                tab_dict = annotate_movement_with_hand_links(t, movement)
+                tab_dict = annotate_movement_with_hand_links(request, t, movement)
                 context["movement_headers"] = tab_dict["headers"]
                 context["movement_rows"] = tab_dict["rows"]
 

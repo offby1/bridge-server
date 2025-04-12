@@ -61,5 +61,5 @@ def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
     request = rf.get("/woteva/")
     request.user = None
 
-    with django_assert_max_num_queries(202):
+    with django_assert_max_num_queries(327):
         tournament_view(request, "1")
