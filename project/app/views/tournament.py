@@ -42,6 +42,7 @@ def annotate_movement_with_hand_links(
                     board__group=_group_letter(one_based_round - 1),
                 )
                 # TODO -- replace this one-query-per-cell with one giant query, somehow
+
                 qs = (
                     app.models.Hand.objects.filter(**filter_kwargs)
                     .values_list("pk", flat=True)
@@ -49,12 +50,18 @@ def annotate_movement_with_hand_links(
                 )
                 logger.debug("%s => %s", filter_kwargs, qs)
                 hands = ",".join([str(pk) for pk in qs])
-                annotated_column = format_html(
-                    "Round {}, <a href='{}'>{}</a>",
-                    one_based_round,
-                    reverse("app:hand-list", query=dict(hand_pks=hands)),  # type: ignore[call-arg]
-                    column,
-                )
+                if qs.exists():
+                    # TODO -- don't pass hand primary keys to the view -- those change over time (as hands are
+                    # completed). Instead, pass the table display number, and the board group, and let the view do the
+                    # query.  That will eliminate the queries from loading this page, and fob them off onto queries when
+                    # someone actually clicks a link.
+                    annotated_column = format_html(
+                        "<a href='{}'>{}</a>",
+                        reverse("app:hand-list", query=dict(hand_pks=hands)),  # type: ignore[call-arg]
+                        column,
+                    )
+                else:
+                    annotated_column = column
             annotated_row.append(annotated_column)
         annotated_rows.append(annotated_row)
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
