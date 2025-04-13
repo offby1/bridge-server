@@ -512,6 +512,10 @@ class Tournament(models.Model):
                     | models.Q(play_completion_deadline__gt=models.F("signup_deadline"))
                 ),
             ),
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique",
+                fields=["display_number"],
+            ),
         ]
 
 
