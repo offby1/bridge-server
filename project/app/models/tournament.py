@@ -276,12 +276,12 @@ class Tournament(models.Model):
             logger.debug("OK! Now we get to work.")
 
         with transaction.atomic():
-            assert (
-                not self.board_set.exists()
-            ), f"Don't add boards to {self}; it already has {self.board_set.count()}!!"
-            assert (
-                not self.is_complete
-            ), f"Wassup! Don't add boards to a completed tournament!! {self}"
+            assert not self.board_set.exists(), (
+                f"Don't add boards to {self}; it already has {self.board_set.count()}!!"
+            )
+            assert not self.is_complete, (
+                f"Wassup! Don't add boards to a completed tournament!! {self}"
+            )
 
             self._add_boards_internal(n=n)
 
@@ -461,6 +461,10 @@ class Tournament(models.Model):
                     )
                     | models.Q(play_completion_deadline__gt=models.F("signup_deadline"))
                 ),
+            ),
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_display_number_unique",
+                fields=["display_number"],
             ),
         ]
 
