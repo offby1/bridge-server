@@ -505,13 +505,11 @@ class Hand(TimeStampedModel):
             assert contract.declarer is not None
             self.send_event_to_players_and_hand(
                 data={
-                    "board": self.board.display_number,
+                    "table": self.table_display_number,
+                    "contract_text": str(contract),
                     "contract": {
                         "opening_leader": contract.declarer.seat.lho().value,
                     },
-                    "contract_text": str(contract),
-                    "table": self.table_display_number,
-                    "tournament": self.board.tournament.display_number,
                 },
             )
         elif self.get_xscript().final_score() is not None:
