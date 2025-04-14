@@ -198,7 +198,7 @@ class Player(TimeStampedModel):
             logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
 
             # No problem blocking here -- experience shows this doesn't take long
-            subprocess.run(
+            proc = subprocess.run(
                 [
                     "svc",
                     flags,
@@ -208,6 +208,8 @@ class Player(TimeStampedModel):
                 check=False,
                 capture_output=True,
             )
+            if proc.stderr:
+                logger.warning("%s", proc.stderr)
 
         logger.info(
             f"{self.name} ({self.pk}): {self.allow_bot_to_play_for_me=} {self.currently_seated=}"
@@ -217,7 +219,10 @@ class Player(TimeStampedModel):
 
         if not (self.allow_bot_to_play_for_me and self.currently_seated):
             svc("-d")
-            shutil.rmtree(run_dir, ignore_errors=True)
+            try:
+                shutil.rmtree(run_dir, ignore_errors=False)
+            except FileNotFoundError:
+                pass
             return
 
         shell_script_text = """#!/bin/bash
