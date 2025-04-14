@@ -4,7 +4,6 @@ import datetime
 import logging
 import os
 import pathlib
-import shutil
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -198,7 +197,7 @@ class Player(TimeStampedModel):
             logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
 
             # No problem blocking here -- experience shows this doesn't take long
-            subprocess.run(
+            proc = subprocess.run(
                 [
                     "svc",
                     flags,
@@ -208,6 +207,8 @@ class Player(TimeStampedModel):
                 check=False,
                 capture_output=True,
             )
+            if proc.stderr:
+                logger.warning("%s", proc.stderr)
 
         logger.info(
             f"{self.name} ({self.pk}): {self.allow_bot_to_play_for_me=} {self.currently_seated=}"
@@ -216,8 +217,11 @@ class Player(TimeStampedModel):
         run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
 
         if not (self.allow_bot_to_play_for_me and self.currently_seated):
+            try:
+                (run_dir / "down").touch()
+            except FileNotFoundError:
+                pass
             svc("-d")
-            shutil.rmtree(run_dir, ignore_errors=True)
             return
 
         shell_script_text = """#!/bin/bash
@@ -235,6 +239,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         run_file.chmod(0o755)
         run_file = run_file.rename(run_dir / "run")
 
+        (run_dir / "down").unlink(missing_ok=True)
         svc("-u")
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
