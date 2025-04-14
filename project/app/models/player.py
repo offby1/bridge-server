@@ -57,7 +57,7 @@ class PlayerManager(models.Manager):
 
     def create_synthetic(self) -> Player:
         new_user = auth.models.User.objects.create_user(
-            username=self._find_unused_username(prefix="_"), password="."
+            username=self._find_unused_username(prefix="_")
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
