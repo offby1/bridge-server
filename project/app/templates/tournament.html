@@ -42,10 +42,8 @@
         {% endif %}
     </span>
     <hr />
-    {% ifexists pairs %}
-    {% with pairs=pairs title="Matchpoint Scores" %}
-        {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
-    {% endwith %}
+    {% ifexists matchpoint_score_table %}
+    {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
     <hr />
 {% endifexists %}
 <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.

@@ -3,8 +3,6 @@ IN PROGRESS:
 
 * app:hand-list should have a way to filter the rows by tournament number
 
-* Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.
-
 
 STILL TODO:
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
@@ -220,6 +218,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.
+
+  Gonna try "django-tables2" again.
+
 * The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
 
 * MOVEMENTS

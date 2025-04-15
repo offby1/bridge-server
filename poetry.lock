@@ -1000,6 +1000,24 @@ files = [
 django = ">=1.8"
 
 [[package]]
+name = "django-tables2"
+version = "2.7.5"
+description = "Table/data-grid framework for Django"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "django_tables2-2.7.5-py3-none-any.whl", hash = "sha256:d9338937797207ffb6f481be2125c5ec3a0bb1858d409c672cc25fc5d654cb22"},
+    {file = "django_tables2-2.7.5.tar.gz", hash = "sha256:fb5dcaa09379cf3947598ec7e1bd5f26ed63aafdee3b23963446763bbeac37bf"},
+]
+
+[package.dependencies]
+django = ">=4.2"
+
+[package.extras]
+tablib = ["tablib"]
+
+[[package]]
 name = "django-template-partials"
 version = "24.4"
 description = "django-template-partials"
@@ -4093,4 +4111,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "03bb2c34a6bad4f9cc4c8768d2e49d2d187b9fe94af50b9ab034f92f85310f13"
+content-hash = "71797d615d98a4426606edcaed2948105b9fbf456f040715573566d09b09e6a9"

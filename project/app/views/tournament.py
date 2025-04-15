@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
+import django_tables2 as tables
 
 from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
@@ -55,6 +56,11 @@ def annotate_grid_with_hand_links(
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
 
 
+class MatchpointScoreTable(tables.Table):
+    pair = tables.Column()
+    score = tables.Column()
+
+
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer: app.models.Player | None = getattr(request.user, "player", None)
 
@@ -81,7 +87,9 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 context["movement_rows"] = tab_dict["rows"]
 
                 if t.is_complete:
-                    context["pairs"] = t.matchpoints_by_pair()
+                    items = t.matchpoints_by_pair().items()
+                    l_o_d = [{"pair": pair, "score": score} for pair, score in items]
+                    context["matchpoint_score_table"] = MatchpointScoreTable(l_o_d, request=request)
 
     if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
         viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
