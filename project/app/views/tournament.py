@@ -107,7 +107,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
             if not non_synths_signed_up_besides_us.exists():
                 text_shmext = format_html(
-                    """<button class="btn btn-primary" type="submit">Miss Me With This Deadline Shit</button>"""
+                    """<button class="btn btn-primary" type="submit">Skip the Deadline</button>"""
                 )
                 comment += text_shmext
                 context["speed_things_up_button"] = text_shmext
