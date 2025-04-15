@@ -1,6 +1,4 @@
 IN PROGRESS:
-* The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
-
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
 
 * app:hand-list should have a way to filter the rows by tournament number
@@ -222,6 +220,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
+
 * MOVEMENTS
 
   I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
