@@ -23,7 +23,7 @@ retrying = "^1.3.4"
 sseclient = "^0.0.27"
 types-requests = "^2.32.0.20240712"
 platformdirs = "^4.2.2"
-sentry-sdk = "^2.14.0"
+sentry-sdk = "2.*"
 docutils = "^0.21.2"
 django-fastdev = "^1.12.0"
 # beware of https://github.com/psycopg/psycopg/issues/888

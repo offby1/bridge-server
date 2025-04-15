@@ -38,7 +38,3 @@ sentry_sdk.init(  # type: ignore
     ],
     release=VERSION,
 )
-
-if "sentry_sdk" not in LOGGING["loggers"]:
-    LOGGING["loggers"]["sentry_sdk"] = {}
-LOGGING["loggers"]["sentry_sdk"]["level"] = "WARNING"
