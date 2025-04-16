@@ -258,9 +258,15 @@ class Movement:
                 )
             )
 
-        return cls(
+        rv = cls(
             boards_per_round_per_table=boards_per_round_per_table,
             num_phantoms=num_phantoms,
             pairs=pairs,
             table_settings_by_table_number=tuple([v for k, v in sorted(temp_rv.items())]),
         )
+        # import tabulate
+
+        # t = rv.tabulate_me()
+        # print(f"{boards_per_round_per_table=}")
+        # print(tabulate.tabulate(t["rows"], headers=t["headers"]))
+        return rv

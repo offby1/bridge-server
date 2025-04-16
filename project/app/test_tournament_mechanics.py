@@ -10,7 +10,7 @@ when a tournament round starts:
 - we create one hand per table, using the boards for that round
 
 when any of those hands ends:
-- if all the other hands in the round have also ended:
+- *if all the other hands in the round have also ended*: [1]
   - if the tournament is over:
     - eject all pairs
     - send suitable SSE event
@@ -18,10 +18,11 @@ when any of those hands ends:
     - start a new tournament round (item #1 above)
 - otherwise:
   - if there are unplayed boards for this table & round ("test_first_hand_to_end_in_a_round"):
-    - we create another hand at that same table, using the next board for this table & round
+    - we create another hand at that same table, using the next board for this table & round (i.e., the next board in that group)
   - otherwise ("test_last_hand_in_a_group"):
     - do nothing for this table
 
+[1] I went back and forth between "create a new hand (in the next round) at table T as soon as the last hand at table T completes", and "wait until all hands of that round have completed and then create a new hand (in the next round) for each table".  I'm settling on the latter because the former would require that I somehow ensure that the new hand's players -- half of whom come from another table -- are done with *their* hand, and that sounds messy.
 """
 
 import collections
@@ -60,6 +61,8 @@ def small_tournament_at_signup_deadline(db) -> Generator[Tournament]:
         for p in Player.objects.all():
             t.sign_up_player_and_partner(p)
 
+        assert t.hands().count() == 0
+
         yield t
 
 
@@ -68,6 +71,7 @@ def small_tournament_during_play(small_tournament_at_signup_deadline) -> Generat
     with freeze_time(SIGNUP_DEADLINE + (PLAY_COMPLETION_DEADLINE - SIGNUP_DEADLINE) // 2):
         _do_signup_expired_stuff(small_tournament_at_signup_deadline)
 
+        assert small_tournament_at_signup_deadline.hands().count() == 2
         yield small_tournament_at_signup_deadline
 
 
@@ -91,38 +95,51 @@ def test_start_of_round_creates_one_hand_per_table(
 
 
 def test_first_hand_to_end_in_a_round(small_tournament_during_play: Tournament) -> None:
+    mvmt = small_tournament_during_play.get_movement()
+    assert mvmt.boards_per_round_per_table == 2
+
     num_hands_before = small_tournament_during_play.hands().count()
-    h = small_tournament_during_play.hands().first()
+    assert num_hands_before == 2
+
+    h = small_tournament_during_play.hands().filter(table_display_number=1).first()
     assert h is not None
+    assert not h.is_complete
+
     play_out_hand(h)
 
+    # One original hand for each table, plus a new board at table 1
+    assert small_tournament_during_play.hands().count() == 3
+
+
+def test_last_hand_to_end_in_a_round(small_tournament_during_play: Tournament) -> None:
     mvmt = small_tournament_during_play.get_movement()
-    assert mvmt.boards_per_round_per_table > 1
+    assert mvmt.boards_per_round_per_table == 2
 
-    num_hands_after = small_tournament_during_play.hands().count()
-    assert num_hands_after == num_hands_before + 1
+    assert set([str(h) for h in small_tournament_during_play.hands()]) == {
+        "Tournament #1, Table #1, board#1",
+        "Tournament #1, Table #2, board#1",
+    }
 
+    def d(hands):
+        return [f"{h} ({'complete' if h.is_complete else 'incomplete'})" for h in hands]
 
-def test_last_hand_in_a_group(small_tournament_during_play: Tournament) -> None:
-    h1 = small_tournament_during_play.hands().get(table_display_number=1, board__display_number=1)
-    assert h1.board.display_number == 1
-    play_out_hand(h1)
-    assert h1.is_complete
+    for _ in range(2):
+        hands = small_tournament_during_play.hands()
+        filtered = hands.filter(table_display_number__in={1, 2})
 
-    h2 = small_tournament_during_play.hands().get(table_display_number=1, board__display_number=2)
-    assert h2.board.display_number == 2
-    play_out_hand(h2)
-    assert h2.is_complete
+        for h in filtered:
+            assert h is not None
+            if not h.is_complete:
+                play_out_hand(h)
 
-    assert small_tournament_during_play.rounds_played() == (0, 2)
-
-    other_hands = small_tournament_during_play.hands().exclude(pk__in=[h1.pk, h2.pk])
-    assert other_hands.count() == 1
-    oh = other_hands.first()
-    assert oh is not None  # mypy, y u so dumb
-    assert oh.board.tournament.display_number == 1
-    assert oh.table_display_number == 2
-    assert oh.board.display_number == 1
+    assert set([str(h) for h in small_tournament_during_play.hands()]) == {
+        "Tournament #1, Table #1, board#1",
+        "Tournament #1, Table #1, board#2",
+        "Tournament #1, Table #1, board#3",
+        "Tournament #1, Table #2, board#1",
+        "Tournament #1, Table #2, board#2",
+        "Tournament #1, Table #2, board#3",
+    }
 
 
 def test_last_hand_in_a_round(small_tournament_during_play: Tournament) -> None:

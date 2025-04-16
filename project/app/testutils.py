@@ -1,13 +1,9 @@
-import logging
-
 import pytest
 
 import app.models
 import bridge.contract
 import bridge.table
 from app.models.utils import assert_type
-
-logger = logging.getLogger(__name__)
 
 
 def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.models.Hand:
@@ -42,7 +38,6 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
 
 
 def play_out_hand(h: app.models.Hand) -> None:
-    logger.info(f"Playing out {h}")
     if h.is_complete:
         pytest.fail(f"Yo Vinnie: y u want to play out {h=} which is already complete?!")
 
@@ -55,7 +50,6 @@ def play_out_hand(h: app.models.Hand) -> None:
         h.add_play_from_player(player=p.libraryThing(), card=play.card)
         h.get_xscript().add_card(play.card)
 
-    logger.info(f"After: {h.is_complete=}")
     if h.is_complete:
         return
 
@@ -89,28 +83,8 @@ def play_out_round(tournament: app.models.Tournament) -> None:
 
 
 def find_incomplete_hand(tournament: app.models.Tournament) -> app.models.Hand | None:
-    hands_created = tournament.hands().count()
-    total = tournament.get_movement().total_hands
-    logger.debug("%s has created %d hands out of %d", tournament, hands_created, total)
-
-    completes = []
-    incompletes = []
     for h in tournament.hands():
-        if h.is_complete:
-            completes.append(h)
-        else:
-            incompletes.append(h)
+        if not h.is_complete:
+            return h
 
-    logger.debug(
-        "%s has %d complete hands, and %d incomplete hands",
-        tournament,
-        len(completes),
-        len(incompletes),
-    )
-    for h in completes:
-        logger.debug("%s is complete", h)
-    for h in incompletes:
-        logger.debug("%s is not complete", h)
-    if not incompletes:
-        return None
-    return incompletes[0]
+    return None

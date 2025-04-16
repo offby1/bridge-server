@@ -268,16 +268,12 @@ class Tournament(models.Model):
         }
 
     def players(self) -> models.QuerySet:
-        # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones
-        pks = set()
-        b: app.models.Board
-        for b in self.board_set.all():
-            h: app.models.Hand
-            for h in b.hand_set.all():
-                for _, player in h.players_by_direction_letter.items():
-                    pks.add(player.pk)
-
-        return app.models.Player.objects.filter(pk__in=pks)
+        hands = self.hands()
+        expression = models.Q(pk__in=hands.values("North"))
+        expression |= models.Q(pk__in=hands.values("East"))
+        expression |= models.Q(pk__in=hands.values("South"))
+        expression |= models.Q(pk__in=hands.values("West"))
+        return app.models.Player.objects.filter(expression).distinct()
 
     def compute_play_completion_deadline(self) -> datetime.datetime:
         # Compute the play deadline from
@@ -312,6 +308,12 @@ class Tournament(models.Model):
         for b in self.board_set.all():
             assert b.group is not None, f"Hey! {b=} ain't got no group"
 
+    def the_round_just_ended(self) -> int | None:
+        num_completed_rounds, num_hands_this_round = self.rounds_played()
+        if num_completed_rounds > 0 and num_hands_this_round == 0:
+            return num_completed_rounds
+        return None
+
     def rounds_played(self) -> tuple[int, int]:
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
@@ -343,15 +345,12 @@ class Tournament(models.Model):
     def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
         rv: list[Hand] = []
         for zb_table_number in range(self.get_movement().num_rounds):
-            try:
-                rv.append(
-                    app.models.Hand.objects.create_for_tournament(
-                        self, zb_round_number=zb_round_number, zb_table_number=zb_table_number
-                    )
-                )
-            # TODO -- figure out why we get these exceptions :-|  So far they're benign, but ...
-            except app.models.hand.HandError as e:
-                logger.warning(f"{e}: Continuing")
+            new_hand = app.models.Hand.objects.create_next_hand_at_table(
+                self, zb_table_number=zb_table_number, zb_round_number=zb_round_number
+            )
+            assert new_hand is not None
+            rv.append(new_hand)
+
         return rv
 
     def _cache_key(self) -> str:

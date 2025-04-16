@@ -128,7 +128,7 @@ class Player(TimeStampedModel):
 
     @property
     def boards_played(self) -> models.QuerySet:
-        return Board.objects.filter(pk__in=self.hands_played.values_list("board", flat=True))
+        return Board.objects.filter(pk__in=self.hands_played)
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -209,10 +209,6 @@ class Player(TimeStampedModel):
             )
             if proc.stderr:
                 logger.warning("%s", proc.stderr)
-
-        logger.info(
-            f"{self.name} ({self.pk}): {self.allow_bot_to_play_for_me=} {self.currently_seated=}"
-        )
 
         run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
 

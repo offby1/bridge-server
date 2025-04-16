@@ -140,7 +140,8 @@ class Board(models.Model):
     objects = BoardManager()
 
     def was_played_at_table(self, *, table_display_number: int) -> models.QuerySet:
-        return self.hand_set.filter(table_display_number=table_display_number)
+        qs = self.hand_set.filter(table_display_number=table_display_number)
+        return qs
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
@@ -276,9 +277,10 @@ class Board(models.Model):
         return f"{vuln} vulnerable"
 
     def __repr__(self) -> str:
-        if self.group is None:
-            return f"<Board #{self.display_number} pk={self.pk}>"
-        return f"<Board #{self.display_number} group {self.group} pk={self.pk}>"
+        group_string = ""
+        if self.group is not None:
+            group_string = f"group {self.group}"
+        return f"<Board #{self.display_number} {group_string} t#{self.tournament.display_number} pk={self.pk}>"
 
     def __str__(self) -> str:
         return f"{self.short_string()}, {self.vulnerability_string()}, dealt by {self.fancy_dealer}"

@@ -29,14 +29,13 @@ from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 
-from . import Board
+from ..utils import movements
 from .common import attribute_names
 from .player import Player
 from .tournament import Tournament
 
 from .types import PK, PK_from_str
 from .utils import assert_type
-from app.utils.movements import PlayersAndBoardsForOneRound, _group_letter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -59,6 +58,10 @@ class PlayError(Exception):
 
 
 class TournamentIsOver(HandError):
+    pass
+
+
+class RoundIsOver(HandError):
     pass
 
 
@@ -140,71 +143,63 @@ def send_timestamped_event(
 
 
 class HandManager(models.Manager):
-    def create_for_tournament(
-        self, tournament: Tournament, zb_round_number: int, zb_table_number: int
-    ) -> Hand:
+    from . import Board
+
+    def _create_hand_with(
+        self, *, pnb: movements.PlayersAndBoardsForOneRound, board: Board
+    ) -> Hand | None:
+        q = pnb.quartet
+        ns = q.ns
+        ew = q.ew
+        n_k, s_k = ns.id_
+        e_k, w_k = ew.id_
+        North = Player.objects.get(pk=n_k)
+        East = Player.objects.get(pk=e_k)
+        South = Player.objects.get(pk=s_k)
+        West = Player.objects.get(pk=w_k)
+        for p in (North, East):
+            for x in (p, p.partner):
+                if x.current_hand() is not None:
+                    new_hand_description = ", ".join([str(p) for p in (North, East, South, West)])
+                    new_hand_description += f" play {board} at {pnb.table_number}"
+                    msg = f"Cannot seat {new_hand_description} when {x} is still playing {x.current_hand()}"
+                    logger.info("%s; returning None", msg)
+                    return None
+
+            p.unseat_partnership(reason=f"New hand for round {pnb.zb_round_number + 1}")
+        new_hand = self.create(
+            board=board,
+            North=North,
+            East=East,
+            South=South,
+            West=West,
+            table_display_number=pnb.table_number,
+        )
+
+        return new_hand
+
+    def create_next_hand_at_table(
+        self, tournament: Tournament, zb_table_number: int, zb_round_number: int
+    ) -> Hand | None:
         with transaction.atomic():
+            hands_already_played_at_this_table = self.filter(
+                table_display_number=zb_table_number + 1,
+                board__group=movements._group_letter(zb_round_number),
+            )
+            boards_already_played_at_this_table = set(
+                [h.board for h in hands_already_played_at_this_table]
+            )
+
             mvmt = tournament.get_movement()
 
-            pnb: PlayersAndBoardsForOneRound = mvmt.players_and_boards_for(
+            pnb = mvmt.players_and_boards_for(
                 zb_round_number=zb_round_number, zb_table_number=zb_table_number
             )
+            for candidate_board in pnb.board_group.boards:
+                if candidate_board not in boards_already_played_at_this_table:
+                    return self._create_hand_with(pnb=pnb, board=candidate_board)
 
-            # Find a board in this group which has not been played at this table.
-            hands_played_at_this_table = self.filter(table_display_number=zb_table_number + 1)
-
-            boards_not_played_at_this_table = (
-                Board.objects.filter(tournament=tournament)
-                .exclude(
-                    pk__in=hands_played_at_this_table.values_list("board", flat=True),
-                )
-                .filter(group=_group_letter(zb_round_number))
-            )
-
-            if not boards_not_played_at_this_table.exists():
-                raise HandError(
-                    f"Cannot find unplayed board for {zb_round_number=}, {zb_table_number=}"
-                )
-
-            the_board = boards_not_played_at_this_table.first()
-
-            if the_board is None:
-                # If there are none, then the round is over.
-                # proceed only if all of our players are either not seated, or are seated at completed hands.
-                raise Exception("TODO")
-
-            q = pnb.quartet
-            ns = q.ns
-            ew = q.ew
-            n_k, s_k = ns.id_
-            e_k, w_k = ew.id_
-            North = Player.objects.get(pk=n_k)
-            East = Player.objects.get(pk=e_k)
-            South = Player.objects.get(pk=s_k)
-            West = Player.objects.get(pk=w_k)
-            for p in (North, East):
-                for x in (p, p.partner):
-                    if x.current_hand() is not None:
-                        new_hand_description = ", ".join(
-                            [str(p) for p in (North, East, South, West)]
-                        )
-                        new_hand_description += f" play {the_board} at {zb_table_number + 1}"
-                        raise HandError(
-                            f"Uh oh, how can {new_hand_description} when {x} is still playing {x.current_hand()}"
-                        )
-
-                p.unseat_partnership(reason=f"New hand for round {zb_round_number + 1}")
-            logger.debug("%s/%s and %s/%s play %s", North, South, East, West, the_board)
-            new_hand = self.create(
-                board=the_board,
-                North=North,
-                East=East,
-                South=South,
-                West=West,
-                table_display_number=zb_table_number + 1,
-            )
-            logger.info("Created hand %s", new_hand)
-            return new_hand
+            return None
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")
@@ -214,25 +209,17 @@ class HandManager(models.Manager):
 
         p: Player
         for p in players:
-            h = p.hand_at_which_we_played_board(board)
-            assert h is None, (
-                f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
-            )
-
-        expression = models.Q(pk__in=[])
-        for p in players:
             if (ch := p.current_hand_and_direction()) is not None:
                 msg = f"Cannot seat {p.name} because they are already playing {ch[1]} in {ch[0]}"
-                import pprint
-
-                pprint.pprint(vars(p))
                 raise HandError(msg)
 
-            expression |= models.Q(pk__in=p.boards_played.all())
-
-        if Board.objects.filter(expression).filter(pk=board.pk).exists():
-            msg = f"Cannot seat all of {[p.name for p in players]} because at least one them has already played {board}"
-            raise HandError(msg)
+            # TODO -- figure out why this triggers! I expected this to trigger only if our caller was entirely on drugs,
+            # but in fact it triggers reliably when I do `just stress --min-players=20`
+            if (h := p.hand_at_which_we_played_board(board)) is not None:
+                msg = (
+                    f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
+                )
+                raise HandError(msg)
 
         rv = super().create(*args, **kwargs)
 
@@ -260,7 +247,9 @@ class Hand(TimeStampedModel):
     direction_names = attribute_names
     objects = HandManager()
 
-    board = models.ForeignKey["Board"]("Board", on_delete=models.CASCADE)
+    from . import Board
+
+    board = models.ForeignKey[Board]("Board", on_delete=models.CASCADE)
 
     North = models.ForeignKey["Player"](
         "Player",
@@ -574,48 +563,36 @@ class Hand(TimeStampedModel):
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
         with transaction.atomic():
             assert self.is_complete
+            assert self.table_display_number is not None
 
             for p in self.players():
                 p._control_bot()
 
-            num_completed_rounds, hands_completed_this_round = self.tournament.rounds_played()
+            if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
+                mvmt = self.tournament.get_movement()
 
-            mvmt = self.tournament.get_movement()
-
-            if hands_completed_this_round == 0:
-                if num_completed_rounds == len(mvmt.table_settings_by_table_number):
-                    self.tournament.maybe_complete()
+                if num_complete_rounds < mvmt.num_rounds:
+                    self.tournament.create_hands_for_round(zb_round_number=num_complete_rounds)
                 else:
-                    self.tournament.create_hands_for_round(zb_round_number=num_completed_rounds)
+                    self.tournament.maybe_complete()
+
             else:
-                # If there are unplayed boards for this table, create a hand for one of them.
-                assert self.table_display_number is not None
-                pnb: PlayersAndBoardsForOneRound = mvmt.table_settings_by_table_number[
-                    self.table_display_number - 1
-                ][num_completed_rounds]
-                all_boards_this_table_this_round = pnb.board_group.boards
+                new_hand = Hand.objects.create_next_hand_at_table(
+                    tournament=self.tournament,
+                    zb_table_number=self.table_display_number - 1,
+                    zb_round_number=movements._zb_round_number(self.board.group),
+                )
+                if new_hand is not None:
+                    logger.info(f"Just created new hand {new_hand}")
 
-                for b in all_boards_this_table_this_round:
-                    if not b.was_played_at_table(table_display_number=self.table_display_number):
-                        new_hand = Hand.objects.create(
-                            board=b,
-                            North=self.North,
-                            East=self.East,
-                            South=self.South,
-                            West=self.West,
-                            table_display_number=self.table_display_number,
-                        )
-                        logger.info(f"Just created {new_hand=}")
-                        break
-
-            self.send_event_to_players_and_hand(
-                data={
-                    "final_score": final_score_text,
-                    "table": self.table_display_number,
-                    "tournament": self.tournament.pk,
-                    "tournament_is_complete": self.tournament.is_complete,
-                },
-            )
+                self.send_event_to_players_and_hand(
+                    data={
+                        "final_score": final_score_text,
+                        "table": self.table_display_number,
+                        "tournament": self.tournament.pk,
+                        "tournament_is_complete": self.tournament.is_complete,
+                    },
+                )
 
             if self.tournament.is_complete:
                 return
@@ -957,6 +934,10 @@ class Hand(TimeStampedModel):
                 fields=["board", "North", "East", "South", "West"],
                 name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_by_four_players",
             ),
+            models.UniqueConstraint(
+                fields=["board", "table_display_number"],
+                name="%(app_label)s_%(class)s_a_board_can_be_played_only_once_at_a_given_table",
+            ),
         ]
         ordering = [
             "board__tournament__display_number",
@@ -990,7 +971,6 @@ class CallManager(models.Manager):
 
         c = libBid.deserialize(kwargs["serialized"])
 
-        logger.debug("%s: %s called %s", rv.hand, x.auction.allowed_caller(), c)
         x.add_call(c)
         rv.hand._cache_set(x)
 
