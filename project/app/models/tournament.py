@@ -237,17 +237,20 @@ class Tournament(models.Model):
 
     objects = TournamentManager()
 
-    def matchpoints_by_pair(self) -> dict[str, tuple[int, float]]:
+    def matchpoints_by_pair(self) -> dict[tuple[str, str], tuple[int, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
         def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
             if fs == 0:
                 return {"ns_raw_score": 0, "ew_raw_score": 0}
             return {"ns_raw_score": fs.north_south_points, "ew_raw_score": fs.east_west_points}
 
+        def player_link(player_pk: PK) -> str:
+            return app.models.Player.objects.get(pk=player_pk).as_link()
+
         hands = (
             app.utils.scoring.Hand(
-                ns_id=(h.North.name, h.South.name),
-                ew_id=(h.East.name, h.West.name),
+                ns_id=(h.North.pk, h.South.pk),
+                ew_id=(h.East.pk, h.West.pk),
                 board_id=h.board.pk,
                 **consistent_score(h.get_xscript().final_score()),
             )
@@ -259,7 +262,10 @@ class Tournament(models.Model):
         )
 
         scorer = app.utils.scoring.Scorer(hands=list(hands))
-        return {str(k): v for k, v in scorer.matchpoints_by_pairs().items()}
+        return {
+            (player_link(k[0]), player_link(k[1])): v
+            for k, v in scorer.matchpoints_by_pairs().items()
+        }
 
     def players(self) -> models.QuerySet:
         # TODO -- make this one fancy-shmancy query, instead of a bunch of little ones

@@ -1,9 +1,9 @@
 import collections
 import collections.abc
 import dataclasses
+from typing import Any
 
-
-ID = collections.abc.Hashable
+ID = Any
 
 
 @dataclasses.dataclass
