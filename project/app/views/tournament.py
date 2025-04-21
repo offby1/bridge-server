@@ -100,6 +100,10 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                         for pair, score in items
                     ]
                     context["matchpoint_score_table"] = MatchpointScoreTable(l_o_d, request=request)
+        else:
+            msg = f"{t} is an old tournament whose boards don't belong to groups; no scores for you"
+            logger.info("%s", msg)
+            context["missing_matchpoint_explanation"] = msg
 
     if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
         viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)

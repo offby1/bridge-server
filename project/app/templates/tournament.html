@@ -46,6 +46,10 @@
     {% include "matchpoint-table-partial.html#matchpoint-table-partial" %}
     <hr />
 {% endifexists %}
+{% ifexists missing_matchpoint_explanation %}
+{{ missing_matchpoint_explanation }}
+<hr />
+{% endifexists %}
 <a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
 {% elif tournament.status_str == "Running" %}
 <span style="font-size: 2em;">
