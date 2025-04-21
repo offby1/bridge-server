@@ -76,8 +76,11 @@ def two_boards_one_of_which_is_played_almost_to_completion(db: None) -> None:
 
 
 @pytest.fixture
-def fresh_tournament(db: None) -> None:
+def fresh_tournament(db: None) -> Tournament:
     call_command("loaddata", "fresh_tournament")
+    t = Tournament.objects.first()
+    assert t is not None
+    return t
 
 
 @pytest.fixture

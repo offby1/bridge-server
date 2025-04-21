@@ -486,6 +486,14 @@ class Tournament(models.Model):
 
     def maybe_complete(self) -> None:
         with transaction.atomic():
+            if self.hands().count() == 0 and self.play_completion_deadline_has_passed():
+                logger.info(
+                    "%s: Huh, the play completion deadline passed without any hands being played! I'm deleting myself.",
+                    self,
+                )
+                self.delete()
+                return
+
             if self.is_complete:
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return

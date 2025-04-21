@@ -280,3 +280,11 @@ def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (1, 0)
+
+
+def test_no_boards_vanishes_after_play_deadline(fresh_tournament: Tournament) -> None:
+    assert fresh_tournament.hands().count() == 0
+    assert fresh_tournament.pk is not None
+    with freeze_time(fresh_tournament.play_completion_deadline + datetime.timedelta(seconds=20)):
+        fresh_tournament.maybe_complete()
+        assert fresh_tournament.pk is None
