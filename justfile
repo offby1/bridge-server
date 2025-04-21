@@ -24,8 +24,6 @@ ensure-django-secret:
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
-    else
-    echo "Looks like you've already got a reasonable django secret already: "; ls -l "{{ DJANGO_SECRET_FILE }}"
     fi
 
 [private]
@@ -37,8 +35,6 @@ ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
     cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
-    else
-    echo "Looks like you've already got a reasonable skeleton key already: "; ls -l "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -122,7 +118,7 @@ all-but-django-prep: pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
-manage *options: all-but-django-prep ensure-skeleton-key
+manage *options: all-but-django-prep ensure-skeleton-key version-file
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
