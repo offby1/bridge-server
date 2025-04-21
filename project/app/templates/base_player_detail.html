@@ -12,8 +12,8 @@
             {% endblock partnership-status-html %}
         </li>
         <li>
-            {% if player.current_table %}
-                {{ player.current_table.as_link }}
+            {% if player.current_hand %}
+                {{ player.current_hand.as_link }}
             {% else %}
                 {% if user.player == player %}
                     You

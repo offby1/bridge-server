@@ -24,8 +24,6 @@ ensure-django-secret:
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
-    else
-    echo "Looks like you've already got a reasonable django secret already: "; ls -l "{{ DJANGO_SECRET_FILE }}"
     fi
 
 [private]
@@ -37,8 +35,6 @@ ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
     cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
-    else
-    echo "Looks like you've already got a reasonable skeleton key already: "; ls -l "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -122,7 +118,7 @@ all-but-django-prep: pre-commit poetry-install pg-start
 
 [group('django')]
 [private]
-manage *options: all-but-django-prep ensure-skeleton-key
+manage *options: all-but-django-prep ensure-skeleton-key version-file
     cd project && poetry run python manage.py {{ options }}
 
 [group('django')]
@@ -142,16 +138,15 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate: makemigrations create-cache (manage "migrate")
 
 [group('django')]
-stress:
-    docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress
+stress *options:
+    docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
 [group('bs')]
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
-    trap "poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts && echo 'open {{ justfile_dir() }}/project/htmlcov/index.html'" EXIT
-    poetry run coverage  run --rcfile={{ justfile_dir() }}/pyproject.toml --branch manage.py runserver 9000 {{ options }}
+    poetry run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
 
@@ -203,7 +198,7 @@ k *options:
 # Draw a nice entity-relationship diagram
 [group('django')]
 graph: migrate
-    cd project && poetry run python manage.py graph_models app | dot -Tsvg > $TMPDIR/graph.svg
+    cd project && poetry run python manage.py graph_models --no-inheritance app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
 # Run all the tests
@@ -269,13 +264,27 @@ ensure_git_repo_clean:
 ensure_branch_is_main:
     [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
 
+[script('bash')]
+ensure_bot_is_on_same_branch:
+    set -euo pipefail
+
+    our_branch="$(git symbolic-ref HEAD)"
+    cd ../api-bot
+    bot_branch="$(git symbolic-ref HEAD)"
+
+    if ! [[ "${our_branch}" = "${bot_branch}" ]]
+    then
+      echo our branch $our_branch is not the same as the bot\'s branch $bot_branch
+      false
+    fi
+
 [group('docker')]
-prod *options: ensure_branch_is_main ensure_git_repo_clean
+prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
     CADDY_HOSTNAME=bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }} --detach
     COMPOSE_PROFILES=prod                                   DOCKER_CONTEXT=ls docker compose logs django --follow
 
 [group('docker')]
-hetz *options: ensure_git_repo_clean
+hetz *options: ensure_git_repo_clean ensure_bot_is_on_same_branch
     CADDY_HOSTNAME=beta.bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
     COMPOSE_PROFILES=prod                                        DOCKER_CONTEXT=hetz docker compose logs django --follow
 

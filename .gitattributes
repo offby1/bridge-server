@@ -1,2 +1,3 @@
+django -diff
 *.sql -diff
 *.log -diff

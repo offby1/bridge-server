@@ -1,13 +1,10 @@
 IN PROGRESS:
-Note: to reliably load a fixture, do e.g. `just drop migrate manage loaddata now_what && just --no-deps runme`
+* At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
+
+* app:hand-list should have a way to filter the rows by tournament number
+
 
 STILL TODO:
-* MOVEMENTS
-
-  I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
-
-  There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
-
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
 
   The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands.
@@ -221,6 +218,18 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.
+
+  Gonna try "django-tables2" again.
+
+* The `app:tournament` view displays the movement as a grid.  Each cell should be a link to the relevant hands (if they exist).
+
+* MOVEMENTS
+
+  I must be getting cocky; now that tournaments mostly work, this is the only missing thing I can think of.
+
+  There might be a couple of movements to choose from, plus "no movement at all" (which is what we've currently got); each tournament would be associated with exactly one such, and it cannot be changed once the tournament is created.
+
 * Ensure that timestamps (in particular, tournament deadlines) show up in the browser in the user's preferred time zone.
   - https://docs.djangoproject.com/en/dev/topics/i18n/timezones/#selecting-the-current-time-zone is one (rather tedious) way to do that;
   - maybe I can just embed calls to the Javascript `Date` function in the web pages, thereby letting the browser handle it

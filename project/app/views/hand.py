@@ -9,6 +9,7 @@ import bridge.xscript
 from bridge.auction import Auction
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Value
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from bridge.xscript import HandTranscript
-
+    from django.db.models import QuerySet
     from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
 
 
@@ -50,7 +51,7 @@ def _auction_context_for_hand(hand) -> dict[str, Any]:
 
 def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
     context = {}
-    p_b_d_list = list(hand.players_by_direction.items())
+    p_b_d_list = list(hand.players_by_direction_letter.items())
     # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
     p_b_d_list.insert(0, p_b_d_list.pop(-1))
     # Hightlight whoever's turn it is
@@ -65,31 +66,35 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
     return context.items()
 
 
-def _bidding_box_context_for_hand(request: HttpRequest, hand: Hand) -> dict[str, Any]:
-    player = request.user.player  # type: ignore
-    seat = player.current_seat
-    display_bidding_box = hand.auction.status == bridge.auction.Auction.Incomplete
+def _bidding_box_context_for_hand(request: AuthedHttpRequest, hand: Hand) -> dict[str, Any]:
+    as_viewed_by: app.models.Player | None = request.user.player
+    assert as_viewed_by is not None
 
-    if not seat or seat.table != hand.table:
+    display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
+
+    if not as_viewed_by.has_played_hand(hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
-        if allowed_caller is None:
-            disabled_because_out_of_turn = True
+        disabled = True
+
+        if hand.open_access:
+            disabled = False
         else:
-            disabled_because_out_of_turn = (
-                player.name != allowed_caller.name and not hand.open_access
-            )
+            if allowed_caller is not None and (as_viewed_by.name == allowed_caller.name):
+                disabled = False
+
         buttons = bidding_box_buttons(
             auction=hand.auction,
             call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
-            disabled_because_out_of_turn=disabled_because_out_of_turn,
+            disabled_because_out_of_turn=disabled,
         )
+
     return {
         "bidding_box_buttons": buttons,
         "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
         "display_bidding_box": display_bidding_box,
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
+        "show_auction_history": display_bidding_box,
     }
 
 
@@ -105,39 +110,49 @@ def _display_and_control(
     if as_viewed_by is not None:
         assert_type(as_viewed_by, app.models.Player)
     assert_type(as_dealt, bool)
-    is_dummy = hand.dummy and seat == hand.dummy.seat
 
+    board: app.models.Board = hand.board
+    seat_is_dummy = hand.dummy and seat == hand.dummy.seat
+
+    wat = board.what_can_they_see(player=as_viewed_by)
     display_cards = (
-        as_dealt  # hand is over and we're reviewing it
+        as_dealt  # hand is over and we're reviewing it; i.e., the hand is complete
         or hand.open_access
-        or ((as_viewed_by is not None) and as_viewed_by.has_seen_board_at(hand.board, seat))
+        or wat == board.PlayerVisibility.everything
     )
-    viewer_may_control_this_seat = hand.open_access and not hand.is_complete
 
-    is_this_seats_turn_to_play = (
-        hand.player_who_may_play is not None
-        and hand.player_who_may_play.current_seat is not None
-        and hand.player_who_may_play.current_seat.direction == seat.value
-    )
-    if (
-        as_viewed_by is not None
-        and display_cards
-        and as_viewed_by.current_seat is not None
-        and is_this_seats_turn_to_play
-    ):
-        if seat.value == as_viewed_by.current_seat.direction:  # it's our hand, duuude
-            viewer_may_control_this_seat |= not is_dummy  # declarer controls this hand, not dummy
-        elif hand.dummy is not None and hand.declarer is not None:
-            the_declarer: bridge.seat.Seat = hand.declarer.seat
-            if (
-                seat == hand.dummy.seat
-                and the_declarer.value == as_viewed_by.current_seat.direction
-            ):
-                viewer_may_control_this_seat = True
+    current_direction = None
+    if as_viewed_by is not None:
+        current_direction = as_viewed_by.current_direction()
+    if current_direction is not None:
+        if current_direction == seat.name:
+            display_cards |= wat >= board.PlayerVisibility.own_hand
+        if seat_is_dummy:
+            display_cards |= wat >= board.PlayerVisibility.dummys_hand
+
+    if as_viewed_by is None or not as_viewed_by.currently_seated:
+        return {
+            "display_cards": bool(display_cards),
+            "viewer_may_control_this_seat": False,
+        }
+
+    if not display_cards or hand.player_who_may_play is None:
+        return {
+            "display_cards": display_cards,
+            "viewer_may_control_this_seat": False,
+        }
+
+    if hand.open_access and not hand.is_complete:
+        return {"display_cards": True, "viewer_may_control_this_seat": True}
+
+    if seat == getattr(hand.dummy, "seat", None):
+        viewer_may_control_this_seat = hand.declarer == as_viewed_by.libraryThing()
+    else:
+        viewer_may_control_this_seat = hand.player_who_may_play == as_viewed_by
 
     return {
-        "display_cards": bool(display_cards),
-        "viewer_may_control_this_seat": bool(viewer_may_control_this_seat),
+        "display_cards": True,
+        "viewer_may_control_this_seat": viewer_may_control_this_seat,
     }
 
 
@@ -293,7 +308,6 @@ def _four_hands_context_for_hand(
     libSeat: bridge.seat.Seat
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
-        this_seats_player.display_name = this_seats_player.name_dir(hand=hand)
 
         visibility_and_control = _display_and_control(
             hand=hand,
@@ -412,7 +426,7 @@ def bidding_box_buttons(
 
 
 @logged_in_as_player_required()
-def bidding_box_partial_view(request: HttpRequest, hand_pk: PK) -> TemplateResponse:
+def bidding_box_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     context = _bidding_box_context_for_hand(request, hand)
@@ -425,9 +439,9 @@ def bidding_box_partial_view(request: HttpRequest, hand_pk: PK) -> TemplateRespo
 
 
 @logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, table_pk: PK) -> TemplateResponse:
-    table: app.models.Table = get_object_or_404(app.models.Table, pk=table_pk)
-    context = _four_hands_context_for_hand(request=request, hand=table.current_hand)
+def four_hands_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    context = _four_hands_context_for_hand(request=request, hand=hand)
 
     return TemplateResponse(
         request,
@@ -443,7 +457,7 @@ def _maybe_redirect_or_error(
     player_visibility: app.models.Board.PlayerVisibility,
     request_viewname: str,
 ) -> HttpResponse | None:
-    def redirect_or_none(destination_viewname: str) -> HttpResponseRedirect | None:
+    def redirect_if_different_view(destination_viewname: str) -> HttpResponseRedirect | None:
         if destination_viewname == request_viewname:
             return None
         return HttpResponseRedirect(reverse(destination_viewname, args=[hand_pk]))
@@ -458,16 +472,16 @@ def _maybe_redirect_or_error(
             app.models.Board.PlayerVisibility.dummys_hand
             | app.models.Board.PlayerVisibility.own_hand
         ):
-            if (response := redirect_or_none("app:hand-detail")) is not None:
+            if (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
 
         case app.models.Board.PlayerVisibility.everything:
             if hand_is_complete:
-                if (response := redirect_or_none("app:hand-archive")) is not None:
+                if (response := redirect_if_different_view("app:hand-archive")) is not None:
                     return response
                 return None
 
-            elif (response := redirect_or_none("app:hand-detail")) is not None:
+            elif (response := redirect_if_different_view("app:hand-detail")) is not None:
                 return response
             else:
                 logger.debug(
@@ -554,7 +568,7 @@ def _terse_description(hand: Hand) -> str:
 
     table = format_html(
         "Table #{}",
-        hand.table.pk,
+        hand.table_display_number,
     )
 
     board = format_html(
@@ -567,22 +581,20 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-@logged_in_as_player_required()
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    player = request.user.player
-    assert player is not None
+    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
+    # will not be played again.
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
+    player = getattr(request.user, "player", None)
+
+    # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
+    # exactly when
+    # e.g.
     # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
-    if player.current_table_pk() != hand.table.pk:
-        h: app.models.Hand | None
-        if (h := player.hand_at_which_board_was_played(hand.board)) is None or not h.is_complete:
-            assert h is not None  # mypy, why are you so dumb
-            why = "You are not allowed to see neither squat, zip, nada, nor bupkis"
-            if h.abandoned_because:
-                why += " because " + h.abandoned_because
-            return Forbid(why)
 
     response = _maybe_redirect_or_error(
         hand_pk=hand.pk,
@@ -594,24 +606,21 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if response is not None:
         return response
 
-    # for when player is looking at a hand whose board they've already played.
-    other_hand = player.hand_at_which_board_was_played(hand.board)
-    assert other_hand is not None
-    hand_link = reverse("app:hand-detail", args=[other_hand.pk])
-    hand_description = str(other_hand)
-
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
         | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
         | _bidding_box_context_for_hand(request, hand)
-        | {
-            "hand_at_which_I_played_this_board": {
-                "link": hand_link,
-                "description": hand_description,
-            }
-        }
     )
+
+    if (
+        player is not None
+        and (other_hand := player.hand_at_which_we_played_board(hand.board)) is not None
+    ):
+        context["hand_at_which_I_played_this_board"] = {
+            "link": reverse("app:hand-detail", args=[other_hand.pk]),
+            "description": str(other_hand),
+        }
 
     return TemplateResponse(request, "hand_detail.html", context=context)
 
@@ -644,11 +653,14 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     return HttpResponse(
         json.dumps(
             {
-                "xscript": xscript.serializable(),
+                "board": hand.board.display_number,
                 "current_event_ids_by_player_name": {
-                    s.player_name: get_current_event_id([s.player.event_channel_name])
-                    for s in hand.table.seats
+                    p.name: get_current_event_id([p.event_channel_name])
+                    for _, p in hand.players_by_direction_letter.items()
                 },
+                "table": hand.table_display_number,
+                "tournament": hand.board.tournament.display_number,
+                "xscript": xscript.serializable(),
             }
         ),
         headers={"Content-Type": "text/json"},
@@ -656,16 +668,21 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
 
 def hand_list_view(request: HttpRequest) -> HttpResponse:
+    hand_pks = request.GET.get("hand_pks")
     player_pk = request.GET.get("played_by")
-    player: app.models.Player | None = None
 
-    hand_list = app.models.Hand.objects.order_by("board__tournament__pk", "table__pk", "id")
+    player: app.models.Player | None = None
+    hand_list: QuerySet[Hand]
+    if hand_pks is not None:
+        hand_list = app.models.Hand.objects.filter(pk__in=hand_pks.split(","))
+    else:
+        hand_list = app.models.Hand.objects.order_by(
+            "board__tournament__display_number", "board__display_number", "id"
+        )
 
     if player_pk is not None:
         player = get_object_or_404(app.models.Player, pk=player_pk)
-        players_seats = app.models.Seat.objects.filter(player=player)
-        players_tables = players_seats.values_list("table", flat=True)
-        hand_list = hand_list.filter(table__in=players_tables)
+        hand_list = player.hands_played.all()
 
     paginator = Paginator(hand_list, 16)
     page_number = request.GET.get("page")
@@ -685,6 +702,37 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
     return render(request, "hand_list.html", context=context)
 
 
+def hands_by_table_and_board_group(
+    request: HttpRequest, tournament_pk: PK, table_display_number: int, board_group: str
+) -> HttpResponse:
+    filter_kwargs = dict(
+        board__group=board_group,
+        table_display_number=table_display_number,
+        board__tournament=tournament_pk,
+    )
+
+    qs = (
+        app.models.Hand.objects.filter(**filter_kwargs)
+        .annotate(summary_for_this_viewer=Value("TODO placeholder what goes here?"))
+        .all()
+    )
+    logger.debug("%s => %s", filter_kwargs, qs)
+
+    hands = list(qs)
+
+    paginator = Paginator(hands, 16)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "filtered_count": paginator.count,
+        "page_obj": page_obj,
+        "player": None,
+    }
+
+    return render(request, "hand_list.html", context=context)
+
+
 @logged_in_as_player_required(redirect=False)
 def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
@@ -692,7 +740,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
     player = request.user.player
     assert player is not None
 
-    if player not in hand.players_by_direction.values():
+    if player not in hand.players_by_direction_letter.values():
         return Forbid("You're not at that table")
 
     whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)

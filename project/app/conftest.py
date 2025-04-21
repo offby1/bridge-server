@@ -1,14 +1,18 @@
+import logging
+
 import pytest
-from django.contrib import auth
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Table, Tournament
+from .models import Hand, Play, Player, Tournament
 from .models.tournament import check_for_expirations
+from .testutils import play_out_round
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
-def dump_django_cache():
+def clear_django_cache():
     cache.clear()
 
 
@@ -38,26 +42,32 @@ def innocuous_secret_key(settings):
 
 
 @pytest.fixture
-def usual_setup(db: None) -> None:
+def usual_setup(db: None) -> Hand:
     call_command("loaddata", "usual_setup")
+
+    h = Hand.objects.first()
+    assert h is not None
+    return h
 
 
 @pytest.fixture
-def nobody_seated(db: None) -> None:
+def nobody_seated_nobody_signed_up(db: None) -> None:
     call_command(
         "loaddata",
         "usual_setup",
         "--exclude",
-        "app.seat",
-        "--exclude",
         "app.hand",
-        "--exclude",
-        "app.table",
     )
-    Player.objects.all().update(currently_seated=False)
     for p in Player.objects.all():
         for b in p.boards_played.all():
             p.boards_played.remove(b)
+
+
+@pytest.fixture
+def nobody_seated(nobody_seated_nobody_signed_up) -> None:
+    current_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    for p in Player.objects.all():
+        current_tournament.sign_up_player_and_partner(p)
 
 
 @pytest.fixture
@@ -66,32 +76,36 @@ def two_boards_one_of_which_is_played_almost_to_completion(db: None) -> None:
 
 
 @pytest.fixture
-def nearly_completed_tournament(db: None) -> None:
-    call_command("loaddata", "nearly_completed_tournament")
+def fresh_tournament(db: None) -> Tournament:
+    call_command("loaddata", "fresh_tournament")
+    t = Tournament.objects.first()
+    assert t is not None
+    return t
 
 
 @pytest.fixture
-def two_boards_one_is_complete(two_boards_one_of_which_is_played_almost_to_completion) -> None:
+def nearly_completed_tournament(db: None) -> Tournament:
+    call_command("loaddata", "nearly_completed_tournament")
+    t = Tournament.objects.first()
+    assert t is not None
+    return t
+
+
+@pytest.fixture
+def two_boards_one_is_complete(
+    two_boards_one_of_which_is_played_almost_to_completion: None,
+) -> Hand:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
     check_for_expirations(__name__)
 
+    return h1
+
 
 @pytest.fixture
-def second_setup(usual_setup):
-    new_player_names = ["n2", "e2", "s2", "w2"]
-    for name in new_player_names:
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
+def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
+    before: Tournament | None = Tournament.objects.filter(is_complete=False).first()
+    assert before is not None
 
-    Player.objects.get_by_name("n2").partner_with(Player.objects.get_by_name("s2"))
-    Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-
-    table = Table.objects.create_with_two_partnerships(
-        p1=Player.objects.get_by_name("n2"),
-        p2=Player.objects.get_by_name("e2"),
-        tournament=Tournament.objects.first(),
-    )
-    table.next_board()
-    return table
+    play_out_round(before)
+    return before

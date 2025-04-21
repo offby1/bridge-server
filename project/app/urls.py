@@ -14,9 +14,10 @@ from .views.hand import (
     hand_list_view,
     hand_serialized_view,
     hand_xscript_updates_view,
+    hands_by_table_and_board_group,
     open_access_toggle_view,
 )
-from .views.table import set_table_tempo_view
+
 from .views.tournament import (
     new_tournament_view,
     tournament_list_view,
@@ -33,6 +34,11 @@ urlpatterns = [
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
     path("hand/", hand_list_view, name="hand-list"),
+    path(
+        "hand/<int:tournament_pk>/<int:table_display_number>/<str:board_group>/",
+        hands_by_table_and_board_group,
+        name="hands-by-table-and-board-group",
+    ),
     path("hand/<int:pk>/", hand_detail_view, name="hand-detail"),
     path(
         "hand/<int:pk>/updates/<int:calls>/<int:plays>/",
@@ -49,7 +55,7 @@ urlpatterns = [
     ),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path(
-        "hand/<table_pk>/four-hands",
+        "hand/<hand_pk>/four-hands",
         four_hands_partial_view,
         name="four-hands-partial",
     ),
@@ -83,19 +89,6 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("table/", table.table_list_view, name="table-list"),
-    path("table/<int:pk>/", table.table_json_view, name="table-json"),
-    path(
-        "table/<int:pk>/new-board-plz/",
-        table.details.new_board_view,
-        name="new-board-plz",
-    ),
-    path("table/<table_pk>/set-table-tempo/", set_table_tempo_view, name="set-table-tempo"),
-    path(
-        "table/new/<tournament_pk>/<pk1>/<pk2>/",
-        table.details.new_table_for_two_partnerships,
-        name="new-table",
-    ),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournament/", tournament_list_view, name="tournament-list"),
     path("tournament/<int:pk>/", tournament_view, name="tournament"),

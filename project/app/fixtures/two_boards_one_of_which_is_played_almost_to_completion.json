@@ -73,8 +73,42 @@
   },
   {
     "fields": {
+      "player": 1,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "player": 2,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "player": 3,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "player": 4,
+      "tournament": 1
+    },
+    "model": "app.tournamentsignup",
+    "pk": 4
+  },
+  {
+    "fields": {
       "display_number": 1,
-      "is_complete": false
+      "is_complete": false,
+      "play_completion_deadline": "2999-12-31T23:59:59Z",
+      "signup_deadline": "1970-01-01T00:00:00Z"
     },
     "model": "app.tournament",
     "pk": 1
@@ -85,6 +119,7 @@
       "display_number": 1,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": false,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -100,6 +135,7 @@
       "display_number": 2,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": true,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -116,48 +152,8 @@
   },
   {
     "fields": {
-      "direction": "N",
-      "player": 1,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "direction": "E",
-      "player": 2,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "direction": "S",
-      "player": 3,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "direction": "W",
-      "player": 4,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 4
-  },
-  {
-    "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": false,
@@ -169,11 +165,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
@@ -185,11 +177,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
@@ -201,11 +189,7 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,
@@ -216,11 +200,16 @@
   },
   {
     "fields": {
+      "East": 2,
+      "North": 1,
+      "South": 3,
+      "West": 4,
+      "abandoned_because": null,
       "board": 1,
       "created": "2000-01-01T00:00:00Z",
       "modified": "2000-01-01T00:00:00Z",
       "open_access": false,
-      "table": 1
+      "table_display_number": 1
     },
     "model": "app.hand",
     "pk": 1
@@ -774,13 +763,5 @@
     },
     "model": "app.play",
     "pk": 51
-  },
-  {
-    "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
-    },
-    "model": "app.table",
-    "pk": 1
   }
 ]

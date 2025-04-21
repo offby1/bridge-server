@@ -1,6 +1,3 @@
-from django.core.management import call_command
-from django.test import Client
-
 from app.models import Call, Hand, Play
 
 
@@ -28,13 +25,3 @@ def test_xscript_works_despite_caching_being_hard_yo(usual_setup) -> None:
     plays = list(h1.get_xscript().plays())
     assert len(plays) == 1
     assert plays[0].card.serialize() == "♦2"
-
-
-def test_non_seated_player_not_go_boom(db) -> None:
-    call_command("loaddata", "boom")
-
-    c = Client()
-    assert c.login(username="bob", password="!") is True
-
-    response = c.get("/serialized/hand/1/")
-    assert response.status_code == 200

@@ -34,8 +34,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if player.current_table %}
-                                {{ player.current_table.as_link }}
+                            {% if player.current_hand %}
+                                <a href="{% url 'app:hand-detail' pk=player.pk %}">Table {{ player.current_hand.table_display_number }}</a>
                             {% else %}
                                 <a href="{% url 'app:lobby' %}">lobby</a>
                             {% endif %}
@@ -47,7 +47,7 @@
                                 </a>
                             {% endif %}
                         </td>
-                        <td>{{ player.last_action.0 }}: {{ player.last_action.1 }}</td>
+                        <td>{{ player.last_action.0 }}{{ player.last_action.0|date:"e" }}: {{ player.last_action.1 }}</td>
                         <td>
                             {% if player.action_button %}
                                 <form method="post" action="{{ player.action_button.form_action }}">

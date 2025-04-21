@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import os
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING
@@ -22,16 +23,13 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 from faker import Faker
 
 from .board import Board
+from .common import attribute_names
 from .message import Message
 from .playaz import WireCharacterProvider
-from .seat import Seat
 from .types import PK_from_str
 
 if TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager
-
     from .hand import Hand
-    from .table import Table
     from .types import PK
 
 logger = logging.getLogger(__name__)
@@ -56,11 +54,10 @@ class PlayerManager(models.Manager):
             candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
             if not auth.models.User.objects.filter(username__in=candidates).exists():
                 return candidates[-1]
-            logger.debug("User named %s already exists; let's try another", " or ".join(candidates))
 
     def create_synthetic(self) -> Player:
         new_user = auth.models.User.objects.create_user(
-            username=self._find_unused_username(prefix="synthetic_")
+            username=self._find_unused_username(prefix="_")
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
@@ -69,6 +66,10 @@ class PlayerManager(models.Manager):
 
     def get_by_name(self, name):
         return self.get(user__username=name)
+
+    def currently_seated(self) -> models.QuerySet:
+        seated_pks = set([p.pk for p in self.all() if p.currently_seated])
+        return self.filter(pk__in=seated_pks)
 
 
 class PlayerException(Exception):
@@ -83,11 +84,10 @@ class PartnerException(PlayerException):
     pass
 
 
+# fmt:off
+
+# fmt:on
 class Player(TimeStampedModel):
-    if TYPE_CHECKING:
-        historical_seat_set = RelatedManager["Seat"]()
-
-    display_name: str  # set by a view, from name_dir
     objects = PlayerManager()
 
     user = models.OneToOneField(
@@ -103,13 +103,6 @@ class Player(TimeStampedModel):
         "Player", null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    # This is semi-redundant.  If it's True, there *must* be some seat whose player is me; we check this in our `save` method.
-    # If it's False, anything goes -- if there are no such seats, then it's fine (I've never been seated); otherwise,
-    # those seats are historical, and I've since left my last table, and not chosen a new one.
-
-    # This gets set to True when someone creates a Seat instance whose player is us; it gets set to False when our
-    # partnership splits up.
-    currently_seated = models.BooleanField(default=False)
     allow_bot_to_play_for_me = models.BooleanField(default=False)
     synthetic = models.BooleanField(default=False)
 
@@ -120,7 +113,22 @@ class Player(TimeStampedModel):
         object_id_field="recipient_object_id",
     )
 
-    boards_played: models.ManyToManyField[Board, models.Model] = models.ManyToManyField(Board)
+    # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
+    @property
+    def hands_played(self) -> models.QuerySet:
+        from app.models import Hand
+
+        hands = Hand.objects.all()
+
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self})
+
+        return hands.filter(expression)
+
+    @property
+    def boards_played(self) -> models.QuerySet:
+        return Board.objects.filter(pk__in=self.hands_played)
 
     def last_action(self) -> tuple[datetime.datetime, str]:
         rv = (self.created, "joined")
@@ -135,17 +143,34 @@ class Player(TimeStampedModel):
 
         return rv
 
-    def unseat_me(self) -> None:
-        self.currently_seated = False
-        self._control_bot()
+    def unseat_partnership(self, reason: str | None = None) -> None:
+        with transaction.atomic():
+            for p in (self, getattr(self, "partner")):
+                if p is not None and p.currently_seated:
+                    p.unseat_me(reason=reason)
+        if reason is not None and self.partner is not None:
+            channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
+            send_event(
+                channel=channel,
+                event_type="message",
+                data=reason,
+            )
 
-    # Note that this player has been exposed to some information from the given board, which means we will not allow
-    # them to play that board later.
-    def taint_board(self, *, board_pk: PK) -> None:
-        # TODO -- it seems wrong that I have to fetch the entire Board object, just to store its primary key.
-        board = Board.objects.filter(pk=board_pk).first()
-        if board is not None:
-            self.boards_played.add(board)
+    def unseat_me(self, reason: str | None = None) -> None:
+        # TODO -- refactor this with "current_hand"
+        logger.info("Unseating %s because %s", self.name, reason)
+        with transaction.atomic():
+            h: Hand
+            direction_name: str
+
+            for h in self.hands_played.filter(abandoned_because__isnull=True):
+                if not h.is_complete:
+                    for direction_name in h.direction_names:
+                        if getattr(h, direction_name) == self:
+                            h.abandoned_because = reason or f"{self.name} left"
+                            h.save()
+                            break
+        self._control_bot()
 
     @property
     def event_channel_name(self):
@@ -160,35 +185,39 @@ class Player(TimeStampedModel):
 
     # https://cr.yp.to/daemontools/svc.html
     def _control_bot(self) -> None:
-        service_directory = pathlib.Path("/service")
-        if not service_directory.is_dir():
-            logger.debug(f"Bailing out early because {service_directory=} is not a directory")
+        # do nothing when run from a unit test, so as to reduce the noise in the log output.
+        if os.environ.get("PYTEST_VERSION") is not None:
             return
 
-        def run_in_slash_service(command: list[str]) -> None:
-            subprocess.run(
-                command,
-                cwd=service_directory,
-                check=False,
-                capture_output=True,
-            )
+        service_directory = pathlib.Path("/service")
+        if not service_directory.is_dir():
+            return
 
         def svc(flags: str) -> None:
+            logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
+
             # No problem blocking here -- experience shows this doesn't take long
-            run_in_slash_service(
+            proc = subprocess.run(
                 [
                     "svc",
                     flags,
                     str(self.pk),
                 ],
+                cwd=service_directory,
+                check=False,
+                capture_output=True,
             )
+            if proc.stderr:
+                logger.warning("%s", proc.stderr)
 
-        if not self.allow_bot_to_play_for_me or not self.currently_seated:
-            logger.info(
-                f"{self.name=} {self.allow_bot_to_play_for_me=} {self.currently_seated=}; ensuring bot is stopped"
-            )
+        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
+
+        if not (self.allow_bot_to_play_for_me and self.currently_seated):
+            try:
+                (run_dir / "down").touch()
+            except FileNotFoundError:
+                pass
             svc("-d")
-            logger.info("Stopped bot for %s", self)
             return
 
         shell_script_text = """#!/bin/bash
@@ -200,15 +229,14 @@ set -euo pipefail
 printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
-        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
         run_file = run_dir / "run.notyet"
         run_file.parent.mkdir(parents=True, exist_ok=True)
         run_file.write_text(shell_script_text)
         run_file.chmod(0o755)
         run_file = run_file.rename(run_dir / "run")
 
+        (run_dir / "down").unlink(missing_ok=True)
         svc("-u")
-        logger.info("Started bot for %s", self)
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
@@ -223,12 +251,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.allow_bot_to_play_for_me = desired_state
             self.save()
-            self._control_bot()
 
     def save(self, *args, **kwargs) -> None:
-        self._check_current_seat()
         self._check_synthetic()
         super().save(*args, **kwargs)
+        self._control_bot()
 
     def _check_synthetic(self) -> None:
         if not self.pk:
@@ -237,25 +264,15 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         if self.synthetic != original.synthetic:
             raise ValidationError("The 'synthetic' field cannot be changed.")
 
-    def _check_current_seat(self) -> None:
-        if not self.currently_seated:
-            return
-
-        my_seats = Seat.objects.filter(player=self)
-
-        assert (
-            my_seats.exists()
-        ), f"{self.currently_seated=} and yet I cannot find a table at which I am sitting"
-
     def libraryThing(self) -> bridge.table.Player:
-        seat = self.current_seat
+        direction_name = self.current_direction()
 
-        if seat is None:
+        if direction_name is None:
             msg = f"{self} is not seated, so cannot be converted to a bridge-library Player"
             raise PlayerException(msg)
 
         return bridge.table.Player(
-            seat=seat.libraryThing,
+            seat=bridge.seat.Seat(direction_name[0].upper()),
             name=self.name,
         )
 
@@ -341,112 +358,75 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
             self.partner.partner = None
             self.partner.unseat_me()
-            self.partner.save(update_fields=["partner", "currently_seated"])
+            self.partner.save(update_fields=["partner"])
 
             self.partner = None
             self.unseat_me()
-            self.save(update_fields=["partner", "currently_seated"])
+            self.save(update_fields=["partner"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
 
-    def current_table_pk(self) -> PK | None:
-        ct = self.current_table
-        if ct is None:
-            return None
-        return ct.pk
-
     @property
-    def current_table(self) -> Table | None:
-        if self.current_seat is None:
+    def currently_seated(self) -> bool:
+        return self.current_hand_and_direction() is not None
+
+    def current_hand_and_direction(self) -> tuple[Hand, str] | None:
+        h: Hand
+        direction_name: str
+
+        for h in self.hands_played:
+            if not h.is_complete and h.abandoned_because is None:
+                for direction_name in h.direction_names:
+                    if getattr(h, direction_name) == self:
+                        return h, direction_name
+
+        return None
+
+    def current_hand(self) -> Hand | None:
+        ch = self.current_hand_and_direction()
+        if ch is None:
             return None
+        return ch[0]
 
-        return self.current_seat.table
-
-    @property
-    def current_seat(self) -> Seat | None:
-        if not self.currently_seated:
+    def current_direction(self) -> str | None:
+        ch = self.current_hand_and_direction()
+        if ch is None:
             return None
-
-        return Seat.objects.filter(player=self).order_by("-id").first()
+        return ch[1]
 
     def dealt_cards(self) -> list[bridge.card.Card]:
-        seat = self.current_seat
-        assert seat is not None
-        return seat.table.current_hand.board.cards_for_direction(seat.direction)
+        ch = self.current_hand_and_direction()
 
-    @property
-    def hands_played(self) -> models.QuerySet:
-        from .hand import Hand
-        from .table import Table
+        if ch is None:
+            msg = f"{self} is not seated, so has no cards"
+            raise PlayerException(msg)
 
-        my_seats = Seat.objects.filter(player=self)
-        my_tables = Table.objects.filter(seat__in=my_seats)
-        return Hand.objects.filter(table__in=my_tables)
+        current_hand, direction_name = ch
+        return current_hand.board.cards_for_direction_string(direction_name)
 
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
-    def hand_at_which_board_was_played(self, board: Board) -> Hand | None:
+    def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
         from .hand import Hand
-        from .table import Table
 
-        qs = Hand.objects.filter(
-            board=board,
-            table__in=Table.objects.filter(
-                pk__in=self.historical_seat_set.values_list("table_id", flat=True).all()
-            ).all(),
-        ).all()
-        if qs.count() > 1:
-            logger.critical("%s", f"Uh oh -- {self} played {board} more than once: {qs.all()}")
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self.pk})
+
+        qs = Hand.objects.filter(board=board).filter(expression)
+        assert qs.count() < 2
         return qs.first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
-        what_they_can_see = board.what_can_they_see(player=self)
-        if what_they_can_see == Board.PlayerVisibility.nothing:
-            return False
-
-        hand = self.hand_at_which_board_was_played(board)
-        assert (
-            hand is not None
-        )  # what_they_can_see should have been PlayerVisibility.nothing in this case
-
-        if what_they_can_see is Board.PlayerVisibility.own_hand:
-            return hand.players_by_direction[seat.value] == self
-
-        if what_they_can_see == Board.PlayerVisibility.dummys_hand:
-            if hand.players_by_direction[seat.value] == self:
-                return True
-            dummy = hand.dummy
-            return dummy is not None and dummy.seat == seat
-
-        assert (
-            what_they_can_see is Board.PlayerVisibility.everything
-        ), f"{what_they_can_see=} but otta be everything"
-        return True
+        return board in self.boards_played.all()
 
     @cached_property
     def name(self):
         return self.user.username
 
-    def name_dir(self, *, hand: Hand) -> str:
-        direction = ""
-        role = ""
-        if self.has_played_hand(hand):
-            seat = hand.table.seats.get(player=self)
-            direction = f" ({seat.named_direction})"
-
-            a: bridge.auction.Auction
-            a = hand.get_xscript().auction
-            if a.found_contract:
-                assert isinstance(a.status, bridge.auction.Contract)
-                assert a.declarer is not None
-                assert a.dummy is not None
-                if self.name == a.declarer.name:
-                    role = "Declarer! "
-                elif self.name == a.dummy.name:
-                    role = "Dummy "
-
-        return f"{self.pk}:{role}{self.as_link()}{direction}"
+    def display_name(self) -> str:
+        return f"{self.pk}:{self.as_link()}"
 
     def as_link(self, style=""):
         name = self.name
@@ -481,7 +461,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             existing = (
                 Player.objects.filter(synthetic=True)
                 .filter(partner__isnull=False)
-                .filter(currently_seated=False)
+                .filter(current_hand__isnull=True)
                 .exclude(partner=self)
             )
             if existing.count() >= 2:
@@ -517,12 +497,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return f"modelPlayer{vars(self)}"
 
     def __str__(self):
-        if self.synthetic:
-            return f"🤖🤖{self.name}🤖🤖"
         return self.name
 
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "synthetic", "allow_bot_to_play_for_me", "currently_seated"]
-    list_filter = ["currently_seated"]
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]

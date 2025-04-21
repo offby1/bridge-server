@@ -1,0 +1,5 @@
+{% load partials %}
+{% load render_table from django_tables2 %}
+{% partialdef matchpoint-table-partial %}
+{% render_table matchpoint_score_table %}
+{% endpartialdef matchpoint-table-partial %}

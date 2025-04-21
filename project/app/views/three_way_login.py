@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from app.models import Player, TableHasNoHand
+from app.models import Player
 from app.models.utils import UserMitPlaya
 from app.views import Forbid
 
@@ -17,15 +17,9 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
     assert user.player is not None
     data = {"player-name": user.username, "player_pk": user.player.pk, "comment": comment}
 
-    current_table = user.player.current_table
-    if current_table is not None:
-        data["table_pk"] = current_table.pk
-        try:
-            current_hand = current_table.current_hand
-        except TableHasNoHand as e:
-            logging.info("%s", e)
-        else:
-            data["hand_pk"] = current_hand.pk
+    current_hand = user.player.current_hand()
+    if current_hand is not None:
+        data["hand_pk"] = current_hand.pk
 
     return JsonResponse(data)
 

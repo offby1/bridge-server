@@ -9,7 +9,6 @@ from typing import Any
 
 from django.contrib import messages as django_web_messages
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -167,10 +166,10 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
     if sender == recipient:
         return None
 
-    if recipient.current_seat:
+    if recipient.current_hand_and_direction() is not None:
         return f"{recipient.name} is already seated"
-    if sender.current_seat:
-        return "You are already seated"
+    if sender.current_hand_and_direction() is not None:
+        return f"You, {sender.name}, are already seated"
 
     return None
 
@@ -180,22 +179,21 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
     who_clicked = request.user.player  # aka "as_viewed_by"
-    redirect_to_table = False
+    redirect_to_hand = False
 
     if pk is None:
         if request.method != "GET":
             return HttpResponseNotAllowed(["GET"])
 
         pk = request.user.player.pk
-        redirect_to_table = True
+        redirect_to_hand = True
 
     subject: Player = get_object_or_404(Player, pk=pk)
 
-    if redirect_to_table and subject.currently_seated:
-        assert subject.current_table is not None
-        return HttpResponseRedirect(
-            reverse("app:hand-detail", kwargs={"pk": subject.current_table.current_hand.pk})
-        )
+    if redirect_to_hand and subject.currently_seated:
+        current_hand = subject.current_hand()
+        assert current_hand is not None
+        return HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": current_hand.pk}))
 
     common_context = {
         "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
@@ -320,10 +318,14 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
             logger.debug(f"Nuttin' from pk={name_or_pk=}")
             return HttpResponseNotFound()
 
+    current_hand = p.current_hand()
+
     payload = {
         "pk": p.pk,
-        "current_table_pk": p.current_table_pk(),
-        "current_seat_pk": p.current_seat.pk if p.current_seat is not None else None,
+        "current_table_number": current_hand.table_display_number
+        if current_hand is not None
+        else None,
+        "current_hand_pk": current_hand.pk if current_hand is not None else None,
         "name": p.name,
     }
 
@@ -385,53 +387,46 @@ def _background_css_color(player: Player) -> str:
     return "darkgrey"
 
 
-def player_list_view(request):
+@logged_in_as_player_required(redirect=False)
+def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
     has_partner = request.GET.get("has_partner")
-    seated = request.GET.get("seated")
+    has_partner_filter = None
     exclude_me = request.GET.get("exclude_me")
 
     qs = Player.objects.all()
     filter_description = []
 
-    player = getattr(request.user, "player", None)
+    viewer = getattr(request.user, "player", None)
 
-    if player is not None and {"True": True, "False": False}.get(exclude_me) is True:
-        qs = qs.exclude(pk=player.pk).exclude(partner=player)
-        filter_description.append(f"excluding {player}")
+    if (
+        viewer is not None
+        and exclude_me is not None
+        and {"True": True, "False": False}.get(exclude_me) is True
+    ):
+        qs = qs.exclude(pk=viewer.pk).exclude(partner=viewer)
+        filter_description.append(f"excluding {viewer}")
 
-    if (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None:
+    if (
+        has_partner is not None
+        and (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None
+    ):
         qs = qs.exclude(partner__isnull=has_partner_filter)
         filter_description.append(("with" if has_partner_filter else "without") + " a partner")
 
-    if (seated_filter := {"True": True, "False": False}.get(seated)) is not None:
-        qs = qs.filter(currently_seated=seated_filter)
-        filter_description.append("currently seated" if seated_filter else "in the lobby")
-
     filtered_count = qs.count()
-    if player is not None and player.partner is not None:
-        qs = qs.annotate(
-            maybe_a_link=(
-                Q(currently_seated=False)
-                & Q(partner__isnull=False)
-                & ~Q(pk=player.pk)
-                & ~Q(pk=player.partner.pk)
-            ),
-        )
 
     paginator = Paginator(qs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Smuggle a button in there.
-    for other in page_obj:
-        other.action_button = (
-            _get_partner_action_from_context(request=request, subject=other, as_viewed_by=player)
+    # Smuggle some display stuff in there.
+    player: Player
+    for player in page_obj:
+        player.action_button = (
+            _get_partner_action_from_context(request=request, subject=player, as_viewed_by=viewer)
             or None
         )
-
-    # Smuggle a style in there.
-    for other in page_obj:
-        other.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(other))
+        player.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(player))
 
     context = {
         "filtered_count": filtered_count,
@@ -443,8 +438,8 @@ def player_list_view(request):
     # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
     # create a synthetic player.
     if (
-        player is not None
-        and player.partner is None
+        viewer is not None
+        and viewer.partner is None
         and has_partner_filter is False
         and filtered_count == 0
     ):
@@ -454,10 +449,9 @@ def player_list_view(request):
         )
     # similarly for opponents.
     elif (
-        player is not None
-        and player.partner is not None
+        viewer is not None
+        and viewer.partner is not None
         and has_partner_filter is True
-        and seated_filter is False
         and filtered_count < 2
     ):
         context["create_synth_opponents_button"] = _create_synth_opponents_button(request)

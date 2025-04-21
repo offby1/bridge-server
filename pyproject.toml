@@ -23,7 +23,7 @@ retrying = "^1.3.4"
 sseclient = "^0.0.27"
 types-requests = "^2.32.0.20240712"
 platformdirs = "^4.2.2"
-sentry-sdk = "^2.14.0"
+sentry-sdk = "2.*"
 docutils = "^0.21.2"
 django-fastdev = "^1.12.0"
 # beware of https://github.com/psycopg/psycopg/issues/888
@@ -34,6 +34,7 @@ types-tabulate = "^0.9.0.20241207"
 pyinstrument = "^5.0.1"
 humanize = "^4.11.0"
 django-tz-detect = "^0.5.0"
+django-tables2 = "2.*"
 
 [tool.djlint]
 use_gitignore=true
@@ -60,8 +61,12 @@ python-lsp-black = "^2.0.0"
 pyls-memestra = "^0.0.16"
 pylsp-rope = "^0.1.17"
 python-lsp-ruff = "^2.2.2"
+python-constraint = "^1.4.0"
 pytest-xdist = "^3.6.1"
 freezegun = "^1.5.1"
+# Handy for monitoring parallel test runs (i.e., pytest-xdist) -- use htop to look for "pytest"
+setproctitle = "^1.3.5"
+
 
 [tool.pydocstyle]
 # Disable pydocstyle entirely.
@@ -71,12 +76,13 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D212"
 
 [tool.ruff]
 line-length = 100
+target-version = "py313"
+unsafe-fixes = true
 
-#https://docs.astral.sh/ruff/rules/unused-import/
 #https://docs.astral.sh/ruff/rules/print/
 #https://docs.astral.sh/ruff/rules/p-print/
 [tool.ruff.lint]
-ignore = ["F401", "T201", "T203"]
+ignore = ["T201", "T203"]
 
 [tool.coverage.run]
 dynamic_context = "test_function"

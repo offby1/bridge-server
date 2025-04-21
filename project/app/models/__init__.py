@@ -18,9 +18,7 @@ from .player import (
     Player,
     PlayerException,
 )
-from .seat import Seat, SeatException
 from .signups import TournamentSignup
-from .table import NoMoreBoards, Table, TableException, TableHasNoHand
 from .tournament import Tournament
 
 __all__ = [
@@ -35,9 +33,7 @@ __all__ = [
     "PartnerException",
     "Player",
     "PlayerException",
-    "Seat",
     "SeatException",
-    "Table",
     "TableException",
     "TableHasNoHand",
     "Tournament",

@@ -1,0 +1,3335 @@
+[
+  {
+    "fields": {
+      "codename": "add_event",
+      "content_type": 1,
+      "name": "Can add event"
+    },
+    "model": "auth.permission",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "codename": "change_event",
+      "content_type": 1,
+      "name": "Can change event"
+    },
+    "model": "auth.permission",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "codename": "delete_event",
+      "content_type": 1,
+      "name": "Can delete event"
+    },
+    "model": "auth.permission",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "codename": "view_event",
+      "content_type": 1,
+      "name": "Can view event"
+    },
+    "model": "auth.permission",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "codename": "add_eventcounter",
+      "content_type": 2,
+      "name": "Can add event counter"
+    },
+    "model": "auth.permission",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "codename": "change_eventcounter",
+      "content_type": 2,
+      "name": "Can change event counter"
+    },
+    "model": "auth.permission",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "codename": "delete_eventcounter",
+      "content_type": 2,
+      "name": "Can delete event counter"
+    },
+    "model": "auth.permission",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "codename": "view_eventcounter",
+      "content_type": 2,
+      "name": "Can view event counter"
+    },
+    "model": "auth.permission",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "codename": "add_logentry",
+      "content_type": 3,
+      "name": "Can add log entry"
+    },
+    "model": "auth.permission",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "codename": "change_logentry",
+      "content_type": 3,
+      "name": "Can change log entry"
+    },
+    "model": "auth.permission",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "codename": "delete_logentry",
+      "content_type": 3,
+      "name": "Can delete log entry"
+    },
+    "model": "auth.permission",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "codename": "view_logentry",
+      "content_type": 3,
+      "name": "Can view log entry"
+    },
+    "model": "auth.permission",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "codename": "add_permission",
+      "content_type": 4,
+      "name": "Can add permission"
+    },
+    "model": "auth.permission",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "codename": "change_permission",
+      "content_type": 4,
+      "name": "Can change permission"
+    },
+    "model": "auth.permission",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "codename": "delete_permission",
+      "content_type": 4,
+      "name": "Can delete permission"
+    },
+    "model": "auth.permission",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "codename": "view_permission",
+      "content_type": 4,
+      "name": "Can view permission"
+    },
+    "model": "auth.permission",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "codename": "add_group",
+      "content_type": 5,
+      "name": "Can add group"
+    },
+    "model": "auth.permission",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "codename": "change_group",
+      "content_type": 5,
+      "name": "Can change group"
+    },
+    "model": "auth.permission",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "codename": "delete_group",
+      "content_type": 5,
+      "name": "Can delete group"
+    },
+    "model": "auth.permission",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "codename": "view_group",
+      "content_type": 5,
+      "name": "Can view group"
+    },
+    "model": "auth.permission",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "codename": "add_user",
+      "content_type": 6,
+      "name": "Can add user"
+    },
+    "model": "auth.permission",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "codename": "change_user",
+      "content_type": 6,
+      "name": "Can change user"
+    },
+    "model": "auth.permission",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "codename": "delete_user",
+      "content_type": 6,
+      "name": "Can delete user"
+    },
+    "model": "auth.permission",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "codename": "view_user",
+      "content_type": 6,
+      "name": "Can view user"
+    },
+    "model": "auth.permission",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "codename": "add_contenttype",
+      "content_type": 7,
+      "name": "Can add content type"
+    },
+    "model": "auth.permission",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "codename": "change_contenttype",
+      "content_type": 7,
+      "name": "Can change content type"
+    },
+    "model": "auth.permission",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "codename": "delete_contenttype",
+      "content_type": 7,
+      "name": "Can delete content type"
+    },
+    "model": "auth.permission",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "codename": "view_contenttype",
+      "content_type": 7,
+      "name": "Can view content type"
+    },
+    "model": "auth.permission",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "codename": "add_session",
+      "content_type": 8,
+      "name": "Can add session"
+    },
+    "model": "auth.permission",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "codename": "change_session",
+      "content_type": 8,
+      "name": "Can change session"
+    },
+    "model": "auth.permission",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "codename": "delete_session",
+      "content_type": 8,
+      "name": "Can delete session"
+    },
+    "model": "auth.permission",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "codename": "view_session",
+      "content_type": 8,
+      "name": "Can view session"
+    },
+    "model": "auth.permission",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "codename": "add_player",
+      "content_type": 9,
+      "name": "Can add player"
+    },
+    "model": "auth.permission",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "codename": "change_player",
+      "content_type": 9,
+      "name": "Can change player"
+    },
+    "model": "auth.permission",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "codename": "delete_player",
+      "content_type": 9,
+      "name": "Can delete player"
+    },
+    "model": "auth.permission",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "codename": "view_player",
+      "content_type": 9,
+      "name": "Can view player"
+    },
+    "model": "auth.permission",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "codename": "add_message",
+      "content_type": 10,
+      "name": "Can add message"
+    },
+    "model": "auth.permission",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "codename": "change_message",
+      "content_type": 10,
+      "name": "Can change message"
+    },
+    "model": "auth.permission",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "codename": "delete_message",
+      "content_type": 10,
+      "name": "Can delete message"
+    },
+    "model": "auth.permission",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "codename": "view_message",
+      "content_type": 10,
+      "name": "Can view message"
+    },
+    "model": "auth.permission",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "codename": "add_lobby",
+      "content_type": 11,
+      "name": "Can add lobby"
+    },
+    "model": "auth.permission",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "codename": "change_lobby",
+      "content_type": 11,
+      "name": "Can change lobby"
+    },
+    "model": "auth.permission",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "codename": "delete_lobby",
+      "content_type": 11,
+      "name": "Can delete lobby"
+    },
+    "model": "auth.permission",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "codename": "view_lobby",
+      "content_type": 11,
+      "name": "Can view lobby"
+    },
+    "model": "auth.permission",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "codename": "add_board",
+      "content_type": 12,
+      "name": "Can add board"
+    },
+    "model": "auth.permission",
+    "pk": 45
+  },
+  {
+    "fields": {
+      "codename": "change_board",
+      "content_type": 12,
+      "name": "Can change board"
+    },
+    "model": "auth.permission",
+    "pk": 46
+  },
+  {
+    "fields": {
+      "codename": "delete_board",
+      "content_type": 12,
+      "name": "Can delete board"
+    },
+    "model": "auth.permission",
+    "pk": 47
+  },
+  {
+    "fields": {
+      "codename": "view_board",
+      "content_type": 12,
+      "name": "Can view board"
+    },
+    "model": "auth.permission",
+    "pk": 48
+  },
+  {
+    "fields": {
+      "codename": "add_call",
+      "content_type": 13,
+      "name": "Can add call"
+    },
+    "model": "auth.permission",
+    "pk": 49
+  },
+  {
+    "fields": {
+      "codename": "change_call",
+      "content_type": 13,
+      "name": "Can change call"
+    },
+    "model": "auth.permission",
+    "pk": 50
+  },
+  {
+    "fields": {
+      "codename": "delete_call",
+      "content_type": 13,
+      "name": "Can delete call"
+    },
+    "model": "auth.permission",
+    "pk": 51
+  },
+  {
+    "fields": {
+      "codename": "view_call",
+      "content_type": 13,
+      "name": "Can view call"
+    },
+    "model": "auth.permission",
+    "pk": 52
+  },
+  {
+    "fields": {
+      "codename": "add_play",
+      "content_type": 14,
+      "name": "Can add play"
+    },
+    "model": "auth.permission",
+    "pk": 53
+  },
+  {
+    "fields": {
+      "codename": "change_play",
+      "content_type": 14,
+      "name": "Can change play"
+    },
+    "model": "auth.permission",
+    "pk": 54
+  },
+  {
+    "fields": {
+      "codename": "delete_play",
+      "content_type": 14,
+      "name": "Can delete play"
+    },
+    "model": "auth.permission",
+    "pk": 55
+  },
+  {
+    "fields": {
+      "codename": "view_play",
+      "content_type": 14,
+      "name": "Can view play"
+    },
+    "model": "auth.permission",
+    "pk": 56
+  },
+  {
+    "fields": {
+      "codename": "add_usermitplaya",
+      "content_type": 15,
+      "name": "Can add user"
+    },
+    "model": "auth.permission",
+    "pk": 57
+  },
+  {
+    "fields": {
+      "codename": "change_usermitplaya",
+      "content_type": 15,
+      "name": "Can change user"
+    },
+    "model": "auth.permission",
+    "pk": 58
+  },
+  {
+    "fields": {
+      "codename": "delete_usermitplaya",
+      "content_type": 15,
+      "name": "Can delete user"
+    },
+    "model": "auth.permission",
+    "pk": 59
+  },
+  {
+    "fields": {
+      "codename": "view_usermitplaya",
+      "content_type": 15,
+      "name": "Can view user"
+    },
+    "model": "auth.permission",
+    "pk": 60
+  },
+  {
+    "fields": {
+      "codename": "add_hand",
+      "content_type": 16,
+      "name": "Can add hand"
+    },
+    "model": "auth.permission",
+    "pk": 61
+  },
+  {
+    "fields": {
+      "codename": "change_hand",
+      "content_type": 16,
+      "name": "Can change hand"
+    },
+    "model": "auth.permission",
+    "pk": 62
+  },
+  {
+    "fields": {
+      "codename": "delete_hand",
+      "content_type": 16,
+      "name": "Can delete hand"
+    },
+    "model": "auth.permission",
+    "pk": 63
+  },
+  {
+    "fields": {
+      "codename": "view_hand",
+      "content_type": 16,
+      "name": "Can view hand"
+    },
+    "model": "auth.permission",
+    "pk": 64
+  },
+  {
+    "fields": {
+      "codename": "add_tournament",
+      "content_type": 17,
+      "name": "Can add tournament"
+    },
+    "model": "auth.permission",
+    "pk": 65
+  },
+  {
+    "fields": {
+      "codename": "change_tournament",
+      "content_type": 17,
+      "name": "Can change tournament"
+    },
+    "model": "auth.permission",
+    "pk": 66
+  },
+  {
+    "fields": {
+      "codename": "delete_tournament",
+      "content_type": 17,
+      "name": "Can delete tournament"
+    },
+    "model": "auth.permission",
+    "pk": 67
+  },
+  {
+    "fields": {
+      "codename": "view_tournament",
+      "content_type": 17,
+      "name": "Can view tournament"
+    },
+    "model": "auth.permission",
+    "pk": 68
+  },
+  {
+    "fields": {
+      "codename": "add_tournamentsignup",
+      "content_type": 18,
+      "name": "Can add tournament signup"
+    },
+    "model": "auth.permission",
+    "pk": 69
+  },
+  {
+    "fields": {
+      "codename": "change_tournamentsignup",
+      "content_type": 18,
+      "name": "Can change tournament signup"
+    },
+    "model": "auth.permission",
+    "pk": 70
+  },
+  {
+    "fields": {
+      "codename": "delete_tournamentsignup",
+      "content_type": 18,
+      "name": "Can delete tournament signup"
+    },
+    "model": "auth.permission",
+    "pk": 71
+  },
+  {
+    "fields": {
+      "codename": "view_tournamentsignup",
+      "content_type": 18,
+      "name": "Can view tournament signup"
+    },
+    "model": "auth.permission",
+    "pk": 72
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:50.770Z",
+      "email": "admin@admin.com",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$96bOVjJRngMuFOOBwxBwQk$Sn2AFn2XOhCaOwyxsYR2464mQqjT0q+mGaeUp971vLU=",
+      "user_permissions": [],
+      "username": "admin"
+    },
+    "model": "auth.user",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:50.978Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:53:20.250Z",
+      "last_name": "",
+      "password": "!xvZv0DpKdbgsUmWjDvCVpmf4SKe1mLn9m5XJkZIl",
+      "user_permissions": [],
+      "username": "_prez"
+    },
+    "model": "auth.user",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:50.987Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:53:20.250Z",
+      "last_name": "",
+      "password": "!gMoRPSrge4QlJ65VPB7VuVp5af9pBUZ0VEEewowU",
+      "user_permissions": [],
+      "username": "_rhonda"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.000Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:58:13.064Z",
+      "last_name": "",
+      "password": "!4XL624FGGkLEEAgq0ySfCsvNIOEVxYkQgz9aNa32",
+      "user_permissions": [],
+      "username": "_bodie"
+    },
+    "model": "auth.user",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.008Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:58:13.062Z",
+      "last_name": "",
+      "password": "!BHlQS0FUb2BdRNRhlBs2pIOJtRdyg2aR1xofKX5C",
+      "user_permissions": [],
+      "username": "_kima"
+    },
+    "model": "auth.user",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.021Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:58:13.064Z",
+      "last_name": "",
+      "password": "!KHXkF3RRMyGfvi3CCliZz7OzSoy5wqhxhdmMyAKq",
+      "user_permissions": [],
+      "username": "_tony gray"
+    },
+    "model": "auth.user",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.030Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:58:13.065Z",
+      "last_name": "",
+      "password": "!9vB3uquH1BzXi2Ga4KopjmwySnLdEv2yqsooSbkl",
+      "user_permissions": [],
+      "username": "_sydnor"
+    },
+    "model": "auth.user",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.044Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:53:24.407Z",
+      "last_name": "",
+      "password": "!fx2I92gaAKvkvDtwN6yZcZgbz1q0QRuk9N6c3Kr2",
+      "user_permissions": [],
+      "username": "_randy"
+    },
+    "model": "auth.user",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "date_joined": "2025-04-05T23:47:51.054Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2025-04-05T23:53:24.411Z",
+      "last_name": "",
+      "password": "!PKri721vo8aT8WJUE5GNJYf6Kz5MiQE3DaZXrvE7",
+      "user_permissions": [],
+      "username": "_marla"
+    },
+    "model": "auth.user",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "boards_per_round_per_table": 1,
+      "display_number": 1,
+      "is_complete": true,
+      "play_completion_deadline": "2025-04-06T01:40:05.127Z",
+      "signup_deadline": "2025-04-06T01:25:05.127Z"
+    },
+    "model": "app.tournament",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "dealer": "N",
+      "display_number": 1,
+      "east_cards": "♣3♣6♣7♣9♣Q♥4♥T♥Q♠4♠7♠9♠J♠A",
+      "ew_vulnerable": false,
+      "group": "A",
+      "north_cards": "♣8♣J♦3♦6♦7♦T♦Q♥3♥7♥8♥9♥K♥A",
+      "ns_vulnerable": false,
+      "south_cards": "♣2♣4♣5♣T♦2♦8♦9♦A♥2♥J♠2♠8♠Q",
+      "tournament": 1,
+      "west_cards": "♣K♣A♦4♦5♦J♦K♥5♥6♠3♠5♠6♠T♠K"
+    },
+    "model": "app.board",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "dealer": "E",
+      "display_number": 2,
+      "east_cards": "♣2♣5♣9♣T♣J♣K♦9♦T♥5♥9♠8♠9♠J",
+      "ew_vulnerable": false,
+      "group": "B",
+      "north_cards": "♣4♣6♣7♣8♣A♦8♦J♦Q♦A♥2♥7♥Q♠7",
+      "ns_vulnerable": true,
+      "south_cards": "♣Q♦2♦3♦4♦6♥6♥8♠2♠4♠6♠Q♠K♠A",
+      "tournament": 1,
+      "west_cards": "♣3♦5♦7♦K♥3♥4♥T♥J♥K♥A♠3♠5♠T"
+    },
+    "model": "app.board",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:04.994Z",
+      "modified": "2025-04-06T01:25:38.695Z",
+      "partner": 2,
+      "synthetic": true,
+      "user": 2
+    },
+    "model": "app.player",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.002Z",
+      "modified": "2025-04-06T01:25:38.715Z",
+      "partner": 1,
+      "synthetic": true,
+      "user": 3
+    },
+    "model": "app.player",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.014Z",
+      "modified": "2025-04-06T01:25:38.657Z",
+      "partner": 4,
+      "synthetic": true,
+      "user": 4
+    },
+    "model": "app.player",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.022Z",
+      "modified": "2025-04-06T01:25:38.672Z",
+      "partner": 3,
+      "synthetic": true,
+      "user": 5
+    },
+    "model": "app.player",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.036Z",
+      "modified": "2025-04-06T01:25:38.735Z",
+      "partner": 6,
+      "synthetic": true,
+      "user": 6
+    },
+    "model": "app.player",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.045Z",
+      "modified": "2025-04-06T01:25:38.725Z",
+      "partner": 5,
+      "synthetic": true,
+      "user": 7
+    },
+    "model": "app.player",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.059Z",
+      "modified": "2025-04-06T01:25:38.705Z",
+      "partner": 8,
+      "synthetic": true,
+      "user": 8
+    },
+    "model": "app.player",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "allow_bot_to_play_for_me": true,
+      "created": "2025-04-06T01:25:05.068Z",
+      "modified": "2025-04-06T01:25:38.684Z",
+      "partner": 7,
+      "synthetic": true,
+      "user": 9
+    },
+    "model": "app.player",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "East": 5,
+      "North": 1,
+      "South": 2,
+      "West": 6,
+      "abandoned_because": null,
+      "board": 1,
+      "created": "2025-04-06T01:25:05.213Z",
+      "modified": "2025-04-06T01:25:23.020Z",
+      "open_access": false,
+      "table_display_number": 1
+    },
+    "model": "app.hand",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "East": 7,
+      "North": 3,
+      "South": 4,
+      "West": 8,
+      "abandoned_because": null,
+      "board": 1,
+      "created": "2025-04-06T01:25:05.241Z",
+      "modified": "2025-04-06T01:25:22.558Z",
+      "open_access": false,
+      "table_display_number": 2
+    },
+    "model": "app.hand",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "East": 7,
+      "North": 1,
+      "South": 2,
+      "West": 8,
+      "abandoned_because": null,
+      "board": 2,
+      "created": "2025-04-06T01:25:23.114Z",
+      "modified": "2025-04-06T01:25:37.930Z",
+      "open_access": false,
+      "table_display_number": 1
+    },
+    "model": "app.hand",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "East": 5,
+      "North": 3,
+      "South": 4,
+      "West": 6,
+      "abandoned_because": null,
+      "board": 2,
+      "created": "2025-04-06T01:25:23.160Z",
+      "modified": "2025-04-06T01:25:38.616Z",
+      "open_access": false,
+      "table_display_number": 2
+    },
+    "model": "app.hand",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.359Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:08.359Z",
+      "serialized": "1♦"
+    },
+    "model": "app.call",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.391Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:08.391Z",
+      "serialized": "1♣"
+    },
+    "model": "app.call",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.639Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:08.639Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.646Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:08.646Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.890Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:08.890Z",
+      "serialized": "1♥"
+    },
+    "model": "app.call",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:08.895Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:08.895Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.151Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:09.151Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.152Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:09.152Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.415Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:09.415Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.691Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:09.691Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:23.346Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:23.346Z",
+      "serialized": "1♣"
+    },
+    "model": "app.call",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.156Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:24.156Z",
+      "serialized": "1♦"
+    },
+    "model": "app.call",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.193Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:24.193Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.380Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:24.380Z",
+      "serialized": "2♣"
+    },
+    "model": "app.call",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.413Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:24.413Z",
+      "serialized": "1♣"
+    },
+    "model": "app.call",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.643Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:24.643Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.656Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:24.656Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.906Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:24.906Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:24.906Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:24.906Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.141Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:25.141Z",
+      "serialized": "2♦"
+    },
+    "model": "app.call",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.143Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:25.143Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.404Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:25.404Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.676Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:25.676Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.959Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:25.959Z",
+      "serialized": "Pass"
+    },
+    "model": "app.call",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.447Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:09.447Z",
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:09.720Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:09.720Z",
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.017Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:10.017Z",
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.037Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:10.037Z",
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 4
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.305Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:10.305Z",
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 5
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.311Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:10.311Z",
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 6
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.563Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:10.563Z",
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 7
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.566Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:10.566Z",
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 8
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.804Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:10.804Z",
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 9
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:10.806Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:10.806Z",
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 10
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.057Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:11.057Z",
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 11
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.059Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:11.059Z",
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 12
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.301Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:11.301Z",
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.307Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:11.307Z",
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.552Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:11.552Z",
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.554Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:11.554Z",
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 16
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.802Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:11.802Z",
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 17
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:11.809Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:11.809Z",
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 18
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.050Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:12.050Z",
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 19
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.054Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:12.054Z",
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 20
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.302Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:12.302Z",
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 21
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.304Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:12.304Z",
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 22
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.548Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:12.548Z",
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 23
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.552Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:12.552Z",
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 24
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.797Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:12.797Z",
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 25
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:12.798Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:12.798Z",
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 26
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.042Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:13.042Z",
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 27
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.053Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:13.053Z",
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 28
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.314Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:13.314Z",
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 29
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.358Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:13.358Z",
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 30
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.584Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:13.584Z",
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 31
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.589Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:13.589Z",
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 32
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.836Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:13.836Z",
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 33
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:13.837Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:13.837Z",
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 34
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.071Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:14.071Z",
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 35
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.087Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:14.087Z",
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 36
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.322Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:14.322Z",
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 37
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.330Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:14.330Z",
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 38
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.568Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:14.568Z",
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 39
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.571Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:14.571Z",
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 40
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.812Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:14.812Z",
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 41
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:14.813Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:14.813Z",
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 42
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.062Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:15.062Z",
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 43
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.073Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:15.073Z",
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 44
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.310Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:15.310Z",
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 45
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.333Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:15.333Z",
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 46
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.630Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:15.630Z",
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 47
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.633Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:15.633Z",
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 48
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.895Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:15.895Z",
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 49
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:15.897Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:15.897Z",
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 50
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.136Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:16.136Z",
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 51
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.143Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:16.143Z",
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 52
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.430Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:16.430Z",
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 53
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.434Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:16.434Z",
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 54
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.673Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:16.673Z",
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 55
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.676Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:16.676Z",
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 56
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.917Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:16.917Z",
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 57
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:16.928Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:16.928Z",
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 58
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.172Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:17.172Z",
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 59
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.184Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:17.184Z",
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 60
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.414Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:17.414Z",
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 61
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.420Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:17.420Z",
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 62
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.720Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:17.720Z",
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 63
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.730Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:17.730Z",
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 64
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.984Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:17.984Z",
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 65
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:17.985Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:17.985Z",
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 66
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.231Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:18.231Z",
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 67
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.232Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:18.232Z",
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 68
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.472Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:18.472Z",
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 69
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.482Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:18.482Z",
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 70
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.728Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:18.728Z",
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 71
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.731Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:18.731Z",
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 72
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.970Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:18.970Z",
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 73
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:18.978Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:18.978Z",
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 74
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.209Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:19.209Z",
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 75
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.237Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:19.237Z",
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 76
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.475Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:19.475Z",
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 77
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.482Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:19.482Z",
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 78
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.725Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:19.725Z",
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 79
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.737Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:19.737Z",
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 80
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.978Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:19.978Z",
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 81
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:19.982Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:19.982Z",
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 82
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.229Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:20.230Z",
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 83
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.234Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:20.234Z",
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 84
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.493Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:20.493Z",
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 85
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.502Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:20.502Z",
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 86
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.755Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:20.755Z",
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 87
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:20.764Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:20.764Z",
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 88
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.008Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:21.008Z",
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 89
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.012Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:21.012Z",
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 90
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.255Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:21.255Z",
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 91
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.261Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:21.261Z",
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 92
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.500Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:21.500Z",
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 93
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.513Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:21.513Z",
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 94
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.749Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:21.749Z",
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 95
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.757Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:21.757Z",
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 96
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.993Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:21.993Z",
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 97
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:21.998Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:21.998Z",
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 98
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.273Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:22.273Z",
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 99
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.280Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:22.280Z",
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 100
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.523Z",
+      "hand": 2,
+      "modified": "2025-04-06T01:25:22.523Z",
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 101
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.526Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:22.526Z",
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 102
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.801Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:22.801Z",
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 103
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:22.992Z",
+      "hand": 1,
+      "modified": "2025-04-06T01:25:22.992Z",
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 104
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.412Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:25.412Z",
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 105
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.631Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:25.631Z",
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 106
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:25.805Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:25.805Z",
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 107
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.051Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:26.051Z",
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 108
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.309Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:26.309Z",
+      "serialized": "♣3"
+    },
+    "model": "app.play",
+    "pk": 109
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.364Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:26.364Z",
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 110
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.631Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:26.631Z",
+      "serialized": "♣4"
+    },
+    "model": "app.play",
+    "pk": 111
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.635Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:26.635Z",
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 112
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.814Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:26.814Z",
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 113
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:26.934Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:26.934Z",
+      "serialized": "♣2"
+    },
+    "model": "app.play",
+    "pk": 114
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.085Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:27.085Z",
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 115
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.203Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:27.203Z",
+      "serialized": "♣Q"
+    },
+    "model": "app.play",
+    "pk": 116
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.370Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:27.370Z",
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 117
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.403Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:27.403Z",
+      "serialized": "♦2"
+    },
+    "model": "app.play",
+    "pk": 118
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.648Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:27.648Z",
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 119
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.663Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:27.663Z",
+      "serialized": "♦5"
+    },
+    "model": "app.play",
+    "pk": 120
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.885Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:27.885Z",
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 121
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:27.900Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:27.900Z",
+      "serialized": "♦8"
+    },
+    "model": "app.play",
+    "pk": 122
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.132Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:28.132Z",
+      "serialized": "♦9"
+    },
+    "model": "app.play",
+    "pk": 123
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.133Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:28.133Z",
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 124
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.377Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:28.377Z",
+      "serialized": "♣5"
+    },
+    "model": "app.play",
+    "pk": 125
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.380Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:28.380Z",
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 126
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.612Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:28.612Z",
+      "serialized": "♦3"
+    },
+    "model": "app.play",
+    "pk": 127
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.618Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:28.618Z",
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 128
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.853Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:28.853Z",
+      "serialized": "♦7"
+    },
+    "model": "app.play",
+    "pk": 129
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:28.854Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:28.854Z",
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 130
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.093Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:29.093Z",
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 131
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.094Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:29.094Z",
+      "serialized": "♣6"
+    },
+    "model": "app.play",
+    "pk": 132
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.330Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:29.330Z",
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 133
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.331Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:29.331Z",
+      "serialized": "♦K"
+    },
+    "model": "app.play",
+    "pk": 134
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.565Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:29.565Z",
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 135
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.573Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:29.573Z",
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 136
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.802Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:29.802Z",
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 137
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:29.803Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:29.803Z",
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 138
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.038Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:30.038Z",
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 139
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.039Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:30.039Z",
+      "serialized": "♦4"
+    },
+    "model": "app.play",
+    "pk": 140
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.273Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:30.273Z",
+      "serialized": "♣7"
+    },
+    "model": "app.play",
+    "pk": 141
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.280Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:30.280Z",
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 142
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.549Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:30.549Z",
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 143
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.554Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:30.554Z",
+      "serialized": "♣9"
+    },
+    "model": "app.play",
+    "pk": 144
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.784Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:30.784Z",
+      "serialized": "♦6"
+    },
+    "model": "app.play",
+    "pk": 145
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:30.785Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:30.785Z",
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 146
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.037Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:31.037Z",
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 147
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.047Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:31.047Z",
+      "serialized": "♥3"
+    },
+    "model": "app.play",
+    "pk": 148
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.294Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:31.294Z",
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 149
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.295Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:31.295Z",
+      "serialized": "♥6"
+    },
+    "model": "app.play",
+    "pk": 150
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.532Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:31.532Z",
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 151
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.535Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:31.535Z",
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 152
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.770Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:31.770Z",
+      "serialized": "♥T"
+    },
+    "model": "app.play",
+    "pk": 153
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:31.775Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:31.775Z",
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 154
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.010Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:32.010Z",
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 155
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.014Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:32.014Z",
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 156
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.246Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:32.246Z",
+      "serialized": "♦T"
+    },
+    "model": "app.play",
+    "pk": 157
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.248Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:32.248Z",
+      "serialized": "♥4"
+    },
+    "model": "app.play",
+    "pk": 158
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.481Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:32.481Z",
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 159
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.486Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:32.486Z",
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 160
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.724Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:32.724Z",
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 161
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.729Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:32.729Z",
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 162
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.971Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:32.971Z",
+      "serialized": "♥8"
+    },
+    "model": "app.play",
+    "pk": 163
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:32.975Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:32.975Z",
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 164
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.203Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:33.203Z",
+      "serialized": "♣T"
+    },
+    "model": "app.play",
+    "pk": 165
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.214Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:33.214Z",
+      "serialized": "♦A"
+    },
+    "model": "app.play",
+    "pk": 166
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.448Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:33.448Z",
+      "serialized": "♠2"
+    },
+    "model": "app.play",
+    "pk": 167
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.455Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:33.455Z",
+      "serialized": "♥5"
+    },
+    "model": "app.play",
+    "pk": 168
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.691Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:33.691Z",
+      "serialized": "♥J"
+    },
+    "model": "app.play",
+    "pk": 169
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.692Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:33.692Z",
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 170
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.927Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:33.927Z",
+      "serialized": "♣8"
+    },
+    "model": "app.play",
+    "pk": 171
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:33.929Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:33.929Z",
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 172
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.172Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:34.172Z",
+      "serialized": "♥2"
+    },
+    "model": "app.play",
+    "pk": 173
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.174Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:34.174Z",
+      "serialized": "♣J"
+    },
+    "model": "app.play",
+    "pk": 174
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.408Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:34.408Z",
+      "serialized": "♥9"
+    },
+    "model": "app.play",
+    "pk": 175
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.410Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:34.410Z",
+      "serialized": "♠4"
+    },
+    "model": "app.play",
+    "pk": 176
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.673Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:34.673Z",
+      "serialized": "♥K"
+    },
+    "model": "app.play",
+    "pk": 177
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.677Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:34.677Z",
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 178
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.911Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:34.911Z",
+      "serialized": "♣A"
+    },
+    "model": "app.play",
+    "pk": 179
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:34.913Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:34.913Z",
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 180
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.154Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:35.154Z",
+      "serialized": "♦J"
+    },
+    "model": "app.play",
+    "pk": 181
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.156Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:35.156Z",
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 182
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.412Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:35.412Z",
+      "serialized": "♣K"
+    },
+    "model": "app.play",
+    "pk": 183
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.413Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:35.413Z",
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 184
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.660Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:35.660Z",
+      "serialized": "♠6"
+    },
+    "model": "app.play",
+    "pk": 185
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.661Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:35.661Z",
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 186
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.895Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:35.895Z",
+      "serialized": "♥A"
+    },
+    "model": "app.play",
+    "pk": 187
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:35.898Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:35.898Z",
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 188
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.135Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:36.135Z",
+      "serialized": "♦Q"
+    },
+    "model": "app.play",
+    "pk": 189
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.151Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:36.151Z",
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 190
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.383Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:36.383Z",
+      "serialized": "♠8"
+    },
+    "model": "app.play",
+    "pk": 191
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.386Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:36.386Z",
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 192
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.637Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:36.637Z",
+      "serialized": "♠Q"
+    },
+    "model": "app.play",
+    "pk": 193
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.639Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:36.639Z",
+      "serialized": "♥7"
+    },
+    "model": "app.play",
+    "pk": 194
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.918Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:36.918Z",
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 195
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:36.919Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:36.919Z",
+      "serialized": "♠3"
+    },
+    "model": "app.play",
+    "pk": 196
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.157Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:37.157Z",
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 197
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.164Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:37.164Z",
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 198
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.421Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:37.421Z",
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 199
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.428Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:37.428Z",
+      "serialized": "♠9"
+    },
+    "model": "app.play",
+    "pk": 200
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.662Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:37.662Z",
+      "serialized": "♠K"
+    },
+    "model": "app.play",
+    "pk": 201
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.665Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:37.665Z",
+      "serialized": "♥Q"
+    },
+    "model": "app.play",
+    "pk": 202
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.902Z",
+      "hand": 3,
+      "modified": "2025-04-06T01:25:37.902Z",
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 203
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:37.903Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:37.903Z",
+      "serialized": "♠5"
+    },
+    "model": "app.play",
+    "pk": 204
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:38.160Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:38.160Z",
+      "serialized": "♠7"
+    },
+    "model": "app.play",
+    "pk": 205
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:38.337Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:38.337Z",
+      "serialized": "♠J"
+    },
+    "model": "app.play",
+    "pk": 206
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:38.462Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:38.462Z",
+      "serialized": "♠A"
+    },
+    "model": "app.play",
+    "pk": 207
+  },
+  {
+    "fields": {
+      "created": "2025-04-06T01:25:38.588Z",
+      "hand": 4,
+      "modified": "2025-04-06T01:25:38.588Z",
+      "serialized": "♠T"
+    },
+    "model": "app.play",
+    "pk": 208
+  }
+]

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from django.db.models import Case, Value, When
 from django.template.response import TemplateResponse
@@ -9,12 +10,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
+import django_tables2 as tables  # type: ignore[import-untyped]
 
 from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
 
 import app.models
+import app.models.common
 import app.models.tournament
+from app.utils.movements import Movement, _group_letter
 
 from .misc import logged_in_as_player_required
 
@@ -22,22 +26,89 @@ from .misc import logged_in_as_player_required
 logger = logging.getLogger(__name__)
 
 
-@logged_in_as_player_required()
+def annotate_grid_with_hand_links(
+    request: AuthedHttpRequest, t: app.models.Tournament, mvmt: Movement
+) -> dict[str, Any]:
+    tabulate_me = mvmt.tabulate_me()
+    annotated_rows = []
+    for zb_table, row in enumerate(tabulate_me["rows"]):
+        annotated_row = []
+        for one_based_round, column in enumerate(row):
+            # the first entry here is just the table number.
+            if one_based_round == 0:
+                annotated_column = column
+            else:
+                annotated_column = format_html(
+                    "<a href='{}'>{}</a>",
+                    reverse(
+                        "app:hands-by-table-and-board-group",
+                        kwargs=dict(
+                            tournament_pk=t.pk,
+                            table_display_number=zb_table + 1,
+                            board_group=_group_letter(one_based_round - 1),
+                        ),
+                    ),
+                    column,
+                )
+
+            annotated_row.append(annotated_column)
+        annotated_rows.append(annotated_row)
+    return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
+
+
+class MatchpointScoreTable(tables.Table):
+    pair1 = tables.Column()
+    pair2 = tables.Column()
+    matchpoints = tables.Column()
+    percentage = tables.Column()
+
+
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
-    viewer: app.models.Player | None = request.user.player
-    assert viewer is not None
+    viewer: app.models.Player | None = getattr(request.user, "player", None)
+
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     context = {
         "tournament": t,
         "button": "",
         "comment": "",
+        "signed_up_players": app.models.TournamentSignup.objects.filter(tournament=t),
         "speed_things_up_button": "",
     }
-    # TODO -- if our caller is not signed up for any tournaments, *and* if this tournament is open for signups, display a big "sign me up" button.
-    viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
-    logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
+    if t.signup_deadline_has_passed():
+        # Only display the movement if every board in the tournament was assigned a group -- otherwise it's an old
+        # tournament that didn't have a movement
+        if not t.board_set.filter(group__isnull=True).exists():
+            try:
+                movement = t.get_movement()
+            except app.models.tournament.NoPairs:
+                pass
+            else:
+                context["movement_boards_per_round"] = movement.boards_per_round_per_table
+                tab_dict = annotate_grid_with_hand_links(request, t, movement)
+                context["movement_headers"] = tab_dict["headers"]
+                context["movement_rows"] = tab_dict["rows"]
 
-    if viewer.partner is not None and not viewer.currently_seated:
+                if t.is_complete:
+                    items = t.matchpoints_by_pair().items()
+                    l_o_d = [
+                        {
+                            "pair1": pair[0],
+                            "pair2": pair[1],
+                            "matchpoints": score[0],
+                            "percentage": score[1],
+                        }
+                        for pair, score in items
+                    ]
+                    context["matchpoint_score_table"] = MatchpointScoreTable(l_o_d, request=request)
+        else:
+            msg = f"{t} is an old tournament whose boards don't belong to groups; no scores for you"
+            logger.info("%s", msg)
+            context["missing_matchpoint_explanation"] = msg
+
+    if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
+        viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
+        logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
+
         if not viewer_signup.exists():
             logger.debug("#%s's status is %s", t.display_number, t.status())
             if t.status() is app.models.tournament.OpenForSignup:
@@ -58,13 +129,12 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
             if not non_synths_signed_up_besides_us.exists():
                 text_shmext = format_html(
-                    """<button class="btn btn-primary" type="submit">Miss Me With This Deadline Shit</button>"""
+                    """<button class="btn btn-primary" type="submit">Skip the Deadline</button>"""
                 )
                 comment += text_shmext
                 context["speed_things_up_button"] = text_shmext
             context["comment"] = comment
 
-    context["signed_up_players"] = app.models.TournamentSignup.objects.filter(tournament=t)
     return TemplateResponse(request=request, template="tournament.html", context=context)
 
 
@@ -76,13 +146,12 @@ def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
 
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     try:
-        t.sign_up(viewer)
+        t.sign_up_player_and_partner(viewer)
     except app.models.tournament.TournamentSignupError as e:
         return Forbid(e)
     return HttpResponseRedirect(reverse("app:tournament", kwargs=dict(pk=t.pk)))
 
 
-@logged_in_as_player_required()
 def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     now = timezone.now()
 
@@ -97,8 +166,6 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
             default=WHITE,
         ),
     )
-
-    # TODO -- sort the items so that openforsignups come first; then in descending order by signup deadline.
 
     context = {"tournament_list": all_, "description": "", "button": ""}
 

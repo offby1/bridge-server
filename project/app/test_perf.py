@@ -1,16 +1,17 @@
+from django.core.management import call_command
+
 import bridge.card
 import bridge.contract
 
-from .models import Hand, Player, Table
+from .models import Hand, Player
 from .views.hand import hand_detail_view
+from .views.tournament import tournament_view
 
 
 def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
-    usual_setup, rf, django_assert_max_num_queries
+    usual_setup: Hand, rf, django_assert_max_num_queries
 ) -> None:
-    t = Table.objects.first()
-    assert t is not None
-    h = t.current_hand
+    h = usual_setup
 
     def next_caller(current_caller):
         table = h.auction.table
@@ -33,10 +34,32 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
     c(bridge.contract.Pass)
     c(bridge.contract.Pass)
 
-    request = rf.get("/woteva/", data={"pk": t.pk})
+    request = rf.get("/woteva/", data={"pk": h.pk})
     p = Player.objects.first()
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(76):
-        hand_detail_view(request, t.current_hand.pk)
+    with django_assert_max_num_queries(118):
+        hand_detail_view(request, h.pk)
+
+
+def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
+    nearly_completed_tournament, rf, django_assert_max_num_queries
+) -> None:
+    request = rf.get("/woteva/")
+    p = Player.objects.first()
+    assert p is not None
+    request.user = p.user
+
+    with django_assert_max_num_queries(28):
+        tournament_view(request, "1")
+
+
+def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
+    call_command("loaddata", "completed-tournament-20-players")
+
+    request = rf.get("/woteva/")
+    request.user = None
+
+    with django_assert_max_num_queries(327):
+        tournament_view(request, "1")

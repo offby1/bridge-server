@@ -1,80 +1,10 @@
 [
   {
     "fields": {
-      "date_joined": "2024-10-02T21:55:20.402Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
-      "user_permissions": [],
-      "username": "Jeremy Northam"
-    },
-    "model": "auth.user",
-    "pk": 11
-  },
-  {
-    "fields": {
-      "date_joined": "2024-10-02T21:55:20.373Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2024-11-06T15:27:39.341Z",
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
-      "user_permissions": [],
-      "username": "Clint Eastwood"
-    },
-    "model": "auth.user",
-    "pk": 12
-  },
-  {
-    "fields": {
-      "date_joined": "2024-10-02T21:55:20.389Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
-      "user_permissions": [],
-      "username": "J.D. Souther"
-    },
-    "model": "auth.user",
-    "pk": 13
-  },
-  {
-    "fields": {
-      "date_joined": "2024-10-02T21:55:20.396Z",
-      "email": "",
-      "first_name": "",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "",
-      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
-      "user_permissions": [],
-      "username": "Adam West"
-    },
-    "model": "auth.user",
-    "pk": 14
-  },
-  {
-    "fields": {
       "display_number": 1,
-      "is_complete": false
+      "is_complete": false,
+      "play_completion_deadline": "2999-12-31T23:49:49.999Z",
+      "signup_deadline": "2000-01-01T00:00:00Z"
     },
     "model": "app.tournament",
     "pk": 1
@@ -85,6 +15,7 @@
       "display_number": 1,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": false,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -100,6 +31,7 @@
       "display_number": 2,
       "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
       "ew_vulnerable": false,
+      "group": "A",
       "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
       "ns_vulnerable": true,
       "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
@@ -110,58 +42,13 @@
     "pk": 2
   },
   {
-    "fields": {},
-    "model": "app.lobby",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "direction": "N",
-      "player": 1,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "direction": "E",
-      "player": 2,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "direction": "S",
-      "player": 3,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "direction": "W",
-      "player": 4,
-      "table": 1
-    },
-    "model": "app.seat",
-    "pk": 4
-  },
-  {
     "fields": {
       "allow_bot_to_play_for_me": true,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": true,
-      "user": 11
+      "user": 1
     },
     "model": "app.player",
     "pk": 1
@@ -169,15 +56,11 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
-      "user": 12
+      "user": 2
     },
     "model": "app.player",
     "pk": 2
@@ -185,15 +68,11 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
-      "user": 13
+      "user": 3
     },
     "model": "app.player",
     "pk": 3
@@ -201,36 +80,101 @@
   {
     "fields": {
       "allow_bot_to_play_for_me": false,
-      "boards_played": [
-        1
-      ],
       "created": "2000-01-01T00:00:00Z",
-      "currently_seated": true,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,
-      "user": 14
+      "user": 4
     },
     "model": "app.player",
     "pk": 4
   },
   {
     "fields": {
+      "abandoned_because": null,
       "board": 1,
-      "created": "2000-01-01T00:00:00Z",
-      "modified": "2000-01-01T00:00:00Z",
+      "created": "2025-03-26T15:40:29.315Z",
+      "East": 2,
+      "modified": "2025-03-26T15:40:29.315Z",
+      "North": 1,
       "open_access": false,
-      "table": 1
+      "South": 3,
+      "table_display_number": 1,
+      "West": 4
     },
     "model": "app.hand",
     "pk": 1
   },
   {
     "fields": {
-      "tempo_seconds": 1.0,
-      "tournament": 1
+      "date_joined": "2025-03-26T15:35:19.214Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Jeremy Northam"
     },
-    "model": "app.table",
+    "model": "auth.user",
     "pk": 1
+  },
+  {
+    "fields": {
+      "date_joined": "2025-03-26T15:35:19.232Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Clint Eastwood"
+    },
+    "model": "auth.user",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "date_joined": "2025-03-26T15:35:19.252Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "J.D. Souther"
+    },
+    "model": "auth.user",
+    "pk": 3
+  },
+  {
+    "fields": {
+      "date_joined": "2025-03-26T15:35:19.271Z",
+      "email": "",
+      "first_name": "",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "",
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "user_permissions": [],
+      "username": "Adam West"
+    },
+    "model": "auth.user",
+    "pk": 4
   }
 ]

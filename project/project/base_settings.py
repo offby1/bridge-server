@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_tables2",
     "debug_toolbar",
     "django_extensions",
     "template_partials",
@@ -120,6 +121,7 @@ MIDDLEWARE = [
     "tz_detect.middleware.TimezoneMiddleware",
 ]
 LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
+GENERATE_REQUEST_ID_IF_NOT_IN_HEADER = True
 
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 
@@ -132,6 +134,8 @@ ROOT_URLCONF = "project.urls"
 LOGIN_REDIRECT_URL = "app:player"
 
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
+
+DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5-responsive.html"
 
 TEMPLATES = [
     {
@@ -212,9 +216,17 @@ LOGGING: dict[str, Any] = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        # "file": {
+        #     "level": "DEBUG",
+        #     "class": "logging.FileHandler",
+        #     "filename": "/tmp/django.log",
+        # },
     },
     "root": {
-        "handlers": ["console"],
+        "handlers": [
+            "console",
+            # "file"
+        ],
     },
     "loggers": {
         "app": {

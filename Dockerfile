@@ -34,4 +34,4 @@ COPY /server/start-daphne.sh /service/daphne/run
 
 WORKDIR /bridge/project
 
-CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && poetry run python manage.py bring_up_all_api_bots && cd /service && svscan"]
+CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && poetry run python manage.py synchronize_bot_states && (cd /service && svscan) "]
