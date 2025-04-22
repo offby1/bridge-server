@@ -1,5 +1,3 @@
-import json
-
 from django.http import HttpRequest, HttpResponse
 
 from app.models.types import PK

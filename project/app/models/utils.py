@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 def assert_type(obj_: Any, expected_type: type[Any]) -> None:
     __tracebackhide__ = True
-    assert isinstance(
-        obj_, expected_type
-    ), f"I want a {expected_type} but you done gimme a {type(obj_)}"
+    assert isinstance(obj_, expected_type), (
+        f"I want a {expected_type} but you done gimme a {type(obj_)}"
+    )
 
 
 class UserMitPlaya(User):
