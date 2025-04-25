@@ -61,6 +61,14 @@ class PlayerManager(models.Manager):
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
+    def ensure_at_least_six_synths(self) -> None:
+        with transaction.atomic():
+            num_existing = Player.objects.filter(synthetic=True).count()
+            num_needed = max(0, 6 - num_existing)
+            while num_needed > 0:
+                self.create_synthetic()
+                num_needed -= 1
+
     def get_from_user(self, user):
         return self.get(user=user)
 
