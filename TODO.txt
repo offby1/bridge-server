@@ -1,10 +1,14 @@
 IN PROGRESS:
+
+STILL TODO:
+* Use [the time element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time) where appropriate.
+
+* When creating synthetic opponents, create *six*, not two; so we get two tables, hence a realistic movement.
+
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
 
 * app:hand-list should have a way to filter the rows by tournament number
 
-
-STILL TODO:
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
 
   The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands.
