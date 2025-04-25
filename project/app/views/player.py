@@ -356,24 +356,6 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
     return HttpResponseRedirect(next_)
 
 
-def _create_synth_opponents_button(request) -> str:
-    return format_html(
-        """<button class="btn btn-primary" type="submit">Gimme synthetic opponents, Yo</button>"""
-    )
-
-
-@require_http_methods(["POST"])
-@logged_in_as_player_required(redirect=False)
-def player_create_synthetic_opponents_view(request: AuthedHttpRequest) -> HttpResponse:
-    assert request.user.player is not None
-    next_ = request.POST["next"]
-    try:
-        request.user.player.create_synthetic_opponents()
-    except Exception as e:
-        return HttpResponseBadRequest(str(e))
-    return HttpResponseRedirect(next_)
-
-
 def _background_css_color(player: Player) -> str:
     now = timezone.now()
     when, what = player.last_action()
@@ -447,14 +429,5 @@ def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
         context["create_synth_partner_next"] = (
             reverse("app:tournament-list") + "?open_for_signups=True"
         )
-    # similarly for opponents.
-    elif (
-        viewer is not None
-        and viewer.partner is not None
-        and has_partner_filter is True
-        and filtered_count < 2
-    ):
-        context["create_synth_opponents_button"] = _create_synth_opponents_button(request)
-        context["create_synth_opponents_next"] = request.get_full_path()
 
     return render(request, "player_list.html", context)

@@ -80,14 +80,6 @@
         <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
     </form>
 {% endifexists %}
-{% ifexists create_synth_opponents_button %}
-<form action="{% url 'app:player-create-synthetic-opponents' %}"
-      method="post">
-    {% csrf_token %}
-    {{ create_synth_opponents_button }}
-    <input type="hidden" name="next" value="{{ create_synth_opponents_next }}" />
-</form>
-{% endifexists %}
 {% include "pagination-controls.html" %}
 {% endblock player_list %}
 {% endblock content %}

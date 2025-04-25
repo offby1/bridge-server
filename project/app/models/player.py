@@ -456,30 +456,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             new_player.save()
             return self.partner
 
-    def create_synthetic_opponents(self) -> list[Player]:
-        with transaction.atomic():
-            existing = (
-                Player.objects.filter(synthetic=True)
-                .filter(partner__isnull=False)
-                .filter(current_hand__isnull=True)
-                .exclude(partner=self)
-            )
-            if existing.count() >= 2:
-                raise PartnerException(
-                    f"There are already at least two existing synths {[s.name for s in existing.all()]}"
-                )
-            rv: list[Player] = []
-
-            while len(rv) < 2:
-                rv.append(Player.objects.create_synthetic())
-
-            rv[0].partner = rv[1]
-            rv[1].partner = rv[0]
-            for p in rv:
-                p.save()
-
-            return rv
-
     class Meta:
         ordering = ["user__username"]
         constraints = [
