@@ -65,10 +65,11 @@ def logged_in_as_player_required(*, redirect=True):
             user = request.user
             player = app.models.Player.objects.filter(user__username=user.username).first()
             if player is None:
+                msg = f"You ({user.username}) ain't no player, so you can't see whatever \"{view_function.__name__}\" would have shown you."
                 django_web_messages.add_message(
                     request,
                     django_web_messages.INFO,
-                    f"You ({user.username}) ain't no player, so you can't see whatever {view_function} would have shown you.",
+                    msg,
                 )
                 if redirect:
                     home = reverse("app:home")
