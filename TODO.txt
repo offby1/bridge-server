@@ -1,8 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* Use [the time element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time) where appropriate.
-
 * When creating synthetic opponents, create *six*, not two; so we get two tables, hence a realistic movement.
 
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
@@ -222,6 +220,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Use [the time element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time) where appropriate.
+
+  Done, in a couple places; although the benefit isn't clear.
+
 * Completed tournaments have a summary showing each pair along with their score in matchpoints.  Allow sorting by various columns -- partners and score, certainly.
 
   Gonna try "django-tables2" again.

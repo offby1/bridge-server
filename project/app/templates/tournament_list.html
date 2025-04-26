@@ -36,7 +36,8 @@
                     <td>{{ tournament.status_str }}</td>
                     <td style="{{ tournament.signup_deadline_style }}">
                         {% if tournament.signup_deadline %}
-                            <span class="isoformat">{{ tournament.signup_deadline.isoformat }}</span>
+                            <time datetime="{{ tournament.signup_deadline.isoformat }}"
+                                  class="isoformat">{{ tournament.signup_deadline.isoformat }}</time>
                             <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
                         {% else %}
                             None
@@ -44,7 +45,8 @@
                     </td>
                     <td style="{{ tournament.play_completion_deadline_style }}">
                         {% if tournament.play_completion_deadline %}
-                            <span class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</span>
+                            <time datetime="{{ tournament.play_completion_deadline.isoformat }}"
+                                  class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</time>
                             <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
                         {% else %}
                             None
