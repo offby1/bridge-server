@@ -7,6 +7,8 @@ import pathlib
 import subprocess
 from typing import TYPE_CHECKING
 
+import more_itertools
+
 import bridge.auction
 import bridge.card
 import bridge.seat
@@ -31,6 +33,7 @@ from .types import PK_from_str
 if TYPE_CHECKING:
     from .hand import Hand
     from .types import PK
+    import app.models
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +63,37 @@ class PlayerManager(models.Manager):
             username=self._find_unused_username(prefix="_")
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
+
+    def get_or_create_synthetic(self, **exclude_kwargs) -> tuple[Player, bool]:
+        existing = Player.objects.filter(synthetic=True, partner__isnull=True).exclude(
+            **exclude_kwargs
+        )
+        if existing:
+            return existing, False
+
+        return self.create_synthetic(), True
+
+    def ensure_eight_players_signed_up(self, *, tournament: app.models.Tournament) -> None:
+        with transaction.atomic():
+            the_eight = [
+                player for player in self.filter(tournamentsignup__tournament=tournament)[0:8]
+            ]
+
+            while len(the_eight) < 8:
+                p, created = self.get_or_create_synthetic(pk__in=[p.pk for p in the_eight])
+                logger.info("%s %s", "created" if created else "reused", p)
+                the_eight.append(p)
+
+            # now pair 'em up and sign 'em up
+            unpartnered = [p for p in the_eight if p.partner is None]
+
+            for chunk in more_itertools.chunked(unpartnered, 2):
+                if len(chunk) == 2:
+                    p1, p2 = chunk
+                    p1.partner_with(p2)
+
+            for p in the_eight:
+                tournament.sign_up_player_and_partner(p)
 
     def get_from_user(self, user):
         return self.get(user=user)
@@ -309,7 +343,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def partner_with(self, other):
         with transaction.atomic():
             if self.partner not in (None, other):
-                msg = f"Cannot partner with {other=} cuz I'm already partnered with {self.partner=}"
+                msg = f"Cannot partner with {other.name=} cuz I'm already partnered with {self.partner.name=}"
                 raise PartnerException(
                     msg,
                 )
@@ -447,7 +481,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             existing = Player.objects.filter(synthetic=True).filter(partner__isnull=True)
             if existing.exists():
                 raise PartnerException(
-                    f"There are already existing synths {[s.name for s in existing.all()]}"
+                    f"There are already existing, unpartnered synths {[s.name for s in existing.all()]}"
                 )
             new_player = Player.objects.create_synthetic()
             new_player.partner = self
@@ -455,30 +489,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             self.save()
             new_player.save()
             return self.partner
-
-    def create_synthetic_opponents(self) -> list[Player]:
-        with transaction.atomic():
-            existing = (
-                Player.objects.filter(synthetic=True)
-                .filter(partner__isnull=False)
-                .filter(current_hand__isnull=True)
-                .exclude(partner=self)
-            )
-            if existing.count() >= 2:
-                raise PartnerException(
-                    f"There are already at least two existing synths {[s.name for s in existing.all()]}"
-                )
-            rv: list[Player] = []
-
-            while len(rv) < 2:
-                rv.append(Player.objects.create_synthetic())
-
-            rv[0].partner = rv[1]
-            rv[1].partner = rv[0]
-            for p in rv:
-                p.save()
-
-            return rv
 
     class Meta:
         ordering = ["user__username"]
@@ -502,4 +512,5 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
+    list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]
     list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]

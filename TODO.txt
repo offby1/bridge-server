@@ -1,7 +1,9 @@
 IN PROGRESS:
 
 STILL TODO:
-* When creating synthetic opponents, create *six*, not two; so we get two tables, hence a realistic movement.
+* The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
+
+  Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
 
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
 
@@ -140,10 +142,6 @@ STILL TODO:
 
 * Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
 
-* The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
-
-  Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
-
 * Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
   - "Table" joins "Hand" and "Seat"
   - "Hand" joins "Call" and "Play"
@@ -220,6 +218,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* When creating synthetic opponents, create enough (not just two) so we get two tables, hence a realistic movement.
+
 * Use [the time element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time) where appropriate.
 
   Done, in a couple places; although the benefit isn't clear.

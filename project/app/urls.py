@@ -67,11 +67,6 @@ urlpatterns = [
         player.player_create_synthetic_partner_view,
         name="player-create-synthetic-partner",
     ),
-    path(
-        "player/create-synthetic-opponents",
-        player.player_create_synthetic_opponents_view,
-        name="player-create-synthetic-opponents",
-    ),
     path("player/<int:pk>/", player.player_detail_view, name="player"),
     path(
         "player/<int:pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"
