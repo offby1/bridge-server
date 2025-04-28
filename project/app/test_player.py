@@ -54,8 +54,13 @@ def test_synth_signup(db) -> None:
         user=auth.models.User.objects.create(username="bob"),
     )
     bob.create_synthetic_partner()
+    t.sign_up_player_and_partner(bob)
 
     assert Player.objects.count() == 2
 
     Player.objects.ensure_six_synths_signed_up(tournament=t)
     assert Player.objects.count() == 8
+
+    with freeze_time(t.signup_deadline + datetime.timedelta(seconds=1)):
+        mvmt = t.get_movement()
+        assert mvmt.num_rounds == 2
