@@ -195,7 +195,7 @@ def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) ->
     if not t.is_complete and t.signup_deadline is not None and not t.signup_deadline_has_passed():
         t.signup_deadline = timezone.now()
         t.save()
-        app.models.player.ensure_at_least_six_synths()
+        app.models.player.Player.objects.ensure_six_synths_signed_up(tournament=t)
         app.models.tournament._do_signup_expired_stuff(t)
 
         logger.debug(

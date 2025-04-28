@@ -31,6 +31,7 @@ from .types import PK_from_str
 if TYPE_CHECKING:
     from .hand import Hand
     from .types import PK
+    import app.models
 
 logger = logging.getLogger(__name__)
 
@@ -61,12 +62,14 @@ class PlayerManager(models.Manager):
         )
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
-    def ensure_at_least_six_synths(self) -> None:
+    def ensure_six_synths_signed_up(self, *, tournament: app.models.Tournament) -> None:
         with transaction.atomic():
             num_existing = Player.objects.filter(synthetic=True).count()
             num_needed = max(0, 6 - num_existing)
             while num_needed > 0:
-                self.create_synthetic()
+                p1 = self.create_synthetic()
+                p1.create_synthetic_partner()
+                tournament.sign_up_player_and_partner(p1)
                 num_needed -= 1
 
     def get_from_user(self, user):
