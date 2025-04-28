@@ -58,7 +58,10 @@ def test_synth_signup(db) -> None:
 
     assert Player.objects.count() == 2
 
-    Player.objects.ensure_six_synths_signed_up(tournament=t)
+    Player.objects.ensure_eight_players_signed_up(tournament=t)
+    assert Player.objects.count() == 8
+
+    Player.objects.ensure_eight_players_signed_up(tournament=t)
     assert Player.objects.count() == 8
 
     with freeze_time(t.signup_deadline + datetime.timedelta(seconds=1)):
