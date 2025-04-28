@@ -432,16 +432,22 @@ class Tournament(models.Model):
             raise PlayerNotSeatedError(
                 f"At least one of {(player.name, player.partner.name)} is currently seated"
             )
+
+        num_created = 0
         for p in (player, player.partner):
-            app.models.TournamentSignup.objects.get_or_create(
+            _, created = app.models.TournamentSignup.objects.get_or_create(
                 defaults=dict(tournament=self), player=p
             )
-        logger.debug(
-            "Just signed up partners %s and %s for tournament #%s",
-            player.name,
-            player.partner.name,
-            self.display_number,
-        )
+            if created:
+                num_created += 1
+
+        if num_created > 0:
+            logger.debug(
+                "Just signed up partners %s and %s for tournament #%s",
+                player.name,
+                player.partner.name,
+                self.display_number,
+            )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         players = (
