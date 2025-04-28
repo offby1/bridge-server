@@ -7,6 +7,8 @@ import pathlib
 import subprocess
 from typing import TYPE_CHECKING
 
+import more_itertools
+
 import bridge.auction
 import bridge.card
 import bridge.seat
@@ -64,13 +66,20 @@ class PlayerManager(models.Manager):
 
     def ensure_six_synths_signed_up(self, *, tournament: app.models.Tournament) -> None:
         with transaction.atomic():
-            num_existing = Player.objects.filter(synthetic=True).count()
+            qs = Player.objects.filter(synthetic=True, partner__isnull=True)
+            num_existing = qs.count()
             num_needed = max(0, 6 - num_existing)
+
             while num_needed > 0:
-                p1 = self.create_synthetic()
-                p1.create_synthetic_partner()
-                tournament.sign_up_player_and_partner(p1)
+                self.create_synthetic()
                 num_needed -= 1
+
+            # now pair 'em up and sign 'em up
+            for chunk in more_itertools.chunked(qs, 2):
+                if len(chunk) == 2:
+                    p1, p2 = chunk
+                    p1.partner_with(p2)
+                    tournament.sign_up_player_and_partner(p1)
 
     def get_from_user(self, user):
         return self.get(user=user)
@@ -458,7 +467,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             existing = Player.objects.filter(synthetic=True).filter(partner__isnull=True)
             if existing.exists():
                 raise PartnerException(
-                    f"There are already existing synths {[s.name for s in existing.all()]}"
+                    f"There are already existing, unpartnered synths {[s.name for s in existing.all()]}"
                 )
             new_player = Player.objects.create_synthetic()
             new_player.partner = self

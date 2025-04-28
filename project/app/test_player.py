@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from django.conf import settings
 from django.contrib import auth
 
-from app.models import Hand, Player
+from app.models import Hand, Player, Tournament
 
 
 def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
@@ -46,3 +46,16 @@ def test_player_timestamp_updates(db, everybodys_password) -> None:
     assert new_guy.created == new_guy.modified == Today
 
     assert new_guy.last_action() == (Today, "joined")
+
+
+def test_synth_signup(db) -> None:
+    t = Tournament.objects.create()
+    bob = Player.objects.create(
+        user=auth.models.User.objects.create(username="bob"),
+    )
+    bob.create_synthetic_partner()
+
+    assert Player.objects.count() == 2
+
+    Player.objects.ensure_six_synths_signed_up(tournament=t)
+    assert Player.objects.count() == 8
