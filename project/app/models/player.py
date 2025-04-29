@@ -65,10 +65,12 @@ class PlayerManager(models.Manager):
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
     def get_or_create_synthetic(self, **exclude_kwargs) -> tuple[Player, bool]:
-        existing = Player.objects.filter(synthetic=True, partner__isnull=True).exclude(
-            **exclude_kwargs
+        existing = (
+            Player.objects.filter(synthetic=True, partner__isnull=True)
+            .exclude(**exclude_kwargs)
+            .first()
         )
-        if existing:
+        if existing is not None:
             return existing, False
 
         return self.create_synthetic(), True
