@@ -241,6 +241,12 @@ class Board(models.Model):
             # logger.error(f"{player=} is None => {self.PlayerVisibility.nothing=}")
             return self.PlayerVisibility.nothing
 
+        if self.tournament.signup_deadline_has_passed() and player not in self.tournament.players():
+            logger.error(
+                f"t#{self.tournament.display_number}'s signup deadline has passed; and {player.name=} isn't in that tournament, so => {self.PlayerVisibility.everything=}"
+            )
+            return self.PlayerVisibility.everything
+
         hand = player.hand_at_which_we_played_board(self)
         if hand is None:
             # logger.error(f"{hand=} is None => {self.PlayerVisibility.nothing=}")

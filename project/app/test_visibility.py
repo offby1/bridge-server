@@ -1,3 +1,14 @@
+"""
+# can Player P view hand H or H.board?
+
+- if player P *can never* play hand H, they can see everything about both.  (test_running_tournament_irrelevant_players)
+  This means: hand H is part of tournament T, and T's signup deadline has passed; *and* P never signed up for T.
+- if the tournament T to which H.board belongs is completed, everyone can see everything. (test_completed_tournament)
+- if player P has already played hand H *and* H is *completed*, they can see everything about both. (test_player_has_played_board)
+- if player P is *currently* playing hand H, they can see only their own cards, and the dummy. (test_player_has_played_board, test_one_card_played)
+  Also, maybe: the auction history, and the play history.  In real tournaments, the auction history vanishes once it has settled, and the only play history that is visible is the current trick.
+"""
+
 import datetime
 from typing import Generator
 
@@ -52,10 +63,11 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament: Hand
     for player in [None, non_tournament_player]:
         board: Board = hand.board
         for direction in libSeat:
-            assert not board.can_see_cards_at(
+            can_see = board.can_see_cards_at(
                 player=player,
                 direction_letter=direction.value,
-            ), f"Whoa -- {player} can see {board} at {direction}?!"
+            )
+            assert can_see == (player is not None)
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(
@@ -92,6 +104,12 @@ def test_player_has_played_board(
                         player=p,
                         direction_letter=d_letter,
                     ), f"Hey now -- {player} can't see their own cards ({board} at {d_letter})?!"
+
+                if hand.is_complete:
+                    assert board.can_see_cards_at(
+                        player=p,
+                        direction_letter=d_letter,
+                    ), f"Hey now -- {player} can't see cards at *completed* {board} at {d_letter}?!"
 
 
 @pytest.fixture
