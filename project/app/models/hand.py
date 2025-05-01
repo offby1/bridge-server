@@ -340,7 +340,7 @@ class Hand(TimeStampedModel):
 
         tournament: Tournament = self.tournament
         if not tournament.is_complete and tournament.play_completion_deadline_has_passed():
-            self.abandoned_because = "The tournament's play deadline has passed"
+            self.abandoned_because = f"Tournament #{tournament.display_number}'s play deadline {tournament.play_completion_deadline} has passed"
             self.save()
             return True
 

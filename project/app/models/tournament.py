@@ -67,9 +67,15 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
         assert tour.hands().count() == tour.get_movement().num_rounds
+
         if tour.play_completion_deadline is None:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
+        else:
+            logger.warning(
+                "Not computing play completion deadline; instead using already-assigned value %s",
+                tour.play_completion_deadline,
+            )
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -163,6 +169,11 @@ class TournamentManager(models.Manager):
             now = timezone.now()
             kwargs.setdefault("signup_deadline", now + datetime.timedelta(seconds=300))
 
+            # TODO -- typically this gets clobbered by a value computed from the movement.
+            # Perhaps this field should remain nullable?
+            three_hours_from_now = now + datetime.timedelta(seconds=3 * 3600)
+            kwargs.setdefault("play_completion_deadline", three_hours_from_now)
+
             rv: Tournament = super().create(*args, **kwargs)
             logger.debug("Just created %s", rv)
             logger.debug(
@@ -229,10 +240,10 @@ class Tournament(models.Model):
     display_number = models.SmallIntegerField(unique=True)
 
     signup_deadline = models.DateTimeField(
-        null=True, blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
+        blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
     )  # type: ignore[call-overload]
     play_completion_deadline = models.DateTimeField(
-        null=True, blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
+        blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()

@@ -103,7 +103,7 @@ STILL TODO:
 
   * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
 
-  * Anonymous users must not be allowed to watch a hand in progress.
+  * Anonymous users must not be allowed to watch a hand in progress.  Why not? Because it'd be too easy for a player to fire up an incognito window and peek at a hand that they will later play.
 
     Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
 
@@ -218,6 +218,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* I've got backwards-compatibility kludges here and there, to deal with "old-style" tournaments (i.e., those that lack deadlines).  If so, kill that code.
+
 * When creating synthetic opponents, create enough (not just two) so we get two tables, hence a realistic movement.
 
 * Use [the time element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time) where appropriate.
