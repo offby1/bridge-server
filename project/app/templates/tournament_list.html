@@ -68,6 +68,9 @@ function updateDurations() {
          var innards = span.innerHTML;
          var then = new Date (innards);
          var durationMS = then - now ;
+
+         span.innerHTML = span.innerHTML.toLocaleString();
+
          var suffix = " from now";
          if (durationMS < 0) {
             durationMS *= -1;
@@ -79,7 +82,7 @@ function updateDurations() {
           + ")";
       };
 
-      isos = document.querySelectorAll("span.isoformat");
+      isos = document.querySelectorAll("time.isoformat");
       isos.forEach (clobberSibling);
     }
 setInterval(updateDurations, 1000);
