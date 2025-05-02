@@ -238,8 +238,8 @@ def _three_by_three_trick_display_context_for_hand(
             color = card.color
         throb = ""
         if direction == winning_direction:
-            throb = " class=throb-div"
-        return f"""<div{throb}><span style="color: {color}">{card or "__"}</span></div>"""
+            throb = 'class="throb-div"'
+        return f"""<div {throb}><span style="color: {color}">{card or "__"}</span></div>"""
 
     arrow = ""
     if lead_came_from is not None:
