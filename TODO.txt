@@ -1,4 +1,10 @@
 IN PROGRESS:
+* Make the cards more visible during play, by only showing one hand at a time!
+  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
+  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
+
+  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
+
 
 STILL TODO:
 * The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
@@ -24,12 +30,6 @@ STILL TODO:
 * When a tournament's signup deadline has passed, but the play deadline hasn't; *and* all of the signed-up players have played as much as they can play (whatever that means), then force the tournament to complete.  Otherwise, everyone has to sit around waiting for the play deadline to expire before they can see the boards/hands.
 
 * player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
-
-* Make the cards more visible during play, by only showing one hand at a time!
-  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
-  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
-
-  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
 
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
