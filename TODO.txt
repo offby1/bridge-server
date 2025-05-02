@@ -29,6 +29,8 @@ STILL TODO:
   Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
   Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
 
+  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
+
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
   - I've also got a [Django-tasks](https://github.com/realOrangeOne/django-tasks) branch; that was a struggle from start to finish, and I never got it working. There's a [Django Enhancement Proposal](  https://github.com/django/deps/blob/5746805dfb062a99555b5e5bbc5b1685212aba2c/accepted/0014-background-workers.rst#L26) for it.
