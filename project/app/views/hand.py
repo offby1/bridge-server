@@ -624,6 +624,10 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
+def hand_xperimental_view(request: AuthedHttpRequest) -> HttpResponse:
+    return TemplateResponse(request, "hand_xpermiment.html", context={})
+
+
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 

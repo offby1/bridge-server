@@ -13,6 +13,7 @@ from .views.hand import (
     hand_detail_view,
     hand_list_view,
     hand_serialized_view,
+    hand_xperimental_view,
     hand_xscript_updates_view,
     hands_by_table_and_board_group,
     open_access_toggle_view,
@@ -94,4 +95,5 @@ urlpatterns = [
         tournament_void_signup_deadline_view,
         name="tournament-void-signup-deadline",
     ),
+    path("x/", hand_xperimental_view, name="hand-xperimental-view"),
 ]
