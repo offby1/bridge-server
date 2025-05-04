@@ -71,11 +71,6 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         if tour.play_completion_deadline is None:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
-        else:
-            logger.warning(
-                "Not computing play completion deadline; instead using already-assigned value %s",
-                tour.play_completion_deadline,
-            )
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
@@ -166,10 +161,12 @@ class TournamentManager(models.Manager):
             now = timezone.now()
             kwargs.setdefault("signup_deadline", now + datetime.timedelta(seconds=300))
 
-            # TODO -- typically this gets clobbered by a value computed from the movement.
-            # Perhaps this field should remain nullable?
-            three_hours_from_now = now + datetime.timedelta(seconds=3 * 3600)
-            kwargs.setdefault("play_completion_deadline", three_hours_from_now)
+            if "play_completion_deadline" in kwargs:
+                import os
+
+                assert os.environ.get("PYTEST_VERSION") is not None, (
+                    "Uh oh, some non-test code is trying to set the play_completion_deadline on a new tournament"
+                )
 
             rv: Tournament = super().create(*args, **kwargs)
             logger.debug("Just created %s", rv)
@@ -240,7 +237,10 @@ class Tournament(models.Model):
         blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
     )  # type: ignore[call-overload]
     play_completion_deadline = models.DateTimeField(
-        blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
+        null=True,
+        blank=True,
+        default=None,
+        db_comment="NULL means we don't yet know how many players we have, hence cannot compute a movement",
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
