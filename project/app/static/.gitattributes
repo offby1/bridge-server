@@ -1,1 +1,2 @@
-* -diff
+bootstrap* -diff
+*.js -diff
