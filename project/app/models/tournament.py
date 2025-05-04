@@ -82,13 +82,10 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 @receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
-    logger.debug(f"{sender=} {kwargs=}")
     t: Tournament
 
     with transaction.atomic():
         incompletes = Tournament.objects.filter(is_complete=False, signup_deadline__isnull=False)
-
-        logger.debug(f"{Tournament.objects.count()} tournaments: {incompletes=}")
 
         for t in incompletes:
             logger.debug("Checking '%s': ", t)
