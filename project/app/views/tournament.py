@@ -95,7 +95,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                             "pair1": pair[0],
                             "pair2": pair[1],
                             "matchpoints": score[0],
-                            "percentage": score[1],
+                            "percentage": f"{int(round(score[1]))}%",
                         }
                         for pair, score in items
                     ]
