@@ -98,18 +98,6 @@ ul.carousel::scroll-button(*):disabled {
   cursor: unset;
 }
 
-ul.carousel::scroll-button(left) {
-  content: "◄";
-  right: calc(anchor(left) - 70px);
-  bottom: calc(anchor(top) + 13px);
-}
-
-ul.carousel::scroll-button(right) {
-  content: "►";
-  left: calc(anchor(right) - 70px);
-  bottom: calc(anchor(top) + 13px);
-}
-
 li.carousel {
   list-style-type: none;
   background-color: #eee;
