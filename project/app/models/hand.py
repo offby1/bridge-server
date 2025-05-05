@@ -903,10 +903,10 @@ class Hand(TimeStampedModel):
         total_score: int | str = "-"
 
         my_seat_letter = "N"
+
         if as_viewed_by is not None:
-            cd = as_viewed_by.current_direction()
-            if cd is not None:
-                my_seat_letter = cd[0]
+            if (direction := self.direction_letters_by_player.get(as_viewed_by)) is not None:
+                my_seat_letter = direction
 
         fs = self.get_xscript().final_score()
 
