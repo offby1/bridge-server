@@ -280,13 +280,8 @@ ensure_bot_is_on_same_branch:
 
 [group('docker')]
 prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
-    CADDY_HOSTNAME=bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=ls just dcu {{ options }} --detach
-    COMPOSE_PROFILES=prod                                   DOCKER_CONTEXT=ls docker compose logs django --follow
-
-[group('docker')]
-hetz *options: ensure_git_repo_clean ensure_bot_is_on_same_branch
-    CADDY_HOSTNAME=beta.bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
-    COMPOSE_PROFILES=prod                                        DOCKER_CONTEXT=hetz docker compose logs django --follow
+    CADDY_HOSTNAME=bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
+    COMPOSE_PROFILES=prod                                   DOCKER_CONTEXT=hetz docker compose logs django --follow
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
