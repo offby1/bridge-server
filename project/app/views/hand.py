@@ -205,7 +205,7 @@ def _single_hand_as_four_divs(
         if all_four.this_hands_turn_to_play and not hand.is_complete
         else ""
     )
-    return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
+    return SafeString(f'<div class="hand" {highlight_style}>' + "<br/>\n".join(row_divs) + "</div>")
 
 
 def _three_by_three_trick_display_context_for_hand(

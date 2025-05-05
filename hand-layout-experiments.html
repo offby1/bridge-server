@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <body>
+        <div class="hand">
+            <div class="spades">
+                <div>&nbsp;</div>
+            </div>
+            <div class="hearts">
+                <div>♥A</div>
+                <div>♥K</div>
+                <div>♥9</div>
+                <div>♥8</div>
+                <div>♥7</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+                <div>♥3</div>
+            </div>
+            <div class="diamonds">
+                <div>♦Q</div>
+                <div>♦T</div>
+                <div>♦7</div>
+                <div>♦6</div>
+                <div>♦3</div>
+            </div>
+            <div class="clubs">
+                <div>♣J</div>
+                <div>♣8</div>
+            </div>
+        </div>
+    </body>
+    <style>
+    * {
+    outline: 1px solid red;
+    }
+    .spades, .hearts, .diamonds, .clubs {
+    display: flex;
+    font-size: 10cqh;
+    flex-direction: row;
+    align-items: center;
+    }
+    .hearts, .diamonds {
+    color: red;
+    }
+    .spades, .clubs {
+    color: black;
+    }
+    body {
+         display: grid;
+    grid-template-rows: 25% 25% 25% 25%;
+
+    }
+    </style>
+</html>
