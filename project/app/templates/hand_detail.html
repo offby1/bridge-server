@@ -68,7 +68,7 @@
             <div>
                 {% if show_auction_history %}
                     {% ifexists card_display.current_player %}
-                    {% include "hand-div.html" with cards=card_display.current_player.cards %}
+                    {% include "hand-div.html" with cards=card_display.current_player.cards id="" %}
                 {% endifexists %}
             {% endif %}
         </div>
