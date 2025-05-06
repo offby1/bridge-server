@@ -1,4 +1,4 @@
-* {
+xx* {
     outline: 1px solid red;
 }
 
@@ -56,7 +56,7 @@ body {
 
 .spades, .hearts, .diamonds, .clubs {
     display: flex;
-    font-size: 7cqh;
+    font-size: 5cqh;
     flex-direction: row;
     align-items: center;
 }
@@ -70,4 +70,7 @@ body {
 .hand {
     display: grid;
     grid-template-rows: 25% 25% 25% 25%;
+}
+.btn {
+    --bs-btn-font-size: revert;
 }

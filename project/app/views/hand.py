@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from bridge.xscript import HandTranscript
     from django.db.models import QuerySet
-    from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
+    from app.models.hand import AllFourSuitHoldings, Hand
 
 
 logger = logging.getLogger(__name__)
@@ -155,66 +155,13 @@ def _display_and_control(
     }
 
 
-def _single_hand_as_four_divs(
-    *,
-    all_four: AllFourSuitHoldings,
-    hand: app.models.Hand,
-    viewer_may_control_this_seat: bool,
-) -> SafeString:
-    def card_button(c: bridge.card.Card) -> str:
-        return f"""<button
-        type="button"
-        class="btn btn-primary"
-        name="card" value="{c.serialize()}"
-        style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
-        hx-post="{reverse("app:play-post", kwargs={"hand_pk": hand.pk})}"
-        hx-swap="none"
-        >{c}</button>"""
-
-    # Meant to look like an active button, but without any hover action.
-    def card_text(text: str, suit_color: str) -> str:
-        return f"""<span
-        class="btn btn-primary inactive-button"
-        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
-        >{text}</span>"""
-
-    def single_row_divs(suit, holding: SuitHolding) -> str:
-        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
-        active = holding.legal_now and viewer_may_control_this_seat
-
-        cols = [
-            card_button(c) if active else card_text(str(c), c.color)
-            for c in sorted(holding.cards_of_one_suit, reverse=True)
-        ]
-        if not cols:
-            # placeholder
-            return """<span
-            class="btn btn-primary inactive-button"
-            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
-            >&nbsp;</span>"""
-
-        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
-        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
-
-    row_divs = []
-    for suit, holding in sorted(all_four.items(), reverse=True):
-        row_divs.append(single_row_divs(suit, holding))
-
-    highlight_style = (
-        'style="background-color: lightgreen;"'
-        if all_four.this_hands_turn_to_play and not hand.is_complete
-        else ""
-    )
-    return SafeString(f'<div class="hand" {highlight_style}>' + "<br/>\n".join(row_divs) + "</div>")
-
-
 def _get_card_html(
     *,
     all_four: AllFourSuitHoldings,
     hand: app.models.Hand,
     viewer_may_control_this_seat: bool,
-) -> SafeString:
-    def card_button(c: bridge.card.Card) -> str:
+) -> dict[str, SafeString]:
+    def _card_to_button(c: bridge.card.Card) -> str:
         return f"""<button
         type="button"
         class="btn btn-primary"
@@ -225,33 +172,34 @@ def _get_card_html(
         >{c}</button>"""
 
     # Meant to look like an active button, but without any hover action.
-    def card_text(text: str, suit_color: str) -> str:
+    def card_text(text: str, *, suit_color: str, opacity: str) -> str:
         return f"""<span
         class="btn btn-primary inactive-button"
-        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
+        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc; {opacity}"
         >{text}</span>"""
-
-    def single_row_divs(suit, holding: SuitHolding) -> str:
-        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
-        active = holding.legal_now and viewer_may_control_this_seat
-
-        cols = [
-            card_button(c) if active else card_text(str(c), c.color)
-            for c in sorted(holding.cards_of_one_suit, reverse=True)
-        ]
-        if not cols:
-            # placeholder
-            return """<span
-            class="btn btn-primary inactive-button"
-            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
-            >&nbsp;</span>"""
-
-        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
-        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
 
     suits = {}
     for suit, holding in sorted(all_four.items(), reverse=True):
-        suits[suit.name()] = [c for c in holding.cards_of_one_suit]
+        active = holding.legal_now and viewer_may_control_this_seat
+
+        if holding.cards_of_one_suit:
+            opacity = (
+                "opacity: 25%;"
+                if all_four.this_hands_turn_to_play and not holding.legal_now
+                else ""
+            )
+
+            suits[suit.name()] = [
+                SafeString(
+                    _card_to_button(c)
+                    if active
+                    else card_text(str(c), suit_color=c.color, opacity=opacity)
+                )
+                for c in sorted(holding.cards_of_one_suit, reverse=True)
+            ]
+        else:
+            # BUGBUG -- this shows e.g. "12 cards" for each of the four suits; we really want to show that message just once
+            suits[suit.name()] = [SafeString("—")]  # em dash
 
     return suits
 
