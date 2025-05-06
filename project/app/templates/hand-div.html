@@ -3,32 +3,15 @@
     Imagine I made some use of {{ cards }} here.
     <br>
     <div class="spades">
-        <div>&nbsp;</div>
+        {% for c in cards.Spades %}<div>{{ c }}</div>{% endfor %}
     </div>
     <div class="hearts">
-        <div>♥A</div>
-        <div>♥K</div>
-        <div>♥9</div>
-        <div>♥8</div>
-        <div>♥7</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
-        <div>♥3</div>
+        {% for c in cards.Hearts %}<div>{{ c }}</div>{% endfor %}
     </div>
     <div class="diamonds">
-        <div>♦Q</div>
-        <div>♦T</div>
-        <div>♦7</div>
-        <div>♦6</div>
-        <div>♦3</div>
+        {% for c in cards.Diamonds %}<div>{{ c }}</div>{% endfor %}
     </div>
     <div class="clubs">
-        <div>♣J</div>
-        <div>♣8</div>
+        {% for c in cards.Clubs %}<div>{{ c }}</div>{% endfor %}
     </div>
 </div>

@@ -208,6 +208,54 @@ def _single_hand_as_four_divs(
     return SafeString(f'<div class="hand" {highlight_style}>' + "<br/>\n".join(row_divs) + "</div>")
 
 
+def _get_card_html(
+    *,
+    all_four: AllFourSuitHoldings,
+    hand: app.models.Hand,
+    viewer_may_control_this_seat: bool,
+) -> SafeString:
+    def card_button(c: bridge.card.Card) -> str:
+        return f"""<button
+        type="button"
+        class="btn btn-primary"
+        name="card" value="{c.serialize()}"
+        style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
+        hx-post="{reverse("app:play-post", kwargs={"hand_pk": hand.pk})}"
+        hx-swap="none"
+        >{c}</button>"""
+
+    # Meant to look like an active button, but without any hover action.
+    def card_text(text: str, suit_color: str) -> str:
+        return f"""<span
+        class="btn btn-primary inactive-button"
+        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
+        >{text}</span>"""
+
+    def single_row_divs(suit, holding: SuitHolding) -> str:
+        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
+        active = holding.legal_now and viewer_may_control_this_seat
+
+        cols = [
+            card_button(c) if active else card_text(str(c), c.color)
+            for c in sorted(holding.cards_of_one_suit, reverse=True)
+        ]
+        if not cols:
+            # placeholder
+            return """<span
+            class="btn btn-primary inactive-button"
+            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
+            >&nbsp;</span>"""
+
+        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
+        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
+
+    suits = {}
+    for suit, holding in sorted(all_four.items(), reverse=True):
+        suits[suit.name()] = [c for c in holding.cards_of_one_suit]
+
+    return suits
+
+
 def _three_by_three_trick_display_context_for_hand(
     request: HttpRequest,
     hand: app.models.Hand,
@@ -315,16 +363,16 @@ def _four_hands_context_for_hand(
             as_dealt=as_dealt,
         )
         if visibility_and_control["display_cards"]:
-            dem_cards_baby = _single_hand_as_four_divs(
+            card_html_by_suit = _get_card_html(
                 all_four=suitholdings,
                 hand=hand,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
-            dem_cards_baby = SafeString(suitholdings.textual_summary)
+            card_html_by_suit = SafeString(suitholdings.textual_summary)
 
         cards_by_direction_display[libSeat.name] = {
-            "cards": dem_cards_baby,
+            "cards": card_html_by_suit,
             "player": this_seats_player,
         }
 
