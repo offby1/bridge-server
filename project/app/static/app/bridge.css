@@ -53,3 +53,21 @@ body {
 .humanize-me {
     font-family: monospace;
 }
+
+.spades, .hearts, .diamonds, .clubs {
+    display: flex;
+    font-size: 7cqh;
+    flex-direction: row;
+    align-items: center;
+}
+.hearts, .diamonds {
+    color: red;
+}
+.spades, .clubs {
+    color: black;
+}
+
+.hand {
+    display: grid;
+    grid-template-rows: 25% 25% 25% 25%;
+}
