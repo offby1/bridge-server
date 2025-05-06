@@ -301,6 +301,8 @@ def _four_hands_context_for_hand(
 
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
+    next_seat_to_play = hand.get_xscript().next_seat_to_play()
+
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
 
@@ -337,6 +339,7 @@ def _four_hands_context_for_hand(
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "hand": hand,
+        "next_seat_to_play": next_seat_to_play.name.lower(),
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
     if not hand.is_complete:

@@ -10,12 +10,12 @@
     <div></div>
     <div>
         {{ card_display.North.player.display_name|safe }}:
-        {% include "hand-div.html" with cards=card_display.North.cards %}
+        {% include "hand-div.html" with cards=card_display.North.cards id="north" %}
     </div>
     <div></div>
     <div>
         {{ card_display.West.player.display_name|safe }}:
-        {% include "hand-div.html" with cards=card_display.West.cards %}
+        {% include "hand-div.html" with cards=card_display.West.cards id="west" %}
     </div>
     <div>
         {% ifexists three_by_three_trick_display %}
@@ -30,12 +30,12 @@
 </div>
 <div>
     {{ card_display.East.player.display_name|safe }}:
-    {% include "hand-div.html" with cards=card_display.East.cards %}
+    {% include "hand-div.html" with cards=card_display.East.cards id="east" %}
 </div>
 <div></div>
 <div>
     {{ card_display.South.player.display_name|safe }}:
-    {% include "hand-div.html" with cards=card_display.South.cards %}
+    {% include "hand-div.html" with cards=card_display.South.cards id="south" %}
 </div>
 <div></div>
 </div>
