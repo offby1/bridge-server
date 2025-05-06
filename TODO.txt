@@ -1,5 +1,4 @@
 IN PROGRESS:
-* Consider using flexbox for the card display; see https://www.youtube.com/live/hrzNaWFsP_4 for tons of detail.
 
 STILL TODO:
 * The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
@@ -219,6 +218,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Consider using flexbox for the card display; see https://www.youtube.com/live/hrzNaWFsP_4 for tons of detail.
+
 * I've got backwards-compatibility kludges here and there, to deal with "old-style" tournaments (i.e., those that lack deadlines).  If so, kill that code.
 
 * When creating synthetic opponents, create enough (not just two) so we get two tables, hence a realistic movement.
