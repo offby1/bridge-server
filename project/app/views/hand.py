@@ -160,7 +160,7 @@ def _get_card_html(
     all_four: AllFourSuitHoldings,
     hand: app.models.Hand,
     viewer_may_control_this_seat: bool,
-) -> dict[str, SafeString]:
+) -> dict[str, list[SafeString]]:
     def _card_to_button(c: bridge.card.Card) -> str:
         return f"""<button
         type="button"
@@ -317,7 +317,10 @@ def _four_hands_context_for_hand(
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
-            card_html_by_suit = SafeString(suitholdings.textual_summary)
+            card_html_by_suit = {
+                suit.name(): [SafeString(suitholdings.textual_summary)]
+                for suit, holding in sorted(suitholdings.items(), reverse=True)
+            }
 
         cards_by_direction_display[libSeat.name] = {
             "cards": card_html_by_suit,
