@@ -1,3 +1,7 @@
+* {
+    outline: 1px solid red;
+}
+
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
 .inactive-button {
   pointer-events: none;
