@@ -15,7 +15,7 @@ pg-start: orb
     docker compose up --wait postgres --detach
 
 [group('postgres')]
-drop: pg-start
+drop: pg-stop pg-start
     docker exec --user postgres server-postgres-1 dropdb --if-exists bridge
     # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
     docker compose down --volumes postgres
