@@ -618,7 +618,6 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
-            logger.debug(f"Nobody may call now at {self} because this hand is abandoned.")
             return None
 
         if self.auction.status is Auction.Incomplete:
@@ -626,7 +625,6 @@ class Hand(TimeStampedModel):
             assert libAllowed is not None
             return Player.objects.get_by_name(libAllowed.name)
 
-        logger.debug(f"Nobody may call now at {self} because the auction is settled.")
         return None
 
     @property
