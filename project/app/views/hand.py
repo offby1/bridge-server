@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from bridge.xscript import HandTranscript
     from django.db.models import QuerySet
-    from app.models.hand import AllFourSuitHoldings, Hand, SuitHolding
+    from app.models.hand import AllFourSuitHoldings, Hand
 
 
 logger = logging.getLogger(__name__)
@@ -155,13 +155,13 @@ def _display_and_control(
     }
 
 
-def _single_hand_as_four_divs(
+def _get_card_html(
     *,
     all_four: AllFourSuitHoldings,
     hand: app.models.Hand,
     viewer_may_control_this_seat: bool,
-) -> SafeString:
-    def card_button(c: bridge.card.Card) -> str:
+) -> dict[str, list[SafeString]]:
+    def _card_to_button(c: bridge.card.Card) -> str:
         return f"""<button
         type="button"
         class="btn btn-primary"
@@ -172,40 +172,36 @@ def _single_hand_as_four_divs(
         >{c}</button>"""
 
     # Meant to look like an active button, but without any hover action.
-    def card_text(text: str, suit_color: str) -> str:
+    def card_text(text: str, *, suit_color: str, opacity: str) -> str:
         return f"""<span
         class="btn btn-primary inactive-button"
-        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc"
+        style="--bs-btn-color: {suit_color}; --bs-btn-bg: #ccc; {opacity}"
         >{text}</span>"""
 
-    def single_row_divs(suit, holding: SuitHolding) -> str:
-        gauzy = all_four.this_hands_turn_to_play and not holding.legal_now
+    suits = {}
+    for suit, holding in sorted(all_four.items(), reverse=True):
         active = holding.legal_now and viewer_may_control_this_seat
 
-        cols = [
-            card_button(c) if active else card_text(str(c), c.color)
-            for c in sorted(holding.cards_of_one_suit, reverse=True)
-        ]
-        if not cols:
-            # placeholder
-            return """<span
-            class="btn btn-primary inactive-button"
-            style="--bs-btn-color: black; --bs-btn-bg: #fffff"
-            >&nbsp;</span>"""
+        if holding.cards_of_one_suit:
+            opacity = (
+                "opacity: 25%;"
+                if all_four.this_hands_turn_to_play and not holding.legal_now
+                else ""
+            )
 
-        gauzy_style = 'style="opacity: 25%;"' if gauzy else ""
-        return f"""<div class="btn-group" {gauzy_style}>{"".join(cols)}</div>"""
+            suits[suit.name()] = [
+                SafeString(
+                    _card_to_button(c)
+                    if active
+                    else card_text(str(c), suit_color=c.color, opacity=opacity)
+                )
+                for c in sorted(holding.cards_of_one_suit, reverse=True)
+            ]
+        else:
+            # BUGBUG -- this shows e.g. "12 cards" for each of the four suits; we really want to show that message just once
+            suits[suit.name()] = [SafeString("—")]  # em dash
 
-    row_divs = []
-    for suit, holding in sorted(all_four.items(), reverse=True):
-        row_divs.append(single_row_divs(suit, holding))
-
-    highlight_style = (
-        'style="background-color: lightgreen;"'
-        if all_four.this_hands_turn_to_play and not hand.is_complete
-        else ""
-    )
-    return SafeString(f"<div {highlight_style}>" + "<br/>\n".join(row_divs) + "</div>")
+    return suits
 
 
 def _three_by_three_trick_display_context_for_hand(
@@ -305,6 +301,9 @@ def _four_hands_context_for_hand(
 
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
+
+    next_seat_to_play = getattr(hand.get_xscript().next_seat_to_play(), "name", "").lower()
+
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
 
@@ -315,16 +314,19 @@ def _four_hands_context_for_hand(
             as_dealt=as_dealt,
         )
         if visibility_and_control["display_cards"]:
-            dem_cards_baby = _single_hand_as_four_divs(
+            card_html_by_suit = _get_card_html(
                 all_four=suitholdings,
                 hand=hand,
                 viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
             )
         else:
-            dem_cards_baby = SafeString(suitholdings.textual_summary)
+            card_html_by_suit = {
+                suit.name(): [SafeString(suitholdings.textual_summary)]
+                for suit, holding in sorted(suitholdings.items(), reverse=True)
+            }
 
         cards_by_direction_display[libSeat.name] = {
-            "cards": dem_cards_baby,
+            "cards": card_html_by_suit,
             "player": this_seats_player,
         }
 
@@ -338,6 +340,7 @@ def _four_hands_context_for_hand(
         "card_display": cards_by_direction_display,
         "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "hand": hand,
+        "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
     if not hand.is_complete:
@@ -617,8 +620,8 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         and (other_hand := player.hand_at_which_we_played_board(hand.board)) is not None
     ):
         context["hand_at_which_I_played_this_board"] = {
-            "link": reverse("app:hand-detail", args=[other_hand.pk]),
             "description": str(other_hand),
+            "link": reverse("app:hand-detail", args=[other_hand.pk]),
         }
 
     return TemplateResponse(request, "hand_detail.html", context=context)

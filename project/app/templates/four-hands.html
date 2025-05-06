@@ -8,9 +8,15 @@
     {# North at the top as per the Bridge Writing Style Guide #}
     {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
     <div></div>
-    <div>{{ card_display.North.player.display_name|safe }}: {{ card_display.North.cards }}</div>
+    <div>
+        {{ card_display.North.player.display_name|safe }}:
+        {% include "hand-div.html" with cards=card_display.North.cards id="north" %}
+    </div>
     <div></div>
-    <div>{{ card_display.West.player.display_name|safe }}: {{ card_display.West.cards }}</div>
+    <div>
+        {{ card_display.West.player.display_name|safe }}:
+        {% include "hand-div.html" with cards=card_display.West.cards id="west" %}
+    </div>
     <div>
         {% ifexists three_by_three_trick_display %}
         <div style="display: grid; grid-template-columns: auto auto auto;">
@@ -22,8 +28,14 @@
         </div>
     {% endifexists %}
 </div>
-<div>{{ card_display.East.player.display_name|safe }}: {{ card_display.East.cards }}</div>
+<div>
+    {{ card_display.East.player.display_name|safe }}:
+    {% include "hand-div.html" with cards=card_display.East.cards id="east" %}
+</div>
 <div></div>
-<div>{{ card_display.South.player.display_name|safe }}: {{ card_display.South.cards }}</div>
+<div>
+    {{ card_display.South.player.display_name|safe }}:
+    {% include "hand-div.html" with cards=card_display.South.cards id="south" %}
+</div>
 <div></div>
 </div>
