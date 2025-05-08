@@ -12,10 +12,10 @@
                     <th>Table</th>
                     <th>Summary</th>
                     <th>
-                        {% if user.is_anonymous %}
-                            North/South Score
-                        {% else %}
+                        {% if my_hand_pk %}
                             Your Side's Score
+                        {% else %}
+                            North/South Score
                         {% endif %}
                     </th>
                 </tr>

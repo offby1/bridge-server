@@ -1,0 +1,20 @@
+{% load fastdev %}
+<div class="hand" id="{{ id }}">
+    <div class="spades">
+        {% for c in cards.Spades %}<div>{{ c }}</div>{% endfor %}
+    </div>
+    <div class="hearts">
+        {% for c in cards.Hearts %}<div>{{ c }}</div>{% endfor %}
+    </div>
+    <div class="diamonds">
+        {% for c in cards.Diamonds %}<div>{{ c }}</div>{% endfor %}
+    </div>
+    <div class="clubs">
+        {% for c in cards.Clubs %}<div>{{ c }}</div>{% endfor %}
+    </div>
+</div>
+<style>
+div#{{ next_seat_to_play }}.hand {
+  background-color: lightgreen;
+}
+</style>
