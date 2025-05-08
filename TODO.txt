@@ -8,7 +8,7 @@ IN PROGRESS:
 Notes:
 
 using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
-- different cards have different widths.  Interestingly, at <http://localhost:9000/hand/1/>, they're all the same width.
+- different cards have different widths on my Pixel 7.  Interestingly, at <http://localhost:9000/hand/1/>, they're all the same width.  I've fiddled with various values for "font-family" and none works on both :-\
 - if I mess with font size and browser size, I can make the cards expand to exceed the size allotted to them, so a vertical scrollbar appears
 
 
