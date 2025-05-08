@@ -165,7 +165,7 @@ create-cache: (manage "createcachetable")
 # For production -- doesn't restart when a file changes.
 [group('bs')]
 [script('bash')]
-daphne: test django-superuser migrate create-cache collectstatic ensure-skeleton-key
+daphne: ft django-superuser migrate create-cache collectstatic ensure-skeleton-key
     set -euo pipefail
     cd project
     tput rmam                   # disables line wrapping
