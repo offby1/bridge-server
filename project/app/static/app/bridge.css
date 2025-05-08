@@ -129,7 +129,12 @@ li.carousel::scroll-marker:target-current {
 
 .spades, .hearts, .diamonds, .clubs {
     display: flex;
-    font-family: monospace;
+
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+
     font-size: 5cqh;
     flex-direction: row;
     align-items: center;
