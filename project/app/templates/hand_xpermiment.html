@@ -6,24 +6,24 @@
 {% endblock title %}
 {% block content %}
     {# from https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages #}
-    <h2>Just a plain list</h2>
-    <ul>
-        <li>Bada</li>
-        <li>Bing</li>
-    </ul>
-    <h2>CSS carousel single item per page</h2>
+    <h1 style="text-align:center">{{ terse_description }}</h1>
     <ul class="carousel">
         <li class="carousel">
-            <h2>Page 1</h2>
-        </li>
-        <li class="carousel">
-            <h2>Page 2</h2>
-        </li>
-        <li class="carousel">
-            <h2>Page 3</h2>
-        </li>
-        <li class="carousel">
-            <h2>Page 4</h2>
-        </li>
-    </ul>
+            {% ifexists card_display.current_player %}
+            <h2>Your Hand</h2>
+            {% include "hand-div.html" with cards=card_display.current_player.cards id="" %}
+        {% else %}
+            No <tt>card_display.current_player</tt> for you
+        {% endifexists %}
+    </li>
+    <li class="carousel">
+        <h2>Page 2</h2>
+    </li>
+    <li class="carousel">
+        <h2>Page 3</h2>
+    </li>
+    <li class="carousel">
+        <h2>Page 4</h2>
+    </li>
+</ul>
 {% endblock content %}

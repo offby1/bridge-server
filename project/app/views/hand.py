@@ -583,30 +583,13 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
+def _hand_detail_player_and_context(request, hand: app.models.Hand):
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
     player = getattr(request.user, "player", None)
-
-    # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
-    # exactly when
-    # e.g.
-    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
-
-    response = _maybe_redirect_or_error(
-        hand_pk=hand.pk,
-        hand_is_complete=hand.is_complete,
-        player_visibility=hand.board.what_can_they_see(player=player),
-        request_viewname="app:hand-detail",
-    )
-
-    if response is not None:
-        return response
 
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
@@ -624,11 +607,36 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             "link": reverse("app:hand-detail", args=[other_hand.pk]),
         }
 
+    return player, context
+
+
+def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    player, context = _hand_detail_player_and_context(request, hand)
+
+    # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
+    # exactly when
+    # e.g.
+    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
+
+    response = _maybe_redirect_or_error(
+        hand_pk=hand.pk,
+        hand_is_complete=hand.is_complete,
+        player_visibility=hand.board.what_can_they_see(player=player),
+        request_viewname="app:hand-detail",
+    )
+
+    if response is not None:
+        return response
+
     return TemplateResponse(request, "hand_detail.html", context=context)
 
 
-def hand_xperimental_view(request: AuthedHttpRequest) -> HttpResponse:
-    return TemplateResponse(request, "hand_xpermiment.html", context={})
+def hand_xperimental_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+    _, context = _hand_detail_player_and_context(request, hand)
+    return TemplateResponse(request, "hand_xpermiment.html", context=context)
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
