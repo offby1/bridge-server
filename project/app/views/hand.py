@@ -343,6 +343,12 @@ def _four_hands_context_for_hand(
         "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
+
+    if xscript.auction.found_contract:
+        cards_by_direction_display["dummy_hand"] = cards_by_direction_display[
+            xscript.auction.dummy.seat.name
+        ]
+
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(
             request, hand, xscript=xscript
@@ -589,7 +595,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+        return request.user, {"terse_description": "get lost"}
 
     player = getattr(request.user, "player", None)
 

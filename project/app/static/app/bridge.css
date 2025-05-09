@@ -57,7 +57,7 @@ body {
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 ul.carousel {
   width: 90vw;
-  height: 300px;
+  height: 500px;
   padding: 20px 100px 20px 20px;
   display: flex;
   gap: 4vw;
@@ -129,6 +129,12 @@ li.carousel::scroll-marker:target-current {
 
 .spades, .hearts, .diamonds, .clubs {
     display: flex;
+
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+
     font-size: 5cqh;
     flex-direction: row;
     align-items: center;

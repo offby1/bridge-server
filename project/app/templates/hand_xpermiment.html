@@ -17,13 +17,72 @@
         {% endifexists %}
     </li>
     <li class="carousel">
-        <h2>Page 2</h2>
-    </li>
-    <li class="carousel">
-        <h2>Page 3</h2>
-    </li>
-    <li class="carousel">
-        <h2>Page 4</h2>
-    </li>
+        <h2>Dummy</h2>
+        {% ifexists card_display.dummy_hand %}
+        {% include "hand-div.html" with cards=card_display.dummy_hand.cards id="" %}
+    {% else %}
+        No <tt>card_display.dummy</tt> for you
+    {% endifexists %}
+</li>
+<li class="carousel">
+    <h2>Current Trick</h2>
+    {% ifexists three_by_three_trick_display %}
+    <div style="display: grid; grid-template-columns: auto auto auto;">
+        {% for row in three_by_three_trick_display.rows %}
+            {% for column in row %}
+                <div {% if column != " " %}style="border: 1px dotted; text-align: center;"{% endif %}>{{ column|safe }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+{% endifexists %}
+</li>
 </ul>
 {% endblock content %}
+{% block upper-right-column %}
+    {% if DEPLOYMENT_ENVIRONMENT != "production" %}
+        <div class="col">
+            <div class="form-check form-switch">
+                <input class="form-check-input"
+                       type="checkbox"
+                       role="switch"
+                       id="god-mode-switch"
+                       hx-post="{% url 'app:open-access-toggle' hand.pk %}"
+                       hx-swap="none"
+                       {% if hand.open_access %}checked{% endif %} />
+                <label class="form-check-label" for="god-mode-switch">✨GOD MODE🦄</label>
+            </div>
+        </div>
+    {% endif %}
+{% endblock upper-right-column %}
+{% block scripts %}
+    <script>
+         var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}/');
+         console.log("Listening for hand events on {{ hand.pk }}");
+
+         handEventSource.addEventListener('message', function (e) {
+             console.log("Hand event listener saw " + e.data);
+
+             window.location.reload();
+         }, false);
+
+         // scroll the auction div so that the most-recent calls are visible.
+         addEventListener("DOMContentLoaded", (event) =>
+             {
+                 var auctionDiv = document.querySelector("#auction");
+                 if (auctionDiv != null) {
+                     auctionDiv.scroll(0, 10000);
+                 }
+         });
+
+         htmx.on("htmx:responseError", function(evt) {
+             const errorToast = document.getElementById('errorToast');
+             const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+
+             const errorText = document.getElementById('errorText');
+             errorText.innerHTML = evt.detail.xhr.responseText;
+
+             toastBootstrap.show();
+         });
+
+    </script>
+{% endblock scripts %}
