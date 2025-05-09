@@ -18,10 +18,15 @@
     </li>
     <li class="carousel">
         <h2>Dummy</h2>
-    </li>
-    <li class="carousel">
-        <h2>Current Trick</h2>
-    </li>
+        {% ifexists card_display.dummy_hand %}
+        {% include "hand-div.html" with cards=card_display.dummy_hand.cards id="" %}
+    {% else %}
+        No <tt>card_display.dummy</tt> for you
+    {% endifexists %}
+</li>
+<li class="carousel">
+    <h2>Current Trick</h2>
+</li>
 </ul>
 {% endblock content %}
 {% block upper-right-column %}

@@ -343,6 +343,12 @@ def _four_hands_context_for_hand(
         "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
+
+    if xscript.auction.declarer is not None:
+        cards_by_direction_display["dummy_hand"] = cards_by_direction_display[
+            xscript.auction.dummy.seat.name
+        ]
+
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(
             request, hand, xscript=xscript
