@@ -26,6 +26,15 @@
 </li>
 <li class="carousel">
     <h2>Current Trick</h2>
+    {% ifexists three_by_three_trick_display %}
+    <div style="display: grid; grid-template-columns: auto auto auto;">
+        {% for row in three_by_three_trick_display.rows %}
+            {% for column in row %}
+                <div {% if column != " " %}style="border: 1px dotted; text-align: center;"{% endif %}>{{ column|safe }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+{% endifexists %}
 </li>
 </ul>
 {% endblock content %}
