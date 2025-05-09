@@ -154,3 +154,7 @@ li.carousel::scroll-marker:target-current {
 li h2 {
     text-align: center;
 }
+
+.3x3-trick-display {
+    outline: 1px solid red;
+}

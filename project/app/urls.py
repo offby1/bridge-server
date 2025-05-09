@@ -16,6 +16,7 @@ from .views.hand import (
     hand_xscript_updates_view,
     hands_by_table_and_board_group,
     open_access_toggle_view,
+    three_by_three_stub,
 )
 
 from .views.tournament import (
@@ -90,4 +91,5 @@ urlpatterns = [
         name="tournament-void-signup-deadline",
     ),
     path("x/<pk>/", hand_xperimental_view, name="hand-xperimental-view"),
+    path("x2/", three_by_three_stub, name="three-by-three-stub"),
 ]
