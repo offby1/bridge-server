@@ -587,7 +587,7 @@ def _hand_detail_player_and_context(request, hand: app.models.Hand):
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+        return request.user, {"terse_description": "get lost"}
 
     player = getattr(request.user, "player", None)
 
