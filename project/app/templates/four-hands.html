@@ -19,13 +19,7 @@
     </div>
     <div>
         {% ifexists three_by_three_trick_display %}
-        <div style="display: grid; grid-template-columns: auto auto auto;">
-            {% for row in three_by_three_trick_display.rows %}
-                {% for column in row %}
-                    <div {% if column != " " %}style="border: 1px dotted; text-align: center;"{% endif %}>{{ column|safe }}</div>
-                {% endfor %}
-            {% endfor %}
-        </div>
+        {% include "3x3-trick-display.html" %}
     {% endifexists %}
 </div>
 <div>
