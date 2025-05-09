@@ -112,9 +112,6 @@ li.carousel {
   scroll-snap-align: center;
 }
 
-li.carousel:nth-child(even) {
-  background-color: cyan;
-}
 li.carousel::scroll-marker {
   content: "";
   width: 16px;
