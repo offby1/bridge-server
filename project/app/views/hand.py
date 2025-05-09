@@ -595,7 +595,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return request.user, {"terse_description": "get lost"}
+        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
     player = getattr(request.user, "player", None)
 
