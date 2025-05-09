@@ -232,7 +232,7 @@ def _three_by_three_trick_display_context_for_hand(
         color = "black"
         if card is not None:
             color = card.color
-        css_classes = []
+        css_classes = ["bigfont"]
 
         if direction == winning_direction:
             css_classes.append("throb-div")
@@ -253,13 +253,13 @@ def _three_by_three_trick_display_context_for_hand(
     return {
         "three_by_three_trick_display": {
             "rows": [
-                [" ", c(bridge.seat.Seat.NORTH.value), " "],
+                ["&nbsp;", c(bridge.seat.Seat.NORTH.value), "&nbsp;"],
                 [
                     c(bridge.seat.Seat.WEST.value),
-                    arrow,
+                    f'<span class="bigfont" style="justify-self: center">{arrow}</span>',
                     c(bridge.seat.Seat.EAST.value),
                 ],
-                [" ", c(bridge.seat.Seat.SOUTH.value), " "],
+                ["&nbsp;", c(bridge.seat.Seat.SOUTH.value), "&nbsp;"],
             ],
         },
     }
@@ -786,16 +786,20 @@ def three_by_three_stub(request: AuthedHttpRequest) -> HttpResponse:
     context = {
         "three_by_three_trick_display": {
             "rows": [
-                [" ", '<div class="spades">♠3</div>', " "],
                 [
-                    '<div class="spades">♠2</div>',
-                    "➡️",
-                    '<div class="spades">♠5</div>',
+                    '<div class="bigfont">&nbsp;</div>',
+                    '<div class="bigfont spades">♠3</div>',
+                    '<div class="bigfont">&nbsp;</div>',
                 ],
                 [
-                    " ",
-                    '<div class="throb-div spades">♠6</div>',
-                    " ",
+                    '<div class="bigfont spades">♠2</div>',
+                    '<div class="bigfont">➡️</div>',
+                    '<div class="bigfont spades">♠5</div>',
+                ],
+                [
+                    '<div class="bigfont">&nbsp;</div>',
+                    '<div class="bigfont throb-div spades">♠6</div>',
+                    '<div class="bigfont">&nbsp;</div>',
                 ],
             ]
         }

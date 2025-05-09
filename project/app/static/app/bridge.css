@@ -124,15 +124,17 @@ li.carousel::scroll-marker:target-current {
   background-color: black;
 }
 
-.spades, .hearts, .diamonds, .clubs {
-    display: flex;
-
+.bigfont {
     font-family: "Roboto Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 100;
     font-style: normal;
 
-    font-size: 5cqh;
+    font-size: 10cqh;
+}
+
+.spades, .hearts, .diamonds, .clubs {
+    display: flex;
     flex-direction: row;
     align-items: center;
 }
@@ -155,6 +157,13 @@ li h2 {
     text-align: center;
 }
 
-.3x3-trick-display {
-    outline: 1px solid red;
+.three-by-three-trick-display {
+    display: grid;
+    height: 50cqh;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+div.three-by-three-trick-display > div.grid-column {
+    width: 100px;
+    height: 100px;
 }
