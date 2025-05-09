@@ -150,3 +150,7 @@ li.carousel::scroll-marker:target-current {
 .btn {
     --bs-btn-font-size: revert;
 }
+
+li h2 {
+    text-align: center;
+}
