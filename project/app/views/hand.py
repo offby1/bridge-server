@@ -344,7 +344,7 @@ def _four_hands_context_for_hand(
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
     }
 
-    if xscript.auction.declarer is not None:
+    if xscript.auction.found_contract:
         cards_by_direction_display["dummy_hand"] = cards_by_direction_display[
             xscript.auction.dummy.seat.name
         ]
