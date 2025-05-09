@@ -779,29 +779,3 @@ def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResp
 
     hand.toggle_open_access()
     return HttpResponse(f"{hand=} {hand.open_access=}")
-
-
-@logged_in_as_player_required()
-def three_by_three_stub(request: AuthedHttpRequest) -> HttpResponse:
-    context = {
-        "three_by_three_trick_display": {
-            "rows": [
-                [
-                    '<div class="bigfont">&nbsp;</div>',
-                    '<div class="bigfont spades">♠3</div>',
-                    '<div class="bigfont">&nbsp;</div>',
-                ],
-                [
-                    '<div class="bigfont spades">♠2</div>',
-                    '<div class="bigfont">➡️</div>',
-                    '<div class="bigfont spades">♠5</div>',
-                ],
-                [
-                    '<div class="bigfont">&nbsp;</div>',
-                    '<div class="bigfont throb-div spades">♠6</div>',
-                    '<div class="bigfont">&nbsp;</div>',
-                ],
-            ]
-        }
-    }
-    return TemplateResponse(request, "3x3-trick-display.html", context=context)
