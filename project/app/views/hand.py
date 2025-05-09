@@ -232,10 +232,19 @@ def _three_by_three_trick_display_context_for_hand(
         color = "black"
         if card is not None:
             color = card.color
-        throb = ""
+        css_classes = []
+
         if direction == winning_direction:
-            throb = 'class="throb-div"'
-        return f"""<div {throb}><span style="color: {color}">{card or "__"}</span></div>"""
+            css_classes.append("throb-div")
+
+        if card is not None:
+            css_classes.append(card.suit.name().lower())
+
+        class_attribute = f'class="{" ".join(css_classes)}"' if css_classes else ""
+
+        return (
+            f"""<div {class_attribute}><span style="color: {color}">{card or "__"}</span></div>"""
+        )
 
     arrow = ""
     if lead_came_from is not None:

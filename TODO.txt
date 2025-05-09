@@ -13,8 +13,6 @@ Sooo many problems ...
 
 Smaller notes:
 
-- The "current trick" slide is laughably awful (the cards are teeny-weeny)
-
 - perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
 
 using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
