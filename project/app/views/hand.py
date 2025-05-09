@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
     HttpResponse,
+    HttpResponseForbidden,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from bridge.xscript import HandTranscript
+    import datetime
     from django.db.models import QuerySet
     from app.models.hand import AllFourSuitHoldings, Hand
 
@@ -630,11 +632,27 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
 
 def hand_xperimental_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    def _localize(stamp: datetime.datetime) -> datetime.datetime:
+        if (zone_name := request.session.get("detected_tz")) is not None:
+            import zoneinfo
+
+            try:
+                zone = zoneinfo.ZoneInfo(zone_name)
+                return stamp.astimezone(zone)
+            except zoneinfo.ZoneInfoNotFoundError:
+                pass
+        logger.warning(f"'detected_tz' is {zone_name}; returning timestamp unchanged")
+        return stamp
+
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
+
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return request.user, {"terse_description": "get lost"}
+        return HttpResponseForbidden(
+            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
+            f" until {_localize(hand.board.tournament.play_completion_deadline)}, so you can't see this hand now."
+        )
 
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
