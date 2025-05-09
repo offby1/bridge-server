@@ -338,7 +338,6 @@ def _four_hands_context_for_hand(
     always = {
         "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
-        "four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),
         "hand": hand,
         "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
@@ -436,18 +435,6 @@ def bidding_box_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> Templat
     return TemplateResponse(
         request,
         "auction.html",
-        context=context,
-    )
-
-
-@logged_in_as_player_required()
-def four_hands_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
-    context = _four_hands_context_for_hand(request=request, hand=hand)
-
-    return TemplateResponse(
-        request,
-        "four-hands-3x3-partial.html#four-hands-3x3-partial",
         context=context,
     )
 

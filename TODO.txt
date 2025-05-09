@@ -218,6 +218,9 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
+  At least some are not obsolete -- the chat system still uses them
+
 * Consider using flexbox for the card display; see https://www.youtube.com/live/hrzNaWFsP_4 for tons of detail.
 
 * I've got backwards-compatibility kludges here and there, to deal with "old-style" tournaments (i.e., those that lack deadlines).  If so, kill that code.
@@ -1122,9 +1125,6 @@ NOT DONE:
     2024-11-20T12:56:36+0000 MainThread INFO  bot.py 270 <-- {'new-hand': {'pk': 2, 'table': {'seat_set': [1, 2, 3, 4], 'id': 1, 'current_hand_pk': 2, 'tempo_seconds': 1.0}, 'board': 2}, 'tempo_seconds': 1.0, 'time': 1732107396.893606}
 
   At least on this branch, this is obsolete; that bot no longer exists.
-
-* I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
-  At least some are not obsolete -- the chat system still uses them
 
 * When clicking "New board plz", if the current hand is not the most recent, do nothing.
 
