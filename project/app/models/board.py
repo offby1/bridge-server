@@ -242,8 +242,9 @@ class Board(models.Model):
             return self.PlayerVisibility.nothing
 
         if self.tournament.signup_deadline_has_passed() and player not in self.tournament.players():
+            player_name = getattr(player, "name", "?")
             logger.error(
-                f"t#{self.tournament.display_number}'s signup deadline has passed; and {player.name=} isn't in that tournament, so => {self.PlayerVisibility.everything=}"
+                f"t#{self.tournament.display_number}'s signup deadline has passed; and {player_name=} isn't in that tournament, so => {self.PlayerVisibility.everything=}"
             )
             return self.PlayerVisibility.everything
 
