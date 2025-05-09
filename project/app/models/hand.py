@@ -632,18 +632,15 @@ class Hand(TimeStampedModel):
         from . import Player
 
         if self.is_abandoned:
-            logger.debug(f"Nobody may play now at {self} because this hand is abandoned.")
             return None
 
         if not self.auction.found_contract:
-            logger.debug(
-                f"Nobody may play now at {self} because {self.auction.status} has not found a contract."
-            )
             return None
 
         seat_who_may_play = self.get_xscript().next_seat_to_play()
         if seat_who_may_play is None:
             return None
+
         pbs = self.libPlayers_by_libSeat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
