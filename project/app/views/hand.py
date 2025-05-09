@@ -315,6 +315,7 @@ def _four_hands_context_for_hand(
 
     next_seat_to_play = getattr(hand.get_xscript().next_seat_to_play(), "name", "").lower()
 
+    viewers_seat: bridge.seat.Seat | None = None
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
 
@@ -343,15 +344,21 @@ def _four_hands_context_for_hand(
 
         if as_viewed_by is not None and this_seats_player.pk == as_viewed_by.pk:
             cards_by_direction_display["current_player"] = cards_by_direction_display[libSeat.name]
+            assert viewers_seat is None
+            viewers_seat = libSeat
 
     xscript = hand.get_xscript()
 
     always = {
         "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
+        "dummy_player": (
+            hand.get_xscript().auction.dummy if hand.get_xscript().auction.found_contract else None
+        ),
         "hand": hand,
         "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
+        "viewers_seat": viewers_seat,
     }
 
     if xscript.auction.found_contract:

@@ -1,17 +1,8 @@
 IN PROGRESS:
-* Make the cards more visible during play, by only showing one hand at a time!
-  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
-  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
 
-  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
-
-Sooo many problems ...
-
-- We've lost the green "it's your turn to play" background
-- I have no idea what direction I'm sitting
-- I can't see anything that tells me what the contract is
-
-Smaller notes:
+
+STILL TODO:
+* Carousel notes:
 
 - perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
 
@@ -24,8 +15,6 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
 - if I mess with font size and browser size, I can make the cards expand to exceed the size allotted to them, so a vertical scrollbar appears
 
-
-STILL TODO:
 * The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
@@ -239,6 +228,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Make the cards more visible during play, by only showing one hand at a time!
+  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
+  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
+
+  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
+
 * I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
   At least some are not obsolete -- the chat system still uses them
 
