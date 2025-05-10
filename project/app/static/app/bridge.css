@@ -123,7 +123,7 @@ li.carousel::scroll-marker:target-current {
 }
 
 .bigfont {
-    font-family: "Roboto Mono", monospace;
+    font-family: monospace;
     font-optical-sizing: auto;
     font-weight: 100;
     font-style: normal;
