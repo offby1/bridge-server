@@ -1,9 +1,6 @@
-{% extends "base.html" %}
 {% load fastdev %}
-{% block content %}
-    <div class="three-by-three-trick-display">
-        {% for row in three_by_three_trick_display.rows %}
-            {% for column in row %}{{ column|safe }}{% endfor %}
-        {% endfor %}
-    </div>
-{% endblock content %}
+<div class="three-by-three-trick-display">
+    {% for row in three_by_three_trick_display.rows %}
+        {% for column in row %}{{ column|safe }}{% endfor %}
+    {% endfor %}
+</div>
