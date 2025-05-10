@@ -131,6 +131,10 @@ li.carousel::scroll-marker:target-current {
     font-size: 10cqh;
 }
 
+.mediumfont {
+    font-size: 5cqh;
+}
+
 .spades, .hearts, .diamonds, .clubs {
     display: flex;
     flex-direction: row;
