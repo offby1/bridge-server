@@ -56,11 +56,9 @@ body {
 
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 ul.carousel {
-  width: 90vw;
-  height: 500px;
-  padding: 20px 100px 20px 20px;
+  width: 90%;
+  height: 90%;
   display: flex;
-  gap: 4vw;
   overflow-x: scroll;
   scroll-snap-type: x mandatory;
   anchor-name: --myCarousel;
