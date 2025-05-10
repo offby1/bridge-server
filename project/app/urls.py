@@ -89,5 +89,5 @@ urlpatterns = [
         tournament_void_signup_deadline_view,
         name="tournament-void-signup-deadline",
     ),
-    path("x/<pk>/", hand_xperimental_view, name="hand-xperimental-view"),
+    path("x/hand/<pk>/", hand_xperimental_view, name="hand-xperimental-view"),
 ]
