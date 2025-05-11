@@ -468,9 +468,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         name = self.name
         if self.synthetic:
             name = format_html("<i>{}</i>", self.name)
+        style_attribute = "" if not style else f'style="{style}"'
         return format_html(
-            "<a style='{}' href='{}'>{}</a>",
-            style,
+            f'<a {style_attribute} href="{{}}">{{}}</a>',
             reverse("app:player", kwargs={"pk": self.pk}),
             name,
         )
