@@ -1,6 +1,11 @@
 IN PROGRESS:
 * Do the carousel thing to the auction, just as we did to the play.
 
+  I've marked up the divs with some new ids.  The divs that we want to include in the carousel are
+  - "auction"
+  - "make-me-a-li" (that's the bidding box)
+  - the contents of hand-div
+
 
 STILL TODO:
 * Carousel notes:

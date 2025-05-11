@@ -5,12 +5,13 @@
     {{ hand }}
 {% endblock title %}
 {% block content %}
-    <div>
-        <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
-            <div>
+    <div id="big-descriptive-text">
+        <div id="more-big-descriptive-text"
+             {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
+            <div id="hand-terse-description">
                 <h1 style="text-align:center">{{ terse_description }}</h1>
             </div>
-            <div class="row">
+            <div id="hand-status" class="row">
                 <div class="col">
                     <h1>
                         <div id="auction-summary">{{ hand.auction.status }}</div>
@@ -31,7 +32,7 @@
     {% if not show_auction_history %}
         <div class="col">{% include "four-hands.html" %}</div>
     {% endif %}
-    <div>
+    <div id="toast-and-bidding-box">
         <div class="toast-container">
             <div id="errorToast"
                  class="toast"
@@ -62,7 +63,7 @@
                     display: grid;
                     grid-template-columns: auto auto"
              id="bidding-box">
-            <div>
+            <div id="make-me-a-li">
                 {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
             </div>
             <div>
@@ -83,7 +84,7 @@
 </h4>
 {% endifexists %}
 {% if show_auction_history %}
-    <div>{% include "four-hands.html" %}</div>
+    <div id="four-hands">{% include "four-hands.html" %}</div>
 {% endif %}
 {% endifexists %}
 {% endblock content %}

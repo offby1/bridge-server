@@ -92,7 +92,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get_by_name("Jeremy Northam")
 
     link = p.as_link()
-    assert re.search(r"href='/player/.*>.*Jeremy Northam.*</a>", link)
+    assert re.search(r'href="/player/.*>.*Jeremy Northam.*</a>', link)
 
 
 def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) -> None:
