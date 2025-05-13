@@ -380,6 +380,14 @@ class Hand(TimeStampedModel):
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data, when=now)
 
+    def send_event_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
+        p = Player.objects.get(pk=player_pk)
+        player_channel = p.event_channel_name
+
+        send_timestamped_event(
+            channel=player_channel, data=data | {"hand_pk": self.pk}, when=time.time()
+        )
+
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
     summary_for_this_viewer: str
@@ -505,9 +513,12 @@ class Hand(TimeStampedModel):
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
     def _get_current_trick_html(self) -> str:
-        from app.views.hand import _three_by_three_HTML_for_hand
+        from app.views.hand import _three_by_three_HTML_for_trick
 
-        return _three_by_three_HTML_for_hand(self)
+        return _three_by_three_HTML_for_trick(self)
+
+    def _get_current_hand_html(self) -> str:
+        return f"<div>Imagine I am some HTML showing one hand for {self}</div>"
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -560,6 +571,11 @@ class Hand(TimeStampedModel):
             data["dummy"] = "".join([c.serialize() for c in libCards])
 
         self.send_event_to_players_and_hand(data=data)
+
+        self.send_event_to_player(
+            player_pk=legit_player.pk,
+            data={"current_hand_html": self._get_current_hand_html()},
+        )
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))

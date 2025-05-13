@@ -73,6 +73,11 @@ div#{{ next_seat_to_play|title }}.hand {
                  const container = document.getElementById("_3x3-container");
                  container.innerHTML = trick_html;
              }
+             {% if next_seat_to_play %}
+             if ("{{ next_seat_to_play|title }}" in data) {
+                 console.log("Maybe I should update {{ next_seat_to_play }}");
+             }
+             {% endif %}
          }
      }, false);
 
