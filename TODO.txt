@@ -1,10 +1,5 @@
 IN PROGRESS:
-* Do the carousel thing to the auction, just as we did to the play.
-
-  I've marked up the divs with some new ids.  The divs that we want to include in the carousel are
-  - "auction"
-  - "make-me-a-li" (that's the bidding box)
-  - the contents of hand-div
+* I broke God-mode :-(
 
 * Ponder: should the server ever automatically scroll a carousel to reveal some slide other than the default one?
 
@@ -12,7 +7,17 @@ IN PROGRESS:
 
   If so, how?  Is there some API for scrolling the carousel?
 
-  Failing that, perhaps now I should change the current scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bit", so that the user is entirely in control of what gets scrolled when.
+  👉 Failing that, perhaps now I should change the current scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bit", so that the user is entirely in control of what gets scrolled when.
+
+  Which HTML things need to get updated?
+
+  | when           | what            | where          |
+  |----------------+-----------------+----------------|
+  | During auction | current auction | hand channel   |
+  | During auction | bidding box     | hand channel   |
+  | During play    | our hand        | player channel |
+  | During play    | dummy           | hand channel   |
+  | During play    | current trick   | hand channel   |
 
 
 STILL TODO:
@@ -244,6 +249,13 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Do the carousel thing to the auction, just as we did to the play.
+
+  I've marked up the divs with some new ids.  The divs that we want to include in the carousel are
+  - "auction"
+  - "make-me-a-li" (that's the bidding box)
+  - the contents of hand-div
+
 * Make the cards more visible during play, by only showing one hand at a time!
   Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
   Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
