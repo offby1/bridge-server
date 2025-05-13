@@ -35,46 +35,46 @@
 {% endblock upper-right-column %}
 {% block scripts %}
     <script>
- var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}/');
- console.log("Listening for hand events on {{ hand.pk }}");
-
- handEventSource.addEventListener('message', function (e) {
-     console.log("Hand event listener saw " + e.data);
-
-     const data = JSON.parse(e.data);
-     if ("new-play" in data) {
-         const new_play = data["new-play"];
-         if ("trick_html" in new_play) {
-             const trick_html = new_play["trick_html"];
-             const container = document.getElementById("_3x3-container");
-             container.innerHTML = trick_html;
-         }
-         {% if next_seat_to_play %}
-         if ("{{ next_seat_to_play|title }}" in data) {
-             console.log("Maybe I should update {{ next_seat_to_play }}");
-         }
+         {% if user.is_authenticated %}
+         var playerEventSource = new ReconnectingEventSource('/events/player/system:player:{{ user.player.pk }}/');
+         console.log("Listening for player events on /events/player/system:player:{{ user.player.pk }}");
+         playerEventSource.addEventListener('message', function (e) {
+             const data = JSON.parse(e.data);
+             console.log("Player event listener saw " + e.data);
+         }, false);
          {% endif %}
-     }
- }, false);
 
- // scroll the auction div so that the most-recent calls are visible.
- addEventListener("DOMContentLoaded", (event) =>
-     {
-         var auctionDiv = document.querySelector("#auction");
-         if (auctionDiv != null) {
-             auctionDiv.scroll(0, 10000);
-         }
- });
+         var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}/');
+         console.log("Listening for hand events on /events/hand/{{ hand.pk }}");
 
- htmx.on("htmx:responseError", function(evt) {
-     const errorToast = document.getElementById('errorToast');
-     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+         handEventSource.addEventListener('message', function (e) {
+             console.log("Hand event listener saw " + e.data);
 
-     const errorText = document.getElementById('errorText');
-     errorText.innerHTML = evt.detail.xhr.responseText;
+             const data = JSON.parse(e.data);
+             if ("new-play" in data) {
+                 const new_play = data["new-play"];
+                 if ("trick_html" in new_play) {
+                     const trick_html = new_play["trick_html"];
+                     const container = document.getElementById("_3x3-container");
+                     container.innerHTML = trick_html;
+                 }
+                 {% if next_seat_to_play %}
+                 if ("{{ next_seat_to_play|title }}" in data) {
+                     console.log("Maybe I should update {{ next_seat_to_play }}");
+                 }
+                 {% endif %}
+             }
+         }, false);
 
-     toastBootstrap.show();
- });
+         htmx.on("htmx:responseError", function(evt) {
+             const errorToast = document.getElementById('errorToast');
+             const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+
+             const errorText = document.getElementById('errorText');
+             errorText.innerHTML = evt.detail.xhr.responseText;
+
+             toastBootstrap.show();
+         });
 
     </script>
 {% endblock scripts %}

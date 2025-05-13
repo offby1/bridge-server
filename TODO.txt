@@ -1,13 +1,7 @@
 IN PROGRESS:
 * I broke God-mode :-(
 
-* Ponder: should the server ever automatically scroll a carousel to reveal some slide other than the default one?
-
-  e.g., during the play, I almost certainly want to see the current trick as soon as I've chosen a card to play.
-
-  If so, how?  Is there some API for scrolling the carousel?
-
-  👉 Failing that, perhaps now I should change the current scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bit", so that the user is entirely in control of what gets scrolled when.
+* I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 
   Which HTML things need to get updated?
 
@@ -21,6 +15,7 @@ IN PROGRESS:
 
 * About the above: perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
+* If I'm the dummy, carousel_style_play shows two slides with my hand.  That's dumb!
 
 STILL TODO:
 * Carousel notes:
