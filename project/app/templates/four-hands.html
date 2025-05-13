@@ -17,7 +17,7 @@
         {{ card_display.West.player.display_name|safe }}:
         {% include "hand-div.html" with cards=card_display.West.cards id="west" class="hand mediumfont" %}
     </div>
-    <div>
+    <div id="_3x3-container">
         {% ifexists three_by_three_trick_display %}
         {% include "3x3-trick-display.html" %}
     {% endifexists %}

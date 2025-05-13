@@ -70,7 +70,17 @@
  handEventSource.addEventListener('message', function (e) {
      console.log("Hand event listener saw " + e.data);
 
+     const data = JSON.parse(e.data);
+     if ("new-play" in data) {
+         const new_play = data["new-play"];
+         if ("trick_html" in new_play) {
+             const trick_html = new_play["trick_html"];
+             const container = document.getElementById("_3x3-container");
+             container.innerHTML = trick_html;
+         }
+     } else {
      window.location.reload();
+     }
  }, false);
 
  // scroll the auction div so that the most-recent calls are visible.
@@ -83,7 +93,7 @@
  });
 
  htmx.on("htmx:responseError", function(evt) {
-     const errorToast = document.getElementById('errorToast');
+         const errorToast = document.getElementById('errorToast');
      const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
 
      const errorText = document.getElementById('errorText');
