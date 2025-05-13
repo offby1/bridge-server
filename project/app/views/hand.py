@@ -454,7 +454,7 @@ def bidding_box_buttons(
 def bidding_box_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
-    context = _bidding_box_context_for_hand(request, hand)
+    context = _bidding_box_context_for_hand(request, hand) | _auction_context_for_hand(hand)
 
     return TemplateResponse(
         request,
