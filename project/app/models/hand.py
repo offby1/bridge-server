@@ -235,9 +235,6 @@ class HandManager(models.Manager):
         return rv
 
 
-def get_current_trick_html(hand_pk: PK) -> str:
-    return f"<div>Pretend I'm the current trick for hand {hand_pk}</div>"
-
 # fmt:off
 
 # fmt:on
@@ -507,6 +504,11 @@ class Hand(TimeStampedModel):
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
+    def _get_current_trick_html(self) -> str:
+        from app.views.hand import _three_by_three_HTML_for_hand
+
+        return _three_by_three_HTML_for_hand(self)
+
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
@@ -548,7 +550,7 @@ class Hand(TimeStampedModel):
             "new-play": {
                 "hand_pk": self.pk,
                 "serialized": card.serialize(),
-                "trick_html": get_current_trick_html(hand_pk=self.pk),
+                "trick_html": self._get_current_trick_html(),
             },
         }
 
