@@ -16,6 +16,7 @@ from django.http import (
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
@@ -264,6 +265,12 @@ def _three_by_three_trick_display_context_for_hand(
             ],
         },
     }
+
+
+def _three_by_three_HTML_for_hand(hand: app.models.Hand) -> str:
+    xscript = hand.get_xscript()
+    context = _three_by_three_trick_display_context_for_hand(hand, xscript)
+    return render_to_string("3x3-trick-display.html", context)
 
 
 def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
