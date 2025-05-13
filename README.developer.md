@@ -69,3 +69,11 @@ Optional but slick. `pipx install pre-commit`
 - `just prod` does what `just dcu` does, plus:
   - it deploys to a docker context named "ls", instead of locally.  This won't work for you unless you have a host accessible via `ssh ls`. Mine is a server that has a slick-looking domain name (`bridge.offby1.info`).
   - it enables the "prod" profile, which includes "caddy", which is a TLS-doing reverse proxy *that gets TLS certificates for me automatically* 🎉
+
+## Using curl to examine event stream
+
+- First "log in"
+  `curl --cookie cook --cookie-jar cook -u 'bob:.'  https://django.server.orb.local/three-way-login/`
+
+- Now "tail" the stream
+  `curl  --cookie cook --cookie-jar cook   https://django.server.orb.local/events/hand/1/`
