@@ -599,50 +599,6 @@ def _terse_description(hand: Hand) -> str:
 
 
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
-    if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
-
-    player = getattr(request.user, "player", None)
-
-    # TODO -- we used to forbid viewing of hands sometimes; it's not clear if we should still do that, and if so,
-    # exactly when
-    # e.g.
-    # If player is not seated at this table, only let them see the hand if they've already completed playing the board.
-
-    response = _maybe_redirect_or_error(
-        hand_pk=hand.pk,
-        hand_is_complete=hand.is_complete,
-        player_visibility=hand.board.what_can_they_see(player=player),
-        request_viewname="app:hand-detail",
-    )
-
-    if response is not None:
-        return response
-
-    context = (
-        _four_hands_context_for_hand(request=request, hand=hand)
-        | {"terse_description": _terse_description(hand)}
-        | _auction_context_for_hand(hand)
-        | _bidding_box_context_for_hand(request, hand)
-    )
-
-    if (
-        player is not None
-        and (other_hand := player.hand_at_which_we_played_board(hand.board)) is not None
-    ):
-        context["hand_at_which_I_played_this_board"] = {
-            "description": str(other_hand),
-            "link": reverse("app:hand-detail", args=[other_hand.pk]),
-        }
-
-    return TemplateResponse(request, "hand_detail.html", context=context)
-
-
-def hand_xperimental_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     def _localize(stamp: datetime.datetime) -> datetime.datetime:
         if (zone_name := request.session.get("detected_tz")) is not None:
             import zoneinfo
@@ -672,7 +628,7 @@ def hand_xperimental_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         | _bidding_box_context_for_hand(request, hand)
     )
 
-    return TemplateResponse(request, "hand_xpermiment.html", context=context)
+    return TemplateResponse(request, "hand_detail.html", context=context)
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
