@@ -431,7 +431,7 @@ def bidding_box_buttons(
 
         row += "".join(buttons)
 
-        row += "</div><br/>"
+        row += "</div>"
 
         rows.append(row)
 
@@ -447,7 +447,7 @@ def bidding_box_buttons(
     top_button_group += "</div>"
 
     joined_rows = "\n".join(rows)
-    return SafeString(f"""{top_button_group} <br/> {joined_rows}""")
+    return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
 @logged_in_as_player_required()

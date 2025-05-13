@@ -33,7 +33,7 @@
         </table>
     </li>
     <li class="carousel">
-        <div id="toast-bidding-box-and-hand">
+        <div id="toast-bidding-box">
             <div class="toast-container">
                 <div id="errorToast"
                      class="toast"
@@ -61,12 +61,18 @@
                 </div>
             </div>
             <div style="font-family: monospace;
-                        display: grid;
-                        grid-template-columns: auto auto"
-                 id="bidding-box">
-                <div id="make-me-a-li">
-                    {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
-                </div>
+                display: grid;
+                grid-template-rows:
+                [multiplier-start] 1fr
+                [one] 1 fr
+                [two] 1 fr
+                [three] 1 fr
+                [four] 1 fr
+                [five] 1 fr
+                [six] 1 fr
+                [seven] 1 fr;
+                id="bidding-box">
+                {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
             </div>
         </div>
     </li>
