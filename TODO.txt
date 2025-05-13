@@ -6,6 +6,14 @@ IN PROGRESS:
   - "make-me-a-li" (that's the bidding box)
   - the contents of hand-div
 
+* Ponder: should the server ever automatically scroll a carousel to reveal some slide other than the default one?
+
+  e.g., during the play, I almost certainly want to see the current trick as soon as I've chosen a card to play.
+
+  If so, how?  Is there some API for scrolling the carousel?
+
+  Failing that, perhaps now I should change the current scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bit", so that the user is entirely in control of what gets scrolled when.
+
 
 STILL TODO:
 * Carousel notes:
