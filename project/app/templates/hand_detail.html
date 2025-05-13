@@ -2,7 +2,7 @@
 {% load fastdev %}
 {% load static %}
 {% block title %}
-    IT'S THE BIG HAND EXPERIMENT
+    {{ hand }}
 {% endblock title %}
 {% block content %}
     {# from https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages #}
@@ -11,35 +11,11 @@
         <h1>{{ hand.auction.status }}</h1>
         <h1>{{ hand.trick_counts_by_direction }}</h1>
     </div>
-    <ul class="carousel">
-        <li class="carousel">
-            {% ifexists card_display.current_player %}
-            <h2>Your Hand ({{ viewers_seat }})</h2>
-            {% include "hand-div.html" with cards=card_display.current_player.cards id=viewers_seat.name class="hand bigfont" %}
-        {% else %}
-            No <tt>card_display.current_player</tt> for you
-        {% endifexists %}
-    </li>
-    <li class="carousel">
-        <h2>Dummy ({{ dummy_player }})</h2>
-        {% ifexists card_display.dummy_hand %}
-        {% include "hand-div.html" with cards=card_display.dummy_hand.cards id=dummy_player.seat.name class="hand bigfont" %}
+    {% if hand.auction.found_contract %}
+        {% include "carousel_style_play.html" %}
     {% else %}
-        No <tt>card_display.dummy</tt> for you
-    {% endifexists %}
-</li>
-<li class="carousel">
-    <h2>Current Trick</h2>
-    {% ifexists three_by_three_trick_display %}
-    <div id="_3x3-container">{% include "3x3-trick-display.html" %}</div>
-{% endifexists %}
-</li>
-</ul>
-<style>
-div#{{ next_seat_to_play|title }}.hand {
-  background-color: lightgreen;
-}
-</style>
+        {% include "carousel_style_auction.html" %}
+    {% endif %}
 {% endblock content %}
 {% block upper-right-column %}
     {% if DEPLOYMENT_ENVIRONMENT != "production" %}
@@ -59,46 +35,46 @@ div#{{ next_seat_to_play|title }}.hand {
 {% endblock upper-right-column %}
 {% block scripts %}
     <script>
-     var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}/');
-     console.log("Listening for hand events on {{ hand.pk }}");
+ var handEventSource = new ReconnectingEventSource('/events/hand/{{ hand.pk }}/');
+ console.log("Listening for hand events on {{ hand.pk }}");
 
-     handEventSource.addEventListener('message', function (e) {
-         console.log("Hand event listener saw " + e.data);
+ handEventSource.addEventListener('message', function (e) {
+     console.log("Hand event listener saw " + e.data);
 
-         const data = JSON.parse(e.data);
-         if ("new-play" in data) {
-             const new_play = data["new-play"];
-             if ("trick_html" in new_play) {
-                 const trick_html = new_play["trick_html"];
-                 const container = document.getElementById("_3x3-container");
-                 container.innerHTML = trick_html;
-             }
-             {% if next_seat_to_play %}
-             if ("{{ next_seat_to_play|title }}" in data) {
-                 console.log("Maybe I should update {{ next_seat_to_play }}");
-             }
-             {% endif %}
+     const data = JSON.parse(e.data);
+     if ("new-play" in data) {
+         const new_play = data["new-play"];
+         if ("trick_html" in new_play) {
+             const trick_html = new_play["trick_html"];
+             const container = document.getElementById("_3x3-container");
+             container.innerHTML = trick_html;
          }
-     }, false);
+         {% if next_seat_to_play %}
+         if ("{{ next_seat_to_play|title }}" in data) {
+             console.log("Maybe I should update {{ next_seat_to_play }}");
+         }
+         {% endif %}
+     }
+ }, false);
 
-     // scroll the auction div so that the most-recent calls are visible.
-     addEventListener("DOMContentLoaded", (event) =>
-         {
-             var auctionDiv = document.querySelector("#auction");
-             if (auctionDiv != null) {
-                 auctionDiv.scroll(0, 10000);
-             }
-     });
+ // scroll the auction div so that the most-recent calls are visible.
+ addEventListener("DOMContentLoaded", (event) =>
+     {
+         var auctionDiv = document.querySelector("#auction");
+         if (auctionDiv != null) {
+             auctionDiv.scroll(0, 10000);
+         }
+ });
 
-     htmx.on("htmx:responseError", function(evt) {
-         const errorToast = document.getElementById('errorToast');
-         const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+ htmx.on("htmx:responseError", function(evt) {
+     const errorToast = document.getElementById('errorToast');
+     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
 
-         const errorText = document.getElementById('errorText');
-         errorText.innerHTML = evt.detail.xhr.responseText;
+     const errorText = document.getElementById('errorText');
+     errorText.innerHTML = evt.detail.xhr.responseText;
 
-         toastBootstrap.show();
-     });
+     toastBootstrap.show();
+ });
 
     </script>
 {% endblock scripts %}
