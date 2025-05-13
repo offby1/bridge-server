@@ -19,6 +19,8 @@ IN PROGRESS:
   | During play    | dummy           | hand channel   |
   | During play    | current trick   | hand channel   |
 
+* About the above: perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
+
 
 STILL TODO:
 * Carousel notes:
