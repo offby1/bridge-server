@@ -1,6 +1,15 @@
 IN PROGRESS:
 
 STILL TODO:
+* Terminology trouble: I use the word "hand" to refer to two different things:
+
+  - A Django model that represents one board, four players, and a table display number
+  - The set of cards belonging to one of those four players
+
+  I don't think I've wasted a week due to this confusion (yet), but it's a ticking time bomb.
+
+* Clicking "Skip the deadline" is sometimes slow.  I suspect it's creating synthetic users, and doing the deliberately-slow-password-hashing-thing for each.
+
 * The SSE events for "a call was made at table X" and "a play was made at table X" should be readable by *all* users, regardless of whether they're sitting at the table, so their browsers will update when they watch the hand; currently those players are getting 400s when listening to `/events/hand/xxx/`.
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
