@@ -235,6 +235,9 @@ class HandManager(models.Manager):
         return rv
 
 
+def get_current_trick_html(hand_pk: PK) -> str:
+    return f"<div>Pretend I'm the current trick for hand {hand_pk}</div>"
+
 # fmt:off
 
 # fmt:on
@@ -543,8 +546,9 @@ class Hand(TimeStampedModel):
 
         data: dict[str, Any] = {
             "new-play": {
-                "serialized": card.serialize(),
                 "hand_pk": self.pk,
+                "serialized": card.serialize(),
+                "trick_html": get_current_trick_html(hand_pk=self.pk),
             },
         }
 
