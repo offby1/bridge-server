@@ -207,7 +207,6 @@ def _get_card_html(
 
 
 def _three_by_three_trick_display_context_for_hand(
-    request: HttpRequest,
     hand: app.models.Hand,
     xscript: bridge.xscript.HandTranscript,
 ) -> dict[str, Any]:
@@ -367,9 +366,7 @@ def _four_hands_context_for_hand(
         ]
 
     if not hand.is_complete:
-        return always | _three_by_three_trick_display_context_for_hand(
-            request, hand, xscript=xscript
-        )
+        return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
     return always
 
 
