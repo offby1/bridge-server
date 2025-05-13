@@ -28,11 +28,11 @@
             </div>
         {% endif %}
     </div>
-    <div>{% include "auction.html" %}</div>
     {% if not show_auction_history %}
         <div class="col">{% include "four-hands.html" %}</div>
+    {% else %}
+        {% include "carousel_style_auction.html" %}
     {% endif %}
-    {% include "carousel_style_auction.html" %}
     {% ifexists card_display.current_player %}
 {% else %}
     {% ifexists hand_at_which_I_played_this_board %}

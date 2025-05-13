@@ -1,44 +1,82 @@
 {% load fastdev %}
-<div id="toast-and-bidding-box">
-    <div class="toast-container">
-        <div id="errorToast"
-             class="toast"
-             role="alert"
-             aria-live="assertive"
-             aria-atomic="true">
-            <div class="toast-header">
-                <svg class="bd-placeholder-img rounded me-2"
-                     width="20"
-                     height="20"
-                     xmlns="http://www.w3.org/2000/svg"
-                     aria-hidden="true"
-                     preserveAspectRatio="xMidYMid slice"
-                     focusable="false">
-                    <rect width="100%" height="100%" fill="#007aff"></rect>
-                </svg>
-                <strong class="me-auto">Uh oh</strong>
-                <small>You're in trouble now</small>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="toast"
-                        aria-label="Close"></button>
+{% load player_extras %}
+<ul class="carousel">
+    <li class="carousel">
+        <table class="table caption-top"
+               id="auction"
+               style="border: 1px dotted;
+                      overflow: auto;
+                      height: 10em">
+            <caption>Auction</caption>
+            <thead>
+                <tr>
+                    {% for direction, player in history %}
+                        <th {{ player.style|safe }}>
+                            <i>{{ direction }}</i>
+                            <br>
+                            {{ player.player|styled_link:user }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for row in hand.auction.fancy_HTML_display %}
+                    <tr>
+                        {% for call in row %}
+                            <td>
+                                {% if call is not None %}{{ call|safe }}{% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </li>
+    <li class="carousel">
+        <div id="toast-bidding-box-and-hand">
+            <div class="toast-container">
+                <div id="errorToast"
+                     class="toast"
+                     role="alert"
+                     aria-live="assertive"
+                     aria-atomic="true">
+                    <div class="toast-header">
+                        <svg class="bd-placeholder-img rounded me-2"
+                             width="20"
+                             height="20"
+                             xmlns="http://www.w3.org/2000/svg"
+                             aria-hidden="true"
+                             preserveAspectRatio="xMidYMid slice"
+                             focusable="false">
+                            <rect width="100%" height="100%" fill="#007aff"></rect>
+                        </svg>
+                        <strong class="me-auto">Uh oh</strong>
+                        <small>You're in trouble now</small>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="toast"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body" id="errorText">OK, so, like, that didn't work.</div>
+                </div>
             </div>
-            <div class="toast-body" id="errorText">OK, so, like, that didn't work.</div>
+            <div style="font-family: monospace;
+                        display: grid;
+                        grid-template-columns: auto auto"
+                 id="bidding-box">
+                <div id="make-me-a-li">
+                    {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
+                </div>
+            </div>
         </div>
-    </div>
-    <div style="font-family: monospace;
-                display: grid;
-                grid-template-columns: auto auto"
-         id="bidding-box">
-        <div id="make-me-a-li">
-            {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
-        </div>
+    </li>
+    <li class="carousel">
         <div>
             {% if show_auction_history %}
                 {% ifexists card_display.current_player %}
-                {% include "hand-div.html" with cards=card_display.current_player.cards id="" class="hand" %}
+                {% include "hand-div.html" with cards=card_display.current_player.cards id="" class="hand bigfont" %}
             {% endifexists %}
         {% endif %}
     </div>
-</div>
-</div>
+</li>
+</ul>
