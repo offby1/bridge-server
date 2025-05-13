@@ -3,6 +3,9 @@
 <ul class="carousel">
     <li class="carousel">{% include "auction.html" %}</li>
     <li class="carousel">
+        <div>{% include "hand-div.html" with cards=card_display.current_player.cards id="" class="hand bigfont" %}</div>
+    </li>
+    <li class="carousel">
         <div id="toast-bidding-box">
             <div class="toast-container">
                 <div id="errorToast"
@@ -46,13 +49,4 @@
             </div>
         </div>
     </li>
-    <li class="carousel">
-        <div>
-            {% if show_auction_history %}
-                {% ifexists card_display.current_player %}
-                {% include "hand-div.html" with cards=card_display.current_player.cards id="" class="hand bigfont" %}
-            {% endifexists %}
-        {% endif %}
-    </div>
-</li>
 </ul>
