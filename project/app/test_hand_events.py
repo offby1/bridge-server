@@ -49,7 +49,7 @@ class CapturedEventsFromChannel:
 def test_auction_settled_messages(usual_setup) -> None:
     h = usual_setup
 
-    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+    with CapturedEventsFromChannel(h.event_table_html_channel) as cap:
         set_auction_to(
             bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
             h,
@@ -75,7 +75,7 @@ def test_sends_final_score() -> None:
     libPlayer = h.player_who_may_play.libraryThing()
     libCard = bridge.card.Card.deserialize("♠A")
 
-    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+    with CapturedEventsFromChannel(h.event_table_html_channel) as cap:
         h.add_play_from_player(player=libPlayer, card=libCard)
 
     def sought(datum):
@@ -91,7 +91,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
         h,
     )
 
-    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+    with CapturedEventsFromChannel(h.event_table_html_channel) as cap:
         h.add_play_from_player(
             # opening lead from East
             player=h.player_who_may_play.libraryThing(),
@@ -103,7 +103,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     # TODO -- we shouldn't insist on this order
     assert dummy == "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A"
 
-    with CapturedEventsFromChannel(h.event_channel_name) as cap:
+    with CapturedEventsFromChannel(h.event_table_html_channel) as cap:
         h.add_play_from_player(
             # play from South
             player=h.player_who_may_play.libraryThing(),

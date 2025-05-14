@@ -319,12 +319,12 @@ class Hand(TimeStampedModel):
             raise HandError(msg)
 
     @property
-    def event_channel_name(self):
-        return f"hand:{self.pk}"
+    def event_table_html_channel(self):
+        return f"table:html:{self.pk}"
 
     @staticmethod
-    def hand_pk_from_event_channel_name(cn: str) -> PK | None:
-        pieces = cn.split("hand:")
+    def hand_pk_from_event_table_html_channel(cn: str) -> PK | None:
+        pieces = cn.split("table:html:")
         if len(pieces) != 2:
             return None
         return PK_from_str(pieces[1])
@@ -369,10 +369,15 @@ class Hand(TimeStampedModel):
 
         return False
 
-    def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
-        hand_channel = self.event_channel_name
-        player_channels = [p.event_channel_name for p in self.players()]
-        all_channels = [hand_channel, "all-tables", *player_channels]
+    def send_events_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
+        table_channel = self.event_table_html_channel
+        player_channels: list[str] = []
+        for p in self.players():
+            player_channels.append(p.event_HTML_hand_channel)
+            player_channels.append(p.event_JSON_hand_channel)
+
+        all_channels = [table_channel, "all-tables", *player_channels]
+        logger.warning(f"{all_channels=}")
 
         data = data.copy()
         data["hand_pk"] = self.pk
@@ -382,7 +387,7 @@ class Hand(TimeStampedModel):
 
     def send_event_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
         p = Player.objects.get(pk=player_pk)
-        player_channel = p.event_channel_name
+        player_channel = p.event_HTML_hand_channel
 
         send_timestamped_event(
             channel=player_channel, data=data | {"hand_pk": self.pk}, when=time.time()
@@ -488,7 +493,7 @@ class Hand(TimeStampedModel):
 
         self.call_set.create(serialized=call.serialize())
 
-        self.send_event_to_players_and_hand(
+        self.send_events_to_players_and_hand(
             data={
                 "new-call": {
                     "serialized": call.serialize(),
@@ -500,7 +505,7 @@ class Hand(TimeStampedModel):
             contract = self.auction.status
             assert isinstance(contract, libContract)
             assert contract.declarer is not None
-            self.send_event_to_players_and_hand(
+            self.send_events_to_players_and_hand(
                 data={
                     "table": self.table_display_number,
                     "contract_text": str(contract),
@@ -570,7 +575,7 @@ class Hand(TimeStampedModel):
             libCards = sorted(self.current_cards_by_seat()[self.dummy.seat])
             data["dummy"] = "".join([c.serialize() for c in libCards])
 
-        self.send_event_to_players_and_hand(data=data)
+        self.send_events_to_players_and_hand(data=data)
 
         self.send_event_to_player(
             player_pk=legit_player.pk,
@@ -607,7 +612,7 @@ class Hand(TimeStampedModel):
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
 
-                self.send_event_to_players_and_hand(
+                self.send_events_to_players_and_hand(
                     data={
                         "final_score": final_score_text,
                         "table": self.table_display_number,
@@ -860,7 +865,7 @@ class Hand(TimeStampedModel):
 
         self.open_access = not self.open_access
         self.save()
-        self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
+        self.send_events_to_players_and_hand(data={"open-access-status": self.open_access})
 
     def _score_by_player(self, *, player: Player) -> int:
         fs = self.get_xscript().final_score()

@@ -15,24 +15,24 @@ def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
 
-    assert cm.can_read_channel(north, north.event_channel_name)
-    assert not cm.can_read_channel(north, south.event_channel_name)
-    assert cm.can_read_channel(south, south.event_channel_name)
-    assert not cm.can_read_channel(south, north.event_channel_name)
+    assert cm.can_read_channel(north, north.event_HTML_hand_channel)
+    assert not cm.can_read_channel(north, south.event_HTML_hand_channel)
+    assert cm.can_read_channel(south, south.event_HTML_hand_channel)
+    assert not cm.can_read_channel(south, north.event_HTML_hand_channel)
 
     the_hand = Hand.objects.first()
     assert the_hand is not None
     assert north in the_hand.players()
     assert south in the_hand.players()
 
-    assert cm.can_read_channel(north, the_hand.event_channel_name)
-    assert cm.can_read_channel(south, the_hand.event_channel_name)
+    assert cm.can_read_channel(north, the_hand.event_table_html_channel)
+    assert cm.can_read_channel(south, the_hand.event_table_html_channel)
 
     j_random_user = auth.models.User.objects.create(
         username="J. Random User, Esq", password=everybodys_password
     )
 
-    assert not cm.can_read_channel(j_random_user, the_hand.event_channel_name)
+    assert not cm.can_read_channel(j_random_user, the_hand.event_table_html_channel)
 
 
 def test_player_timestamp_updates(db, everybodys_password) -> None:

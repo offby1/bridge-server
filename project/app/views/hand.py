@@ -661,7 +661,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             {
                 "board": hand.board.display_number,
                 "current_event_ids_by_player_name": {
-                    p.name: get_current_event_id([p.event_channel_name])
+                    p.name: get_current_event_id([p.event_HTML_hand_channel])
                     for _, p in hand.players_by_direction_letter.items()
                 },
                 "table": hand.table_display_number,

@@ -28,14 +28,20 @@ class MyChannelManager(DefaultChannelManager):
             # logger.warning(f"{player.pk=} {player_pks=}")
             return player.pk in player_pks
 
-        # system-to-player messages are similarly private.
-        if (player_pk := models.Player.player_pk_from_event_channel_name(channel)) is not None:
+        # system-to-player HTML messages are similarly private.
+        if (player_pk := models.Player.player_pk_from_event_HTML_hand_channel(channel)) is not None:
             rv = player_pk == player.pk
             # logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
             return rv
 
+        # system-to-player JSON messages are similarly private.
+        if (player_pk := models.Player.player_pk_from_event_JSON_hand_channel(channel)) is not None:
+            rv = player_pk == player.pk
+            logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
+            return rv
+
         # hand messages, alas, are private.
-        if (hand_pk := models.Hand.hand_pk_from_event_channel_name(channel)) is not None:
+        if (hand_pk := models.Hand.hand_pk_from_event_table_html_channel(channel)) is not None:
             try:
                 hand = models.Hand.objects.get(pk=hand_pk)
             except models.Hand.DoesNotExist:

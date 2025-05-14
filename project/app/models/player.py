@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import pathlib
+import re
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -209,15 +210,26 @@ class Player(TimeStampedModel):
         self._control_bot()
 
     @property
-    def event_channel_name(self):
-        return f"system:player:{self.pk}"
+    def event_HTML_hand_channel(self):
+        return f"player:html:hand:{self.pk}"
 
     @staticmethod
-    def player_pk_from_event_channel_name(cn: str) -> PK | None:
-        pieces = cn.split("system:player:")
-        if len(pieces) != 2:
-            return None
-        return PK_from_str(pieces[1])
+    def player_pk_from_event_HTML_hand_channel(cn: str) -> PK | None:
+        if (m := re.match(r"player:html:(?:hand|chat):(?P<player_id>.*)", cn)) is not None:
+            return PK_from_str(m.groups()[0])
+
+        return None
+
+    @property
+    def event_JSON_hand_channel(self):
+        return f"player:json:{self.pk}"
+
+    @staticmethod
+    def player_pk_from_event_JSON_hand_channel(cn: str) -> PK | None:
+        if (m := re.match(r"player:json:(?P<player_id>.*)", cn)) is not None:
+            return PK_from_str(m.groups()[0])
+
+        return None
 
     # https://cr.yp.to/daemontools/svc.html
     def _control_bot(self) -> None:
@@ -514,5 +526,4 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]
     list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]
