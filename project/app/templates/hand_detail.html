@@ -35,6 +35,8 @@
 {% endblock upper-right-column %}
 {% block scripts %}
     <script>
+         {# TODO -- some events could be handled in either listener; how do I choose a listener? #}
+
          {% if user.is_authenticated %}
          var playerEventSource = new ReconnectingEventSource('/events/player/system:player:{{ user.player.pk }}/');
          console.log("Listening for player events on /events/player/system:player:{{ user.player.pk }}");
@@ -63,6 +65,9 @@
                      console.log("Maybe I should update {{ next_seat_to_play }}");
                  }
                  {% endif %}
+             } else if ("new-call" in data) {
+                 console.log("Maybe I should update the auction and bidding-box slides");
+
              } else if ("contract_text" in data) {
                  /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
                  window.location.reload();
