@@ -4,8 +4,9 @@ import 'postgres.just'
 
 # https://just.systems/man/en/chapter_32.html?highlight=xdg#xdg-directories1230
 
-export DJANGO_SECRET_FILE := config_directory() / "info.offby1.bridge/django_secret_key"
-export DJANGO_SKELETON_KEY_FILE := config_directory() / "info.offby1.bridge/django_skeleton_key"
+DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
+export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
+export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -16,10 +17,13 @@ default:
     just --list
 
 [private]
+django-secret-directory:
+    mkdir -vp "{{ DJANGO_SECRET_DIRECTORY }}"
+
+[private]
 [script('bash')]
-ensure-django-secret:
+ensure-django-secret: django-secret-directory
     set -euo pipefail
-    mkdir -vp "$(dirname {{ DJANGO_SECRET_FILE }})"
     touch "{{ DJANGO_SECRET_FILE }}"
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
@@ -30,7 +34,6 @@ ensure-django-secret:
 [script('bash')]
 ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
     set -euo pipefail
-    mkdir -vp "$(dirname {{ DJANGO_SKELETON_KEY_FILE }})"
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
