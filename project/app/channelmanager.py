@@ -11,22 +11,28 @@ logger = logging.getLogger(__name__)
 
 class MyChannelManager(DefaultChannelManager):
     def can_read_channel(self, user: UserMitPlaya, channel: str) -> bool:
+        # logger.warning(f"{user=} {channel=}")
         if user is None:
+            # logger.warning("False 'cuz user is None")
             return False
 
         player: models.Player | None
         if isinstance(user, models.Player):
             player = user
         elif (player := getattr(user, "player", None)) is None:
+            # logger.warning(f"False 'cuz {player=} is None")
             return False
 
         # player-to-player messages are private.
         if (player_pks := models.Message.player_pks_from_channel_name(channel)) is not None:
+            # logger.warning(f"{player.pk=} {player_pks=}")
             return player.pk in player_pks
 
         # system-to-player messages are similarly private.
         if (player_pk := models.Player.player_pk_from_event_channel_name(channel)) is not None:
-            return player_pk == player.pk
+            rv = player_pk == player.pk
+            # logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
+            return rv
 
         # hand messages, alas, are private.
         if (hand_pk := models.Hand.hand_pk_from_event_channel_name(channel)) is not None:
