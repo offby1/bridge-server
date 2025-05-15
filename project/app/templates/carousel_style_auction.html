@@ -5,5 +5,14 @@
     <li class="carousel">
         <div>{% include "hand-div.html" with cards=card_display.current_player.cards id="" class="hand bigfont" %}</div>
     </li>
-    <li class="carousel">{% include "bidding-box.html" %}</li>
+    <li class="carousel" id="toast-and-bidding-box">{% include "bidding-box.html" %}</li>
 </ul>
+<style>
+ li#toast-and-bidding-box.carousel {
+     {% if disabled %}
+     background-color: white;
+     {% else %}
+     background-color: lightgreen;
+     {% endif %}
+ }
+</style>

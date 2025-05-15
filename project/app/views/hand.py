@@ -71,11 +71,12 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
 def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player) -> dict[str, Any]:
     display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
 
+    disabled = True
+
     if not as_viewed_by.has_played_hand(hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
-        disabled = True
 
         if hand.open_access:
             disabled = False
@@ -92,6 +93,8 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
     return {
         "bidding_box_buttons": buttons,
         "display_bidding_box": display_bidding_box,
+        "disabled": disabled,
+        "next_seat_to_call": "errm",
         "show_auction_history": display_bidding_box,
     }
 
