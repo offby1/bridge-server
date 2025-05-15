@@ -54,11 +54,11 @@
 
             Also -- I haven't thought this through -- perhaps if you're not authenticated, you can watch the auction
             history, but in that case there'd be no point in seeing a bidding box.  */
-         console.log("Maybe I should update the bidding-box slide");
          const new_call = data["new-call"];
          if ("bidding_box_html" in new_call) {
-             bidding_box_html = new_call["bidding_box_html"];
-             console.log(`Imagine I updated the bidding box with ${bidding_box_html}`);
+             const bidding_box_html = new_call["bidding_box_html"];
+             const container = document.getElementById("toast-and-bidding-box");
+             container.innerHTML = bidding_box_html;
          } else {
              console.log("Hey! Y U no bidding_box_html??");
          }
