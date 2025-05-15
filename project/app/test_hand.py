@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from django.contrib import auth
 
@@ -19,12 +19,9 @@ from .testutils import set_auction_to
 
 from .views.hand import (
     _bidding_box_context_for_hand,
+    _bidding_box_HTML_for_hand,
     _maybe_redirect_or_error,
-    bidding_box_partial_view,
 )
-
-if TYPE_CHECKING:
-    from django.template.response import TemplateResponse
 
 
 def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
@@ -112,7 +109,7 @@ def test_cards_by_player(usual_setup: Hand) -> None:
         assert len(h.current_cards_by_seat()[seat]) == 13
 
 
-def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> TemplateResponse:
+def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> str:
     from app.models.utils import assert_type
 
     if isinstance(as_seen_by, libPlayer):
@@ -123,9 +120,7 @@ def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> Temp
     request = rf.get("/woteva/", data={"hand_pk": h.pk})
     request.user = as_seen_by.user
 
-    response = bidding_box_partial_view(request, h.pk)
-    response.render()
-    return response
+    return _bidding_box_HTML_for_hand(h)
 
 
 def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
@@ -162,8 +157,8 @@ def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
 
     # The auction is settled, so no bidding box.
     assert h.player_who_may_play is not None
-    response = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
-    assert b"<button" not in response.content
+    bb_str = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
+    assert "<button" not in bb_str
 
 
 def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
@@ -192,7 +187,9 @@ def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
     east = Player.objects.get_by_name("Clint Eastwood")
     request = rf.get("/woteva/")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
@@ -222,7 +219,9 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
     south = Player.objects.get_by_name("J.D. Souther")
     request = rf.get("/woteva/", data={"hand_pk": h.pk})
     request.user = south.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
     # you cannot double your own partner.
     disabled, _active = _partition_button_values(bbc_html)
 
@@ -234,7 +233,9 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
     }
     east = Player.objects.get_by_name("Clint Eastwood")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
 
     disabled, _active = _partition_button_values(bbc_html)
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"

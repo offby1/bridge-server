@@ -496,6 +496,7 @@ class Hand(TimeStampedModel):
         self.send_events_to_players_and_hand(
             data={
                 "new-call": {
+                    "bidding_box_html": self._get_current_bidding_box_html(),
                     "serialized": call.serialize(),
                 },
             },
@@ -516,6 +517,11 @@ class Hand(TimeStampedModel):
             )
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
+
+    def _get_current_bidding_box_html(self) -> str:
+        from app.views.hand import _bidding_box_HTML_for_hand
+
+        return _bidding_box_HTML_for_hand(self)
 
     def _get_current_trick_html(self) -> str:
         from app.views.hand import _three_by_three_HTML_for_trick

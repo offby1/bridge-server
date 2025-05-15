@@ -68,10 +68,7 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
     return context.items()
 
 
-def _bidding_box_context_for_hand(request: AuthedHttpRequest, hand: Hand) -> dict[str, Any]:
-    as_viewed_by: app.models.Player | None = request.user.player
-    assert as_viewed_by is not None
-
+def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player) -> dict[str, Any]:
     display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
 
     if not as_viewed_by.has_played_hand(hand):
@@ -94,7 +91,6 @@ def _bidding_box_context_for_hand(request: AuthedHttpRequest, hand: Hand) -> dic
 
     return {
         "bidding_box_buttons": buttons,
-        "bidding_box_partial_endpoint": reverse("app:bidding-box-partial", args=[hand.pk]),
         "display_bidding_box": display_bidding_box,
         "show_auction_history": display_bidding_box,
     }
@@ -265,6 +261,14 @@ def _three_by_three_trick_display_context_for_hand(
             ],
         },
     }
+
+
+def _bidding_box_HTML_for_hand(hand: app.models.Hand) -> str:
+    as_viewed_by = hand.player_who_may_call
+    if as_viewed_by is None:
+        return "No bidding box for you"
+    context = _bidding_box_context_for_hand(hand=hand, as_viewed_by=as_viewed_by)
+    return render_to_string("bidding-box.html", context)
 
 
 def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
@@ -454,19 +458,6 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-@logged_in_as_player_required()
-def bidding_box_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> TemplateResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
-
-    context = _bidding_box_context_for_hand(request, hand) | _auction_context_for_hand(hand)
-
-    return TemplateResponse(
-        request,
-        "auction.html",
-        context=context,
-    )
-
-
 def _maybe_redirect_or_error(
     *,
     hand_is_complete: bool,
@@ -621,12 +612,16 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
             f" until {_localize(hand.board.tournament.play_completion_deadline)}, so you can't see this hand now."
         )
 
+    as_viewed_by = request.user.player
+
     context = (
         _four_hands_context_for_hand(request=request, hand=hand)
         | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
-        | _bidding_box_context_for_hand(request, hand)
     )
+
+    if as_viewed_by is not None:
+        context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
 
     return TemplateResponse(request, "hand_detail.html", context=context)
 
