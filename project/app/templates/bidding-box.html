@@ -1,6 +1,6 @@
 {% load fastdev %}
 {% load player_extras %}
-<div>
+<div id="fiddle-my-background-daddy-o">
     <div class="toast-container">
         <div id="errorToast"
              class="toast"
@@ -42,3 +42,13 @@
         {% if display_bidding_box %}{{ bidding_box_buttons }}{% endif %}
     </div>
 </div>
+<style>
+ #fiddle-my-background-daddy-o {
+     {% if disabled %}
+     background-color: white;
+     {% else %}
+     background-color: lightgreen;
+     {% endif %}
+     padding: 20px;
+ }
+</style>
