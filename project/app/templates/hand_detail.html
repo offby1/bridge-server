@@ -44,7 +44,20 @@
  playerEventSource.addEventListener('message', function (e) {
      const data = JSON.parse(e.data);
      console.log("Player event listener saw " + e.data);
- }, false);
+
+     if ("new-call" in data) {
+         /* We handle the bidding box here, whereas the auction history is handled in the "table" listener below.  Only
+            because the auction history is identical regardless of who is looking at it, whereas the bidding box varies a
+            little -- it's active when it's our" turn. */
+         console.log("Maybe I should update the bidding-box slide");
+         const new_call = data["new-call"];
+         if ("bidding_box_html" in new_call) {
+             console.log(`Imagine I updateded the bidding box with ${bidding_box_html}`);
+         } else {
+             console.log("Hey! Y U no bidding_box_html??");
+         }
+     }
+ });
  {% endif %}
 
  const handEventUrl = '/events/table/html/{{ hand.pk }}/';
@@ -68,7 +81,7 @@
          }
          {% endif %}
      } else if ("new-call" in data) {
-         console.log("Maybe I should update the auction and bidding-box slides");
+         console.log("Maybe I should update the auction slide");
 
      } else if ("contract_text" in data) {
          /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
