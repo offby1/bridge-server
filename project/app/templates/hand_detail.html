@@ -43,7 +43,7 @@
  console.log(`Listening for player events on ${playerEventUrl}`);
  playerEventSource.addEventListener('message', function (e) {
      const data = JSON.parse(e.data);
-     console.log("Player event listener saw " + e.data);
+     console.log("Player event listener saw " + Object.keys(data));
 
      if ("new-call" in data) {
          /* TODO -- check to see if we're currently displaying something *other* than the auction slides, and if so, just reload the whole page. */
@@ -55,8 +55,10 @@
             Also -- I haven't thought this through -- perhaps if you're not authenticated, you can watch the auction
             history, but in that case there'd be no point in seeing a bidding box.  */
          const new_call = data["new-call"];
+         console.log("new-call event has " + Object.keys(new_call));
          if ("bidding_box_html" in new_call) {
              const bidding_box_html = new_call["bidding_box_html"];
+             console.log(`Updating toast-and-bidding-box with ${bidding_box_html.slice(0, 50)}`);
              const container = document.getElementById("toast-and-bidding-box");
              container.innerHTML = bidding_box_html;
          } else {
@@ -71,13 +73,13 @@
  console.log(`Listening for hand events on ${handEventUrl}`);
 
  handEventSource.addEventListener('message', function (e) {
-     console.log("Hand event listener saw " + e.data);
-
      const data = JSON.parse(e.data);
+     console.log("Hand event listener saw " + Object.keys(data));
      if ("new-play" in data) {
          /* TODO -- check to see if we're currently displaying something *other* than the play slides, and if so, just reload the whole page. */
 
          const new_play = data["new-play"];
+         console.log("new-play event has " + Object.keys(new_play));
          if ("trick_html" in new_play) {
              const trick_html = new_play["trick_html"];
              const container = document.getElementById("_3x3-container");
@@ -89,7 +91,8 @@
          }
          {% endif %}
      } else if ("new-call" in data) {
-         console.log("Maybe I should update the auction slide");
+         new_call = data["new-call"]
+         console.log("new-call event has " + Object.keys(new_call));
 
      } else if ("contract_text" in data) {
          /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
