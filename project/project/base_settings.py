@@ -127,6 +127,7 @@ STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestSta
 
 INTERNAL_IPS = [
     "127.0.0.1",
+    "192.168.97.1",  # when running via orbstack.  No idea if I can count on this or what.
 ]
 
 ROOT_URLCONF = "project.urls"
