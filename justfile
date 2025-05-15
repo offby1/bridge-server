@@ -165,25 +165,6 @@ curl-login:
 
 create-cache: (manage "createcachetable")
 
-# For production -- doesn't restart when a file changes.
-[group('bs')]
-[script('bash')]
-daphne: ft django-superuser migrate create-cache collectstatic ensure-skeleton-key
-    set -euo pipefail
-    cd project
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
-    set -x
-    poetry run daphne                                                               \
-      --verbosity                                                                   \
-      1                                                                             \
-      --bind                                                                        \
-      0.0.0.0                                                                       \
-      --port 9000 \
-      --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
-      project.asgi:application
-
 alias createsuperuser := django-superuser
 alias superuser := django-superuser
 
