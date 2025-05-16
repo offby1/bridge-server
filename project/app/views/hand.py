@@ -72,7 +72,7 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
     display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
 
     disabled = True
-    logger.warning(f"{disabled=} by default")
+
     if not as_viewed_by.has_played_hand(hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
@@ -80,13 +80,9 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
 
         if hand.open_access:
             disabled = False
-            logger.warning(f"{disabled=} because {hand.open_access=}")
         else:
             if allowed_caller is not None and (as_viewed_by.name == allowed_caller.name):
                 disabled = False
-            logger.warning(
-                f"{disabled=} because {allowed_caller=} is not None and ({as_viewed_by.name=} == {allowed_caller.name=})"
-            )
 
         buttons = bidding_box_buttons(
             auction=hand.auction,
@@ -270,11 +266,8 @@ def _three_by_three_trick_display_context_for_hand(
     }
 
 
-def _bidding_box_HTML_for_hand(hand: app.models.Hand) -> str:
-    as_viewed_by = hand.player_who_may_call  # BUGBUG -- this needs to be request.user.player
-    if as_viewed_by is None:
-        return "No bidding box for you"
-    context = _bidding_box_context_for_hand(hand=hand, as_viewed_by=as_viewed_by)
+def _bidding_box_HTML_for_hand_for_player(hand: app.models.Hand, player: app.models.Player) -> str:
+    context = _bidding_box_context_for_hand(hand=hand, as_viewed_by=player)
     return render_to_string("bidding-box.html", context)
 
 
@@ -606,7 +599,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                 return stamp.astimezone(zone)
             except zoneinfo.ZoneInfoNotFoundError:
                 pass
-        logger.warning(f"'detected_tz' is {zone_name}; returning timestamp unchanged")
+
         return stamp
 
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)

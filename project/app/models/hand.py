@@ -377,7 +377,6 @@ class Hand(TimeStampedModel):
             player_channels.append(p.event_JSON_hand_channel)
 
         all_channels = [table_channel, "all-tables", *player_channels]
-        logger.warning(f"{all_channels=}")
 
         data = data.copy()
         data["hand_pk"] = self.pk
@@ -493,14 +492,22 @@ class Hand(TimeStampedModel):
 
         self.call_set.create(serialized=call.serialize())
 
-        self.send_events_to_players_and_hand(
+        now = time.time()
+        for p in self.players():
+            channel = p.event_HTML_hand_channel
+            data = {
+                "bidding_box_html": self._get_current_bidding_box_html_for_player(p),
+            }
+            send_timestamped_event(channel=channel, data=data, when=now)
+
+        send_timestamped_event(
+            channel=self.event_table_html_channel,
             data={
                 "new-call": {
-                    # BUGBUG -- this HTML needs to vary by player, in order to have the active player's buttons active!
-                    "bidding_box_html": self._get_current_bidding_box_html(),
                     "serialized": call.serialize(),
-                },
+                }
             },
+            when=now,
         )
 
         if self.declarer:  # the auction just settled
@@ -519,10 +526,10 @@ class Hand(TimeStampedModel):
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
-    def _get_current_bidding_box_html(self) -> str:
-        from app.views.hand import _bidding_box_HTML_for_hand
+    def _get_current_bidding_box_html_for_player(self, p: Player) -> str:
+        from app.views.hand import _bidding_box_HTML_for_hand_for_player
 
-        return _bidding_box_HTML_for_hand(self)
+        return _bidding_box_HTML_for_hand_for_player(self, p)
 
     def _get_current_trick_html(self) -> str:
         from app.views.hand import _three_by_three_HTML_for_trick

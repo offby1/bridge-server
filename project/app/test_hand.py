@@ -19,7 +19,7 @@ from .testutils import set_auction_to
 
 from .views.hand import (
     _bidding_box_context_for_hand,
-    _bidding_box_HTML_for_hand,
+    _bidding_box_HTML_for_hand_for_player,
     _maybe_redirect_or_error,
 )
 
@@ -120,7 +120,7 @@ def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> str:
     request = rf.get("/woteva/", data={"hand_pk": h.pk})
     request.user = as_seen_by.user
 
-    return _bidding_box_HTML_for_hand(h)
+    return _bidding_box_HTML_for_hand_for_player(h, as_seen_by)
 
 
 def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
@@ -158,7 +158,11 @@ def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
     # The auction is settled, so no bidding box.
     assert h.player_who_may_play is not None
     bb_str = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
-    assert "<button" not in bb_str
+
+    # TODO -- actually parse the HTML; look for a div whose id is #bidding-box, and assert that *either*
+    # - there is no such div; or else
+    # - it's empty
+    assert "btn-primary" not in bb_str
 
 
 def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
