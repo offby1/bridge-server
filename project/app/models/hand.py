@@ -496,6 +496,7 @@ class Hand(TimeStampedModel):
         self.send_events_to_players_and_hand(
             data={
                 "new-call": {
+                    # BUGBUG -- this HTML needs to vary by player, in order to have the active player's buttons active!
                     "bidding_box_html": self._get_current_bidding_box_html(),
                     "serialized": call.serialize(),
                 },
