@@ -1,0 +1,32 @@
+*What's all this, then?*
+
+I notice that the logic in ~app.view.hand~ is really confusing.  There's a "show me the hand which I assume is active" view (~_interactive_view~), and a "show me the hand which I assume is already played" view (~hand_archive_view~) and each of them checks things and redirects to the other as needed.
+
+Instead, I should have a *single* "show me the hand" view, which checks to see which makes sense, and then always renders The Right Thing.
+
+Note that the existing ~test_visibility.py~ checks for this sort of stuff; perhaps start by massaging that to express the below rules.
+
+* What would the rule(s) be?
+
+Perhaps it's simply:
+** Given a Django user and a hand, what view should we see?
+*** If the tournament is over
+**** They see the all-four-hands read-only view.
+*** Otherwise:
+**** if the user isn't logged in, they get a 403[fn:1]; or
+**** if the user doesn't have an associated Player, they get a 403; or
+**** if the player isn't "in" the tournament[fn:2], they get a 403[fn:4]; or
+**** if the player has not already played its board, they get a 403; or
+**** If the hand is abandoned or completed, they see the all-four-hands read-only view; or
+**** If the hand is in the auction, they see the interactive view; or
+**** If the hand is in the play, they see the interactive view.
+
+* Footnotes
+
+[fn:1]Each of these 403s should include some text explaining *why* they can't see anything.
+
+[fn:2]"part of" means either in ~t.signed_up_players~ or in ~t.players~ (those are mutually exclusive)
+
+[fn:3]Tournaments can also be in the signup phase, but in that case, they have no hands, so it's not relevant.
+
+[fn:4] On the one hand: a player who is not part of the tournament cannot use knowledge of some board to score points ... on the other hand, it'd be awfully easy for a cheater to just create a new login and use that to observe their own hand in progress.
