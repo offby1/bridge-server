@@ -503,9 +503,10 @@ class Hand(TimeStampedModel):
         send_timestamped_event(
             channel=self.event_table_html_channel,
             data={
+                "auction_history_html": "<div>Imagine I'm some auction history</div>",
                 "new-call": {
                     "serialized": call.serialize(),
-                }
+                },
             },
             when=now,
         )

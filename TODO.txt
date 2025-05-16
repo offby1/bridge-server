@@ -1,7 +1,5 @@
 IN PROGRESS:
-* The bidding box still doesn't seem to be reloading automatically.
-
-  Running via "runme" (as opposed to "just follow") shows that it looks right when inactive (white background; reddish buttons), but only after I manually reload the page.
+* The bidding box automatically changes its appearance when someone else calls, but clicking an apparently-active button does nothing.  After I hit F5, though, it works properly.
 
 * I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 

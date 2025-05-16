@@ -45,25 +45,21 @@
      const data = JSON.parse(e.data);
      console.log("Player event listener saw " + Object.keys(data));
 
-     if ("new-call" in data) {
-         /* TODO -- check to see if we're currently displaying something *other* than the auction slides, and if so, just reload the whole page. */
+     /* TODO -- check to see if we're currently displaying something *other* than the auction slides, and if so, just reload the whole page. */
 
-         /* We handle the bidding box here, whereas the auction history is handled in the "table" listener below.  Only
-            because the auction history is identical regardless of who is looking at it, whereas the bidding box varies
-            a little -- it's active when it's our" turn.
+     /* We handle the bidding box here, whereas the auction history is handled in the "table" listener below.  Only
+        because the auction history is identical regardless of who is looking at it, whereas the bidding box varies
+        a little -- it's active when it's our" turn.
 
-            Also -- I haven't thought this through -- perhaps if you're not authenticated, you can watch the auction
-            history, but in that case there'd be no point in seeing a bidding box.  */
-         const new_call = data["new-call"];
-         console.log("new-call event has " + Object.keys(new_call));
-         if ("bidding_box_html" in new_call) {
-             const bidding_box_html = new_call["bidding_box_html"];
-             console.log(`Updating toast-and-bidding-box with ${bidding_box_html.slice(0, 50)}`);
-             const container = document.getElementById("toast-and-bidding-box");
-             container.innerHTML = bidding_box_html;
-         } else {
-             console.log("Hey! Y U no bidding_box_html??");
-         }
+        Also -- I haven't thought this through -- perhaps if you're not authenticated, you can watch the auction
+        history, but in that case there'd be no point in seeing a bidding box.  */
+     if ("bidding_box_html" in data) {
+         const bidding_box_html = data["bidding_box_html"];
+         console.log(`Updating toast-and-bidding-box with ${bidding_box_html.slice(0, 50)}`);
+         const container = document.getElementById("toast-and-bidding-box");
+         container.innerHTML = bidding_box_html;
+     } else {
+         console.log("Hey! Y U no bidding_box_html??");
      }
  });
  {% endif %}
@@ -76,8 +72,6 @@
      const data = JSON.parse(e.data);
      console.log("Hand event listener saw " + Object.keys(data));
      if ("new-play" in data) {
-         /* TODO -- check to see if we're currently displaying something *other* than the play slides, and if so, just reload the whole page. */
-
          const new_play = data["new-play"];
          console.log("new-play event has " + Object.keys(new_play));
          if ("trick_html" in new_play) {
@@ -90,18 +84,19 @@
              console.log("Maybe I should update {{ next_seat_to_play }}");
          }
          {% endif %}
-     } else if ("new-call" in data) {
-         new_call = data["new-call"]
-         console.log("new-call event has " + Object.keys(new_call));
+     } else if ("auction_history_html" in data) {
+         auction_history_html = data["auction_history_html"]
+         console.log("Imagine I updated the auction_history_html with " + auction_history_html.slice(0, 50));
 
      } else if ("contract_text" in data) {
          /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
          window.location.reload();
      }
+     /* TODO -- check to see if the hand is over; if so, load ... uh ... either the next hand, or just the user's home page */
  }, false);
 
  htmx.on("htmx:responseError", function(evt) {
-         const errorToast = document.getElementById('errorToast');
+     const errorToast = document.getElementById('errorToast');
      const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
 
      const errorText = document.getElementById('errorText');
