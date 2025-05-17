@@ -530,8 +530,9 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-def _viewname_for_situation(hand: app.models.Hand, player: app.models.Player) -> str:
-    logger.warning(f"{hand=} {player.name=}")
+def _viewname_for_situation(hand: app.models.Hand, player: app.models.Player | None) -> str:
+    player_name = getattr(player, "name", "?")
+    logger.warning(f"{hand=} {player_name=}")
 
     t: app.models.Tournament = hand.board.tournament
     if t.is_complete:
