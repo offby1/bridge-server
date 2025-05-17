@@ -458,70 +458,12 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-def _maybe_redirect_or_error(
-    *,
-    hand_is_complete: bool,
-    hand_pk: PK,
-    player_visibility: app.models.Board.PlayerVisibility,
-    request_viewname: str,
-) -> HttpResponse | None:
-    def redirect_if_different_view(destination_viewname: str) -> HttpResponseRedirect | None:
-        if destination_viewname == request_viewname:
-            return None
-        return HttpResponseRedirect(reverse(destination_viewname, args=[hand_pk]))
-
-    match player_visibility:
-        case app.models.Board.PlayerVisibility.nothing:
-            return Forbid(
-                "You are not allowed to see neither squat, zip, nada, nor bupkis",
-            )
-
-        case (
-            app.models.Board.PlayerVisibility.dummys_hand
-            | app.models.Board.PlayerVisibility.own_hand
-        ):
-            if (response := redirect_if_different_view("app:hand-detail")) is not None:
-                return response
-
-        case app.models.Board.PlayerVisibility.everything:
-            if hand_is_complete:
-                if (response := redirect_if_different_view("app:hand-archive")) is not None:
-                    return response
-                return None
-
-            elif (response := redirect_if_different_view("app:hand-detail")) is not None:
-                return response
-            else:
-                logger.debug(
-                    f"{player_visibility.name=} for a {hand_is_complete=}; we must have already played this board.  Returning None"
-                )
-                return None
-
-    return None
-
-
-def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
+def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
-    if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
-
-    player = None if request.user.is_anonymous else request.user.player
-
-    response = _maybe_redirect_or_error(
-        hand_is_complete=hand.is_complete,
-        hand_pk=hand.pk,
-        player_visibility=hand.board.what_can_they_see(player=player),
-        request_viewname="app:hand-archive",
-    )
-    if response is not None:
-        return response
 
     xscript = hand.get_xscript()
     a = xscript.auction
     c = a.status
-    if c is Auction.Incomplete:
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
 
     if c is Auction.PassedOut:
         context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
@@ -533,17 +475,16 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
         }
         return TemplateResponse(
             request,
-            "hand_archive.html",
+            "read-only_hand.html",
             context=context,
         )
 
     broken_down_score = xscript.final_score()
 
-    if broken_down_score is None:
-        return HttpResponseRedirect(reverse("app:hand-detail", args=[hand.pk]))
-
     if broken_down_score == 0:
         score_description = "Passed Out"
+    elif broken_down_score is None:
+        score_description = "Still being played"
     else:
         score_description = f"{broken_down_score.trick_summary}: "
 
@@ -561,7 +502,7 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     }
     return TemplateResponse(
         request,
-        "hand_archive.html",
+        "read-only_hand.html",
         context=context,
     )
 
@@ -589,6 +530,16 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
+def _viewname_for_situation(hand: app.models.Hand, player: app.models.Player) -> str:
+    logger.warning(f"{hand=} {player.name=}")
+
+    t: app.models.Tournament = hand.board.tournament
+    if t.is_complete:
+        return "app:hand-archive"
+
+    return "app:hand-detail"
+
+
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     def _localize(stamp: datetime.datetime) -> datetime.datetime:
         if (zone_name := request.session.get("detected_tz")) is not None:
@@ -603,8 +554,15 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         return stamp
 
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
+
+    # TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
+    match vn := _viewname_for_situation(hand, getattr(request.user, "player", None)):
+        case "app:hand-detail":
+            pass
+        case "app:hand-archive":
+            return HttpResponseRedirect(reverse(vn, kwargs={"pk": hand.pk}))
+        case _:
+            assert False, f"Don't know how to deal with a view named {vn=}"
 
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
         return HttpResponseForbidden(
@@ -623,7 +581,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if as_viewed_by is not None:
         context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
 
-    return TemplateResponse(request, "hand_detail.html", context=context)
+    return TemplateResponse(request, "interactive_hand.html", context=context)
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:

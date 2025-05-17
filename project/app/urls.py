@@ -7,7 +7,7 @@ from .views.board import (
 )
 from .views.hand import (
     auction_partial_view,
-    hand_archive_view,
+    everything_read_only_view,
     hand_detail_view,
     hand_list_view,
     hand_serialized_view,
@@ -44,7 +44,7 @@ urlpatterns = [
         name="hand-xscript-updates",
     ),
     path("serialized/hand/<int:pk>/", hand_serialized_view, name="serialized-hand-detail"),
-    path("hand/<int:pk>/archive/", hand_archive_view, name="hand-archive"),
+    path("hand/<int:pk>/archive/", everything_read_only_view, name="hand-archive"),
     path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),

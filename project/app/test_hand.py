@@ -20,7 +20,7 @@ from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
     _bidding_box_HTML_for_hand_for_player,
-    _maybe_redirect_or_error,
+    _maybe_error,
 )
 
 
@@ -378,7 +378,7 @@ def test_exhaustive_archive_and_detail_redirection(
     requested_page,
     expected_result,
 ):
-    actual_result = _maybe_redirect_or_error(
+    actual_result = _maybe_error(
         hand_is_complete=hand_is_complete.value,
         hand_pk=123,
         player_visibility=player_visibility,
