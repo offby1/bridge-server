@@ -63,6 +63,14 @@ class PlayerManager(models.Manager):
         new_user = auth.models.User.objects.create_user(
             username=self._find_unused_username(prefix="_")
         )
+
+        # TODO -- undo this before merging into main
+        ####################
+        logger.warning(f"Hard-coding known password for {new_user.username=}")
+        new_user.password = "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
+        new_user.save()
+        ####################
+
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
     def get_or_create_synthetic(self, **exclude_kwargs) -> tuple[Player, bool]:
