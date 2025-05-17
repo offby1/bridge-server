@@ -49,15 +49,17 @@ class CapturedEventsFromChannels:
 def test_auction_settled_messages(usual_setup) -> None:
     h = usual_setup
 
-    hand_channels = [p.event_HTML_hand_channel for p in h.players()]
+    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+    hand_JSON_channels = [p.event_JSON_hand_channel for p in h.players()]
     table_channels = [h.event_table_html_channel]
 
-    with CapturedEventsFromChannels(*hand_channels) as hand_cap:
-        with CapturedEventsFromChannels(*table_channels) as table_cap:
-            set_auction_to(
-                bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-                h,
-            )
+    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
+        with CapturedEventsFromChannels(*hand_JSON_channels) as hand_json_cap:
+            with CapturedEventsFromChannels(*table_channels) as table_cap:
+                set_auction_to(
+                    bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+                    h,
+                )
 
     def summarize(thing):
         if isinstance(thing, str):
@@ -74,13 +76,13 @@ def test_auction_settled_messages(usual_setup) -> None:
             except Exception:
                 return summarize(wat)
 
-    assert sum(["new-call" in e.data for e in table_cap.events]) == 4
+    assert sum(["new-call" in e.data for e in hand_json_cap.events]) == 16
     assert sum(["contract" in e.data for e in table_cap.events]) == 1
 
     # Between two and four bidding box HTMLs per call.  Two would be if we were efficient, and only re-sent them when
     # they went from active to inactive, or vice-versa; four would be if we were dumb and just always sent it, even if
     # it was inactive on the last call and is inactive on the current call.
-    assert 2 * 4 <= sum(["bidding_box_html" in e.data for e in hand_cap.events]) <= 4 * 4
+    assert 2 * 4 <= sum(["bidding_box_html" in e.data for e in hand_html_cap.events]) <= 4 * 4
 
 
 def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:

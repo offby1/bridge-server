@@ -493,20 +493,30 @@ class Hand(TimeStampedModel):
         self.call_set.create(serialized=call.serialize())
 
         now = time.time()
+
         for p in self.players():
-            channel = p.event_HTML_hand_channel
-            data = {
-                "bidding_box_html": self._get_current_bidding_box_html_for_player(p),
-            }
-            send_timestamped_event(channel=channel, data=data, when=now)
+            send_timestamped_event(
+                channel=p.event_HTML_hand_channel,
+                data={
+                    "bidding_box_html": self._get_current_bidding_box_html_for_player(p),
+                    "hand_pk": self.pk,
+                },
+                when=now,
+            )
+
+            send_timestamped_event(
+                channel=p.event_JSON_hand_channel,
+                data={
+                    "hand_pk": self.pk,
+                    "new-call": {"serialized": call.serialize()},
+                },
+                when=now,
+            )
 
         send_timestamped_event(
             channel=self.event_table_html_channel,
             data={
                 "auction_history_html": "<div>Imagine I'm some auction history</div>",
-                "new-call": {
-                    "serialized": call.serialize(),
-                },
             },
             when=now,
         )

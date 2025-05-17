@@ -37,7 +37,7 @@ class MyChannelManager(DefaultChannelManager):
         # system-to-player JSON messages are similarly private.
         if (player_pk := models.Player.player_pk_from_event_JSON_hand_channel(channel)) is not None:
             rv = player_pk == player.pk
-            logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
+            # logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
             return rv
 
         # hand messages, alas, are private.
