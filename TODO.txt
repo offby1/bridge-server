@@ -1,6 +1,4 @@
 IN PROGRESS:
-* The bidding box automatically changes its appearance when someone else calls, but clicking an apparently-active button does nothing.  After I hit F5, though, it works properly.
-
 * I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 
   Which HTML things need to get updated?
@@ -8,7 +6,7 @@ IN PROGRESS:
   | when                | HTML to include | which channel & why         | current status |
   |---------------------+-----------------+-----------------------------+----------------|
   | auction: every call | current auction | hand: observers             |                |
-  | auction: every call | bidding box     | player: so they can call    |                |
+  | auction: every call | bidding box     | player: so they can call    | ok             |
   | play: every play    | our hand        | player                      |                |
   | play: every play    | dummy           | hand: observers and players |                |
   | play: every play    | current trick   | hand: observers and players | ok             |

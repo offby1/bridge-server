@@ -58,6 +58,10 @@
          console.log(`Updating toast-and-bidding-box with ${bidding_box_html.slice(0, 50)}`);
          const container = document.getElementById("toast-and-bidding-box");
          container.innerHTML = bidding_box_html;
+
+         /* We just replaced the buttons, onto which HTMX had added some attributes or listeners or something, with
+         plain HTML that lacks that mojo.  So we now tell htmx to restore the mojo. */
+         htmx.process(container);
      } else {
          console.log("Hey! Y U no bidding_box_html??");
      }
