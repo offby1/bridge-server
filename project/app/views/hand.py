@@ -66,12 +66,11 @@ def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any
 
 
 def _bidding_box_context_for_hand(request: AuthedHttpRequest, hand: Hand) -> dict[str, Any]:
-    as_viewed_by: app.models.Player | None = request.user.player
-    assert as_viewed_by is not None
+    as_viewed_by: app.models.Player | None = getattr(request.user, "player", None)
 
     display_bidding_box = hand.auction.status is bridge.auction.Auction.Incomplete
 
-    if not as_viewed_by.has_played_hand(hand):
+    if as_viewed_by is None or not as_viewed_by.has_played_hand(hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
