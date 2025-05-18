@@ -96,9 +96,9 @@ def check_for_expirations(sender, **kwargs) -> None:
             )
             if t.play_completion_deadline_has_passed():
                 t.is_complete = True
-                t.abandon_all_hands(
-                    reason=f"Play completion deadline ({t.play_completion_deadline.isoformat()}) has passed"
-                )
+                assert t.play_completion_deadline is not None
+                deadline_str = t.play_completion_deadline.isoformat()
+                t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
                 continue
 
