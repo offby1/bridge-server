@@ -547,8 +547,10 @@ class Hand(TimeStampedModel):
 
         return _three_by_three_HTML_for_trick(self)
 
-    def _get_current_hand_html(self) -> str:
-        return f"<div>Imagine I am some HTML showing one hand for {self}</div>"
+    def _get_current_hand_html(self, *, p: Player) -> str:
+        from app.views.hand import _hand_HTML_for_player
+
+        return _hand_HTML_for_player(hand=self, player=p)
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -604,7 +606,7 @@ class Hand(TimeStampedModel):
 
         self.send_event_to_player(
             player_pk=legit_player.pk,
-            data={"current_hand_html": self._get_current_hand_html()},
+            data={"current_hand_html": self._get_current_hand_html(p=legit_player)},
         )
 
         if (final_score := self.get_xscript().final_score()) is not None:

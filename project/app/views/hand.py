@@ -277,6 +277,22 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
     return render_to_string("3x3-trick-display.html", context)
 
 
+def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -> str:
+    context = {
+        "cards": {
+            "Spades": ["Sorry!"],
+            "Hearts": ["Sorry!"],
+            "Diamonds": ["Sorry!"],
+            "Clubs": ["Sorry!"],
+        },
+        "class": "hand bigfont",
+        "id": "some-lower-cased-compass-direction",
+        "next_seat_to_play": "another-lower-cased-compass-direction",
+    }
+
+    return render_to_string("hand-div.html", context)
+
+
 def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
     # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
     for t_index, t in enumerate(xscript.tricks):
@@ -570,7 +586,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
         return HttpResponseForbidden(
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {_localize(hand.board.tournament.play_completion_deadline)}, so you can't see this hand now."
+            f" until {_localize(hand.board.tournament.play_completion_deadline)}, so anonymous users such as yourself can't see this hand now."
         )
 
     as_viewed_by = request.user.player
