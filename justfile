@@ -109,7 +109,7 @@ alias version := version-file
 [private]
 version-file:
     git log -1 --format='%h %cs' > project/VERSION
-    git symbolic-ref HEAD > project/GIT_SYMBOLIC_REF
+    -git symbolic-ref HEAD > project/GIT_SYMBOLIC_REF
 
 [private]
 pre-commit:
