@@ -787,19 +787,6 @@ class Hand(TimeStampedModel):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-    @cached_property
-    def most_recent_call(self):
-        return self.call_set.order_by("-id").first()
-
-    @property
-    def most_recent_bid(self):
-        return (
-            self.call_set.order_by("-id")
-            .annotate(first=models.F("serialized")[0])
-            .filter(first__in="1234567")
-            .first()
-        )
-
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
