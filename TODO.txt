@@ -32,6 +32,8 @@ IN PROGRESS:
 
 
 STILL TODO:
+* Make error pages extend the same base.html template that everything else does.  For example: I'm not logged in, and am looking at <http://127.0.0.1:9000/hand/1/>, whose entire content is `<html><head></head><body>This tournament (#1) won't yet complete until 2035-05-13 02:41:08.570023+00:00, so anonymous users such as yourself can't see this hand now.</body></html>`.  That's informative, but it'd be more useful if there were, say, a "home" link, &c.
+
 * Carousel notes:
 
 - perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
