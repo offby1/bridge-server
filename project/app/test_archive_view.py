@@ -3,6 +3,7 @@ from typing import Any
 from bridge.card import Suit
 from bridge.contract import Bid
 from django.contrib.auth.models import AnonymousUser
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Hand, Player
@@ -28,6 +29,7 @@ def test_final_score(usual_setup: Hand, rf: Any) -> None:
     request.user = north.user
 
     response = hand_archive_view(request=request, pk=h.pk)
+    assert isinstance(response, HttpResponseRedirect)
 
     assert response.status_code == 302
     assert response.url == reverse("app:hand-detail", args=[h.pk])
