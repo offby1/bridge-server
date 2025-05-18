@@ -666,10 +666,11 @@ class Hand(TimeStampedModel):
                     self.tournament.maybe_complete()
 
             else:
+                board_group = getattr(self.board, "group", "?")
                 new_hand = Hand.objects.create_next_hand_at_table(
                     tournament=self.tournament,
                     zb_table_number=self.table_display_number - 1,
-                    zb_round_number=movements._zb_round_number(self.board.group),
+                    zb_round_number=movements._zb_round_number(board_group),
                 )
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
