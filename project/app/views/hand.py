@@ -380,9 +380,7 @@ def _four_hands_context_for_hand(
             xscript.auction.dummy.seat.name
         ]
     else:
-        logger.warning(
-            f"No dummy hand for you, {as_viewed_by.name}, 'cuz you *are* the dummy, Dummy!"
-        )
+        logger.warning(f"No dummy hand for you, {as_viewed_by}, 'cuz you *are* the dummy, Dummy!")
 
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
