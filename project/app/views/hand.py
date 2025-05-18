@@ -309,15 +309,11 @@ def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
 
 def _four_hands_context_for_hand(
     *,
-    request: AuthedHttpRequest,
+    as_viewed_by: app.models.Player | None = None,
     hand: app.models.Hand,
     xscript: bridge.xscript.HandTranscript | None = None,
     as_dealt: bool = False,
 ) -> dict[str, Any]:
-    as_viewed_by = None
-    if hasattr(request.user, "player"):
-        as_viewed_by = request.user.player
-
     skel = hand.display_skeleton(as_dealt=as_dealt)
 
     cards_by_direction_display = {}
@@ -472,7 +468,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     c = a.status
 
     if c is Auction.PassedOut:
-        context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
+        context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
         context |= {
             "score": 0,
             "vars_score": {"passed_out": 0},
@@ -499,7 +495,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
         else:
             score_description += f"Declarer's side get {broken_down_score.total}"
 
-    context = _four_hands_context_for_hand(request=request, hand=hand, as_dealt=True)
+    context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
         "show_auction_history": True,
@@ -580,7 +576,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     as_viewed_by = request.user.player
 
     context = (
-        _four_hands_context_for_hand(request=request, hand=hand)
+        _four_hands_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
         | {"terse_description": _terse_description(hand)}
         | _auction_context_for_hand(hand)
     )

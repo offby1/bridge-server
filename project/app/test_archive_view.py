@@ -11,4 +11,4 @@ def test_archive_view(usual_setup: Hand, rf: Any) -> None:
     request = rf.get("/woteva/", data={"pk": h.pk})
     request.user = AnonymousUser()
     # We're just testing for the absence of an exception
-    _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
+    _four_hands_context_for_hand(as_viewed_by=None, hand=h, as_dealt=True)
