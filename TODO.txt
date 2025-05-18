@@ -24,7 +24,7 @@ IN PROGRESS:
 
   - probably a channel for lobby chats, although those fell off the face of the Earth long ago :-)
 
-  Can't think why I'd need a "hand-json" channel.
+  I don't have a "table:json" channel.  Such a channel would make sense, so that I could send calls and plays just once, instead of four times; but it'd require that I figure out how to let the bot listen to two channels "at once" -- this hypothetical table:json channel, *plus* the existing player:json channel.  (Now that I think about it, there might not be any truly private information in that latter existing channel!)
 
 * About the above: perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 

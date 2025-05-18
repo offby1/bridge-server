@@ -124,17 +124,27 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             card=bridge.card.Card.deserialize("d2"),
         )
 
-    data = json.loads(json.loads(cap.events[0].data))
-    dummy = data.get("dummy")
-    # TODO -- we shouldn't insist on this order
-    assert dummy == "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A"
-
-    with CapturedEventsFromChannels(h.event_table_html_channel) as cap:
         h.add_play_from_player(
-            # play from South
+            # play from South -- dummy, as it happens
             player=h.player_who_may_play.libraryThing(),
             card=bridge.card.Card.deserialize("h2"),
         )
 
-    data = json.loads(json.loads(cap.events[0].data))
-    assert "dummy" not in data
+        h.add_play_from_player(
+            # play from West
+            player=h.player_who_may_play.libraryThing(),
+            card=bridge.card.Card.deserialize("s2"),
+        )
+
+    data0 = json.loads(json.loads(cap.events[0].data))
+    dummy_html = data0.get("dummy_html")
+    # Everyone gets to see the dummy after the opening lead.
+    assert """<div class="spades">""" in dummy_html
+
+    data1 = json.loads(json.loads(cap.events[1].data))
+    dummy_html = data1.get("dummy_html")
+    # Everyone gets to see the *updated* dummy after it has played a card.
+    assert """<div class="spades">""" in dummy_html
+
+    # No *table-wide* HTML after the opening lead.
+    assert len(cap.events) == 2

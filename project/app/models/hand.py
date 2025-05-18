@@ -139,6 +139,16 @@ def send_timestamped_event(
 ) -> None:
     if when is None:
         when = time.time()
+
+    def summarize(thing):
+        if isinstance(thing, str):
+            return thing[0:20]
+        elif isinstance(thing, dict):
+            return {k: summarize(v) for k, v in thing.items()}
+        else:
+            return thing
+
+    logger.debug(f"Sending {summarize(data)=} to {channel=}")
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
@@ -369,6 +379,17 @@ class Hand(TimeStampedModel):
 
         return False
 
+    def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
+        send_timestamped_event(channel=self.event_table_html_channel, data=data)
+
+    def send_HTML_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
+        p = Player.objects.get(pk=player_pk)
+        send_timestamped_event(channel=p.event_HTML_hand_channel, data=data)
+
+    def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
+        for p in self.players():
+            send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
+
     def send_events_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
         table_channel = self.event_table_html_channel
         player_channels: list[str] = []
@@ -384,13 +405,21 @@ class Hand(TimeStampedModel):
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data, when=now)
 
-    def send_event_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
+    def send_event_to_all_players(self, *, data: dict[str, Any]) -> None:
+        now = time.time()
+        for p in self.players():
+            self.send_event_to_player(player_pk=p.pk, data=data, now=now)
+
+    def send_event_to_player(
+        self, *, player_pk: PK, data: dict[str, Any], now: float | None = None
+    ) -> None:
+        if now is None:
+            now = time.time()
+
         p = Player.objects.get(pk=player_pk)
         player_channel = p.event_HTML_hand_channel
 
-        send_timestamped_event(
-            channel=player_channel, data=data | {"hand_pk": self.pk}, when=time.time()
-        )
+        send_timestamped_event(channel=player_channel, data=data | {"hand_pk": self.pk}, when=now)
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
@@ -525,15 +554,18 @@ class Hand(TimeStampedModel):
             contract = self.auction.status
             assert isinstance(contract, libContract)
             assert contract.declarer is not None
-            self.send_events_to_players_and_hand(
-                data={
-                    "table": self.table_display_number,
-                    "contract_text": str(contract),
-                    "contract": {
-                        "opening_leader": contract.declarer.seat.lho().value,
-                    },
+
+            data = {
+                "contract_text": str(contract),
+                "contract": {
+                    "opening_leader": contract.declarer.seat.lho().value,
                 },
-            )
+            }
+
+            self.send_JSON_to_players(data=data)
+
+            # TODO -- html-escape it, I guess
+            self.send_HTML_to_table(data=data)
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
@@ -582,31 +614,34 @@ class Hand(TimeStampedModel):
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
+        the_dummy_just_played = legit_player.libraryThing() == self.get_xscript().auction.dummy
+
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
             raise PlayError(str(e)) from e
 
-        logger.debug("%s: %s played %s", self, legit_player, card)
+        logger.debug("%s: %s (%d) played %s", self, legit_player, legit_player.pk, card)
 
-        data: dict[str, Any] = {
-            "new-play": {
-                "hand_pk": self.pk,
-                "serialized": card.serialize(),
+        was_the_opening_lead = self.get_xscript().num_plays == 1
+        if the_dummy_just_played or was_the_opening_lead:
+            self.send_HTML_to_table(
+                data={"dummy_html": self._get_current_hand_html(p=legit_player)}
+            )
+        else:
+            self.send_HTML_to_player(
+                player_pk=legit_player.pk,
+                data={"current_hand_html": self._get_current_hand_html(p=legit_player)},
+            )
+
+        self.send_JSON_to_players(
+            data={
+                "new-play": {
+                    "hand_pk": self.pk,
+                    "serialized": card.serialize(),
+                },
                 "trick_html": self._get_current_trick_html(),
-            },
-        }
-
-        if self.get_xscript().num_plays == 1:  # opening lead
-            assert self.dummy is not None
-            libCards = sorted(self.current_cards_by_seat()[self.dummy.seat])
-            data["dummy"] = "".join([c.serialize() for c in libCards])
-
-        self.send_events_to_players_and_hand(data=data)
-
-        self.send_event_to_player(
-            player_pk=legit_player.pk,
-            data={"current_hand_html": self._get_current_hand_html(p=legit_player)},
+            }
         )
 
         if (final_score := self.get_xscript().final_score()) is not None:

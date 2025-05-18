@@ -62,9 +62,11 @@
          htmx.process(container);
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
-         console.log("Imagine I updated our cards with " + current_hand_html);
+         const container = document.getElementById("update-me-with-SSE");
+         container.innerHTML = current_hand_html;
+         htmx.process(container);
      }
- });
+     });
  {% endif %}
 
  const handEventUrl = '/events/table/html/{{ hand.pk }}/';

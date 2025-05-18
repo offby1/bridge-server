@@ -302,9 +302,8 @@ def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> N
 
     first_player = Player.objects.first()
     assert first_player is not None
-    assert any(
-        "contract" in e for e in sent_events_by_channel[f"player:html:hand:{first_player.pk}"]
-    )
+    assert any("contract" in e for e in sent_events_by_channel[f"player:json:{first_player.pk}"])
+    assert any("contract" in e for e in sent_events_by_channel[f"table:html:{h.pk}"])
 
 
 class HandIsComplete(enum.Enum):
