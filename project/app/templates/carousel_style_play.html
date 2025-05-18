@@ -9,14 +9,12 @@
         No <tt>card_display.current_player</tt> for you
     {% endifexists %}
 </li>
+{% ifexists card_display.dummy_hand %}
 <li class="carousel">
     <h2>Dummy ({{ dummy_player }})</h2>
-    {% ifexists card_display.dummy_hand %}
     {% include "hand-div.html" with cards=card_display.dummy_hand.cards id=dummy_player.seat.name class="hand bigfont" %}
-{% else %}
-    No <tt>card_display.dummy</tt> for you
-{% endifexists %}
 </li>
+{% endifexists %}
 <li class="carousel">
     <h2>Current Trick</h2>
     {% ifexists three_by_three_trick_display %}

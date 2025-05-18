@@ -30,8 +30,6 @@ IN PROGRESS:
 
 * I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
 
-* If I'm the dummy, carousel_style_play shows two slides with my hand.  That's dumb!
-
 
 STILL TODO:
 * Carousel notes:

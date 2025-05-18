@@ -371,10 +371,18 @@ def _four_hands_context_for_hand(
         "viewers_seat": viewers_seat,
     }
 
-    if xscript.auction.found_contract:
+    as_viewed_by_is_dummy = False
+    if hand.get_xscript().auction.found_contract and as_viewed_by is not None:
+        as_viewed_by_is_dummy = as_viewed_by.libraryThing() == hand.get_xscript().auction.dummy
+
+    if xscript.auction.found_contract and not as_viewed_by_is_dummy:
         cards_by_direction_display["dummy_hand"] = cards_by_direction_display[
             xscript.auction.dummy.seat.name
         ]
+    else:
+        logger.warning(
+            f"No dummy hand for you, {as_viewed_by.name}, 'cuz you *are* the dummy, Dummy!"
+        )
 
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
