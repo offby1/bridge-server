@@ -913,13 +913,13 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 COPY public.auth_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined) FROM stdin;
 1	pbkdf2_sha256$1000000$hOtJaXGVyHPaISkIaQDrbG$nWBkhC6zBHMzY+WQ87zU/MeCxPUqcpnhb4KR6mJN/QY=	\N	t	admin			admin@admin.com	t	t	2025-05-13 01:54:08.222857+00
 2	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	2025-05-13 01:55:25.019841+00	f	bob				f	t	2025-05-13 01:55:22.010573+00
-3	!1BBKw6TXpKuvES07LQctjCtQSBgfP4eZitdCHNUx	\N	f	_prez				f	t	2025-05-13 01:55:27.815036+00
-4	!28g1Y4Z9jLvFBmursdyhPJyal3Vhbf1Rmn411eLH	\N	f	_rhonda				f	t	2025-05-13 01:56:08.359574+00
-5	!sggVvePbXcDBae5am5WGsNtYBP58IUZzaWfwazO4	\N	f	_bodie				f	t	2025-05-13 01:56:08.396774+00
-6	!Hiei2P3bjtHGXxSVCDpOJw2KMrBm34RsRbdlhJA4	\N	f	_kima				f	t	2025-05-13 01:56:08.418117+00
-7	!k9BtqsWWwgoSF4CSydnMjMxJVXRa2bHIdWqgH3Qo	\N	f	_tony gray				f	t	2025-05-13 01:56:08.435629+00
-8	!ZH7gu44MdU5MGrtEqncQbaFQLQMyDX72GNkrHlPC	\N	f	_sydnor				f	t	2025-05-13 01:56:08.45254+00
-9	!7w70Tmiw83vvFK1B3GNrBRMyTO8LtkMiTFPFNnGA	\N	f	_randy				f	t	2025-05-13 01:56:08.469337+00
+3	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_prez				f	t	2025-05-13 01:55:27.815036+00
+4	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_rhonda				f	t	2025-05-13 01:56:08.359574+00
+5	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_bodie				f	t	2025-05-13 01:56:08.396774+00
+6	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_kima				f	t	2025-05-13 01:56:08.418117+00
+7	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_tony gray				f	t	2025-05-13 01:56:08.435629+00
+8	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_sydnor				f	t	2025-05-13 01:56:08.45254+00
+9	pbkdf2_sha256$1000000$hcz7Zz2oQN4VRnphUzni3z$Oc+nLTL3LXuV+4IGHgGTNo6pF3Quo3rTtcza9y9DFIE=	\N	f	_randy				f	t	2025-05-13 01:56:08.469337+00
 \.
 
 
