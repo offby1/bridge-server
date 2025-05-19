@@ -640,9 +640,10 @@ class Hand(TimeStampedModel):
                     "hand_pk": self.pk,
                     "serialized": card.serialize(),
                 },
-                "trick_html": self._get_current_trick_html(),
             }
         )
+
+        self.send_HTML_to_table(data={"trick_html": self._get_current_trick_html()})
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
