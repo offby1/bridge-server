@@ -486,8 +486,9 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     a = xscript.auction
     c = a.status
 
+    context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
+
     if c is Auction.PassedOut:
-        context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
         context |= {
             "score": 0,
             "vars_score": {"passed_out": 0},
@@ -513,7 +514,6 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
         else:
             score_description += f"Declarer's side get {broken_down_score.total}"
 
-    context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
         "history": _players_west_first_context_for_hand(hand),
