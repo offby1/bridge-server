@@ -44,13 +44,12 @@ logger = logging.getLogger(__name__)
 
 def _auction_context_for_hand(hand) -> dict[str, Any]:
     return {
-        "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
         "hand": hand,
-        "history": _auction_history_context_for_hand(hand),
+        "players_starting_with_west": _players_west_first_context_for_hand(hand),
     }
 
 
-def _auction_history_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
+def _players_west_first_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
     context = {}
     p_b_d_list = list(hand.players_by_direction_letter.items())
     # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
@@ -291,6 +290,13 @@ def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -
     return render_to_string("hand-div.html", context)
 
 
+def auction_history_HTML_for_table(
+    *, hand: app.models.Hand, as_viewed_by: app.models.Player | None = None
+) -> str:
+    context = _auction_context_for_hand(hand) | {"user": as_viewed_by}
+    return render_to_string("auction.html", context)
+
+
 def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
     # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
     for t_index, t in enumerate(xscript.tricks):
@@ -511,7 +517,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
-        "history": _auction_history_context_for_hand(hand),
+        "history": _players_west_first_context_for_hand(hand),
         "terse_description": _terse_description(hand),
     }
     return TemplateResponse(

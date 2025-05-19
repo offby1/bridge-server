@@ -542,11 +542,11 @@ class Hand(TimeStampedModel):
                 when=now,
             )
 
+        from app.views.hand import auction_history_HTML_for_table
+
         send_timestamped_event(
             channel=self.event_table_html_channel,
-            data={
-                "auction_history_html": "<div>Imagine I'm some auction history</div>",
-            },
+            data={"auction_history_html": auction_history_HTML_for_table(hand=self)},
             when=now,
         )
 

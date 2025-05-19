@@ -53,7 +53,6 @@
         history, but in that case there'd be no point in seeing a bidding box.  */
      if ("bidding_box_html" in data) {
          const bidding_box_html = data["bidding_box_html"];
-         console.log(`Updating toast-and-bidding-box with ${bidding_box_html.slice(0, 50)}`);
          const container = document.getElementById("toast-and-bidding-box");
          container.innerHTML = bidding_box_html;
 
@@ -91,8 +90,8 @@
          {% endif %}
      } else if ("auction_history_html" in data) {
          auction_history_html = data["auction_history_html"]
-         console.log("Imagine I updated the auction_history_html with " + auction_history_html.slice(0, 50));
-
+         container = document.getElementById ("auction");
+         container.innerHTML = auction_history_html;
      } else if ("contract_text" in data) {
          /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
          window.location.reload();

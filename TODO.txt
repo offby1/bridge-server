@@ -5,7 +5,7 @@ IN PROGRESS:
 
   | when                | HTML to include | which channel & why         | current status |
   |---------------------+-----------------+-----------------------------+----------------|
-  | auction: every call | current auction | hand: observers             |                |
+  | auction: every call | current auction | hand: observers             | ok             |
   | auction: every call | bidding box     | player: so they can call    | ok             |
   | play: every play    | our hand        | player                      |                |
   | play: every play    | dummy           | hand: observers and players |                |

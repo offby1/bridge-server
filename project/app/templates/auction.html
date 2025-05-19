@@ -8,7 +8,7 @@
     <caption>Auction</caption>
     <thead>
         <tr>
-            {% for direction, player in history %}
+            {% for direction, player in players_starting_with_west %}
                 <th {{ player.style|safe }}>
                     <i>{{ direction }}</i>
                     <br>
