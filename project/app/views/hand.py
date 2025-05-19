@@ -375,13 +375,12 @@ def _four_hands_context_for_hand(
 
     xscript = hand.get_xscript()
 
-    always = {
+    always = _auction_context_for_hand(hand) | {
         "annotated_tricks": list(_annotate_tricks(xscript)),
         "card_display": cards_by_direction_display,
         "dummy_player": (
             hand.get_xscript().auction.dummy if hand.get_xscript().auction.found_contract else None
         ),
-        "hand": hand,
         "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
         "viewers_seat": viewers_seat,
