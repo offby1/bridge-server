@@ -72,32 +72,26 @@
  var handEventSource = new ReconnectingEventSource(handEventUrl);
  console.log(`Listening for hand events on ${handEventUrl}`);
 
- handEventSource.addEventListener('message', function (e) {
-     const data = JSON.parse(e.data);
-     console.log("Hand event listener saw " + Object.keys(data));
-     if ("new-play" in data) {
-         const new_play = data["new-play"];
-         console.log("new-play event has " + Object.keys(new_play));
-         if ("trick_html" in new_play) {
-             const trick_html = new_play["trick_html"];
+     handEventSource.addEventListener('message', function (e) {
+         const data = JSON.parse(e.data);
+         console.log("Hand event listener saw " + Object.keys(data));
+         if ("trick_html" in data) {
+             const trick_html = data["trick_html"];
              const container = document.getElementById("_3x3-container");
              container.innerHTML = trick_html;
+         } else if ("auction_history_html" in data) {
+             auction_history_html = data["auction_history_html"]
+             container = document.getElementById ("auction");
+             container.innerHTML = auction_history_html;
+         } else if ("dummy_html" in data) {
+             dummy_html = data["dummy_html"];
+             console.log (`I spose I otta do something for the dummy: ${dummy_html}`);
+         } else if ("contract_text" in data) {
+             /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
+             window.location.reload();
          }
-         {% if next_seat_to_play %}
-         if ("{{ next_seat_to_play|title }}" in data) {
-             console.log("Maybe I should update {{ next_seat_to_play }}");
-         }
-         {% endif %}
-     } else if ("auction_history_html" in data) {
-         auction_history_html = data["auction_history_html"]
-         container = document.getElementById ("auction");
-         container.innerHTML = auction_history_html;
-     } else if ("contract_text" in data) {
-         /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
-         window.location.reload();
-     }
-     /* TODO -- check to see if the hand is over; if so, load ... uh ... either the next hand, or just the user's home page */
- }, false);
+         /* TODO -- check to see if the hand is over; if so, load ... uh ... either the next hand, or just the user's home page */
+     }, false);
 
  htmx.on("htmx:responseError", function(evt) {
      const errorToast = document.getElementById('errorToast');

@@ -275,16 +275,17 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
 
 
 def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -> str:
+    ds = hand.display_skeleton(as_dealt=False)
+
+    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(player.current_direction()[0])]
+    card_html_by_direction = app.views.hand._get_card_html(
+        all_four=our_all_four_suit_holding, hand=hand, viewer_may_control_this_seat=True
+    )
     context = {
-        "cards": {
-            "Spades": ["Sorry!"],
-            "Hearts": ["Sorry!"],
-            "Diamonds": ["Sorry!"],
-            "Clubs": ["Sorry!"],
-        },
+        "cards": card_html_by_direction,
         "class": "hand bigfont",
-        "id": "some-lower-cased-compass-direction",
-        "next_seat_to_play": "another-lower-cased-compass-direction",
+        "id": player.current_direction(),
+        "next_seat_to_play": hand.next_seat_to_play,
     }
 
     return render_to_string("hand-div.html", context)
