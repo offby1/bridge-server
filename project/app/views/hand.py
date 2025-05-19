@@ -584,7 +584,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         case _:
             assert False, f"Don't know how to deal with a view named {vn=}"
 
-    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+    if not request.user.is_authenticated and not hand.board.tournament.is_complete:
         return HttpResponseForbidden(
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
             f" until {_localize(hand.board.tournament.play_completion_deadline)}, so anonymous users such as yourself can't see this hand now."
@@ -607,10 +607,10 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+    if not request.user.is_authenticated and not hand.board.tournament.is_complete:
         return Forbid("You are anonymous, and this tournament isn't complete")
 
-    if request.user.is_anonymous:
+    if not request.user.is_authenticated:
         xscript = hand.get_xscript()
     else:
         player = request.user.player
@@ -684,7 +684,9 @@ def hand_list_view(request: HttpRequest) -> HttpResponse:
 def hands_by_table_and_board_group(
     request: AuthedHttpRequest, tournament_pk: PK, table_display_number: int, board_group: str
 ) -> HttpResponse:
-    player: app.models.Player | None = None if request.user.is_anonymous else request.user.player
+    player: app.models.Player | None = (
+        request.user.player if request.user.is_authenticated else None
+    )
 
     filter_kwargs = dict(
         board__group=board_group,
