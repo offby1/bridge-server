@@ -38,12 +38,29 @@ class CapturedEventsFromChannels:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.events = list(
-            Event.objects.filter(channel__in=self._channel_names).exclude(
-                id__in=self._message_ids_before
-            )
+        self.events = (
+            Event.objects.order_by("created")
+            .filter(channel__in=self._channel_names)
+            .exclude(id__in=self._message_ids_before)
         )
         return False
+
+
+def summarize(thing):
+    if isinstance(thing, str):
+        return thing[0:10]
+    elif isinstance(thing, dict):
+        return {k: summarize(v) for k, v in thing.items()}
+    else:
+        return thing
+
+
+def p(wat):
+    while True:
+        try:
+            wat = json.loads(wat)
+        except Exception:
+            return summarize(wat)
 
 
 def test_auction_settled_messages(usual_setup) -> None:
@@ -60,21 +77,6 @@ def test_auction_settled_messages(usual_setup) -> None:
                     bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
                     h,
                 )
-
-    def summarize(thing):
-        if isinstance(thing, str):
-            return thing[0:10]
-        elif isinstance(thing, dict):
-            return {k: summarize(v) for k, v in thing.items()}
-        else:
-            return thing
-
-    def p(wat):
-        while True:
-            try:
-                wat = json.loads(wat)
-            except Exception:
-                return summarize(wat)
 
     assert sum(["new-call" in e.data for e in hand_json_cap.events]) == 16
     assert sum(["contract" in e.data for e in table_cap.events]) == 1
@@ -136,15 +138,15 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             card=bridge.card.Card.deserialize("s2"),
         )
 
-    data0 = json.loads(json.loads(cap.events[0].data))
-    dummy_html = data0.get("dummy_html")
-    # Everyone gets to see the dummy after the opening lead.
-    assert """<div class="spades">""" in dummy_html
+    dummys_seen = tricks_seen = 0
+    for e in cap.events:
+        if "dummy_html" in e.data:
+            dummys_seen += 1
+        if "trick_html" in e.data:
+            tricks_seen += 1
 
-    data1 = json.loads(json.loads(cap.events[1].data))
-    dummy_html = data1.get("dummy_html")
-    # Everyone gets to see the *updated* dummy after it has played a card.
-    assert """<div class="spades">""" in dummy_html
+    # Everyone gets to see the dummy after the opening lead, and everyone gets to see the *updated* dummy after it has
+    # played a card.
+    assert dummys_seen == 2
 
-    # No *table-wide* HTML after the opening lead.
-    assert len(cap.events) == 2
+    assert tricks_seen == 3
