@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 def _auction_context_for_hand(hand) -> dict[str, Any]:
     return {
         "auction_partial_endpoint": reverse("app:auction-partial", args=[hand.pk]),
-        "show_auction_history": hand.auction.status is bridge.auction.Auction.Incomplete,
         "hand": hand,
         "history": _auction_history_context_for_hand(hand),
     }
@@ -95,7 +94,6 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
         "display_bidding_box": display_bidding_box,
         "disabled": disabled,
         "next_seat_to_call": "errm",
-        "show_auction_history": display_bidding_box,
     }
 
 
@@ -488,7 +486,6 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
         context |= {
             "score": 0,
             "vars_score": {"passed_out": 0},
-            "show_auction_history": False,
             "terse_description": _terse_description(hand),
         }
         return TemplateResponse(
@@ -514,7 +511,6 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     context = _four_hands_context_for_hand(as_viewed_by=None, hand=hand, as_dealt=True)
     context |= {
         "score": score_description,
-        "show_auction_history": True,
         "history": _auction_history_context_for_hand(hand),
         "terse_description": _terse_description(hand),
     }
