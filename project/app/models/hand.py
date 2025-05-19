@@ -626,12 +626,24 @@ class Hand(TimeStampedModel):
         was_the_opening_lead = self.get_xscript().num_plays == 1
         if the_dummy_just_played or was_the_opening_lead:
             self.send_HTML_to_table(
-                data={"dummy_html": self._get_current_hand_html(p=legit_player)}
+                data={
+                    "dummy_html": self._get_current_hand_html(p=legit_player),
+                    "dummy_direction": self.dummy.seat.name,
+                }
             )
         else:
+            # This player just played, so their hand needs to lose the card *and* lose the "it's your turn" highlighting.
             self.send_HTML_to_player(
                 player_pk=legit_player.pk,
                 data={"current_hand_html": self._get_current_hand_html(p=legit_player)},
+            )
+
+        if self.player_who_may_play:
+            # This player is *about to* play, so their hand needs the "it's your turn" highlighting.  TODO: don't also
+            # resend them their entire hand, since it hasn't changed.
+            self.send_HTML_to_player(
+                player_pk=self.player_who_may_play.pk,
+                data={"current_hand_html": self._get_current_hand_html(p=self.player_who_may_play)},
             )
 
         self.send_JSON_to_players(

@@ -62,7 +62,7 @@
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
          const container = document.getElementById("update-me-with-SSE");
-         container.innerHTML = current_hand_html;
+         container.outerHTML = current_hand_html;
          htmx.process(container);
      }
      });
@@ -85,7 +85,10 @@
              container.innerHTML = auction_history_html;
          } else if ("dummy_html" in data) {
              dummy_html = data["dummy_html"];
-             console.log (`I spose I otta do something for the dummy: ${dummy_html}`);
+             dummy_direction = data["dummy_direction"];
+             container = document.getElementById (dummy_direction);
+             container.innerHTML = dummy_html;
+             htmx.process(container);
          } else if ("contract_text" in data) {
              /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
              window.location.reload();
