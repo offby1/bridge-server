@@ -42,21 +42,41 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _auction_context_for_hand(hand) -> dict[str, Any]:
+def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
+    current_direction = player.current_direction()
+    if current_direction is None:
+        return None
+
+    ds = hand.display_skeleton(as_dealt=False)
+    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(current_direction[0])]
+    card_html_by_direction = app.views.hand._get_card_html(
+        all_four=our_all_four_suit_holding, hand=hand, viewer_may_control_this_seat=True
+    )
+
+    return {
+        "active_seat": hand.active_seat_name,
+        "cards": card_html_by_direction,
+        "id": player.current_direction(),
+    }
+
+
+def _auction_context_for_hand(hand: app.models.Hand) -> dict[str, Any]:
     return {
         "hand": hand,
         "players_starting_with_west": _players_west_first_context_for_hand(hand),
     }
 
 
-def _players_west_first_context_for_hand(hand) -> Iterable[tuple[str, dict[str, Any]]]:
+def _players_west_first_context_for_hand(
+    hand: app.models.Hand,
+) -> Iterable[tuple[str, dict[str, Any]]]:
     context = {}
     p_b_d_list = list(hand.players_by_direction_letter.items())
     # put West first because "Bridge Writing Style Guide by Richard Pavlicek.pdf" says to
     p_b_d_list.insert(0, p_b_d_list.pop(-1))
     # Hightlight whoever's turn it is
     for direction, player in p_b_d_list:
-        this_player_context = {"player": player}
+        this_player_context: dict[str, Any] = {"player": player}
         if player == hand.player_who_may_call:
             this_player_context["style"] = """ style="background-color: lightgreen;" """
         else:
@@ -275,23 +295,9 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
 
 
 def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -> str:
-    ds = hand.display_skeleton(as_dealt=False)
-
-    current_direction = player.current_direction()
-    if current_direction is None:
+    context = _hand_div_context(hand=hand, player=player)
+    if not context:
         return escape("""<div>No hand for you!</div>""")
-
-    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(current_direction[0])]
-    card_html_by_direction = app.views.hand._get_card_html(
-        all_four=our_all_four_suit_holding, hand=hand, viewer_may_control_this_seat=True
-    )
-    context = {
-        "cards": card_html_by_direction,
-        "class": "hand bigfont",
-        "id": player.current_direction(),
-        "next_seat_to_play": hand.next_seat_to_play,
-    }
-
     return render_to_string("hand-div.html", context)
 
 
@@ -344,8 +350,6 @@ def _four_hands_context_for_hand(
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
 
-    next_seat_to_play = getattr(hand.get_xscript().next_seat_to_play(), "name", "").lower()
-
     viewers_seat: bridge.seat.Seat | None = None
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
@@ -386,7 +390,6 @@ def _four_hands_context_for_hand(
         "dummy_player": (
             hand.get_xscript().auction.dummy if hand.get_xscript().auction.found_contract else None
         ),
-        "next_seat_to_play": next_seat_to_play,
         "tournament_status": f"{hand.board.tournament} {hand.board.tournament.is_complete=}",
         "viewers_seat": viewers_seat,
     }
@@ -499,31 +502,28 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
             "vars_score": {"passed_out": 0},
             "terse_description": _terse_description(hand),
         }
-        return TemplateResponse(
-            request,
-            "read-only_hand.html",
-            context=context,
-        )
-
-    broken_down_score = xscript.final_score()
-
-    if broken_down_score == 0:
-        score_description = "Passed Out"
-    elif broken_down_score is None:
-        score_description = "Still being played"
     else:
-        score_description = f"{broken_down_score.trick_summary}: "
+        broken_down_score = xscript.final_score()
 
-        if broken_down_score.total < 0:  # defenders got points
-            score_description += f"Defenders get {-broken_down_score.total}"
+        if broken_down_score == 0:
+            score_description = "Passed Out"
+        elif broken_down_score is None:
+            score_description = "Still being played"
         else:
-            score_description += f"Declarer's side get {broken_down_score.total}"
+            score_description = f"{broken_down_score.trick_summary}: "
 
-    context |= {
-        "score": score_description,
-        "history": _players_west_first_context_for_hand(hand),
-        "terse_description": _terse_description(hand),
-    }
+            if broken_down_score.total < 0:  # defenders got points
+                score_description += f"Defenders get {-broken_down_score.total}"
+            else:
+                score_description += f"Declarer's side get {broken_down_score.total}"
+
+        context |= {
+            "active_seat": hand.active_seat_name,
+            "history": _players_west_first_context_for_hand(hand),
+            "score": score_description,
+            "terse_description": _terse_description(hand),
+        }
+
     return TemplateResponse(
         request,
         "read-only_hand.html",
@@ -599,7 +599,10 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     context = (
         _four_hands_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
-        | {"terse_description": _terse_description(hand)}
+        | {
+            "active_seat": hand.active_seat_name,
+            "terse_description": _terse_description(hand),
+        }
         | _auction_context_for_hand(hand)
     )
 

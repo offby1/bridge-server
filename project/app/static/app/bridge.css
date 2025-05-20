@@ -169,3 +169,7 @@ div.three-by-three-trick-display > div.grid-column {
     width: 100px;
     height: 100px;
 }
+
+.active {
+    background-color: lightgreen;
+}

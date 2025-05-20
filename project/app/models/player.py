@@ -427,6 +427,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return self.current_hand_and_direction() is not None
 
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
+        """The string is a capitalized word, like "East"."""
         h: Hand
         direction_name: str
 
@@ -445,6 +446,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return ch[0]
 
     def current_direction(self) -> str | None:
+        """A whole, capitalized, word like 'East'"""
         ch = self.current_hand_and_direction()
         if ch is None:
             return None

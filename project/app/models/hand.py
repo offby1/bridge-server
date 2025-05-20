@@ -764,6 +764,13 @@ class Hand(TimeStampedModel):
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
 
     @property
+    def active_seat_name(self) -> str:
+        if (nsp := self.next_seat_to_play) is not None:
+            return nsp.name
+
+        return ""
+
+    @property
     def next_seat_to_play(self) -> Seat | None:
         if not self.auction.found_contract:
             return None
