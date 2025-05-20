@@ -481,6 +481,7 @@ def bidding_box_buttons(
         active = call in legal_calls
 
         top_button_group += buttonize(call=call, active=active)
+
     top_button_group += "</div>"
 
     joined_rows = "\n".join(rows)
@@ -489,6 +490,15 @@ def bidding_box_buttons(
 
 def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    # TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
+    match vn := _viewname_for_situation(hand, getattr(request.user, "player", None)):
+        case "app:hand-archive":
+            pass
+        case "app:hand-detail":
+            return HttpResponseRedirect(reverse(vn, kwargs={"pk": hand.pk}))
+        case _:
+            assert False, f"Don't know how to deal with a view named {vn=}"
 
     xscript = hand.get_xscript()
     a = xscript.auction
