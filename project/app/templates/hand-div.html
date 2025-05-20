@@ -1,5 +1,5 @@
 {% load fastdev %}
-<div id="update-me-with-SSE">
+<div id="{{ id }}">
     <div id="toast-one-hand">
         <div class="toast-container">
             <div id="errorToast"
@@ -27,7 +27,7 @@
                 <div class="toast-body" id="errorText">OK, so, like, that didn't work.</div>
             </div>
         </div>
-        <div class="{{ class }}" id="{{ id }}">
+        <div class="{{ class }}">
             <div class="spades">
                 {% for c in cards.Spades %}<div>{{ c }}</div>{% endfor %}
             </div>

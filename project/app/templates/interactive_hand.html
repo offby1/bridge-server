@@ -61,9 +61,9 @@
          htmx.process(container);
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
-         const container = document.getElementById("update-me-with-SSE");
+         const container = document.getElementById(data["current_hand_direction"]);
          container.outerHTML = current_hand_html;
-         htmx.process(container);
+         htmx.process(document.getElementById(data["current_hand_direction"]));
      }
      });
  {% endif %}
@@ -80,31 +80,33 @@
              const container = document.getElementById("_3x3-container");
              container.innerHTML = trick_html;
          } else if ("auction_history_html" in data) {
-             auction_history_html = data["auction_history_html"]
-             container = document.getElementById ("auction");
+             const auction_history_html = data["auction_history_html"]
+             const container = document.getElementById ("auction");
              container.innerHTML = auction_history_html;
          } else if ("dummy_html" in data) {
-             dummy_html = data["dummy_html"];
-             dummy_direction = data["dummy_direction"];
-             container = document.getElementById (dummy_direction);
-             container.innerHTML = dummy_html;
-             htmx.process(container);
+             const dummy_html = data["dummy_html"];
+             const dummy_direction = data["dummy_direction"];
+             const container = document.getElementById (dummy_direction);
+             container.outerHTML = dummy_html;
+
+             htmx.process(document.getElementById (dummy_direction));
          } else if ("contract_text" in data) {
              /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
              window.location.reload();
+         } else if ("final_score" in data) {
+             console.log ("TODO: The hand is over; so I guess I should, uh, load either the next hand, or just the user's home page");
          }
-         /* TODO -- check to see if the hand is over; if so, load ... uh ... either the next hand, or just the user's home page */
      }, false);
 
- htmx.on("htmx:responseError", function(evt) {
-     const errorToast = document.getElementById('errorToast');
-     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+     htmx.on("htmx:responseError", function(evt) {
+         const errorToast = document.getElementById('errorToast');
+         const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
 
-     const errorText = document.getElementById('errorText');
-     errorText.innerHTML = evt.detail.xhr.responseText;
+         const errorText = document.getElementById('errorText');
+         errorText.innerHTML = evt.detail.xhr.responseText;
 
-     toastBootstrap.show();
- });
+         toastBootstrap.show();
+     });
 
     </script>
 {% endblock scripts %}
