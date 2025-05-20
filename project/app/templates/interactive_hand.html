@@ -43,8 +43,6 @@
      const data = JSON.parse(e.data);
      console.log("Player event listener saw " + Object.keys(data));
 
-     /* TODO -- check to see if we're currently displaying something *other* than the auction slides, and if so, just reload the whole page. */
-
      /* We handle the bidding box here, whereas the auction history is handled in the "table" listener below.  Only
         because the auction history is identical regardless of who is looking at it, whereas the bidding box varies
         a little -- it's active when it's our" turn.
@@ -54,6 +52,11 @@
      if ("bidding_box_html" in data) {
          const bidding_box_html = data["bidding_box_html"];
          const container = document.getElementById("toast-and-bidding-box");
+         if (container === null) {
+             /* This hand must have ended; go to the "home page".  TODO: go to the *current hand* instead. */
+             window.location = "/player/{{ user.player.pk }}/";
+             return;
+         }
          container.innerHTML = bidding_box_html;
 
          /* We just replaced the buttons, onto which HTMX had added some attributes or listeners or something, with
