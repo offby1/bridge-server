@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Callable
 import dataclasses
 import datetime
 import logging
@@ -584,6 +585,38 @@ class Hand(TimeStampedModel):
 
         return _hand_HTML_for_player(hand=self, player=p)
 
+    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player | None) -> None:
+        if player_to_update is None:
+            return
+
+        if player_to_update.current_direction() is None:
+            return
+
+        assert self.dummy is not None
+        dummy_direction_letter = self.dummy.seat.name[0]
+
+        method: Callable[..., None]
+
+        if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
+            method = self.send_HTML_to_table
+            kwargs = dict(
+                data={
+                    "dummy_direction": self.dummy.seat.name,
+                    "dummy_html": self._get_current_hand_html(p=player_to_update),
+                }
+            )
+        else:
+            method = self.send_HTML_to_player
+            kwargs = dict(
+                data={
+                    "current_hand_direction": player_to_update.libraryThing().seat.name,
+                    "current_hand_html": self._get_current_hand_html(p=player_to_update),
+                },
+                player_pk=player_to_update.pk,
+            )
+
+        method(**kwargs)
+
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
         assert_type(card, libCard)
@@ -614,37 +647,20 @@ class Hand(TimeStampedModel):
             msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
             raise PlayError(msg)
 
-        the_dummy_just_played = legit_player.libraryThing() == self.get_xscript().auction.dummy
-
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
             raise PlayError(str(e)) from e
 
-        logger.debug("%s: %s (%d) played %s", self, legit_player, legit_player.pk, card)
+        just_played = legit_player
+        del legit_player
+        about_to_play = self.player_who_may_play
 
-        was_the_opening_lead = self.get_xscript().num_plays == 1
-        if the_dummy_just_played or was_the_opening_lead:
-            self.send_HTML_to_table(
-                data={
-                    "dummy_html": self._get_current_hand_html(p=legit_player),
-                    "dummy_direction": self.dummy.seat.name,
-                }
-            )
-        else:
-            # This player just played, so their hand needs to lose the card *and* lose the "it's your turn" highlighting.
-            self.send_HTML_to_player(
-                player_pk=legit_player.pk,
-                data={"current_hand_html": self._get_current_hand_html(p=legit_player)},
-            )
+        logger.debug("%s: %s (%d) played %s", self, just_played, just_played.pk, card)
 
-        if self.player_who_may_play:
-            # This player is *about to* play, so their hand needs the "it's your turn" highlighting.  TODO: don't also
-            # resend them their entire hand, since it hasn't changed.
-            self.send_HTML_to_player(
-                player_pk=self.player_who_may_play.pk,
-                data={"current_hand_html": self._get_current_hand_html(p=self.player_who_may_play)},
-            )
+        for update_me in [just_played, about_to_play]:
+            if update_me is not None:
+                self.send_HTML_update_to_appropriate_channel(player_to_update=update_me)
 
         self.send_JSON_to_players(
             data={

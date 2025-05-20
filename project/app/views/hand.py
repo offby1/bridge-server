@@ -19,7 +19,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
@@ -277,7 +277,11 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
 def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -> str:
     ds = hand.display_skeleton(as_dealt=False)
 
-    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(player.current_direction()[0])]
+    current_direction = player.current_direction()
+    if current_direction is None:
+        return escape("""<div>No hand for you!</div>""")
+
+    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(current_direction[0])]
     card_html_by_direction = app.views.hand._get_card_html(
         all_four=our_all_four_suit_holding, hand=hand, viewer_may_control_this_seat=True
     )
