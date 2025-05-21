@@ -163,11 +163,28 @@ li h2 {
     display: grid;
     height: 50cqh;
     grid-template-columns: 1fr 1fr 1fr;
-}
 
-div.three-by-three-trick-display > div.grid-column {
-    width: 100px;
-    height: 100px;
+    div {
+        border: 1px dotted;
+        text-align: center;
+        display:flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    div span {
+        font-family: monospace;
+        font-optical-sizing: auto;
+        font-weight: 100;
+        font-style: normal;
+
+        font-size: 8cqh;
+        justify-self: center;
+    }
+    div.grid-column {
+        width: 100px;
+        height: 100px;
+    }
 }
 
 .active {

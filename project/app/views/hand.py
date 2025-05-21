@@ -250,7 +250,7 @@ def _three_by_three_trick_display_context_for_hand(
         color = "black"
         if card is not None:
             color = card.color
-        css_classes = ["bigfont"]
+        css_classes = []
 
         if direction == winning_direction:
             css_classes.append("throb-div")
@@ -271,13 +271,13 @@ def _three_by_three_trick_display_context_for_hand(
     return {
         "three_by_three_trick_display": {
             "rows": [
-                ["&nbsp;", c(bridge.seat.Seat.NORTH.value), "&nbsp;"],
+                ["", c(bridge.seat.Seat.NORTH.value), ""],
                 [
                     c(bridge.seat.Seat.WEST.value),
-                    f'<span class="bigfont" style="justify-self: center">{arrow}</span>',
+                    f"<span>{arrow}</span>",
                     c(bridge.seat.Seat.EAST.value),
                 ],
-                ["&nbsp;", c(bridge.seat.Seat.SOUTH.value), "&nbsp;"],
+                ["", c(bridge.seat.Seat.SOUTH.value), ""],
             ],
         },
     }
