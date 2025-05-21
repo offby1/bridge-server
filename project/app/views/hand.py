@@ -398,7 +398,10 @@ def _four_hands_context_for_hand(
 
     as_viewed_by_is_dummy = False
     if hand.get_xscript().auction.found_contract and as_viewed_by is not None:
-        as_viewed_by_is_dummy = as_viewed_by.libraryThing() == hand.get_xscript().auction.dummy
+        assert hand.dummy is not None
+        as_viewed_by_is_dummy = (
+            hand.players_by_direction_letter[hand.dummy.seat.value] == as_viewed_by
+        )
 
     if xscript.auction.found_contract and not as_viewed_by_is_dummy:
         cards_by_direction_display["dummy_hand"] = cards_by_direction_display[
