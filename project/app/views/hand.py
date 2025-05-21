@@ -577,6 +577,10 @@ def _viewname_for_situation(hand: app.models.Hand, player: app.models.Player | N
     if t.is_complete:
         return "app:hand-archive"
 
+    if hand.is_abandoned or hand.is_complete:
+        if player is not None and player.has_played_hand(hand):
+            return "app:hand-archive"
+
     return "app:hand-detail"
 
 
