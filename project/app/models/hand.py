@@ -4,6 +4,7 @@ import collections
 from collections.abc import Callable
 import dataclasses
 import datetime
+import json
 import logging
 import time
 from typing import TYPE_CHECKING, Any
@@ -671,7 +672,12 @@ class Hand(TimeStampedModel):
             }
         )
 
-        self.send_HTML_to_table(data={"trick_html": self._get_current_trick_html()})
+        self.send_HTML_to_table(
+            data={
+                "trick_counts_string": self.trick_counts_string(),
+                "trick_html": self._get_current_trick_html(),
+            }
+        )
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
@@ -934,11 +940,11 @@ class Hand(TimeStampedModel):
 
         return flattened
 
-    def trick_counts_by_direction(self) -> dict[str, int]:
+    def trick_counts_string(self) -> str:
         cc = collections.Counter([p.seat.value for p in self.annotated_plays if p.winner])
         ns = cc["S"] + cc["N"]
         ew = cc["E"] + cc["W"]
-        return {"N/S": ns, "E/W": ew}
+        return json.dumps({"N/S": ns, "E/W": ew})
 
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property

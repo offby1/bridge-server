@@ -9,7 +9,7 @@
     <h3 style="text-align:center">{{ terse_description }}</h3>
     <div style="display: flex; justify-content: space-between;">
         <h1>{{ hand.auction.status }}</h1>
-        <h1>{{ hand.trick_counts_by_direction }}</h1>
+        <h1 id="trick-counts-string">{{ hand.trick_counts_string }}</h1>
     </div>
     {% if hand.auction.found_contract %}
         {% include "carousel_style_play.html" %}
@@ -78,6 +78,12 @@
      handEventSource.addEventListener('message', function (e) {
          const data = JSON.parse(e.data);
          console.log("Hand event listener saw " + Object.keys(data));
+         if ("trick_counts_string" in data) {
+             const trick_counts_string = data["trick_counts_string"];
+             const container = document.getElementById("trick-counts-string");
+             container.textContent = trick_counts_string;
+         }
+
          if ("trick_html" in data) {
              const trick_html = data["trick_html"];
              const container = document.getElementById("_3x3-container");
