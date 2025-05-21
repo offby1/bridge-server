@@ -496,14 +496,9 @@ def bidding_box_buttons(
 def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    # TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
-    match vn := _viewname_for_situation(hand, getattr(request.user, "player", None)):
-        case "app:hand-archive":
-            pass
-        case "app:hand-detail":
-            return HttpResponseRedirect(reverse(vn, kwargs={"pk": hand.pk}))
-        case _:
-            assert False, f"Don't know how to deal with a view named {vn=}"
+    redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
+    if getattr(redirect_or_error, "viewname", None) != "app:hand-everything-read-only":
+        return redirect_or_error
 
     xscript = hand.get_xscript()
     a = xscript.auction
@@ -569,22 +564,8 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-def _viewname_for_situation(hand: app.models.Hand, player: app.models.Player | None) -> str:
-    player_name = getattr(player, "name", "?")
-    logger.debug(f"{hand=} {player_name=}")
-
-    t: app.models.Tournament = hand.board.tournament
-    if t.is_complete:
-        return "app:hand-archive"
-
-    if hand.is_abandoned or hand.is_complete:
-        if player is not None and player.has_played_hand(hand):
-            return "app:hand-archive"
-
-    return "app:hand-detail"
-
-
-def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
+def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpRequest) -> HttpResponse:
     def _localize(stamp: datetime.datetime) -> datetime.datetime:
         if (zone_name := request.session.get("detected_tz")) is not None:
             import zoneinfo
@@ -597,22 +578,41 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
         return stamp
 
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+    player = getattr(request.user, "player", None)
 
-    # TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
-    match vn := _viewname_for_situation(hand, getattr(request.user, "player", None)):
-        case "app:hand-detail":
-            pass
-        case "app:hand-archive":
-            return HttpResponseRedirect(reverse(vn, kwargs={"pk": hand.pk}))
-        case _:
-            assert False, f"Don't know how to deal with a view named {vn=}"
+    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
+    t: app.models.Tournament = hand.board.tournament
 
-    if not request.user.is_authenticated and not hand.board.tournament.is_complete:
+    if t.is_complete or (
+        (hand.is_abandoned or hand.is_complete)
+        and player is not None
+        and player.has_played_hand(hand)
+    ):
+        rv = HttpResponseRedirect(reverse("app:hand-everything-read-only", kwargs={"pk": hand.pk}))
+        setattr(rv, "viewname", "app:hand-everything-read-only")
+        return rv
+
+    if player is None and not hand.board.tournament.is_complete:
+        localized_deadline = "forever"
+        if hand.board.tournament.play_completion_deadline is not None:
+            localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline))
         return HttpResponseForbidden(
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {_localize(hand.board.tournament.play_completion_deadline)}, so anonymous users such as yourself can't see this hand now."
+            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
         )
+
+    rv = HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": hand.pk}))
+    setattr(rv, "viewname", "app:hand-detail")
+
+    return rv
+
+
+def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
+    if getattr(redirect_or_error, "viewname", None) != "app:hand-detail":
+        return redirect_or_error
 
     as_viewed_by = request.user.player
 

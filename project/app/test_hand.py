@@ -313,7 +313,7 @@ class HandIsComplete(enum.Enum):
 
 class RequestedPage(enum.StrEnum):
     detail = "app:hand-detail"
-    archive = "app:hand-archive"
+    archive = "app:hand-everything-read-only"
 
 
 @pytest.mark.skip(reason="I need to rewrite this with the new stuff")

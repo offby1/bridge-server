@@ -44,7 +44,7 @@ urlpatterns = [
         name="hand-xscript-updates",
     ),
     path("serialized/hand/<int:pk>/", hand_serialized_view, name="serialized-hand-detail"),
-    path("hand/<int:pk>/archive/", everything_read_only_view, name="hand-archive"),
+    path("hand/<int:pk>/archive/", everything_read_only_view, name="hand-everything-read-only"),
     path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),

@@ -22,7 +22,7 @@
                         <th>{{ table.display_number }}</th>
                         <td>
                             {% if table.has_hand %}
-                                <a href="{% url 'app:hand-archive' table.current_hand.pk %}">{{ table.summary_for_this_viewer }}</a>
+                                <a href="{% url 'app:hand-everything-read-only' table.current_hand.pk %}">{{ table.summary_for_this_viewer }}</a>
                             {% else %}
                                 {{ table.summary_for_this_viewer }}
                             {% endif %}
