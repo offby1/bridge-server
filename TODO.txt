@@ -1,5 +1,4 @@
 IN PROGRESS:
-* The hand-detail view doesn't tell me the names of my opponents.
 * I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 
   Which HTML things need to get updated?

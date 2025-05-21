@@ -227,6 +227,9 @@ def _three_by_three_trick_display_context_for_hand(
     hand: app.models.Hand,
     xscript: bridge.xscript.HandTranscript,
 ) -> dict[str, Any]:
+    player_names_by_direction_letter = {
+        letter: player.name for letter, player in hand.players_by_direction_letter.items()
+    }
     cards_by_direction_letter: dict[str, bridge.card.Card] = {}
 
     lead_came_from: bridge.seat.Seat | None = None
@@ -244,7 +247,6 @@ def _three_by_three_trick_display_context_for_hand(
     elif isinstance(xscript.auction.status, bridge.contract.Contract):
         lead_came_from = xscript.next_seat_to_play()
 
-    # TODO -- use _display_and_control here
     def c(direction: str) -> str:
         card = cards_by_direction_letter.get(direction)
         color = "black"
@@ -260,9 +262,9 @@ def _three_by_three_trick_display_context_for_hand(
 
         class_attribute = f'class="{" ".join(css_classes)}"' if css_classes else ""
 
-        return (
-            f"""<div {class_attribute}><span style="color: {color}">{card or "__"}</span></div>"""
-        )
+        player = player_names_by_direction_letter[direction]
+
+        return f"""<div {class_attribute}>{player}<span style="color: {color}">{card or "__"}</span></div>"""
 
     arrow = ""
     if lead_came_from is not None:
