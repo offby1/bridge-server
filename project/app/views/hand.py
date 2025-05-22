@@ -578,10 +578,15 @@ def _terse_description(hand: Hand) -> str:
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
+    login_page = HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
+    if request.user is None:
+        return login_page
+
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+        return login_page
 
     player = getattr(request.user, "player", None)
 
