@@ -486,7 +486,9 @@ def hand_archive_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
     if request.user.is_anonymous and not hand.board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
-    player = None if request.user.is_anonymous else request.user.player
+    player = None
+    if not request.user.is_anonymous and hasattr(request.user, "player"):
+        player = request.user.player
 
     response = _maybe_redirect_or_error(
         hand_is_complete=hand.is_complete,
