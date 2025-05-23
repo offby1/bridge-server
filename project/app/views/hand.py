@@ -593,6 +593,10 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
 
         return stamp
 
+    t: app.models.Tournament = hand.board.tournament
+    if t.is_complete:
+        return HttpRedirectToNamedViewResponse("app:hand-everything-read-only", hand.pk)
+
     login_page = HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
     if request.user is None:
@@ -606,7 +610,6 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
     player = getattr(request.user, "player", None)
 
     logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
-    t: app.models.Tournament = hand.board.tournament
 
     if t.is_complete or (
         (hand.is_abandoned or hand.is_complete)

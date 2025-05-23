@@ -128,13 +128,13 @@ def various_flavors_of_hand(
 
 
 @pytest.mark.parametrize(
-    ("hand_state", "tournament_state", "player_type", "expected_status_code"),
+    ("hand_state", "tournament_state", "player_type", "expected_view"),
     [
         (
             HandState.complete,
             TournamentState.complete,
             PlayerType.anonymoose,
-            200,
+            "app:hand-everything-read-only",
         )
     ],
 )
@@ -144,7 +144,7 @@ def test_both_important_views(
     hand_state: HandState,
     tournament_state: TournamentState,
     player_type: PlayerType,
-    expected_status_code: int,
+    expected_view: str,
 ) -> None:
     hand: Hand = various_flavors_of_hand[hand_state][tournament_state]
     request = rf.get("/woteva/", data={"pk": hand.pk})
@@ -161,7 +161,12 @@ def test_both_important_views(
         PlayerType.did_not_play_the_hand: Player.objects.create_synthetic().user,
     }[player_type]
 
-    assert (
-        everything_read_only_view(request=request, pk=hand.pk).status_code == expected_status_code
-    )
-    assert hand_detail_view(request=request, pk=hand.pk).status_code == expected_status_code
+    match expected_view:
+        case "app:hand-everything-read-only":
+            assert everything_read_only_view(request=request, pk=hand.pk).status_code == 200
+            assert hand_detail_view(request=request, pk=hand.pk).viewname == expected_view
+        case "app:hand-detail":
+            assert everything_read_only_view(request=request, pk=hand.pk).viewname == expected_view
+            assert hand_detail_view(request=request, pk=hand.pk).status_code == 200
+        case _:
+            assert False, "wtf"
