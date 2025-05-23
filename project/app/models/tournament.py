@@ -95,12 +95,18 @@ def check_for_expirations(sender, **kwargs) -> None:
                 "has" if t.play_completion_deadline_has_passed() else "has not",
             )
             if t.play_completion_deadline_has_passed():
+                logger.debug(
+                    "%s", f"#{t.display_number}'s {t.play_completion_deadline=} has indeed passed"
+                )
                 t.is_complete = True
-                assert t.play_completion_deadline is not None
                 deadline_str = t.play_completion_deadline.isoformat()
                 t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
                 continue
+            else:
+                logger.debug(
+                    "%s", f"#{t.display_number}'s {t.play_completion_deadline=} has not yet passed"
+                )
 
             if t.signup_deadline_has_passed():
                 _do_signup_expired_stuff(t)
@@ -499,7 +505,9 @@ class Tournament(models.Model):
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
             victims = app.models.TournamentSignup.objects.filter(tournament=self)
-            logger.debug("Deleting %s", victims)
+            logger.debug(
+                "Deleting %s because tournament #%s is complete", victims, self.display_number
+            )
             victims.delete()
 
         super().save(*args, **kwargs)
