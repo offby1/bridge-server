@@ -126,5 +126,5 @@ def test_both_important_views(rf: Any, various_flavors_of_hand) -> None:
 
             for user in (None, anonymoose, has_no_player, played_the_hand, did_not_play_the_hand):
                 request.user = user
-                hand_archive_view(request=request, pk=hand.pk)
-                hand_detail_view(request=request, pk=hand.pk)
+                assert hand_archive_view(request=request, pk=hand.pk).status_code < 500
+                assert hand_detail_view(request=request, pk=hand.pk).status_code < 500
