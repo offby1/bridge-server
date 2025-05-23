@@ -578,6 +578,16 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
 
         return stamp
 
+    login_page = HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
+
+    if request.user is None:
+        return login_page
+
+    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
+    # will not be played again.
+    if request.user.is_anonymous and not hand.board.tournament.is_complete:
+        return login_page
+
     player = getattr(request.user, "player", None)
 
     logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
