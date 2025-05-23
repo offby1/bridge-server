@@ -50,7 +50,13 @@ class TournamentState(enum.Enum):
 
 
 @pytest.fixture
-def various_flavors_of_hand(db: Any):
+def _completed_tournament(db: Any):
+    t = Tournament.objects.create(boards_per_round_per_table=1)
+    return t
+
+
+@pytest.fixture
+def various_flavors_of_hand(db: Any, _completed_tournament: Tournament):
     call_command("loaddata", "smoke-case-1")
 
     hands_by_hand_state_by_tournament_state = collections.defaultdict(dict)
@@ -60,14 +66,18 @@ def various_flavors_of_hand(db: Any):
             case TournamentState.incomplete:
                 the_tournament = Tournament.objects.get(pk=1)
             case _:
-                assert not "I am dumb"
+                the_tournament = _completed_tournament  # can't use the existing "just_completed" fixture cuz its primary keys collide with smoke-case-1 :-(
 
         the_hand = None
         match hand_state:
-            case HandState.abandoned, HandState.complete:
+            case HandState.abandoned | HandState.complete:
                 assert not "I am still dumb"
             case HandState.incomplete:
                 the_hand = Hand.objects.get(pk=10)
+            case _:
+                assert not f"Well, this is embarrassing.  wtf is {hand_state=}?"
+
+        assert the_hand is not None
 
         the_hand.board.tournament = the_tournament
         the_hand.board.save()
