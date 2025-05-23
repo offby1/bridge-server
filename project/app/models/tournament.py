@@ -233,14 +233,10 @@ class Tournament(models.Model):
 
     display_number = models.SmallIntegerField(unique=True)
 
-    signup_deadline = models.DateTimeField(
-        blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
-    )  # type: ignore[call-overload]
+    signup_deadline = models.DateTimeField()
     play_completion_deadline = models.DateTimeField(
-        null=True,
-        blank=True,
-        default=None,
-        db_comment="NULL means we don't yet know how many players we have, hence cannot compute a movement",
+        default=datetime.datetime.max.replace(tzinfo=datetime.UTC),
+        db_comment='"a billion years from now" means we don\'t yet know how many players we have, hence cannot compute a movement',
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
