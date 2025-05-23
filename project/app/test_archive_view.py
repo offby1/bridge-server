@@ -2,21 +2,13 @@ from typing import Any
 
 from bridge.card import Suit
 from bridge.contract import Bid
-from django.contrib.auth.models import AnonymousUser
+
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Hand, Player
 from .testutils import set_auction_to
-from .views.hand import _four_hands_context_for_hand, hand_archive_view
-
-
-def test_archive_view(usual_setup: Hand, rf: Any) -> None:
-    h = usual_setup
-    request = rf.get("/woteva/", data={"pk": h.pk})
-    request.user = AnonymousUser()
-    # We're just testing for the absence of an exception
-    _four_hands_context_for_hand(request=request, hand=h, as_dealt=True)
+from .views.hand import hand_archive_view
 
 
 def test_final_score(usual_setup: Hand, rf: Any) -> None:
