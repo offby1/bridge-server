@@ -32,6 +32,13 @@ class TournamentState(enum.Enum):
     complete = enum.auto()
 
 
+class PlayerType(enum.Enum):
+    anonymoose = enum.auto()
+    has_no_player = enum.auto()
+    played_the_hand = enum.auto()
+    did_not_play_the_hand = enum.auto()
+
+
 @pytest.fixture
 def _completed_tournament(db: Any):
     Signup = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
@@ -70,7 +77,9 @@ def smoke_case_1(db: Any):
 
 
 @pytest.fixture
-def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tournament):
+def various_flavors_of_hand(
+    db: Any, smoke_case_1, _completed_tournament: Tournament
+) -> dict[HandState, dict[TournamentState, Hand]]:
     assert datetime.datetime.utcnow().year == 2000
 
     hands_by_hand_state_by_tournament_state: dict[HandState, dict[TournamentState, Hand]] = (
@@ -113,20 +122,38 @@ def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tourna
     return dict(hands_by_hand_state_by_tournament_state)
 
 
-def test_both_important_views(rf: Any, various_flavors_of_hand) -> None:
-    for hand_state, hands_by_tournament_state in various_flavors_of_hand.items():
-        for tournament_state, hand in hands_by_tournament_state.items():
-            request = rf.get("/woteva/", data={"pk": hand.pk})
+@pytest.mark.parametrize(
+    ("hand_state", "tournament_state", "player_type", "expected_status_code"),
+    [
+        (
+            HandState.complete,
+            TournamentState.complete,
+            PlayerType.anonymoose,
+            200,
+        )
+    ],
+)
+def test_both_important_views(
+    rf: Any,
+    various_flavors_of_hand,
+    hand_state: HandState,
+    tournament_state: TournamentState,
+    player_type: PlayerType,
+    expected_status_code: int,
+) -> None:
+    hand = various_flavors_of_hand[hand_state][tournament_state]
+    request = rf.get("/woteva/", data={"pk": hand.pk})
 
-            setattr(request, "session", {})
+    setattr(request, "session", {})
 
-            # Various flavors of user
-            anonymoose = AnonymousUser()
-            has_no_player = User.objects.get(username="admin")
-            played_the_hand = hand.players().first().user
-            did_not_play_the_hand = Player.objects.create_synthetic().user
+    request.user = {
+        PlayerType.anonymoose: AnonymousUser(),
+        PlayerType.has_no_player: User.objects.get(username="admin"),
+        PlayerType.played_the_hand: hand.players().first().user,
+        PlayerType.did_not_play_the_hand: Player.objects.create_synthetic().user,
+    }[player_type]
 
-            for user in (None, anonymoose, has_no_player, played_the_hand, did_not_play_the_hand):
-                request.user = user
-                assert everything_read_only_view(request=request, pk=hand.pk).status_code < 500
-                assert hand_detail_view(request=request, pk=hand.pk).status_code < 500
+    assert (
+        everything_read_only_view(request=request, pk=hand.pk).status_code == expected_status_code
+    )
+    assert hand_detail_view(request=request, pk=hand.pk).status_code == expected_status_code

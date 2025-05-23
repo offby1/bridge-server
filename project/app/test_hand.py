@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import enum
 from typing import Any
 
 from django.contrib import auth
@@ -304,89 +303,6 @@ def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> N
     assert first_player is not None
     assert any("contract" in e for e in sent_events_by_channel[f"player:json:{first_player.pk}"])
     assert any("contract" in e for e in sent_events_by_channel[f"table:html:{h.pk}"])
-
-
-class HandIsComplete(enum.Enum):
-    incomplete = 0
-    complete = 1
-
-
-class RequestedPage(enum.StrEnum):
-    detail = "app:hand-detail"
-    archive = "app:hand-everything-read-only"
-
-
-@pytest.mark.skip(reason="I need to rewrite this with the new stuff")
-@pytest.mark.parametrize(
-    ("hand_is_complete", "player_visibility", "requested_page", "expected_result"),
-    [
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.detail,
-            None,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.archive,
-            302,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.detail,
-            403,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.archive,
-            403,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.detail,
-            302,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.archive,
-            None,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.detail,
-            403,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.archive,
-            403,
-        ),
-    ],
-)
-def test_exhaustive_archive_and_detail_redirection(
-    rf,
-    hand_is_complete,
-    player_visibility,
-    requested_page,
-    expected_result,
-):
-    actual_result = """_maybe_error(
-        hand_is_complete=hand_is_complete.value,
-        hand_pk=123,
-        player_visibility=player_visibility,
-        request_viewname=requested_page.value,
-    )"""
-    if actual_result is None:
-        assert expected_result is None
-    else:
-        assert actual_result.status_code == expected_result
 
 
 @pytest.mark.django_db
