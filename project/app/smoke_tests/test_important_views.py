@@ -71,6 +71,7 @@ def _completed_tournament(db: Any):
         h = t.hands().filter(abandoned_because__isnull=False).first()
         assert h is not None
         check_for_expirations(t)
+        t.refresh_from_db()
         assert t.is_complete
         yield t
 
