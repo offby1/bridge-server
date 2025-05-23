@@ -42,7 +42,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
+class HttpResponseWithViewname(HttpResponse):
+    viewname: str
+
+
+class TemplateResponseWithViewName(HttpResponseWithViewname, TemplateResponse):
+    pass
+
+
+class HttpRedirectToNamedViewResponse(HttpResponseWithViewname, HttpResponseRedirect):
     def __init__(
         self, *, viewname: str | None = None, url: str | None = None, hand_pk: PK | None = None
     ):
@@ -53,6 +61,7 @@ class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
             super().__init__(reverse(viewname, kwargs={"pk": hand_pk}))
             setattr(self, "viewname", viewname)
         else:
+            assert url is not None
             super().__init__(url)
             setattr(self, "viewname", "login")
 
@@ -66,7 +75,7 @@ class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
         return f"{rv} ({self.viewname=})"
 
 
-class HttpResponseForbiddenWithViewName(HttpResponseForbidden):
+class HttpResponseForbiddenWithViewName(HttpResponseWithViewname, HttpResponseForbidden):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         setattr(self, "viewname", "forbidden")
@@ -86,7 +95,9 @@ def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.
     return stamp
 
 
-def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpRequest) -> HttpResponse:
+def _redirect_or_error_response(
+    hand: app.models.Hand, request: AuthedHttpRequest
+) -> HttpResponseWithViewname:
     t: app.models.Tournament = hand.board.tournament
     if t.is_complete:
         return HttpRedirectToNamedViewResponse(
@@ -586,7 +597,7 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponse:
+def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponseWithViewname:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
@@ -627,7 +638,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
             "terse_description": _terse_description(hand),
         }
 
-    return TemplateResponse(
+    return TemplateResponseWithViewName(
         request,
         "read-only_hand.html",
         context=context,
@@ -657,7 +668,7 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponseWithViewname:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
@@ -678,7 +689,7 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     if as_viewed_by is not None:
         context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
 
-    return TemplateResponse(request, "interactive_hand.html", context=context)
+    return TemplateResponseWithViewName(request, "interactive_hand.html", context=context)
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
