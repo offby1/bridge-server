@@ -14,7 +14,7 @@ from django.core.management import call_command
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 
-from app.views.hand import hand_archive_view, hand_detail_view
+from app.views.hand import everything_read_only_view, hand_detail_view
 
 from app.testutils import play_out_hand
 
@@ -118,6 +118,8 @@ def test_both_important_views(rf: Any, various_flavors_of_hand) -> None:
         for tournament_state, hand in hands_by_tournament_state.items():
             request = rf.get("/woteva/", data={"pk": hand.pk})
 
+            setattr(request, "session", {})
+
             # Various flavors of user
             anonymoose = AnonymousUser()
             has_no_player = User.objects.get(username="admin")
@@ -126,5 +128,5 @@ def test_both_important_views(rf: Any, various_flavors_of_hand) -> None:
 
             for user in (None, anonymoose, has_no_player, played_the_hand, did_not_play_the_hand):
                 request.user = user
-                assert hand_archive_view(request=request, pk=hand.pk).status_code < 500
+                assert everything_read_only_view(request=request, pk=hand.pk).status_code < 500
                 assert hand_detail_view(request=request, pk=hand.pk).status_code < 500

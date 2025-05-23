@@ -611,6 +611,8 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
             f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
         )
 
+    assert player is not None
+
     if not player.has_played_hand(hand):
         return HttpResponseForbidden("You haven't yet played this hand, so you cannot see it.")
 
