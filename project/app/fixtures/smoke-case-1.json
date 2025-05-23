@@ -171,6 +171,22 @@
     "pk": 6
   },
   {
+    "fields": {
+      "dealer": "E",
+      "display_number": 7,
+      "east_cards": "C2C3C4C5C6C7C8C9CTCJCQCKCA",
+      "ew_vulnerable": true,
+      "group": "B",
+      "north_cards": "H2H3H4H5H6H7H8H9HTHJHQHKHA",
+      "ns_vulnerable": false,
+      "south_cards": "S2S3S4S5S6S7S8S9STSJSQSKSA",
+      "tournament": 1,
+      "west_cards": "D2D3D4D5D6D7D8D9DTDJDQDKDA"
+    },
+    "model": "app.board",
+    "pk": 7
+  },
+  {
     "fields": {},
     "model": "app.lobby",
     "pk": 1
@@ -479,6 +495,22 @@
     },
     "model": "app.hand",
     "pk": 11
+  },
+  {
+    "fields": {
+      "East": 7,
+      "North": 1,
+      "South": 2,
+      "West": 8,
+      "abandoned_because": "the test wanted us to abandon this hand",
+      "board": 7,
+      "created": "2025-05-21T18:07:06.553Z",
+      "modified": "2025-05-21T18:07:06.553Z",
+      "open_access": false,
+      "table_display_number": 10
+    },
+    "model": "app.hand",
+    "pk": 12
   },
   {
     "fields": {

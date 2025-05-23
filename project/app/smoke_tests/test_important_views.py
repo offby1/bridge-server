@@ -1,16 +1,24 @@
 import collections
+import datetime
 import enum
 import itertools
+import logging
 from typing import Any
 
+from freezegun import freeze_time
 import pytest
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.management import call_command
 
 from app.models import Hand, Player, Tournament
+from app.models.tournament import _do_signup_expired_stuff
 
 from app.views.hand import hand_archive_view, hand_detail_view
+
+from app.testutils import play_out_hand
+
+logger = logging.getLogger()
 
 
 def test_both_important_views(db: Any, rf: Any) -> None:
@@ -51,13 +59,43 @@ class TournamentState(enum.Enum):
 
 @pytest.fixture
 def _completed_tournament(db: Any):
-    t = Tournament.objects.create(boards_per_round_per_table=1)
-    return t
+    Signup = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
+    PlayCompletion = Signup + datetime.timedelta(seconds=24 * 3600)
+    t = Tournament.objects.create(
+        boards_per_round_per_table=2,
+        signup_deadline=Signup,
+        play_completion_deadline=PlayCompletion,
+    )
+
+    with freeze_time(Signup - datetime.timedelta(seconds=1)):
+        p1 = Player.objects.create_synthetic()
+        p2 = Player.objects.create_synthetic()
+        p2.partner = p1
+        p2.save()
+        p1.partner = p2
+        p1.save()
+        t.sign_up_player_and_partner(p1)
+
+    with freeze_time(Signup + datetime.timedelta(seconds=1)):
+        _do_signup_expired_stuff(t)
+        h1 = t.hands().first()
+        play_out_hand(h1)
+
+    with freeze_time(PlayCompletion + datetime.timedelta(seconds=1)):
+        t.abandon_all_hands(reason="Play completion deadline has passed")
+        h = t.hands().filter(abandoned_because__isnull=False).first()
+        assert h is not None
+        yield t
 
 
 @pytest.fixture
-def various_flavors_of_hand(db: Any, _completed_tournament: Tournament):
+def smoke_case_1(db: Any):
     call_command("loaddata", "smoke-case-1")
+
+
+@pytest.fixture
+def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tournament):
+    assert datetime.datetime.utcnow().year == 2000
 
     hands_by_hand_state_by_tournament_state = collections.defaultdict(dict)
     for hand_state, tournament_state in itertools.product(HandState, TournamentState):
@@ -65,19 +103,29 @@ def various_flavors_of_hand(db: Any, _completed_tournament: Tournament):
         match tournament_state:
             case TournamentState.incomplete:
                 the_tournament = Tournament.objects.get(pk=1)
-            case _:
+            case TournamentState.complete:
                 the_tournament = _completed_tournament  # can't use the existing "just_completed" fixture cuz its primary keys collide with smoke-case-1 :-(
+            case _:
+                assert not f"Well, this is embarrassing.  wtf is {tournament_state=}?"
 
         the_hand = None
         match hand_state:
-            case HandState.abandoned | HandState.complete:
-                assert not "I am still dumb"
+            case HandState.complete:
+                the_hand = the_tournament.hands().filter(abandoned_because__isnull=True).first()
+            case HandState.abandoned:
+                the_hand = the_tournament.hands().filter(abandoned_because__isnull=False).first()
             case HandState.incomplete:
+                # Can't have a complete tournament with an incomplete hand.
+                if tournament_state == TournamentState.complete:
+                    continue
+
                 the_hand = Hand.objects.get(pk=10)
             case _:
                 assert not f"Well, this is embarrassing.  wtf is {hand_state=}?"
 
-        assert the_hand is not None
+        assert the_hand is not None, (
+            f"well, so far {dict(hands_by_hand_state_by_tournament_state)=}"
+        )
 
         the_hand.board.tournament = the_tournament
         the_hand.board.save()
