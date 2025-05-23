@@ -83,30 +83,12 @@ def check_for_expirations(sender, **kwargs) -> None:
         incompletes = Tournament.objects.filter(is_complete=False, signup_deadline__isnull=False)
 
         for t in incompletes:
-            logger.debug("Checking '%s': ", t)
-            logger.debug(
-                "signup deadline %s %s passed",
-                t.signup_deadline,
-                "has" if t.signup_deadline_has_passed() else "has not",
-            )
-            logger.debug(
-                "play completion deadline %s %s passed",
-                t.play_completion_deadline,
-                "has" if t.play_completion_deadline_has_passed() else "has not",
-            )
             if t.play_completion_deadline_has_passed():
-                logger.debug(
-                    "%s", f"#{t.display_number}'s {t.play_completion_deadline=} has indeed passed"
-                )
                 t.is_complete = True
                 deadline_str = t.play_completion_deadline.isoformat()
                 t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
                 continue
-            else:
-                logger.debug(
-                    "%s", f"#{t.display_number}'s {t.play_completion_deadline=} has not yet passed"
-                )
 
             if t.signup_deadline_has_passed():
                 _do_signup_expired_stuff(t)
