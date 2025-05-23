@@ -12,7 +12,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.management import call_command
 
 from app.models import Hand, Player, Tournament
-from app.models.tournament import _do_signup_expired_stuff
+from app.models.tournament import _do_signup_expired_stuff, check_for_expirations
 
 from app.views.hand import everything_read_only_view, hand_detail_view
 
@@ -50,8 +50,8 @@ def _completed_tournament(db: Any):
     )
 
     with freeze_time(Signup - datetime.timedelta(seconds=1)):
-        p1 = Player.objects.create_synthetic()
-        p2 = Player.objects.create_synthetic()
+        p1: Player = Player.objects.create_synthetic()
+        p2: Player = Player.objects.create_synthetic()
         p2.partner = p1
         p2.save()
         p1.partner = p2
@@ -65,9 +65,13 @@ def _completed_tournament(db: Any):
         play_out_hand(h1)
 
     with freeze_time(PlayCompletion + datetime.timedelta(seconds=1)):
-        t.abandon_all_hands(reason="Play completion deadline has passed")
+        t.abandon_all_hands(
+            reason=f"t#{t.display_number}'s play completion deadline ({t.play_completion_deadline}) has passed"
+        )
         h = t.hands().filter(abandoned_because__isnull=False).first()
         assert h is not None
+        check_for_expirations(t)
+        assert t.is_complete
         yield t
 
 
@@ -141,15 +145,18 @@ def test_both_important_views(
     player_type: PlayerType,
     expected_status_code: int,
 ) -> None:
-    hand = various_flavors_of_hand[hand_state][tournament_state]
+    hand: Hand = various_flavors_of_hand[hand_state][tournament_state]
     request = rf.get("/woteva/", data={"pk": hand.pk})
 
     setattr(request, "session", {})
 
+    some_player_from_this_hand = hand.players().first()
+    assert some_player_from_this_hand is not None
+
     request.user = {
         PlayerType.anonymoose: AnonymousUser(),
         PlayerType.has_no_player: User.objects.get(username="admin"),
-        PlayerType.played_the_hand: hand.players().first().user,
+        PlayerType.played_the_hand: some_player_from_this_hand.user,
         PlayerType.did_not_play_the_hand: Player.objects.create_synthetic().user,
     }[player_type]
 
