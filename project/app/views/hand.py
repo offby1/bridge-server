@@ -42,6 +42,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
+    def __init__(self, viewname, hand_pk):
+        super().__init__(reverse(viewname, kwargs={"pk": hand_pk}))
+        setattr(self, "viewname", viewname)
+
+    def viewname_is(self, vn: str) -> bool:
+        rv = self.viewname == vn
+        logger.debug("Comparing %r to %r => %s", self.viewname, vn, rv)
+        return rv
+
+    def __repr__(self):
+        rv = repr(super())
+        return f"{rv} ({self.viewname=})"
+
+
 def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
     current_direction = player.current_direction()
     if current_direction is None:
@@ -497,7 +512,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if getattr(redirect_or_error, "viewname", None) != "app:hand-everything-read-only":
+    if not redirect_or_error.viewname_is("app:hand-everything-read-only"):
         return redirect_or_error
 
     xscript = hand.get_xscript()
@@ -598,9 +613,7 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
         and player is not None
         and player.has_played_hand(hand)
     ):
-        rv = HttpResponseRedirect(reverse("app:hand-everything-read-only", kwargs={"pk": hand.pk}))
-        setattr(rv, "viewname", "app:hand-everything-read-only")
-        return rv
+        return HttpRedirectToNamedViewResponse("app:hand-everything-read-only", hand.pk)
 
     if player is None and not hand.board.tournament.is_complete:
         localized_deadline = "forever"
@@ -616,17 +629,14 @@ def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpReques
     if not player.has_played_hand(hand):
         return HttpResponseForbidden("You haven't yet played this hand, so you cannot see it.")
 
-    rv = HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": hand.pk}))
-    setattr(rv, "viewname", "app:hand-detail")
-
-    return rv
+    return HttpRedirectToNamedViewResponse("app:hand-detail", hand.pk)
 
 
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if getattr(redirect_or_error, "viewname", None) != "app:hand-detail":
+    if not redirect_or_error.viewname_is("app:hand-detail"):
         return redirect_or_error
 
     as_viewed_by = request.user.player
