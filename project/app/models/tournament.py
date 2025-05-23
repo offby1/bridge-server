@@ -127,29 +127,6 @@ class ComputingPlayCompletionDeadline(TournamentStatus):
     pass
 
 
-def _status(
-    *,
-    is_complete: bool,
-    signup_deadline: datetime.datetime | None,
-    play_completion_deadline: datetime.datetime | None,
-    as_of: datetime.datetime,
-) -> type[TournamentStatus]:
-    if is_complete:
-        return Complete
-    if signup_deadline is None:
-        return Running
-    if as_of < signup_deadline:
-        return OpenForSignup
-    if play_completion_deadline is None:
-        return ComputingPlayCompletionDeadline
-    if as_of > play_completion_deadline:
-        logger.warning(
-            "Some tournament's play_completion_deadline has passed, but it hasn't (yet) been marked is_complete"
-        )
-        return Complete
-    return Running
-
-
 class TournamentManager(models.Manager):
     def create(self, *args, **kwargs) -> Tournament:
         kwargs = kwargs.copy()
@@ -413,12 +390,13 @@ class Tournament(models.Model):
         return self.status() is Running
 
     def status(self) -> type[TournamentStatus]:
-        return _status(
-            is_complete=self.is_complete,
-            signup_deadline=self.signup_deadline,
-            play_completion_deadline=self.play_completion_deadline,
-            as_of=timezone.now(),
-        )
+        now = timezone.now()
+        if now < self.signup_deadline:
+            return OpenForSignup
+        if now < self.play_completion_deadline:
+            return Running
+
+        return Complete
 
     def status_str(self) -> str:
         return self.status().__name__
