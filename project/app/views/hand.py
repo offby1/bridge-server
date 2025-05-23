@@ -43,9 +43,18 @@ logger = logging.getLogger(__name__)
 
 
 class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
-    def __init__(self, viewname, hand_pk):
-        super().__init__(reverse(viewname, kwargs={"pk": hand_pk}))
-        setattr(self, "viewname", viewname)
+    def __init__(
+        self, *, viewname: str | None = None, url: str | None = None, hand_pk: PK | None = None
+    ):
+        assert (viewname is None) != (url is None)
+        assert (viewname is None) == (hand_pk is None)
+
+        if viewname is not None:
+            super().__init__(reverse(viewname, kwargs={"pk": hand_pk}))
+            setattr(self, "viewname", viewname)
+        else:
+            super().__init__(url)
+            setattr(self, "viewname", "login")
 
     def viewname_is(self, vn: str) -> bool:
         rv = self.viewname == vn
@@ -55,6 +64,77 @@ class HttpRedirectToNamedViewResponse(HttpResponseRedirect):
     def __repr__(self):
         rv = repr(super())
         return f"{rv} ({self.viewname=})"
+
+
+class HttpResponseForbiddenWithViewName(HttpResponseForbidden):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        setattr(self, "viewname", "forbidden")
+
+
+# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
+def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.datetime:
+    if (zone_name := request.session.get("detected_tz")) is not None:
+        import zoneinfo
+
+        try:
+            zone = zoneinfo.ZoneInfo(zone_name)
+            return stamp.astimezone(zone)
+        except zoneinfo.ZoneInfoNotFoundError:
+            pass
+
+    return stamp
+
+
+def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpRequest) -> HttpResponse:
+    t: app.models.Tournament = hand.board.tournament
+    if t.is_complete:
+        return HttpRedirectToNamedViewResponse(
+            viewname="app:hand-everything-read-only", hand_pk=hand.pk
+        )
+
+    login_page = HttpRedirectToNamedViewResponse(url=settings.LOGIN_URL + f"?next={request.path}")
+
+    if request.user is None:
+        return login_page
+
+    player = getattr(request.user, "player", None)
+
+    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
+    # will not be played again.
+    if (request.user.is_anonymous or player is None) and not hand.board.tournament.is_complete:
+        return login_page
+
+    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
+
+    if t.is_complete or (
+        (hand.is_abandoned or hand.is_complete)
+        and player is not None
+        and player.has_played_hand(hand)
+    ):
+        return HttpRedirectToNamedViewResponse(
+            viewname="app:hand-everything-read-only", hand_pk=hand.pk
+        )
+
+    if player is None and not hand.board.tournament.is_complete:
+        localized_deadline = "forever"
+        if hand.board.tournament.play_completion_deadline is not None:
+            localized_deadline = str(
+                _localize(hand.board.tournament.play_completion_deadline, request)
+            )
+        return HttpResponseForbiddenWithViewName(
+            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
+            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
+        )
+
+    assert player is not None
+
+    if not player.has_played_hand(hand):
+        return HttpResponseForbiddenWithViewName(
+            "You haven't yet played this hand, so you cannot see it."
+        )
+
+    return HttpRedirectToNamedViewResponse(viewname="app:hand-detail", hand_pk=hand.pk)
 
 
 def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
@@ -510,7 +590,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if not redirect_or_error.viewname_is("app:hand-everything-read-only"):
+    if redirect_or_error.viewname != "app:hand-everything-read-only":
         return redirect_or_error
 
     xscript = hand.get_xscript()
@@ -577,67 +657,11 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
-def _redirect_or_error_response(hand: app.models.Hand, request: AuthedHttpRequest) -> HttpResponse:
-    def _localize(stamp: datetime.datetime) -> datetime.datetime:
-        if (zone_name := request.session.get("detected_tz")) is not None:
-            import zoneinfo
-
-            try:
-                zone = zoneinfo.ZoneInfo(zone_name)
-                return stamp.astimezone(zone)
-            except zoneinfo.ZoneInfoNotFoundError:
-                pass
-
-        return stamp
-
-    t: app.models.Tournament = hand.board.tournament
-    if t.is_complete:
-        return HttpRedirectToNamedViewResponse("app:hand-everything-read-only", hand.pk)
-
-    login_page = HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
-
-    if request.user is None:
-        return login_page
-
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
-    if request.user.is_anonymous and not hand.board.tournament.is_complete:
-        return login_page
-
-    player = getattr(request.user, "player", None)
-
-    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
-
-    if t.is_complete or (
-        (hand.is_abandoned or hand.is_complete)
-        and player is not None
-        and player.has_played_hand(hand)
-    ):
-        return HttpRedirectToNamedViewResponse("app:hand-everything-read-only", hand.pk)
-
-    if player is None and not hand.board.tournament.is_complete:
-        localized_deadline = "forever"
-        if hand.board.tournament.play_completion_deadline is not None:
-            localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline))
-        return HttpResponseForbidden(
-            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
-        )
-
-    assert player is not None
-
-    if not player.has_played_hand(hand):
-        return HttpResponseForbidden("You haven't yet played this hand, so you cannot see it.")
-
-    return HttpRedirectToNamedViewResponse("app:hand-detail", hand.pk)
-
-
 def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if not redirect_or_error.viewname_is("app:hand-detail"):
+    if redirect_or_error.viewname != "app:hand-detail":
         return redirect_or_error
 
     as_viewed_by = request.user.player

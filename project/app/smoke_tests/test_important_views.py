@@ -130,12 +130,56 @@ def various_flavors_of_hand(
 @pytest.mark.parametrize(
     ("hand_state", "tournament_state", "player_type", "expected_view"),
     [
+        # Complete tournament: eva buddy see eva thang
         (
             HandState.complete,
             TournamentState.complete,
             PlayerType.anonymoose,
             "app:hand-everything-read-only",
-        )
+        ),
+        (
+            HandState.complete,
+            TournamentState.complete,
+            PlayerType.has_no_player,
+            "app:hand-everything-read-only",
+        ),
+        (
+            HandState.complete,
+            TournamentState.complete,
+            PlayerType.played_the_hand,
+            "app:hand-everything-read-only",
+        ),
+        (
+            HandState.complete,
+            TournamentState.complete,
+            PlayerType.did_not_play_the_hand,
+            "app:hand-everything-read-only",
+        ),
+        # Incomplete tournament: it all depends
+        (
+            HandState.complete,
+            TournamentState.incomplete,
+            PlayerType.anonymoose,
+            "login",
+        ),
+        (
+            HandState.complete,
+            TournamentState.incomplete,
+            PlayerType.has_no_player,
+            "login",
+        ),
+        (
+            HandState.complete,
+            TournamentState.incomplete,
+            PlayerType.played_the_hand,
+            "app:hand-everything-read-only",
+        ),
+        (
+            HandState.complete,
+            TournamentState.incomplete,
+            PlayerType.did_not_play_the_hand,
+            "forbidden",
+        ),
     ],
 )
 def test_both_important_views(
@@ -168,5 +212,9 @@ def test_both_important_views(
         case "app:hand-detail":
             assert everything_read_only_view(request=request, pk=hand.pk).viewname == expected_view
             assert hand_detail_view(request=request, pk=hand.pk).status_code == 200
+        case "login" | "forbidden":
+            for v in (everything_read_only_view, hand_detail_view):
+                resp = v(request=request, pk=hand.pk)
+                assert resp.viewname == expected_view
         case _:
             assert False, "wtf"
