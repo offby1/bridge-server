@@ -192,7 +192,7 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
-                    p.unseat_me(reason=reason)
+                    p.abandon_my_hand(reason=reason)
         if reason is not None and self.partner is not None:
             channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
             send_event(
@@ -201,9 +201,8 @@ class Player(TimeStampedModel):
                 data=reason,
             )
 
-    def unseat_me(self, reason: str | None = None) -> None:
+    def abandon_my_hand(self, reason: str | None = None) -> None:
         # TODO -- refactor this with "current_hand"
-        logger.info("Unseating %s because %s", self.name, reason)
         with transaction.atomic():
             h: Hand
             direction_name: str
@@ -413,11 +412,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             evictees.delete()
 
             self.partner.partner = None
-            self.partner.unseat_me()
+            self.partner.abandon_my_hand()
             self.partner.save(update_fields=["partner"])
 
             self.partner = None
-            self.unseat_me()
+            self.abandon_my_hand()  # superfluous, but harmless
             self.save(update_fields=["partner"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)

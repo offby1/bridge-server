@@ -469,7 +469,7 @@ class Tournament(models.Model):
     def abandon_all_hands(self, reason: str) -> None:
         with transaction.atomic():
             for player in self.players():
-                player.unseat_me(reason=reason)
+                player.abandon_my_hand(reason=reason)
                 player.save()
 
     def maybe_complete(self) -> None:
