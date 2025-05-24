@@ -1,4 +1,22 @@
 IN PROGRESS:
+* More than once, I've had a hand full of bots, but the bots just sit there, even though it's their turn to play.  "Bouncing" the bot fixes it -- i.e., learning the pk of the bot player (e.g. 6), then getting a shell in the django container, and typing e.g. `cd /service; svc -d 6; svc -u 6`).
+
+  I wonder if somehow the bot does its initial "get" to retrieve the state of the hand, at which point it's *not* its turn; then its RHO makes a call or play (so it should now be our bot's turn), but only *after* that does the bot start listening for SSE events?  That seems unlikely, since it's not doing much in between those two bits of code; but if so, perhaps it would help if the initial GET returned an event ID, and the bot passed that (perhaps-slightly-old) event ID to the SSE client call, thereby ensuring that it fetches any events it might have missed?
+
+  I wonder if I'm *already* doing something like the above, with the event IDs, but have somehow screwed it up, what with all the rearrangement of messages and channels?
+
+  I see that <http://localhost:9000/serialized/hand/3/> shows
+  ```
+  "board": 2,
+  "current_event_ids_by_player_name": {
+    "_rhonda": "player%3Ahtml%3Ahand%3A3:34",
+    "_sydnor": "player%3Ahtml%3Ahand%3A7:10",
+    "_bodie": "player%3Ahtml%3Ahand%3A4:36",
+    "_randy": "player%3Ahtml%3Ahand%3A8:36"
+  },
+  ```
+  which certainly seems wrong: those event IDs are clearly for the *browser* to update HTML; whereas the bot consumes *JSON* events.
+
 * After the last trick, the interactive hand doesn't switch to the read-only view.
 
 * In the interactive view (on desktop, with browser window maximized), half of the east/west cards are cut off, because the font is so damned big.  And whatever container they're in doesn't allow scrolling.

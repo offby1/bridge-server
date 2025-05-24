@@ -713,8 +713,9 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         json.dumps(
             {
                 "board": hand.board.display_number,
+                # Only the bot pays attention to this, so we include JSON events, not HTML ones.
                 "current_event_ids_by_player_name": {
-                    p.name: get_current_event_id([p.event_HTML_hand_channel])
+                    p.name: get_current_event_id([p.event_JSON_hand_channel])
                     for _, p in hand.players_by_direction_letter.items()
                 },
                 "table": hand.table_display_number,
