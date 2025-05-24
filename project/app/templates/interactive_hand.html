@@ -108,7 +108,8 @@
              /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
              window.location.reload();
          } else if ("final_score" in data) {
-             console.log ("TODO: The hand is over; so I guess I should, uh, load either the next hand, or just the user's home page");
+             /* The hand is over.  Let's move on to the next thing. */
+             window.location.reload();
          }
      }, false);
 
