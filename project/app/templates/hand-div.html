@@ -1,5 +1,5 @@
 {% load fastdev %}
-<div id="{{ id }}" class="{% if id == active_seat %}active{% endif %}">
+<div id="{{ id }}" {% if id == active_seat %}class="active"{% endif %}>
     <div id="toast-one-hand">
         <div class="toast-container">
             <div id="errorToast"
