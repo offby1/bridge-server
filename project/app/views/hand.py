@@ -106,9 +106,6 @@ def _redirect_or_error_response(
 
     login_page = HttpRedirectToNamedViewResponse(url=settings.LOGIN_URL + f"?next={request.path}")
 
-    if request.user is None:
-        return login_page
-
     player = getattr(request.user, "player", None)
 
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
@@ -128,11 +125,7 @@ def _redirect_or_error_response(
         )
 
     if player is None and not hand.board.tournament.is_complete:
-        localized_deadline = "forever"
-        if hand.board.tournament.play_completion_deadline is not None:
-            localized_deadline = str(
-                _localize(hand.board.tournament.play_completion_deadline, request)
-            )
+        localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline, request))
         return HttpResponseForbiddenWithViewName(
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
             f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
