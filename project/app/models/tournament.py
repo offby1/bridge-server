@@ -52,6 +52,9 @@ class NoPairs(Exception):
     pass
 
 
+WAY_DISTANT_PLAY_COMPLETION_DEADLINE = datetime.datetime.max.replace(tzinfo=datetime.UTC)
+
+
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     with transaction.atomic():
         if tour.hands().exists():
@@ -68,7 +71,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         tour.create_hands_for_round(zb_round_number=0)
         assert tour.hands().count() == tour.get_movement().num_rounds
 
-        if tour.play_completion_deadline is None:
+        if tour.play_completion_deadline == WAY_DISTANT_PLAY_COMPLETION_DEADLINE:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
 
@@ -200,7 +203,7 @@ class Tournament(models.Model):
 
     signup_deadline = models.DateTimeField()
     play_completion_deadline = models.DateTimeField(
-        default=datetime.datetime.max.replace(tzinfo=datetime.UTC),
+        default=WAY_DISTANT_PLAY_COMPLETION_DEADLINE,
         db_comment='"a billion years from now" means we don\'t yet know how many players we have, hence cannot compute a movement',
     )  # type: ignore[call-overload]
 
@@ -378,12 +381,16 @@ class Tournament(models.Model):
         return self.status() is Running
 
     def status(self) -> type[TournamentStatus]:
+        if self.is_complete:
+            return Complete
+
         now = timezone.now()
         if now < self.signup_deadline:
             return OpenForSignup
         if now < self.play_completion_deadline:
             return Running
 
+        logger.warning("I confess I don't understand how we got here.")
         return Complete
 
     def status_str(self) -> str:
