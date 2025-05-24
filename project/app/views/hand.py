@@ -211,7 +211,6 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
         "bidding_box_buttons": buttons,
         "display_bidding_box": display_bidding_box,
         "disabled": disabled,
-        "next_seat_to_call": "errm",
     }
 
 
