@@ -80,6 +80,8 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
   Of course, I better censor the events so that they don't reveal the calls, or the cards played, to players who haven't yet played that board.
 
+  This *might* be obviated by all the work I'm doing on the "carousel-via-css" branch.
+
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
 
 * app:hand-list should have a way to filter the rows by tournament number
@@ -95,8 +97,6 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
   Only let them do this if I've got a confirmed email address for them; I imagine that'd reduce spam.
 
   I *think* "Getting a confirmed email address" is something that django, or a widely-used third-party library, can do for me.
-
-* When a tournament's signup deadline has passed, but the play deadline hasn't; *and* all of the signed-up players have played as much as they can play (whatever that means), then force the tournament to complete.  Otherwise, everyone has to sit around waiting for the play deadline to expire before they can see the boards/hands.
 
 * player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
 
@@ -115,14 +115,17 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
     > Django-q2 looks like it lands in the middle for features but has strong support for several different backends
 
 
-* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to
-  match up the bot's logs with the server's.
+* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to match up the bot's logs with the server's.
+
+  I thought I was doing this, but making a call in the browser, with the developer tools on, certainly doesn't show that header in the POST respose.
 
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
 
   Maybe change `player_who_may_call` and `player_who_may_play` to return directions instead of players.
+
+  Also: maybe only ever pass primary keys to the bridge library (where it wants a name).
 
 * After finding a partner, the next step should be a choice:
   - join a tournament
@@ -140,16 +143,6 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
 * An RSS feed! Maybe each completed hand, or each completed tournament, would appear in it.
 
-* A scenario
-
-  - I let the bot play for me
-  - The hand completes, so I'm looking at the "next board plz" button
-  - I change my mind and turn off the "let the bot play for me"
-  - I click the "next board plz" button
-  - I discover that the hand is in progress -- and if the auction is over, I don't get to see it.  I get to see the *contract* but not the calls that led up to it.
-
-  I guess I need a "review the bidding" button? :-\
-
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
 
 * Whatever happened to lobby chat?  It must have slipped into a crack at some point.
@@ -164,37 +157,9 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
   Yikes, that was a long time ago.
 
-* Make the UI not suck.
-
-  It *sometimes* jumps a little when a new call or play gets displayed.
-
-  I think I see what's happening: when the page loads, the auction history (I'm guessing) is displayed scrolled to ensure that its *top* is visible.  But then I have some `onLoad` magic that scrolls to ensure the *bottom* is visible, since that's the most interesting part.
-
-* Totally rethink access control.
-
-  * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
-
-  * Anonymous users must not be allowed to watch a hand in progress.  Why not? Because it'd be too easy for a player to fire up an incognito window and peek at a hand that they will later play.
-
-    Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
-
-    Perhaps a specialized decorator for views?
-
-  * After `just dcu` (commit c8a78a9), logged in as "bob", https://laptop.tail571dc2.ts.net/table/ shows (correctly)
-    Table 5 Hand 5 -- Board #2 (tournament 1), Neither side vulnerable, dealt by West: ('Sorry, bob, but you have not completely played board Board #2 (tournament 1), so later d00d', '-')
-    However when I click that link, it shows me the hand :-|  Granted, it shows me only West's cards, and I am indeed West; but still this seems inconsistent.
-
 * Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
 
 * Consider alternate ASGI server (as opposed to "daphne"): uvicorn + <https://github.com/sysid/sse-starlette>
-
-* Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
-
-* Try moving app.views.player.control_bot_for_player into app.models.player, and having that model's "save" method invoke it (or maybe even use django signals or something).  That way I could mass-update all the players to be bots, or not; currently I have to then log in as each one individually and toggle the little toggle thingy.
-
-* Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're disturbing.
-
-* Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
 
 * A legend! The hand detail should explain that
   - the little downarrow is the trick's led card
@@ -211,18 +176,9 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
 * Rethink at least some of my URLS -- e.g. when I am looking at hand 97, and click a card to play it, the POST goes to e.g. "/play/94/".  I'd have expected it to go instead to "/play/97/", but that 94 is a *seat_id*, not a *hand* ID.  Confusing.
 
-* Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
-
-* Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
-  - "Table" joins "Hand" and "Seat"
-  - "Hand" joins "Call" and "Play"
-
-  Perhaps officially recognize that by rewriting the relevant models to use ManyToMany fields.
-  https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.ManyToManyField.through
-
 * Maybe have one player -- django admin, perhaps -- have super-user powers: can see all cards, can poke the bot, &c, even in "prod".
 
-* In the table archive view:
+* In the hand archive view:
 
   - Maybe have a thingy which, when I hover over one of the cards in the hand, it points to the trick in which that card was played?
   - Or have it be a link instead of a tooltip?  And the destination -- the row in the 13-row table -- should also have a link to take you back to the hand, so you don't have to scroll around to get back.
@@ -236,25 +192,6 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
   Perhaps allow each table to set its own tempo, down to some minimum that will keep the server unstressed, and the browsers capable of following along (1/2 second might be OK).
 
 * "Claim" and "Concede" buttons, at least if you're declarer
-
-* Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
-
-* Consider timestamps for important stuff, in particular calls and plays.
-
-  I'm referring to columns in the db, not just an entry in the little SSE events that we send.
-
-* Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
-
-  I seem to be slowly moving towards this; most of what was previously associated with Table is now associated with Hand.
-
-* Think about optimization (without actually doing it, since that would be premature):
-  Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
-
-  So, consider which events really need to be public, and which can be "private".
-
-  e.g player_detail_view sends "splitsville" (to the "partnerships" channel) in response to a player clicking the button, but surely only (at most) four players need to know about this *instantly*; other people can reload the page to find out who's partnered with whom.
-
-  Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
 
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
   In particular: I should make this like every other website with built-in chat:
@@ -280,10 +217,6 @@ using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
 
 * After each hand has been played:
   - Before the table vanishes, maybe the players can chat with each other?
-  - I guess let any player break up the table
-    - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
-  - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
-
 
 MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
@@ -1153,6 +1086,45 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* A scenario
+
+  - I let the bot play for me
+  - The hand completes, so I'm looking at the "next board plz" button
+  - I change my mind and turn off the "let the bot play for me"
+  - I click the "next board plz" button
+  - I discover that the hand is in progress -- and if the auction is over, I don't get to see it.  I get to see the *contract* but not the calls that led up to it.
+
+  I guess I need a "review the bidding" button? :-\
+
+  Meh.  There's no longer any "next board plz" button :-)
+
+* Consider passing a "read timeout" to the SSE client; I don't know exactly what this would do, but perhaps it would cause it to raise a StopIteration exception after that much time has passed with no events; that would be handy as a way to resynch.
+
+  I confess I haven't tested this, but I'd *hope* that there's no need to do this, given that the serialized-hand view includes some event IDs, and the bot passes those back to the server when it starts the SSEClient loop.
+
+* Consider some sort of partners-ranked-by-score page.  It would show each partnership (including those that have since split up); it'd be ordered by number of boards won by that partnership.
+
+  This is close enough to the existing end-of-tournament score that I'm'a call it done.
+
+* Seeing a number of `Invalid request: Can't resume session after stream-error.` errors in the console
+
+  Haven't seen this in forever
+
+* Both the "Table" and "Hand" models are effectively "join" tables for many-to-many relationships:
+  - "Table" joins "Hand" and "Seat"
+  - "Hand" joins "Call" and "Play"
+
+  Perhaps officially recognize that by rewriting the relevant models to use ManyToMany fields.
+  https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.ManyToManyField.through
+
+  Dunno what I was thinking -- calls and plays are many-to-one with hands, not many-to-many
+
+* After each hand has been played:
+  - I guess let any player break up the table
+    - this would be tolerable if I did the "examining what you've done in the past" thing below, so that if the table vanishes on you, you can still examine the result at your leisure
+  - Alternative: require unanimity.  Have four buttons, one for each player.  Only the one for the current player is active.  Each says "I'm done reviewing this hand"; once all four have been pushed, we do ... whatever it is we do next.  (Next board, presumably)
+  Those things seem too disruptive in a tournament; I can't think of an equivalent from the real world of a duplicate club.
+
 * When I toggle the "let the bot play for me" button, my name doesn't update from e.g. "bob (bot-powered)" to "bob (independent)" everywhere; rather, I have to reload the page to see the new status.  This is annoying.
 
   In theory I could fix this by making every spot that displays the name, and hence might need updating, into a partial, and have it reload as needed.  That seems so tedious, though, that my heart sinks just thinking about it.
