@@ -12,9 +12,9 @@
         <h1 id="trick-counts-string">{{ hand.trick_counts_string }}</h1>
     </div>
     {% if hand.auction.found_contract %}
-        {% include "carousel_style_play.html" %}
+        {% include "carousel_style_play.html" with id=viewers_seat.name %}
     {% else %}
-        {% include "carousel_style_auction.html" %}
+        {% include "carousel_style_auction.html" with id=viewers_seat.name %}
     {% endif %}
 {% endblock content %}
 {% block upper-right-column %}
