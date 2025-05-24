@@ -1,50 +1,5 @@
 IN PROGRESS:
-* More than once, I've had a hand full of bots, but the bots just sit there, even though it's their turn to play.  "Bouncing" the bot fixes it -- i.e., learning the pk of the bot player (e.g. 6), then getting a shell in the django container, and typing e.g. `cd /service; svc -d 6; svc -u 6`).
-
-  I wonder if somehow the bot does its initial "get" to retrieve the state of the hand, at which point it's *not* its turn; then its RHO makes a call or play (so it should now be our bot's turn), but only *after* that does the bot start listening for SSE events?  That seems unlikely, since it's not doing much in between those two bits of code; but if so, perhaps it would help if the initial GET returned an event ID, and the bot passed that (perhaps-slightly-old) event ID to the SSE client call, thereby ensuring that it fetches any events it might have missed?
-
-  I wonder if I'm *already* doing something like the above, with the event IDs, but have somehow screwed it up, what with all the rearrangement of messages and channels?
-
-  I see that <http://localhost:9000/serialized/hand/3/> shows
-  ```
-  "board": 2,
-  "current_event_ids_by_player_name": {
-    "_rhonda": "player%3Ahtml%3Ahand%3A3:34",
-    "_sydnor": "player%3Ahtml%3Ahand%3A7:10",
-    "_bodie": "player%3Ahtml%3Ahand%3A4:36",
-    "_randy": "player%3Ahtml%3Ahand%3A8:36"
-  },
-  ```
-  which certainly seems wrong: those event IDs are clearly for the *browser* to update HTML; whereas the bot consumes *JSON* events.
-
-* I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
-
-  Which HTML things need to get updated?
-
-  | when                | HTML to include | which channel & why         | current status |
-  |---------------------+-----------------+-----------------------------+----------------|
-  | auction: every call | current auction | hand: observers             | ok             |
-  | auction: every call | bidding box     | player: so they can call    | ok             |
-  | play: every play    | our hand        | player                      |                |
-  | play: every play    | dummy           | hand: observers and players |                |
-  | play: every play    | current trick   | hand: observers and players | ok             |
-
-  Maybe I should have more than just two channels.  Here I propose some, showing the URL, channel name, and description for each:
-
-  | url                                               | channel name                           | wozzit fur                                                                                                                |
-  |---------------------------------------------------+----------------------------------------+---------------------------------------------------------------------------------------------------------------------------|
-  | events/player/html/hand/<player_id>/              | player:html:hand:{player_id}           | for human player using a browser. Payload is HTML for their bidding box or hand, as appropriate.                          |
-  | events/player/html/chat/<receiving_player_id>/[a] | player:html:chat:{receiving_player_id} | for human player using a browser. Payload is HTML for an incoming chat.                                                   |
-  | events/player/json/<player_id>/                   | player:json:{player_id}                | strictly for the bot.  Shows calls and plays in the player's current hand.                                                |
-  | events/table/html/<hand_id>/                      | table:html:{hand_id}                   | for observers and the player: shows the current auction when that's relevant; otherwise shows current trick and the dummy |
-
-  [a] the message will include the name of the sender; the system will both add that name, and prohibit illegal chats (like from one partner to another when seated).
-
-  - probably a channel for lobby chats, although those fell off the face of the Earth long ago :-)
-
-  I don't have a "table:json" channel.  Such a channel would make sense, so that I could send calls and plays just once, instead of four times; but it'd require that I figure out how to let the bot listen to two channels "at once" -- this hypothetical table:json channel, *plus* the existing player:json channel.  (Now that I think about it, there might not be any truly private information in that latter existing channel!)
-
-* About the above: perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
+* Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
 * I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
 
@@ -56,12 +11,13 @@ STILL TODO:
 
 - perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
 
-using `2025-05-08T20:21:22+0000.sql`, looking at <http://localhost:9000/x/1/>:
-- different cards have different widths on my Pixel 7.  Interestingly, at <http://localhost:9000/hand/1/>, they're all the same width.  I've fiddled with various values for "font-family" and none works on both :-\
+- different cards have different widths on my Pixel 7.  Interestingly, at <http://localhost:9000/hand/1/>, they're all the same width.  I've fiddled with various values for "font-family" and none works on both :-\  See the "font-trouble" folder.
 
-  I suspect that none of the fonts I've tried for Android have equally-sized suit glyphs.  Perhaps I should try the "meslo nerd font", which I used to use on desktop for exactly this reason (it's the only monospaced font I can think of offhand where the characters are really the same width).  However, it's not obvious how I can serve up those fonts -- Google's fonts, e.g., each come with a nice bunch of HTML and CSS that I can just copy-n-paste, but the nerd fonts don't.
+  I suspect that none of the fonts I've tried for Android have equally-sized suit glyphs.
 
-  Rather than find *exactly* the right font, surely there's some way I can tell my CSS to make each button exactly the same width.  I just don't (yet) know how, although I imagine [my exercism class](https://exercism.org/courses/front-end-fundamentals) will eventually cover that.
+  - Perhaps I should try the "meslo nerd font", which I used to use on desktop for exactly this reason (it's the only monospaced font I can think of offhand where the characters are really the same width).  However, it's not obvious how I can serve up those fonts -- Google's fonts, e.g., each come with a nice bunch of HTML and CSS that I can just copy-n-paste, but the nerd fonts don't.
+
+  - Rather than find *exactly* the right font, surely there's some way I can tell my CSS to make each button exactly the same width.  I just don't (yet) know how, although I imagine [my exercism class](https://exercism.org/courses/front-end-fundamentals) will eventually cover that.
 
 - if I mess with font size and browser size, I can make the cards expand to exceed the size allotted to them, so a vertical scrollbar appears
 
@@ -220,6 +176,33 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
+
+  Which HTML things need to get updated?
+
+  | when                | HTML to include | which channel & why         | current status |
+  |---------------------+-----------------+-----------------------------+----------------|
+  | auction: every call | current auction | hand: observers             | ok             |
+  | auction: every call | bidding box     | player: so they can call    | ok             |
+  | play: every play    | our hand        | player                      |                |
+  | play: every play    | dummy           | hand: observers and players |                |
+  | play: every play    | current trick   | hand: observers and players | ok             |
+
+  Maybe I should have more than just two channels.  Here I propose some, showing the URL, channel name, and description for each:
+
+  | url                                               | channel name                           | wozzit fur                                                                                                                |
+  |---------------------------------------------------+----------------------------------------+---------------------------------------------------------------------------------------------------------------------------|
+  | events/player/html/hand/<player_id>/              | player:html:hand:{player_id}           | for human player using a browser. Payload is HTML for their bidding box or hand, as appropriate.                          |
+  | events/player/html/chat/<receiving_player_id>/[a] | player:html:chat:{receiving_player_id} | for human player using a browser. Payload is HTML for an incoming chat.                                                   |
+  | events/player/json/<player_id>/                   | player:json:{player_id}                | strictly for the bot.  Shows calls and plays in the player's current hand.                                                |
+  | events/table/html/<hand_id>/                      | table:html:{hand_id}                   | for observers and the player: shows the current auction when that's relevant; otherwise shows current trick and the dummy |
+
+  [a] the message will include the name of the sender; the system will both add that name, and prohibit illegal chats (like from one partner to another when seated).
+
+  - probably a channel for lobby chats, although those fell off the face of the Earth long ago :-)
+
+  I don't have a "table:json" channel.  Such a channel would make sense, so that I could send calls and plays just once, instead of four times; but it'd require that I figure out how to let the bot listen to two channels "at once" -- this hypothetical table:json channel, *plus* the existing player:json channel.  (Now that I think about it, there might not be any truly private information in that latter existing channel!)
+
 * Do the carousel thing to the auction, just as we did to the play.
 
   I've marked up the divs with some new ids.  The divs that we want to include in the carousel are
