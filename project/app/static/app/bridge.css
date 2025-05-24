@@ -62,18 +62,6 @@ ul.carousel {
   overflow-x: scroll;
   scroll-snap-type: x mandatory;
   anchor-name: --myCarousel;
-  scroll-marker-group: after;
-}
-
-ul.carousel::scroll-marker-group {
-  position: absolute;
-  position-anchor: --myCarousel;
-  top: calc(anchor(bottom) - 70px);
-  justify-self: anchor-center;
-
-  display: flex;
-  justify-content: center;
-  gap: 20px;
 }
 
 ul.carousel::scroll-button(*) {
@@ -100,6 +88,28 @@ ul.carousel::scroll-button(*):disabled {
   cursor: unset;
 }
 
+ul::scroll-button(left) {
+  content: "◄";
+}
+
+ul::scroll-button(right) {
+  content: "►";
+}
+
+ul::scroll-button(*) {
+  position: absolute;
+  position-anchor: --myCarousel;
+  align-self: anchor-center;
+}
+
+ul::scroll-button(left) {
+  right: calc(anchor(left) - 45px);
+}
+
+ul::scroll-button(right) {
+  left: calc(anchor(right) - 45px);
+}
+
 li.carousel {
   list-style-type: none;
   background-color: #eee;
@@ -108,18 +118,6 @@ li.carousel {
 
   flex: 0 0 100%;
   scroll-snap-align: center;
-}
-
-li.carousel::scroll-marker {
-  content: "";
-  width: 16px;
-  height: 16px;
-  background-color: transparent;
-  border: 2px solid black;
-  border-radius: 50%;
-}
-li.carousel::scroll-marker:target-current {
-  background-color: black;
 }
 
 .bigfont {
