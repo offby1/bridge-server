@@ -11,14 +11,6 @@ STILL TODO:
 
 - perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
 
-- different cards have different widths on my Pixel 7.  Interestingly, at <http://localhost:9000/hand/1/>, they're all the same width.  I've fiddled with various values for "font-family" and none works on both :-\  See the "font-trouble" folder.
-
-  I suspect that none of the fonts I've tried for Android have equally-sized suit glyphs.
-
-  - Perhaps I should try the "meslo nerd font", which I used to use on desktop for exactly this reason (it's the only monospaced font I can think of offhand where the characters are really the same width).  However, it's not obvious how I can serve up those fonts -- Google's fonts, e.g., each come with a nice bunch of HTML and CSS that I can just copy-n-paste, but the nerd fonts don't.
-
-  - Rather than find *exactly* the right font, surely there's some way I can tell my CSS to make each button exactly the same width.  I just don't (yet) know how, although I imagine [my exercism class](https://exercism.org/courses/front-end-fundamentals) will eventually cover that.
-
 - if I mess with font size and browser size, I can make the cards expand to exceed the size allotted to them, so a vertical scrollbar appears
 
 * Terminology trouble: I use the word "hand" to refer to two different things:

@@ -139,6 +139,7 @@ li.carousel::scroll-marker:target-current {
     display: flex;
     flex-direction: row;
     align-items: center;
+    div { span, button {width: 2em; }}
 }
 .hearts, .diamonds {
     color: red;
