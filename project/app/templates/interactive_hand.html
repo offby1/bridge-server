@@ -96,6 +96,11 @@
              const dummy_html = data["dummy_html"];
              const dummy_direction = data["dummy_direction"];
              const container = document.getElementById (dummy_direction);
+             if (container === null) {
+                 /* The auction ended, but we're still showing the auction carousel. Reload to pick up the play carousel. */
+                 window.location.reload();
+                 return;
+             }
              container.outerHTML = dummy_html;
 
              htmx.process(document.getElementById (dummy_direction));
