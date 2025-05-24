@@ -17,8 +17,6 @@ IN PROGRESS:
   ```
   which certainly seems wrong: those event IDs are clearly for the *browser* to update HTML; whereas the bot consumes *JSON* events.
 
-* In the interactive view (on desktop, with browser window maximized), half of the east/west cards are cut off, because the font is so damned big.  And whatever container they're in doesn't allow scrolling.
-
 * I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 
   Which HTML things need to get updated?
