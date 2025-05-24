@@ -23,8 +23,7 @@ logger = logging.getLogger()
 
 class HandState(enum.Enum):
     incomplete = enum.auto()
-    abandoned = enum.auto()
-    complete = enum.auto()
+    complete_or_abandoned = enum.auto()
 
 
 class TournamentState(enum.Enum):
@@ -102,10 +101,8 @@ def various_flavors_of_hand(
 
         the_hand = None
         match hand_state:
-            case HandState.complete:
+            case HandState.complete_or_abandoned:
                 the_hand = the_tournament.hands().filter(abandoned_because__isnull=True).first()
-            case HandState.abandoned:
-                the_hand = the_tournament.hands().filter(abandoned_because__isnull=False).first()
             case HandState.incomplete:
                 # Can't have a complete tournament with an incomplete hand.
                 if tournament_state == TournamentState.complete:
@@ -127,60 +124,93 @@ def various_flavors_of_hand(
     return dict(hands_by_hand_state_by_tournament_state)
 
 
+# pytest parameters for test_both_important_views, below.
+complete_tournament = [
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.anonymoose,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.has_no_player,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.played_the_hand,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.did_not_play_the_hand,
+        "app:hand-everything-read-only",
+    ),
+]
+
+
+incomplete_tournament = [
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.anonymoose,
+        "login",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.has_no_player,
+        "login",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.played_the_hand,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.did_not_play_the_hand,
+        "forbidden",
+    ),
+]
+
+incomplete_hand = [
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.anonymoose,
+        "login",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.has_no_player,
+        "login",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.played_the_hand,
+        "app:hand-detail",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.did_not_play_the_hand,
+        "forbidden",
+    ),
+]
+
+
 @pytest.mark.parametrize(
     ("hand_state", "tournament_state", "player_type", "expected_view"),
-    [
-        # Complete tournament: eva buddy see eva thang
-        (
-            HandState.complete,
-            TournamentState.complete,
-            PlayerType.anonymoose,
-            "app:hand-everything-read-only",
-        ),
-        (
-            HandState.complete,
-            TournamentState.complete,
-            PlayerType.has_no_player,
-            "app:hand-everything-read-only",
-        ),
-        (
-            HandState.complete,
-            TournamentState.complete,
-            PlayerType.played_the_hand,
-            "app:hand-everything-read-only",
-        ),
-        (
-            HandState.complete,
-            TournamentState.complete,
-            PlayerType.did_not_play_the_hand,
-            "app:hand-everything-read-only",
-        ),
-        # Incomplete tournament: it all depends
-        (
-            HandState.complete,
-            TournamentState.incomplete,
-            PlayerType.anonymoose,
-            "login",
-        ),
-        (
-            HandState.complete,
-            TournamentState.incomplete,
-            PlayerType.has_no_player,
-            "login",
-        ),
-        (
-            HandState.complete,
-            TournamentState.incomplete,
-            PlayerType.played_the_hand,
-            "app:hand-everything-read-only",
-        ),
-        (
-            HandState.complete,
-            TournamentState.incomplete,
-            PlayerType.did_not_play_the_hand,
-            "forbidden",
-        ),
-    ],
+    complete_tournament + incomplete_tournament + incomplete_hand,
 )
 def test_both_important_views(
     rf: Any,
