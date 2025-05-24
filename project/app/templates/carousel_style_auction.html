@@ -3,7 +3,7 @@
 <ul class="carousel">
     <li class="carousel">{% include "auction.html" %}</li>
     <li class="carousel">
-        <div>{% include "hand-div.html" with cards=card_display.current_player.cards %}</div>
+        <div>{% include "hand-div.html" with cards=card_display.current_player.cards class="hand bigfont" %}</div>
     </li>
     <li class="carousel" id="toast-and-bidding-box">{% include "bidding-box.html" %}</li>
 </ul>

@@ -2,6 +2,14 @@ xx* {
     outline: 1px solid red;
 }
 
+#four-hands {
+    border: 1px solid;
+    height: 50%;
+    font-family: monospace;
+    display: grid;
+    grid-template-columns: auto auto auto;
+}
+
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
 .inactive-button {
   pointer-events: none;
@@ -88,25 +96,25 @@ ul.carousel::scroll-button(*):disabled {
   cursor: unset;
 }
 
-ul::scroll-button(left) {
+ul.carousel::scroll-button(left) {
   content: "◄";
 }
 
-ul::scroll-button(right) {
+ul.carousel::scroll-button(right) {
   content: "►";
 }
 
-ul::scroll-button(*) {
+ul.carousel::scroll-button(*) {
   position: absolute;
   position-anchor: --myCarousel;
   align-self: anchor-center;
 }
 
-ul::scroll-button(left) {
+ul.carousel::scroll-button(left) {
   right: calc(anchor(left) - 45px);
 }
 
-ul::scroll-button(right) {
+ul.carousel::scroll-button(right) {
   left: calc(anchor(right) - 45px);
 }
 

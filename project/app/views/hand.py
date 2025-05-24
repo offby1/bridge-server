@@ -398,6 +398,7 @@ def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -
     context = _hand_div_context(hand=hand, player=player)
     if not context:
         return escape("""<div>No hand for you!</div>""")
+    context = context | {"class": "hand bigfont"}
     return render_to_string("hand-div.html", context)
 
 

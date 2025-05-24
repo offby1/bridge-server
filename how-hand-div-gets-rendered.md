@@ -9,8 +9,9 @@
 
 ✓ `app.views.hand_detail_view` renders `interactive_hand.html` which includes `carousel_style_play.html`    which includes `hand-div.html`
 
-`hand-div.html` needs these variables:
+## `hand-div.html` needs these variables:
 
-- `id` whose value one of "North", "East", "South", or "West".
-- `cards` whose value is a somewhat complex pile of bootstrap buttons
 - `active_seat` whose value is either the empty string, or one of "North", "East", "South", or "West".
+- `cards` whose value is a somewhat complex pile of bootstrap buttons
+- `class` whose value is a string that determines the CSS classes of the innermost container
+- `id` whose value one of "North", "East", "South", or "West".
