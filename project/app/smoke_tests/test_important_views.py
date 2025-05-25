@@ -11,7 +11,7 @@ import pytest
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.management import call_command
 
-from app.models import Hand, Player, Tournament
+from app.models import Board, Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff, check_for_expirations
 
 from app.views.hand import everything_read_only_view, hand_detail_view
@@ -67,8 +67,7 @@ def _completed_tournament(db: Any):
         t.abandon_all_hands(
             reason=f"t#{t.display_number}'s play completion deadline ({t.play_completion_deadline}) has passed"
         )
-        h = t.hands().filter(abandoned_because__isnull=False).first()
-        assert h is not None
+        assert t.hands().filter(abandoned_because__isnull=False).count() == 1
         check_for_expirations(t)
         t.refresh_from_db()
         assert t.is_complete
@@ -103,6 +102,9 @@ def various_flavors_of_hand(
         match hand_state:
             case HandState.complete_or_abandoned:
                 the_hand = the_tournament.hands().filter(abandoned_because__isnull=True).first()
+                assert the_hand is not None, (
+                    f"well, so far {dict(hands_by_hand_state_by_tournament_state)=}"
+                )
             case HandState.incomplete:
                 # Can't have a complete tournament with an incomplete hand.
                 if tournament_state == TournamentState.complete:
@@ -112,10 +114,7 @@ def various_flavors_of_hand(
             case _:
                 assert not f"Well, this is embarrassing.  wtf is {hand_state=}?"
 
-        assert the_hand is not None, (
-            f"well, so far {dict(hands_by_hand_state_by_tournament_state)=}"
-        )
-
+        # unclear why I'm doing this :-(
         the_hand.board.tournament = the_tournament
         the_hand.board.save()
 
@@ -247,4 +246,35 @@ def test_both_important_views(
                 resp = v(request=request, pk=hand.pk)
                 assert resp.viewname == expected_view
         case _:
-            assert False, "wtf"
+            assert False, f"wtf is {expected_view=}"
+
+
+# I tried to incorporate this test into test_both_important_views above, but it was a mess.
+def test_weirdo_special_case(db, rf):
+    t1 = Tournament.objects.create()
+    b1, _ = Board.objects.get_or_create_from_display_number(
+        display_number=1, tournament=t1, group="A"
+    )
+    North, South, East, West = [Player.objects.create_synthetic() for _ in range(4)]
+    North.partner_with(South)
+    East.partner_with(West)
+    Ding, Dong, Witch, Dead = [Player.objects.create_synthetic() for _ in range(4)]
+    Ding.partner_with(Dong)
+    Witch.partner_with(Dead)
+    h1 = Hand.objects.create(
+        board=b1, North=North, East=East, West=West, South=South, table_display_number=1
+    )
+    h2 = Hand.objects.create(
+        board=b1, North=Ding, East=Dong, West=Witch, South=Dead, table_display_number=2
+    )
+    play_out_hand(h1)
+
+    # North can "see" all of h1.
+    request = rf.get("/woteva/", data={"pk": h1.pk})
+    setattr(request, "session", {})
+    request.user = North.user
+
+    assert everything_read_only_view(request=request, pk=h1.pk).status_code == 200
+
+    # North can also "see" all of h2, even though it's not complete.
+    assert everything_read_only_view(request=request, pk=h2.pk).status_code == 200

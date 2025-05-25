@@ -7,6 +7,7 @@
 - if player P has already played hand H *and* H is *completed*, they can see everything about both. (test_player_has_played_board)
 - if player P is *currently* playing hand H, they can see only their own cards, and the dummy. (test_player_has_played_board, test_one_card_played)
   Also, maybe: the auction history, and the play history.  In real tournaments, the auction history vanishes once it has settled, and the only play history that is visible is the current trick.
+- if player P has already completed a hand H with board B, and wants to look at *incomplete* hand I that *also* includes board B, they can see everything. (test_weirdo_special_case)
 """
 
 import datetime
