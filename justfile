@@ -227,7 +227,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
+dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key ensure_bot_is_on_same_branch
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
