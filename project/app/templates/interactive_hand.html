@@ -88,10 +88,14 @@
              const trick_html = data["trick_html"];
              const container = document.getElementById("_3x3-container");
              container.innerHTML = trick_html;
+
+             document.querySelector("#_3x3-container").scrollIntoView()
          } else if ("auction_history_html" in data) {
              const auction_history_html = data["auction_history_html"]
              const container = document.getElementById ("auction");
              container.innerHTML = auction_history_html;
+
+             document.querySelector("#auction").scrollIntoView()
          } else if ("dummy_html" in data) {
              const dummy_html = data["dummy_html"];
              const dummy_direction = data["dummy_direction"];
