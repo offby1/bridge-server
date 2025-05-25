@@ -710,12 +710,9 @@ class Hand(TimeStampedModel):
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
 
-                self.send_events_to_players_and_hand(
+                self.send_HTML_to_table(
                     data={
                         "final_score": final_score_text,
-                        "table": self.table_display_number,
-                        "tournament": self.tournament.pk,
-                        "tournament_is_complete": self.tournament.is_complete,
                     },
                 )
 

@@ -96,20 +96,24 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score() -> None:
+def test_sends_final_score_just_to_table() -> None:
     h = Hand.objects.get(pk=1)
 
     assert h.player_who_may_play is not None
     libPlayer = h.player_who_may_play.libraryThing()
     libCard = bridge.card.Card.deserialize("♠A")
 
-    with CapturedEventsFromChannels(h.event_table_html_channel) as cap:
-        h.add_play_from_player(player=libPlayer, card=libCard)
+    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+
+    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
+        with CapturedEventsFromChannels(h.event_table_html_channel) as table_cap:
+            h.add_play_from_player(player=libPlayer, card=libCard)
 
     def sought(datum):
-        return "final_score" in datum and "table" in datum
+        return "final_score" in datum
 
-    assert any(sought(d.data) for d in cap.events)
+    assert any(sought(d.data) for d in table_cap.events)
+    assert not any(sought(d.data) for d in hand_html_cap.events)
 
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
