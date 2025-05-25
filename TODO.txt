@@ -1,17 +1,27 @@
 IN PROGRESS:
+
+STILL TODO:
+* I'm fuzzy on the details, but I think I was logged in as a player who wasn't the declarer or dummy; after the last trick was played, the browser loaded my "player home page" (e.g. `/player/1/`) instead of something more useful, like the next hand, or the review of the previous hand.
+
+* If I'm not looking at the "current trick" slide, it can acquire crucial information (namely: cards played by other seats), and then disappear, without me ever seeing it.  Imagine I lead a card, and don't scroll away from my hand.  Now three other players will play; one of them wins the trick and leads to the next.  Eventually my hand's background will turn light green, telling me it's my turn to play the trick ... but I won't have seen the previous trick -- the three cards that followed mine are now gone.
+
+  So, maybe ...
+
+  - automatically scroll to the current trick as soon as I've played a card?
+  - replace the "current trick" slide with a much smaller doohickey on every remaining slide?
+  - Add a "previous trick" slide (perhaps above the "current trick" slide)?
+  - Have the server enforce a pause of a couple of seconds before anyone can lead to the 2nd-13th tricks?
+
 * Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
 * I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
 
-
-STILL TODO:
+* What should I do about a player who doesn't call or play within a reasonable amount of time?
+
+  - certainly allow people at the table to yell at them via chat
+  - perhaps "mark" them as an "unreliable player" or something, and make that mark visible to everyone?
+
 * Make error pages extend the same base.html template that everything else does.  For example: I'm not logged in, and am looking at <http://127.0.0.1:9000/hand/1/>, whose entire content is `<html><head></head><body>This tournament (#1) won't yet complete until 2035-05-13 02:41:08.570023+00:00, so anonymous users such as yourself can't see this hand now.</body></html>`.  That's informative, but it'd be more useful if there were, say, a "home" link, &c.
-
-* Carousel notes:
-
-- perhaps, after playing a card and reloading the page, we should show the "current trick" slide as the default, since that's certain to have new information (my hand, and the dummy's hand, only change once per trick, whereas the current trick changes four times per trick).
-
-- if I mess with font size and browser size, I can make the cards expand to exceed the size allotted to them, so a vertical scrollbar appears
 
 * Terminology trouble: I use the word "hand" to refer to two different things:
 
@@ -34,7 +44,7 @@ STILL TODO:
 
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
 
-  The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands.
+  The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands; and in general, will be more civilized.
 
   Maybe make the "who looked at which hands when" information visible to everyone, as further disincentive.
 
