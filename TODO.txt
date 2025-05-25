@@ -1,8 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* I'm fuzzy on the details, but I think I was logged in as a player who wasn't the declarer or dummy; after the last trick was played, the browser loaded my "player home page" (e.g. `/player/1/`) instead of something more useful, like the next hand, or the review of the previous hand.
-
 * Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
 * I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
@@ -1069,6 +1067,10 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* I'm fuzzy on the details, but I think I was logged in as a player who wasn't the declarer or dummy; after the last trick was played, the browser loaded my "player home page" (e.g. `/player/1/`) instead of something more useful, like the next hand, or the review of the previous hand.
+
+  I could not reproduce this; I only saw it load the `/hand/xyzzy/archive` page, which is fine.
+
 * A scenario
 
   - I let the bot play for me
