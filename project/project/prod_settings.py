@@ -37,4 +37,7 @@ sentry_sdk.init(  # type: ignore
         ),
     ],
     release=VERSION,
+    _experiments={
+        "enable_logs": True,
+    },
 )
