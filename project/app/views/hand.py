@@ -134,9 +134,13 @@ def _redirect_or_error_response(
     assert player is not None
 
     if not player.has_played_hand(hand):
-        return HttpResponseForbiddenWithViewName(
-            "You haven't yet played this hand, so you cannot see it."
-        )
+        if hand.board in (h.board for h in player.hands_played if h.is_complete):
+            # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
+            return HttpRedirectToNamedViewResponse(
+                viewname="app:hand-everything-read-only", hand_pk=hand.pk
+            )
+        msg = f"You, {player}, haven't yet fully played thi's hand's board {hand.board}, so you cannot see the hand."
+        return HttpResponseForbiddenWithViewName(msg)
 
     return HttpRedirectToNamedViewResponse(viewname="app:hand-detail", hand_pk=hand.pk)
 
