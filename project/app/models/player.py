@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import pathlib
+import re
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -62,6 +63,14 @@ class PlayerManager(models.Manager):
         new_user = auth.models.User.objects.create_user(
             username=self._find_unused_username(prefix="_")
         )
+
+        # Handy for hackin', but you don't want this active in prod
+        ####################
+        # logger.warning(f"Hard-coding known password for {new_user.username=}")
+        # new_user.password = "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
+        # new_user.save()
+        ####################
+
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
 
     def get_or_create_synthetic(self, **exclude_kwargs) -> tuple[Player, bool]:
@@ -183,7 +192,7 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
-                    p.unseat_me(reason=reason)
+                    p.abandon_my_hand(reason=reason)
         if reason is not None and self.partner is not None:
             channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
             send_event(
@@ -192,9 +201,8 @@ class Player(TimeStampedModel):
                 data=reason,
             )
 
-    def unseat_me(self, reason: str | None = None) -> None:
+    def abandon_my_hand(self, reason: str | None = None) -> None:
         # TODO -- refactor this with "current_hand"
-        logger.info("Unseating %s because %s", self.name, reason)
         with transaction.atomic():
             h: Hand
             direction_name: str
@@ -209,15 +217,26 @@ class Player(TimeStampedModel):
         self._control_bot()
 
     @property
-    def event_channel_name(self):
-        return f"system:player:{self.pk}"
+    def event_HTML_hand_channel(self):
+        return f"player:html:hand:{self.pk}"
 
     @staticmethod
-    def player_pk_from_event_channel_name(cn: str) -> PK | None:
-        pieces = cn.split("system:player:")
-        if len(pieces) != 2:
-            return None
-        return PK_from_str(pieces[1])
+    def player_pk_from_event_HTML_hand_channel(cn: str) -> PK | None:
+        if (m := re.match(r"player:html:(?:hand|chat):(?P<player_id>.*)", cn)) is not None:
+            return PK_from_str(m.groups()[0])
+
+        return None
+
+    @property
+    def event_JSON_hand_channel(self):
+        return f"player:json:{self.pk}"
+
+    @staticmethod
+    def player_pk_from_event_JSON_hand_channel(cn: str) -> PK | None:
+        if (m := re.match(r"player:json:(?P<player_id>.*)", cn)) is not None:
+            return PK_from_str(m.groups()[0])
+
+        return None
 
     # https://cr.yp.to/daemontools/svc.html
     def _control_bot(self) -> None:
@@ -393,11 +412,11 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
             evictees.delete()
 
             self.partner.partner = None
-            self.partner.unseat_me()
+            self.partner.abandon_my_hand()
             self.partner.save(update_fields=["partner"])
 
             self.partner = None
-            self.unseat_me()
+            self.abandon_my_hand()  # superfluous, but harmless
             self.save(update_fields=["partner"])
 
         self._send_partnership_messages(action=SPLIT, old_partner_pk=old_partner_pk)
@@ -407,6 +426,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return self.current_hand_and_direction() is not None
 
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
+        """The string is a capitalized word, like "East"."""
         h: Hand
         direction_name: str
 
@@ -425,6 +445,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return ch[0]
 
     def current_direction(self) -> str | None:
+        """A whole, capitalized, word like 'East'"""
         ch = self.current_hand_and_direction()
         if ch is None:
             return None
@@ -468,9 +489,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         name = self.name
         if self.synthetic:
             name = format_html("<i>{}</i>", self.name)
+        style_attribute = "" if not style else f'style="{style}"'
         return format_html(
-            "<a style='{}' href='{}'>{}</a>",
-            style,
+            f'<a {style_attribute} href="{{}}">{{}}</a>',
             reverse("app:player", kwargs={"pk": self.pk}),
             name,
         )
@@ -514,5 +535,4 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]
     list_display = ["name", "synthetic", "allow_bot_to_play_for_me"]

@@ -1,10 +1,5 @@
 {% load fastdev %}
-<div id="four-hands"
-     style="border: 1px solid;
-            height: 50%;
-            font-family: monospace;
-            display: grid;
-            grid-template-columns: auto auto auto">
+<div id="four-hands">
     {# North at the top as per the Bridge Writing Style Guide #}
     {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
     <div></div>
@@ -17,15 +12,9 @@
         {{ card_display.West.player.display_name|safe }}:
         {% include "hand-div.html" with cards=card_display.West.cards id="west" %}
     </div>
-    <div>
+    <div id="_3x3-container">
         {% ifexists three_by_three_trick_display %}
-        <div style="display: grid; grid-template-columns: auto auto auto;">
-            {% for row in three_by_three_trick_display.rows %}
-                {% for column in row %}
-                    <div {% if column != " " %}style="border: 1px dotted; text-align: center;"{% endif %}>{{ column|safe }}</div>
-                {% endfor %}
-            {% endfor %}
-        </div>
+        {% include "3x3-trick-display.html" %}
     {% endifexists %}
 </div>
 <div>

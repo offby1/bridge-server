@@ -14,12 +14,12 @@ from app.models.types import PK
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
-    if request.user.is_anonymous and not board.tournament.is_complete:
+    if not request.user.is_authenticated and not board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
     my_hand = None
 
-    if not request.user.is_anonymous:
+    if request.user.is_authenticated:
         if (player := getattr(request.user, "player", None)) is not None:
             my_hand = player.hand_at_which_we_played_board(board)
 

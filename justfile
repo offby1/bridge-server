@@ -129,6 +129,14 @@ collectstatic: (manage "collectstatic --no-input")
 
 [group('django')]
 fixture *options: pg-stop drop migrate (manage "loaddata " + options)
+    @echo To create a new fixture, do e.g. "just dumpdata"
+
+alias loaddata := fixture
+
+[group('django')]
+dumpdata: all-but-django-prep ensure-skeleton-key version-file
+    just --no-deps manage dumpdata app auth | jq > {{ datetime_utc("%FT%T%z") }}.json
+    @echo Now move that file to project/app/fixtures
 
 # You can add  --print-sql-location to see a stack trace on *every* *damned* *query* :-)
 [group('django')]
@@ -164,25 +172,6 @@ curl-login:
     curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:9000/three-way-login/
 
 create-cache: (manage "createcachetable")
-
-# For production -- doesn't restart when a file changes.
-[group('bs')]
-[script('bash')]
-daphne: ft django-superuser migrate create-cache collectstatic ensure-skeleton-key
-    set -euo pipefail
-    cd project
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
-    set -x
-    poetry run daphne                                                               \
-      --verbosity                                                                   \
-      1                                                                             \
-      --bind                                                                        \
-      0.0.0.0                                                                       \
-      --port 9000 \
-      --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
-      project.asgi:application
 
 alias createsuperuser := django-superuser
 alias superuser := django-superuser
@@ -241,7 +230,7 @@ cover *options: (test options)
 [script('bash')]
 clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
-    git clean -dx --interactive
+    git clean -dxff
 
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
@@ -282,9 +271,16 @@ ensure_bot_is_on_same_branch:
     fi
 
 [group('docker')]
+[script('bash')]
 prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
-    CADDY_HOSTNAME=bridge.offby1.info COMPOSE_PROFILES=prod DOCKER_CONTEXT=hetz just dcu {{ options }} --detach
-    COMPOSE_PROFILES=prod                                   DOCKER_CONTEXT=hetz docker compose logs django --follow
+    set -euo pipefail
+
+    export COMPOSE_PROFILES=prod
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DOCKER_CONTEXT=hetz
+
+    CADDY_HOSTNAME=bridge.offby1.info just dcu {{ options }} --detach
+    docker compose logs django --follow
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke

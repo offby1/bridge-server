@@ -90,15 +90,25 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 
                 if t.is_complete:
                     items = t.matchpoints_by_pair().items()
-                    l_o_d = [
-                        {
-                            "pair1": pair[0],
-                            "pair2": pair[1],
-                            "matchpoints": score[0],
-                            "percentage": f"{int(round(score[1]))}%",
-                        }
-                        for pair, score in items
-                    ]
+                    l_o_d = []
+                    for pair, score in items:
+                        numeric_score = score[1]
+                        import math
+
+                        if math.isnan(numeric_score):
+                            string_score = "?"
+                        else:
+                            string_score = f"{int(round(numeric_score))}%"
+
+                        l_o_d.append(
+                            {
+                                "pair1": pair[0],
+                                "pair2": pair[1],
+                                "matchpoints": score[0],
+                                "percentage": string_score,
+                            }
+                        )
+
                     context["matchpoint_score_table"] = MatchpointScoreTable(l_o_d, request=request)
         else:
             msg = f"{t} is an old tournament whose boards don't belong to groups; no scores for you"
@@ -192,7 +202,7 @@ def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) ->
         "%s",
         f"#{t.display_number} {t.is_complete=} {t.signup_deadline=} {t.signup_deadline_has_passed()=}",
     )
-    if not t.is_complete and t.signup_deadline is not None and not t.signup_deadline_has_passed():
+    if not t.is_complete and not t.signup_deadline_has_passed():
         app.models.player.Player.objects.ensure_eight_players_signed_up(tournament=t)
 
         t.signup_deadline = timezone.now()

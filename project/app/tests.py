@@ -92,7 +92,7 @@ def test_player_names_are_links_to_detail_page(usual_setup):
     p = Player.objects.get_by_name("Jeremy Northam")
 
     link = p.as_link()
-    assert re.search(r"href='/player/.*>.*Jeremy Northam.*</a>", link)
+    assert re.search(r'href="/player/.*>.*Jeremy Northam.*</a>', link)
 
 
 def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) -> None:
@@ -350,7 +350,6 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) ->
 
 
 def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) -> None:
-    request = rf.get("/woteva/")
     h = usual_setup
 
     # Nobody done played nothin'
@@ -374,7 +373,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) 
     for tt in h.current_trick:
         expected_cards_by_direction[tt.seat.value] = tt.card.serialize()
 
-    ya = hand._three_by_three_trick_display_context_for_hand(request, h, xscript=h.get_xscript())
+    ya = hand._three_by_three_trick_display_context_for_hand(h, xscript=h.get_xscript())
     three_by_three_trick_display_rows = ya["three_by_three_trick_display"]["rows"]
 
     north_row, east_west_row, south_row = three_by_three_trick_display_rows

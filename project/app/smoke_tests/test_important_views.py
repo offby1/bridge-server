@@ -11,10 +11,10 @@ import pytest
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.management import call_command
 
-from app.models import Hand, Player, Tournament
-from app.models.tournament import _do_signup_expired_stuff
+from app.models import Board, Hand, Player, Tournament
+from app.models.tournament import _do_signup_expired_stuff, check_for_expirations
 
-from app.views.hand import hand_archive_view, hand_detail_view
+from app.views.hand import everything_read_only_view, hand_detail_view
 
 from app.testutils import play_out_hand
 
@@ -23,13 +23,19 @@ logger = logging.getLogger()
 
 class HandState(enum.Enum):
     incomplete = enum.auto()
-    abandoned = enum.auto()
-    complete = enum.auto()
+    complete_or_abandoned = enum.auto()
 
 
 class TournamentState(enum.Enum):
     incomplete = enum.auto()
     complete = enum.auto()
+
+
+class PlayerType(enum.Enum):
+    anonymoose = enum.auto()
+    has_no_player = enum.auto()
+    played_the_hand = enum.auto()
+    did_not_play_the_hand = enum.auto()
 
 
 @pytest.fixture
@@ -43,8 +49,8 @@ def _completed_tournament(db: Any):
     )
 
     with freeze_time(Signup - datetime.timedelta(seconds=1)):
-        p1 = Player.objects.create_synthetic()
-        p2 = Player.objects.create_synthetic()
+        p1: Player = Player.objects.create_synthetic()
+        p2: Player = Player.objects.create_synthetic()
         p2.partner = p1
         p2.save()
         p1.partner = p2
@@ -58,9 +64,13 @@ def _completed_tournament(db: Any):
         play_out_hand(h1)
 
     with freeze_time(PlayCompletion + datetime.timedelta(seconds=1)):
-        t.abandon_all_hands(reason="Play completion deadline has passed")
-        h = t.hands().filter(abandoned_because__isnull=False).first()
-        assert h is not None
+        t.abandon_all_hands(
+            reason=f"t#{t.display_number}'s play completion deadline ({t.play_completion_deadline}) has passed"
+        )
+        assert t.hands().filter(abandoned_because__isnull=False).count() == 1
+        check_for_expirations(t)
+        t.refresh_from_db()
+        assert t.is_complete
         yield t
 
 
@@ -70,7 +80,9 @@ def smoke_case_1(db: Any):
 
 
 @pytest.fixture
-def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tournament):
+def various_flavors_of_hand(
+    db: Any, smoke_case_1, _completed_tournament: Tournament
+) -> dict[HandState, dict[TournamentState, Hand]]:
     assert datetime.datetime.utcnow().year == 2000
 
     hands_by_hand_state_by_tournament_state: dict[HandState, dict[TournamentState, Hand]] = (
@@ -88,10 +100,11 @@ def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tourna
 
         the_hand = None
         match hand_state:
-            case HandState.complete:
+            case HandState.complete_or_abandoned:
                 the_hand = the_tournament.hands().filter(abandoned_because__isnull=True).first()
-            case HandState.abandoned:
-                the_hand = the_tournament.hands().filter(abandoned_because__isnull=False).first()
+                assert the_hand is not None, (
+                    f"well, so far {dict(hands_by_hand_state_by_tournament_state)=}"
+                )
             case HandState.incomplete:
                 # Can't have a complete tournament with an incomplete hand.
                 if tournament_state == TournamentState.complete:
@@ -101,10 +114,7 @@ def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tourna
             case _:
                 assert not f"Well, this is embarrassing.  wtf is {hand_state=}?"
 
-        assert the_hand is not None, (
-            f"well, so far {dict(hands_by_hand_state_by_tournament_state)=}"
-        )
-
+        # unclear why I'm doing this :-(
         the_hand.board.tournament = the_tournament
         the_hand.board.save()
 
@@ -113,18 +123,158 @@ def various_flavors_of_hand(db: Any, smoke_case_1, _completed_tournament: Tourna
     return dict(hands_by_hand_state_by_tournament_state)
 
 
-def test_both_important_views(rf: Any, various_flavors_of_hand) -> None:
-    for hand_state, hands_by_tournament_state in various_flavors_of_hand.items():
-        for tournament_state, hand in hands_by_tournament_state.items():
-            request = rf.get("/woteva/", data={"pk": hand.pk})
+# pytest parameters for test_both_important_views, below.
+complete_tournament = [
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.anonymoose,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.has_no_player,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.played_the_hand,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.complete,
+        PlayerType.did_not_play_the_hand,
+        "app:hand-everything-read-only",
+    ),
+]
 
-            # Various flavors of user
-            anonymoose = AnonymousUser()
-            has_no_player = User.objects.get(username="admin")
-            played_the_hand = hand.players().first().user
-            did_not_play_the_hand = Player.objects.create_synthetic().user
 
-            for user in (None, anonymoose, has_no_player, played_the_hand, did_not_play_the_hand):
-                request.user = user
-                assert hand_archive_view(request=request, pk=hand.pk).status_code < 500
-                assert hand_detail_view(request=request, pk=hand.pk).status_code < 500
+incomplete_tournament = [
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.anonymoose,
+        "login",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.has_no_player,
+        "login",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.played_the_hand,
+        "app:hand-everything-read-only",
+    ),
+    (
+        HandState.complete_or_abandoned,
+        TournamentState.incomplete,
+        PlayerType.did_not_play_the_hand,
+        "forbidden",
+    ),
+]
+
+incomplete_hand = [
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.anonymoose,
+        "login",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.has_no_player,
+        "login",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.played_the_hand,
+        "app:hand-detail",
+    ),
+    (
+        HandState.incomplete,
+        TournamentState.incomplete,
+        PlayerType.did_not_play_the_hand,
+        "forbidden",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("hand_state", "tournament_state", "player_type", "expected_view"),
+    complete_tournament + incomplete_tournament + incomplete_hand,
+)
+def test_both_important_views(
+    rf: Any,
+    various_flavors_of_hand,
+    hand_state: HandState,
+    tournament_state: TournamentState,
+    player_type: PlayerType,
+    expected_view: str,
+) -> None:
+    hand: Hand = various_flavors_of_hand[hand_state][tournament_state]
+    request = rf.get("/woteva/", data={"pk": hand.pk})
+
+    setattr(request, "session", {})
+
+    some_player_from_this_hand = hand.players().first()
+    assert some_player_from_this_hand is not None
+
+    request.user = {
+        PlayerType.anonymoose: AnonymousUser(),
+        PlayerType.has_no_player: User.objects.get(username="admin"),
+        PlayerType.played_the_hand: some_player_from_this_hand.user,
+        PlayerType.did_not_play_the_hand: Player.objects.create_synthetic().user,
+    }[player_type]
+
+    match expected_view:
+        case "app:hand-everything-read-only":
+            assert everything_read_only_view(request=request, pk=hand.pk).status_code == 200
+            assert hand_detail_view(request=request, pk=hand.pk).viewname == expected_view
+        case "app:hand-detail":
+            assert everything_read_only_view(request=request, pk=hand.pk).viewname == expected_view
+            assert hand_detail_view(request=request, pk=hand.pk).status_code == 200
+        case "login" | "forbidden":
+            for v in (everything_read_only_view, hand_detail_view):
+                resp = v(request=request, pk=hand.pk)
+                assert resp.viewname == expected_view
+        case _:
+            assert False, f"wtf is {expected_view=}"
+
+
+# I tried to incorporate this test into test_both_important_views above, but it was a mess.
+def test_weirdo_special_case(db, rf):
+    t1 = Tournament.objects.create()
+    b1, _ = Board.objects.get_or_create_from_display_number(
+        display_number=1, tournament=t1, group="A"
+    )
+    North, South, East, West = [Player.objects.create_synthetic() for _ in range(4)]
+    North.partner_with(South)
+    East.partner_with(West)
+    Ding, Dong, Witch, Dead = [Player.objects.create_synthetic() for _ in range(4)]
+    Ding.partner_with(Dong)
+    Witch.partner_with(Dead)
+    h1 = Hand.objects.create(
+        board=b1, North=North, East=East, West=West, South=South, table_display_number=1
+    )
+    h2 = Hand.objects.create(
+        board=b1, North=Ding, East=Dong, West=Witch, South=Dead, table_display_number=2
+    )
+    play_out_hand(h1)
+
+    # North can "see" all of h1.
+    request = rf.get("/woteva/", data={"pk": h1.pk})
+    setattr(request, "session", {})
+    request.user = North.user
+
+    assert everything_read_only_view(request=request, pk=h1.pk).status_code == 200
+
+    # North can also "see" all of h2, even though it's not complete.
+    assert everything_read_only_view(request=request, pk=h2.pk).status_code == 200

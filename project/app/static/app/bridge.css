@@ -2,6 +2,14 @@ xx* {
     outline: 1px solid red;
 }
 
+#four-hands {
+    border: 1px solid;
+    height: 50%;
+    font-family: monospace;
+    display: grid;
+    grid-template-columns: auto auto auto;
+}
+
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
 .inactive-button {
   pointer-events: none;
@@ -54,11 +62,90 @@ body {
     font-family: monospace;
 }
 
+/* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
+ul.carousel {
+  width: 90%;
+  height: 90%;
+  display: flex;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  anchor-name: --myCarousel;
+}
+
+ul.carousel::scroll-button(*) {
+  border: 0;
+  font-size: 2rem;
+  background: none;
+  color: rgb(0 0 0 / 0.7);
+  cursor: pointer;
+  position: absolute;
+  position-anchor: --myCarousel;
+}
+
+ul.carousel::scroll-button(*):hover,
+ul.carousel::scroll-button(*):focus {
+  color: rgb(0 0 0 / 1);
+}
+
+ul.carousel::scroll-button(*):active {
+  translate: 1px 1px;
+}
+
+ul.carousel::scroll-button(*):disabled {
+  color: rgb(0 0 0 / 0.2);
+  cursor: unset;
+}
+
+ul.carousel::scroll-button(left) {
+  content: "◄";
+}
+
+ul.carousel::scroll-button(right) {
+  content: "►";
+}
+
+ul.carousel::scroll-button(*) {
+  position: absolute;
+  position-anchor: --myCarousel;
+  align-self: anchor-center;
+}
+
+ul.carousel::scroll-button(left) {
+  right: calc(anchor(left) - 45px);
+}
+
+ul.carousel::scroll-button(right) {
+  left: calc(anchor(right) - 45px);
+}
+
+li.carousel {
+  list-style-type: none;
+  background-color: #eee;
+  border: 1px solid #ddd;
+  padding: 20px;
+
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+}
+
+.bigfont {
+    font-family: monospace;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+
+    font-size: 8cqh;
+}
+
+.mediumfont {
+    font-size: 5cqh;
+}
+
 .spades, .hearts, .diamonds, .clubs {
     display: flex;
-    font-size: 5cqh;
     flex-direction: row;
     align-items: center;
+    div { span, button {width: 2em; }}
 }
 .hearts, .diamonds {
     color: red;
@@ -73,4 +160,40 @@ body {
 }
 .btn {
     --bs-btn-font-size: revert;
+}
+
+li h2 {
+    text-align: center;
+}
+
+.three-by-three-trick-display {
+    display: grid;
+    height: 50cqh;
+    grid-template-columns: 1fr 1fr 1fr;
+
+    div {
+        border: 1px dotted;
+        text-align: center;
+        display:flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    div span {
+        font-family: monospace;
+        font-optical-sizing: auto;
+        font-weight: 100;
+        font-style: normal;
+
+        font-size: 8cqh;
+        justify-self: center;
+    }
+    div.grid-column {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+.active {
+    background-color: lightgreen;
 }

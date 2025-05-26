@@ -1,0 +1,6 @@
+{% load fastdev %}
+<div class="three-by-three-trick-display">
+    {% for row in three_by_three_trick_display.rows %}
+        {% for column in row %}<div>{{ column|safe }}</div>{% endfor %}
+    {% endfor %}
+</div>

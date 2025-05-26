@@ -24,6 +24,7 @@ services:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       PGHOST: postgres
       PGPASS: postgres

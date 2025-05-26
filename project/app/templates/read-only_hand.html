@@ -4,12 +4,17 @@
     Review of {{ hand }}
 {% endblock title %}
 {% block content %}
-    <div>
+    <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
         <h2>Review of {{ terse_description }}</h2>
         <h2>{{ hand.auction.status }}</h2>
         <h1>{{ score }}</h1>
     </div>
-    <div>{% include "four-hands.html" %}</div>
+    {% if hand.is_abandoned %}
+        <div>
+            <h1 style="text-align: center; color: red">This hand was abandoned: {{ hand.abandoned_because }}</h1>
+        </div>
+    {% endif %}
+    <div style="display: flex; overflow: auto;">{% include "four-hands.html" with class="hand mediumfont" %}</div>
     <div style="display: flex;">
         <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>

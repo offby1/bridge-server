@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Callable
 import dataclasses
 import datetime
+import json
 import logging
 import time
 from typing import TYPE_CHECKING, Any
@@ -139,6 +141,16 @@ def send_timestamped_event(
 ) -> None:
     if when is None:
         when = time.time()
+
+    def summarize(thing):
+        if isinstance(thing, str):
+            return thing[0:20]
+        elif isinstance(thing, dict):
+            return {k: summarize(v) for k, v in thing.items()}
+        else:
+            return thing
+
+    # logger.debug(f"Sending {summarize(data)=} to {channel=}")
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
@@ -319,12 +331,12 @@ class Hand(TimeStampedModel):
             raise HandError(msg)
 
     @property
-    def event_channel_name(self):
-        return f"hand:{self.pk}"
+    def event_table_html_channel(self):
+        return f"table:html:{self.pk}"
 
     @staticmethod
-    def hand_pk_from_event_channel_name(cn: str) -> PK | None:
-        pieces = cn.split("hand:")
+    def hand_pk_from_event_table_html_channel(cn: str) -> PK | None:
+        pieces = cn.split("table:html:")
         if len(pieces) != 2:
             return None
         return PK_from_str(pieces[1])
@@ -369,16 +381,47 @@ class Hand(TimeStampedModel):
 
         return False
 
-    def send_event_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
-        hand_channel = self.event_channel_name
-        player_channels = [p.event_channel_name for p in self.players()]
-        all_channels = [hand_channel, "all-tables", *player_channels]
+    def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
+        send_timestamped_event(channel=self.event_table_html_channel, data=data)
+
+    def send_HTML_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
+        p = Player.objects.get(pk=player_pk)
+        send_timestamped_event(channel=p.event_HTML_hand_channel, data=data)
+
+    def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
+        for p in self.players():
+            send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
+
+    def send_events_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
+        table_channel = self.event_table_html_channel
+        player_channels: list[str] = []
+        for p in self.players():
+            player_channels.append(p.event_HTML_hand_channel)
+            player_channels.append(p.event_JSON_hand_channel)
+
+        all_channels = [table_channel, "all-tables", *player_channels]
 
         data = data.copy()
         data["hand_pk"] = self.pk
         now = time.time()
         for channel in all_channels:
             send_timestamped_event(channel=channel, data=data, when=now)
+
+    def send_event_to_all_players(self, *, data: dict[str, Any]) -> None:
+        now = time.time()
+        for p in self.players():
+            self.send_event_to_player(player_pk=p.pk, data=data, now=now)
+
+    def send_event_to_player(
+        self, *, player_pk: PK, data: dict[str, Any], now: float | None = None
+    ) -> None:
+        if now is None:
+            now = time.time()
+
+        p = Player.objects.get(pk=player_pk)
+        player_channel = p.event_HTML_hand_channel
+
+        send_timestamped_event(channel=player_channel, data=data | {"hand_pk": self.pk}, when=now)
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
@@ -480,29 +523,100 @@ class Hand(TimeStampedModel):
 
         self.call_set.create(serialized=call.serialize())
 
-        self.send_event_to_players_and_hand(
-            data={
-                "new-call": {
-                    "serialized": call.serialize(),
+        now = time.time()
+
+        for p in self.players():
+            send_timestamped_event(
+                channel=p.event_HTML_hand_channel,
+                data={
+                    "bidding_box_html": self._get_current_bidding_box_html_for_player(p),
+                    "hand_pk": self.pk,
                 },
-            },
+                when=now,
+            )
+
+            send_timestamped_event(
+                channel=p.event_JSON_hand_channel,
+                data={
+                    "hand_pk": self.pk,
+                    "new-call": {"serialized": call.serialize()},
+                },
+                when=now,
+            )
+
+        from app.views.hand import auction_history_HTML_for_table
+
+        send_timestamped_event(
+            channel=self.event_table_html_channel,
+            data={"auction_history_html": auction_history_HTML_for_table(hand=self)},
+            when=now,
         )
 
         if self.declarer:  # the auction just settled
             contract = self.auction.status
             assert isinstance(contract, libContract)
             assert contract.declarer is not None
-            self.send_event_to_players_and_hand(
-                data={
-                    "table": self.table_display_number,
-                    "contract_text": str(contract),
-                    "contract": {
-                        "opening_leader": contract.declarer.seat.lho().value,
-                    },
+
+            data = {
+                "contract_text": str(contract),
+                "contract": {
+                    "opening_leader": contract.declarer.seat.lho().value,
                 },
-            )
+            }
+
+            self.send_JSON_to_players(data=data)
+
+            # TODO -- html-escape it, I guess
+            self.send_HTML_to_table(data=data)
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
+
+    def _get_current_bidding_box_html_for_player(self, p: Player) -> str:
+        from app.views.hand import _bidding_box_HTML_for_hand_for_player
+
+        return _bidding_box_HTML_for_hand_for_player(self, p)
+
+    def _get_current_trick_html(self) -> str:
+        from app.views.hand import _three_by_three_HTML_for_trick
+
+        return _three_by_three_HTML_for_trick(self)
+
+    def _get_current_hand_html(self, *, p: Player) -> str:
+        from app.views.hand import _hand_HTML_for_player
+
+        return _hand_HTML_for_player(hand=self, player=p)
+
+    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player | None) -> None:
+        if player_to_update is None:
+            return
+
+        if player_to_update.current_direction() is None:
+            return
+
+        assert self.dummy is not None
+        dummy_direction_letter = self.dummy.seat.name[0]
+
+        method: Callable[..., None]
+
+        if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
+            method = self.send_HTML_to_table
+            kwargs = dict(
+                data={
+                    "dummy_direction": self.dummy.seat.name,
+                    "dummy_html": self._get_current_hand_html(p=player_to_update),
+                }
+            )
+        else:
+            method = self.send_HTML_to_player
+            kwargs = dict(
+                data={
+                    "current_hand_direction": player_to_update.libraryThing().seat.name,
+                    "current_hand_html": self._get_current_hand_html(p=player_to_update),
+                },
+                player_pk=player_to_update.pk,
+            )
+
+        method(**kwargs)
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -539,21 +653,31 @@ class Hand(TimeStampedModel):
         except Error as e:
             raise PlayError(str(e)) from e
 
-        logger.debug("%s: %s played %s", self, legit_player, card)
+        just_played = legit_player
+        del legit_player
+        about_to_play = self.player_who_may_play
 
-        data: dict[str, Any] = {
-            "new-play": {
-                "serialized": card.serialize(),
-                "hand_pk": self.pk,
-            },
-        }
+        logger.debug("%s: %s (%d) played %s", self, just_played, just_played.pk, card)
 
-        if self.get_xscript().num_plays == 1:  # opening lead
-            assert self.dummy is not None
-            libCards = sorted(self.current_cards_by_seat()[self.dummy.seat])
-            data["dummy"] = "".join([c.serialize() for c in libCards])
+        for update_me in [just_played, about_to_play]:
+            if update_me is not None:
+                self.send_HTML_update_to_appropriate_channel(player_to_update=update_me)
 
-        self.send_event_to_players_and_hand(data=data)
+        self.send_JSON_to_players(
+            data={
+                "new-play": {
+                    "hand_pk": self.pk,
+                    "serialized": card.serialize(),
+                },
+            }
+        )
+
+        self.send_HTML_to_table(
+            data={
+                "trick_counts_string": self.trick_counts_string(),
+                "trick_html": self._get_current_trick_html(),
+            }
+        )
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
@@ -586,12 +710,9 @@ class Hand(TimeStampedModel):
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
 
-                self.send_event_to_players_and_hand(
+                self.send_HTML_to_table(
                     data={
                         "final_score": final_score_text,
-                        "table": self.table_display_number,
-                        "tournament": self.tournament.pk,
-                        "tournament_is_complete": self.tournament.is_complete,
                     },
                 )
 
@@ -644,6 +765,13 @@ class Hand(TimeStampedModel):
 
         pbs = self.libPlayers_by_libSeat
         return Player.objects.get_by_name(pbs[seat_who_may_play].name)
+
+    @property
+    def active_seat_name(self) -> str:
+        if (nsp := self.next_seat_to_play) is not None:
+            return nsp.name
+
+        return ""
 
     @property
     def next_seat_to_play(self) -> Seat | None:
@@ -736,19 +864,6 @@ class Hand(TimeStampedModel):
             )
         return DisplaySkeleton(holdings_by_seat=rv)
 
-    @cached_property
-    def most_recent_call(self):
-        return self.call_set.order_by("-id").first()
-
-    @property
-    def most_recent_bid(self):
-        return (
-            self.call_set.order_by("-id")
-            .annotate(first=models.F("serialized")[0])
-            .filter(first__in="1234567")
-            .first()
-        )
-
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
@@ -822,11 +937,11 @@ class Hand(TimeStampedModel):
 
         return flattened
 
-    def trick_counts_by_direction(self) -> dict[str, int]:
+    def trick_counts_string(self) -> str:
         cc = collections.Counter([p.seat.value for p in self.annotated_plays if p.winner])
         ns = cc["S"] + cc["N"]
         ew = cc["E"] + cc["W"]
-        return {"N/S": ns, "E/W": ew}
+        return json.dumps({"N/S": ns, "E/W": ew})
 
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
@@ -839,7 +954,7 @@ class Hand(TimeStampedModel):
 
         self.open_access = not self.open_access
         self.save()
-        self.send_event_to_players_and_hand(data={"open-access-status": self.open_access})
+        self.send_events_to_players_and_hand(data={"open-access-status": self.open_access})
 
     def _score_by_player(self, *, player: Player) -> int:
         fs = self.get_xscript().final_score()

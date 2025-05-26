@@ -1,31 +1,31 @@
 {% load fastdev %}
 {% load player_extras %}
-{% if show_auction_history %}
-    <div id="auction" style="border: 1px dotted; overflow: auto; height: 10em">
-        <table class="table caption-top">
-            <caption>Auction</caption>
-            <thead>
-                <tr>
-                    {% for direction, player in history %}
-                        <th {{ player.style|safe }}>
-                            <i>{{ direction }}</i>
-                            <br>
-                            {{ player.player|styled_link:user }}
-                        </th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for row in hand.auction.fancy_HTML_display %}
-                    <tr>
-                        {% for call in row %}
-                            <td>
-                                {% if call is not None %}{{ call|safe }}{% endif %}
-                            </td>
-                        {% endfor %}
-                    </tr>
+<table class="table caption-top"
+       id="auction"
+       style="border: 1px dotted;
+              overflow: auto;
+              height: 10em">
+    <caption>Auction</caption>
+    <thead>
+        <tr>
+            {% for direction, player in players_starting_with_west %}
+                <th {{ player.style|safe }}>
+                    <i>{{ direction }}</i>
+                    <br>
+                    {{ player.player|styled_link:user }}
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% for row in hand.auction.fancy_HTML_display %}
+            <tr>
+                {% for call in row %}
+                    <td>
+                        {% if call is not None %}{{ call|safe }}{% endif %}
+                    </td>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endif %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

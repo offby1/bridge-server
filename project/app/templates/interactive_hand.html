@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load fastdev %}
+{% load static %}
+{% block title %}
+    {{ hand }}
+{% endblock title %}
+{% block content %}
+    {# from https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages #}
+    <h3 style="text-align:center">{{ terse_description }}</h3>
+    <div style="display: flex; justify-content: space-between;">
+        <h1>{{ hand.auction.status }}</h1>
+        <h1 id="trick-counts-string">{{ hand.trick_counts_string }}</h1>
+    </div>
+    {% if hand.auction.found_contract %}
+        {% include "carousel_style_play.html" with id=viewers_seat.name %}
+    {% else %}
+        {% include "carousel_style_auction.html" with id=viewers_seat.name %}
+    {% endif %}
+{% endblock content %}
+{% block upper-right-column %}
+    {% if DEPLOYMENT_ENVIRONMENT != "production" %}
+        <div class="col">
+            <div class="form-check form-switch">
+                <input class="form-check-input"
+                       type="checkbox"
+                       role="switch"
+                       id="god-mode-switch"
+                       hx-post="{% url 'app:open-access-toggle' hand.pk %}"
+                       hx-swap="none"
+                       {% if hand.open_access %}checked{% endif %} />
+                <label class="form-check-label" for="god-mode-switch">✨GOD MODE🦄</label>
+            </div>
+        </div>
+    {% endif %}
+{% endblock upper-right-column %}
+{% block scripts %}
+    <script>
+ {% if user.is_authenticated %}
+ const playerEventUrl = '/events/player/html/hand/{{ user.player.pk }}/';
+ var playerEventSource = new ReconnectingEventSource(playerEventUrl);
+ console.log(`Listening for player events on ${playerEventUrl}`);
+ playerEventSource.addEventListener('message', function (e) {
+     const data = JSON.parse(e.data);
+     console.log("Player event listener saw " + Object.keys(data));
+
+     /* We handle the bidding box here, whereas the auction history is handled in the "table" listener below.  Only
+        because the auction history is identical regardless of who is looking at it, whereas the bidding box varies
+        a little -- it's active when it's our" turn.
+
+        Also -- I haven't thought this through -- perhaps if you're not authenticated, you can watch the auction
+        history, but in that case there'd be no point in seeing a bidding box.  */
+     if ("bidding_box_html" in data) {
+         const bidding_box_html = data["bidding_box_html"];
+         const container = document.getElementById("toast-and-bidding-box");
+         if (container === null) {
+             /* This hand must have ended; go to the "home page".  TODO: go to the *current hand* instead. */
+             window.location = "/player/{{ user.player.pk }}/";
+             return;
+         }
+         container.innerHTML = bidding_box_html;
+
+         /* We just replaced the buttons, onto which HTMX had added some attributes or listeners or something, with
+         plain HTML that lacks that mojo.  So we now tell htmx to restore the mojo. */
+         htmx.process(container);
+     } else if ("current_hand_html" in data) {
+         current_hand_html = data["current_hand_html"]
+         const container = document.getElementById(data["current_hand_direction"]);
+         container.outerHTML = current_hand_html;
+         htmx.process(document.getElementById(data["current_hand_direction"]));
+     }
+     });
+ {% endif %}
+
+ const handEventUrl = '/events/table/html/{{ hand.pk }}/';
+ var handEventSource = new ReconnectingEventSource(handEventUrl);
+ console.log(`Listening for hand events on ${handEventUrl}`);
+
+     handEventSource.addEventListener('message', function (e) {
+         const data = JSON.parse(e.data);
+         console.log("Hand event listener saw " + Object.keys(data));
+         if ("trick_counts_string" in data) {
+             const trick_counts_string = data["trick_counts_string"];
+             const container = document.getElementById("trick-counts-string");
+             container.textContent = trick_counts_string;
+         }
+
+         if ("trick_html" in data) {
+             const trick_html = data["trick_html"];
+             const container = document.getElementById("_3x3-container");
+             container.innerHTML = trick_html;
+
+             document.querySelector("#_3x3-container").scrollIntoView()
+         } else if ("auction_history_html" in data) {
+             const auction_history_html = data["auction_history_html"]
+             const container = document.getElementById ("auction");
+             container.innerHTML = auction_history_html;
+
+             document.querySelector("#auction").scrollIntoView()
+         } else if ("dummy_html" in data) {
+             const dummy_html = data["dummy_html"];
+             const dummy_direction = data["dummy_direction"];
+             const container = document.getElementById (dummy_direction);
+             if (container === null) {
+                 /* The auction ended, but we're still showing the auction carousel. Reload to pick up the play carousel. */
+                 window.location.reload();
+                 return;
+             }
+             container.outerHTML = dummy_html;
+
+             htmx.process(document.getElementById (dummy_direction));
+         } else if ("contract_text" in data) {
+             /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
+             window.location.reload();
+         } else if ("final_score" in data) {
+             /* The hand is over.  Let's move on to the next thing. */
+             window.location.reload();
+         }
+     }, false);
+
+     htmx.on("htmx:responseError", function(evt) {
+         const errorToast = document.getElementById('errorToast');
+         const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+
+         const errorText = document.getElementById('errorText');
+         errorText.innerHTML = evt.detail.xhr.responseText;
+
+         toastBootstrap.show();
+     });
+
+    </script>
+{% endblock scripts %}

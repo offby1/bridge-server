@@ -52,6 +52,9 @@ class NoPairs(Exception):
     pass
 
 
+WAY_DISTANT_PLAY_COMPLETION_DEADLINE = datetime.datetime.max.replace(tzinfo=datetime.UTC)
+
+
 def _do_signup_expired_stuff(tour: "Tournament") -> None:
     with transaction.atomic():
         if tour.hands().exists():
@@ -68,7 +71,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
         tour.create_hands_for_round(zb_round_number=0)
         assert tour.hands().count() == tour.get_movement().num_rounds
 
-        if tour.play_completion_deadline is None:
+        if tour.play_completion_deadline == WAY_DISTANT_PLAY_COMPLETION_DEADLINE:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()
             tour.save()
 
@@ -83,20 +86,8 @@ def check_for_expirations(sender, **kwargs) -> None:
         incompletes = Tournament.objects.filter(is_complete=False, signup_deadline__isnull=False)
 
         for t in incompletes:
-            logger.debug("Checking '%s': ", t)
-            logger.debug(
-                "signup deadline %s %s passed",
-                t.signup_deadline,
-                "has" if t.signup_deadline_has_passed() else "has not",
-            )
-            logger.debug(
-                "play completion deadline %s %s passed",
-                t.play_completion_deadline,
-                "has" if t.play_completion_deadline_has_passed() else "has not",
-            )
             if t.play_completion_deadline_has_passed():
                 t.is_complete = True
-                assert t.play_completion_deadline is not None
                 deadline_str = t.play_completion_deadline.isoformat()
                 t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
@@ -125,29 +116,6 @@ class OpenForSignup(TournamentStatus):
 # Hopefully our tournament won't be in the state for more than a millisecond
 class ComputingPlayCompletionDeadline(TournamentStatus):
     pass
-
-
-def _status(
-    *,
-    is_complete: bool,
-    signup_deadline: datetime.datetime | None,
-    play_completion_deadline: datetime.datetime | None,
-    as_of: datetime.datetime,
-) -> type[TournamentStatus]:
-    if is_complete:
-        return Complete
-    if signup_deadline is None:
-        return Running
-    if as_of < signup_deadline:
-        return OpenForSignup
-    if play_completion_deadline is None:
-        return ComputingPlayCompletionDeadline
-    if as_of > play_completion_deadline:
-        logger.warning(
-            "Some tournament's play_completion_deadline has passed, but it hasn't (yet) been marked is_complete"
-        )
-        return Complete
-    return Running
 
 
 class TournamentManager(models.Manager):
@@ -233,14 +201,10 @@ class Tournament(models.Model):
 
     display_number = models.SmallIntegerField(unique=True)
 
-    signup_deadline = models.DateTimeField(
-        blank=True, default=None, db_comment="NULL means 'infintely far in the future'"
-    )  # type: ignore[call-overload]
+    signup_deadline = models.DateTimeField()
     play_completion_deadline = models.DateTimeField(
-        null=True,
-        blank=True,
-        default=None,
-        db_comment="NULL means we don't yet know how many players we have, hence cannot compute a movement",
+        default=WAY_DISTANT_PLAY_COMPLETION_DEADLINE,
+        db_comment='"a billion years from now" means we don\'t yet know how many players we have, hence cannot compute a movement',
     )  # type: ignore[call-overload]
 
     objects = TournamentManager()
@@ -417,12 +381,17 @@ class Tournament(models.Model):
         return self.status() is Running
 
     def status(self) -> type[TournamentStatus]:
-        return _status(
-            is_complete=self.is_complete,
-            signup_deadline=self.signup_deadline,
-            play_completion_deadline=self.play_completion_deadline,
-            as_of=timezone.now(),
-        )
+        if self.is_complete:
+            return Complete
+
+        now = timezone.now()
+        if now < self.signup_deadline:
+            return OpenForSignup
+        if now < self.play_completion_deadline:
+            return Running
+
+        logger.warning("I confess I don't understand how we got here.")
+        return Complete
 
     def status_str(self) -> str:
         return self.status().__name__
@@ -495,7 +464,7 @@ class Tournament(models.Model):
     def abandon_all_hands(self, reason: str) -> None:
         with transaction.atomic():
             for player in self.players():
-                player.unseat_me(reason=reason)
+                player.abandon_my_hand(reason=reason)
                 player.save()
 
     def maybe_complete(self) -> None:
@@ -525,7 +494,9 @@ class Tournament(models.Model):
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
             victims = app.models.TournamentSignup.objects.filter(tournament=self)
-            logger.debug("Deleting %s", victims)
+            logger.debug(
+                "Deleting %s because tournament #%s is complete", victims, self.display_number
+            )
             victims.delete()
 
         super().save(*args, **kwargs)

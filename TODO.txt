@@ -1,6 +1,21 @@
 IN PROGRESS:
 
 STILL TODO:
+* We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
+
+  Dunno if this would save significant time, memory, or CPU; but it's an idea.
+
+* Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
+
+* I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
+
+* What should I do about a player who doesn't call or play within a reasonable amount of time?
+
+  - certainly allow people at the table to yell at them via chat
+  - perhaps "mark" them as an "unreliable player" or something, and make that mark visible to everyone?
+
+* Make error pages extend the same base.html template that everything else does.  For example: I'm not logged in, and am looking at <http://127.0.0.1:9000/hand/1/>, whose entire content is `<html><head></head><body>This tournament (#1) won't yet complete until 2035-05-13 02:41:08.570023+00:00, so anonymous users such as yourself can't see this hand now.</body></html>`.  That's informative, but it'd be more useful if there were, say, a "home" link, &c.
+
 * Terminology trouble: I use the word "hand" to refer to two different things:
 
   - A Django model that represents one board, four players, and a table display number
@@ -22,7 +37,7 @@ STILL TODO:
 
 * Allow players to register an email address, and once they've done so, let them see hands in progress in tournaments in which they're not playing.
 
-  The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands.
+  The idea is: if *they* know that *I* know their email address, they'll be less likely to divulge what they see to players in those hands; and in general, will be more civilized.
 
   Maybe make the "who looked at which hands when" information visible to everyone, as further disincentive.
 
@@ -33,12 +48,6 @@ STILL TODO:
   I *think* "Getting a confirmed email address" is something that django, or a widely-used third-party library, can do for me.
 
 * player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
-
-* Make the cards more visible during play, by only showing one hand at a time!
-  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
-  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
-
-  This is in progress on the "carousel-via-css" branch.
 
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
@@ -96,14 +105,6 @@ STILL TODO:
     Now the "lobby" link goes to the player list, with seated players filtered out.
 
   Yikes, that was a long time ago.
-
-* Make the UI not suck.
-
-  It *sometimes* jumps a little when a new call or play gets displayed.
-
-  I think I see what's happening: when the page loads, the auction history (I'm guessing) is displayed scrolled to ensure that its *top* is visible.  But then I have some `onLoad` magic that scrolls to ensure the *bottom* is visible, since that's the most interesting part.
-
-  Note that this is being taken care of in the "carousel-via-css" branch.
 
 * Consider alternate HTTP client (as opposed to "requests"): <https://github.com/florimondmanca/httpx-sse>
 
@@ -170,50 +171,54 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
-* When a tournament's signup deadline has passed, but the play deadline hasn't; *and* all of the signed-up players have played as much as they can play (whatever that means), then force the tournament to complete.  Otherwise, everyone has to sit around waiting for the play deadline to expire before they can see the boards/hands.
+* If I'm not looking at the "current trick" slide, it can acquire crucial information (namely: cards played by other seats), and then disappear, without me ever seeing it.  Imagine I lead a card, and don't scroll away from my hand.  Now three other players will play; one of them wins the trick and leads to the next.  Eventually my hand's background will turn light green, telling me it's my turn to play the trick ... but I won't have seen the previous trick -- the three cards that followed mine are now gone.
 
-  This is done on the "carousel-via-css" branch -- <https://gitlab.com/offby1/bridge-server/-/commit/2f02e1957c930c8078e98f06580dc749bbff13d0>
+  So, maybe ...
 
-* Totally rethink access control.
+  ✓ automatically scroll to the current trick as soon as I've played a card?
+  ⌧ replace the "current trick" slide with a much smaller doohickey on every remaining slide?
+  ⌧ Add a "previous trick" slide (perhaps above the "current trick" slide)?
+  ⌧ Have the server enforce a pause of a couple of seconds before anyone can lead to the 2nd-13th tricks?
 
-  * Any tournament that is complete should be visible to everyone, anonymous or otherwise.
+* I have changed the previous scheme of "reload the entire page whenever we get a server-sent event" to "when we get a server-sent event, redraw just the relevant bits", so that the user is entirely in control of what gets scrolled when.
 
-  * Anonymous users must not be allowed to watch a hand in progress.  Why not? Because it'd be too easy for a player to fire up an incognito window and peek at a hand that they will later play.
+  Which HTML things need to get updated?
 
-    Maybe for fun demo purposes, we can have a single table that's not part of a tournament, and whose boards are genuinely random?
+  | when                | HTML to include | which channel & why         | current status |
+  |---------------------+-----------------+-----------------------------+----------------|
+  | auction: every call | current auction | hand: observers             | ok             |
+  | auction: every call | bidding box     | player: so they can call    | ok             |
+  | play: every play    | our hand        | player                      |                |
+  | play: every play    | dummy           | hand: observers and players |                |
+  | play: every play    | current trick   | hand: observers and players | ok             |
 
-    Perhaps a specialized decorator for views?
+  Maybe I should have more than just two channels.  Here I propose some, showing the URL, channel name, and description for each:
 
-  * After `just dcu` (commit c8a78a9), logged in as "bob", https://laptop.tail571dc2.ts.net/table/ shows (correctly)
-    Table 5 Hand 5 -- Board #2 (tournament 1), Neither side vulnerable, dealt by West: ('Sorry, bob, but you have not completely played board Board #2 (tournament 1), so later d00d', '-')
-    However when I click that link, it shows me the hand :-|  Granted, it shows me only West's cards, and I am indeed West; but still this seems inconsistent.
+  | url                                               | channel name                           | wozzit fur                                                                                                                |
+  |---------------------------------------------------+----------------------------------------+---------------------------------------------------------------------------------------------------------------------------|
+  | events/player/html/hand/<player_id>/              | player:html:hand:{player_id}           | for human player using a browser. Payload is HTML for their bidding box or hand, as appropriate.                          |
+  | events/player/html/chat/<receiving_player_id>/[a] | player:html:chat:{receiving_player_id} | for human player using a browser. Payload is HTML for an incoming chat.                                                   |
+  | events/player/json/<player_id>/                   | player:json:{player_id}                | strictly for the bot.  Shows calls and plays in the player's current hand.                                                |
+  | events/table/html/<hand_id>/                      | table:html:{hand_id}                   | for observers and the player: shows the current auction when that's relevant; otherwise shows current trick and the dummy |
 
-  That last bullet point is still true, except that now, for whatever reason, it doesn't seem as inconsistent.  So there!
+  [a] the message will include the name of the sender; the system will both add that name, and prohibit illegal chats (like from one partner to another when seated).
 
-* Try moving app.views.player.control_bot_for_player into app.models.player, and having that model's "save" method invoke it (or maybe even use django signals or something).  That way I could mass-update all the players to be bots, or not; currently I have to then log in as each one individually and toggle the little toggle thingy.
+  - probably a channel for lobby chats, although those fell off the face of the Earth long ago :-)
 
-* Occasional "asyncio.exceptions.CancelledError" tracebacks in the daphne log.  I don't think anything truly bad is happening, but they're disturbing.
+  I don't have a "table:json" channel.  Such a channel would make sense, so that I could send calls and plays just once, instead of four times; but it'd require that I figure out how to let the bot listen to two channels "at once" -- this hypothetical table:json channel, *plus* the existing player:json channel.  (Now that I think about it, there might not be any truly private information in that latter existing channel!)
 
-  Dunno what these are, but I've at least muffled them.
+* Do the carousel thing to the auction, just as we did to the play.
 
-* Now that I've created a little CSS file, I should probably replace most of my "style" attributes with CSS classes.  Or whatever they call 'em.
+  I've marked up the divs with some new ids.  The divs that we want to include in the carousel are
+  - "auction"
+  - "make-me-a-li" (that's the bidding box)
+  - the contents of hand-div
 
-* Consider timestamps for important stuff, in particular calls and plays.
+* Make the cards more visible during play, by only showing one hand at a time!
+  Currently I've got room to show all four hands; during play you get to see your cards, plus the dummy's.
+  Maybe instead I should only show your cards -- i.e., zoom in -- and have some sort of interaction to let you flip between your cards and the dummy.  That interaction would have to be *easy* and *obvious* and *fast*.
 
-  I'm referring to columns in the db, not just an entry in the little SSE events that we send.
-
-* Maybe a "Table" isn't worth modeling at all; instead model "games" or "hands" -- both current and past.  A "game" or a "hand" is pretty much what I'm now calling a Table -- four players plus a specific board, plus a possibly-complete transcript of what they did.
-
-  I seem to be slowly moving towards this; most of what was previously associated with Table is now associated with Hand.
-
-* Think about optimization (without actually doing it, since that would be premature):
-  Seems we're sending events to a "public" channel, which means if we have 1,000 browsers listening for those events, most of them will ignore most events (since bob only cares about events that affect him).
-
-  So, consider which events really need to be public, and which can be "private".
-
-  e.g player_detail_view sends "splitsville" (to the "partnerships" channel) in response to a player clicking the button, but surely only (at most) four players need to know about this *instantly*; other people can reload the page to find out who's partnered with whom.
-
-  Otoh, a given player probably won't send that many messages; and sending a message is likely cheaper than rendering and returning a whole response, so ... 🤷
+  I'm thinking a carousel ([CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels) or [bootstrap](https://getbootstrap.com/docs/5.3/components/carousel/)) might be the thing.  For the auction: you'd have one pane showing the bidding box, and another showing the auction-so-far.  For the play, you'd have one pane showing your cards; one showing the dummy; and one showing the current trick.
 
 * I have some references to e.g. `"four_hands_partial_endpoint": reverse("app:four-hands-partial", args=[hand.pk]),` which I suspect are obsolete
   At least some are not obsolete -- the chat system still uses them
@@ -1066,6 +1071,10 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* I'm fuzzy on the details, but I think I was logged in as a player who wasn't the declarer or dummy; after the last trick was played, the browser loaded my "player home page" (e.g. `/player/1/`) instead of something more useful, like the next hand, or the review of the previous hand.
+
+  I could not reproduce this; I only saw it load the `/hand/xyzzy/archive` page, which is fine.
+
 * A scenario
 
   - I let the bot play for me

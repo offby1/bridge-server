@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import collections
-import enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from django.contrib import auth
 
@@ -19,12 +18,8 @@ from .testutils import set_auction_to
 
 from .views.hand import (
     _bidding_box_context_for_hand,
-    _maybe_redirect_or_error,
-    bidding_box_partial_view,
+    _bidding_box_HTML_for_hand_for_player,
 )
-
-if TYPE_CHECKING:
-    from django.template.response import TemplateResponse
 
 
 def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
@@ -112,7 +107,7 @@ def test_cards_by_player(usual_setup: Hand) -> None:
         assert len(h.current_cards_by_seat()[seat]) == 13
 
 
-def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> TemplateResponse:
+def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> str:
     from app.models.utils import assert_type
 
     if isinstance(as_seen_by, libPlayer):
@@ -123,9 +118,7 @@ def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> Temp
     request = rf.get("/woteva/", data={"hand_pk": h.pk})
     request.user = as_seen_by.user
 
-    response = bidding_box_partial_view(request, h.pk)
-    response.render()
-    return response
+    return _bidding_box_HTML_for_hand_for_player(h, as_seen_by)
 
 
 def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
@@ -162,8 +155,12 @@ def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
 
     # The auction is settled, so no bidding box.
     assert h.player_who_may_play is not None
-    response = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
-    assert b"<button" not in response.content
+    bb_str = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
+
+    # TODO -- actually parse the HTML; look for a div whose id is #bidding-box, and assert that *either*
+    # - there is no such div; or else
+    # - it's empty
+    assert "btn-primary" not in bb_str
 
 
 def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
@@ -192,7 +189,9 @@ def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
     east = Player.objects.get_by_name("Clint Eastwood")
     request = rf.get("/woteva/")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
@@ -222,7 +221,9 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
     south = Player.objects.get_by_name("J.D. Souther")
     request = rf.get("/woteva/", data={"hand_pk": h.pk})
     request.user = south.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
     # you cannot double your own partner.
     disabled, _active = _partition_button_values(bbc_html)
 
@@ -234,7 +235,9 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
     }
     east = Player.objects.get_by_name("Clint Eastwood")
     request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(request, h)["bidding_box_buttons"]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
+        "bidding_box_buttons"
+    ]
 
     disabled, _active = _partition_button_values(bbc_html)
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
@@ -298,89 +301,8 @@ def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> N
 
     first_player = Player.objects.first()
     assert first_player is not None
-    assert any("contract" in e for e in sent_events_by_channel[f"system:player:{first_player.pk}"])
-
-
-class HandIsComplete(enum.Enum):
-    incomplete = 0
-    complete = 1
-
-
-class RequestedPage(enum.StrEnum):
-    detail = "app:hand-detail"
-    archive = "app:hand-archive"
-
-
-@pytest.mark.parametrize(
-    ("hand_is_complete", "player_visibility", "requested_page", "expected_result"),
-    [
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.detail,
-            None,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.archive,
-            302,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.detail,
-            403,
-        ),
-        (
-            HandIsComplete.incomplete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.archive,
-            403,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.detail,
-            302,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.everything,
-            RequestedPage.archive,
-            None,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.detail,
-            403,
-        ),
-        (
-            HandIsComplete.complete,
-            Board.PlayerVisibility.nothing,
-            RequestedPage.archive,
-            403,
-        ),
-    ],
-)
-def test_exhaustive_archive_and_detail_redirection(
-    rf,
-    hand_is_complete,
-    player_visibility,
-    requested_page,
-    expected_result,
-):
-    actual_result = _maybe_redirect_or_error(
-        hand_is_complete=hand_is_complete.value,
-        hand_pk=123,
-        player_visibility=player_visibility,
-        request_viewname=requested_page.value,
-    )
-    if actual_result is None:
-        assert expected_result is None
-    else:
-        assert actual_result.status_code == expected_result
+    assert any("contract" in e for e in sent_events_by_channel[f"player:json:{first_player.pk}"])
+    assert any("contract" in e for e in sent_events_by_channel[f"table:html:{h.pk}"])
 
 
 @pytest.mark.django_db

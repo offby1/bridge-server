@@ -10,6 +10,14 @@ from django.db import transaction
 from .utils import is_safe
 
 
+# In [1]: from django.contrib.auth.hashers import make_password
+# In [2]: make_password(".")
+# Out[2]: 'pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU='
+everybodys_password = (
+    "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
+)
+
+
 class Command(BaseCommand):
     def add_arguments(self, parser) -> None:
         group = parser.add_mutually_exclusive_group()
@@ -70,6 +78,8 @@ class Command(BaseCommand):
 
                 t.sign_up_player_and_partner(p)
                 self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
+                p.user.password = everybodys_password
+                p.user.save()
                 p.toggle_bot(True)
 
             t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)

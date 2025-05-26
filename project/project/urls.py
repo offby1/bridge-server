@@ -15,25 +15,26 @@ urlpatterns = [
         kwargs={"channels": ["lobby"]},
     ),
     path(
-        "events/player/<channel>/",
+        "events/player/html/hand/<player_id>/",
         include(django_eventstream.urls),
+        {"format-channels": ["player:html:hand:{player_id}"]},
+    ),
+    path(
+        "events/player/json/<player_id>/",
+        include(django_eventstream.urls),
+        {"format-channels": ["player:json:{player_id}"]},
+    ),
+    # This gets events for one specific table.
+    path(
+        "events/table/html/<hand_id>/",
+        include(django_eventstream.urls),
+        {"format-channels": ["table:html:{hand_id}"]},
     ),
     # This gets all events for all tables.
     path(
         "events/all-tables/",
         include(django_eventstream.urls),
         kwargs={"channels": ["all-tables"]},
-    ),
-    # This gets events for one specific table.
-    path(
-        "events/table/<table_id>/",
-        include(django_eventstream.urls),
-        {"format-channels": ["table:{table_id}"]},
-    ),
-    path(
-        "events/hand/<hand_id>/",
-        include(django_eventstream.urls),
-        {"format-channels": ["hand:{hand_id}"]},
     ),
     path(
         # public.  Messages are like {"joined": [16, 17], "split": []} or {"split": [16, 17], "joined": []}

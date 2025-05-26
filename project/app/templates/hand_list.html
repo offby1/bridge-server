@@ -25,7 +25,7 @@
                 {% for hand in page_obj %}
                     <tr>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">
+                            <a href="{% url 'app:hand-detail' hand.pk %}">
                                 {% if hand.is_complete %}
                                     ✔
                                 {% elif hand.is_abandoned %}
@@ -36,19 +36,19 @@
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.tournament.display_number }}</a>
+                            <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.board.tournament.display_number }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.table_display_number }}</a>
+                            <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.table_display_number }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.board.display_number }}</a>
+                            <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.board.display_number }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.player_names_string }}</a>
+                            <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.player_names_string }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-archive' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
+                            <a href="{% url 'app:hand-detail' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
                         </td>
                     </tr>
                 {% endfor %}

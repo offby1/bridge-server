@@ -1,0 +1,24 @@
+{% load fastdev %}
+{% load player_extras %}
+<ul class="carousel">
+    <li class="carousel">
+        {% ifexists card_display.current_player %}
+        <h2>Your Hand ({{ viewers_seat }})</h2>
+        {% include "hand-div.html" with cards=card_display.current_player.cards id=viewers_seat.name class="hand bigfont" %}
+    {% else %}
+        No <tt>card_display.current_player</tt> for you
+    {% endifexists %}
+</li>
+{% ifexists card_display.dummy_hand %}
+<li class="carousel">
+    <h2>Dummy ({{ dummy_player }})</h2>
+    {% include "hand-div.html" with cards=card_display.dummy_hand.cards id=dummy_player.seat.name class="hand bigfont" %}
+</li>
+{% endifexists %}
+<li class="carousel">
+    <h2>Current Trick</h2>
+    {% ifexists three_by_three_trick_display %}
+    <div id="_3x3-container">{% include "3x3-trick-display.html" %}</div>
+{% endifexists %}
+</li>
+</ul>
