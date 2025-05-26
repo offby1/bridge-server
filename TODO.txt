@@ -666,7 +666,7 @@ DONE:
   - hand.hand_list_view
   - hand.hand_archive_view
   - hand.four_hands_partial_view
-  - hand.hand_detail_view
+  - hand._interactive_view
   - hand.bidding_box_partial_view
   - hand.auction_partial_view
 

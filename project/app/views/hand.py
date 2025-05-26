@@ -94,57 +94,6 @@ def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.
     return stamp
 
 
-# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
-def _redirect_or_error_response(
-    hand: app.models.Hand, request: AuthedHttpRequest
-) -> HttpResponseWithViewname:
-    t: app.models.Tournament = hand.board.tournament
-    if t.is_complete:
-        return HttpRedirectToNamedViewResponse(
-            viewname="app:hand-everything-read-only", hand_pk=hand.pk
-        )
-
-    login_page = HttpRedirectToNamedViewResponse(url=settings.LOGIN_URL + f"?next={request.path}")
-
-    player = getattr(request.user, "player", None)
-
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
-    if (request.user.is_anonymous or player is None) and not hand.board.tournament.is_complete:
-        return login_page
-
-    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
-
-    if t.is_complete or (
-        (hand.is_abandoned or hand.is_complete)
-        and player is not None
-        and player.has_played_hand(hand)
-    ):
-        return HttpRedirectToNamedViewResponse(
-            viewname="app:hand-everything-read-only", hand_pk=hand.pk
-        )
-
-    if player is None and not hand.board.tournament.is_complete:
-        localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline, request))
-        return HttpResponseForbiddenWithViewName(
-            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
-        )
-
-    assert player is not None
-
-    if not player.has_played_hand(hand):
-        if hand.board in (h.board for h in player.hands_played if h.is_complete):
-            # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
-            return HttpRedirectToNamedViewResponse(
-                viewname="app:hand-everything-read-only", hand_pk=hand.pk
-            )
-        msg = f"You, {player}, haven't yet fully played thi's hand's board {hand.board}, so you cannot see the hand."
-        return HttpResponseForbiddenWithViewName(msg)
-
-    return HttpRedirectToNamedViewResponse(viewname="app:hand-detail", hand_pk=hand.pk)
-
-
 def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
     current_direction = player.current_direction()
     if current_direction is None:
@@ -594,7 +543,57 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponseWithViewname:
+def _redirect_or_error_response(
+    hand: app.models.Hand, request: AuthedHttpRequest
+) -> HttpResponseWithViewname:
+    t: app.models.Tournament = hand.board.tournament
+    if t.is_complete:
+        return HttpRedirectToNamedViewResponse(
+            viewname="app:hand-everything-read-only", hand_pk=hand.pk
+        )
+
+    login_page = HttpRedirectToNamedViewResponse(url=settings.LOGIN_URL + f"?next={request.path}")
+
+    player = getattr(request.user, "player", None)
+
+    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
+    # will not be played again.
+    if (request.user.is_anonymous or player is None) and not hand.board.tournament.is_complete:
+        return login_page
+
+    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
+
+    if t.is_complete or (
+        (hand.is_abandoned or hand.is_complete)
+        and player is not None
+        and player.has_played_hand(hand)
+    ):
+        return HttpRedirectToNamedViewResponse(
+            viewname="app:hand-everything-read-only", hand_pk=hand.pk
+        )
+
+    if player is None and not hand.board.tournament.is_complete:
+        localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline, request))
+        return HttpResponseForbiddenWithViewName(
+            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
+            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
+        )
+
+    assert player is not None
+
+    if not player.has_played_hand(hand):
+        if hand.board in (h.board for h in player.hands_played if h.is_complete):
+            # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
+            return HttpRedirectToNamedViewResponse(
+                viewname="app:hand-everything-read-only", hand_pk=hand.pk
+            )
+        msg = f"You, {player}, haven't yet fully played thi's hand's board {hand.board}, so you cannot see the hand."
+        return HttpResponseForbiddenWithViewName(msg)
+
+    return HttpRedirectToNamedViewResponse(viewname="app:hand-detail", hand_pk=hand.pk)
+
+
+def _everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponseWithViewname:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
@@ -642,30 +641,7 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
     )
 
 
-def _terse_description(hand: Hand) -> str:
-    tourney = format_html(
-        '<a href="{}?tournament={}">Tournament #{}</a>',
-        reverse("app:board-list"),
-        hand.board.tournament.pk,
-        hand.board.tournament.display_number,
-    )
-
-    table = format_html(
-        "Table #{}",
-        hand.table_display_number,
-    )
-
-    board = format_html(
-        '<a href="{}">Board #{} ({})</a>',
-        reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
-        hand.board.display_number,
-        hand.board.vulnerability_string(),
-    )
-
-    return SafeString(" ".join([tourney, table, board]))
-
-
-def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponseWithViewname:
+def _interactive_view(request: AuthedHttpRequest, pk: PK) -> HttpResponseWithViewname:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
@@ -687,6 +663,29 @@ def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponseWithView
         context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
 
     return TemplateResponseWithViewName(request, "interactive_hand.html", context=context)
+
+
+def _terse_description(hand: Hand) -> str:
+    tourney = format_html(
+        '<a href="{}?tournament={}">Tournament #{}</a>',
+        reverse("app:board-list"),
+        hand.board.tournament.pk,
+        hand.board.tournament.display_number,
+    )
+
+    table = format_html(
+        "Table #{}",
+        hand.table_display_number,
+    )
+
+    board = format_html(
+        '<a href="{}">Board #{} ({})</a>',
+        reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
+        hand.board.display_number,
+        hand.board.vulnerability_string(),
+    )
+
+    return SafeString(" ".join([tourney, table, board]))
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:

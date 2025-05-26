@@ -4,11 +4,11 @@ import bridge.card
 import bridge.contract
 
 from .models import Hand, Player
-from .views.hand import hand_detail_view
+from .views.hand import _interactive_view
 from .views.tournament import tournament_view
 
 
-def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
+def test__interactive_view_doesnt_do_a_shitton_of_queries(
     usual_setup: Hand, rf, django_assert_max_num_queries
 ) -> None:
     h = usual_setup
@@ -40,7 +40,7 @@ def test_hand_detail_view_doesnt_do_a_shitton_of_queries(
     request.user = p.user
 
     with django_assert_max_num_queries(118):
-        hand_detail_view(request, h.pk)
+        _interactive_view(request, h.pk)
 
 
 def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(

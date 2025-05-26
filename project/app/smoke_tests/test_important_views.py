@@ -14,7 +14,7 @@ from django.core.management import call_command
 from app.models import Board, Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff, check_for_expirations
 
-from app.views.hand import everything_read_only_view, hand_detail_view
+from app.views.hand import _everything_read_only_view, _interactive_view
 
 from app.testutils import play_out_hand
 
@@ -236,13 +236,13 @@ def test_both_important_views(
 
     match expected_view:
         case "app:hand-everything-read-only":
-            assert everything_read_only_view(request=request, pk=hand.pk).status_code == 200
-            assert hand_detail_view(request=request, pk=hand.pk).viewname == expected_view
+            assert _everything_read_only_view(request=request, pk=hand.pk).status_code == 200
+            assert _interactive_view(request=request, pk=hand.pk).viewname == expected_view
         case "app:hand-detail":
-            assert everything_read_only_view(request=request, pk=hand.pk).viewname == expected_view
-            assert hand_detail_view(request=request, pk=hand.pk).status_code == 200
+            assert _everything_read_only_view(request=request, pk=hand.pk).viewname == expected_view
+            assert _interactive_view(request=request, pk=hand.pk).status_code == 200
         case "login" | "forbidden":
-            for v in (everything_read_only_view, hand_detail_view):
+            for v in (_everything_read_only_view, _interactive_view):
                 resp = v(request=request, pk=hand.pk)
                 assert resp.viewname == expected_view
         case _:
@@ -274,7 +274,7 @@ def test_weirdo_special_case(db, rf):
     setattr(request, "session", {})
     request.user = North.user
 
-    assert everything_read_only_view(request=request, pk=h1.pk).status_code == 200
+    assert _everything_read_only_view(request=request, pk=h1.pk).status_code == 200
 
     # North can also "see" all of h2, even though it's not complete.
-    assert everything_read_only_view(request=request, pk=h2.pk).status_code == 200
+    assert _everything_read_only_view(request=request, pk=h2.pk).status_code == 200

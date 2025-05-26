@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from .models import Hand, Player
 from .testutils import set_auction_to
-from .views.hand import everything_read_only_view
+from .views.hand import _everything_read_only_view
 
 
 def test_final_score(usual_setup: Hand, rf: Any) -> None:
@@ -22,7 +22,7 @@ def test_final_score(usual_setup: Hand, rf: Any) -> None:
     request = rf.get("/woteva/", data={"pk": h.pk})
     request.user = north.user
 
-    response = everything_read_only_view(request=request, pk=h.pk)
+    response = _everything_read_only_view(request=request, pk=h.pk)
     assert isinstance(response, HttpResponseRedirect)
 
     assert response.status_code == 302

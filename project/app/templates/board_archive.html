@@ -24,16 +24,16 @@
                 {% for h in annotated_hands %}
                     <tr {% if h.pk == my_hand_pk %}class="table-warning"{% endif %}>
                         <th>
-                            <a href="{% url 'app:hand-everything-read-only' h.pk %}">{{ h.pk }}</a>
+                            <a href="{% url 'app:hand-dispatch' h.pk %}">{{ h.pk }}</a>
                         </th>
                         <td>
-                            <a href="{% url 'app:hand-everything-read-only' h.pk %}">{{ h.table_display_number }}</a>
+                            <a href="{% url 'app:hand-dispatch' h.pk %}">{{ h.table_display_number }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-everything-read-only' h.pk %}">{{ h.summary_for_this_viewer }}</a>
+                            <a href="{% url 'app:hand-dispatch' h.pk %}">{{ h.summary_for_this_viewer }}</a>
                         </td>
                         <td>
-                            <a href="{% url 'app:hand-everything-read-only' h.pk %}">{{ h.score_for_this_viewer }}</a>
+                            <a href="{% url 'app:hand-dispatch' h.pk %}">{{ h.score_for_this_viewer }}</a>
                         </td>
                     </tr>
                 {% endfor %}
