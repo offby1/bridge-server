@@ -81,7 +81,6 @@ class HttpResponseForbiddenWithViewName(HttpResponseWithViewname, HttpResponseFo
         setattr(self, "viewname", "forbidden")
 
 
-# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
 def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.datetime:
     if (zone_name := request.session.get("detected_tz")) is not None:
         import zoneinfo
@@ -95,6 +94,7 @@ def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.
     return stamp
 
 
+# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
 def _redirect_or_error_response(
     hand: app.models.Hand, request: AuthedHttpRequest
 ) -> HttpResponseWithViewname:
