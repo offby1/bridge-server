@@ -19,6 +19,10 @@ They don't *host*, but they do have a dead-easy [TLS-doing reverse proxy](https:
 ### [railway.app](https://railway.app/)
 Glanced at it; it clearly aims to make deployment easy.  No idea if it's got what I'd need, though; worth more investigation.
 
+[Django docs](https://docs.railway.com/guides/django#deploy-django-app-on-railway).
+
+A quick glance at the docs suggests that they really want me to use their database instance, rather than running my own in a container; [this](https://docs.railway.com/guides/dockerfiles#docker-compose) suggests that they will *copy* the information from my compose file, and I will then have to maintain that copy forever.  It smells like they're trying to lock customers in.
+
 ### ✘ digital ocean
 
 The signup process *looks* slick, but kept refusing to accept my SSH public key.  Finally I gave up and switched to "log in with a password" ... then found out that it had created *four* "droplets" and *four* postgres databases (which would charge me $80/month total) without telling me (i.e., my attempts to add my ssh public key might have succeeded even though the UI said they'd fail?). Overwhelmingly untrustworthy.  I had to spend a fair amount of time individually deleting the droplets and databases, and shutting down my account.
