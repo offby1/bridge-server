@@ -1,6 +1,10 @@
 IN PROGRESS:
 
 STILL TODO:
+* We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
+
+  Dunno if this would save significant time, memory, or CPU; but it's an idea.
+
 * Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
 * I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.

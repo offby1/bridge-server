@@ -64,11 +64,11 @@ class PlayerManager(models.Manager):
             username=self._find_unused_username(prefix="_")
         )
 
-        # TODO -- undo this before merging into main
+        # Handy for hackin', but you don't want this active in prod
         ####################
-        logger.warning(f"Hard-coding known password for {new_user.username=}")
-        new_user.password = "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
-        new_user.save()
+        # logger.warning(f"Hard-coding known password for {new_user.username=}")
+        # new_user.password = "pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU="
+        # new_user.save()
         ####################
 
         return Player.objects.create(synthetic=True, allow_bot_to_play_for_me=True, user=new_user)
