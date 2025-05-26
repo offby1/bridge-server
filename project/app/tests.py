@@ -103,7 +103,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) ->
     client = Client()
 
     def r():
-        return client.get(reverse("app:hand-detail", kwargs={"pk": h.pk}), follow=True)
+        return client.get(reverse("app:hand-dispatch", kwargs={"pk": h.pk}), follow=True)
 
     response = r()
     for c in norths_cards:
@@ -127,7 +127,7 @@ def test_legal_cards(usual_setup: Hand, rf) -> None:
     client = Client()
     client.login(username=leader.name, password=".")
 
-    response = client.get(reverse("app:hand-detail", kwargs={"pk": h.pk}), follow=True)
+    response = client.get(reverse("app:hand-dispatch", kwargs={"pk": h.pk}), follow=True)
     assert "disabled" not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled

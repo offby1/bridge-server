@@ -296,7 +296,7 @@ class Hand(TimeStampedModel):
     def as_link(self):
         return format_html(
             "<a href='{}'>{}</a>",
-            reverse("app:hand-detail", kwargs={"pk": self.pk}),
+            reverse("app:hand-dispatch", kwargs={"pk": self.pk}),
             str(self),
         )
 
