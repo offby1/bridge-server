@@ -129,9 +129,6 @@ class PartnerException(PlayerException):
     pass
 
 
-# fmt:off
-
-# fmt:on
 class Player(TimeStampedModel):
     objects = PlayerManager()
 

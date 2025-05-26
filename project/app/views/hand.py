@@ -527,33 +527,39 @@ def _error_response_or_viewfunc(
 
     # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
     # will not be played again.
-    if (user.is_anonymous or player is None) and not hand.board.tournament.is_complete:
+    if user.is_anonymous or player is None:
         return HttpResponseForbidden(
             "Anonymous users cannot view hands from incomplete tournaments"
         )
 
-    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
-
-    if t.is_complete or (
+    if (
         (hand.is_abandoned or hand.is_complete)
         and player is not None
         and player.has_played_hand(hand)
     ):
+        logger.debug("%s has played %s so _everything_read_only_view", player.name, hand)
         return _everything_read_only_view
 
-    if player is None and not hand.board.tournament.is_complete:
-        return HttpResponseForbidden(
+    if player is None:
+        msg = (
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
             f" until {hand.board.tournament.play_completion_deadline}, so anonymous users such as yourself can't see this hand now."
         )
+        return HttpResponseForbidden(msg)
 
     assert player is not None
 
     if not player.has_played_hand(hand):
-        if hand.board in (h.board for h in player.hands_played if h.is_complete):
-            # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
-            return _everything_read_only_view
-        msg = f"You, {player}, haven't yet fully played thi's hand's board {hand.board}, so you cannot see the hand."
+        for h in player.hands_played:
+            if h.is_complete and h.board == hand.board:
+                # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
+                msg = (
+                    f"{player.name} has not played {hand} but has played the board at"
+                    f" {h}, so _everything_read_only_view"
+                )
+                return _everything_read_only_view
+
+        msg = f"You, {player}, haven't yet fully played this hand's board {hand.board}, so you cannot see the hand."
         return HttpResponseForbidden(msg)
 
     return _interactive_view
