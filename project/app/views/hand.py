@@ -646,6 +646,7 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
+# TODO -- maybe call _error_response_or_viewfunc to do most of the permissions checking
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 

@@ -1,21 +1,19 @@
 import logging
 
+import pytest
 
 from app.models import Board, Hand, Player, Tournament
 
 
-from app.views.hand import _everything_read_only_view
+from app.views.hand import _error_response_or_viewfunc, _everything_read_only_view
 
 from app.testutils import play_out_hand
 
 logger = logging.getLogger()
 
 
-def test_dispatcher() -> None: ...
-
-
-# I tried to incorporate this test into test_both_important_views above, but it was a mess.
-def test_weirdo_special_case(db, rf):
+@pytest.fixture
+def two_hands(db) -> list[Hand]:
     t1 = Tournament.objects.create()
     b1, _ = Board.objects.get_or_create_from_display_number(
         display_number=1, tournament=t1, group="A"
@@ -34,12 +32,19 @@ def test_weirdo_special_case(db, rf):
     )
     play_out_hand(h1)
 
+    return [h1, h2]
+
+
+def test_dispatcher(two_hands: list[Hand], rf):
+    h1, h2 = two_hands
+    North = h1.North
+
     # North can "see" all of h1.
     request = rf.get("/woteva/", data={"pk": h1.pk})
     setattr(request, "session", {})
     request.user = North.user
 
-    assert _everything_read_only_view(request=request, pk=h1.pk).status_code == 200
+    assert _error_response_or_viewfunc(h1, North.user) == _everything_read_only_view
 
     # North can also "see" all of h2, even though it's not complete.
-    assert _everything_read_only_view(request=request, pk=h2.pk).status_code == 200
+    assert _error_response_or_viewfunc(h2, North.user) == _everything_read_only_view
