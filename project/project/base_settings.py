@@ -16,6 +16,9 @@ from pathlib import Path
 import sys
 from typing import Any
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -262,3 +265,30 @@ CACHES = {
         "LOCATION": "bridge_django_cache",
     }
 }
+
+
+def init_sentry_for_environment(environment: str) -> None:
+    sentry_sdk.init(  # type: ignore
+        dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
+        send_default_pii=True,
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for tracing.
+        environment=environment,
+        traces_sample_rate=0.01,
+        # Set profiles_sample_rate to 1.0 to profile 100%
+        # of sampled transactions.
+        # We recommend adjusting this value in production.
+        profiles_sample_rate=0.01,
+        profile_lifecycle="trace",
+        integrations=[
+            DjangoIntegration(
+                cache_spans=True,
+                middleware_spans=True,
+                signals_spans=False,
+            ),
+        ],
+        release=VERSION,
+        _experiments={
+            "enable_logs": True,
+        },
+    )
