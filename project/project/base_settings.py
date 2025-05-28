@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 import sys
@@ -110,6 +111,7 @@ EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 MIDDLEWARE = [
     "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
     "log_request_id.middleware.RequestIDMiddleware",
+    "app.middleware.simple_access_log.RequestLoggingMiddleware",
     "app.middleware.add_git_commit_hash.AddVersionHeaderMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -198,6 +200,15 @@ STATIC_ROOT = BASE_DIR / "static_root"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+class MuffleObserverLogs(logging.Filter):
+    def filter(self, record):
+        if getattr(record, "filename", None) == "_observer.py":
+            return False
+
+        return True
+
+
 LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -210,12 +221,13 @@ LOGGING: dict[str, Any] = {
         },
     },
     "filters": {
+        "muffle_observer_logs": {"()": MuffleObserverLogs},
         "request_id": {"()": "log_request_id.filters.RequestIDFilter"},
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
-            "filters": ["request_id"],
+            "filters": ["request_id", "muffle_observer_logs"],
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
