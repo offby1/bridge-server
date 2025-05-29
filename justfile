@@ -131,6 +131,7 @@ collectstatic: (manage "collectstatic --no-input")
 fixture *options: pg-stop drop migrate (manage "loaddata " + options)
     @echo To create a new fixture, do e.g. "just dumpdata"
 
+alias load := fixture
 alias loaddata := fixture
 
 [group('django')]
