@@ -268,7 +268,7 @@ ensure_bot_is_on_same_branch:
     if ! [[ "${our_branch}" = "${bot_branch}" ]]
     then
       echo our branch $our_branch is not the same as the bot\'s branch $bot_branch
-      #false
+      false
     fi
 
 [group('docker')]
