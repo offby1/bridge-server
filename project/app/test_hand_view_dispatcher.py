@@ -3,9 +3,12 @@ import logging
 import pytest
 
 from django.contrib import auth
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseForbidden
+from django.utils.timezone import now
 
 from app.models import Board, Hand, Player, Tournament
+from app.models.tournament import _do_signup_expired_stuff
 from app.views.hand import (
     _error_response_or_viewfunc,
     _everything_read_only_view,
@@ -88,3 +91,22 @@ def test_dispatcher(two_hands):
                 assert type(actual) is expected
             else:
                 assert actual == expected
+
+
+def test_anonymous_can_view_hands_if_the_boards_will_not_be_played_again(db, everybodys_password):
+    t = Tournament.objects.create()
+    Player.objects.ensure_eight_players_signed_up(tournament=t)
+    t.signup_deadline = now()
+    t.save()
+    _do_signup_expired_stuff(t)
+
+    ann = AnonymousUser()
+
+    for h in Hand.objects.filter(board__display_number=1):
+        assert type(_error_response_or_viewfunc(h, ann)) is HttpResponseForbidden
+
+    for h in Hand.objects.filter(board__display_number=1):
+        play_out_hand(h)
+
+    for h in Hand.objects.filter(board__display_number=1):
+        assert _error_response_or_viewfunc(h, ann) == _everything_read_only_view

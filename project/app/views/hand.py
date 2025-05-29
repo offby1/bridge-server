@@ -525,12 +525,12 @@ def _error_response_or_viewfunc(
 
     player = getattr(user, "player", None)
 
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
     if user.is_anonymous or player is None:
-        return HttpResponseForbidden(
-            "Anonymous users cannot view hands from incomplete tournaments"
-        )
+        if t.will_board_be_played_again(board=hand.board):
+            return HttpResponseForbidden(
+                "Anonymous users can view only those boards that have been fully played"
+            )
+        return _everything_read_only_view
 
     if (
         (hand.is_abandoned or hand.is_complete)
