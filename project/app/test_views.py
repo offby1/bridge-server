@@ -2,10 +2,12 @@ import base64
 import json
 
 from django.conf import settings
+from django.core.cache import cache
 from django.test.client import Client
 from django.urls import reverse
 
-from app.views import player
+from app.models import Player, Tournament
+from app.views import player, tournament
 
 
 def test_player_by_name_or_pk_view(usual_setup, rf) -> None:
@@ -46,3 +48,13 @@ def test_compatibility_with_three_way_login(usual_setup, rf) -> None:
         reverse("app:player-by-name-or-pk", kwargs={"name_or_pk": jeremys_player_id}),
     )
     assert json.loads(response.content)["name"] == "Jeremy Northam"
+
+
+def test_tournament_view_after_splitsville(usual_setup, rf):
+    some_player = Player.objects.first()
+    some_player.break_partnership()
+    cache.clear()
+
+    request = rf.get("/woteva")
+    request.user = some_player
+    tournament.tournament_view(request, Tournament.objects.first().pk)
