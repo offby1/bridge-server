@@ -2,13 +2,7 @@ import logging
 import os
 
 from .base_settings import *  # noqa
-from .base_settings import (
-    INSTALLED_APPS,
-    LOGGING,
-    MIDDLEWARE,
-    TEMPLATES,
-    init_sentry_for_environment,
-)
+from .base_settings import INSTALLED_APPS, LOGGING, MIDDLEWARE, TEMPLATES
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
@@ -28,5 +22,3 @@ LOGGING["root"]["level"] = "DEBUG"  # type: ignore  [index]
 
 # See notes in prod_settings
 DEPLOYMENT_ENVIRONMENT = "development"
-
-init_sentry_for_environment(environment=DEPLOYMENT_ENVIRONMENT)
