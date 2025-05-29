@@ -395,21 +395,31 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                     msg,
                 )
 
+            logger.debug(
+                "%s is calling it splits with their partner %s", self.name, self.partner.name
+            )
             old_partner_pk = self.partner.pk
 
             import app.models
 
             evictees = app.models.TournamentSignup.objects.filter(player__in={self, self.partner})
-            logger.debug(
-                "About to remove %s",
-                ", ".join(
-                    [
-                        f"{su.player.name} from signups for t#{su.tournament.display_number}"
-                        for su in evictees
-                    ]
-                ),
-            )
-            evictees.delete()
+            if not evictees:
+                logger.debug(
+                    "Neither %s nor %s were signed up for any tournaments; no TournamentSignups to delete",
+                    self.name,
+                    self.partner.name,
+                )
+            else:
+                logger.debug(
+                    "About to remove %s",
+                    ", ".join(
+                        [
+                            f"{su.player.name} from signups for t#{su.tournament.display_number}"
+                            for su in evictees
+                        ]
+                    ),
+                )
+                evictees.delete()
 
             self.partner.partner = None
             self.partner.abandon_my_hand()
