@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import operator
 from typing import TYPE_CHECKING, Any, Literal
 
 from django.contrib import admin
@@ -298,21 +299,22 @@ class Tournament(models.Model):
         logger.debug(f"{num_completed_hands=} {boards_per_round_per_tournament=} => {rv=}")
         return rv
 
-    @staticmethod
-    def pairs_from_partnerships(players: models.QuerySet) -> Generator[app.utils.movements.Pair]:
-        seen: set[PK] = set()
-
-        for p in players:
-            if p.pk not in seen and p.partner.pk not in seen:
-                names = f"{p.name}, {p.partner.name}"
-                yield app.utils.movements.Pair(id_=[p.pk, p.partner.pk], names=names)
-                seen.add(p.pk)
-                seen.add(p.partner.pk)
-
-    def seated_pairs(self) -> Generator[app.utils.movements.Pair]:
-        from app.models import Player
-
-        yield from self.pairs_from_partnerships(Player.objects.currently_seated())
+    def pairs_from_existing_hands(self) -> Generator[app.utils.movements.Pair]:
+        """I examine my hands, and for each, I *assume* that N and S are partners, as are E and W.  This avoids chaos if a partnership has dissolved since the tournament's signup deadline expired."""
+        pairs: set[tuple[Player, Player]] = set()
+        for h in (
+            self.hands()
+            .select_related(*app.models.common.attribute_names)
+            .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
+        ):
+            p1 = tuple(sorted([h.North, h.South], key=operator.attrgetter("pk")))
+            p2 = tuple(sorted([h.East, h.West], key=operator.attrgetter("pk")))
+            pairs.add(p1)
+            pairs.add(p2)
+        for p in pairs:
+            yield app.utils.movements.Pair(
+                id_=(p[0].pk, p[1].pk), names=f"{p[0].name}, {p[1].name}"
+            )
 
     def create_hands_for_round(self, *, zb_round_number: int) -> list[Hand]:
         rv: list[Hand] = []
@@ -338,14 +340,7 @@ class Tournament(models.Model):
         if (_movement := self._cache_get()) is None:
             logger.debug(f"{self.hands().count()} hands exist.")
             if self.hands().exists():
-                # Collect all players who have played the hands.
-                player_pks: set[PK] = set()
-                for h in self.hands():
-                    player_pks = player_pks.union(h.player_pks())
-                from app.models import Player
-
-                pairs = list(self.pairs_from_partnerships(Player.objects.filter(pk__in=player_pks)))
-                logger.debug(f"self.pairs_from_partnerships => {pairs=}")
+                pairs = list(self.pairs_from_existing_hands())
             else:
                 assert self.signup_deadline_has_passed(), (
                     f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
@@ -427,14 +422,19 @@ class Tournament(models.Model):
             )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
-        players = (
+        seen: set[PK] = set()
+
+        for p in (
             self.signed_up_players()
             .select_related("user")
             .select_related("partner")
             .select_related("partner__user")
-        )
-
-        yield from self.pairs_from_partnerships(players)
+        ):
+            if p.pk not in seen and p.partner.pk not in seen:
+                names = f"{p.name}, {p.partner.name}"
+                yield app.utils.movements.Pair(id_=[p.pk, p.partner.pk], names=names)
+                seen.add(p.pk)
+                seen.add(p.partner.pk)
 
     def signed_up_players(self) -> models.QuerySet:
         from app.models import Player
