@@ -652,12 +652,12 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-# TODO -- maybe call _error_response_or_viewfunc to do most of the permissions checking
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if not request.user.is_authenticated and not hand.board.tournament.is_complete:
-        return Forbid("You are anonymous, and this tournament isn't complete")
+    resp = _error_response_or_viewfunc(hand, request.user)
+    if isinstance(resp, HttpResponseForbidden):
+        return resp
 
     if not request.user.is_authenticated:
         xscript = hand.get_xscript()
