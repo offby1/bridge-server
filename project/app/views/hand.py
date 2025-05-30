@@ -523,14 +523,15 @@ def _error_response_or_viewfunc(
     if t.is_complete:
         return _everything_read_only_view
 
+    if not t.will_board_be_played_again(board=hand.board):
+        return _everything_read_only_view
+
     player = getattr(user, "player", None)
 
     if user.is_anonymous or player is None:
-        if t.will_board_be_played_again(board=hand.board):
-            return HttpResponseForbidden(
-                "Anonymous users can view only those boards that have been fully played"
-            )
-        return _everything_read_only_view
+        return HttpResponseForbidden(
+            "Anonymous users can view only those boards that have been fully played"
+        )
 
     if (
         (hand.is_abandoned or hand.is_complete)

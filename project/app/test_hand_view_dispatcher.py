@@ -93,7 +93,7 @@ def test_dispatcher(two_hands):
                 assert actual == expected
 
 
-def test_anonymous_can_view_hands_if_the_boards_will_not_be_played_again(db, everybodys_password):
+def test_rando_can_view_hands_if_the_boards_will_not_be_played_again(db, everybodys_password):
     t = Tournament.objects.create()
     Player.objects.ensure_eight_players_signed_up(tournament=t)
     t.signup_deadline = now()
@@ -101,12 +101,15 @@ def test_anonymous_can_view_hands_if_the_boards_will_not_be_played_again(db, eve
     _do_signup_expired_stuff(t)
 
     ann = AnonymousUser()
+    not_part_of_this_tournament = Player.objects.create_synthetic().user
 
     for h in Hand.objects.filter(board__display_number=1):
-        assert type(_error_response_or_viewfunc(h, ann)) is HttpResponseForbidden
+        for u in (ann, not_part_of_this_tournament):
+            assert type(_error_response_or_viewfunc(h, u)) is HttpResponseForbidden
 
     for h in Hand.objects.filter(board__display_number=1):
         play_out_hand(h)
 
     for h in Hand.objects.filter(board__display_number=1):
-        assert _error_response_or_viewfunc(h, ann) == _everything_read_only_view
+        for u in (ann, not_part_of_this_tournament):
+            assert _error_response_or_viewfunc(h, u) == _everything_read_only_view
