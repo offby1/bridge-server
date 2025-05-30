@@ -97,9 +97,7 @@ class BoardManager(models.Manager):
             defaults=defaults, tournament=tournament, display_number=display_number
         )
 
-# fmt:off
-
-# fmt:on
+
 class Board(models.Model):
     @functools.total_ordering
     class PlayerVisibility(enum.Enum):
@@ -242,10 +240,6 @@ class Board(models.Model):
             return self.PlayerVisibility.nothing
 
         if self.tournament.signup_deadline_has_passed() and player not in self.tournament.players():
-            player_name = getattr(player, "name", "?")
-            logger.error(
-                f"t#{self.tournament.display_number}'s signup deadline has passed; and {player_name=} isn't in that tournament, so => {self.PlayerVisibility.everything=}"
-            )
             return self.PlayerVisibility.everything
 
         hand = player.hand_at_which_we_played_board(self)
@@ -303,14 +297,6 @@ class Board(models.Model):
                 fields=["display_number", "tournament_id"],
             ),
         ]
-
-
-# fmt:off
-
-
-
-
-# fmt:on
 
 
 admin.site.register(Board)
