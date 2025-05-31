@@ -25,8 +25,9 @@ class MyChannelManager(DefaultChannelManager):
 
         # player-to-player messages are private.
         if (player_pks := models.Message.player_pks_from_channel_name(channel)) is not None:
-            # logger.warning(f"{player.pk=} {player_pks=}")
-            return player.pk in player_pks
+            rv = player.pk in player_pks
+            # logger.warning(f"{player.pk=} {player_pks=} => {rv=}")
+            return rv
 
         # system-to-player HTML messages are similarly private.
         if (player_pk := models.Player.player_pk_from_event_HTML_hand_channel(channel)) is not None:
@@ -45,14 +46,16 @@ class MyChannelManager(DefaultChannelManager):
             try:
                 hand = models.Hand.objects.get(pk=hand_pk)
             except models.Hand.DoesNotExist:
-                logger.info("Hand %s does not exist", hand_pk)
+                logger.info("Hand %s does not exist => False", hand_pk)
                 return False
             else:
-                return player in hand.players()
+                rv = player in hand.players()
+                # logger.warning(f"{player=} in  {hand.players()=} => {rv=}")
+                return rv
 
         if channel == "partnerships":
             return True
 
         # everything else is visible to everyone, although I don't think there *are* any other messages.
-        logger.warning("OK, so wtf is channel %s?", channel)
+        # logger.warning("OK, so wtf is channel %s?", channel)
         return True

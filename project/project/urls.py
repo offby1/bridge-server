@@ -15,6 +15,10 @@ urlpatterns = [
         kwargs={"channels": ["lobby"]},
     ),
     path(
+        "events/chat/player-to-player/<channel>/",
+        include(django_eventstream.urls),
+    ),
+    path(
         "events/player/html/hand/<player_id>/",
         include(django_eventstream.urls),
         {"format-channels": ["player:html:hand:{player_id}"]},
@@ -35,12 +39,6 @@ urlpatterns = [
         "events/all-tables/",
         include(django_eventstream.urls),
         kwargs={"channels": ["all-tables"]},
-    ),
-    path(
-        # public.  Messages are like {"joined": [16, 17], "split": []} or {"split": [16, 17], "joined": []}
-        "events/partnerships/",
-        include(django_eventstream.urls),
-        kwargs={"channels": ["partnerships"]},
     ),
     path("tz_detect/", include("tz_detect.urls")),
 ]

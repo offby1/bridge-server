@@ -162,6 +162,25 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
 
 alias runserver := runme
 
+# Like "runme", but lets SSE work, and doesn't automatically reload
+[group('bs')]
+[script('bash')]
+daphne: ft version-file django-superuser migrate create-cache collectstatic ensure-skeleton-key
+    set -euo pipefail
+    cd project
+    tput rmam                   # disables line wrapping
+    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
+    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
+    set -x
+    poetry run daphne                                                               \
+      --verbosity                                                                   \
+      1                                                                             \
+      --bind                                                                        \
+      0.0.0.0                                                                       \
+      --port 9000 \
+      --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
+      project.asgi:application
+
 curl *options: django-superuser migrate create-cache ensure-skeleton-key
     curl -v --cookie cook --cookie-jar cook "{{ options }}"
 

@@ -196,8 +196,8 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
         return HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": current_hand.pk}))
 
     common_context = {
+        "chat_channel_name": Message.channel_name_from_players(who_clicked, subject),
         "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
-        "chat_event_source_endpoint": f"/events/player/{Message.channel_name_from_players(who_clicked, subject)}",
         "chat_messages": (
             [
                 m.as_html()
