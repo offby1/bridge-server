@@ -418,14 +418,6 @@ class Tournament(models.Model):
             if created:
                 num_created += 1
 
-        if num_created > 0:
-            logger.debug(
-                "Just signed up partners %s and %s for tournament #%s",
-                player.name,
-                player.partner.name,
-                self.display_number,
-            )
-
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         seen: set[PK] = set()
 
