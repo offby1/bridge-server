@@ -8,6 +8,7 @@ import random
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
+
 from bridge.card import Card
 from bridge.seat import Seat
 
@@ -140,6 +141,25 @@ class Board(models.Model):
     def was_played_at_table(self, *, table_display_number: int) -> models.QuerySet:
         qs = self.hand_set.filter(table_display_number=table_display_number)
         return qs
+
+    def will_be_played_again(self) -> bool:
+        # How many *complete* hands include this board?
+        num_completed_hands = len([h for h in self.hand_set.filter(board=self) if h.is_complete])
+        # If that number == the number of tables in this tournament, then no
+        # otherwise yes
+        mvmt = self.tournament.get_movement()
+        return num_completed_hands < len(mvmt.table_settings_by_zb_table_number)
+
+    # TODO -- make the return value an enum, I guess
+    # Also TODO -- probably could be combined with what_can_they_see and similar methods
+    def relationship_to(self, player: Player) -> str:
+        from app.models import Hand
+
+        for h in Hand.objects.filter(board=self):
+            if player in h.players():
+                return "AlreadyPlayedIt" if h.is_complete else "CurrentlyPlayingIt"
+
+        return "NeverSeenIt"
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"

@@ -359,14 +359,6 @@ class Tournament(models.Model):
 
         return _movement
 
-    def will_board_be_played_again(self, *, board: app.models.Board) -> bool:
-        # How many *complete* hands include this board?
-        num_completed_hands = sum([1 for h in self.hands().filter(board=board) if h.is_complete])
-        # If that number == the number of tables in this tournament, then no
-        # otherwise yes
-        mvmt = self.get_movement()
-        return num_completed_hands < len(mvmt.table_settings_by_zb_table_number)
-
     def signup_deadline_has_passed(self) -> bool:
         if self.signup_deadline is None:
             return False

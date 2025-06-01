@@ -510,63 +510,46 @@ def hand_dispatch_view(request: HttpRequest, pk: PK) -> HttpResponse:
     """
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    wat = _error_response_or_viewfunc(hand, request.user)
+    wat = _error_response_or_viewfunc(hand.board, request.user)
     if isinstance(wat, HttpResponse):
         return wat
     return wat(request, pk)
 
 
 def _error_response_or_viewfunc(
-    hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
+    board: app.models.Board, user: AbstractBaseUser | AnonymousUser
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
-    t: app.models.Tournament = hand.board.tournament
+    assert_type(board, app.models.Board)
 
-    if not t.will_board_be_played_again(board=hand.board):
-        logger.warning("board will not be played again; _everything_read_only_view")
+    if not board.will_be_played_again():
+        logger.warning(
+            f"board #{board.display_number} will not be played again; {user} gets _everything_read_only_view"
+        )
         return _everything_read_only_view
 
     player = getattr(user, "player", None)
 
     if user.is_anonymous or player is None:
-        msg = "Anonymous users can view only those boards that have been fully played"
+        msg = f"Anonymous users like {user} can view only those boards that have been fully played"
         logger.warning("%s", msg)
         return HttpResponseForbidden(msg)
 
-    if (
-        (hand.is_abandoned or hand.is_complete)
-        and player is not None
-        and player.has_played_hand(hand)
-    ):
-        logger.warning("%s has played %s so _everything_read_only_view", player.name, hand)
-        return _everything_read_only_view
+    match brt := board.relationship_to(player):
+        case "NeverSeenIt":
+            msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
+            logger.warning("%s", msg)
+            return HttpResponseForbidden(msg)
+        case "CurrentlyPlayingIt":
+            return _interactive_view
+        case "AlreadyPlayedIt":
+            logger.warning(
+                "%s has already played board #%s so _everything_read_only_view",
+                player.name,
+                board.display_number,
+            )
+            return _everything_read_only_view
 
-    if player is None:
-        msg = (
-            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {hand.board.tournament.play_completion_deadline}, so anonymous users such as yourself can't see this hand now."
-        )
-        logger.warning("%s", msg)
-        return HttpResponseForbidden(msg)
-
-    assert player is not None
-
-    if not player.has_played_hand(hand):
-        for h in player.hands_played:
-            if h.is_complete and h.board == hand.board:
-                # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
-                msg = (
-                    f"{player.name} has not played {hand} but has *completely* played the board at"
-                    f" {h}, so _everything_read_only_view"
-                )
-                logger.warning("%s", msg)
-                return _everything_read_only_view
-
-        msg = f"You, {player}, haven't yet fully played this hand's board {hand.board}, so you cannot see the hand."
-        logger.warning("%s", msg)
-        return HttpResponseForbidden(msg)
-
-    logger.warning("fell through, so _interactive_view")
-    return _interactive_view
+    assert False, f"wtf is {brt}"
 
 
 def _everything_read_only_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
@@ -659,7 +642,7 @@ def _terse_description(hand: Hand) -> str:
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    resp = _error_response_or_viewfunc(hand, request.user)
+    resp = _error_response_or_viewfunc(hand.board, request.user)
     if isinstance(resp, HttpResponseForbidden):
         return resp
 
