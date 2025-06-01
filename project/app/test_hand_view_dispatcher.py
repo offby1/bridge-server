@@ -1,13 +1,13 @@
 import logging
+import types
 
 import pytest
 
-from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseForbidden
 from django.utils.timezone import now
 
-from app.models import Board, Hand, Player, Tournament
+from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 from app.views.hand import (
     _error_response_or_viewfunc,
@@ -20,96 +20,68 @@ logger = logging.getLogger()
 
 
 @pytest.fixture
-def two_hands(db, everybodys_password) -> None:
-    t1 = Tournament.objects.create()
-    b1, _ = Board.objects.get_or_create_from_display_number(
-        display_number=1, tournament=t1, group="A"
-    )
-
-    North, South, East, West = [
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-        for name in ["North", "East", "South", "West"]
-    ]
-
-    North.partner_with(South)
-    East.partner_with(West)
-
-    Ding, Dong, Witch, Dead = [
-        Player.objects.create(
-            user=auth.models.User.objects.create(username=name, password=everybodys_password),
-        )
-        for name in ["Ding", "Dong", "Witch", "Dead"]
-    ]
-
-    Ding.partner_with(Dong)
-    Witch.partner_with(Dead)
-
-    h1 = Hand.objects.create(
-        board=b1, North=North, East=East, West=West, South=South, table_display_number=1
-    )
-
-    play_out_hand(h1)
-
-    Hand.objects.create(
-        board=b1, North=Ding, East=Dong, West=Witch, South=Dead, table_display_number=2
-    )
-
-
-expectation_matrix = {
-    "North": {
-        "b1t1": _everything_read_only_view,
-        "b1t2": _everything_read_only_view,
-        "b2t1": _interactive_view,
-    },
-    "Ding": {
-        "b1t1": HttpResponseForbidden,
-        "b1t2": _interactive_view,
-        "b2t1": HttpResponseForbidden,
-    },
-}
-
-
-def test_dispatcher(two_hands):
-    assert Hand.objects.filter(board__display_number=1).count() == 2
-
-    for h in Hand.objects.all():
-        logger.info("hand %s: %s", h, [p.name for p in h.players()])
-
-    for player_name, by_board_and_table_display_numbers in expectation_matrix.items():
-        player = Player.objects.get_by_name(player_name)
-        for unpack_me, expected in by_board_and_table_display_numbers.items():
-            board_display_number, table_display_number = int(unpack_me[1]), int(unpack_me[3])
-
-            hand = Hand.objects.get(
-                board__display_number=board_display_number,
-                table_display_number=table_display_number,
-            )
-            actual = _error_response_or_viewfunc(hand, player.user)
-            if isinstance(actual, HttpResponseForbidden):
-                assert type(actual) is expected
-            else:
-                assert actual == expected
-
-
-def test_rando_can_view_hands_if_the_boards_will_not_be_played_again(db, everybodys_password):
-    t = Tournament.objects.create()
+def setup(db) -> None:
+    t = Tournament.objects.create(boards_per_round_per_table=1)
     Player.objects.ensure_eight_players_signed_up(tournament=t)
     t.signup_deadline = now()
     t.save()
+
     _do_signup_expired_stuff(t)
 
-    ann = AnonymousUser()
-    not_part_of_this_tournament = Player.objects.create_synthetic().user
-
-    for h in Hand.objects.filter(board__display_number=1):
-        for u in (ann, not_part_of_this_tournament):
-            assert type(_error_response_or_viewfunc(h, u)) is HttpResponseForbidden
-
-    for h in Hand.objects.filter(board__display_number=1):
+    # play board 1 fully
+    b1_hands = Hand.objects.filter(board__id=1)
+    assert b1_hands.count() == 2
+    for h in b1_hands:
         play_out_hand(h)
+    # play only one hand of board 2
+    b2_hands = Hand.objects.filter(board__id=2)
+    assert b2_hands.count() == 2
+    b2_hands_first = b2_hands.first()
+    assert b2_hands_first is not None
+    play_out_hand(b2_hands_first)
 
-    for h in Hand.objects.filter(board__display_number=1):
-        for u in (ann, not_part_of_this_tournament):
-            assert _error_response_or_viewfunc(h, u) == _everything_read_only_view
+    assert Hand.objects.count() == 4
+
+    return t
+
+
+def test_alt(setup: Tournament) -> None:
+    import pprint
+
+    pprint.pprint(setup.get_movement())
+
+    all_users = [p.user for p in Player.objects.all()] + [AnonymousUser]
+
+    # Board 1 has been fully played, so everybody can see everything.
+    for u in all_users:
+        for h in Hand.objects.filter(board__display_number=1):
+            assert _error_response_or_viewfunc(h, u) == _everything_read_only_view, f"{u.username}"
+
+    # Board 2 has been only partially played.
+    for h in Hand.objects.exclude(board__display_number=1):
+        for u in all_users:
+            hand_description = (
+                f"{u.username=} at {h} ({h.is_complete=}) with {[p.name for p in h.players()]}"
+            )
+
+            def expect(expected):
+                __tracebackhide__ = True
+                actual = _error_response_or_viewfunc(h, u)
+                if isinstance(expected, types.FunctionType):
+                    if actual != expected:
+                        pytest.fail(
+                            f"{hand_description} expected {expected} but got {actual.__name__}"
+                        )
+                else:
+                    if type(actual) is not expected:
+                        pytest.fail(
+                            f"{hand_description} expected {expected} but got {type(actual)} ({getattr(actual, '__name__', '?')})"
+                        )
+
+            if u in [p.user for p in h.players()]:
+                if h.is_complete:
+                    expect(_everything_read_only_view)
+                else:
+                    expect(_interactive_view)
+            else:
+                expect(HttpResponseForbidden)

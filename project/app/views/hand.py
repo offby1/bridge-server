@@ -520,25 +520,24 @@ def _error_response_or_viewfunc(
     hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
     t: app.models.Tournament = hand.board.tournament
-    if t.is_complete:
-        return _everything_read_only_view
 
     if not t.will_board_be_played_again(board=hand.board):
+        logger.warning("board will not be played again; _everything_read_only_view")
         return _everything_read_only_view
 
     player = getattr(user, "player", None)
 
     if user.is_anonymous or player is None:
-        return HttpResponseForbidden(
-            "Anonymous users can view only those boards that have been fully played"
-        )
+        msg = "Anonymous users can view only those boards that have been fully played"
+        logger.warning("%s", msg)
+        return HttpResponseForbidden(msg)
 
     if (
         (hand.is_abandoned or hand.is_complete)
         and player is not None
         and player.has_played_hand(hand)
     ):
-        logger.debug("%s has played %s so _everything_read_only_view", player.name, hand)
+        logger.warning("%s has played %s so _everything_read_only_view", player.name, hand)
         return _everything_read_only_view
 
     if player is None:
@@ -546,6 +545,7 @@ def _error_response_or_viewfunc(
             f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
             f" until {hand.board.tournament.play_completion_deadline}, so anonymous users such as yourself can't see this hand now."
         )
+        logger.warning("%s", msg)
         return HttpResponseForbidden(msg)
 
     assert player is not None
@@ -555,14 +555,17 @@ def _error_response_or_viewfunc(
             if h.is_complete and h.board == hand.board:
                 # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
                 msg = (
-                    f"{player.name} has not played {hand} but has played the board at"
+                    f"{player.name} has not played {hand} but has *completely* played the board at"
                     f" {h}, so _everything_read_only_view"
                 )
+                logger.warning("%s", msg)
                 return _everything_read_only_view
 
         msg = f"You, {player}, haven't yet fully played this hand's board {hand.board}, so you cannot see the hand."
+        logger.warning("%s", msg)
         return HttpResponseForbidden(msg)
 
+    logger.warning("fell through, so _interactive_view")
     return _interactive_view
 
 
