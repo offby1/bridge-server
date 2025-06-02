@@ -333,6 +333,7 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         assert not h.is_abandoned
 
     h = Hand.objects.first()
+    assert h is not None
     assert not h.is_complete
 
     for dir_ in h.direction_names:

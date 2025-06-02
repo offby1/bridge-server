@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import operator
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -20,6 +20,7 @@ import app.models.common
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
 from app.models.types import PK
+from app.models.utils import assert_type
 import app.utils.movements
 import app.utils.scoring
 
@@ -153,7 +154,9 @@ class TournamentManager(models.Manager):
     def open_for_signups(self) -> models.QuerySet:
         return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
 
-    def get_or_create_tournament_open_for_signups(self, **kwargs) -> tuple[Tournament, bool]:
+    def get_or_create_tournament_open_for_signups(
+        self, **creation_kwargs
+    ) -> tuple[Tournament, bool]:
         with transaction.atomic():
             now = timezone.now()
             incomplete_and_open_tournaments_qs = self.filter(
@@ -166,7 +169,7 @@ class TournamentManager(models.Manager):
                     "No tournament exists that is incomplete, and open for signup through %s, so we will create a new one",
                     now,
                 )
-                new_tournament = self.create(**kwargs)
+                new_tournament = self.create(**creation_kwargs)
                 logger.debug("... namely '%s'", new_tournament)
                 return new_tournament, True
 
@@ -204,6 +207,11 @@ class Tournament(models.Model):
         default=WAY_DISTANT_PLAY_COMPLETION_DEADLINE,
         db_comment='"a billion years from now" means we don\'t yet know how many players we have, hence cannot compute a movement',
     )  # type: ignore[call-overload]
+
+    tempo_seconds = models.FloatField(
+        db_comment="Time, in seconds, that the bot will wait before making a call or play",
+        default=1.0,
+    )
 
     objects = TournamentManager()
 
@@ -327,11 +335,14 @@ class Tournament(models.Model):
     def _cache_key(self) -> str:
         return f"tournament:{self.pk}"
 
-    def _cache_set(self, value: str) -> None:
+    def _cache_set(self, value: app.utils.movements.Movement) -> None:
+        assert_type(value, app.utils.movements.Movement)
         cache.set(self._cache_key(), value)
 
-    def _cache_get(self) -> Any:
-        return cache.get(self._cache_key())
+    def _cache_get(self) -> app.utils.movements.Movement | None:
+        rv = cache.get(self._cache_key())
+        assert_type(rv, app.utils.movements.Movement | None)
+        return rv
 
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:

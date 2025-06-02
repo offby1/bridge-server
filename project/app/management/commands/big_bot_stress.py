@@ -42,6 +42,7 @@ class Command(BaseCommand):
 
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
                 boards_per_round_per_table=boards_per_round_per_table,
+                tempo_seconds=0,
             )
 
             p: Player

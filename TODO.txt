@@ -3,10 +3,6 @@ IN PROGRESS:
 STILL TODO:
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
-* Restore the tempo attribute on a tournament, and have the bot honor it.
-
-  That way it'd be easy to speed up an all-bot tournament.
-
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
 
 * scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
@@ -178,6 +174,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Restore the tempo attribute on a tournament, and have the bot honor it.
+
+  That way it'd be easy to speed up an all-bot tournament.
+
 * carousel_style_auction doesn't indicate that a hand has been abandoned.
 
   Repro steps:

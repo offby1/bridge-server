@@ -461,11 +461,14 @@ class Hand(TimeStampedModel):
     def _cache_key(self) -> str:
         return f"hand:{self.pk}"
 
-    def _cache_set(self, value: str) -> None:
+    def _cache_set(self, value: HandTranscript) -> None:
+        assert_type(value, HandTranscript)
         cache.set(self._cache_key(), value)
 
-    def _cache_get(self) -> Any:
-        return cache.get(self._cache_key())
+    def _cache_get(self) -> HandTranscript | None:
+        rv = cache.get(self._cache_key())
+        assert_type(rv, HandTranscript | None)
+        return rv
 
     def get_xscript(self) -> HandTranscript:
         def calls() -> Iterator[tuple[libPlayer, libCall]]:
@@ -537,6 +540,7 @@ class Hand(TimeStampedModel):
                 data={
                     "hand_pk": self.pk,
                     "new-call": {"serialized": call.serialize()},
+                    "tempo_seconds": self.board.tournament.tempo_seconds,
                 },
                 when=now,
             )
@@ -613,7 +617,7 @@ class Hand(TimeStampedModel):
                 player_pk=player_to_update.pk,
             )
 
-        method(**kwargs)
+        method(**kwargs)  # type: ignore [arg-type]
 
     def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
         assert_type(player, libPlayer)
@@ -666,6 +670,7 @@ class Hand(TimeStampedModel):
                     "hand_pk": self.pk,
                     "serialized": card.serialize(),
                 },
+                "tempo_seconds": self.board.tournament.tempo_seconds,
             }
         )
 
