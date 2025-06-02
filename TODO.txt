@@ -9,8 +9,6 @@ STILL TODO:
 
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
 
-* At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
-
 * scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
   - make it scroll by one <li> at a time, instead; or maybe
   - bring back the little dots along the bottom that did exactly that
@@ -182,6 +180,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
+
 * Perhaps I should restore the "legacy" hand view, but only for observers (i.e., users who are logged in, but haven't signed up for the tournament).  That way I can ensure that the carousel hand view is seen only by authenticated users, and thus can refer to `user.player` in its template.
 
 * If I'm not looking at the "current trick" slide, it can acquire crucial information (namely: cards played by other seats), and then disappear, without me ever seeing it.  Imagine I lead a card, and don't scroll away from my hand.  Now three other players will play; one of them wins the trick and leads to the next.  Eventually my hand's background will turn light green, telling me it's my turn to play the trick ... but I won't have seen the previous trick -- the three cards that followed mine are now gone.
