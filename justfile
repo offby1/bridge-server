@@ -158,7 +158,7 @@ stress *options:
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
-    poetry run python manage.py runserver_plus 9000 {{ options }} --print-sql
+    poetry run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
 
