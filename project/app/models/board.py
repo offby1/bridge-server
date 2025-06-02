@@ -150,16 +150,15 @@ class Board(models.Model):
         mvmt = self.tournament.get_movement()
         return num_completed_hands < len(mvmt.table_settings_by_zb_table_number)
 
-    # TODO -- make the return value an enum, I guess
-    # Also TODO -- probably could be combined with what_can_they_see and similar methods
-    def relationship_to(self, player: Player) -> str:
+    # TODO -- probably could be combined with what_can_they_see and similar methods
+    def relationship_to(self, player: Player) -> tuple[str, Hand | None]:
         from app.models import Hand
 
         for h in Hand.objects.filter(board=self):
             if player in h.players():
-                return "AlreadyPlayedIt" if h.is_complete else "CurrentlyPlayingIt"
+                return ("AlreadyPlayedIt", h) if h.is_complete else ("CurrentlyPlayingIt", h)
 
-        return "NeverSeenIt"
+        return ("NeverSeenIt", None)
 
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"

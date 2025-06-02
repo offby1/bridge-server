@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseForbidden
 from django.utils.timezone import now
 
-from app.models import Board, Hand, Player, Tournament
+from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 from app.views.hand import (
     _error_response_or_viewfunc,
@@ -53,35 +53,34 @@ def test_alt(setup: Tournament) -> None:
     all_users = [p.user for p in Player.objects.all()] + [AnonymousUser]
 
     # Board 1 has been fully played, so everybody can see everything.
-    for u in all_users:
-        assert (
-            _error_response_or_viewfunc(Board.objects.get(display_number=1), u)
-            == _everything_read_only_view
-        ), f"{u.username}"
+    for h in Hand.objects.filter(board__display_number=1):
+        for u in all_users:
+            assert _error_response_or_viewfunc(h, u) == _everything_read_only_view, f"{u.username}"
 
-    # Board 2 has been only partially played.
-    for u in all_users:
-        b = Board.objects.get(display_number=2)
+    for h in Hand.objects.filter(board__display_number=2):
+        # Board 2 has been only partially played.
+        for u in all_users:
 
-        def expect(expected):
-            __tracebackhide__ = True
-            actual = _error_response_or_viewfunc(b, u)
-            if isinstance(expected, types.FunctionType):
-                if actual != expected:
-                    pytest.fail(f"expected {expected} but got {actual=}")
+            def expect(expected):
+                __tracebackhide__ = True
+                actual = _error_response_or_viewfunc(h, u)
+
+                if isinstance(expected, types.FunctionType):
+                    if actual != expected:
+                        pytest.fail(f"expected {expected=} but got {actual=}")
+                else:
+                    if actual is not expected and type(actual) is not expected:
+                        pytest.fail(f"expected {expected=} but got {type(actual)=}")
+
+            if u.is_anonymous:
+                expect(HttpResponseForbidden)
             else:
-                if type(actual) is not expected:
-                    pytest.fail(f"expected {expected} but got {type(actual)=}")
-
-        if u.is_anonymous:
-            expect(HttpResponseForbidden)
-        else:
-            match brt := b.relationship_to(u.player):
-                case "AlreadyPlayedIt":
-                    expect(_everything_read_only_view)
-                case "CurrentlyPlayingIt":
-                    expect(_interactive_view)
-                case "NeverSeenIt":
-                    expect(HttpResponseForbidden)
-                case _:
-                    pytest.fail(f"No idea what {brt=} is")
+                match brt := h.board.relationship_to(u.player):
+                    case ("AlreadyPlayedIt", _):
+                        expect(_everything_read_only_view)
+                    case ("CurrentlyPlayingIt", at_hand):
+                        expect(_interactive_view if h == at_hand else HttpResponseForbidden)
+                    case ("NeverSeenIt", None):
+                        expect(HttpResponseForbidden)
+                    case _:
+                        pytest.fail(f"No idea what {brt=} is")

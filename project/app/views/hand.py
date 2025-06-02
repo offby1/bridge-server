@@ -423,6 +423,7 @@ def _four_hands_context_for_hand(
 
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
+
     return always
 
 
@@ -510,15 +511,16 @@ def hand_dispatch_view(request: HttpRequest, pk: PK) -> HttpResponse:
     """
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    wat = _error_response_or_viewfunc(hand.board, request.user)
+    wat = _error_response_or_viewfunc(hand, request.user)
     if isinstance(wat, HttpResponse):
         return wat
     return wat(request, pk)
 
 
 def _error_response_or_viewfunc(
-    board: app.models.Board, user: AbstractBaseUser | AnonymousUser
+    hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
+    board = hand.board
     assert_type(board, app.models.Board)
 
     if not board.will_be_played_again():
@@ -535,17 +537,18 @@ def _error_response_or_viewfunc(
         return HttpResponseForbidden(msg)
 
     match brt := board.relationship_to(player):
-        case "NeverSeenIt":
+        case ("NeverSeenIt", None):
             msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
             logger.warning("%s", msg)
             return HttpResponseForbidden(msg)
-        case "CurrentlyPlayingIt":
-            return _interactive_view
-        case "AlreadyPlayedIt":
+        case ("CurrentlyPlayingIt", at_hand):
+            return _interactive_view if hand == at_hand else HttpResponseForbidden
+        case ("AlreadyPlayedIt", at_hand):
             logger.warning(
-                "%s has already played board #%s so _everything_read_only_view",
+                "%s has already played board #%s at %s so _everything_read_only_view",
                 player.name,
                 board.display_number,
+                at_hand,
             )
             return _everything_read_only_view
 
@@ -642,7 +645,7 @@ def _terse_description(hand: Hand) -> str:
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    resp = _error_response_or_viewfunc(hand.board, request.user)
+    resp = _error_response_or_viewfunc(hand, request.user)
     if isinstance(resp, HttpResponseForbidden):
         return resp
 
