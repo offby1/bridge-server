@@ -689,6 +689,12 @@ class Hand(TimeStampedModel):
             for p in self.players():
                 p._control_bot()
 
+            self.send_HTML_to_table(
+                data={
+                    "final_score": final_score_text,
+                },
+            )
+
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
                 mvmt = self.tournament.get_movement()
 
@@ -706,15 +712,6 @@ class Hand(TimeStampedModel):
                 )
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
-
-                self.send_HTML_to_table(
-                    data={
-                        "final_score": final_score_text,
-                    },
-                )
-
-            if self.tournament.is_complete:
-                return
 
     @property
     def auction(self) -> Auction:
