@@ -65,6 +65,7 @@ def test_alt(setup: Tournament) -> None:
                 __tracebackhide__ = True
                 actual = _error_response_or_viewfunc(h, u)
 
+                # TODO -- discriminate on the basis of "callability" -- if it's callable, call it.
                 if isinstance(expected, types.FunctionType):
                     if actual != expected:
                         pytest.fail(f"expected {expected=} but got {actual=}")

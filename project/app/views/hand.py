@@ -505,7 +505,7 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-def hand_dispatch_view(request: HttpRequest, pk: PK) -> HttpResponse:
+def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     """
     Returns either a 403 response (with explanatory text), or else the function in this module to call to get the response.
     """
@@ -514,6 +514,10 @@ def hand_dispatch_view(request: HttpRequest, pk: PK) -> HttpResponse:
     wat = _error_response_or_viewfunc(hand, request.user)
     if isinstance(wat, HttpResponse):
         return wat
+
+    if hand.is_abandoned:
+        return _everything_read_only_view(request, pk)
+
     return wat(request, pk)
 
 
