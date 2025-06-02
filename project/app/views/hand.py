@@ -521,35 +521,23 @@ def _error_response_or_viewfunc(
     hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
     board = hand.board
-    assert_type(board, app.models.Board)
 
     if not board.will_be_played_again():
-        logger.warning(
-            f"board #{board.display_number} will not be played again; {user} gets _everything_read_only_view"
-        )
         return _everything_read_only_view
 
     player = getattr(user, "player", None)
 
     if user.is_anonymous or player is None:
         msg = f"Anonymous users like {user} can view only those boards that have been fully played"
-        logger.warning("%s", msg)
         return HttpResponseForbidden(msg)
 
     match brt := board.relationship_to(player):
         case ("NeverSeenIt", None):
             msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
-            logger.warning("%s", msg)
             return HttpResponseForbidden(msg)
         case ("CurrentlyPlayingIt", at_hand):
             return _interactive_view if hand == at_hand else HttpResponseForbidden
         case ("AlreadyPlayedIt", at_hand):
-            logger.warning(
-                "%s has already played board #%s at %s so _everything_read_only_view",
-                player.name,
-                board.display_number,
-                at_hand,
-            )
             return _everything_read_only_view
 
     assert False, f"wtf is {brt}"
