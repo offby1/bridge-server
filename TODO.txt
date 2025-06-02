@@ -1,6 +1,12 @@
 IN PROGRESS:
 
 STILL TODO:
+* everything-read-only view should update automatically via SSE, just as the interactive views do.
+
+* Restore the tempo attribute on a tournament, and have the bot honor it.
+
+  That way it'd be easy to speed up an all-bot tournament.
+
 * Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
 
 * At the end of a hand, display a button (where "Next board plz" used to be) that takes us to the current hand.
@@ -15,7 +21,9 @@ STILL TODO:
 
   Dunno if this would save significant time, memory, or CPU; but it's an idea.
 
-* I broke God-mode :-(  The only way I can think of to fix this easily is to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
+* I broke God-mode :-(  One way to easily fix this would be to restore the "legacy" hand view, as above.  Might's well just have it permanently in god-mode.
+
+  Another idea: just add a couple more <li>'s to the carousel views, so that each compass direction is represented.
 
 * What should I do about a player who doesn't call or play within a reasonable amount of time?
 
