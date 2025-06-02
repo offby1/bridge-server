@@ -14,6 +14,7 @@ from app.models.types import PK
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
+    # TODO -- this is too strict; re-use, (or duplicate) logic from app.views.hand._error_response_or_viewfunc
     if not request.user.is_authenticated and not board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 

@@ -104,30 +104,30 @@ class Movement:
     boards_per_round_per_table: int  # redundant, but handy
     pairs: list[Pair]  # also redundant
     # The number of tables always equals the number of rounds.
-    table_settings_by_table_number: tuple[list[PlayersAndBoardsForOneRound], ...]
+    table_settings_by_zb_table_number: tuple[list[PlayersAndBoardsForOneRound], ...]
     num_phantoms: int = 0
 
     def players_and_boards_for(
         self, *, zb_round_number: int, zb_table_number: int
     ) -> PlayersAndBoardsForOneRound:
-        return self.table_settings_by_table_number[zb_table_number][zb_round_number]
+        return self.table_settings_by_zb_table_number[zb_table_number][zb_round_number]
 
     @property
     def total_hands(self) -> int:
         return (
             self.num_rounds
-            * len(self.table_settings_by_table_number)
+            * len(self.table_settings_by_zb_table_number)
             * self.boards_per_round_per_table
         )
 
     @property
     def num_rounds(self) -> int:
-        return len(self.table_settings_by_table_number)
+        return len(self.table_settings_by_zb_table_number)
 
     def tabulate_me(self) -> dict[str, Any]:
         rows: list[list[str]] = []
         headers = ["table"]
-        for tn, rounds in enumerate(self.table_settings_by_table_number):
+        for tn, rounds in enumerate(self.table_settings_by_zb_table_number):
             if not rows:
                 headers.extend(list(f"round {r.zb_round_number + 1}" for r in rounds))
             row = [str(rounds[0].table_number)]
@@ -262,7 +262,7 @@ class Movement:
             boards_per_round_per_table=boards_per_round_per_table,
             num_phantoms=num_phantoms,
             pairs=pairs,
-            table_settings_by_table_number=tuple([v for k, v in sorted(temp_rv.items())]),
+            table_settings_by_zb_table_number=tuple([v for k, v in sorted(temp_rv.items())]),
         )
         # import tabulate
 

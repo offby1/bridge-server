@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* auction_carousel_view doesn't indicate that a hand has been abandoned.
+
 * We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
 
   Dunno if this would save significant time, memory, or CPU; but it's an idea.
@@ -666,7 +668,7 @@ DONE:
   - hand.hand_list_view
   - hand.hand_archive_view
   - hand.four_hands_partial_view
-  - hand.hand_detail_view
+  - hand._interactive_view
   - hand.bidding_box_partial_view
   - hand.auction_partial_view
 

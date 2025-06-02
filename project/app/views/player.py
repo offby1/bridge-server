@@ -193,7 +193,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
     if redirect_to_hand and subject.currently_seated:
         current_hand = subject.current_hand()
         assert current_hand is not None
-        return HttpResponseRedirect(reverse("app:hand-detail", kwargs={"pk": current_hand.pk}))
+        return HttpResponseRedirect(reverse("app:hand-dispatch", kwargs={"pk": current_hand.pk}))
 
     common_context = {
         "chat_channel_name": Message.channel_name_from_players(who_clicked, subject),

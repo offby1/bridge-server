@@ -1,9 +1,14 @@
+import logging
+
 import pytest
 
 import app.models
 import bridge.contract
 import bridge.table
 from app.models.utils import assert_type
+
+
+logger = logging.getLogger(__name__)
 
 
 def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.models.Hand:
@@ -51,6 +56,7 @@ def play_out_hand(h: app.models.Hand) -> None:
         h.get_xscript().add_card(play.card)
 
     if h.is_complete:
+        logger.info("%s played %s to completion", [p.name for p in h.players()], h)
         return
 
     pytest.fail(f"Uh oh, we didn't make any calls or plays in {h}")

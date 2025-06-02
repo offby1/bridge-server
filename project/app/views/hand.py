@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import bridge.seat
 import bridge.xscript
@@ -13,8 +13,8 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
-    HttpResponseRedirect,
 )
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
@@ -42,47 +42,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class HttpResponseWithViewname(HttpResponse):
-    viewname: str
-
-
-class TemplateResponseWithViewName(HttpResponseWithViewname, TemplateResponse):
-    pass
-
-
-class HttpRedirectToNamedViewResponse(HttpResponseWithViewname, HttpResponseRedirect):
-    def __init__(
-        self, *, viewname: str | None = None, url: str | None = None, hand_pk: PK | None = None
-    ):
-        assert (viewname is None) != (url is None)
-        assert (viewname is None) == (hand_pk is None)
-
-        if viewname is not None:
-            super().__init__(reverse(viewname, kwargs={"pk": hand_pk}))
-            setattr(self, "viewname", viewname)
-        else:
-            assert url is not None
-            super().__init__(url)
-            setattr(self, "viewname", "login")
-
-    def viewname_is(self, vn: str) -> bool:
-        rv = self.viewname == vn
-        logger.debug("Comparing %r to %r => %s", self.viewname, vn, rv)
-        return rv
-
-    def __repr__(self):
-        rv = repr(super())
-        return f"{rv} ({self.viewname=})"
-
-
-class HttpResponseForbiddenWithViewName(HttpResponseWithViewname, HttpResponseForbidden):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        setattr(self, "viewname", "forbidden")
-
-
-def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.datetime:
-    if (zone_name := request.session.get("detected_tz")) is not None:
+def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetime.datetime:
+    if zone_name is not None:
         import zoneinfo
 
         try:
@@ -92,57 +53,6 @@ def _localize(stamp: datetime.datetime, request: AuthedHttpRequest) -> datetime.
             pass
 
     return stamp
-
-
-# TODO -- this is a kludge.  The `hand-dispatch-view` branch describes an idea for simplifying this.
-def _redirect_or_error_response(
-    hand: app.models.Hand, request: AuthedHttpRequest
-) -> HttpResponseWithViewname:
-    t: app.models.Tournament = hand.board.tournament
-    if t.is_complete:
-        return HttpRedirectToNamedViewResponse(
-            viewname="app:hand-everything-read-only", hand_pk=hand.pk
-        )
-
-    login_page = HttpRedirectToNamedViewResponse(url=settings.LOGIN_URL + f"?next={request.path}")
-
-    player = getattr(request.user, "player", None)
-
-    # TODO -- don't require that the entire tournament be complete; instead, require only that this particular board
-    # will not be played again.
-    if (request.user.is_anonymous or player is None) and not hand.board.tournament.is_complete:
-        return login_page
-
-    logger.debug(f"{hand=} {getattr(player, "name", "?")=}")
-
-    if t.is_complete or (
-        (hand.is_abandoned or hand.is_complete)
-        and player is not None
-        and player.has_played_hand(hand)
-    ):
-        return HttpRedirectToNamedViewResponse(
-            viewname="app:hand-everything-read-only", hand_pk=hand.pk
-        )
-
-    if player is None and not hand.board.tournament.is_complete:
-        localized_deadline = str(_localize(hand.board.tournament.play_completion_deadline, request))
-        return HttpResponseForbiddenWithViewName(
-            f"This tournament (#{hand.board.tournament.display_number}) won't yet complete"
-            f" until {localized_deadline}, so anonymous users such as yourself can't see this hand now."
-        )
-
-    assert player is not None
-
-    if not player.has_played_hand(hand):
-        if hand.board in (h.board for h in player.hands_played if h.is_complete):
-            # Sure, they haven't played this hand; but they *have* seen this board before, so it's fine.
-            return HttpRedirectToNamedViewResponse(
-                viewname="app:hand-everything-read-only", hand_pk=hand.pk
-            )
-        msg = f"You, {player}, haven't yet fully played thi's hand's board {hand.board}, so you cannot see the hand."
-        return HttpResponseForbiddenWithViewName(msg)
-
-    return HttpRedirectToNamedViewResponse(viewname="app:hand-detail", hand_pk=hand.pk)
 
 
 def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
@@ -513,6 +423,7 @@ def _four_hands_context_for_hand(
 
     if not hand.is_complete:
         return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
+
     return always
 
 
@@ -594,12 +505,46 @@ def bidding_box_buttons(
     return SafeString(f"""{top_button_group}{joined_rows}""")
 
 
-def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResponseWithViewname:
+def hand_dispatch_view(request: HttpRequest, pk: PK) -> HttpResponse:
+    """
+    Returns either a 403 response (with explanatory text), or else the function in this module to call to get the response.
+    """
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if redirect_or_error.viewname != "app:hand-everything-read-only":
-        return redirect_or_error
+    wat = _error_response_or_viewfunc(hand, request.user)
+    if isinstance(wat, HttpResponse):
+        return wat
+    return wat(request, pk)
+
+
+def _error_response_or_viewfunc(
+    hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
+) -> HttpResponseForbidden | Callable[..., HttpResponse]:
+    board = hand.board
+
+    if not board.will_be_played_again():
+        return _everything_read_only_view
+
+    player = getattr(user, "player", None)
+
+    if user.is_anonymous or player is None:
+        msg = f"Anonymous users like {user} can view only those boards that have been fully played"
+        return HttpResponseForbidden(msg)
+
+    match brt := board.relationship_to(player):
+        case ("NeverSeenIt", None):
+            msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
+            return HttpResponseForbidden(msg)
+        case ("CurrentlyPlayingIt", at_hand):
+            return _interactive_view if hand == at_hand else HttpResponseForbidden
+        case ("AlreadyPlayedIt", at_hand):
+            return _everything_read_only_view
+
+    assert False, f"wtf is {brt}"
+
+
+def _everything_read_only_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     xscript = hand.get_xscript()
     a = xscript.auction
@@ -635,11 +580,31 @@ def everything_read_only_view(request: AuthedHttpRequest, *, pk: PK) -> HttpResp
             "terse_description": _terse_description(hand),
         }
 
-    return TemplateResponseWithViewName(
+    return TemplateResponse(
         request,
         "read-only_hand.html",
         context=context,
     )
+
+
+def _interactive_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+
+    as_viewed_by = request.user.player
+
+    context = (
+        _four_hands_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
+        | {
+            "active_seat": hand.active_seat_name,
+            "terse_description": _terse_description(hand),
+        }
+        | _auction_context_for_hand(hand)
+    )
+
+    if as_viewed_by is not None:
+        context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
+
+    return TemplateResponse(request, "interactive_hand.html", context=context)
 
 
 def _terse_description(hand: Hand) -> str:
@@ -665,35 +630,12 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
-def hand_detail_view(request: AuthedHttpRequest, pk: PK) -> HttpResponseWithViewname:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
-    redirect_or_error = _redirect_or_error_response(hand=hand, request=request)
-    if redirect_or_error.viewname != "app:hand-detail":
-        return redirect_or_error
-
-    as_viewed_by = request.user.player
-
-    context = (
-        _four_hands_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
-        | {
-            "active_seat": hand.active_seat_name,
-            "terse_description": _terse_description(hand),
-        }
-        | _auction_context_for_hand(hand)
-    )
-
-    if as_viewed_by is not None:
-        context |= _bidding_box_context_for_hand(as_viewed_by=as_viewed_by, hand=hand)
-
-    return TemplateResponseWithViewName(request, "interactive_hand.html", context=context)
-
-
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
-    if not request.user.is_authenticated and not hand.board.tournament.is_complete:
-        return Forbid("You are anonymous, and this tournament isn't complete")
+    resp = _error_response_or_viewfunc(hand, request.user)
+    if isinstance(resp, HttpResponseForbidden):
+        return resp
 
     if not request.user.is_authenticated:
         xscript = hand.get_xscript()

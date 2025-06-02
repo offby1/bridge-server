@@ -186,9 +186,6 @@ class TournamentManager(models.Manager):
             return first_incomplete, False
 
 
-# fmt:off
-
-# fmt:on
 class Tournament(models.Model):
     if TYPE_CHECKING:
         from app.models.board import Board
@@ -273,9 +270,9 @@ class Tournament(models.Model):
         This might not be the case if we were created from an old json Django fixture.
         """
         mvmt = self.get_movement()
-        expected = mvmt.boards_per_round_per_table * len(mvmt.table_settings_by_table_number)
+        expected = mvmt.boards_per_round_per_table * len(mvmt.table_settings_by_zb_table_number)
         assert self.board_set.count() == expected, (
-            f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_table_number)=} => {expected} boards, but got {self.board_set.count()}"
+            f"Expected {mvmt.boards_per_round_per_table=} * {len(mvmt.table_settings_by_zb_table_number)=} => {expected} boards, but got {self.board_set.count()}"
         )
 
         for b in self.board_set.all():
@@ -293,7 +290,7 @@ class Tournament(models.Model):
         """
         num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
         mvmt = self.get_movement()
-        num_tables = len(mvmt.table_settings_by_table_number)
+        num_tables = len(mvmt.table_settings_by_zb_table_number)
         boards_per_round_per_tournament = num_tables * mvmt.boards_per_round_per_table
         rv = divmod(num_completed_hands, boards_per_round_per_tournament)
         logger.debug(f"{num_completed_hands=} {boards_per_round_per_tournament=} => {rv=}")
@@ -412,14 +409,6 @@ class Tournament(models.Model):
             )
             if created:
                 num_created += 1
-
-        if num_created > 0:
-            logger.debug(
-                "Just signed up partners %s and %s for tournament #%s",
-                player.name,
-                player.partner.name,
-                self.display_number,
-            )
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         seen: set[PK] = set()

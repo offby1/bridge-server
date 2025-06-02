@@ -19,7 +19,7 @@ class Command(BaseCommand):
         assert h is not None
 
         number = 5
-        total_seconds = timeit.timeit(lambda: hand.hand_detail_view(request, h.pk), number=number)
+        total_seconds = timeit.timeit(lambda: hand._interactive_view(request, h.pk), number=number)
         sys.stderr.write(
             f"{total_seconds=} for {number=} calls, mean {total_seconds / number} seconds\n",
         )
