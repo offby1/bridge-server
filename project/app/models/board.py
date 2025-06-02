@@ -132,8 +132,7 @@ class Board(models.Model):
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
     group = models.CharField(
         max_length=1,
-        null=True,
-        db_comment=""" A, B, C &c, NULL means not yet assigned """,  # type: ignore [call-overload]
+        db_comment=""" A, B, C &c """,  # type: ignore [call-overload]
     )
 
     objects = BoardManager()
