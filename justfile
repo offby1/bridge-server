@@ -268,7 +268,7 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key ensure_
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (dcu "--watch")
+follow: (dcu "--watch") start
 
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
