@@ -297,7 +297,7 @@ prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same
 
     export COMPOSE_PROFILES=prod
     export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DOCKER_CONTEXT=hetz
+    export DOCKER_CONTEXT=hetz-prod
 
     CADDY_HOSTNAME=bridge.offby1.info just dcu {{ options }} --detach
     docker compose logs django --follow

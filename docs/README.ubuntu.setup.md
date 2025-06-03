@@ -8,9 +8,9 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 - accepted the default SSH pub key that I'd already uploaded
 - activated the firewall I've already created, named "ssh and https"
 - clicked "Create and Buy Now"
-- copied the IP address of the newly-created machine into the `Host hetz` stanza of `~/.ssh/config`, as the `hostname` entry
+- copied the IP address of the newly-created machine into the `Host hetz-prod` stanza of `~/.ssh/config`, as the `hostname` entry
 
-- `ssh root@hetz`, then
+- `ssh root@hetz-prod`, then
 
 ```shell
 # # edit /etc/ssh/sshd_config
@@ -21,8 +21,8 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 # exit
 ```
 
-Now `ssh@hetz` and make sure it doesn't prompt for a password!!
-If it doesn't (which is good), do `ssh root@hetz` again and continue ...
+Now `ssh@hetz-prod` and make sure it doesn't prompt for a password!!
+If it doesn't (which is good), do `ssh root@hetz-prod` again and continue ...
 
 ```shell
 # apt update
@@ -47,5 +47,5 @@ $ exit
 ```
 
 - On my laptop:
-  - update `~/.ssh/config` so that I can just "ssh hetz"
-  - `docker context create hetz --docker "host=ssh://ubuntu@hetz"`
+  - update `~/.ssh/config` so that I can just "ssh hetz-prod"
+  - `docker context create hetz-prod --docker "host=ssh://ubuntu@hetz-prod"`

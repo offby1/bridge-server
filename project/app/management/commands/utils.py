@@ -12,4 +12,4 @@ def is_safe(stderr) -> bool:
     if settings.DEBUG:
         return True
 
-    return DOCKER_CONTEXT in {"hetz", "orbstack"}
+    return DOCKER_CONTEXT in {"hetz-beta", "orbstack"}

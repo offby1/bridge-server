@@ -29,10 +29,6 @@ backup: pg-start
 restore *options: drop pg-start
     docker compose exec --user postgres --no-TTY postgres psql bridge {{ options }}
 
-[group('postgres')]
-grab-prod-backups:
-    DOCKER_CONTEXT=ls just backup
-
 alias stop := pg-stop
 
 [group('postgres')]
