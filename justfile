@@ -302,5 +302,18 @@ prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same
     CADDY_HOSTNAME=bridge.offby1.info just dcu {{ options }} --detach
     docker compose logs django --follow
 
+# TODO -- refactor this by combining with "prod" above
+[group('docker')]
+[script('bash')]
+beta *options: ensure_git_repo_clean
+    set -euo pipefail
+
+    export COMPOSE_PROFILES=beta
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DOCKER_CONTEXT=hetz-beta
+
+    CADDY_HOSTNAME=beta.bridge.offby1.info just dcu {{ options }} --detach
+    docker compose logs django --follow
+
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
