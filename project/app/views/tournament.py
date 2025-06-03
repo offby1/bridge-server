@@ -135,15 +135,12 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             )
             names = [su.player.name for su in non_synths_signed_up_besides_us]
             logger.debug(f"{names=}")
-            comment = f"Say, {names=} and none of those are you {viewer.name} or your partner {viewer.partner.name}"
+
             logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
             if not non_synths_signed_up_besides_us.exists():
-                text_shmext = format_html(
+                context["speed_things_up_button"] = format_html(
                     """<button class="btn btn-primary" type="submit">Skip the Deadline</button>"""
                 )
-                comment += text_shmext
-                context["speed_things_up_button"] = text_shmext
-            context["comment"] = comment
 
     return TemplateResponse(request=request, template="tournament.html", context=context)
 
