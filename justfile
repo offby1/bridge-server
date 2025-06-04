@@ -255,7 +255,7 @@ clean: die-if-poetry-active
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('docker')]
 [script('bash')]
-dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
+dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
@@ -264,11 +264,11 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
     set -x
     export GIT_VERSION="$(cat project/VERSION)"
-    docker compose up --build {{ options }}
+    docker compose up --build {{ options }} django django-collected-static django-migrated
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (dcu "--watch") start
+follow: (dcu "--watch")
 
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
