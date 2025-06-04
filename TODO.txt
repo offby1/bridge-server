@@ -1,9 +1,17 @@
 IN PROGRESS:
 
 STILL TODO:
+* add a bit of logic to suppress this common warning
+
+    django-1  | _valchek ... 2025-06-04T19:32:26+0000 INFO  request_id=none player.py(249) svc 'svc -d' for _valchek's bot (52)
+    django-1  | 2025-06-04T19:32:26+0000 WARNING request_id=none player.py(263) svc b'svc: warning: unable to chdir to 52: file does not exist\n'
+    django-1  | _valchek done
+
+  Surely, if we're *stopping* a bot, it's not a problem that the bot's directory doesn't exist.
+
 * Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
 
-* Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which deployment environment do we run" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
+* Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which set of django settings do we use" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
@@ -16,6 +24,10 @@ STILL TODO:
   `_error_response_or_viewfunc` and `Board.relationship_to` are sorta groping their way there.
 
   I've considered using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing; but it occurs to me that that stuff likely only controls access to model instances, whereas I need to control access to the individual holdings of a single board instance.
+
+  One example: in prod, if you're not logged in, <https://bridge.offby1.info/hand/55/> yells at you: `Anonymous users like AnonymousUser can view only those boards that have been fully played`.  However, the associated tournament is complete, so it should let me see it.
+
+  I've already got this logic right somewhere else, but apparently whatever tries to render that page isn't using it.
 
 * scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
   - make it scroll by one <li> at a time, instead; or maybe

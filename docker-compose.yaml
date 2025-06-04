@@ -70,8 +70,6 @@ services:
       # only for initializing the db
       POSTGRES_DB: bridge
       POSTGRES_PASSWORD: postgres
-    # TODO -- figure out how to tell docker to put the backing store where I want it, or at the very least, figure out
-    # where it is
     ports:
       - "127.0.0.1:5432:5432"
 
@@ -79,6 +77,7 @@ services:
     # client)
 
     # "--log_statement=all", "--log_min_duration_statement=0" are handy for exploring performance
+    # https://www.postgresql.org/docs/17/config-setting.html#CONFIG-SETTING-SHELL
     command: ["postgres", "--max_connections=100"]
 
     volumes:
