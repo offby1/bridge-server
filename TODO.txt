@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
+
 * Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which deployment environment do we run" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
