@@ -512,8 +512,8 @@ def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     wat = _error_response_or_viewfunc(hand, request.user)
-    if isinstance(wat, HttpResponse):
-        return wat
+    if isinstance(wat, HttpResponseForbidden):
+        return Custom403(request, wat.text)  # type: ignore[attr-defined]
 
     if hand.is_abandoned:
         return _everything_read_only_view(request, pk)
@@ -540,7 +540,13 @@ def _error_response_or_viewfunc(
             msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
             return HttpResponseForbidden(msg)
         case ("CurrentlyPlayingIt", at_hand):
-            return _interactive_view if hand == at_hand else HttpResponseForbidden
+            return (
+                _interactive_view
+                if hand == at_hand
+                else HttpResponseForbidden(
+                    f"You, {player}, are currently playing this hand, so you cannot see everybody's cards!"
+                )
+            )
         case ("AlreadyPlayedIt", at_hand):
             return _everything_read_only_view
 
@@ -634,12 +640,19 @@ def _terse_description(hand: Hand) -> str:
     return SafeString(" ".join([tourney, table, board]))
 
 
+def Custom403(request: HttpRequest, content: str) -> HttpResponse:
+    rv = render(request, "custom403.html", context=dict(content=content))
+    rv.status_code = 403
+    return rv
+
+
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     resp = _error_response_or_viewfunc(hand, request.user)
+    print(f"{type(resp)=}")
     if isinstance(resp, HttpResponseForbidden):
-        return resp
+        return Custom403(request, resp.text)  # type: ignore[attr-defined]
 
     if not request.user.is_authenticated:
         xscript = hand.get_xscript()
