@@ -1,9 +1,19 @@
 IN PROGRESS:
 
 STILL TODO:
+* Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which deployment environment do we run" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
+
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
-* Consider using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing.
+* *STILL* rethink permissions.
+
+  I've done this like six times, and I guess it's slowly getting better, but it's still not clean.
+
+  I need *one* bit of code that answers the question: can this user see this bit of this hand?
+
+  `_error_response_or_viewfunc` and `Board.relationship_to` are sorta groping their way there.
+
+  I've considered using [django's built-in permissions](https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization) to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing; but it occurs to me that that stuff likely only controls access to model instances, whereas I need to control access to the individual holdings of a single board instance.
 
 * scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
   - make it scroll by one <li> at a time, instead; or maybe
