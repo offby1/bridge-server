@@ -216,7 +216,7 @@ graph: migrate
 # Run all the tests
 [group('bs')]
 [script('bash')]
-test *options: makemigrations mypy
+test *options: makemigrations mypy collectstatic
     set -euxo pipefail
     cd project
 
