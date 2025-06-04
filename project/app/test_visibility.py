@@ -26,7 +26,7 @@ from .testutils import find_incomplete_hand, play_out_hand, play_out_round, set_
 
 
 @pytest.fixture
-def completed_tournament(nearly_completed_tournament: Hand) -> Hand:
+def completed_tournament(nearly_completed_tournament: Tournament) -> Hand:
     play_out_round(nearly_completed_tournament)
 
     assert nearly_completed_tournament.is_complete
@@ -52,7 +52,7 @@ def test_completed_tournament(completed_tournament: Hand) -> None:
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
 
-def test_running_tournament_irrelevant_players(nearly_completed_tournament: Hand) -> None:
+def test_running_tournament_irrelevant_players(nearly_completed_tournament: Tournament) -> None:
     hand = find_incomplete_hand(nearly_completed_tournament)
     assert hand is not None
 
@@ -72,7 +72,7 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament: Hand
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(
-    nearly_completed_tournament: Hand,
+    nearly_completed_tournament: Tournament,
 ) -> None:
     hand: Hand | None = Hand.objects.first()
     assert hand is not None
@@ -89,7 +89,7 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 
 
 def test_player_has_played_board(
-    nearly_completed_tournament: Hand,
+    nearly_completed_tournament: Tournament,
 ) -> None:
     for player in Player.objects.all():
         board: Board

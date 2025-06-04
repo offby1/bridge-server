@@ -404,11 +404,21 @@ def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
     # Smuggle some display stuff in there.
     player: Player
     for player in page_obj:
-        player.action_button = (
-            _get_partner_action_from_context(request=request, subject=player, as_viewed_by=viewer)
-            or None
+        setattr(
+            player,
+            "action_button",
+            (
+                _get_partner_action_from_context(
+                    request=request, subject=player, as_viewed_by=viewer
+                )
+                or None
+            ),
         )
-        player.age_style = format_html(""" --bs-table-bg: {}; """, _background_css_color(player))
+        setattr(
+            player,
+            "age_style",
+            format_html(""" --bs-table-bg: {}; """, _background_css_color(player)),
+        )
 
     context = {
         "filtered_count": filtered_count,
