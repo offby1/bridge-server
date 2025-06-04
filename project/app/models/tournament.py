@@ -79,6 +79,7 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
 
 # TODO -- replace this with a scheduled solution -- see the "django-q2" branch
+# Now that I think about it, this could also be a middleware
 @receiver(request_finished)
 @throttle(seconds=60)
 def check_for_expirations(sender, **kwargs) -> None:
