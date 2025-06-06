@@ -232,19 +232,43 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dxff
 
+[private]
+docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
+
 # typical usage: just nuke ; docker volume prune --all --force ; just botme
 [script('bash')]
-botme *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
-    set -euo pipefail
+botme *options: docker-prerequisites
+    set -euox pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.dev_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export GIT_VERSION="$(cat project/VERSION)"
+
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    set -x
-    export GIT_VERSION="$(cat project/VERSION)"
+
     docker compose up --build {{ options }} django django-collected-static django-migrated
+
+alias perf := perf-local
+
+[group('development')]
+[group('perf')]
+[script('bash')]
+perf-local: drop docker-prerequisites
+    set -euox pipefail
+
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export GIT_VERSION="$(cat project/VERSION)"
+
+    tput rmam                   # disables line wrapping
+    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
+
+    docker compose up --build --detach  django django-collected-static django-migrated
+    just stress --min-players=20
+    docker compose logs django --follow
 
 # Your kids know 'front and follow'?
 [script('bash')]
@@ -270,9 +294,12 @@ ensure_bot_is_on_same_branch:
       false
     fi
 
+[private]
+deploy-prerequisites: docker-prerequisites ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
+
 [group('deploy')]
 [script('bash')]
-prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
+prod *options: deploy-prerequisites
     set -euo pipefail
 
     export CADDY_HOSTNAME=bridge.offby1.info
@@ -285,7 +312,7 @@ prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same
 
 [group('deploy')]
 [script('bash')]
-beta *options: ensure_git_repo_clean
+beta *options: docker-prerequisites ensure_git_repo_clean
     set -euo pipefail
 
     export CADDY_HOSTNAME=beta.bridge.offby1.info
