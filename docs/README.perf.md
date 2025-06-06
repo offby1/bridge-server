@@ -10,12 +10,12 @@ This is the nicest profiler I've found so far.  I can use it in two ways; both a
 
 ## py-spy
 
-I once managed to get py-spy working on MacOS (it wasn't easy); I have not been able to reproduce this success.  It works fine in the docker container, though.  I think I use it there like this:
+I once managed to get py-spy working on MacOS (it wasn't easy); I have not been able to reproduce this success.  It works fine in the docker container, though.  Use it there like this:
 
 ```shell
 $ docker compose exec -it django bash
-# htop # to find out the PID you care about
-# poetry run py-spy --attach PID
+# htop # to find out the PID you care about (typically daphne)
+# poetry run py-spy top --pid PID
 ```
 
 ## Other ideas to explore

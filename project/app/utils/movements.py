@@ -174,10 +174,6 @@ class Movement:
                 else:
                     old += 1
 
-            logger.info(
-                f"Created {new} new, and fetched {old} existing, boards for group {_group_letter(group_index)} {display_numbers=}"
-            )
-
     @classmethod
     def from_pairs(
         cls,
