@@ -7,7 +7,6 @@ import 'postgres.just'
 DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
-export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 export PYTHONUNBUFFERED := "t"
@@ -162,25 +161,6 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
 
 alias runserver := runme
 
-# Like "runme", but lets SSE work, and doesn't automatically reload
-[group('bs')]
-[script('bash')]
-daphne: ft version-file django-superuser migrate create-cache collectstatic ensure-skeleton-key
-    set -euo pipefail
-    cd project
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
-    set -x
-    poetry run daphne                                                               \
-      --verbosity                                                                   \
-      1                                                                             \
-      --bind                                                                        \
-      0.0.0.0                                                                       \
-      --port 9000 \
-      --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
-      project.asgi:application
-
 curl *options: django-superuser migrate create-cache ensure-skeleton-key
     curl -v --cookie cook --cookie-jar cook "{{ options }}"
 
@@ -259,6 +239,7 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.dev_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
