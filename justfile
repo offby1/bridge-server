@@ -140,7 +140,7 @@ dumpdata: all-but-django-prep ensure-skeleton-key version-file
 
 # You can add  --print-sql-location to see a stack trace on *every* *damned* *query* :-)
 [group('django')]
-shell *options: migrate (manage "shell_plus --print-sql " + options)
+shell: migrate (manage "shell_plus --print-sql ")
 
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
@@ -299,28 +299,18 @@ deploy-prerequisites: docker-prerequisites ensure_branch_is_main ensure_git_repo
 
 [group('deploy')]
 [script('bash')]
-prod *options: deploy-prerequisites
+prod: deploy-prerequisites
     set -euo pipefail
 
     export CADDY_HOSTNAME=bridge.offby1.info
     export COMPOSE_PROFILES=prod
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export DOCKER_CONTEXT=hetz-prod
+    export GIT_VERSION="$(cat project/VERSION)"
 
-    just botme {{ options }} --detach
-    docker compose logs django --follow
-
-[group('deploy')]
-[script('bash')]
-beta *options: docker-prerequisites ensure_git_repo_clean
-    set -euo pipefail
-
-    export CADDY_HOSTNAME=beta.bridge.offby1.info
-    export COMPOSE_PROFILES=beta
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DOCKER_CONTEXT=hetz-beta
-
-    just botme {{ options }} --detach
+    docker compose up --build --detach
     docker compose logs django --follow
 
 # Kill it all.  Kill it all, with fire.
