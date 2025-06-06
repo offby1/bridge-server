@@ -152,7 +152,7 @@ migrate: makemigrations create-cache (manage "migrate")
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
-[group('bs')]
+[group('development')]
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
@@ -180,7 +180,7 @@ alias superuser := django-superuser
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
 
 # Run tests with --exitfirst and --failed-first
-[group('bs')]
+[group('development')]
 t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Run individual tests with no dependencies
@@ -194,7 +194,7 @@ graph: migrate
     open $TMPDIR/graph.svg
 
 # Run all the tests
-[group('bs')]
+[group('development')]
 [script('bash')]
 test *options: makemigrations mypy collectstatic
     set -euxo pipefail
@@ -214,11 +214,11 @@ test *options: makemigrations mypy collectstatic
     esac
 
 # Fast tests (i.e., run in parallel)
-[group('bs')]
+[group('development')]
 ft: (t "-n 8")
 
 # Display coverage from a test run
-[group('bs')]
+[group('development')]
 [script('bash')]
 cover *options: (test options)
     set -euox pipefail
@@ -232,10 +232,9 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dxff
 
-# typical usage: just nuke ; docker volume prune --all --force ; just dcu
-[group('docker')]
+# typical usage: just nuke ; docker volume prune --all --force ; just botme
 [script('bash')]
-dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
+botme *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
@@ -249,7 +248,7 @@ dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (dcu "--watch")
+follow: (botme "--watch")
 
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
@@ -271,29 +270,30 @@ ensure_bot_is_on_same_branch:
       false
     fi
 
-[group('docker')]
+[group('deploy')]
 [script('bash')]
 prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
     set -euo pipefail
 
+    export CADDY_HOSTNAME=bridge.offby1.info
     export COMPOSE_PROFILES=prod
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DOCKER_CONTEXT=hetz-prod
 
-    CADDY_HOSTNAME=bridge.offby1.info just dcu {{ options }} --detach
+    just botme {{ options }} --detach
     docker compose logs django --follow
 
-# TODO -- refactor this by combining with "prod" above
-[group('docker')]
+[group('deploy')]
 [script('bash')]
 beta *options: ensure_git_repo_clean
     set -euo pipefail
 
+    export CADDY_HOSTNAME=beta.bridge.offby1.info
     export COMPOSE_PROFILES=beta
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DOCKER_CONTEXT=hetz-beta
 
-    CADDY_HOSTNAME=beta.bridge.offby1.info just dcu {{ options }} --detach
+    just botme {{ options }} --detach
     docker compose logs django --follow
 
 # Kill it all.  Kill it all, with fire.
