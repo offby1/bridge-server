@@ -4,11 +4,9 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base_settings import *  # noqa
-from .base_settings import ALLOWED_HOSTS, LOGGING, VERSION
+from .base_settings import LOGGING, VERSION
 
 DEBUG = False
-
-ALLOWED_HOSTS.append("django")  # for when we're running as part of a docker-compose stack
 
 # "development": running on my laptop without docker
 # "staging": running on my laptop with docker

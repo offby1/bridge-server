@@ -7,7 +7,6 @@ import 'postgres.just'
 DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
-export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
 export PYTHONUNBUFFERED := "t"
@@ -153,7 +152,7 @@ migrate: makemigrations create-cache (manage "migrate")
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
-[group('bs')]
+[group('development')]
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
@@ -161,25 +160,6 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
     poetry run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
-
-# Like "runme", but lets SSE work, and doesn't automatically reload
-[group('bs')]
-[script('bash')]
-daphne: ft version-file django-superuser migrate create-cache collectstatic ensure-skeleton-key
-    set -euo pipefail
-    cd project
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    export -n DJANGO_SETTINGS_MODULE # let project/asgi.py determine if we're development, staging, production, or whatever
-    set -x
-    poetry run daphne                                                               \
-      --verbosity                                                                   \
-      1                                                                             \
-      --bind                                                                        \
-      0.0.0.0                                                                       \
-      --port 9000 \
-      --log-fmt="%(asctime)sZ  %(levelname)s %(filename)s %(funcName)s %(message)s" \
-      project.asgi:application
 
 curl *options: django-superuser migrate create-cache ensure-skeleton-key
     curl -v --cookie cook --cookie-jar cook "{{ options }}"
@@ -200,7 +180,7 @@ alias superuser := django-superuser
 django-superuser: all-but-django-prep migrate (manage "create_insecure_superuser")
 
 # Run tests with --exitfirst and --failed-first
-[group('bs')]
+[group('development')]
 t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Run individual tests with no dependencies
@@ -214,7 +194,7 @@ graph: migrate
     open $TMPDIR/graph.svg
 
 # Run all the tests
-[group('bs')]
+[group('development')]
 [script('bash')]
 test *options: makemigrations mypy collectstatic
     set -euxo pipefail
@@ -234,11 +214,11 @@ test *options: makemigrations mypy collectstatic
     esac
 
 # Fast tests (i.e., run in parallel)
-[group('bs')]
+[group('development')]
 ft: (t "-n 8")
 
 # Display coverage from a test run
-[group('bs')]
+[group('development')]
 [script('bash')]
 cover *options: (test options)
     set -euox pipefail
@@ -252,23 +232,47 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dxff
 
-# typical usage: just nuke ; docker volume prune --all --force ; just dcu
-[group('docker')]
+[private]
+docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
+
+# typical usage: just nuke ; docker volume prune --all --force ; just botme
 [script('bash')]
-dcu *options: version-file orb poetry-install-no-dev ensure-skeleton-key start
-    set -euo pipefail
+botme *options: docker-prerequisites
+    set -euox pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.dev_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export GIT_VERSION="$(cat project/VERSION)"
+
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-    set -x
-    export GIT_VERSION="$(cat project/VERSION)"
+
     docker compose up --build {{ options }} django django-collected-static django-migrated
+
+alias perf := perf-local
+
+[group('development')]
+[group('perf')]
+[script('bash')]
+perf-local: drop docker-prerequisites
+    set -euox pipefail
+
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export GIT_VERSION="$(cat project/VERSION)"
+
+    tput rmam                   # disables line wrapping
+    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
+
+    docker compose up --build --detach  django django-collected-static django-migrated
+    just stress --min-players=20
+    docker compose logs django --follow
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (dcu "--watch")
+follow: (botme "--watch")
 
 ensure_git_repo_clean:
     [[ -z "$(git status --porcelain)" ]]
@@ -290,29 +294,33 @@ ensure_bot_is_on_same_branch:
       false
     fi
 
-[group('docker')]
+[private]
+deploy-prerequisites: docker-prerequisites ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
+
+[group('deploy')]
 [script('bash')]
-prod *options: ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
+prod *options: deploy-prerequisites
     set -euo pipefail
 
+    export CADDY_HOSTNAME=bridge.offby1.info
     export COMPOSE_PROFILES=prod
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DOCKER_CONTEXT=hetz-prod
 
-    CADDY_HOSTNAME=bridge.offby1.info just dcu {{ options }} --detach
+    just botme {{ options }} --detach
     docker compose logs django --follow
 
-# TODO -- refactor this by combining with "prod" above
-[group('docker')]
+[group('deploy')]
 [script('bash')]
-beta *options: ensure_git_repo_clean
+beta *options: docker-prerequisites ensure_git_repo_clean
     set -euo pipefail
 
+    export CADDY_HOSTNAME=beta.bridge.offby1.info
     export COMPOSE_PROFILES=beta
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DOCKER_CONTEXT=hetz-beta
 
-    CADDY_HOSTNAME=beta.bridge.offby1.info just dcu {{ options }} --detach
+    just botme {{ options }} --detach
     docker compose logs django --follow
 
 # Kill it all.  Kill it all, with fire.
