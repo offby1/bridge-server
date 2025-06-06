@@ -1,0 +1,17 @@
+Thinking about
+
+- clearly separating "which django settings do we use" from "which processes run, and where, and how"
+- which combinations of those things exist, and what are they for
+
+| django settings flavor | how we run it        | description                                      |
+|------------------------+----------------------+--------------------------------------------------|
+| dev                    | standalone           | common, quick-and-dirty way to look at web pages |
+| dev                    | local docker         | like the above, but we need the bots running     |
+| dev                    | remote docker (beta) |                                                  |
+| dev                    | remote docker (prod) | ☢☢☢☢ N/A bad evil do not do ☠ ☢☢☢☢               |
+| prod                   | standalone           | ?                                                |
+| prod                   | local docker         | perf testing                                     |
+| prod                   | remote docker (beta) | more-realistic perf testing                      |
+| prod                   | remote docker (prod) | you know, for prod                               |
+
+Note that there's no law saying I must have exactly two sets of django settings; any number greater than 0 could theoretically work.
