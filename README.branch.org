@@ -1,3 +1,5 @@
+* Intro
+
 Thinking about
 
 - clearly separating "which django settings do we use" from "which processes run, and where, and how"
@@ -15,3 +17,20 @@ Thinking about
 | prod                   | remote docker (prod) | you know, for prod                               |
 
 Note that there's no law saying I must have exactly two sets of django settings; any number greater than 0 could theoretically work.
+* How do the "dev" django settings differ from the "prod" ones?
+** ~DEBUG~ is True in dev; False in prod
+
+** Both set ~DEPLOYMENT_ENVIRONMENT~ (to either ~"production"~ or ~"staging"~) based on the ~COMPOSE_PROFILES~ environment variable
+To state the obvious: ~DEPLOYMENT_ENVIRONMENT~ here is exactly my "how we run it" column above.
+- Maybe nix this variable entirely, and rely on https://docs.docker.com/compose/how-tos/environment-variables/envvars/#compose_profiles
+
+** logging level depends on ~DEPLOYMENT_ENVIRONMENT~.
+But I dunno, maybe it should depend simply on dev vs prod.
+
+** Sentry only worksin "prod".
+... and I sometimes wish it worked in dev.
+
+** only "dev" allows pyinstrument to be activated.
+It still requires ~PYINSTRUMENT~ to be set to ~t~ in the envronment.
+
+** I adjust various log levels to non-defaults in "dev"
