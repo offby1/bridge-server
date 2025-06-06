@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 
 import bridge.card
 import bridge.contract
@@ -44,23 +43,6 @@ class CapturedEventsFromChannels:
             .exclude(id__in=self._message_ids_before)
         )
         return False
-
-
-def summarize(thing):
-    if isinstance(thing, str):
-        return thing[0:10]
-    elif isinstance(thing, dict):
-        return {k: summarize(v) for k, v in thing.items()}
-    else:
-        return thing
-
-
-def p(wat):
-    while True:
-        try:
-            wat = json.loads(wat)
-        except Exception:
-            return summarize(wat)
 
 
 def test_auction_settled_messages(usual_setup) -> None:
