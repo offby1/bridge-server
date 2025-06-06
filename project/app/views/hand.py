@@ -650,7 +650,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     resp = _error_response_or_viewfunc(hand, request.user)
-    print(f"{type(resp)=}")
+
     if isinstance(resp, HttpResponseForbidden):
         return Custom403(request, resp.text)  # type: ignore[attr-defined]
 
