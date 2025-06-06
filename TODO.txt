@@ -1,17 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
-* add a bit of logic to suppress this common warning
-
-    django-1  | _valchek ... 2025-06-04T19:32:26+0000 INFO  request_id=none player.py(249) svc 'svc -d' for _valchek's bot (52)
-    django-1  | 2025-06-04T19:32:26+0000 WARNING request_id=none player.py(263) svc b'svc: warning: unable to chdir to 52: file does not exist\n'
-    django-1  | _valchek done
-
-  Surely, if we're *stopping* a bot, it's not a problem that the bot's directory doesn't exist.
-
 * Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
-
-* Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which set of django settings do we use" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
@@ -45,6 +35,7 @@ STILL TODO:
 
   - certainly allow people at the table to yell at them via chat
   - perhaps "mark" them as an "unreliable player" or something, and make that mark visible to everyone?
+  - perhaps discreetly scroll their interactive-hand thingy to show either the bidding box or the cards
 
 * Make error pages extend the same base.html template that everything else does.  For example: I'm not logged in, and am looking at <http://127.0.0.1:9000/hand/1/>, whose entire content is `<html><head></head><body>This tournament (#1) won't yet complete until 2035-05-13 02:41:08.570023+00:00, so anonymous users such as yourself can't see this hand now.</body></html>`.  That's informative, but it'd be more useful if there were, say, a "home" link, &c.
 
@@ -198,6 +189,16 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* add a bit of logic to suppress this common warning
+
+    django-1  | _valchek ... 2025-06-04T19:32:26+0000 INFO  request_id=none player.py(249) svc 'svc -d' for _valchek's bot (52)
+    django-1  | 2025-06-04T19:32:26+0000 WARNING request_id=none player.py(263) svc b'svc: warning: unable to chdir to 52: file does not exist\n'
+    django-1  | _valchek done
+
+  Surely, if we're *stopping* a bot, it's not a problem that the bot's directory doesn't exist.
+
+* Consider that "how do we run it" (locally vs local docker vs remote docker) is orthogonal to "which set of django settings do we use" (dev vs prod).  Fiddle the justfile recipes to let me choose both those things independently.
+
 * Restore the tempo attribute on a tournament, and have the bot honor it.
 
   That way it'd be easy to speed up an all-bot tournament.
