@@ -238,7 +238,7 @@ docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key
 # typical usage: just nuke ; docker volume prune --all --force ; just botme
 [script('bash')]
 botme *options: docker-prerequisites
-    set -euox pipefail
+    set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.dev_settings
@@ -256,7 +256,7 @@ alias perf := perf-local
 [group('perf')]
 [script('bash')]
 perf-local: drop docker-prerequisites
-    set -euox pipefail
+    set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.prod_settings
