@@ -1,0 +1,52 @@
+* Intro
+
+Thinking about
+
+- clearly separating "which django settings do we use" from "which processes run, and where, and how"
+- which combinations of those things exist, and what are they for
+
+| proposed justfile recipe name | django settings flavor | how we run it        | description                                      |
+|-------------------------------+------------------------+----------------------+--------------------------------------------------|
+| runme                         | dev                    | daphne standalone    | common, quick-and-dirty way to look at web pages |
+| botme                         | dev                    | local docker         | like the above, but we need the bots running     |
+|                               | dev                    | remote docker (beta) |                                                  |
+|                               | dev                    | remote docker (prod) | ☢☢☢☢ N/A bad evil do not do ☠ ☢☢☢☢               |
+|                               | prod                   | daphne standalone    | ?                                                |
+| perf-local                    | prod                   | local docker         | perf testing                                     |
+| perf-beta                     | prod                   | remote docker (beta) | more-realistic perf testing                      |
+| prod                          | prod                   | remote docker (prod) | you know, for prod                               |
+
+Note that there's no law saying I must have exactly two sets of django settings; any number greater than 0 could theoretically work.
+* How do the "dev" django settings differ from the "prod" ones?
+These observations are based on commits on main, before this one
+#+BEGIN_EXAMPLE
+1268438a170fa050f3bf7f7a0373106ec0f725f2
+Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+AuthorDate: 2025-06-06 13:07:00 -0700
+Commit:     Eric Hanchrow <eric.hanchrow@gmail.com>
+CommitDate: 2025-06-06 13:07:00 -0700
+
+Parent:     576ed962 Nix spurious "print"
+Parent:     f0935a46 Prepare to merge
+Contained:  main make-four-hands-view-auto-reload
+Follows:    ran-on-teensy (2422)
+
+Merge branch 'settings-vs-how-we-run-it'
+#+END_EXAMPLE
+
+** ~DEBUG~ is True in dev; False in prod
+
+** Both set ~DEPLOYMENT_ENVIRONMENT~ (to either ~"production"~ or ~"staging"~) based on the ~COMPOSE_PROFILES~ environment variable
+To state the obvious: ~DEPLOYMENT_ENVIRONMENT~ here is exactly my "how we run it" column above.
+- Maybe nix this variable entirely, and rely on https://docs.docker.com/compose/how-tos/environment-variables/envvars/#compose_profiles
+
+** logging level depends on ~DEPLOYMENT_ENVIRONMENT~.
+But I dunno, maybe it should depend simply on dev vs prod.
+
+** Sentry only works in "prod".
+... and I sometimes wish it worked in dev.
+
+** only "dev" allows pyinstrument to be activated.
+It still requires ~PYINSTRUMENT~ to be set to ~t~ in the envronment.
+
+** I adjust various log levels to non-defaults in "dev"

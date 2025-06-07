@@ -9,3 +9,4 @@
 /README.*.html
 __pycache__/
 /cook
+/docs/*.html
