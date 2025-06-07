@@ -147,9 +147,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "app.template.context_processors.stick_that_gitlab_link_in_there_daddy_O",
-                "app.template.context_processors.stick_that_version_in_there_daddy_O",
-                "app.template.context_processors.stick_deployment_environment_in_there_daddy_O",
+                "app.template.context_processors.add_various_bits_of_handy_info",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",

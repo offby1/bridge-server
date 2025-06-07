@@ -12,8 +12,8 @@ import sys
 from django.conf import settings
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.prod_settings")
-print(f'{os.environ["DJANGO_SETTINGS_MODULE"]=}')
+print()
+print(f"{os.environ["DJANGO_SETTINGS_MODULE"]=}")
 print(f"{settings.DEPLOYMENT_ENVIRONMENT=} {settings.SECURE_SSL_REDIRECT=}")
 print(f"{settings.VERSION=}")
 print(f"{settings.GIT_SYMBOLIC_REF=}")

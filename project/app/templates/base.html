@@ -90,7 +90,12 @@
         </nav>
         {% ifexists debug %}
         <h2>It's debugging time!!</h2>
-        <tt>{{ request.resolver_match.view_name }}</tt>
+        <div style="display: flex;justify-content: space-around;">
+            <div>
+                <tt>{{ request.resolver_match.view_name }}</tt>
+            </div>
+            <div>{{ PLATFORM }}</div>
+        </div>
     {% endifexists %}
     <div class="row">
         <div class="col"></div>

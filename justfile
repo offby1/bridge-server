@@ -6,6 +6,7 @@ import 'postgres.just'
 
 DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
+export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", "orbstack")
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -257,7 +258,6 @@ botme *options: docker-prerequisites
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.dev_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
