@@ -2,7 +2,11 @@ import logging
 import os
 
 from .base_settings import *  # noqa
-from .base_settings import INSTALLED_APPS, LOGGING, MIDDLEWARE, TEMPLATES
+from .base_settings import INSTALLED_APPS, INTERNAL_IPS, LOGGING, MIDDLEWARE, TEMPLATES
+
+# TODO -- generalize this.
+# This value is just what I observed while running under Docker; I don't yet have any way of ensuring it's always valid.
+INTERNAL_IPS.append("192.168.97.1")
 
 # https://docs.djangoproject.com/en/5.0/topics/templates/#django.template.backends.django.DjangoTemplates says
 #   'debug': ... defaults to the value of the DEBUG setting.
