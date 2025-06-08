@@ -7,7 +7,7 @@ xx* {
     height: 50%;
     font-family: monospace;
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: 25em 25em 25em;
 }
 
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
