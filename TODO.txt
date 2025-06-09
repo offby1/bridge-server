@@ -84,10 +84,6 @@ STILL TODO:
     > django-tasks possibly has the smallest feature set of all of them, but it's goal I believe is to be a reliably available, simple option with strong integration. Eventually you can write your own django extensions that need simple background workers and as long as you target django-tasks it'll work regardless of what the end project is actually running.
     > Django-q2 looks like it lands in the middle for features but has strong support for several different backends
 
-* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to match up the bot's logs with the server's.
-
-  I thought I was doing this, but making a call in the browser, with the developer tools on, certainly doesn't show that header in the POST respose.
-
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
@@ -189,6 +185,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to match up the bot's logs with the server's.
+
+  I thought I was doing this, but making a call in the browser, with the developer tools on, certainly doesn't show that header in the POST respose.
+
+  I think I just need to set `'REQUEST_ID_RESPONSE_HEADER'` to True in the settings.
+
 * add a bit of logic to suppress this common warning
 
     django-1  | _valchek ... 2025-06-04T19:32:26+0000 INFO  request_id=none player.py(249) svc 'svc -d' for _valchek's bot (52)
