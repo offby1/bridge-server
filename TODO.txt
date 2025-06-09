@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
+
 * Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
