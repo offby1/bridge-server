@@ -984,8 +984,11 @@ class Hand(TimeStampedModel):
 
         return matchpoints
 
-    # The summary is phrased in terms of the player, who is presumed to have played the board already -- except if it's
-    # None, in which case we (arbitrarily) summarize in terms of North.
+    # The summary is phrased in terms of the player, if they have seen (at least some of) the board already; otherwise
+    # we (arbitrarily) summarize in terms of North.
+
+    # TODO -- rewrite this to take a seat letter, not a Player, since the former is the only thing we need from the
+    # latter, and after rewriting, it should be easier to test.
     def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
         if as_viewed_by is None:
             if not self.tournament.is_complete:
