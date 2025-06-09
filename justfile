@@ -148,9 +148,20 @@ makemigrations *options: (manage "makemigrations " + options)
 [group('django')]
 migrate: makemigrations create-cache (manage "migrate")
 
-[group('django')]
+[group('stress')]
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
+
+[group('stress')]
+[script('bash')]
+tiny:
+    set -euxo pipefail
+
+    just drop
+    DJANGO_SETTINGS_MODULE=project.prod_settings just botme -d
+    just stress --tiny
+    docker compose logs django --follow
+    docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
 [group('development')]
 [script('bash')]
