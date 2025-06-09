@@ -14,8 +14,19 @@ pg-start: orb
 
     docker compose up --wait postgres --detach
 
+[private]
+[script('bash')]
+die-if-not-local-docker:
+    set -euox pipefail
+
+    if [ ${DOCKER_CONTEXT:-} != "orbstack" ]
+    then
+       echo "Not a great idea to drop a production database, eh what?"
+       false
+    fi
+
 [group('postgres')]
-drop: pg-stop pg-start
+drop: die-if-not-local-docker pg-stop pg-start
     # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
     docker compose down --volumes postgres
     just pg-start
@@ -31,7 +42,7 @@ restore *options: drop pg-start
 alias stop := pg-stop
 
 [group('postgres')]
-pg-stop: orb
+pg-stop: die-if-not-local-docker orb
     docker compose down postgres
 
 [group('docker')]
@@ -44,7 +55,7 @@ orb:
     just dump-docker-context
 
 [script('bash')]
-docker-nuke: orb
+docker-nuke: die-if-not-local-docker orb
     set -euo pipefail
 
     echo "Killing containers!"
