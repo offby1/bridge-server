@@ -42,6 +42,9 @@ logger = logging.getLogger(__name__)
 JOIN = "partnerup"
 SPLIT = "splitsville"
 
+# Experience shows that more bots than this does ... uh ... something bad; I forget what.  In any case, I've got the
+# docker stack set up to limit the number of Postgres connections to this number; so if you embiggen this, also embiggen
+# that.
 MAX_BOT_PROCESSES = 40
 
 
@@ -236,14 +239,14 @@ class Player(TimeStampedModel):
         return None
 
     # https://cr.yp.to/daemontools/svc.html
-    def _control_bot(self) -> None:
+    def _control_bot(self) -> bool:
         # do nothing when run from a unit test, so as to reduce the noise in the log output.
         if os.environ.get("PYTEST_VERSION") is not None:
-            return
+            return False
 
         service_directory = pathlib.Path("/service")
         if not service_directory.is_dir():
-            return
+            return False
 
         def svc(flags: str) -> None:
             logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
@@ -274,7 +277,7 @@ class Player(TimeStampedModel):
             except FileNotFoundError:
                 pass
             svc("-d")
-            return
+            return False
 
         shell_script_text = """#!/bin/bash
 
@@ -282,7 +285,7 @@ class Player(TimeStampedModel):
 
 set -euo pipefail
 
-printf "%s %s %s "$(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
+printf "\n%s %s %s\n" $(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
 exec /api-bot/.venv/bin/python /api-bot/apibot.py
     """
         run_file = run_dir / "run.notyet"
@@ -293,6 +296,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         (run_dir / "down").unlink(missing_ok=True)
         svc("-u")
+        return True
 
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
@@ -300,9 +304,15 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 desired_state = not self.allow_bot_to_play_for_me
 
             if desired_state is True:
-                c = Player.objects.filter(allow_bot_to_play_for_me=True).count()
-                if c >= MAX_BOT_PROCESSES:
-                    msg = f"There are already {c} bots; no bot for you"
+                num_bots_currently_seated = len(
+                    [
+                        p
+                        for p in Player.objects.filter(allow_bot_to_play_for_me=True)
+                        if p.currently_seated
+                    ]
+                )
+                if num_bots_currently_seated >= MAX_BOT_PROCESSES:
+                    msg = f"There are already {num_bots_currently_seated} bots; no bot for you"
                     raise TooManyBots(msg)
 
             self.allow_bot_to_play_for_me = desired_state

@@ -6,13 +6,32 @@ from typing import TYPE_CHECKING
 from django.contrib import admin
 from django.db import models
 
+from app.utils.movements import MAX_ROUNDS
 
 logger = logging.getLogger(__name__)
+
+
+class TooManySignups(Exception):
+    pass
 
 
 class TournamentSignupManager(models.Manager):
     if TYPE_CHECKING:
         from app.models import Tournament
+
+    def get_or_create(self, defaults=None, **kwargs):
+        got = self.filter(**kwargs)
+        if got.exists():
+            return got.first(), False
+        return self.create(**(defaults | kwargs)), True
+
+    def create(self, **kwargs) -> TournamentSignup:
+        # TODO -- see if maybe we can have a constraint do this for us, since that sorta sounds like I dunno maybe it'd be more efficient?
+        # https://discord.com/channels/856567261900832808/1381640122411515994/1381640122411515994
+        if self.count() >= MAX_ROUNDS * 4:
+            msg = f"There are already {self.count()} signups, which is the most we can handle"
+            raise TooManySignups(msg)
+        return super().create(**kwargs)
 
     def create_synths_for(self, tour: Tournament):
         from app.models import Player

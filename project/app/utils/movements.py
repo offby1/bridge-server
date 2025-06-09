@@ -6,6 +6,7 @@ import dataclasses
 import itertools
 import logging
 from collections.abc import Sequence
+import string
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
@@ -17,6 +18,10 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+# semi-arbitrary; too many rounds would take forever to play Note that this is also the maximum number of tables, since
+# our movements are always "sqaure" -- that is, they always have the same number of rounds as tables.
+MAX_ROUNDS = 16
 
 
 @dataclasses.dataclass(order=True)
@@ -92,11 +97,11 @@ class PlayersAndBoardsForOneRound:
 
 
 def _group_letter(zb_round_number: int) -> str:
-    return "ABCDEFGHIJKLMNOP"[zb_round_number]
+    return string.ascii_uppercase[0:MAX_ROUNDS][zb_round_number]
 
 
 def _zb_round_number(group_letter: str) -> int:
-    return "ABCDEFGHIJKLMNOP".index(group_letter)
+    return string.ascii_uppercase[0:MAX_ROUNDS].index(group_letter)
 
 
 @dataclasses.dataclass(frozen=True)

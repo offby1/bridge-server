@@ -1,7 +1,7 @@
 import datetime
 
 from app.models.player import Player
-from app.models.signups import TournamentSignup
+from app.models.signups import TooManySignups, TournamentSignup
 from app.models.tournament import Tournament, check_for_expirations
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -77,7 +77,11 @@ class Command(BaseCommand):
                         f"{p.name} was already signed up for some tournament, but ain't no' mo'",
                     )
 
-                t.sign_up_player_and_partner(p)
+                try:
+                    t.sign_up_player_and_partner(p)
+                except TooManySignups as e:
+                    self.stderr.write(f"{e}; will stop signing up players")
+                    break
                 self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
                 p.user.password = everybodys_password
                 p.user.save()
