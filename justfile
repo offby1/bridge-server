@@ -264,7 +264,7 @@ botme *options: docker-prerequisites
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
-    docker compose up --build {{ options }} django django-collected-static django-migrated
+    docker compose up --build {{ options }} django django-collected-static django-migrated prometheus grafana
 
 alias perf := perf-local
 
@@ -282,7 +282,7 @@ perf-local: drop docker-prerequisites
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
-    docker compose up --build --detach  django django-collected-static django-migrated
+    docker compose up --build --detach  django django-collected-static django-migrated prometheus grafana
     just stress --min-players=20
     docker compose logs django --follow
 

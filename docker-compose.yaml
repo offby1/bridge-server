@@ -4,6 +4,7 @@ include:
 volumes:
   django_static_root: {}
   postgres_data: {}
+  prom_data:
 
 services:
   django: &django
@@ -96,6 +97,31 @@ services:
       # stopping after 10 seconds, or if the test succeeds, whichever comes first.
       start_period: 10s
       start_interval: 1s
+
+  # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
 
 secrets:
   django_secret:

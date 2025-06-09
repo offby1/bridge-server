@@ -69,6 +69,7 @@ ALLOWED_HOSTS = [
     ".orb.local",
     ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
+    "django",  # for prometheus
     "localhost",
 ]
 
