@@ -167,17 +167,11 @@ class Movement:
                 boards_per_round_per_table,
             )
         ):
-            new = old = 0
-
             for n in display_numbers:
                 a_board, created = Board.objects.get_or_create_from_display_number(
                     group=_group_letter(group_index), display_number=n, tournament=tournament
                 )
                 yield a_board
-                if created:
-                    new += 1
-                else:
-                    old += 1
 
     @classmethod
     def from_pairs(
