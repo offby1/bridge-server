@@ -142,6 +142,11 @@ dumpdata: all-but-django-prep ensure-skeleton-key version-file
 [group('django')]
 shell: migrate (manage "shell_plus --print-sql ")
 
+# Like "shell", but has no dependencies, so starts up fast (if stuff is already built).
+[group('django')]
+sp:
+    cd project && poetry run python manage.py shell_plus --print-sql
+
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
 
