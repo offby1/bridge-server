@@ -252,7 +252,10 @@ clean: die-if-poetry-active
 [private]
 docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
 
+alias dcu := botme
+
 # typical usage: just nuke ; docker volume prune --all --force ; just botme
+[group('development')]
 [script('bash')]
 botme *options: docker-prerequisites
     set -euo pipefail
