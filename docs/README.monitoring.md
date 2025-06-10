@@ -4,6 +4,18 @@ I don't yet know what I need from monitoring.
 
 I have added sentry, prometheus, and grafana; they work fine. However, I don't really udnerstand what they're showing me, apart from obvious stuff like logs (in sentry) and e.g. request latency from prometheus/grafana.
 
+## How I'm doing it
+
+I've got prometheus and grafana containers in the usual docker stack, so those services are always running.  I don't expose either to the public Internet; instead, both servers listen only on localhost (plus my hetzner server is behind a firewall that only lets through ports 80 and 443, both of which go to "caddy", my SSL reverse-proxy).  Therefore, in order to see the grafana UI, I can either
+
+- tell tailscale to "serve" it by running `tailscale serve --bg --tcp 3000 3000`
+- running the tailscale client on my laptop
+- pointing a laptop browser at <http://hetz:3000>
+
+I could probably also expose it via ssh port forwarding, but haven't yet bothered.
+
+## Ideas for Other systems
+
 I also have a branch where I'm poking at fluentd for log collection.
 
 I just came across [opentelemetry](https://opentelemetry.io/ecosystem/demo/), and it is awfully slick.  Seems to solve the same problems as prometheus *and* fluentd, all bundled together.
