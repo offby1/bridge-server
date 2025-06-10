@@ -100,7 +100,7 @@ services:
 
   # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
   prometheus:
-    image: prom/prometheus
+    build: prometheus
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -108,11 +108,10 @@ services:
       - 9090:9090
     restart: unless-stopped
     volumes:
-      - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
 
   grafana:
-    image: grafana/grafana
+    build: grafana
     container_name: grafana
     ports:
       - 3000:3000
@@ -120,8 +119,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=grafana
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
 
 secrets:
   django_secret:

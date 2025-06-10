@@ -1,3 +1,4 @@
+# Adapted from https://github.com/docker/awesome-compose/blob/18f59bdb09ecf520dd5758fbf90dec314baec545/prometheus-grafana/prometheus/prometheus.yml
 apiVersion: 1
 
 datasources:
