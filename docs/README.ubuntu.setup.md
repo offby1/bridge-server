@@ -13,16 +13,17 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 - `ssh root@hetz-prod`, then
 
 ```shell
-# # edit /etc/ssh/sshd_config
+# vi /etc/ssh/sshd_config
 # # change `#PasswordAuthentication yes` to `PasswordAuthentication no`
+# # save
 # /etc/init.d/ssh restart
 
 # adduser ubuntu # annoyingly interactive.
 # exit
 ```
 
-Now `ssh@hetz-prod` and make sure it doesn't prompt for a password!!
-If it doesn't (which is good), do `ssh root@hetz-prod` again and continue ...
+Now `ssh hetz-prod` and make sure it just says "Permission denied", as opposed to prompting for a password!!
+If that's all good, do `ssh root@hetz-prod` again and continue ...
 
 ```shell
 # apt update
