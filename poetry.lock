@@ -2410,6 +2410,7 @@ files = [
 
 [package.dependencies]
 certifi = "*"
+django = {version = ">=1.8", optional = true, markers = "extra == \"django\""}
 urllib3 = ">=1.26.11"
 
 [package.extras]
@@ -3254,4 +3255,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "a1b8476e77a6d38242991cec14e9b81631cdb31608bba76cfb7480d4d99b26c8"
+content-hash = "092f20a66eb0833d73afc06e1c8624f3332d0f9ce039e403ff27dd77fa658b0e"
