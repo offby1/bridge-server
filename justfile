@@ -290,14 +290,14 @@ perf-local: drop docker-prerequisites
 [script('bash')]
 follow: (botme "--watch")
 
-ensure_git_repo_clean:
+ensure-git-repo-clean:
     [[ -z "$(git status --porcelain)" ]]
 
-ensure_branch_is_main:
+ensure-branch-is-main:
     [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
 
 [script('bash')]
-ensure_bot_is_on_same_branch:
+ensure-bot-is-on-same-branch:
     set -euo pipefail
 
     our_branch="$(git symbolic-ref HEAD)"
@@ -311,7 +311,7 @@ ensure_bot_is_on_same_branch:
     fi
 
 [private]
-deploy-prerequisites: docker-prerequisites ensure_branch_is_main ensure_git_repo_clean ensure_bot_is_on_same_branch
+deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean ensure-bot-is-on-same-branch
 
 [group('deploy')]
 [script('bash')]
@@ -324,6 +324,22 @@ prod: deploy-prerequisites
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export DOCKER_CONTEXT=hetz-prod
+    export GIT_VERSION="$(cat project/VERSION)"
+
+    docker compose up --build --detach
+    docker compose logs django --follow
+
+[group('deploy')]
+[script('bash')]
+beta: docker-prerequisites
+    set -euo pipefail
+
+    export CADDY_HOSTNAME=beta.bridge.offby1.info
+    export COMPOSE_PROFILES=prod
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export DOCKER_CONTEXT=hetz-beta
     export GIT_VERSION="$(cat project/VERSION)"
 
     docker compose up --build --detach
