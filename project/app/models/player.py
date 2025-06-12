@@ -486,13 +486,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return hand in self.hands_played.all()
 
     def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
-        from .hand import Hand
-
-        expression = models.Q(pk__in=[])
-        for direction in attribute_names:
-            expression |= models.Q(**{direction: self.pk})
-
-        qs = Hand.objects.filter(board=board).filter(expression)
+        qs = self.hands_played.filter(board=board)
         assert qs.count() < 2
         return qs.first()
 
