@@ -215,6 +215,7 @@ LOGGING: dict[str, Any] = {
     "formatters": {
         "verbose": {
             # https://docs.python.org/3.12/library/logging.html#logrecord-attributes
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             "format": "{asctime} {levelname:5} pid={process} thread={threadName} request_id={request_id} {filename}({lineno}) {funcName} {message}",
             "style": "{",
         },
