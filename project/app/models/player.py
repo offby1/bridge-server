@@ -267,7 +267,9 @@ class Player(TimeStampedModel):
                 if b"unable to chdir" in proc.stderr and flags == "-d":
                     pass
                 else:
-                    logger.warning("%s", proc.stderr)
+                    logger.warning(
+                        "%s", f"{proc.returncode=} {proc.stderr!r} -- {service_directory=}"
+                    )
 
         run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
 

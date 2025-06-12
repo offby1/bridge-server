@@ -9,15 +9,28 @@ class RequestLoggingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        user = getattr(getattr(request, "user", None), "username", None)
+        common_prefix = (
+            f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
+        )
+
+        logger.info(
+            "%s ...",
+            common_prefix,
+        )
+
         before = time.time()
         response = self.get_response(request)
         after = time.time()
 
         duration_ms = int(round((after - before) * 1000))
 
-        user = getattr(getattr(request, "user", None), "username", None)
+        if (
+            request.path_info == "/metrics"
+        ):  # prometheus hits this every 15 seconds; such logs are not useful
+            return response
 
-        log_message_prefix = f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info} => {response.status_code}"
+        response_prefix = common_prefix + f" => {response.status_code}"
 
         # The debug toolbar adds this header.
         if (server_timing := response.headers.get("Server-Timing")) is not None:
@@ -27,14 +40,14 @@ class RequestLoggingMiddleware:
                 _, desc = desc.split("=")
                 logger.info(
                     "%s [%s: %s]",
-                    log_message_prefix,
+                    response_prefix,
                     desc,
                     duration,
                 )
 
         logger.info(
             "%s ms=%d",
-            log_message_prefix,
+            response_prefix,
             duration_ms,
         )
         return response

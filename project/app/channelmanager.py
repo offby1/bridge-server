@@ -26,19 +26,19 @@ class MyChannelManager(DefaultChannelManager):
         # player-to-player messages are private.
         if (player_pks := models.Message.player_pks_from_channel_name(channel)) is not None:
             rv = player.pk in player_pks
-            # logger.warning(f"{player.pk=} {player_pks=} => {rv=}")
+            # logger.warning(f"{player.name=} ({player_pks=}) => {rv=}")
             return rv
 
         # system-to-player HTML messages are similarly private.
         if (player_pk := models.Player.player_pk_from_event_HTML_hand_channel(channel)) is not None:
             rv = player_pk == player.pk
-            # logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
+            # logger.warning(f"{player.name=} ({player_pk=}) => {rv=}")
             return rv
 
         # system-to-player JSON messages are similarly private.
         if (player_pk := models.Player.player_pk_from_event_JSON_hand_channel(channel)) is not None:
             rv = player_pk == player.pk
-            # logger.warning(f"{player.pk=} {player_pk=} => {rv=}")
+            # logger.warning(f"{player.name=} ({player_pk=}) => {rv=}")
             return rv
 
         # hand messages, alas, are private.

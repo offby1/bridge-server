@@ -158,6 +158,9 @@ migrate: makemigrations create-cache (manage "migrate")
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
+dump:
+    docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
+
 [group('stress')]
 [script('bash')]
 tiny:
@@ -167,13 +170,13 @@ tiny:
     DJANGO_SETTINGS_MODULE=project.prod_settings just botme -d
     just stress --tiny
     docker compose logs django --follow
-    docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
 [group('development')]
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
+    export DJANGO_SETTINGS_MODULE=project.dev_settings
     poetry run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme

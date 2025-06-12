@@ -3,6 +3,7 @@ include:
 
 volumes:
   django_static_root: {}
+  grafana_data:
   postgres_data: {}
   prom_data:
 
@@ -119,6 +120,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - grafana_data:/var/lib/grafana # saves preferences, I hope
 
 secrets:
   django_secret:
