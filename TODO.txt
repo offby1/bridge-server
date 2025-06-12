@@ -1,6 +1,10 @@
 IN PROGRESS:
 
 STILL TODO:
+* I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
+
+  The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
+
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
 * After we've finished a hand, we see the _everything_read_only view. Sometimes that view shows a link to the current hand; but sometimes it doesn't.  I assume the latter happens when we're waiting for the next round to start.  Reloading the page (eventually) causes that link to appear; but this page should have the usual "listen for an SSE and update itself" logic, just for that link.
