@@ -1,6 +1,12 @@
 IN PROGRESS:
 
 STILL TODO:
+* Performance, as usual
+
+  For the last week or two I've been running "big_bot_stress" a lot, and watching the request latencies.  With the tempo at 0 -- i.e., each client hitting the server as quickly as it can -- typical p50 latency is maybe 500ms, p99 is 750ms.  Yuck!
+
+  I notice the CPU is more or less pegged at 100%.  Siamak says if the CPU is pegged, you can't learn anything interesting about performance; so I should increase the delay (i.e., decrease the tempo) until CPU is, I dunno, 50%, then capture some traces and see what I see.
+
 * I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
 
   The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
