@@ -618,26 +618,11 @@ def _interactive_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
 
 def _terse_description(hand: Hand) -> str:
-    tourney = format_html(
-        '<a href="{}?tournament={}">Tournament #{}</a>',
-        reverse("app:board-list"),
-        hand.board.tournament.pk,
-        hand.board.tournament.display_number,
-    )
-
-    table = format_html(
-        "Table #{}",
-        hand.table_display_number,
-    )
-
-    board = format_html(
-        '<a href="{}">Board #{} ({})</a>',
+    return format_html(
+        '<a href="{}">{}</a>',
         reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
-        hand.board.display_number,
-        hand.board.vulnerability_string(),
+        hand.board,
     )
-
-    return SafeString(" ".join([tourney, table, board]))
 
 
 def Custom403(request: HttpRequest, content: str) -> HttpResponse:
