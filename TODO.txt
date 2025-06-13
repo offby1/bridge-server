@@ -13,6 +13,8 @@ STILL TODO:
 
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
+  I wonder if switching the eventstore to redis (as above) would reduce the number of needed postgresql connections.
+
 * After we've finished a hand, we see the _everything_read_only view. Sometimes that view shows a link to the current hand; but sometimes it doesn't.  I assume the latter happens when we're waiting for the next round to start.  Reloading the page (eventually) causes that link to appear; but this page should have the usual "listen for an SSE and update itself" logic, just for that link.
 
 * There's something fishy about dates in the admin page; I haven't narrowed it down.  But something weird happened just now: I started a tournament normally, with a single human and (I guess) 7 bots.  I was bored, so I used the admin page to change the tempo; then  when I reloaded a web page, it said
