@@ -6,6 +6,7 @@ from app.models.tournament import Tournament, check_for_expirations
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models.query import QuerySet
 
 from .utils import is_safe
 
@@ -45,13 +46,14 @@ class Command(BaseCommand):
                 tempo_seconds=0,
             )
 
-            p: Player
-
             if (num_players := options.get("min_players", 0)) == 0:
                 if options.get("tiny", False):
                     num_players = 8
 
-            while Player.objects.order_by("user__username").count() < num_players:
+            def synths() -> QuerySet:
+                return Player.objects.order_by("user__username").filter(synthetic=True)
+
+            while synths().count() < num_players:
                 p1 = Player.objects.create_synthetic()
                 p2 = Player.objects.create_synthetic()
                 p1.partner = p2
@@ -60,14 +62,14 @@ class Command(BaseCommand):
                 p2.save()
                 self.stderr.write(f"Created partners {p1.name} and {p2.name}")
 
-            for p in Player.objects.filter(partner__isnull=True):
+            for p in synths().filter(partner__isnull=True):
                 self.stderr.write(f"{p.name} has no partner; making another synth")
                 p.partner = Player.objects.create_synthetic()
                 p.partner.partner = p
                 p.save()
                 p.partner.save()
 
-            for p in Player.objects.order_by("user__username").all():
+            for p in synths():
                 if p.currently_seated:
                     p.unseat_partnership()
 
