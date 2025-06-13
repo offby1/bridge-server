@@ -124,7 +124,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
-    "tz_detect.middleware.TimezoneMiddleware",
+    "app.middleware.better_tz_detect.BetterTimezoneMiddleware",
 ]
 LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
 REQUEST_ID_RESPONSE_HEADER = "X-Request-Id"
