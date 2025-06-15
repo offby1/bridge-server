@@ -17,15 +17,6 @@ STILL TODO:
 
 * After we've finished a hand, we see the _everything_read_only view. Sometimes that view shows a link to the current hand; but sometimes it doesn't.  I assume the latter happens when we're waiting for the next round to start.  Reloading the page (eventually) causes that link to appear; but this page should have the usual "listen for an SSE and update itself" logic, just for that link.
 
-* There's something fishy about dates in the admin page; I haven't narrowed it down.  But something weird happened just now: I started a tournament normally, with a single human and (I guess) 7 bots.  I was bored, so I used the admin page to change the tempo; then  when I reloaded a web page, it said
-
-  ```
-  AssertionError at /hand/1/
-  How do I (Board #1 t#1, group A, Neither side vulnerable, dealt by North) even exist if the tournament signup deadline hasn't yet passed?!
-  ```
-
-  Which says to me that the date forms in the admin page were set to something weird, and by saving my "tempo_seconds" change, I also inadvertently messed up the deadlines.
-
 * Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
@@ -200,6 +191,25 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* There's something fishy about dates in the admin page; I haven't narrowed it down.  But something weird happened just now: I started a tournament normally, with a single human and (I guess) 7 bots.  I was bored, so I used the admin page to change the tempo; then  when I reloaded a web page, it said
+
+  ```
+  AssertionError at /hand/1/
+  How do I (Board #1 t#1, group A, Neither side vulnerable, dealt by North) even exist if the tournament signup deadline hasn't yet passed?!
+  ```
+
+  Which says to me that the date forms in the admin page were set to something weird, and by saving my "tempo_seconds" change, I also inadvertently messed up the deadlines.
+
+  I reproduced the problem, and noticed the UPDATE is funny-lookin'
+
+  `2025-06-13 14:24:13.522 UTC [43] LOG:  statement: UPDATE "app_tournament" SET "boards_per_round_per_table" = 1, "is_complete" = true, "display_number" = 1, "signup_deadline" = '2025-06-12 16:17:48-07:53'::timestamptz, "play_completion_deadline" = '2025-06-12 16:32:48-07:53'::timestamptz, "tempo_seconds" = 2.0 WHERE "app_tournament"."id" = 1`
+
+  See the time-zone offset?  It's `-07:53` -- that's bogus; it should be either `-07:00` or `+00:00`.
+
+  Removing the "tz_detect" app and middleware fixes the problem :-|
+
+  Working around it as described [here](https://github.com/adamcharnock/django-tz-detect/issues/80) *really* fixes it :-)
+
 * Maybe put an X-Request-ID header on all responses? That way the API bot could log that after it gets a response.  Might make it easier to match up the bot's logs with the server's.
 
   I thought I was doing this, but making a call in the browser, with the developer tools on, certainly doesn't show that header in the POST respose.
