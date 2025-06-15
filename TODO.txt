@@ -32,6 +32,8 @@ STILL TODO:
 
 * *STILL* rethink permissions.  See `docs/view-and-control.org`.
 
+  I actually did this in "main" but it triggers some sorta race condition, leading to an assertion failure, in main 😭
+
 * scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
   - make it scroll by one <li> at a time, instead; or maybe
   - bring back the little dots along the bottom that did exactly that
