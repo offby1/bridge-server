@@ -14,11 +14,6 @@ class RequestLoggingMiddleware:
             f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
         )
 
-        logger.info(
-            "%s ...",
-            common_prefix,
-        )
-
         before = time.time()
         response = self.get_response(request)
         after = time.time()
@@ -29,6 +24,11 @@ class RequestLoggingMiddleware:
             request.path_info == "/metrics"
         ):  # prometheus hits this every 15 seconds; such logs are not useful
             return response
+
+        logger.info(
+            "%s ...",
+            common_prefix,
+        )
 
         response_prefix = common_prefix + f" => {response.status_code}"
 
