@@ -8,6 +8,8 @@ This is the nicest profiler I've found so far.  I can use it in two ways; both a
 
 * `just runme` will work normally, but you can append `?profile` to any URL, and it'll render a slick flamegraph, instead of the usual page content.
 
+BUT! If I have it enabled in docker, for a "stress" run, by setting `PYINSTRUMENT_PROFILE_DIR = "profiles"` in settings, it seems to consume gigabytes of RAM, and also (I suspect) slow things down on its own.   As of 2025-06-17T14:45:51-0700 there are [three open issues](https://github.com/joerick/pyinstrument/issues?q=is%3Aissue%20state%3Aopen%20memory) complaining about memory usage.
+
 ## py-spy
 
 I once managed to get py-spy working on MacOS (it wasn't easy); I have not been able to reproduce this success.  It works fine in the docker container, though.  Use it there like this:
