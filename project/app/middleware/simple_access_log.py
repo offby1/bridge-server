@@ -1,4 +1,6 @@
+import cProfile
 import logging
+import pstats
 import time
 
 logger = logging.getLogger(__name__)
@@ -9,21 +11,41 @@ class RequestLoggingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        if (
+            request.path_info == "/metrics"
+        ):  # prometheus hits this every 15 seconds; such logs are not useful
+            return self.get_response(request)
+
         user = getattr(getattr(request, "user", None), "username", None)
         common_prefix = (
             f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
         )
 
+        pr = cProfile.Profile()
+        enabled = False
         before = time.time()
-        response = self.get_response(request)
-        after = time.time()
 
+        try:
+            pr.enable()
+        except ValueError as e:
+            logger.warning("%s", e)
+        else:
+            enabled = True
+
+        try:
+            response = self.get_response(request)
+        finally:
+            pr.disable()
+
+        after = time.time()
         duration_ms = int(round((after - before) * 1000))
 
-        if (
-            request.path_info == "/metrics"
-        ):  # prometheus hits this every 15 seconds; such logs are not useful
-            return response
+        if enabled and duration_ms > 1_000:
+            output_filename = f"/tmp/{duration_ms:04}ms"
+            if (request_id := getattr(request, "id", None)) is not None:
+                output_filename += f"-{request_id}"
+            pr.dump_stats(output_filename)
+
 
         logger.info(
             "%s ...",
