@@ -60,8 +60,11 @@ docker-nuke: die-if-not-local-docker orb
 
     echo "Killing containers!"
     docker ps -aq | xargs --no-run-if-empty docker rm -f
-    # echo "Killing volumes!"
-    docker volume prune --all --force
+
+    echo "Killing postgres volume!"
+    docker volume rm --force server_postgres_data
+
     echo "Removing plugins!"
     docker plugin ls --quiet | xargs --no-run-if-empty docker plugin rm
+
     echo "Done!"
