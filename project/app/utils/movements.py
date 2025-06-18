@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # semi-arbitrary; too many rounds would take forever to play Note that this is also the maximum number of tables, since
-# our movements are always "sqaure" -- that is, they always have the same number of rounds as tables.
+# our movements are always "square" -- that is, they always have the same number of rounds as tables.
 MAX_ROUNDS = 16
 
 
