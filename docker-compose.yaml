@@ -32,6 +32,10 @@ services:
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       PGHOST: postgres
       PGPASS: postgres
+
+    networks:
+      - bridge_tournament_net
+
     ports:
       - "127.0.0.1:9000:9000"
     secrets:
@@ -74,6 +78,10 @@ services:
       # only for initializing the db
       POSTGRES_DB: bridge
       POSTGRES_PASSWORD: postgres
+
+    networks:
+      - bridge_tournament_net
+
     ports:
       - "127.0.0.1:5432:5432"
 
@@ -99,12 +107,29 @@ services:
       start_period: 10s
       start_interval: 1s
 
+  postgres-exporter:
+    environment:
+      - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
+      - DATA_SOURCE_USER=postgres
+      - DATA_SOURCE_PASS=postgres
+    image: quay.io/prometheuscommunity/postgres-exporter
+
+    networks:
+      - bridge_tournament_net
+
   # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
   prometheus:
     build: prometheus
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+
+    depends_on:
+      - postgres-exporter
+
+    networks:
+      - bridge_tournament_net
+
     ports:
       - "127.0.0.1:9090:9090"
     restart: unless-stopped
@@ -114,6 +139,9 @@ services:
   grafana:
     build: grafana
     container_name: grafana
+    networks:
+      - bridge_tournament_net
+
     ports:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped
@@ -128,3 +156,7 @@ secrets:
     environment: "DJANGO_SECRET_KEY"
   django_skeleton_key:
     environment: "DJANGO_SKELETON_KEY"
+
+networks:
+  bridge_tournament_net:
+    driver: bridge              # the name is an annoying coincidence

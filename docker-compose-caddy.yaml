@@ -6,6 +6,8 @@ services:
     # Unlike the official caddy image, this is falling-down-easy to configure as a lets-encrypt-certificate-fetching
     # reverse proxy.
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    networks:
+      - bridge_tournament_net
     ports:
       - 80:80
       - 443:443
