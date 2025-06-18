@@ -289,7 +289,7 @@ perf-local: drop docker-prerequisites
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
     docker compose up --build --detach  django django-collected-static django-migrated prometheus grafana
-    just stress --min-players=20
+    just stress --min-players=100
     docker compose logs django --follow
 
 # Your kids know 'front and follow'?

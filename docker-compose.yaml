@@ -90,7 +90,7 @@ services:
 
     # "--log_statement=all", "--log_min_duration_statement=0" are handy for exploring performance
     # https://www.postgresql.org/docs/17/config-setting.html#CONFIG-SETTING-SHELL
-    command: ["postgres", "--max_connections=100", "--log_min_duration_statement=100"]
+    command: ["postgres", "--max_connections=200", "--log_min_duration_statement=100"]
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
