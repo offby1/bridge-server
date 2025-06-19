@@ -19,6 +19,7 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 # /etc/init.d/ssh restart
 
 # adduser ubuntu # annoyingly interactive.
+# # use the password in my password manager.
 # exit
 ```
 
