@@ -7,6 +7,14 @@ STILL TODO:
 
   I notice the CPU is more or less pegged at 100%.  Siamak says if the CPU is pegged, you can't learn anything interesting about performance; so I should increase the delay (i.e., decrease the tempo) until CPU is, I dunno, 50%, then capture some traces and see what I see.
 
+  Notes from a week of struggling with performance monitoring:
+
+  - Some of the tools are flaky, which wasted my time.  Specifically: pyinstrument consumes so much memory that it's not worth using; and I've blown through my free-tier quota on Sentry, so I can't use that for profiling.
+
+    Also, I was able to get self-hosted sentry working *somewhat*, but it doesn't offer profiling.  No idea if that's a bug, or what.  I've since shut down the VM on which I'd had it running, since it was kind of expensive.
+
+  - In prod, with 64 players (a "16x16" movement), performance is, bad, but (surprisingly) not awful.
+
 * I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
 
   The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
