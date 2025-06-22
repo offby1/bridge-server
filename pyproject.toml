@@ -66,6 +66,7 @@ pytest-xdist = "3.*"
 freezegun = "1.*"
 # Handy for monitoring parallel test runs (i.e., pytest-xdist) -- use htop to look for "pytest"
 setproctitle = "1.*"
+snakeviz = "^2.2.2"
 
 
 [tool.pydocstyle]
