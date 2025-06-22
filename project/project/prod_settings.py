@@ -1,7 +1,6 @@
 import os
 
 import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base_settings import *  # noqa
 from .base_settings import LOGGING, VERSION
@@ -19,6 +18,8 @@ if DEPLOYMENT_ENVIRONMENT == "production":
 # https://docs.sentry.io/platforms/python/integrations/django/
 sentry_sdk.init(  # type: ignore
     dsn="https://a18e83409c4ba3304ff35d0097313e7a@o4507936352501760.ingest.us.sentry.io/4507936354205696",
+    # Add data like request headers and IP for users;
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
     send_default_pii=True,
     environment=DEPLOYMENT_ENVIRONMENT,
     # Set traces_sample_rate to 1.0 to capture 100%
@@ -30,14 +31,5 @@ sentry_sdk.init(  # type: ignore
     # Profiles will be automatically collected while
     # there is an active span.
     profile_lifecycle="trace",
-    integrations=[
-        DjangoIntegration(
-            cache_spans=True,
-            signals_spans=False,
-        ),
-    ],
     release=VERSION,
-    _experiments={
-        "enable_logs": True,
-    },
 )
