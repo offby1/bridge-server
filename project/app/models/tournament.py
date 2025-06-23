@@ -482,7 +482,9 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
-            all_hands_are_complete = not self.hands().filter(is_complete=False).exists()
+            all_hands_are_complete = (
+                self.hands().exists() and not self.hands().filter(is_complete=False).exists()
+            )
 
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.is_complete = True
