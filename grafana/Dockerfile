@@ -1,2 +1,3 @@
 FROM grafana/grafana:latest
-COPY datasource.yml /etc/grafana/provisioning/datasources
+COPY dashboards/ /etc/grafana/dashboards/
+COPY provisioning/ /etc/grafana/provisioning/
