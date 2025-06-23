@@ -358,6 +358,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.save()
             return True
 
+        # TODO -- I suspect this always returns None, since HandManager.create will raise an exception if any of the four
+        # players are already seated.
+
         # p has abandoned this hand if, and only if:
         # - some other hand exists in which they are a player,
         #   and that hand itself is neither complete nor abandoned

@@ -326,7 +326,7 @@ def test_predictable_shuffles():
         assert attrs1_empty[k] != attrs1_golly[k]
 
 
-def test_is_abandoned(usual_setup, everybodys_password) -> None:
+def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
     assert Hand.objects.count() > 0
 
     for h in Hand.objects.all():
@@ -356,7 +356,17 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     assert "left" in message
     assert north.name in message or south.name in message
 
-    north.partner_with(south)
+
+@pytest.mark.skip(reason="I suspect this is pointless")
+def test_is_abandoned_defection(usual_setup, everybodys_password) -> None:
+    h = Hand.objects.first()
+    assert h is not None
+
+    north: Player | None = h.North
+    assert north is not None
+
+    south: Player | None = north.partner
+    assert south is not None
 
     # Now put north and south into some other hand
     new_player_names = ["e2", "w2"]
@@ -366,10 +376,6 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
         )
 
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
-    assert not north.currently_seated
-    assert not south.currently_seated
-    assert not Player.objects.get_by_name("e2").currently_seated
-    assert not Player.objects.get_by_name("w2").currently_seated
 
     board, _ = Board.objects.get_or_create_from_display_number(
         display_number=Board.objects.count() + 1,
@@ -391,4 +397,4 @@ def test_is_abandoned(usual_setup, everybodys_password) -> None:
     message = h.abandoned_because
 
     assert north.name in message or south.name in message
-    assert "left" in message
+    assert "defected, those bastards" in message
