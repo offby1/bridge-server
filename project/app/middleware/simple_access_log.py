@@ -1,4 +1,3 @@
-import cProfile
 import logging
 import sys
 import time
@@ -28,30 +27,12 @@ class RequestLoggingMiddleware:
             f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
         )
 
-        pr = cProfile.Profile()
-        enabled = False
         before = time.time()
 
-        try:
-            pr.enable()
-        except ValueError as e:
-            logger.warning("%s", e)
-        else:
-            enabled = True
-
-        try:
-            response = self.get_response(request)
-        finally:
-            pr.disable()
+        response = self.get_response(request)
 
         after = time.time()
         duration_ms = int(round((after - before) * 1000))
-
-        if enabled and duration_ms > 1_000:
-            output_filename = f"/tmp/{duration_ms:04}ms"
-            if (request_id := getattr(request, "id", None)) is not None:
-                output_filename += f"-{request_id}"
-            pr.dump_stats(output_filename)
 
         logger.info(
             "%s ...",
