@@ -1,8 +1,6 @@
 import logging
-import sys
 import time
 
-import django.db.utils
 
 logger = logging.getLogger(__name__)
 
@@ -17,21 +15,16 @@ class RequestLoggingMiddleware:
         ):  # prometheus hits this every 15 seconds; such logs are not useful
             return self.get_response(request)
 
-        try:
-            user = getattr(getattr(request, "user", None), "username", None)
-        except django.db.utils.OperationalError:
-            logger.exception("That's it, we're outta here")
-            sys.exit(1)
+        user = getattr(getattr(request, "user", None), "username", None)
 
         common_prefix = (
             f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
         )
 
         before = time.time()
-
         response = self.get_response(request)
-
         after = time.time()
+
         duration_ms = int(round((after - before) * 1000))
 
         logger.info(
