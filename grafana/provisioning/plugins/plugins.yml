@@ -1,0 +1,7 @@
+apiVersion: 1
+
+apps:
+  # I don't intend to actually use this feature; I'm installing it only because whenever I first look at profiles, there's
+  # a popup complaining that some plugin or other isn't installed.  This is probably a bug in grafana's pyroscope data source.
+  # The grafana logs suggest that this is the missing plugin.
+  - type: grafana-llm-app
