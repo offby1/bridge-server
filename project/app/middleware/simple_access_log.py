@@ -1,6 +1,5 @@
 import cProfile
 import logging
-import pstats
 import sys
 import time
 
@@ -53,7 +52,6 @@ class RequestLoggingMiddleware:
             if (request_id := getattr(request, "id", None)) is not None:
                 output_filename += f"-{request_id}"
             pr.dump_stats(output_filename)
-
 
         logger.info(
             "%s ...",
