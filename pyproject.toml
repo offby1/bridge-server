@@ -36,6 +36,7 @@ humanize = "^4.11.0"
 django-tz-detect = "^0.5.0"
 django-tables2 = "2.*"
 django-prometheus = "*"
+pyroscope-io = "^0.8.11"
 
 [tool.djlint]
 use_gitignore=true
