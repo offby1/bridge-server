@@ -24,7 +24,6 @@ sseclient = "*"
 requests = "2.*"
 types-requests = "2.*"
 platformdirs = "*"
-sentry-sdk = {extras = ["django"], version = "^2.29.1"}
 docutils = "*"
 django-fastdev = "*"
 # beware of https://github.com/psycopg/psycopg/issues/888
