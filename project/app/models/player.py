@@ -455,6 +455,13 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         return None
 
+    def direction_at_hand(self, h: Hand) -> str:
+        for direction_name in h.direction_names:
+            if getattr(h, direction_name) == self:
+                return direction_name
+
+        assert False, f"some idiot called me for {h} when {self.name} never played it"
+
     def current_hand(self) -> Hand | None:
         ch = self.current_hand_and_direction()
         if ch is None:

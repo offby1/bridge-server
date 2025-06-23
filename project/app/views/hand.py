@@ -650,7 +650,9 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                 app.models.Board.PlayerVisibility.dummys_hand
                 | app.models.Board.PlayerVisibility.own_hand
             ):
-                xscript = hand.get_xscript().as_viewed_by(player.libraryThing())
+                xscript = hand.get_xscript().as_viewed_by(
+                    bridge.seat.Seat(player.direction_at_hand(hand)[0])
+                )
             case app.models.Board.PlayerVisibility.everything:
                 xscript = hand.get_xscript()
             case _:

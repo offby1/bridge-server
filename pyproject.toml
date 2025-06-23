@@ -13,7 +13,7 @@ django-extensions = "*"
 faker = "^26.0.0"
 more-itertools = "^10.3.0"
 tqdm = "*"
-bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "055e73cf1d423a47933f3dd4e7027b8e7ba5f1ad" }
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "540392f525a330ceeab5793be057b89ce8c7822a" }
 #bridge = {path = "../library", develop = true}
 django-eventstream = "*"
 daphne = "*"
