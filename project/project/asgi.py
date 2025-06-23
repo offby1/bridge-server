@@ -15,8 +15,8 @@ from django.core.asgi import get_asgi_application
 import pyroscope  # type: ignore [import-untyped]
 
 pyroscope.configure(
-    application_name="bridge",  # replace this with some name for your application
-    server_address=f"http://{os.environ.get('PYROSCOPE_HOST', 'localhost')}:4040",  # replace this with the address of your Pyroscope server
+    application_name="bridge",
+    server_address=f"http://{os.environ.get('PYROSCOPE_HOST', 'localhost')}:4040",
 )
 
 print()
