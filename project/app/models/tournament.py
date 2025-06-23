@@ -297,7 +297,7 @@ class Tournament(models.Model):
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
         """
-        num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
+        num_completed_hands = self.hands().filter(is_complete=True).count()
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_zb_table_number)
         boards_per_round_per_tournament = num_tables * mvmt.boards_per_round_per_table
@@ -452,7 +452,7 @@ class Tournament(models.Model):
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
         if self.status() is not Complete:
-            num_completed = sum([h.is_complete for h in self.hands()])
+            num_completed = self.hands().filter(is_complete=True).count()
             rv += f"; {num_completed} hands played"
 
         return rv
@@ -482,11 +482,7 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
-            all_hands_are_complete = self.hands().exists()
-            for h in self.hands():
-                if not h.is_complete:
-                    all_hands_are_complete = False
-                    break
+            all_hands_are_complete = not self.hands().filter(is_complete=False).exists()
 
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.is_complete = True

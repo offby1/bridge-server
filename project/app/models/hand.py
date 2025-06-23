@@ -262,6 +262,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     board = models.ForeignKey[Board]("Board", on_delete=models.CASCADE)
 
+    # This field is redundant, in that we could compute it on-demand from the transcript.  But I suspect that is slow.
+    is_complete = models.BooleanField(default=False)
+
     North = models.ForeignKey["Player"](
         "Player",
         on_delete=models.CASCADE,
@@ -355,13 +358,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.save()
             return True
 
+        # p has abandoned this hand if, and only if:
+        # - some other hand exists in which they are a player,
+        #   and that hand itself is neither complete nor abandoned
         def has_defected(p: Player) -> bool:
-            their_hands = p.hands_played.all()
-
             h: Hand
-            for h in their_hands:
-                if h.is_complete or h.abandoned_because is not None:
-                    continue
+            for h in p.hands_played.filter(is_complete=False, abandoned_because__isnull=False):
                 if h.pk != self.pk:
                     return True
 
@@ -868,17 +870,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
-    @property
-    def is_complete(self):
-        x = self.get_xscript()
-
-        if x.num_plays == 52:
-            return True
-
-        if x.auction.status is Auction.PassedOut:
-            return True
-        return False
-
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
 
@@ -1089,6 +1080,10 @@ class CallManager(models.Manager):
         x.add_call(c)
         rv.hand._cache_set(x)
 
+        if x.auction.status is Auction.PassedOut:
+            rv.hand.is_complete = True
+            rv.hand.save()
+
         return rv
 
 
@@ -1139,6 +1134,10 @@ class PlayManager(models.Manager):
 
         x.add_card(card)
         rv.hand._cache_set(x)
+
+        if x.num_plays == 52:
+            rv.hand.is_complete = True
+            rv.hand.save()
 
         return rv
 

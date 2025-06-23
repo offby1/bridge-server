@@ -202,18 +202,11 @@ class Player(TimeStampedModel):
             )
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
-        # TODO -- refactor this with "current_hand"
         with transaction.atomic():
-            h: Hand
-            direction_name: str
+            if (h := self.current_hand()) is not None:
+                h.abandoned_because = reason or f"{self.name} left"
+                h.save()
 
-            for h in self.hands_played.filter(abandoned_because__isnull=True):
-                if not h.is_complete:
-                    for direction_name in h.direction_names:
-                        if getattr(h, direction_name) == self:
-                            h.abandoned_because = reason or f"{self.name} left"
-                            h.save()
-                            break
         self._control_bot()
 
     @property
@@ -453,11 +446,10 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         h: Hand
         direction_name: str
 
-        for h in self.hands_played:
-            if not h.is_complete and h.abandoned_because is None:
-                for direction_name in h.direction_names:
-                    if getattr(h, direction_name) == self:
-                        return h, direction_name
+        for h in self.hands_played.filter(is_complete=False, abandoned_because__isnull=True):
+            for direction_name in h.direction_names:
+                if getattr(h, direction_name) == self:
+                    return h, direction_name
 
         return None
 

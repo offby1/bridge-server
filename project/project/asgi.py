@@ -12,7 +12,7 @@ import sys
 from django.conf import settings
 from django.core.asgi import get_asgi_application
 
-import pyroscope
+import pyroscope  # type: ignore [import-untyped]
 
 pyroscope.configure(
     application_name="bridge",  # replace this with some name for your application
