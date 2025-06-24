@@ -36,7 +36,7 @@
     <span style="font-size: 2em;">
         {% if tournament.play_completion_deadline %}
             {# TODO -- figure out when it really completed! #}
-            Completed no later than {{ tournament.play_completion_deadline }} {{ tournament.play_completion_deadline|date:"e" }}.
+            Completed {{ tournament.completed_at }} {{ tournament.play_completion_deadline|date:"e" }}.
         {% else %}
             Completed.
         {% endif %}

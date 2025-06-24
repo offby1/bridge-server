@@ -104,7 +104,7 @@ def two_boards_one_is_complete(
 
 @pytest.fixture
 def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
-    before: Tournament | None = Tournament.objects.filter(is_complete=False).first()
+    before: Tournament | None = Tournament.objects.incompletes().first()
     assert before is not None
 
     play_out_round(before)

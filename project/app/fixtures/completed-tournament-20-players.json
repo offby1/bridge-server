@@ -380,8 +380,8 @@
   {
     "fields": {
       "boards_per_round_per_table": 3,
+      "completed_at": "2025-04-08T17:25:45.611Z",
       "display_number": 1,
-      "is_complete": true,
       "play_completion_deadline": "2025-04-08T17:25:45.611Z",
       "signup_deadline": "2025-04-08T15:33:15.611Z"
     },

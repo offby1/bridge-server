@@ -328,7 +328,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
-            tour.is_complete = True
+            tour.completed_at = tour.play_completion_deadline
             tour.save()
 
             msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
