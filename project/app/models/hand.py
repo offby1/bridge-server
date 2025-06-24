@@ -374,6 +374,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 abandoned_because__isnull=False,
             ):
                 if h.pk != self.pk:
+                    logger.warning("%s", f"{p.name} has abandoned hand {self} for {h}")
                     return True
 
             return False
