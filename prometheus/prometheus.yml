@@ -19,7 +19,6 @@ scrape_configs:
   static_configs:
   - targets:
     - django:9000
-    - django:9100
 - job_name: postgres
   honor_timestamps: true
   scrape_interval: 15s

@@ -86,11 +86,11 @@ def check_for_expirations(sender, **kwargs) -> None:
     t: Tournament
 
     with transaction.atomic():
-        incompletes = Tournament.objects.filter(is_complete=False, signup_deadline__isnull=False)
+        incompletes = Tournament.objects.incompletes().filter(signup_deadline__isnull=False)
 
         for t in incompletes:
             if t.play_completion_deadline_has_passed():
-                t.is_complete = True
+                t.completed_at = t.play_completion_deadline
                 deadline_str = t.play_completion_deadline.isoformat()
                 t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
@@ -149,19 +149,16 @@ class TournamentManager(models.Manager):
             )
             return rv
 
-    def current(self) -> Tournament | None:
-        return self.filter(is_complete=False).first()
-
     def open_for_signups(self) -> models.QuerySet:
-        return self.filter(is_complete=False).filter(signup_deadline__gte=timezone.now())
+        return self.incompletes().filter(signup_deadline__gte=timezone.now())
 
     def get_or_create_tournament_open_for_signups(
         self, **creation_kwargs
     ) -> tuple[Tournament, bool]:
         with transaction.atomic():
             now = timezone.now()
-            incomplete_and_open_tournaments_qs = self.filter(
-                models.Q(signup_deadline__gte=now), is_complete=False
+            incomplete_and_open_tournaments_qs = self.incompletes().filter(
+                models.Q(signup_deadline__gte=now)
             )
 
             logger.debug(f"{now=} {incomplete_and_open_tournaments_qs=}")
@@ -189,6 +186,9 @@ class TournamentManager(models.Manager):
             )
             return first_incomplete, False
 
+    def incompletes(self) -> models.QuerySet:
+        return self.filter(completed_at__isnull=True)
+
 
 class Tournament(models.Model):
     if TYPE_CHECKING:
@@ -198,8 +198,7 @@ class Tournament(models.Model):
 
     boards_per_round_per_table = models.PositiveSmallIntegerField(default=3)
 
-    # TODO -- replace this with a nullable `completed_at` DateTimefield
-    is_complete = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True)
 
     display_number = models.SmallIntegerField(unique=True)
 
@@ -215,6 +214,10 @@ class Tournament(models.Model):
     )
 
     objects = TournamentManager()
+
+    @property
+    def is_complete(self) -> bool:
+        return self.completed_at is not None
 
     def matchpoints_by_pair(self) -> dict[tuple[str, str], tuple[int, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
@@ -297,7 +300,7 @@ class Tournament(models.Model):
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
         """
-        num_completed_hands = sum([1 for h in self.hands().all() if h.is_complete])
+        num_completed_hands = self.hands().filter(is_complete=True).count()
         mvmt = self.get_movement()
         num_tables = len(mvmt.table_settings_by_zb_table_number)
         boards_per_round_per_tournament = num_tables * mvmt.boards_per_round_per_table
@@ -452,7 +455,7 @@ class Tournament(models.Model):
     def __str__(self) -> str:
         rv = f"{self.short_string()}; {self.status().__name__}"
         if self.status() is not Complete:
-            num_completed = sum([h.is_complete for h in self.hands()])
+            num_completed = self.hands().filter(is_complete=True).count()
             rv += f"; {num_completed} hands played"
 
         return rv
@@ -482,23 +485,23 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
-            all_hands_are_complete = self.hands().exists()
-            for h in self.hands():
-                if not h.is_complete:
-                    all_hands_are_complete = False
-                    break
+            all_hands_are_complete = (
+                self.hands().exists() and not self.hands().filter(is_complete=False).exists()
+            )
 
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
-                self.is_complete = True
+                self.completed_at = (
+                    timezone.now() if all_hands_are_complete else self.play_completion_deadline
+                )
                 self.save()
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
-            victims = app.models.TournamentSignup.objects.filter(tournament=self)
-            logger.debug(
-                "Deleting %s because tournament #%s is complete", victims, self.display_number
-            )
-            victims.delete()
+            if (victims := app.models.TournamentSignup.objects.filter(tournament=self)).exists():
+                logger.debug(
+                    "Deleting %s because tournament #%s is complete", victims, self.display_number
+                )
+                victims.delete()
 
         super().save(*args, **kwargs)
 

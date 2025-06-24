@@ -32,6 +32,7 @@ services:
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       PGHOST: postgres
       PGPASS: postgres
+      PYROSCOPE_HOST: pyroscope
 
     networks:
       - bridge_tournament_net
@@ -90,7 +91,7 @@ services:
 
     # "--log_statement=all", "--log_min_duration_statement=0" are handy for exploring performance
     # https://www.postgresql.org/docs/17/config-setting.html#CONFIG-SETTING-SHELL
-    command: ["postgres", "--max_connections=100", "--log_min_duration_statement=100"]
+    command: ["postgres", "--max_connections=200", "--log_min_duration_statement=100"]
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -118,6 +119,23 @@ services:
       - bridge_tournament_net
 
   # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
+  grafana:
+    build: grafana
+    container_name: grafana
+    depends_on:
+      - pyroscope
+    networks:
+      - bridge_tournament_net
+
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - grafana_data:/var/lib/grafana # saves preferences, I hope
+
   prometheus:
     build: prometheus
     container_name: prometheus
@@ -136,20 +154,12 @@ services:
     volumes:
       - prom_data:/prometheus
 
-  grafana:
-    build: grafana
-    container_name: grafana
+  pyroscope:
+    image: grafana/pyroscope
     networks:
       - bridge_tournament_net
-
     ports:
-      - "127.0.0.1:3000:3000"
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
-    volumes:
-      - grafana_data:/var/lib/grafana # saves preferences, I hope
+      - "127.0.0.1:4040:4040"
 
 secrets:
   django_secret:

@@ -1,5 +1,7 @@
 # Perf notes
 
+https://chatgpt.com/c/685066f3-4d4c-8013-b496-e0f00ab9e643 suggests (I had suspected this might be possible) django eventstream is holding open lots of connections, which might somehow be causing the rest of the app to fight over the remaining connections.
+
 ## pyinstrument
 
 This is the nicest profiler I've found so far.  I can use it in two ways; both are enabled by setting `PYINSTRUMENT` to `t` in the environment.

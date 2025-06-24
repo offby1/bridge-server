@@ -1,4 +1,3 @@
-import collections
 import datetime
 import logging
 
@@ -34,16 +33,27 @@ logger = logging.getLogger(__name__)
 
 
 def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup) -> None:
-    assert Tournament.objects.filter(is_complete=False).count() < 2
+    assert Tournament.objects.incompletes().count() < 2
+
+
+def _tally_ho() -> dict[bool, int]:
+    incomplete_count = Tournament.objects.incompletes().count()
+    complete_count = Tournament.objects.count() - incomplete_count
+    rv = {}
+    if complete_count:
+        rv[True] = complete_count
+    if incomplete_count:
+        rv[False] = incomplete_count
+    return rv
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    tally_before = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
+    tally_before = _tally_ho()
     assert tally_before == {False: 1}
 
-    before = Tournament.objects.filter(is_complete=False).first()
+    before = Tournament.objects.incompletes().first()
     assert before is not None
 
     hand = before.hands().first()
@@ -54,14 +64,14 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
     before.refresh_from_db()
     assert before.is_complete
 
-    tally_after = collections.Counter(Tournament.objects.values_list("is_complete", flat=True))
+    tally_after = _tally_ho()
     assert tally_after == {True: 1}
 
 
 def test_completing_one_tournament_ejects_players(
     two_boards_one_of_which_is_played_almost_to_completion,
 ) -> None:
-    tournament = Tournament.objects.filter(is_complete=False).first()
+    tournament = Tournament.objects.incompletes().first()
     assert tournament is not None
     hand = tournament.hands().first()
     assert hand is not None

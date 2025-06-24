@@ -197,9 +197,11 @@ class HandManager(models.Manager):
     ) -> Hand | None:
         with transaction.atomic():
             hands_already_played_at_this_table = self.filter(
-                table_display_number=zb_table_number + 1,
                 board__group=movements._group_letter(zb_round_number),
+                board__tournament=tournament,
+                table_display_number=zb_table_number + 1,
             )
+
             boards_already_played_at_this_table = set(
                 [h.board for h in hands_already_played_at_this_table]
             )
@@ -262,6 +264,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     board = models.ForeignKey[Board]("Board", on_delete=models.CASCADE)
 
+    # This field is redundant, in that we could compute it on-demand from the transcript.  But I suspect that is slow.
+    is_complete = models.BooleanField(default=False)
+
     North = models.ForeignKey["Player"](
         "Player",
         on_delete=models.CASCADE,
@@ -323,7 +328,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
-            tour.is_complete = True
+            tour.completed_at = tour.play_completion_deadline
             tour.save()
 
             msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
@@ -355,14 +360,21 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.save()
             return True
 
-        def has_defected(p: Player) -> bool:
-            their_hands = p.hands_played.all()
+        # TODO -- I suspect this always returns None, since HandManager.create will raise an exception if any of the four
+        # players are already seated.
 
+        # p has abandoned this hand if, and only if:
+        # - some other hand in this tournament exists in which they are a player,
+        #   and that hand itself is neither complete nor abandoned
+        def has_defected(p: Player) -> bool:
             h: Hand
-            for h in their_hands:
-                if h.is_complete or h.abandoned_because is not None:
-                    continue
+            for h in p.hands_played.filter(
+                board__tournament=self.board.tournament,
+                is_complete=False,
+                abandoned_because__isnull=False,
+            ):
                 if h.pk != self.pk:
+                    logger.warning("%s", f"{p.name} has abandoned hand {self} for {h}")
                     return True
 
             return False
@@ -719,6 +731,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
+                else:
+                    logger.error(
+                        f"Couldn't create next hand in {self.tournament=} {self.table_display_number - 1=}, {movements._zb_round_number(board_group)=}; no idea why"
+                    )
 
     @property
     def auction(self) -> Auction:
@@ -867,17 +883,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
-
-    @property
-    def is_complete(self):
-        x = self.get_xscript()
-
-        if x.num_plays == 52:
-            return True
-
-        if x.auction.status is Auction.PassedOut:
-            return True
-        return False
 
     def serialized_plays(self):
         return [p.serialized for p in self.play_set.order_by("id")]
@@ -1089,6 +1094,10 @@ class CallManager(models.Manager):
         x.add_call(c)
         rv.hand._cache_set(x)
 
+        if x.auction.status is Auction.PassedOut:
+            rv.hand.is_complete = True
+            rv.hand.save()
+
         return rv
 
 
@@ -1139,6 +1148,10 @@ class PlayManager(models.Manager):
 
         x.add_card(card)
         rv.hand._cache_set(x)
+
+        if x.num_plays == 52:
+            rv.hand.is_complete = True
+            rv.hand.save()
 
         return rv
 

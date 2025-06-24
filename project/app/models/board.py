@@ -143,7 +143,7 @@ class Board(models.Model):
 
     def will_be_played_again(self) -> bool:
         # How many *complete* hands include this board?
-        num_completed_hands = len([h for h in self.hand_set.filter(board=self) if h.is_complete])
+        num_completed_hands = self.hand_set.filter(board=self, is_complete=True).count()
         # If that number == the number of tables in this tournament, then no
         # otherwise yes
         mvmt = self.tournament.get_movement()

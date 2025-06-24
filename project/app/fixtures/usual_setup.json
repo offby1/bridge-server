@@ -1,8 +1,8 @@
 [
   {
     "fields": {
+      "completed_at": null,
       "display_number": 1,
-      "is_complete": false,
       "play_completion_deadline": "2999-12-31T23:49:49.999Z",
       "signup_deadline": "2000-01-01T00:00:00Z"
     },

@@ -8,3 +8,8 @@ datasources:
   isDefault: true
   access: proxy
   editable: true
+- name: Grafana Pyroscope
+  type: grafana-pyroscope-datasource
+  url: http://pyroscope:4040
+  jsonData:
+    minStep: '15s'

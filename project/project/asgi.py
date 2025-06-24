@@ -12,6 +12,13 @@ import sys
 from django.conf import settings
 from django.core.asgi import get_asgi_application
 
+import pyroscope  # type: ignore [import-untyped]
+
+pyroscope.configure(
+    application_name="bridge",
+    server_address=f"http://{os.environ.get('PYROSCOPE_HOST', 'localhost')}:4040",
+)
+
 print()
 print(f"{os.environ["DJANGO_SETTINGS_MODULE"]=}")
 print(f"{settings.DEPLOYMENT_ENVIRONMENT=} {settings.SECURE_SSL_REDIRECT=}")

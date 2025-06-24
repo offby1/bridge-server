@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
                 boards_per_round_per_table=boards_per_round_per_table,
-                tempo_seconds=0,
+                tempo_seconds=5,
             )
 
             if (num_players := options.get("min_players", 0)) == 0:
