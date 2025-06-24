@@ -149,9 +149,6 @@ class TournamentManager(models.Manager):
             )
             return rv
 
-    # def current(self) -> Tournament | None:
-    #     return self.filter(completed_at__isnull==True).first()
-
     def open_for_signups(self) -> models.QuerySet:
         return self.incompletes().filter(signup_deadline__gte=timezone.now())
 
