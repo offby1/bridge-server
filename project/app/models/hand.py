@@ -197,9 +197,11 @@ class HandManager(models.Manager):
     ) -> Hand | None:
         with transaction.atomic():
             hands_already_played_at_this_table = self.filter(
-                table_display_number=zb_table_number + 1,
                 board__group=movements._group_letter(zb_round_number),
+                board__tournament=tournament,
+                table_display_number=zb_table_number + 1,
             )
+
             boards_already_played_at_this_table = set(
                 [h.board for h in hands_already_played_at_this_table]
             )
@@ -362,11 +364,15 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         # players are already seated.
 
         # p has abandoned this hand if, and only if:
-        # - some other hand exists in which they are a player,
+        # - some other hand in this tournament exists in which they are a player,
         #   and that hand itself is neither complete nor abandoned
         def has_defected(p: Player) -> bool:
             h: Hand
-            for h in p.hands_played.filter(is_complete=False, abandoned_because__isnull=False):
+            for h in p.hands_played.filter(
+                board__tournament=self.board.tournament,
+                is_complete=False,
+                abandoned_because__isnull=False,
+            ):
                 if h.pk != self.pk:
                     return True
 
