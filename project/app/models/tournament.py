@@ -500,11 +500,11 @@ class Tournament(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if self.is_complete:
-            victims = app.models.TournamentSignup.objects.filter(tournament=self)
-            logger.debug(
-                "Deleting %s because tournament #%s is complete", victims, self.display_number
-            )
-            victims.delete()
+            if (victims := app.models.TournamentSignup.objects.filter(tournament=self)).exists():
+                logger.debug(
+                    "Deleting %s because tournament #%s is complete", victims, self.display_number
+                )
+                victims.delete()
 
         super().save(*args, **kwargs)
 
