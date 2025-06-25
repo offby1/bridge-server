@@ -1,22 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* Performance, as usual
-
-  For the last week or two I've been running "big_bot_stress" a lot, and watching the request latencies.  With the tempo at 0 -- i.e., each client hitting the server as quickly as it can -- typical p50 latency is maybe 500ms, p99 is 750ms.  Yuck!
-
-  I notice the CPU is more or less pegged at 100%.  Siamak says if the CPU is pegged, you can't learn anything interesting about performance; so I should increase the delay (i.e., decrease the tempo) until CPU is, I dunno, 50%, then capture some traces and see what I see.
-
-  Notes from a week of struggling with performance monitoring:
-
-  - Almost all the tools are flaky, which wasted my time.  Specifically: pyinstrument consumes so much memory that it's not worth using; and I've blown through my free-tier quota on Sentry, so I can't use that for profiling.
-
-    Also, I was able to get self-hosted sentry working *somewhat*, but it doesn't offer profiling.  No idea if that's a bug, or what.  I've since shut down the VM on which I'd had it running, since it was kind of expensive.
-
-  - In prod, with 64 players (a "16x16" movement), performance is, bad, but (surprisingly) not awful.
-
-  - The grafana suite, and in particular "pyroscope", are the only things I've found that even *might* be helpful.
-
 * app:hand-list should have a way to filter the rows by tournament number
 
 * I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
@@ -201,6 +185,22 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Performance, as usual
+
+  For the last week or two I've been running "big_bot_stress" a lot, and watching the request latencies.  With the tempo at 0 -- i.e., each client hitting the server as quickly as it can -- typical p50 latency is maybe 500ms, p99 is 750ms.  Yuck!
+
+  I notice the CPU is more or less pegged at 100%.  Siamak says if the CPU is pegged, you can't learn anything interesting about performance; so I should increase the delay (i.e., decrease the tempo) until CPU is, I dunno, 50%, then capture some traces and see what I see.
+
+  Notes from a week of struggling with performance monitoring:
+
+  - Almost all the tools are flaky, which wasted my time.  Specifically: pyinstrument consumes so much memory that it's not worth using; and I've blown through my free-tier quota on Sentry, so I can't use that for profiling.
+
+    Also, I was able to get self-hosted sentry working *somewhat*, but it doesn't offer profiling.  No idea if that's a bug, or what.  I've since shut down the VM on which I'd had it running, since it was kind of expensive.
+
+  - In prod, with 64 players (a "16x16" movement), performance is, bad, but (surprisingly) not awful.
+
+  - The grafana suite, and in particular "pyroscope", are the only things I've found that even *might* be helpful.
+
 * There's something fishy about dates in the admin page; I haven't narrowed it down.  But something weird happened just now: I started a tournament normally, with a single human and (I guess) 7 bots.  I was bored, so I used the admin page to change the tempo; then  when I reloaded a web page, it said
 
   ```
