@@ -28,6 +28,7 @@ from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
+from app.models.common import attribute_names
 from app.models.types import PK
 from app.models.utils import assert_type
 from app.views import Forbid, NotFound
@@ -717,6 +718,12 @@ class HandListView(tables.SingleTableMixin, FilterView):
     template_name = "hand_list.html"
 
     filterset_class = HandFilter
+
+    def get_queryset(self):
+        amended_attr_names = [f"{a}__user" for a in attribute_names]
+        return self.model.objects.select_related(
+            "board", "board__tournament", *attribute_names, *amended_attr_names
+        )
 
 
 def hands_by_table_and_board_group(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 import dataclasses
 import datetime
 import json
@@ -809,8 +809,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         modelPlayer = self.players_by_direction_letter[seat.value]
         return Player.objects.get_by_name(modelPlayer.name)
 
-    def players(self) -> models.QuerySet:
-        return Player.objects.filter(pk__in=self.player_pks())
+    # Do `Hand.objects.select_related(*attribute_names)` when fetching users, lest you do lots of extra queries.
+    def players(self) -> Generator[Player]:
+        for attribute_name in attribute_names:
+            yield getattr(self, attribute_name)
 
     def player_pks(self) -> list[PK]:
         # Slight kludge -- I used to have `getattr(self, direction).pk`, but that fetched each player from the db, then
