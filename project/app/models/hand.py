@@ -392,6 +392,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return False
 
+    def status_string(self) -> str:
+        if self.is_complete:
+            return "✔"
+        if self.is_abandoned:
+            return "✘"
+        return "…"
+
     def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
         send_timestamped_event(channel=self.event_table_html_channel, data=data)
 
@@ -1063,9 +1070,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         ]
 
 
-# fmt:off
-
-# fmt:on
 @admin.register(Hand)
 class HandAdmin(admin.ModelAdmin):
     list_display = ["board", "open_access", "is_abandoned"]

@@ -679,14 +679,25 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
 
 class HandTable(tables.Table):
-    status = tables.Column()
+    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
     tournament_number = tables.Column(
         accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
     )
-    table = tables.Column()
+    table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     board = tables.Column()
     players = tables.Column()
-    result = tables.Column()
+    result = tables.Column(orderable=False, empty_values=())
+
+    def render_result(self, record) -> str:
+        summary_for_this_viewer, _ = record.summary_as_viewed_by(
+            as_viewed_by=getattr(self.request.user, "player", None),
+        )
+        return summary_for_this_viewer
+
+    def render_board(self, value) -> SafeString:
+        return format_html(
+            """<a href="{}">{}</a>""", reverse("app:board-archive", kwargs=dict(pk=value.pk)), value
+        )
 
     def render_players(self, value) -> SafeString:
         return SafeString(", ".join([p.as_link() for p in value]))
