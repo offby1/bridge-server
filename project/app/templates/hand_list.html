@@ -1,59 +1,11 @@
 {% extends "base.html" %}
 {% load player_extras %}
+{% load render_table from django_tables2 %}
 {% block title %}
-    Hands {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}
+    Hands
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
-        <table class="table caption-top">
-            <caption>
-                Hands
-                {% if player %}played by {{ player|styled_link:user }},{% endif %}
-                {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}
-            </caption>
-            <thead>
-                <tr>
-                    <th>Status</th>
-                    <th>Tournament #</th>
-                    <th>Table</th>
-                    <th>Board</th>
-                    <th>players</th>
-                    <th>Result</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for hand in page_obj %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">
-                                {% if hand.is_complete %}
-                                    ✔
-                                {% elif hand.is_abandoned %}
-                                    ✘
-                                {% else %}
-                                    …
-                                {% endif %}
-                            </a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">{{ hand.board.tournament.display_number }}</a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">{{ hand.table_display_number }}</a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">{{ hand.board.display_number }}</a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">{{ hand.player_names_string }}</a>
-                        </td>
-                        <td>
-                            <a href="{% url 'app:hand-dispatch' hand.pk %}">{{ hand.summary_for_this_viewer }}</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% include "pagination-controls.html" %}
+        {% render_table table %}
     {% endblock hand_list %}
 {% endblock content %}
