@@ -23,7 +23,8 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
-from django_filters.views import FilterView
+from django_filters import FilterSet  # type: ignore[import-untyped]
+from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
@@ -679,6 +680,12 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     )
 
 
+class HandFilter(FilterSet):
+    class Meta:
+        model = app.models.Hand
+        fields = ["board__tournament__display_number"]
+
+
 class HandTable(tables.Table):
     status = tables.Column(accessor=tables.A("status_string"), orderable=False)
     tournament_number = tables.Column(
@@ -708,6 +715,8 @@ class HandListView(tables.SingleTableMixin, FilterView):
     model = app.models.Hand
     table_class = HandTable
     template_name = "hand_list.html"
+
+    filterset_class = HandFilter
 
 
 def hands_by_table_and_board_group(
