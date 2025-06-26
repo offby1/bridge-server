@@ -23,6 +23,7 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
+from django_filters.views import FilterView
 import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
@@ -703,7 +704,7 @@ class HandTable(tables.Table):
         return SafeString(", ".join([p.as_link() for p in value]))
 
 
-class HandListView(tables.SingleTableView):
+class HandListView(tables.SingleTableMixin, FilterView):
     model = app.models.Hand
     table_class = HandTable
     template_name = "hand_list.html"
