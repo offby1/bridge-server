@@ -1,8 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* app:hand-list should have a way to filter the rows by tournament number
-
 * I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
 
   The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
@@ -185,6 +183,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* app:hand-list should have a way to filter the rows by tournament number
+
 * Performance, as usual
 
   For the last week or two I've been running "big_bot_stress" a lot, and watching the request latencies.  With the tempo at 0 -- i.e., each client hitting the server as quickly as it can -- typical p50 latency is maybe 500ms, p99 is 750ms.  Yuck!

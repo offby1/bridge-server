@@ -8,7 +8,7 @@ from .views.board import (
 from .views.hand import (
     auction_partial_view,
     hand_dispatch_view,
-    hand_list_view,
+    HandListView,
     hand_serialized_view,
     hand_xscript_updates_view,
     hands_by_table_and_board_group,
@@ -30,7 +30,7 @@ urlpatterns = [
     path("board/", board_list_view, name="board-list"),
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
-    path("hand/", hand_list_view, name="hand-list"),
+    path("hand/", HandListView.as_view(), name="hand-list"),
     path(
         "hand/<int:tournament_pk>/<int:table_display_number>/<str:board_group>/",
         hands_by_table_and_board_group,

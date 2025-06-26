@@ -23,6 +23,9 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
+from django_filters import FilterSet  # type: ignore[import-untyped]
+from django_filters.views import FilterView  # type: ignore[import-untyped]
+import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
 from app.models.types import PK
@@ -35,7 +38,6 @@ if TYPE_CHECKING:
 
     from bridge.xscript import HandTranscript
     import datetime
-    from django.db.models import QuerySet
     from app.models.hand import AllFourSuitHoldings, Hand
 
 
@@ -678,39 +680,43 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     )
 
 
-def hand_list_view(request: HttpRequest) -> HttpResponse:
-    hand_pks = request.GET.get("hand_pks")
-    player_pk = request.GET.get("played_by")
+class HandFilter(FilterSet):
+    class Meta:
+        model = app.models.Hand
+        fields = ["board__tournament__display_number"]
 
-    player: app.models.Player | None = None
-    hand_list: QuerySet[Hand]
-    if hand_pks is not None:
-        hand_list = app.models.Hand.objects.filter(pk__in=hand_pks.split(","))
-    else:
-        hand_list = app.models.Hand.objects.order_by(
-            "board__tournament__display_number", "board__display_number", "id"
+
+class HandTable(tables.Table):
+    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
+    tournament_number = tables.Column(
+        accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
+    )
+    table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
+    board = tables.Column()
+    players = tables.Column()
+    result = tables.Column(orderable=False, empty_values=())
+
+    def render_result(self, record) -> str:
+        summary_for_this_viewer, _ = record.summary_as_viewed_by(
+            as_viewed_by=getattr(self.request.user, "player", None),
+        )
+        return summary_for_this_viewer
+
+    def render_board(self, value) -> SafeString:
+        return format_html(
+            """<a href="{}">{}</a>""", reverse("app:board-archive", kwargs=dict(pk=value.pk)), value
         )
 
-    if player_pk is not None:
-        player = get_object_or_404(app.models.Player, pk=player_pk)
-        hand_list = player.hands_played.all()
+    def render_players(self, value) -> SafeString:
+        return SafeString(", ".join([p.as_link() for p in value]))
 
-    paginator = Paginator(hand_list, 16)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-    h: Hand
-    for h in page_obj.object_list:
-        h.summary_for_this_viewer, h.score_for_this_viewer = h.summary_as_viewed_by(
-            as_viewed_by=getattr(request.user, "player", None),
-        )
-    context = {
-        "filtered_count": paginator.count,
-        "page_obj": page_obj,
-        "played_by": "" if player is None else f"played_by={player.pk}",
-        "player": player,
-    }
 
-    return render(request, "hand_list.html", context=context)
+class HandListView(tables.SingleTableMixin, FilterView):
+    model = app.models.Hand
+    table_class = HandTable
+    template_name = "hand_list.html"
+
+    filterset_class = HandFilter
 
 
 def hands_by_table_and_board_group(
