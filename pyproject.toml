@@ -38,7 +38,6 @@ django-tables2 = "2.*"
 django-prometheus = "*"
 pyroscope-io = "^0.8.11"
 django-filter = "^25.1"
-django-bootstrap3 = "^25.1"
 
 [tool.djlint]
 use_gitignore=true

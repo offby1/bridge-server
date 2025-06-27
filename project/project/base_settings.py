@@ -77,7 +77,6 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "bootstrap3",
     "daphne",
     "django_fastdev",
     "django_eventstream",
