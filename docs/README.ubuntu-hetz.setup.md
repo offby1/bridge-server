@@ -51,3 +51,5 @@ $ exit
 - On my laptop:
   - update `~/.ssh/config` so that I can just "ssh hetz-prod"
   - `docker context create hetz-prod --docker "host=ssh://ubuntu@hetz-prod"`
+
+- Some day I gotta figure out how to fiddle /etc/sudoers so that the "ubuntu" user can sudo without having to type the root password.
