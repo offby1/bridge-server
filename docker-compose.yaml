@@ -121,7 +121,6 @@ services:
   # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
   grafana:
     build: grafana
-    container_name: grafana
     depends_on:
       - pyroscope
     networks:
@@ -138,7 +137,6 @@ services:
 
   prometheus:
     build: prometheus
-    container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
