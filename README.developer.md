@@ -67,13 +67,15 @@ Optional but slick. `pipx install pre-commit`
 `DEPLOYMENT_ENVIRONMENT` will be `"staging"` on the laptop, and `"production"` elsewhere.  When running on the laptop, you can fool it into thinking it's production by invoking e.g. `DJANGO_SETTINGS_MODULE=project.prod_settings HOSTNAME=yeah.im.production.trustme just dcu`
 
 - `just prod` does what `just dcu` does, plus:
-  - it deploys to a docker context named "ls", instead of locally.  This won't work for you unless you have a host accessible via `ssh ls`. Mine is a server that has a slick-looking domain name (`bridge.offby1.info`).
+  - it deploys to a docker context named "hetz-prod", instead of locally.
+    - you need to have prepared a host as per [this](docs/README.ubuntu-hetz.setup.md)
+    - `docker context create hetz-prod --docker "host=ssh://ubuntu@your-hetzner-host"`
+    - no, of course it doesn't have to be Hetzner; that's just the one hosting provider for which I've written up detailed instructions.
+
   - it enables the "prod" profile, which includes "caddy", which is a TLS-doing reverse proxy *that gets TLS certificates for me automatically* 🎉
 
 ## Using curl to examine event stream
 
-- First "log in"
-  `curl --cookie cook --cookie-jar cook -u 'bob:.'  https://django.server.orb.local/three-way-login/`
+- First "log in": `just curl-login`
 
-- Now "tail" the stream
-  `curl  --cookie cook --cookie-jar cook   https://django.server.orb.local/events/hand/1/`
+- Now "tail" the stream: `just curl https://django.server.orb.local/events/hand/1/` e.g.
