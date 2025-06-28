@@ -153,7 +153,7 @@ class Board(models.Model):
     def relationship_to(self, player: Player) -> tuple[str, Hand | None]:
         from app.models import Hand
 
-        for h in Hand.objects.filter(board=self):
+        for h in Hand.objects.prepop().filter(board=self):
             if player in h.players():
                 return ("AlreadyPlayedIt", h) if h.is_complete else ("CurrentlyPlayingIt", h)
 

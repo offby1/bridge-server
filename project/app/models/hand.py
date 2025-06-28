@@ -25,6 +25,8 @@ from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import Error, models, transaction
+from django.db.models.query import QuerySet
+from django.http import Http404
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -158,6 +160,19 @@ def send_timestamped_event(
 
 class HandManager(models.Manager):
     from . import Board
+
+    def prepop(self) -> QuerySet:
+        amended_attr_names = [f"{a}__user" for a in attribute_names]
+        return self.select_related(
+            "board", "board__tournament", *attribute_names, *amended_attr_names
+        )
+
+    # Like django.shortcuts.get_object_or_404(app.models.Hand, pk=pk), but does a buncha "select_related" for efficiency.
+    def get_or_404(self, pk: PK) -> Hand:
+        try:
+            return self.prepop().get(pk=pk)
+        except Hand.DoesNotExist:
+            raise Http404("No Hand matches the given query.")
 
     def _create_hand_with(
         self, *, pnb: movements.PlayersAndBoardsForOneRound, board: Board
@@ -806,8 +821,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         return xscript.next_seat_to_play()
 
     def modPlayer_by_seat(self, seat: Seat) -> Player:
-        modelPlayer = self.players_by_direction_letter[seat.value]
-        return Player.objects.get_by_name(modelPlayer.name)
+        return getattr(self, seat.name)
 
     # Do `Hand.objects.select_related(*attribute_names)` when fetching users, lest you do lots of extra queries.
     def players(self) -> Generator[Player]:

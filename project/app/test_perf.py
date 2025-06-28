@@ -40,7 +40,7 @@ def test__interactive_view_doesnt_do_a_shitton_of_queries(
     request.user = p.user
 
     with django_assert_max_num_queries(118):
-        _interactive_view(request, h.pk)
+        _interactive_view(request, h)
 
 
 def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(

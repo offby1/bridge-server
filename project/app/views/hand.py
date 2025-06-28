@@ -512,16 +512,16 @@ def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     """
     Returns either a 403 response (with explanatory text), or else the function in this module to call to get the response.
     """
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+    hand: app.models.Hand = app.models.Hand.objects.get_or_404(pk=pk)
 
     wat = _error_response_or_viewfunc(hand, request.user)
     if isinstance(wat, HttpResponseForbidden):
         return Custom403(request, wat.text)  # type: ignore[attr-defined]
 
     if hand.is_abandoned:
-        return _everything_read_only_view(request, pk)
+        return _everything_read_only_view(request, hand)
 
-    return wat(request, pk)
+    return wat(request, hand)
 
 
 def _error_response_or_viewfunc(
@@ -556,9 +556,7 @@ def _error_response_or_viewfunc(
     assert False, f"wtf is {brt}"
 
 
-def _everything_read_only_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
+def _everything_read_only_view(request: AuthedHttpRequest, hand: app.models.Hand) -> HttpResponse:
     xscript = hand.get_xscript()
     a = xscript.auction
     c = a.status
@@ -600,9 +598,7 @@ def _everything_read_only_view(request: AuthedHttpRequest, pk: PK) -> HttpRespon
     )
 
 
-def _interactive_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
-
+def _interactive_view(request: AuthedHttpRequest, hand: app.models.Hand) -> HttpResponse:
     as_viewed_by = request.user.player
 
     context = (
