@@ -31,6 +31,8 @@ If that's all good, do `ssh root@hetz-prod` again and continue ...
 # apt -y upgrade
 # apt install -y htop docker.io
 # usermod --append --groups sudo,docker ubuntu
+# # create a file in /etc/sudoers.d like
+# #    ubuntu ALL=(ALL) NOPASSWD:ALL
 # su - ubuntu
 $ mkdir -vp ~/.ssh
 $ cd .ssh
@@ -51,5 +53,3 @@ $ exit
 - On my laptop:
   - update `~/.ssh/config` so that I can just "ssh hetz-prod"
   - `docker context create hetz-prod --docker "host=ssh://ubuntu@hetz-prod"`
-
-- Some day I gotta figure out how to fiddle /etc/sudoers so that the "ubuntu" user can sudo without having to type the root password.
