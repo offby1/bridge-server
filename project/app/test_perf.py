@@ -1,10 +1,13 @@
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 
+import pytest
+
 import bridge.card
 import bridge.contract
 
-from .models import Hand, Player
+from .models import Board, Hand, Player
+from .views.board import board_archive_view
 from .views.hand import _interactive_view, HandListView
 from .views.tournament import tournament_view
 
@@ -73,3 +76,26 @@ def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_q
     with django_assert_max_num_queries(2):
         wat = HandListView.as_view()(request)
         wat.render()
+
+
+@pytest.mark.parametrize(
+    ["username", "expected_num_queries"],
+    [
+        ["Clint Eastwood", 23],
+        [None, 2],
+    ],
+)
+def test_board_archive_view(
+    nearly_completed_tournament, rf, django_assert_max_num_queries, username, expected_num_queries
+) -> None:
+    request = rf.get("/woteva/")
+
+    if username is None:
+        request.user = AnonymousUser()
+    else:
+        request.user = Player.objects.get_by_name(username).user
+
+    board = Board.objects.first()
+    assert board is not None
+    with django_assert_max_num_queries(expected_num_queries):
+        board_archive_view(request, pk=board.pk)
