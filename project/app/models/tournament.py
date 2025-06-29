@@ -226,13 +226,10 @@ class Tournament(models.Model):
                 return {"ns_raw_score": 0, "ew_raw_score": 0}
             return {"ns_raw_score": fs.north_south_points, "ew_raw_score": fs.east_west_points}
 
-        def player_link(player_pk: PK) -> str:
-            return app.models.Player.objects.get(pk=player_pk).as_link()
-
         hands = (
             app.utils.scoring.Hand(
-                ns_id=(h.North.pk, h.South.pk),
-                ew_id=(h.East.pk, h.West.pk),
+                ns_id=(h.North, h.South),
+                ew_id=(h.East, h.West),
                 board_id=h.board.pk,
                 **consistent_score(h.get_xscript().final_score()),
             )
@@ -245,8 +242,7 @@ class Tournament(models.Model):
 
         scorer = app.utils.scoring.Scorer(hands=list(hands))
         return {
-            (player_link(k[0]), player_link(k[1])): v
-            for k, v in scorer.matchpoints_by_pairs().items()
+            (k[0].as_link(), k[1].as_link()): v for k, v in scorer.matchpoints_by_pairs().items()
         }
 
     def players(self) -> models.QuerySet:
