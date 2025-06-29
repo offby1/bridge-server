@@ -489,9 +489,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         return hand in self.hands_played.all()
 
     def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
-        qs = self.hands_played.filter(board=board)
-        assert qs.count() < 2
-        return qs.first()
+        return self.hands_played.filter(board=board).first()
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         return board in self.boards_played.all()
