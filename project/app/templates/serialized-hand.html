@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+    What were you expecting, JSON?
+    {# I exist so that you can use the django debug toolbar to check SQL queries #}
+    <table>
+        <tr>
+            <th>Board</th>
+            <td>{{ board }}</td>
+        </tr>
+        <tr>
+            <th>current_event_ids_by_player_name</th>
+            <td>{{ current_event_ids_by_player_name }}</td>
+        </tr>
+        <tr>
+            <th>table</th>
+            <td>{{ table }}</td>
+        </tr>
+        <tr>
+            <th>tournament</th>
+            <td>{{ tournament }}</td>
+        </tr>
+        <tr>
+            <th>xscript</th>
+            <td>{{ xscript }}</td>
+        </tr>
+    </table>
+{% endblock content %}

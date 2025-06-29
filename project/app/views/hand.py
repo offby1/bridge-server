@@ -632,6 +632,8 @@ def Custom403(request: HttpRequest, content: str) -> HttpResponse:
 
 
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    preferred_type = request.get_preferred_type(["text/html", "application/json"])
+
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
 
     resp = _error_response_or_viewfunc(hand, request.user)
@@ -660,22 +662,24 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                     "You are not allowed to see neither squat, zip, nada, nor bupkis",
                 )
 
-    return HttpResponse(
-        json.dumps(
-            {
-                "board": hand.board.display_number,
-                # Only the bot pays attention to this, so we include JSON events, not HTML ones.
-                "current_event_ids_by_player_name": {
-                    p.name: get_current_event_id([p.event_JSON_hand_channel])
-                    for _, p in hand.players_by_direction_letter.items()
-                },
-                "table": hand.table_display_number,
-                "tournament": hand.board.tournament.display_number,
-                "xscript": xscript.serializable(),
-            }
-        ),
-        headers={"Content-Type": "text/json"},
-    )
+    context = {
+        "board": hand.board.display_number,
+        # Only the bot pays attention to this, so we include JSON events, not HTML ones.
+        "current_event_ids_by_player_name": {
+            p.name: get_current_event_id([p.event_JSON_hand_channel])
+            for _, p in hand.players_by_direction_letter.items()
+        },
+        "table": hand.table_display_number,
+        "tournament": hand.board.tournament.display_number,
+        "xscript": xscript.serializable(),
+    }
+
+    if preferred_type == "application/json":
+        return HttpResponse(
+            json.dumps(context),
+            headers={"Content-Type": "application/json"},
+        )
+    return TemplateResponse(request, "serialized-hand.html", context=context)
 
 
 class HandFilter(FilterSet):
