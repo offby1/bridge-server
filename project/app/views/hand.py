@@ -8,13 +8,13 @@ import bridge.seat
 import bridge.xscript
 from bridge.auction import Auction
 from django.conf import settings
-from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
 )
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
+from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
@@ -715,45 +715,26 @@ class HandListView(tables.SingleTableMixin, FilterView):
 
     filterset_class = HandFilter
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         amended_attr_names = [f"{a}__user" for a in attribute_names]
         return self.model.objects.select_related(
             "board", "board__tournament", *attribute_names, *amended_attr_names
         )
 
 
-def hands_by_table_and_board_group(
-    request: AuthedHttpRequest, tournament_pk: PK, table_display_number: int, board_group: str
-) -> HttpResponse:
-    player: app.models.Player | None = (
-        request.user.player if request.user.is_authenticated else None
-    )
+class HandsByTableAndBoardGroupView(HandListView):
+    def get_queryset(self) -> QuerySet:
+        board_group = self.kwargs.get("board_group")
+        table_display_number = self.kwargs.get("table_display_number")
+        tournament_pk = self.kwargs.get("tournament_pk")
 
-    filter_kwargs = dict(
-        board__group=board_group,
-        table_display_number=table_display_number,
-        board__tournament=tournament_pk,
-    )
+        qs = super().get_queryset()
 
-    qs = app.models.Hand.objects.filter(**filter_kwargs)
-    logger.debug("%s => %s", filter_kwargs, qs)
-
-    hands = []
-    for h in qs:
-        h.summary_for_this_viewer, _ = h.summary_as_viewed_by(as_viewed_by=player)
-        hands.append(h)
-
-    paginator = Paginator(hands, 16)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    context = {
-        "filtered_count": paginator.count,
-        "page_obj": page_obj,
-        "player": None,
-    }
-
-    return render(request, "hand_list.html", context=context)
+        return qs.filter(
+            board__group=board_group,
+            table_display_number=table_display_number,
+            board__tournament=tournament_pk,
+        )
 
 
 @logged_in_as_player_required(redirect=False)

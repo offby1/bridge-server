@@ -9,9 +9,9 @@ from .views.hand import (
     auction_partial_view,
     hand_dispatch_view,
     HandListView,
+    HandsByTableAndBoardGroupView,
     hand_serialized_view,
     hand_xscript_updates_view,
-    hands_by_table_and_board_group,
     open_access_toggle_view,
 )
 
@@ -33,7 +33,7 @@ urlpatterns = [
     path("hand/", HandListView.as_view(), name="hand-list"),
     path(
         "hand/<int:tournament_pk>/<int:table_display_number>/<str:board_group>/",
-        hands_by_table_and_board_group,
+        HandsByTableAndBoardGroupView.as_view(),
         name="hands-by-table-and-board-group",
     ),
     path("hand/<int:pk>/", hand_dispatch_view, name="hand-dispatch"),
