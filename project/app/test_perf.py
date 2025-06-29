@@ -1,10 +1,11 @@
+from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 
 import bridge.card
 import bridge.contract
 
 from .models import Hand, Player
-from .views.hand import _interactive_view
+from .views.hand import _interactive_view, HandListView
 from .views.tournament import tournament_view
 
 
@@ -63,3 +64,12 @@ def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
 
     with django_assert_max_num_queries(171):
         tournament_view(request, "1")
+
+
+def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_queries) -> None:
+    request = rf.get("/woteva/")
+    request.user = AnonymousUser()
+
+    with django_assert_max_num_queries(6):
+        wat = HandListView.as_view()(request)
+        wat.render()
