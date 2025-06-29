@@ -12,7 +12,7 @@
                     <th>Table</th>
                     <th>Summary</th>
                     <th>
-                        {% if my_hand_pk %}
+                        {% if viewer_played_this_board %}
                             Your Side's Score
                         {% else %}
                             North/South Score
@@ -22,7 +22,7 @@
             </thead>
             <tbody class="table-group-divider">
                 {% for h in annotated_hands %}
-                    <tr {% if h.pk == my_hand_pk %}class="table-warning"{% endif %}>
+                    <tr {% if h.dis_my_hand %}class="table-warning"{% endif %}>
                         <th>
                             <a href="{% url 'app:hand-dispatch' h.pk %}">{{ h.pk }}</a>
                         </th>

@@ -158,14 +158,16 @@ def send_timestamped_event(
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
+def enrich(qs: QuerySet) -> QuerySet:
+    amended_attr_names = [f"{a}__user" for a in attribute_names]
+    return qs.select_related("board", "board__tournament", *attribute_names, *amended_attr_names)
+
+
 class HandManager(models.Manager):
     from . import Board
 
     def prepop(self) -> QuerySet:
-        amended_attr_names = [f"{a}__user" for a in attribute_names]
-        return self.select_related(
-            "board", "board__tournament", *attribute_names, *amended_attr_names
-        )
+        return enrich(self)
 
     # Like django.shortcuts.get_object_or_404(app.models.Hand, pk=pk), but does a buncha "select_related" for efficiency.
     def get_or_404(self, pk: PK) -> Hand:

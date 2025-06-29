@@ -81,7 +81,7 @@ def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_q
 @pytest.mark.parametrize(
     ["username", "expected_num_queries"],
     [
-        ["Clint Eastwood", 23],
+        ["Clint Eastwood", 5],
         [None, 2],
     ],
 )

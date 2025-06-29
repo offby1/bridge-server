@@ -158,6 +158,8 @@ class Player(TimeStampedModel):
         object_id_field="recipient_object_id",
     )
 
+    hands_by_board_cache: dict[Board, Hand]
+
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
     def hands_played(self) -> models.QuerySet:
@@ -488,8 +490,23 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def has_played_hand(self, hand: Hand) -> bool:
         return hand in self.hands_played.all()
 
+    def cache_get(self, *, board: Board) -> Hand | None:
+        cache = getattr(self, "hands_by_board_cache", {})
+        return cache.get(board)
+
+    def cache_set(self, *, board: Board, hand: Hand) -> None:
+        cache = getattr(self, "hands_by_board_cache", {})
+        cache[board] = hand
+        setattr(self, "hands_by_board_cache", cache)
+
     def hand_at_which_we_played_board(self, board: Board) -> Hand | None:
-        return self.hands_played.filter(board=board).first()
+        if (hit := self.cache_get(board=board)) is not None:
+            return hit
+
+        rv: Hand | None = self.hands_played.filter(board=board).first()
+        if rv is not None:
+            self.cache_set(board=board, hand=rv)
+        return rv
 
     def has_seen_board_at(self, board: Board, seat: bridge.seat.Seat) -> bool:
         return board in self.boards_played.all()

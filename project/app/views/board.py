@@ -18,19 +18,25 @@ def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     if not request.user.is_authenticated and not board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 
-    my_hand = None
+    as_viewed_by: app.models.Player | None = None
 
     if request.user.is_authenticated:
-        if (player := getattr(request.user, "player", None)) is not None:
-            my_hand = player.hand_at_which_we_played_board(board)
+        as_viewed_by = getattr(request.user, "player", None)
 
     annotated_hands: list[app.models.Hand] = []
 
     h: app.models.Hand
-    for h in board.hand_set.all():
+    for h in app.models.hand.enrich(board.hand_set.all()):
+        h.dis_my_hand = False
+        if as_viewed_by is not None:
+            if as_viewed_by.pk in h.player_pks():
+                h.dis_my_hand = True
+                as_viewed_by.cache_set(board=board, hand=h)
+
         h.summary_for_this_viewer, h.score_for_this_viewer = h.summary_as_viewed_by(
-            as_viewed_by=getattr(request.user, "player", None)
+            as_viewed_by=as_viewed_by
         )
+
         annotated_hands.append(h)
 
     def numberify_score(s: int | str) -> float:
@@ -42,13 +48,13 @@ def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
         request=request,
         template="board_archive.html",
         context={
-            "board": board,
-            "my_hand_pk": my_hand.pk if my_hand is not None else None,
             "annotated_hands": sorted(
                 annotated_hands,
                 key=lambda s: numberify_score(operator.attrgetter("score_for_this_viewer")(s)),
                 reverse=True,
             ),
+            "board": board,
+            "viewer_played_this_board": any(h.dis_my_hand for h in annotated_hands),
         },
     )
 
