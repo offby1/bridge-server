@@ -14,6 +14,7 @@ from django.http import (
     HttpResponseForbidden,
 )
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -717,9 +718,17 @@ class HandListView(tables.SingleTableMixin, FilterView):
 
     def get_queryset(self) -> QuerySet:
         amended_attr_names = [f"{a}__user" for a in attribute_names]
-        return self.model.objects.select_related(
+        played_by = self.request.GET.get("played_by")
+        qs = self.model.objects.select_related(
             "board", "board__tournament", *attribute_names, *amended_attr_names
         )
+        if played_by is not None:
+            expression = Q(pk__in=[])
+            for direction in attribute_names:
+                expression |= Q(**{direction: played_by})
+
+            qs = qs.filter(expression)
+        return qs
 
 
 class HandsByTableAndBoardGroupView(HandListView):
