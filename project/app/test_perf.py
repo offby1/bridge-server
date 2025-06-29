@@ -39,7 +39,7 @@ def test__interactive_view_doesnt_do_a_shitton_of_queries(
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(118):
+    with django_assert_max_num_queries(35):
         _interactive_view(request, h)
 
 
@@ -51,7 +51,7 @@ def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     assert p is not None
     request.user = p.user
 
-    with django_assert_max_num_queries(31):
+    with django_assert_max_num_queries(10):
         tournament_view(request, "1")
 
 
@@ -61,5 +61,5 @@ def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
     request = rf.get("/woteva/")
     request.user = None
 
-    with django_assert_max_num_queries(327):
+    with django_assert_max_num_queries(171):
         tournament_view(request, "1")
