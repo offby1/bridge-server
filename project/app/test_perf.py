@@ -70,6 +70,6 @@ def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_q
     request = rf.get("/woteva/")
     request.user = AnonymousUser()
 
-    with django_assert_max_num_queries(6):
+    with django_assert_max_num_queries(2):
         wat = HandListView.as_view()(request)
         wat.render()

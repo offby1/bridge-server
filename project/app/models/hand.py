@@ -360,52 +360,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             return None
         return PK_from_str(pieces[1])
 
-    @cached_property
+    @property
     @admin.display
     def is_abandoned(self) -> bool:
-        if self.is_complete:
-            return False
-
-        if self.abandoned_because is not None:
-            return True
-
-        tournament: Tournament = self.tournament
-        if not tournament.is_complete and tournament.play_completion_deadline_has_passed():
-            self.abandoned_because = f"Tournament #{tournament.display_number}'s play deadline {tournament.play_completion_deadline} has passed"
-            self.save()
-            return True
-
-        # TODO -- I suspect this always returns None, since HandManager.create will raise an exception if any of the four
-        # players are already seated.
-
-        # p has abandoned this hand if, and only if:
-        # - some other hand in this tournament exists in which they are a player,
-        #   and that hand itself is neither complete nor abandoned
-        def has_defected(p: Player) -> bool:
-            h: Hand
-            for h in p.hands_played.filter(
-                board__tournament=self.board.tournament,
-                is_complete=False,
-                abandoned_because__isnull=False,
-            ):
-                if h.pk != self.pk:
-                    logger.warning("%s", f"{p.name} has abandoned hand {self} for {h}")
-                    return True
-
-            return False
-
-        defectors = [p for p in self.players() if has_defected(p)]
-        if defectors:
-            self.abandoned_because = (
-                f"{[p.name for p in defectors]} have started playing some other hand(s)"
-            )
-            logger.info(
-                "I just realized that %s is abandoned because %s", self, self.abandoned_because
-            )
-            self.save()
-            return True
-
-        return False
+        return self.abandoned_because is not None
 
     def status_string(self) -> str:
         if self.is_complete:

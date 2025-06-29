@@ -158,8 +158,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         # All players have been ejected
         assert Player.objects.currently_seated().count() == 0
 
-        hand.refresh_from_db()
-        del hand.is_abandoned
+        hand = Hand.objects.get(pk=hand.pk)
 
         assert hand.is_abandoned
         assert "deadline" in hand.abandoned_because
