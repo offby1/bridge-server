@@ -25,7 +25,7 @@ django-secret-directory:
 ensure-django-secret: django-secret-directory
     set -euo pipefail
     touch "{{ DJANGO_SECRET_FILE }}"
-    if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
+    if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
     fi
@@ -35,7 +35,7 @@ ensure-django-secret: django-secret-directory
 ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
     set -euo pipefail
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
-    if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(stat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
+    if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
     cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
