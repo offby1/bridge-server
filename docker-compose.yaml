@@ -130,8 +130,9 @@ services:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
+      - GF_DATE_FORMATS_DEFAULT_TIMEZONE=UTC
       - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_SECURITY_ADMIN_USER=admin
     volumes:
       - grafana_data:/var/lib/grafana # saves preferences, I hope
 
