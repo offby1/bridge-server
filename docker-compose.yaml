@@ -20,10 +20,13 @@ services:
       - SYS_PTRACE
 
     depends_on:
+      # https://docs.docker.com/reference/compose-file/services/#long-syntax-1
       django-collected-static:
         condition: service_completed_successfully
       django-migrated:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
       DJANGO_SECRET_FILE: /run/secrets/django_secret
@@ -33,6 +36,7 @@ services:
       PGHOST: postgres
       PGPASS: postgres
       PYROSCOPE_HOST: pyroscope
+      REDIS_HOST: redis
 
     ports:
       - "127.0.0.1:9000:9000"
@@ -85,7 +89,7 @@ services:
 
     # "--log_statement=all", "--log_min_duration_statement=0" are handy for exploring performance
     # https://www.postgresql.org/docs/17/config-setting.html#CONFIG-SETTING-SHELL
-    command: ["postgres", "--max_connections=200", "--log_min_duration_statement=100"]
+    command: ["postgres", "--max_connections=200", "--log_statement=all"]
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -144,6 +148,11 @@ services:
     image: grafana/pyroscope
     ports:
       - "127.0.0.1:4040:4040"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "127.0.0.1:6379:6379"
 
 secrets:
   django_secret:

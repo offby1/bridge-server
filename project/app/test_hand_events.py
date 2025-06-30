@@ -10,6 +10,12 @@ from .models import Hand, Player
 from .testutils import set_auction_to
 
 
+@pytest.fixture(autouse=True)
+def capture_events_in_database(settings):
+    del settings.EVENTSTREAM_REDIS
+    settings.EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
+
+
 class CapturedEvents:
     def __init__(self) -> None:
         self.events: list[Event] = []
