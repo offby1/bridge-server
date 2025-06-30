@@ -8,7 +8,7 @@ import bridge.contract
 
 from .models import Board, Hand, Player
 from .views.board import board_archive_view
-from .views.hand import _interactive_view, HandListView
+from .views.hand import _interactive_view, HandListView, hand_serialized_view
 from .views.tournament import tournament_view
 
 
@@ -99,3 +99,21 @@ def test_board_archive_view(
     assert board is not None
     with django_assert_max_num_queries(expected_num_queries):
         board_archive_view(request, pk=board.pk)
+
+
+def test_hand_serialzed_view(
+    nearly_completed_tournament, rf, django_assert_max_num_queries
+) -> None:
+    request = rf.get("/woteva/", headers={"accept": "application/json"})
+    player = Player.objects.first()
+    assert player is not None
+    request.user = player.user
+
+    hand = Hand.objects.first()
+    assert hand is not None
+
+    with django_assert_max_num_queries(37):
+        response = hand_serialized_view(request, pk=hand.pk)
+
+    assert response.headers["Content-Type"].startswith("application/json")
+    assert response.status_code == 200
