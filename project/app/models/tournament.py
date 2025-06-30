@@ -346,7 +346,6 @@ class Tournament(models.Model):
 
     def get_movement(self) -> app.utils.movements.Movement:
         if (_movement := self._cache_get()) is None:
-            logger.debug(f"{self.hands().count()} hands exist.")
             if self.hands().exists():
                 pairs = list(self.pairs_from_existing_hands())
             else:

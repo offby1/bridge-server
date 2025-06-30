@@ -64,6 +64,7 @@ class QueryLogger:
         return rv
 
 
+# TODO -- this is awfully similar to django.test.utils.CaptureQueriesContext
 @contextlib.contextmanager
 def logged_queries():
     ql = QueryLogger()

@@ -6,7 +6,7 @@ import pytest
 import bridge.card
 import bridge.contract
 
-from .models import Board, Hand, Player
+from .models import Board, Hand, Player, Tournament
 from .views.board import board_archive_view
 from .views.hand import _interactive_view, HandListView, hand_serialized_view
 from .views.tournament import tournament_view
@@ -112,7 +112,12 @@ def test_hand_serialzed_view(
     hand = Hand.objects.first()
     assert hand is not None
 
-    with django_assert_max_num_queries(37):
+    # This does a fair number of queries, but they oughtn't be counted against hand_serialized_view.
+    for t in Tournament.objects.all():
+        t.get_movement()
+
+    # Damn, 19 queries? wtf are they?
+    with django_assert_max_num_queries(19):
         response = hand_serialized_view(request, pk=hand.pk)
 
     assert response.headers["Content-Type"].startswith("application/json")

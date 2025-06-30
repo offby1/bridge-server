@@ -23,7 +23,6 @@ from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
-from django_eventstream import get_current_event_id  # type: ignore[import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
@@ -526,12 +525,15 @@ def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
 
 def _error_response_or_viewfunc(
-    hand: app.models.Hand, user: AbstractBaseUser | AnonymousUser
+    hand: app.models.Hand,
+    user: AbstractBaseUser | AnonymousUser,
+    check_if_will_be_played_again: bool = True,
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
     board = hand.board
 
-    if not board.will_be_played_again():
-        return _everything_read_only_view
+    if check_if_will_be_played_again:
+        if not board.will_be_played_again():
+            return _everything_read_only_view
 
     player = getattr(user, "player", None)
 
@@ -631,12 +633,44 @@ def Custom403(request: HttpRequest, content: str) -> HttpResponse:
     return rv
 
 
+def _get_current_event_ids_by_player_name(hand: app.models.Hand) -> dict[str, str]:
+    # We get all the event IDs in one go, so as to avoid hitting the db four times.
+    players = list(hand.players())
+    channel_names = [p.event_JSON_hand_channel for p in players]
+
+    # From here on, we're largely re-implementing django_eventstream.eventstream.get_current_event_id :-(
+    import django_eventstream.models  # type: ignore [import-untyped]
+    import django_eventstream.utils  # type: ignore [import-untyped]
+
+    # The only difference is that we're using "filter", to get a bunch, instead of "get", to get just one.
+    raw_event_ids_by_channel_name = {
+        e.name: e
+        for e in django_eventstream.models.EventCounter.objects.filter(name__in=channel_names)
+    }
+
+    cooked_event_ids_by_player_name = {}
+    for p in players:
+        channel_name = p.event_JSON_hand_channel
+        event_counter = raw_event_ids_by_channel_name.get(channel_name, None)
+        if event_counter is None:
+            value = 0
+        else:
+            value = event_counter.value
+        cooked_event_ids_by_player_name[p.name] = django_eventstream.utils.make_id(
+            {channel_name: value}
+        )
+
+    return cooked_event_ids_by_player_name
+
+
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    preferred_type = request.get_preferred_type(["text/html", "application/json"])
+    preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
 
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=pk)
+    hand = app.models.Hand.objects.get_or_404(pk=pk)
 
-    resp = _error_response_or_viewfunc(hand, request.user)
+    # This view is currently only called by bots, and bots only run when a hand is in progress -- that is, they don't review completed hands.
+    # So there's no point checking if this board is completed; skipping that check saves a query or two.
+    resp = _error_response_or_viewfunc(hand, request.user, check_if_will_be_played_again=False)
 
     if isinstance(resp, HttpResponseForbidden):
         return Custom403(request, resp.text)  # type: ignore[attr-defined]
@@ -665,10 +699,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     context = {
         "board": hand.board.display_number,
         # Only the bot pays attention to this, so we include JSON events, not HTML ones.
-        "current_event_ids_by_player_name": {
-            p.name: get_current_event_id([p.event_JSON_hand_channel])
-            for _, p in hand.players_by_direction_letter.items()
-        },
+        "current_event_ids_by_player_name": _get_current_event_ids_by_player_name(hand),
         "table": hand.table_display_number,
         "tournament": hand.board.tournament.display_number,
         "xscript": xscript.serializable(),
