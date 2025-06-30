@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.asgi import get_asgi_application
 
 try:
-    import pyroscope  # type: ignore [import-untyped]
+    import pyroscope  # type: ignore [import-untyped,import-not-found]
 except ModuleNotFoundError:
     pass
 else:
