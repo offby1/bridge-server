@@ -1054,13 +1054,7 @@ class HandAdmin(admin.ModelAdmin):
 
 class CallManager(models.Manager):
     def create(self, *args, **kwargs) -> Call:
-        if "hand_id" in kwargs:
-            h = Hand.objects.get(pk=kwargs["hand_id"])
-        elif "hand" in kwargs:
-            h = kwargs["hand"]
-        else:
-            msg = f"wtf: {kwargs=}"
-            raise Exception(msg)
+        h: Hand = kwargs["hand"]
 
         x: HandTranscript = h.get_xscript()
 
@@ -1069,11 +1063,11 @@ class CallManager(models.Manager):
         c = libBid.deserialize(kwargs["serialized"])
 
         x.add_call(c)
-        rv.hand._cache_set(x)
+        h._cache_set(x)
 
         if x.auction.status is Auction.PassedOut:
-            rv.hand.is_complete = True
-            rv.hand.save()
+            h.is_complete = True
+            h.save()
 
         return rv
 
@@ -1108,14 +1102,7 @@ admin.site.register(Call)
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Play:
         """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
-        # Apparently I call this both ways :shrug:
-        if "hand_id" in kwargs:
-            h = Hand.objects.get(pk=kwargs["hand_id"])
-        elif "hand" in kwargs:
-            h = kwargs["hand"]
-        else:
-            msg = f"wtf: {kwargs=}"
-            raise Exception(msg)
+        h: Hand = kwargs["hand"]
 
         x: HandTranscript = h.get_xscript()
 
@@ -1124,11 +1111,11 @@ class PlayManager(models.Manager):
         card = libCard.deserialize(kwargs["serialized"])
 
         x.add_card(card)
-        rv.hand._cache_set(x)
+        h._cache_set(x)
 
         if x.num_plays == 52:
-            rv.hand.is_complete = True
-            rv.hand.save()
+            h.is_complete = True
+            h.save()
 
         return rv
 
