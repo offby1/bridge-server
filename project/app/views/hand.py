@@ -701,6 +701,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         # Only the bot pays attention to this, so we include JSON events, not HTML ones.
         "current_event_ids_by_player_name": _get_current_event_ids_by_player_name(hand),
         "table": hand.table_display_number,
+        "tempo_seconds": hand.board.tournament.tempo_seconds,
         "tournament": hand.board.tournament.display_number,
         "xscript": xscript.serializable(),
     }
