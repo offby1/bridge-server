@@ -21,6 +21,8 @@ everybodys_password = (
 
 class Command(BaseCommand):
     def add_arguments(self, parser) -> None:
+        parser.add_argument("--tempo-seconds", type=int, default=5)
+
         group = parser.add_mutually_exclusive_group()
         group.add_argument("--min-players", type=int, default=0)
         group.add_argument("--tiny", default=False, action="store_true")
@@ -43,7 +45,7 @@ class Command(BaseCommand):
 
             t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
                 boards_per_round_per_table=boards_per_round_per_table,
-                tempo_seconds=5,
+                tempo_seconds=options["tempo_seconds"],
             )
 
             if (num_players := options.get("min_players", 0)) == 0:
