@@ -154,6 +154,12 @@ makemigrations *options: (manage "makemigrations " + options)
 [group('django')]
 migrate: makemigrations create-cache (manage "migrate")
 
+# Whop docker upside the haid -- in an attempt to prevent "failed to set up container networking: network blahblah not found"
+[group('docker')]
+whop:
+    docker compose down
+    docker network prune --force
+
 [group('stress')]
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
@@ -288,6 +294,7 @@ perf-local: drop docker-prerequisites
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
+    just whop
     docker compose up --build --detach  django django-collected-static django-migrated prometheus grafana
     just stress --min-players=100
     docker compose logs django --follow
