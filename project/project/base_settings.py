@@ -115,6 +115,7 @@ MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
     "log_request_id.middleware.RequestIDMiddleware",
+    "app.middleware.add_request_id.AddRequestIdToSQLConnectionMiddleware",
     "app.middleware.add_git_commit_hash.AddVersionHeaderMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
