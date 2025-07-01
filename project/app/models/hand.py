@@ -714,8 +714,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 if new_hand is not None:
                     logger.info(f"Just created new hand {new_hand}")
                 else:
-                    logger.error(
-                        f"Couldn't create next hand in {self.tournament=} {self.table_display_number - 1=}, {movements._zb_round_number(board_group)=}; no idea why"
+                    logger.info(
+                        f"We've played all the boards in tournament #{self.tournament.display_number}, board group {self.board.group}, at table #{self.table_display_number}"
                     )
 
     @property
