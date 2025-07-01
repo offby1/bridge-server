@@ -531,15 +531,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 when=now,
             )
 
-            send_timestamped_event(
-                channel=p.event_JSON_hand_channel,
-                data={
-                    "hand_pk": self.pk,
-                    "new-call": {"serialized": call.serialize()},
-                    "tempo_seconds": self.board.tournament.tempo_seconds,
-                },
-                when=now,
-            )
+        self.send_JSON_to_players(
+            data={
+                "hand_event": self.call_set.count() - 1,
+                "hand_pk": self.pk,
+                "new-call": {"serialized": call.serialize()},
+                "tempo_seconds": self.board.tournament.tempo_seconds,
+            }
+        )
 
         from app.views.hand import auction_history_HTML_for_table
 
@@ -662,6 +661,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.send_JSON_to_players(
             data={
+                "hand_event": self.call_set.count() + self.play_set.count() - 1,
                 "new-play": {
                     "hand_pk": self.pk,
                     "serialized": card.serialize(),

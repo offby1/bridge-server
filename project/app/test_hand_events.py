@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+import json
 
 import bridge.card
 import bridge.contract
@@ -14,21 +16,6 @@ from .testutils import set_auction_to
 def capture_events_in_database(settings):
     del settings.EVENTSTREAM_REDIS
     settings.EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
-
-
-class CapturedEvents:
-    def __init__(self) -> None:
-        self.events: list[Event] = []
-        self._message_ids_before = set(
-            Event.objects.values_list("id", flat=True),
-        )
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.events = list(Event.objects.exclude(id__in=self._message_ids_before))
-        return False
 
 
 class CapturedEventsFromChannels:
@@ -51,6 +38,27 @@ class CapturedEventsFromChannels:
         return False
 
 
+def assert_sane_numbering(json_messages: Iterable[str]) -> None:
+    __tracebackhide__ = True
+
+    all_parsed_messages = [json.loads(json.loads(m)) for m in json_messages if m]
+    relevant_parsed_messages = [
+        m for m in all_parsed_messages if ("new-call" in m or "new-play" in m)
+    ]
+
+    actual = [m.get("hand_event") for m in relevant_parsed_messages]
+
+    bogons = [m for m in relevant_parsed_messages if m.get("hand_event") is None]
+    if bogons:
+        pytest.fail(f'Hey man, some messages in {bogons} lack a "hand_event" key')
+
+    expected = list(range(len(actual)))
+    if actual != expected:
+        for m in relevant_parsed_messages:
+            print(m)
+        pytest.fail(f"{actual=} != {expected=} :-(")
+
+
 def test_auction_settled_messages(usual_setup) -> None:
     h = usual_setup
 
@@ -67,6 +75,9 @@ def test_auction_settled_messages(usual_setup) -> None:
                 )
 
     assert sum(["new-call" in e.data for e in hand_json_cap.events]) == 16
+    assert_sane_numbering(
+        (e.data for e in hand_json_cap.events if e.channel == hand_JSON_channels[0])
+    )
     assert sum(["contract" in e.data for e in table_cap.events]) == 1
 
     # Between two and four bidding box HTMLs per call.  Two would be if we were efficient, and only re-sent them when
@@ -106,29 +117,35 @@ def test_sends_final_score_just_to_table() -> None:
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     h = usual_setup
-    set_auction_to(
-        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-        h,
-    )
 
-    with CapturedEventsFromChannels(h.event_table_html_channel) as cap:
-        h.add_play_from_player(
-            # opening lead from East
-            player=h.player_who_may_play.libraryThing(),
-            card=bridge.card.Card.deserialize("d2"),
-        )
+    one_hand_JSON_channel = next(h.players()).event_JSON_hand_channel
 
-        h.add_play_from_player(
-            # play from South -- dummy, as it happens
-            player=h.player_who_may_play.libraryThing(),
-            card=bridge.card.Card.deserialize("h2"),
-        )
+    with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
+        with CapturedEventsFromChannels(h.event_table_html_channel) as cap:
+            set_auction_to(
+                bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+                h,
+            )
 
-        h.add_play_from_player(
-            # play from West
-            player=h.player_who_may_play.libraryThing(),
-            card=bridge.card.Card.deserialize("s2"),
-        )
+            h.add_play_from_player(
+                # opening lead from East
+                player=h.player_who_may_play.libraryThing(),
+                card=bridge.card.Card.deserialize("d2"),
+            )
+
+            h.add_play_from_player(
+                # play from South -- dummy, as it happens
+                player=h.player_who_may_play.libraryThing(),
+                card=bridge.card.Card.deserialize("h2"),
+            )
+
+            h.add_play_from_player(
+                # play from West
+                player=h.player_who_may_play.libraryThing(),
+                card=bridge.card.Card.deserialize("s2"),
+            )
+
+    assert_sane_numbering((e.data for e in hand_json_cap.events))
 
     dummys_seen = tricks_seen = 0
     for e in cap.events:
