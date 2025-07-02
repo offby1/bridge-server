@@ -7,6 +7,7 @@ import bridge.card
 import bridge.contract
 import bridge.seat
 from django.http import (
+    HttpRequest,
     HttpResponse,
 )
 from django.shortcuts import get_object_or_404
@@ -100,3 +101,11 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
         return Forbid(str(e))
 
     return HttpResponse()
+
+
+def sekrit_test_forms_view(request: HttpRequest) -> HttpResponse:
+    return HttpResponse("""
+    <body>
+    Happy now, bitch?
+    </body>
+    """)

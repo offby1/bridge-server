@@ -47,6 +47,7 @@ urlpatterns = [
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/<hand_pk>/", table.details.play_post_view, name="play-post"),
+    path("table/", table.details.sekrit_test_forms_view, name="sekrit-test-forms"),
     path("player/", player.player_detail_view, name="player"),
     path(
         "player/create-synthetic-partner",
