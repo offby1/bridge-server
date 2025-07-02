@@ -105,7 +105,6 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 
 @logged_in_as_player_required()
 def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
-    # Find some hand in progress.
     user = getattr(request, "user", None)
     if user is None:
         return HttpResponse(
@@ -129,13 +128,32 @@ def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
             )
         )
 
-    return HttpResponse(
-        format_html(
-            """
+    # Find some hand in progress.
+    hand = player.current_hand()
+    if hand is None:
+        return HttpResponse(
+            format_html(
+                """
     <body>
     Happy now, bitch ({})?
     </body>
     """,
-            player.name,
+                player.name,
+            )
+        )
+
+    # TODO:
+    # Create a form
+    # populate it with legitimate calls or plays
+    # have its action go to the existing call or play POST view
+    # include the form in the response
+    return HttpResponse(
+        format_html(
+            """
+    <body>
+    Oh maybe we'll let you futz with {}
+    </body>
+    """,
+            hand,
         )
     )
