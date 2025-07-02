@@ -448,7 +448,9 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
         h: Hand
         direction_name: str
 
-        for h in self.hands_played.select_related(*attribute_names).filter(
+        from app.models.hand import enrich
+
+        for h in enrich(self.hands_played).filter(
             is_complete=False, abandoned_because__isnull=True
         ):
             for direction_name in h.direction_names:

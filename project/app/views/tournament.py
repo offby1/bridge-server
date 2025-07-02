@@ -147,7 +147,12 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def tournament_signup_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+def tournament_signup_view(
+    request: AuthedHttpRequest, pk: str, player: app.models.Player | None = None
+) -> HttpResponse:
+    if player is not None:
+        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+
     viewer = request.user.player
     assert viewer is not None
 
@@ -186,14 +191,24 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def new_tournament_view(request: AuthedHttpRequest) -> HttpResponse:
+def new_tournament_view(
+    request: AuthedHttpRequest, player: app.models.Player | None = None
+) -> HttpResponse:
+    if player is not None:
+        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+
     app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
     return HttpResponseRedirect(reverse("app:tournament-list") + "?open_for_signups=True")
 
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) -> HttpResponse:
+def tournament_void_signup_deadline_view(
+    request: AuthedHttpRequest, pk: str, player: app.models.Player | None = None
+) -> HttpResponse:
+    if player is not None:
+        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+
     t: app.models.Tournament = get_object_or_404(app.models.Tournament, pk=pk)
     logger.debug(
         "%s",

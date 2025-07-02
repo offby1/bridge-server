@@ -31,7 +31,12 @@ def _auction_channel_for_table(table):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
+def call_post_view(
+    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
+) -> HttpResponse:
+    if player is not None:
+        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
 
     player = request.user.player
@@ -70,8 +75,19 @@ def call_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+def play_post_view(
+    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
+) -> HttpResponse:
+    hand = None
+    if player is not None:
+        hand = player.current_hand()
+
+    if hand is not None and str(hand.pk) != str(hand_pk):
+        return Forbid(f"Get your shit together -- {hand.pk=} != {hand_pk=}")
+
+    if hand is None:
+        logger.warning("Doing slow fetch; we really shudda had our caller do this for us")
+        hand = app.models.Hand.objects.get_or_404(pk=hand_pk)
 
     who_clicked = request.user.player
     assert who_clicked is not None
@@ -104,7 +120,12 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
 
 
 @logged_in_as_player_required()
-def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
+def sekrit_test_forms_view(
+    request: AuthedHttpRequest, player: app.models.Player | None = None
+) -> HttpResponse:
+    if player is not None:
+        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+
     user = getattr(request, "user", None)
     if user is None:
         return HttpResponse(
