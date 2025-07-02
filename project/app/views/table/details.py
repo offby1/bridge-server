@@ -7,10 +7,10 @@ import bridge.card
 import bridge.contract
 import bridge.seat
 from django.http import (
-    HttpRequest,
     HttpResponse,
 )
 from django.shortcuts import get_object_or_404
+from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
 import app.models
@@ -103,9 +103,39 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     return HttpResponse()
 
 
-def sekrit_test_forms_view(request: HttpRequest) -> HttpResponse:
-    return HttpResponse("""
+@logged_in_as_player_required()
+def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
+    # Find some hand in progress.
+    user = getattr(request, "user", None)
+    if user is None:
+        return HttpResponse(
+            """
     <body>
-    Happy now, bitch?
+    Happy now, anonymous user?
     </body>
-    """)
+"""
+        )
+
+    player = getattr(user, "player", None)
+    if player is None:
+        return HttpResponse(
+            format_html(
+                """
+    <body>
+    Happy now, user named ({})?
+    </body>
+    """,
+                user.username,
+            )
+        )
+
+    return HttpResponse(
+        format_html(
+            """
+    <body>
+    Happy now, bitch ({})?
+    </body>
+    """,
+            player.name,
+        )
+    )
