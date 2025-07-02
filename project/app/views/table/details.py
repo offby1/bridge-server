@@ -121,7 +121,7 @@ def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
             format_html(
                 """
     <body>
-    Happy now, user named ({})?
+    No player -- happy now, user named ({})?
     </body>
     """,
                 user.username,
@@ -135,7 +135,7 @@ def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
             format_html(
                 """
     <body>
-    Happy now, bitch ({})?
+    No current hand -- happy now, bitch ({})?
     </body>
     """,
                 player.name,
