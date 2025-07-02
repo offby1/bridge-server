@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+    Oh maybe we'll let you futz with {{ hand }}
+    <form method="post" action="{% url 'app:play-post' hand.pk %}">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="play">
+    </form>
+{% endblock content %}

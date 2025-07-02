@@ -6,10 +6,10 @@ import bridge.auction
 import bridge.card
 import bridge.contract
 import bridge.seat
-from django.http import (
-    HttpResponse,
-)
+from django import forms
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.template.response import TemplateResponse
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
@@ -142,18 +142,11 @@ def sekrit_test_forms_view(request: AuthedHttpRequest) -> HttpResponse:
             )
         )
 
+    class WozzitForm(forms.Form):
+        card = forms.CharField()
+
     # TODO:
-    # Create a form
-    # populate it with legitimate calls or plays
-    # have its action go to the existing call or play POST view
-    # include the form in the response
-    return HttpResponse(
-        format_html(
-            """
-    <body>
-    Oh maybe we'll let you futz with {}
-    </body>
-    """,
-            hand,
-        )
-    )
+    # populate the form with legitimate calls or plays
+    context = dict(hand=hand, form=WozzitForm())
+
+    return TemplateResponse(request, "sekrit-wozzit-template.html", context=context)
