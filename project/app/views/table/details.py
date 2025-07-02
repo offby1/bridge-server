@@ -100,7 +100,7 @@ def play_post_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     except app.models.hand.PlayError as e:
         return Forbid(str(e))
 
-    return HttpResponse()
+    return HttpResponse("<body>whatchoo lookin' at</body>")
 
 
 @logged_in_as_player_required()

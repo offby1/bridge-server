@@ -1,6 +1,6 @@
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -49,7 +49,8 @@ def signup_view(request):
 
 
 def Forbid(e: Exception | str) -> HttpResponseForbidden:
-    return HttpResponseForbidden(escape(e))
+    tarted_up_html = format_html("<body>{}</body>", escape(e))
+    return HttpResponseForbidden(tarted_up_html)
 
 
 def NotFound(e: Exception | str) -> HttpResponseNotFound:
