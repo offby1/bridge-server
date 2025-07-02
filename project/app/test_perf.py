@@ -102,11 +102,8 @@ def test_board_archive_view(
 
 
 def test_hand_serialzed_view(
-    nearly_completed_tournament, rf, django_assert_max_num_queries, settings
+    nearly_completed_tournament, rf, django_assert_max_num_queries
 ) -> None:
-    settings.DEBUG = True
-    settings.DEBUG_TOOLBAR_CONFIG = {"IS_RUNNING_TESTS": False}
-
     request = rf.get("/woteva/", headers={"accept": "application/json"})
     player = Player.objects.first()
     assert player is not None
@@ -121,25 +118,7 @@ def test_hand_serialzed_view(
 
     # Damn, 19 queries? wtf are they?
     with django_assert_max_num_queries(19):
-        from debug_toolbar.toolbar import DebugToolbar  # type: ignore [import-untyped]
-
-        toolbar = DebugToolbar(request=request, get_response=lambda request: None)
-
-        for panel in toolbar.enabled_panels:
-            if panel.panel_id == "SQLPanel":
-                panel.enable_instrumentation()
-
         response = hand_serialized_view(request, pk=hand.pk)
 
-        for panel in toolbar.enabled_panels:
-            panel.generate_stats(request, response)
-
-        for panel in toolbar.enabled_panels:
-            if panel.panel_id == "SQLPanel":
-                import pprint
-
-                pprint.pprint(panel.get_stats())
-
-    assert "cat" == "dog"
     assert response.headers["Content-Type"].startswith("application/json")
     assert response.status_code == 200
