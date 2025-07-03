@@ -100,9 +100,9 @@ def play_post_view(
 
     if (
         hand.dummy is not None
-        and hand.player_who_may_play.libraryThing().seat == hand.dummy.seat
+        and hand.direction_letters_by_player[hand.player_who_may_play] == hand.dummy.seat.value
         and hand.declarer is not None
-        and who_clicked.libraryThing().seat == hand.declarer.seat
+        and hand.direction_letters_by_player[who_clicked] == hand.declarer.seat.value
     ):
         pass
     elif not (hand.open_access or who_clicked == hand.player_who_may_play):
