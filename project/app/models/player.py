@@ -263,7 +263,8 @@ class Player(TimeStampedModel):
                     pass
                 else:
                     logger.warning(
-                        "%s", f"{proc.returncode=} {proc.stderr!r} -- {service_directory=}"
+                        "%s",
+                        f"{proc.returncode=} {proc.stderr!r} -- {service_directory=} {flags=} {self.pk=}",
                     )
 
         run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))

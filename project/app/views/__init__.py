@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages as django_web_messages
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
 from django.utils.html import escape, format_html
@@ -6,6 +8,8 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 
 from app.forms import SignupForm
+
+logger = logging.getLogger(__name__)
 
 
 def home_view(request):
@@ -49,6 +53,7 @@ def signup_view(request):
 
 
 def Forbid(e: Exception | str) -> HttpResponseForbidden:
+    logger.warning("%s", f"{e=}")
     tarted_up_html = format_html("<body>{}</body>", escape(e))
     return HttpResponseForbidden(tarted_up_html)
 
