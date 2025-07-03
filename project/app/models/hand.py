@@ -750,8 +750,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def player_who_may_play(self) -> Player | None:
-        from . import Player
-
         if self.is_abandoned:
             return None
 
@@ -762,8 +760,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         if seat_who_may_play is None:
             return None
 
-        pbs = self.libPlayers_by_libSeat
-        return Player.objects.get_by_name(pbs[seat_who_may_play].name)
+        return getattr(self, seat_who_may_play.name)
 
     @property
     def active_seat_name(self) -> str:
