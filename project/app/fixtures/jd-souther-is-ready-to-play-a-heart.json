@@ -1,0 +1,897 @@
+[
+  {
+    "model": "app.tournament",
+    "pk": 1,
+    "fields": {
+      "boards_per_round_per_table": 3,
+      "completed_at": null,
+      "display_number": 1,
+      "signup_deadline": "2000-01-01T00:00:00Z",
+      "play_completion_deadline": "2999-12-31T23:49:49.999Z",
+      "tempo_seconds": 20.0
+    }
+  },
+  {
+    "model": "app.board",
+    "pk": 1,
+    "fields": {
+      "display_number": 1,
+      "ns_vulnerable": false,
+      "ew_vulnerable": false,
+      "dealer": "N",
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
+      "tournament": 1,
+      "group": "A"
+    }
+  },
+  {
+    "model": "app.board",
+    "pk": 2,
+    "fields": {
+      "display_number": 2,
+      "ns_vulnerable": true,
+      "ew_vulnerable": false,
+      "dealer": "S",
+      "north_cards": "♣2♣3♣4♣5♣6♣7♣8♣9♣T♣J♣Q♣K♣A",
+      "east_cards": "♦2♦3♦4♦5♦6♦7♦8♦9♦T♦J♦Q♦K♦A",
+      "south_cards": "♥2♥3♥4♥5♥6♥7♥8♥9♥T♥J♥Q♥K♥A",
+      "west_cards": "♠2♠3♠4♠5♠6♠7♠8♠9♠T♠J♠Q♠K♠A",
+      "tournament": 1,
+      "group": "A"
+    }
+  },
+  {
+    "model": "app.board",
+    "pk": 3,
+    "fields": {
+      "display_number": 3,
+      "ns_vulnerable": false,
+      "ew_vulnerable": true,
+      "dealer": "S",
+      "north_cards": "♣2♣4♣7♣8♦7♦8♦Q♦A♥K♠4♠T♠J♠Q",
+      "east_cards": "♣9♣Q♦3♦4♦5♦K♥7♥A♠3♠6♠7♠9♠A",
+      "south_cards": "♣5♣J♣K♣A♦9♦J♥4♥6♥9♥T♥J♠8♠K",
+      "west_cards": "♣3♣6♣T♦2♦6♦T♥2♥3♥5♥8♥Q♠2♠5",
+      "tournament": 1,
+      "group": "A"
+    }
+  },
+  {
+    "model": "app.player",
+    "pk": 1,
+    "fields": {
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
+      "user": 1,
+      "partner": 3,
+      "allow_bot_to_play_for_me": true,
+      "synthetic": true
+    }
+  },
+  {
+    "model": "app.player",
+    "pk": 2,
+    "fields": {
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
+      "user": 2,
+      "partner": 4,
+      "allow_bot_to_play_for_me": true,
+      "synthetic": true
+    }
+  },
+  {
+    "model": "app.player",
+    "pk": 3,
+    "fields": {
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
+      "user": 3,
+      "partner": 1,
+      "allow_bot_to_play_for_me": false,
+      "synthetic": false
+    }
+  },
+  {
+    "model": "app.player",
+    "pk": 4,
+    "fields": {
+      "created": "2000-01-01T00:00:00Z",
+      "modified": "2000-01-01T00:00:00Z",
+      "user": 4,
+      "partner": 2,
+      "allow_bot_to_play_for_me": true,
+      "synthetic": true
+    }
+  },
+  {
+    "model": "app.hand",
+    "pk": 1,
+    "fields": {
+      "created": "2025-03-26T15:40:29.315Z",
+      "modified": "2025-03-26T15:40:29.315Z",
+      "board": 1,
+      "is_complete": false,
+      "North": 1,
+      "East": 2,
+      "South": 3,
+      "West": 4,
+      "table_display_number": 1,
+      "open_access": false,
+      "abandoned_because": null
+    }
+  },
+  {
+    "model": "app.call",
+    "pk": 1,
+    "fields": {
+      "created": "2025-07-04T12:09:22.178Z",
+      "modified": "2025-07-04T12:09:22.178Z",
+      "hand": 1,
+      "serialized": "Pass"
+    }
+  },
+  {
+    "model": "app.call",
+    "pk": 2,
+    "fields": {
+      "created": "2025-07-04T12:09:39.441Z",
+      "modified": "2025-07-04T12:09:39.441Z",
+      "hand": 1,
+      "serialized": "7N"
+    }
+  },
+  {
+    "model": "app.call",
+    "pk": 3,
+    "fields": {
+      "created": "2025-07-04T12:10:53.431Z",
+      "modified": "2025-07-04T12:10:53.431Z",
+      "hand": 1,
+      "serialized": "Pass"
+    }
+  },
+  {
+    "model": "app.call",
+    "pk": 4,
+    "fields": {
+      "created": "2025-07-04T12:11:08.710Z",
+      "modified": "2025-07-04T12:11:08.710Z",
+      "hand": 1,
+      "serialized": "Pass"
+    }
+  },
+  {
+    "model": "app.call",
+    "pk": 5,
+    "fields": {
+      "created": "2025-07-04T12:11:08.893Z",
+      "modified": "2025-07-04T12:11:08.893Z",
+      "hand": 1,
+      "serialized": "Pass"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 1,
+    "fields": {
+      "name": "Can add event",
+      "content_type": 1,
+      "codename": "add_event"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 2,
+    "fields": {
+      "name": "Can change event",
+      "content_type": 1,
+      "codename": "change_event"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 3,
+    "fields": {
+      "name": "Can delete event",
+      "content_type": 1,
+      "codename": "delete_event"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 4,
+    "fields": {
+      "name": "Can view event",
+      "content_type": 1,
+      "codename": "view_event"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 5,
+    "fields": {
+      "name": "Can add event counter",
+      "content_type": 2,
+      "codename": "add_eventcounter"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 6,
+    "fields": {
+      "name": "Can change event counter",
+      "content_type": 2,
+      "codename": "change_eventcounter"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 7,
+    "fields": {
+      "name": "Can delete event counter",
+      "content_type": 2,
+      "codename": "delete_eventcounter"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 8,
+    "fields": {
+      "name": "Can view event counter",
+      "content_type": 2,
+      "codename": "view_eventcounter"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 9,
+    "fields": {
+      "name": "Can add log entry",
+      "content_type": 3,
+      "codename": "add_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 10,
+    "fields": {
+      "name": "Can change log entry",
+      "content_type": 3,
+      "codename": "change_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 11,
+    "fields": {
+      "name": "Can delete log entry",
+      "content_type": 3,
+      "codename": "delete_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 12,
+    "fields": {
+      "name": "Can view log entry",
+      "content_type": 3,
+      "codename": "view_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 13,
+    "fields": {
+      "name": "Can add permission",
+      "content_type": 4,
+      "codename": "add_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 14,
+    "fields": {
+      "name": "Can change permission",
+      "content_type": 4,
+      "codename": "change_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 15,
+    "fields": {
+      "name": "Can delete permission",
+      "content_type": 4,
+      "codename": "delete_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 16,
+    "fields": {
+      "name": "Can view permission",
+      "content_type": 4,
+      "codename": "view_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 17,
+    "fields": {
+      "name": "Can add group",
+      "content_type": 5,
+      "codename": "add_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 18,
+    "fields": {
+      "name": "Can change group",
+      "content_type": 5,
+      "codename": "change_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 19,
+    "fields": {
+      "name": "Can delete group",
+      "content_type": 5,
+      "codename": "delete_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 20,
+    "fields": {
+      "name": "Can view group",
+      "content_type": 5,
+      "codename": "view_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 21,
+    "fields": {
+      "name": "Can add user",
+      "content_type": 6,
+      "codename": "add_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 22,
+    "fields": {
+      "name": "Can change user",
+      "content_type": 6,
+      "codename": "change_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 23,
+    "fields": {
+      "name": "Can delete user",
+      "content_type": 6,
+      "codename": "delete_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 24,
+    "fields": {
+      "name": "Can view user",
+      "content_type": 6,
+      "codename": "view_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 25,
+    "fields": {
+      "name": "Can add content type",
+      "content_type": 7,
+      "codename": "add_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 26,
+    "fields": {
+      "name": "Can change content type",
+      "content_type": 7,
+      "codename": "change_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 27,
+    "fields": {
+      "name": "Can delete content type",
+      "content_type": 7,
+      "codename": "delete_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 28,
+    "fields": {
+      "name": "Can view content type",
+      "content_type": 7,
+      "codename": "view_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 29,
+    "fields": {
+      "name": "Can add session",
+      "content_type": 8,
+      "codename": "add_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 30,
+    "fields": {
+      "name": "Can change session",
+      "content_type": 8,
+      "codename": "change_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 31,
+    "fields": {
+      "name": "Can delete session",
+      "content_type": 8,
+      "codename": "delete_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 32,
+    "fields": {
+      "name": "Can view session",
+      "content_type": 8,
+      "codename": "view_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 33,
+    "fields": {
+      "name": "Can add player",
+      "content_type": 9,
+      "codename": "add_player"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 34,
+    "fields": {
+      "name": "Can change player",
+      "content_type": 9,
+      "codename": "change_player"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 35,
+    "fields": {
+      "name": "Can delete player",
+      "content_type": 9,
+      "codename": "delete_player"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 36,
+    "fields": {
+      "name": "Can view player",
+      "content_type": 9,
+      "codename": "view_player"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 37,
+    "fields": {
+      "name": "Can add message",
+      "content_type": 10,
+      "codename": "add_message"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 38,
+    "fields": {
+      "name": "Can change message",
+      "content_type": 10,
+      "codename": "change_message"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 39,
+    "fields": {
+      "name": "Can delete message",
+      "content_type": 10,
+      "codename": "delete_message"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 40,
+    "fields": {
+      "name": "Can view message",
+      "content_type": 10,
+      "codename": "view_message"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 41,
+    "fields": {
+      "name": "Can add lobby",
+      "content_type": 11,
+      "codename": "add_lobby"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 42,
+    "fields": {
+      "name": "Can change lobby",
+      "content_type": 11,
+      "codename": "change_lobby"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 43,
+    "fields": {
+      "name": "Can delete lobby",
+      "content_type": 11,
+      "codename": "delete_lobby"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 44,
+    "fields": {
+      "name": "Can view lobby",
+      "content_type": 11,
+      "codename": "view_lobby"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 45,
+    "fields": {
+      "name": "Can add board",
+      "content_type": 12,
+      "codename": "add_board"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 46,
+    "fields": {
+      "name": "Can change board",
+      "content_type": 12,
+      "codename": "change_board"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 47,
+    "fields": {
+      "name": "Can delete board",
+      "content_type": 12,
+      "codename": "delete_board"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 48,
+    "fields": {
+      "name": "Can view board",
+      "content_type": 12,
+      "codename": "view_board"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 49,
+    "fields": {
+      "name": "Can add call",
+      "content_type": 13,
+      "codename": "add_call"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 50,
+    "fields": {
+      "name": "Can change call",
+      "content_type": 13,
+      "codename": "change_call"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 51,
+    "fields": {
+      "name": "Can delete call",
+      "content_type": 13,
+      "codename": "delete_call"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 52,
+    "fields": {
+      "name": "Can view call",
+      "content_type": 13,
+      "codename": "view_call"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 53,
+    "fields": {
+      "name": "Can add play",
+      "content_type": 14,
+      "codename": "add_play"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 54,
+    "fields": {
+      "name": "Can change play",
+      "content_type": 14,
+      "codename": "change_play"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 55,
+    "fields": {
+      "name": "Can delete play",
+      "content_type": 14,
+      "codename": "delete_play"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 56,
+    "fields": {
+      "name": "Can view play",
+      "content_type": 14,
+      "codename": "view_play"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 57,
+    "fields": {
+      "name": "Can add user",
+      "content_type": 15,
+      "codename": "add_usermitplaya"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 58,
+    "fields": {
+      "name": "Can change user",
+      "content_type": 15,
+      "codename": "change_usermitplaya"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 59,
+    "fields": {
+      "name": "Can delete user",
+      "content_type": 15,
+      "codename": "delete_usermitplaya"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 60,
+    "fields": {
+      "name": "Can view user",
+      "content_type": 15,
+      "codename": "view_usermitplaya"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 61,
+    "fields": {
+      "name": "Can add hand",
+      "content_type": 16,
+      "codename": "add_hand"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 62,
+    "fields": {
+      "name": "Can change hand",
+      "content_type": 16,
+      "codename": "change_hand"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 63,
+    "fields": {
+      "name": "Can delete hand",
+      "content_type": 16,
+      "codename": "delete_hand"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 64,
+    "fields": {
+      "name": "Can view hand",
+      "content_type": 16,
+      "codename": "view_hand"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 65,
+    "fields": {
+      "name": "Can add tournament",
+      "content_type": 17,
+      "codename": "add_tournament"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 66,
+    "fields": {
+      "name": "Can change tournament",
+      "content_type": 17,
+      "codename": "change_tournament"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 67,
+    "fields": {
+      "name": "Can delete tournament",
+      "content_type": 17,
+      "codename": "delete_tournament"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 68,
+    "fields": {
+      "name": "Can view tournament",
+      "content_type": 17,
+      "codename": "view_tournament"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 69,
+    "fields": {
+      "name": "Can add tournament signup",
+      "content_type": 18,
+      "codename": "add_tournamentsignup"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 70,
+    "fields": {
+      "name": "Can change tournament signup",
+      "content_type": 18,
+      "codename": "change_tournamentsignup"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 71,
+    "fields": {
+      "name": "Can delete tournament signup",
+      "content_type": 18,
+      "codename": "delete_tournamentsignup"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 72,
+    "fields": {
+      "name": "Can view tournament signup",
+      "content_type": 18,
+      "codename": "view_tournamentsignup"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$870000$Pmx2bZoEEh9DwcVBFLeWiT$cliPPZci7+g7GgQvOB0u2o+0S1/qkiPuj9j57UQaYoA=",
+      "last_login": "2025-07-04T12:11:29.099Z",
+      "is_superuser": false,
+      "username": "Jeremy Northam",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-03-26T15:35:19.214Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$lz5zTsGcmVawcBPn8kthky$5CWpnLIb1cU+f8FKLzX3mkHRqJWNWxKHY0DRcSSah/M=",
+      "last_login": "2025-07-04T12:09:35.099Z",
+      "is_superuser": false,
+      "username": "Clint Eastwood",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-03-26T15:35:19.232Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$ASG2Z1yoDE9eF7TljNnGRz$h9FHJ1TSapcblGmBjktxy4MjQQBRnqr1M2hUQlT22/A=",
+      "last_login": "2025-07-04T12:10:49.649Z",
+      "is_superuser": false,
+      "username": "J.D. Souther",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-03-26T15:35:19.252Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$yVEfrTMR6ddLr46OxgYJ5T$RPNmz5hc0o5tRCtPQKgjsEfRZ5iw1GrCn3EE4o6/wTc=",
+      "last_login": "2025-07-04T12:11:05.085Z",
+      "is_superuser": false,
+      "username": "Adam West",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-03-26T15:35:19.271Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  }
+]
