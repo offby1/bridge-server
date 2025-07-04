@@ -119,35 +119,36 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
 
     one_hand_JSON_channel = next(h.players()).event_JSON_hand_channel
 
+    def add_play(card_string: str) -> None:
+        player = h.player_who_may_play
+        player._enrich_hand_and_direction(why="unit test doin its thang")
+        h.add_play_from_model_player(
+            player=player,
+            card=bridge.card.Card.deserialize(card_string),
+        )
+
     with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
-        with CapturedEventsFromChannels(h.event_table_html_channel) as cap:
+        with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
             set_auction_to(
                 bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
                 h,
             )
-
-            h.add_play_from_model_player(
-                # opening lead from East
-                player=h.player_who_may_play,
-                card=bridge.card.Card.deserialize("d2"),
-            )
-
-            h.add_play_from_model_player(
-                # play from South -- dummy, as it happens
-                player=h.player_who_may_play,
-                card=bridge.card.Card.deserialize("h2"),
-            )
-
-            h.add_play_from_model_player(
-                # play from West
-                player=h.player_who_may_play,
-                card=bridge.card.Card.deserialize("s2"),
-            )
+            add_play("d2")
+            add_play("h2")
+            add_play("s2")
 
     assert_sane_numbering((e.data for e in hand_json_cap.events))
 
     dummys_seen = tricks_seen = 0
-    for e in cap.events:
+    for e in table_HTML_cap.events:
+        if not e.data:
+            continue
+        try:
+            for k, v in json.loads(json.loads(e.data)).items():
+                print(f"{k}: {str(v)[0:100]}")
+        except Exception as ex:
+            print(f"{ex=}")
+
         if "dummy_html" in e.data:
             dummys_seen += 1
         if "trick_html" in e.data:
