@@ -160,6 +160,8 @@ class Player(TimeStampedModel):
 
     hands_by_board_cache: dict[Board, Hand]
 
+    current_hand_and_direction_cache: tuple[Hand, str] | None
+
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
     def hands_played(self) -> models.QuerySet:
@@ -207,6 +209,7 @@ class Player(TimeStampedModel):
         with transaction.atomic():
             if (h := self.current_hand()) is not None:
                 h.abandoned_because = reason or f"{self.name} left"
+                self.current_hand_and_direction_cache = None
                 h.save()
 
         self._control_bot()
@@ -451,13 +454,23 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         from app.models.hand import enrich
 
+        if hasattr(self, "current_hand_and_direction_cache"):
+            logger.debug("Fetched current_hand_and_direction_cache from instance %r", id(self))
+            return self.current_hand_and_direction_cache
+
+        logger.warning("Hmph, no current_hand_and_direction_cache on instance %r", id(self))
+
         for h in enrich(self.hands_played).filter(
             is_complete=False, abandoned_because__isnull=True
         ):
             for direction_name in h.direction_names:
                 if getattr(h, direction_name) == self:
+                    logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
+                    setattr(self, "current_hand_and_direction_cache", (h, direction_name))
                     return h, direction_name
 
+        logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
+        setattr(self, "current_hand_and_direction_cache", None)
         return None
 
     def direction_at_hand(self, h: Hand) -> str:

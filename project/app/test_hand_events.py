@@ -99,14 +99,13 @@ def test_sends_final_score_just_to_table() -> None:
     h = Hand.objects.get(pk=1)
 
     assert h.player_who_may_play is not None
-    libPlayer = h.player_who_may_play.libraryThing()
     libCard = bridge.card.Card.deserialize("♠A")
 
     hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
 
     with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
         with CapturedEventsFromChannels(h.event_table_html_channel) as table_cap:
-            h.add_play_from_player(player=libPlayer, card=libCard)
+            h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
 
     def sought(datum):
         return "final_score" in datum
@@ -127,21 +126,21 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
                 h,
             )
 
-            h.add_play_from_player(
+            h.add_play_from_model_player(
                 # opening lead from East
-                player=h.player_who_may_play.libraryThing(),
+                player=h.player_who_may_play,
                 card=bridge.card.Card.deserialize("d2"),
             )
 
-            h.add_play_from_player(
+            h.add_play_from_model_player(
                 # play from South -- dummy, as it happens
-                player=h.player_who_may_play.libraryThing(),
+                player=h.player_who_may_play,
                 card=bridge.card.Card.deserialize("h2"),
             )
 
-            h.add_play_from_player(
+            h.add_play_from_model_player(
                 # play from West
-                player=h.player_who_may_play.libraryThing(),
+                player=h.player_who_may_play,
                 card=bridge.card.Card.deserialize("s2"),
             )
 

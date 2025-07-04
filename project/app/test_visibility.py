@@ -152,10 +152,9 @@ def test_one_card_played(tournament_starting_now: Hand) -> None:
 
     assert h.player_who_may_play is not None
 
-    leader = h.player_who_may_play.libraryThing()
     libCard = h.get_xscript().slightly_less_dumb_play().card
 
-    h.add_play_from_player(player=leader, card=libCard)
+    h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
 
     expect_visibility(
         [

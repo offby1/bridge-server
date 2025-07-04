@@ -36,7 +36,7 @@ def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
 
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h.add_play_from_model_player(player=first_player, card=first_card)
     h = Hand.objects.get(pk=h.pk)
     assert len(h.get_xscript().tricks) == 1
     first_trick = h.get_xscript().tricks[0]
@@ -98,7 +98,7 @@ def test_cards_by_player(usual_setup: Hand) -> None:
     assert len(before) == 13  # just checkin' :-)
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
-    h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
+    h.add_play_from_model_player(player=east, card=diamond_two)
     h = Hand.objects.get(pk=h.pk)
 
     after = set(h.current_cards_by_seat()[libSeat.EAST])
@@ -260,7 +260,7 @@ def test_current_trick(usual_setup: Hand) -> None:
     second_players_cards = second_player.dealt_cards()
 
     first_card = first_players_cards[0]
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h.add_play_from_model_player(player=first_player, card=first_card)
 
     assert h.current_trick is not None
     assert len(h.current_trick) == 1
@@ -268,7 +268,7 @@ def test_current_trick(usual_setup: Hand) -> None:
     assert tt.card == first_card
 
     second_card = second_players_cards[0]
-    h.add_play_from_player(player=second_player.libraryThing(), card=second_card)
+    h.add_play_from_model_player(player=second_player, card=second_card)
 
     assert len(h.current_trick) == 2
     tt = h.current_trick[-1]

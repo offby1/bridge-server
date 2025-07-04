@@ -256,6 +256,10 @@ class HandManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
+        logger.warning(
+            "I dunno, maybe I should set current_hand_and_direction_cache to %r on %s", rv, p
+        )
+
         logger.debug(
             "New hand: %s, played by %s",
             rv,
@@ -614,8 +618,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         method(**kwargs)  # type: ignore [arg-type]
 
-    def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
-        assert_type(player, libPlayer)
+    def add_play_from_model_player(self, *, player: Player, card: libCard) -> Play:
+        assert_type(player, Player)
         assert_type(card, libCard)
 
         if self.is_abandoned:
@@ -624,38 +628,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
-        legit_player = self.player_who_may_play
-        if legit_player is None:
-            msg = "For some crazy reason, nobody is allowed to play a card! Maybe the auction is incomplete, or the hand is over"
-            raise PlayError(msg)
-
-        # TODO -- compare primary keys, not names
-        if player.name != legit_player.name:
-            msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
-            raise PlayError(msg)
-
-        remaining_cards = self.players_remaining_cards(player=player).cards
-        if remaining_cards is None:
-            msg = f"Cannot play a card from {libPlayer.name} because I don't know what cards they hold"
-            raise PlayError(msg)
-
-        legal_cards = self.get_xscript().legal_cards(some_cards=remaining_cards)
-        if card not in legal_cards:
-            msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
-            raise PlayError(msg)
-
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
             raise PlayError(str(e)) from e
 
-        just_played = legit_player
-        del legit_player
         about_to_play = self.player_who_may_play
 
-        logger.debug("%s: %s (%d) played %s", self, just_played, just_played.pk, card)
+        logger.debug("%s: %s (%d) played %s", self, player, player.pk, card)
 
-        for update_me in [just_played, about_to_play]:
+        # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why I'm doing this.
+        # Maybe it's just to indicate which of their cards are legal.
+        for update_me in [player, about_to_play]:
             if update_me is not None:
                 self.send_HTML_update_to_appropriate_channel(player_to_update=update_me)
 
@@ -1022,6 +1006,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return (f"{auction_status}: {trick_summary}", total_score)
 
+    def save(self, *args, **kwargs) -> None:
+        super().save(**kwargs)
+        for attribute_name in attribute_names:
+            p: Player = getattr(self, attribute_name)
+            p.current_hand_and_direction_cache = (self, attribute_name)
+
     def __str__(self) -> str:
         return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
 
@@ -1098,7 +1088,7 @@ admin.site.register(Call)
 
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Play:
-        """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
+        """Only Hand.add_play_from_model_player may call me; the rest of y'all should call *that*."""
         h: Hand = kwargs["hand"]
 
         x: HandTranscript = h.get_xscript()

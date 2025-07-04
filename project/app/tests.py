@@ -366,8 +366,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) 
 
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
-
+    h.add_play_from_model_player(player=first_player, card=first_card)
     expected_cards_by_direction = {dir_.value: "__" for dir_ in libSeat}
     assert h.current_trick is not None
     for tt in h.current_trick:

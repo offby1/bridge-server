@@ -112,7 +112,7 @@ def play_post_view(
 
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:
-        hand.add_play_from_player(player=hand.player_who_may_play.libraryThing(), card=card)
+        hand.add_play_from_model_player(player=hand.player_who_may_play, card=card)
     except app.models.hand.PlayError as e:
         return Forbid(str(e))
 
