@@ -452,13 +452,14 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         if hasattr(self, "current_hand_and_direction_cache"):
             logger.debug(
-                "%s already has %s; no need to actually enrich",
+                "%s (%s) already has %s; no need to actually enrich",
                 self,
+                id(self),
                 "current_hand_and_direction_cache",
             )
             return
 
-        logger.warning("Enriching %s because %s", self, why)
+        logger.warning("Enriching %s (%s) because %s", self, id(self), why)
 
         for h in enrich(self.hands_played).filter(
             is_complete=False, abandoned_because__isnull=True

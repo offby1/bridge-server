@@ -589,7 +589,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         if player_to_update is None:
             return
 
-        if player_to_update.current_direction() is None:
+        if getattr(self, "current_hand_and_direction_cache", None) is None:
             return
 
         assert self.dummy is not None
