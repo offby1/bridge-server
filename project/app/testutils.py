@@ -53,7 +53,6 @@ def play_out_hand(h: app.models.Hand) -> None:
     while (p := h.player_who_may_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
         h.add_play_from_model_player(player=p, card=play.card)
-        h.get_xscript().add_card(play.card)
 
     if h.is_complete:
         logger.info("%s played %s to completion", [p.name for p in h.players()], h)
