@@ -150,6 +150,8 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     dummys_seen = tricks_seen = 0
     for e in cap.events:
         if "dummy_html" in e.data:
+            for k, v in json.loads(json.loads(e.data)).items():
+                print(f"{k}: {str(v)[0:100]}")
             dummys_seen += 1
         if "trick_html" in e.data:
             tricks_seen += 1
