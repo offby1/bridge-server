@@ -196,7 +196,7 @@ def player_detail_view(
     subject: Player = get_object_or_404(Player, pk=pk)
 
     if redirect_to_hand and subject.currently_seated:
-        current_hand = subject.current_hand()
+        current_hand = subject.current_hand
         assert current_hand is not None
         return HttpResponseRedirect(reverse("app:hand-dispatch", kwargs={"pk": current_hand.pk}))
 
@@ -333,7 +333,7 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
             logger.debug(f"Nuttin' from pk={name_or_pk=}")
             return HttpResponseNotFound()
 
-    current_hand = p.current_hand()
+    current_hand = p.current_hand
 
     payload = {
         "pk": p.pk,

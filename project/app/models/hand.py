@@ -188,16 +188,12 @@ class HandManager(models.Manager):
         East = Player.objects.get(pk=e_k)
         South = Player.objects.get(pk=s_k)
         West = Player.objects.get(pk=w_k)
-        for p in (North, East):
-            for x in (p, p.partner):
-                if x.current_hand() is not None:
-                    new_hand_description = ", ".join([str(p) for p in (North, East, South, West)])
-                    new_hand_description += f" play {board} at {pnb.table_number}"
-                    msg = f"Cannot seat {new_hand_description} when {x} is still playing {x.current_hand()}"
-                    logger.info("%s; returning None", msg)
-                    return None
 
-            p.unseat_partnership(reason=f"New hand for round {pnb.zb_round_number + 1}")
+        for p in (North, East, South, West):
+            # We don't use unseat_partnership here because we'd then have to refresh from the database, and queries are
+            # expensive, Yo
+            p.abandon_my_hand(reason=f"New hand for round {pnb.zb_round_number + 1}")
+
         new_hand = self.create(
             board=board,
             North=North,
@@ -256,9 +252,10 @@ class HandManager(models.Manager):
 
         rv = super().create(*args, **kwargs)
 
-        logger.warning(
-            "I dunno, maybe I should set current_hand_and_direction_cache to %r on %s", rv, p
-        )
+        for direction in attribute_names:
+            p = kwargs[direction]
+            p.current_hand = rv
+            p.save()
 
         logger.debug(
             "New hand: %s, played by %s",
@@ -504,8 +501,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
 
-    def add_call_from_player(self, *, player: libPlayer, call: libCall) -> None:
-        assert_type(player, libPlayer)
+    def add_call(self, *, call: libCall) -> None:
         assert_type(call, libCall)
 
         if self.is_abandoned:
@@ -514,13 +510,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
-        auction = self.auction
         try:
-            auction.raise_if_illegal_call(player=player, call=call)
-        except AuctionException as e:
+            self.call_set.create(serialized=call.serialize())
+        except (Error, AuctionException) as e:
             raise AuctionError(str(e)) from e
-
-        self.call_set.create(serialized=call.serialize())
 
         now = time.time()
 
@@ -589,7 +582,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         if player_to_update is None:
             return
 
-        if getattr(self, "current_hand_and_direction_cache", None) is None:
+        if player_to_update.current_hand is None:
             return
 
         assert self.dummy is not None
@@ -1011,7 +1004,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         super().save(**kwargs)
         for attribute_name in attribute_names:
             p: Player = getattr(self, attribute_name)
-            p.current_hand_and_direction_cache = (self, attribute_name)
+            p.current_hand = self  # type: ignore [assignment]
+            p.save()
 
     def __str__(self) -> str:
         return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
@@ -1046,11 +1040,11 @@ class CallManager(models.Manager):
 
         x: HandTranscript = h.get_xscript()
 
+        c = libBid.deserialize(kwargs["serialized"])
+        x.add_call(c)
+
         rv = super().create(*args, **kwargs)
 
-        c = libBid.deserialize(kwargs["serialized"])
-
-        x.add_call(c)
         h._cache_set(x)
 
         if x.auction.status is Auction.PassedOut:
@@ -1094,11 +1088,12 @@ class PlayManager(models.Manager):
 
         x: HandTranscript = h.get_xscript()
 
-        rv = super().create(*args, **kwargs)
-
         card = libCard.deserialize(kwargs["serialized"])
 
         x.add_card(card)
+
+        rv = super().create(*args, **kwargs)
+
         h._cache_set(x)
 
         if x.num_plays == 52:

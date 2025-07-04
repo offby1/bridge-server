@@ -3,7 +3,7 @@ from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
 
-from .models import Hand, Player
+from .models import Hand
 from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
@@ -165,6 +165,4 @@ def test_rejects_calls_after_auction_is_settled(usual_setup: Hand) -> None:
 
     # Not legal because the auction is over
     with pytest.raises(Exception):
-        player = Player.objects.first()
-        assert player is not None
-        h.add_call_from_player(player=player, call=Pass)
+        h.add_call(call=Pass)

@@ -78,7 +78,6 @@ def logged_in_as_player_required(*, redirect=True):
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
                 return Forbid("Go away, anonymous scoundrel")
 
-            player._enrich_hand_and_direction(why=f"{view_function=} {args=} {kwargs=}")
             return view_function(request, *args, player=player, **kwargs)
 
         if redirect:

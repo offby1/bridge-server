@@ -160,7 +160,9 @@ class Player(TimeStampedModel):
 
     hands_by_board_cache: dict[Board, Hand]
 
-    current_hand_and_direction_cache: tuple[Hand, str] | None
+    # This is redundant -- it could be computed from the transcript -- but keeping it here saves time by in effect
+    # caching it.
+    current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
@@ -207,10 +209,14 @@ class Player(TimeStampedModel):
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
         with transaction.atomic():
-            if (h := self.current_hand()) is not None:
+            if (h := self.current_hand) is not None:
                 h.abandoned_because = reason or f"{self.name} left"
-                self.current_hand_and_direction_cache = None
                 h.save()
+
+                self.current_hand = None
+                self.save()
+
+                logger.debug("%s", f"{self} abandoned hand {h} because {h.abandoned_because}")
 
         self._control_bot()
 
@@ -445,43 +451,14 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @property
     def currently_seated(self) -> bool:
-        return self.current_hand_and_direction() is not None
-
-    def _enrich_hand_and_direction(self, why: str = "") -> None:
-        from app.models.hand import enrich
-
-        if hasattr(self, "current_hand_and_direction_cache"):
-            logger.debug(
-                "%s (%s) already has %s; no need to actually enrich",
-                self,
-                id(self),
-                "current_hand_and_direction_cache",
-            )
-            return
-
-        logger.warning("Enriching %s (%s) because %s", self, id(self), why)
-
-        for h in enrich(self.hands_played).filter(
-            is_complete=False, abandoned_because__isnull=True
-        ):
-            for direction_name in h.direction_names:
-                if getattr(h, direction_name) == self:
-                    logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
-                    setattr(self, "current_hand_and_direction_cache", (h, direction_name))
-                    return
-
-        logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
-        setattr(self, "current_hand_and_direction_cache", None)
-        return
+        return self.current_hand is not None
 
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         """The string is a capitalized word, like "East"."""
-        if hasattr(self, "current_hand_and_direction_cache"):
-            logger.debug("Fetched current_hand_and_direction_cache from instance %r", id(self))
-            return self.current_hand_and_direction_cache
+        if self.current_hand is not None:
+            return self.current_hand, self.current_direction()
 
-        self._enrich_hand_and_direction(why="current_hand_and_direction found no cache")
-        return self.current_hand_and_direction_cache
+        return None
 
     def direction_at_hand(self, h: Hand) -> str:
         for direction_name in h.direction_names:
@@ -490,18 +467,18 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         assert False, f"some idiot called me for {h} when {self.name} never played it"
 
-    def current_hand(self) -> Hand | None:
-        ch = self.current_hand_and_direction()
-        if ch is None:
-            return None
-        return ch[0]
-
     def current_direction(self) -> str | None:
         """A whole, capitalized, word like 'East'"""
-        ch = self.current_hand_and_direction()
-        if ch is None:
+        if self.current_hand is None:
             return None
-        return ch[1]
+
+        for d in attribute_names:
+            if getattr(self.current_hand, d) == self:
+                return d
+
+        raise Exception(
+            "%s", f"Oy! {self} has {self.current_hand=} but none of {attribute_names} are us?"
+        )
 
     def dealt_cards(self) -> list[bridge.card.Card]:
         ch = self.current_hand_and_direction()

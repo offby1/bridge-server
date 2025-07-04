@@ -45,6 +45,7 @@
     "fields": {
       "allow_bot_to_play_for_me": true,
       "created": "2000-01-01T00:00:00Z",
+      "current_hand": 1,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
       "synthetic": true,
@@ -57,6 +58,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "created": "2000-01-01T00:00:00Z",
+      "current_hand": 1,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 4,
       "synthetic": false,
@@ -69,6 +71,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "created": "2000-01-01T00:00:00Z",
+      "current_hand": 1,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 1,
       "synthetic": false,
@@ -81,6 +84,7 @@
     "fields": {
       "allow_bot_to_play_for_me": false,
       "created": "2000-01-01T00:00:00Z",
+      "current_hand": 1,
       "modified": "2000-01-01T00:00:00Z",
       "partner": 2,
       "synthetic": false,

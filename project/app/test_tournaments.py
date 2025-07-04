@@ -138,7 +138,7 @@ def test_play_completion_deadline(usual_setup) -> None:
     PlayCompletionDeadline = SignupDeadlineDay + datetime.timedelta(seconds=3600 * 24)
     DayAfter = PlayCompletionDeadline + datetime.timedelta(seconds=3600 * 24)
 
-    hand = north.current_hand()
+    hand = north.current_hand
     assert hand is not None
     the_tournament = hand.tournament
 
@@ -147,13 +147,12 @@ def test_play_completion_deadline(usual_setup) -> None:
         the_tournament.play_completion_deadline = PlayCompletionDeadline
         the_tournament.save()
 
-        hand.add_call_from_player(player=north.libraryThing(), call=Call.deserialize("Pass"))
+        hand.add_call(call=Call.deserialize("Pass"))
 
-    east = Player.objects.get_by_name("Clint Eastwood")
     with freeze_time(DayAfter):
         check_for_expirations(sender="Some unit test")
         with pytest.raises(PlayerException):
-            hand.add_call_from_player(player=east.libraryThing(), call=Call.deserialize("Pass"))
+            hand.add_call(call=Call.deserialize("Pass"))
 
         # All players have been ejected
         assert Player.objects.currently_seated().count() == 0
@@ -171,7 +170,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
     DayAfter = Tomorrow + datetime.timedelta(seconds=3600 * 24)
 
-    current_hand = north.current_hand()
+    current_hand = north.current_hand
     the_tournament = current_hand.tournament
 
     the_tournament.signup_deadline = Today

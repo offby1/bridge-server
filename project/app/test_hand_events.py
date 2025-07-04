@@ -121,7 +121,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
 
     def add_play(card_string: str) -> None:
         player = h.player_who_may_play
-        player._enrich_hand_and_direction(why="unit test doin its thang")
+
         h.add_play_from_model_player(
             player=player,
             card=bridge.card.Card.deserialize(card_string),

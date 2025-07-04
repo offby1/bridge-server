@@ -43,25 +43,17 @@ def call_post_view(
     assert player is not None
     assert_type(player, app.models.Player)
 
-    try:
-        who_clicked = player.libraryThing()
-    except app.models.PlayerException as e:
-        return Forbid(e)
-
     if hand.board.tournament.play_completion_deadline_has_passed():
         return Forbid(f"{hand.board.tournament}'s play completion deadline has passed, sorry")
 
     if hand.player_who_may_call is None:
         return Forbid(f"Nobody is allowed to call now at hand {hand.pk}")
 
-    from_whom = hand.player_who_may_call.libraryThing() if hand.open_access else who_clicked
-
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
-        hand.add_call_from_player(
-            player=from_whom,
+        hand.add_call(
             call=libCall,
         )
     except (
@@ -80,7 +72,7 @@ def play_post_view(
 ) -> HttpResponse:
     hand = None
     if player is not None:
-        hand = player.current_hand()
+        hand = player.current_hand
 
     if hand is not None and str(hand.pk) != str(hand_pk):
         return Forbid(f"Get your shit together -- {hand.pk=} != {hand_pk=}")
@@ -148,7 +140,7 @@ def sekrit_test_forms_view(
             )
 
     # Find some hand in progress.
-    hand = player.current_hand()
+    hand = player.current_hand
     if hand is None:
         return HttpResponse(
             format_html(

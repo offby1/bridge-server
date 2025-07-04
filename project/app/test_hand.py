@@ -61,7 +61,7 @@ def test_rejects_illegal_calls(usual_setup: Hand) -> None:
         table = h.auction.table
         return table.get_lho(current_caller)
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
+    h.add_call(call=libBid.deserialize("Pass"))
 
     caller = next_caller(caller)
     assert caller is not None
@@ -69,15 +69,15 @@ def test_rejects_illegal_calls(usual_setup: Hand) -> None:
     one_notrump = libBid.deserialize("1N")
     assert one_notrump is not None
 
-    h.add_call_from_player(player=caller, call=one_notrump)
+    h.add_call(call=one_notrump)
 
     caller = next_caller(caller)
     assert caller is not None
 
     with pytest.raises(AuctionError):
-        h.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
+        h.add_call(call=libBid.deserialize("1N"))
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
+    h.add_call(call=libBid.deserialize("Double"))
 
     calls = h.calls.all()
 
@@ -176,8 +176,7 @@ def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
     allowed_caller = h.auction.allowed_caller()
     assert allowed_caller is not None
 
-    h.add_call_from_player(
-        player=allowed_caller,
+    h.add_call(
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
 
@@ -205,12 +204,10 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
         assert rv is not None
         return rv
 
-    h.add_call_from_player(
-        player=ac(),
+    h.add_call(
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
-    h.add_call_from_player(
-        player=ac(),
+    h.add_call(
         call=libPass,
     )
 
