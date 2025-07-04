@@ -381,9 +381,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
         send_timestamped_event(channel=self.event_table_html_channel, data=data)
 
-    def send_HTML_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
-        p = Player.objects.get(pk=player_pk)
-        send_timestamped_event(channel=p.event_HTML_hand_channel, data=data)
+    def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
+        send_timestamped_event(channel=player.event_HTML_hand_channel, data=data)
 
     def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
         for p in self.players():
@@ -598,6 +597,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         method: Callable[..., None]
 
+        kwargs: dict[str, Any]
+
         if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
             method = self.send_HTML_to_table
             kwargs = dict(
@@ -613,7 +614,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                     "current_hand_direction": player_to_update.libraryThing().seat.name,
                     "current_hand_html": self._get_current_hand_html(p=player_to_update),
                 },
-                player_pk=player_to_update.pk,
+                player=player_to_update,
             )
 
         method(**kwargs)  # type: ignore [arg-type]
