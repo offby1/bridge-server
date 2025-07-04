@@ -63,8 +63,6 @@ def logged_in_as_player_required(*, redirect=True):
             request: AuthedHttpRequest, *args, **kwargs
         ) -> HttpResponseRedirect | HttpResponseForbidden:
             user = request.user
-            # TODO -- "enrich" the player by doing a buncha "select_relateds", or maybe "prefetch_related"s, to get their current hand;
-            # then pass that enriched player to the view function.
             player = getattr(user, "player", None)
             if player is None:
                 msg = f"You ({user.username}) ain't no player, so you can't see whatever \"{view_function.__name__}\" would have shown you."
@@ -80,6 +78,7 @@ def logged_in_as_player_required(*, redirect=True):
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
                 return Forbid("Go away, anonymous scoundrel")
 
+            player._enrich_hand_and_direction(why=f"{view_function=} {args=} {kwargs=}")
             return view_function(request, *args, player=player, **kwargs)
 
         if redirect:

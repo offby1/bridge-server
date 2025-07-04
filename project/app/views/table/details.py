@@ -123,31 +123,29 @@ def play_post_view(
 def sekrit_test_forms_view(
     request: AuthedHttpRequest, player: app.models.Player | None = None
 ) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
-    user = getattr(request, "user", None)
-    if user is None:
-        return HttpResponse(
-            """
-    <body>
-    Happy now, anonymous user?
-    </body>
-"""
-        )
-
-    player = getattr(user, "player", None)
     if player is None:
-        return HttpResponse(
-            format_html(
+        user = getattr(request, "user", None)
+        if user is None:
+            return HttpResponse(
                 """
-    <body>
-    No player -- happy now, user named ({})?
-    </body>
-    """,
-                user.username,
+        <body>
+        Happy now, anonymous user?
+        </body>
+    """
             )
-        )
+
+        player = getattr(user, "player", None)
+        if player is None:
+            return HttpResponse(
+                format_html(
+                    """
+        <body>
+        No player -- happy now, user named ({})?
+        </body>
+        """,
+                    user.username,
+                )
+            )
 
     # Find some hand in progress.
     hand = player.current_hand()

@@ -447,18 +447,18 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def currently_seated(self) -> bool:
         return self.current_hand_and_direction() is not None
 
-    def current_hand_and_direction(self) -> tuple[Hand, str] | None:
-        """The string is a capitalized word, like "East"."""
-        h: Hand
-        direction_name: str
-
+    def _enrich_hand_and_direction(self, why: str = "") -> None:
         from app.models.hand import enrich
 
         if hasattr(self, "current_hand_and_direction_cache"):
-            logger.debug("Fetched current_hand_and_direction_cache from instance %r", id(self))
-            return self.current_hand_and_direction_cache
+            logger.debug(
+                "%s already has %s; no need to actually enrich",
+                self,
+                "current_hand_and_direction_cache",
+            )
+            return
 
-        logger.warning("Hmph, no current_hand_and_direction_cache on instance %r", id(self))
+        logger.warning("Enriching %s because %s", self, why)
 
         for h in enrich(self.hands_played).filter(
             is_complete=False, abandoned_because__isnull=True
@@ -467,11 +467,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
                 if getattr(h, direction_name) == self:
                     logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
                     setattr(self, "current_hand_and_direction_cache", (h, direction_name))
-                    return h, direction_name
+                    return
 
         logger.debug("Set current_hand_and_direction_cache on instance %r", id(self))
         setattr(self, "current_hand_and_direction_cache", None)
-        return None
+        return
+
+    def current_hand_and_direction(self) -> tuple[Hand, str] | None:
+        """The string is a capitalized word, like "East"."""
+        if hasattr(self, "current_hand_and_direction_cache"):
+            logger.debug("Fetched current_hand_and_direction_cache from instance %r", id(self))
+            return self.current_hand_and_direction_cache
+
+        self._enrich_hand_and_direction(why="current_hand_and_direction found no cache")
+        return self.current_hand_and_direction_cache
 
     def direction_at_hand(self, h: Hand) -> str:
         for direction_name in h.direction_names:
