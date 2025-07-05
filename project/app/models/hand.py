@@ -598,7 +598,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             method = self.send_HTML_to_player
             kwargs = dict(
                 data={
-                    "current_hand_direction": player_to_update.libraryThing().seat.name,
+                    "current_hand_direction": player_to_update.current_direction(current_hand=self),
                     "current_hand_html": self._get_current_hand_html(p=player_to_update),
                 },
                 player=player_to_update,

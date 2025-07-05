@@ -458,7 +458,7 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         """The string is a capitalized word, like "East"."""
         if self.current_hand is not None:
-            return self.current_hand, self.current_direction()
+            return self.current_hand, self.current_direction(current_hand=self.current_hand)
 
         return None
 
@@ -469,17 +469,20 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         assert False, f"some idiot called me for {h} when {self.name} never played it"
 
-    def current_direction(self) -> str | None:
+    def current_direction(self, current_hand: Hand | None = None) -> str | None:
         """A whole, capitalized, word like 'East'"""
-        if self.current_hand is None:
+        if current_hand is None:
+            current_hand = self.current_hand
+
+        if current_hand is None:
             return None
 
         for d in attribute_names:
-            if getattr(self.current_hand, d) == self:
+            if getattr(current_hand, d) == self:
                 return d
 
         raise Exception(
-            "%s", f"Oy! {self} has {self.current_hand=} but none of {attribute_names} are us?"
+            "%s", f"Oy! {self} has {current_hand=} but none of {attribute_names} are us?"
         )
 
     def dealt_cards(self) -> list[bridge.card.Card]:
