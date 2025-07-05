@@ -13,8 +13,8 @@ import app.views.table.details
 from app.models import (
     Board,
     Hand,
+    HandError,
     Player,
-    PlayerException,
     Tournament,
     TournamentSignup,
 )
@@ -151,7 +151,7 @@ def test_play_completion_deadline(usual_setup) -> None:
 
     with freeze_time(DayAfter):
         check_for_expirations(sender="Some unit test")
-        with pytest.raises(PlayerException):
+        with pytest.raises(HandError):
             hand.add_call(call=Call.deserialize("Pass"))
 
         # All players have been ejected
