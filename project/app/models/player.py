@@ -116,8 +116,7 @@ class PlayerManager(models.Manager):
         return self.get(user__username=name)
 
     def currently_seated(self) -> models.QuerySet:
-        seated_pks = set([p.pk for p in self.all() if p.currently_seated])
-        return self.filter(pk__in=seated_pks)
+        return self.filter(current_hand__isnull=False)
 
 
 class PlayerException(Exception):
@@ -159,6 +158,10 @@ class Player(TimeStampedModel):
     )
 
     hands_by_board_cache: dict[Board, Hand]
+
+    # This is redundant -- it could be computed from the transcript -- but keeping it here saves time by in effect
+    # caching it.
+    current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
@@ -205,9 +208,17 @@ class Player(TimeStampedModel):
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
         with transaction.atomic():
-            if (h := self.current_hand()) is not None:
+            if (h := self.current_hand) is not None:
                 h.abandoned_because = reason or f"{self.name} left"
                 h.save()
+
+                self.current_hand = None
+                self.save()
+
+                logger.debug(
+                    "%s",
+                    f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
+                )
 
         self._control_bot()
 
@@ -263,7 +274,8 @@ class Player(TimeStampedModel):
                     pass
                 else:
                     logger.warning(
-                        "%s", f"{proc.returncode=} {proc.stderr!r} -- {service_directory=}"
+                        "%s",
+                        f"{proc.returncode=} {proc.stderr!r} -- {service_directory=} {flags=} {self.pk=}",
                     )
 
         run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
@@ -441,19 +453,12 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
     @property
     def currently_seated(self) -> bool:
-        return self.current_hand_and_direction() is not None
+        return self.current_hand is not None
 
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         """The string is a capitalized word, like "East"."""
-        h: Hand
-        direction_name: str
-
-        for h in self.hands_played.select_related(*attribute_names).filter(
-            is_complete=False, abandoned_because__isnull=True
-        ):
-            for direction_name in h.direction_names:
-                if getattr(h, direction_name) == self:
-                    return h, direction_name
+        if self.current_hand is not None:
+            return self.current_hand, self.current_direction(current_hand=self.current_hand)
 
         return None
 
@@ -464,18 +469,21 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
 
         assert False, f"some idiot called me for {h} when {self.name} never played it"
 
-    def current_hand(self) -> Hand | None:
-        ch = self.current_hand_and_direction()
-        if ch is None:
-            return None
-        return ch[0]
-
-    def current_direction(self) -> str | None:
+    def current_direction(self, current_hand: Hand | None = None) -> str | None:
         """A whole, capitalized, word like 'East'"""
-        ch = self.current_hand_and_direction()
-        if ch is None:
+        if current_hand is None:
+            current_hand = self.current_hand
+
+        if current_hand is None:
             return None
-        return ch[1]
+
+        for d in attribute_names:
+            if getattr(current_hand, d) == self:
+                return d
+
+        raise Exception(
+            "%s", f"Oy! {self} has {current_hand=} but none of {attribute_names} are us?"
+        )
 
     def dealt_cards(self) -> list[bridge.card.Card]:
         ch = self.current_hand_and_direction()

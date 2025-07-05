@@ -3,7 +3,7 @@ from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
 
-from .models import Hand, Player
+from .models import Hand
 from .testutils import set_auction_to
 from .views.hand import _display_and_control
 
@@ -59,8 +59,8 @@ def test_hand_visibility_one(usual_setup: Hand) -> None:
     )
 
     # Make the opening lead
-    h1.add_play_from_player(
-        player=h1.players_by_direction_letter[Seat.EAST.value].libraryThing(),
+    h1.add_play_from_model_player(
+        player=h1.players_by_direction_letter[Seat.EAST.value],
         card=Card.deserialize("D2"),
     )
 
@@ -142,8 +142,8 @@ def test_hand_controlability(usual_setup: Hand, settings) -> None:
     )
 
     # Make the opening lead
-    h.add_play_from_player(
-        player=h.players_by_direction_letter[Seat.EAST.value].libraryThing(),
+    h.add_play_from_model_player(
+        player=h.players_by_direction_letter[Seat.EAST.value],
         card=Card.deserialize("D2"),
     )
 
@@ -165,6 +165,4 @@ def test_rejects_calls_after_auction_is_settled(usual_setup: Hand) -> None:
 
     # Not legal because the auction is over
     with pytest.raises(Exception):
-        player = Player.objects.first()
-        assert player is not None
-        h.add_call_from_player(player=player, call=Pass)
+        h.add_call(call=Pass)

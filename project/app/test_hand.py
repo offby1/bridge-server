@@ -36,7 +36,7 @@ def test_keeps_accurate_transcript(usual_setup: Hand) -> None:
 
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h.add_play_from_model_player(player=first_player, card=first_card)
     h = Hand.objects.get(pk=h.pk)
     assert len(h.get_xscript().tricks) == 1
     first_trick = h.get_xscript().tricks[0]
@@ -61,7 +61,7 @@ def test_rejects_illegal_calls(usual_setup: Hand) -> None:
         table = h.auction.table
         return table.get_lho(current_caller)
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Pass"))
+    h.add_call(call=libBid.deserialize("Pass"))
 
     caller = next_caller(caller)
     assert caller is not None
@@ -69,15 +69,15 @@ def test_rejects_illegal_calls(usual_setup: Hand) -> None:
     one_notrump = libBid.deserialize("1N")
     assert one_notrump is not None
 
-    h.add_call_from_player(player=caller, call=one_notrump)
+    h.add_call(call=one_notrump)
 
     caller = next_caller(caller)
     assert caller is not None
 
     with pytest.raises(AuctionError):
-        h.add_call_from_player(player=caller, call=libBid.deserialize("1N"))
+        h.add_call(call=libBid.deserialize("1N"))
 
-    h.add_call_from_player(player=caller, call=libBid.deserialize("Double"))
+    h.add_call(call=libBid.deserialize("Double"))
 
     calls = h.calls.all()
 
@@ -98,7 +98,7 @@ def test_cards_by_player(usual_setup: Hand) -> None:
     assert len(before) == 13  # just checkin' :-)
 
     diamond_two = Card(suit=libSuit.DIAMONDS, rank=Rank(2))
-    h.add_play_from_player(player=east.libraryThing(), card=diamond_two)
+    h.add_play_from_model_player(player=east, card=diamond_two)
     h = Hand.objects.get(pk=h.pk)
 
     after = set(h.current_cards_by_seat()[libSeat.EAST])
@@ -176,8 +176,7 @@ def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
     allowed_caller = h.auction.allowed_caller()
     assert allowed_caller is not None
 
-    h.add_call_from_player(
-        player=allowed_caller,
+    h.add_call(
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
 
@@ -205,12 +204,10 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
         assert rv is not None
         return rv
 
-    h.add_call_from_player(
-        player=ac(),
+    h.add_call(
         call=libBid(level=1, denomination=libSuit.DIAMONDS),
     )
-    h.add_call_from_player(
-        player=ac(),
+    h.add_call(
         call=libPass,
     )
 
@@ -260,7 +257,7 @@ def test_current_trick(usual_setup: Hand) -> None:
     second_players_cards = second_player.dealt_cards()
 
     first_card = first_players_cards[0]
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
+    h.add_play_from_model_player(player=first_player, card=first_card)
 
     assert h.current_trick is not None
     assert len(h.current_trick) == 1
@@ -268,7 +265,7 @@ def test_current_trick(usual_setup: Hand) -> None:
     assert tt.card == first_card
 
     second_card = second_players_cards[0]
-    h.add_play_from_player(player=second_player.libraryThing(), card=second_card)
+    h.add_play_from_model_player(player=second_player, card=second_card)
 
     assert len(h.current_trick) == 2
     tt = h.current_trick[-1]

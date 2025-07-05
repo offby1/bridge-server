@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
@@ -7,6 +8,9 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from app.models import Message, Player
 
 from .misc import logged_in_as_player_required
+
+
+logger = logging.getLogger(__name__)
 
 
 def lobby(request):

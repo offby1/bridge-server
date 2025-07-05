@@ -59,7 +59,7 @@ def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetim
 
 
 def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
-    current_direction = player.current_direction()
+    current_direction = player.current_direction(current_hand=hand)
     if current_direction is None:
         return None
 
@@ -72,7 +72,7 @@ def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> di
     return {
         "active_seat": hand.active_seat_name,
         "cards": card_html_by_direction,
-        "id": player.current_direction(),
+        "id": current_direction,
     }
 
 
@@ -120,7 +120,7 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
 
         buttons = bidding_box_buttons(
             auction=hand.auction,
-            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
+            call_post_endpoint=reverse("app:call-post"),
             disabled_because_out_of_turn=disabled,
         )
 
@@ -156,7 +156,7 @@ def _display_and_control(
 
     current_direction = None
     if as_viewed_by is not None:
-        current_direction = as_viewed_by.current_direction()
+        current_direction = as_viewed_by.current_direction(current_hand=hand)
     if current_direction is not None:
         if current_direction == seat.name:
             display_cards |= wat >= board.PlayerVisibility.own_hand
@@ -201,7 +201,7 @@ def _get_card_html(
         class="btn btn-primary"
         name="card" value="{c.serialize()}"
         style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
-        hx-post="{reverse("app:play-post", kwargs={"hand_pk": hand.pk})}"
+        hx-post="{reverse("app:play-post")}"
         hx-swap="none"
         >{c}</button>"""
 

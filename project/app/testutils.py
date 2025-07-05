@@ -23,19 +23,19 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
     caller = hand.auction.allowed_caller()
     assert caller is not None
 
-    hand.add_call_from_player(player=caller, call=bid)
+    hand.add_call(call=bid)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 1
     caller = next_caller(caller)
 
-    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    hand.add_call(call=bridge.contract.Pass)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 2
     caller = next_caller(caller)
 
-    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    hand.add_call(call=bridge.contract.Pass)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 3
     caller = next_caller(caller)
 
-    hand.add_call_from_player(player=caller, call=bridge.contract.Pass)
+    hand.add_call(call=bridge.contract.Pass)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 4
     assert hand.auction.found_contract
 
@@ -48,12 +48,11 @@ def play_out_hand(h: app.models.Hand) -> None:
 
     while (p := h.player_who_may_call) is not None:
         call = h.get_xscript().auction.legal_calls()[0]
-        h.add_call_from_player(player=p.libraryThing(), call=call)
+        h.add_call(call=call)
 
     while (p := h.player_who_may_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
-        h.add_play_from_player(player=p.libraryThing(), card=play.card)
-        h.get_xscript().add_card(play.card)
+        h.add_play_from_model_player(player=p, card=play.card)
 
     if h.is_complete:
         logger.info("%s played %s to completion", [p.name for p in h.players()], h)

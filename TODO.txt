@@ -201,6 +201,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Performance, as usual:
+
+  I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.
+
 * app:hand-list should have a way to filter the rows by tournament number
 
 * Performance, as usual

@@ -188,16 +188,7 @@ class HandManager(models.Manager):
         East = Player.objects.get(pk=e_k)
         South = Player.objects.get(pk=s_k)
         West = Player.objects.get(pk=w_k)
-        for p in (North, East):
-            for x in (p, p.partner):
-                if x.current_hand() is not None:
-                    new_hand_description = ", ".join([str(p) for p in (North, East, South, West)])
-                    new_hand_description += f" play {board} at {pnb.table_number}"
-                    msg = f"Cannot seat {new_hand_description} when {x} is still playing {x.current_hand()}"
-                    logger.info("%s; returning None", msg)
-                    return None
 
-            p.unseat_partnership(reason=f"New hand for round {pnb.zb_round_number + 1}")
         new_hand = self.create(
             board=board,
             North=North,
@@ -242,8 +233,8 @@ class HandManager(models.Manager):
 
         p: Player
         for p in players:
-            if (ch := p.current_hand_and_direction()) is not None:
-                msg = f"Cannot seat {p.name} because they are already playing {ch[1]} in {ch[0]}"
+            if p.current_hand is not None and not p.current_hand.is_complete:
+                msg = f"Cannot seat {p.name} because they are currently playing {p.current_hand}"
                 raise HandError(msg)
 
             # TODO -- figure out why this triggers! I expected this to trigger only if our caller was entirely on drugs,
@@ -255,6 +246,11 @@ class HandManager(models.Manager):
                 raise HandError(msg)
 
         rv = super().create(*args, **kwargs)
+
+        for direction in attribute_names:
+            p = kwargs[direction]
+            p.current_hand = rv
+            p.save()
 
         logger.debug(
             "New hand: %s, played by %s",
@@ -377,9 +373,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
         send_timestamped_event(channel=self.event_table_html_channel, data=data)
 
-    def send_HTML_to_player(self, *, player_pk: PK, data: dict[str, Any]) -> None:
-        p = Player.objects.get(pk=player_pk)
-        send_timestamped_event(channel=p.event_HTML_hand_channel, data=data)
+    def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
+        send_timestamped_event(channel=player.event_HTML_hand_channel, data=data)
 
     def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
         for p in self.players():
@@ -501,8 +496,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
 
-    def add_call_from_player(self, *, player: libPlayer, call: libCall) -> None:
-        assert_type(player, libPlayer)
+    def add_call(self, *, call: libCall) -> None:
         assert_type(call, libCall)
 
         if self.is_abandoned:
@@ -511,13 +505,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
-        auction = self.auction
         try:
-            auction.raise_if_illegal_call(player=player, call=call)
-        except AuctionException as e:
+            self.call_set.create(serialized=call.serialize())
+        except (Error, AuctionException) as e:
             raise AuctionError(str(e)) from e
-
-        self.call_set.create(serialized=call.serialize())
 
         now = time.time()
 
@@ -582,17 +573,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _hand_HTML_for_player(hand=self, player=p)
 
-    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player | None) -> None:
-        if player_to_update is None:
-            return
-
-        if player_to_update.current_direction() is None:
-            return
-
+    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
         assert self.dummy is not None
         dummy_direction_letter = self.dummy.seat.name[0]
 
         method: Callable[..., None]
+
+        kwargs: dict[str, Any]
 
         if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
             method = self.send_HTML_to_table
@@ -606,16 +593,16 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             method = self.send_HTML_to_player
             kwargs = dict(
                 data={
-                    "current_hand_direction": player_to_update.libraryThing().seat.name,
+                    "current_hand_direction": player_to_update.current_direction(current_hand=self),
                     "current_hand_html": self._get_current_hand_html(p=player_to_update),
                 },
-                player_pk=player_to_update.pk,
+                player=player_to_update,
             )
 
         method(**kwargs)  # type: ignore [arg-type]
 
-    def add_play_from_player(self, *, player: libPlayer, card: libCard) -> Play:
-        assert_type(player, libPlayer)
+    def add_play_from_model_player(self, *, player: Player, card: libCard) -> Play:
+        assert_type(player, Player)
         assert_type(card, libCard)
 
         if self.is_abandoned:
@@ -624,38 +611,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
-        legit_player = self.player_who_may_play
-        if legit_player is None:
-            msg = "For some crazy reason, nobody is allowed to play a card! Maybe the auction is incomplete, or the hand is over"
-            raise PlayError(msg)
-
-        # TODO -- compare primary keys, not names
-        if player.name != legit_player.name:
-            msg = f"It is not {player.name}'s turn to play, but rather {legit_player.name}'s turn"
-            raise PlayError(msg)
-
-        remaining_cards = self.players_remaining_cards(player=player).cards
-        if remaining_cards is None:
-            msg = f"Cannot play a card from {libPlayer.name} because I don't know what cards they hold"
-            raise PlayError(msg)
-
-        legal_cards = self.get_xscript().legal_cards(some_cards=remaining_cards)
-        if card not in legal_cards:
-            msg = f"{self}, {self.board}: {card} is not a legal play for {player}; only {legal_cards} are"
-            raise PlayError(msg)
-
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
             raise PlayError(str(e)) from e
 
-        just_played = legit_player
-        del legit_player
         about_to_play = self.player_who_may_play
 
-        logger.debug("%s: %s (%d) played %s", self, just_played, just_played.pk, card)
+        logger.debug("%s: %s (%d) played %s", self, player, player.pk, card)
 
-        for update_me in [just_played, about_to_play]:
+        # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why I'm doing this.
+        # Maybe it's just to indicate which of their cards are legal.
+        for update_me in [player, about_to_play]:
             if update_me is not None:
                 self.send_HTML_update_to_appropriate_channel(player_to_update=update_me)
 
@@ -750,8 +717,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def player_who_may_play(self) -> Player | None:
-        from . import Player
-
         if self.is_abandoned:
             return None
 
@@ -762,8 +727,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         if seat_who_may_play is None:
             return None
 
-        pbs = self.libPlayers_by_libSeat
-        return Player.objects.get_by_name(pbs[seat_who_may_play].name)
+        return getattr(self, seat_who_may_play.name)
 
     @property
     def active_seat_name(self) -> str:
@@ -1025,6 +989,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return (f"{auction_status}: {trick_summary}", total_score)
 
+    def save(self, *args, **kwargs) -> None:
+        super().save(**kwargs)
+        if self.abandoned_because is None:
+            for attribute_name in attribute_names:
+                p: Player = getattr(self, attribute_name)
+                p.current_hand = self  # type: ignore [assignment]
+                p.save()
+
     def __str__(self) -> str:
         return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
 
@@ -1058,11 +1030,11 @@ class CallManager(models.Manager):
 
         x: HandTranscript = h.get_xscript()
 
+        c = libBid.deserialize(kwargs["serialized"])
+        x.add_call(c)
+
         rv = super().create(*args, **kwargs)
 
-        c = libBid.deserialize(kwargs["serialized"])
-
-        x.add_call(c)
         h._cache_set(x)
 
         if x.auction.status is Auction.PassedOut:
@@ -1101,16 +1073,17 @@ admin.site.register(Call)
 
 class PlayManager(models.Manager):
     def create(self, *args, **kwargs) -> Play:
-        """Only Hand.add_play_from_player may call me; the rest of y'all should call *that*."""
+        """Only Hand.add_play_from_model_player may call me; the rest of y'all should call *that*."""
         h: Hand = kwargs["hand"]
 
         x: HandTranscript = h.get_xscript()
 
-        rv = super().create(*args, **kwargs)
-
         card = libCard.deserialize(kwargs["serialized"])
 
         x.add_card(card)
+
+        rv = super().create(*args, **kwargs)
+
         h._cache_set(x)
 
         if x.num_plays == 52:

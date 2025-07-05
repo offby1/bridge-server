@@ -222,7 +222,7 @@ def test_sending_lobby_messages(usual_setup: Hand) -> None:
     response = say_hey_from()
     match response.status_code:  # I'm honestly not sure which of these is correct :-|
         case 403:
-            assert response.content == b"Go away, anonymous scoundrel"
+            assert response.content == b"<body>Go away, anonymous scoundrel</body>"
         case 302:
             print(vars(response))
         case _:
@@ -254,7 +254,7 @@ def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
 
     response = hey_bob()
     assert response.status_code == 403  # client isn't authenticated
-    assert response.content == b"Go away, anonymous scoundrel"
+    assert response.content == b"<body>Go away, anonymous scoundrel</body>"
 
     response = hey_bob(sender_player=h.modPlayer_by_seat(libSeat.SOUTH))
     assert response.status_code == 403  # we're both at a table, so we can't talk
@@ -366,8 +366,7 @@ def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) 
 
     first_card = first_players_cards[0]
 
-    h.add_play_from_player(player=first_player.libraryThing(), card=first_card)
-
+    h.add_play_from_model_player(player=first_player, card=first_card)
     expected_cards_by_direction = {dir_.value: "__" for dir_ in libSeat}
     assert h.current_trick is not None
     for tt in h.current_trick:
