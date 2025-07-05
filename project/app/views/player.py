@@ -176,12 +176,7 @@ def _chat_disabled_explanation(*, sender, recipient) -> str | None:
 
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
-def player_detail_view(
-    request: AuthedHttpRequest, pk: PK | None = None, player: Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
     assert request.user.player is not None
     who_clicked = request.user.player  # aka "as_viewed_by"
     redirect_to_hand = False
@@ -256,12 +251,7 @@ def player_detail_view(
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def send_player_message(
-    request: AuthedHttpRequest, recipient_pk: PK, player: Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
@@ -288,12 +278,7 @@ def send_player_message(
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def bot_checkbox_view(
-    request: AuthedHttpRequest, pk: PK, player: Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     playa: Player = get_object_or_404(Player, pk=pk)
 
     try:
@@ -355,12 +340,7 @@ def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
-def player_create_synthetic_partner_view(
-    request: AuthedHttpRequest, player: Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
     assert request.user.player is not None
     next_ = request.POST["next"]
     try:
@@ -390,10 +370,7 @@ def _background_css_color(player: Player) -> str:
 
 
 @logged_in_as_player_required(redirect=False)
-def player_list_view(request: AuthedHttpRequest, player: Player | None = None) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
     has_partner = request.GET.get("has_partner")
     has_partner_filter = None
     exclude_me = request.GET.get("exclude_me")

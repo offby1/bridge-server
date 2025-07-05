@@ -431,12 +431,7 @@ def _four_hands_context_for_hand(
 
 
 @logged_in_as_player_required()
-def auction_partial_view(
-    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def auction_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
     context = _auction_context_for_hand(hand)
 
@@ -803,12 +798,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def open_access_toggle_view(
-    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
-
+def open_access_toggle_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
     if settings.DEPLOYMENT_ENVIRONMENT == "production":
         return NotFound("Geez I dunno what you're talking about")
 
