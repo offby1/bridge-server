@@ -578,13 +578,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _hand_HTML_for_player(hand=self, player=p)
 
-    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player | None) -> None:
-        if player_to_update is None:
-            return
-
-        if player_to_update.current_hand is None:
-            return
-
+    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
         assert self.dummy is not None
         dummy_direction_letter = self.dummy.seat.name[0]
 

@@ -57,7 +57,7 @@ def authenticate_from_basic_auth(request: AuthedHttpRequest) -> AbstractBaseUser
     return authenticate(request, username=u, password=p)
 
 
-def _enrich_user(user: User) -> User:
+def _enrich_user(user):
     if not user.is_authenticated:
         return user
 
