@@ -116,8 +116,7 @@ class PlayerManager(models.Manager):
         return self.get(user__username=name)
 
     def currently_seated(self) -> models.QuerySet:
-        seated_pks = set([p.pk for p in self.all() if p.currently_seated])
-        return self.filter(pk__in=seated_pks)
+        return self.filter(current_hand__isnull=False)
 
 
 class PlayerException(Exception):
@@ -216,7 +215,10 @@ class Player(TimeStampedModel):
                 self.current_hand = None
                 self.save()
 
-                logger.debug("%s", f"{self} abandoned hand {h} because {h.abandoned_because}")
+                logger.debug(
+                    "%s",
+                    f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
+                )
 
         self._control_bot()
 

@@ -486,9 +486,17 @@ class Tournament(models.Model):
                 self.hands().exists() and not self.hands().filter(is_complete=False).exists()
             )
 
+            logger.debug(
+                "%s", f"{all_hands_are_complete=}; {self.play_completion_deadline_has_passed()=}"
+            )
             if all_hands_are_complete or self.play_completion_deadline_has_passed():
                 self.completed_at = (
                     timezone.now() if all_hands_are_complete else self.play_completion_deadline
+                )
+                self.abandon_all_hands(
+                    reason=f"Play completion deadline ({self.play_completion_deadline}) has passed"
+                    if self.play_completion_deadline_has_passed()
+                    else "All hands are complete"
                 )
                 self.save()
 

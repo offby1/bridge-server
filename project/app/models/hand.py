@@ -1002,10 +1002,11 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     def save(self, *args, **kwargs) -> None:
         super().save(**kwargs)
-        for attribute_name in attribute_names:
-            p: Player = getattr(self, attribute_name)
-            p.current_hand = self  # type: ignore [assignment]
-            p.save()
+        if self.abandoned_because is None:
+            for attribute_name in attribute_names:
+                p: Player = getattr(self, attribute_name)
+                p.current_hand = self  # type: ignore [assignment]
+                p.save()
 
     def __str__(self) -> str:
         return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
