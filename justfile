@@ -115,9 +115,6 @@ version-file:
 pre-commit:
     -pre-commit install  --hook-type pre-commit --hook-type pre-push
 
-redis: orb
-    docker compose up --wait redis --detach
-
 [group('django')]
 [private]
 all-but-django-prep: pre-commit poetry-install pg-start redis

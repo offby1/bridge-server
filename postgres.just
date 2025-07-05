@@ -5,7 +5,10 @@
 # defaults to `postgres`; the password has no default).  Without a valid password, I *think* the db won't even come up.
 # `PGDATABASE`, `PGHOST`, `PGPORT` and/or `PGUSER` are all for psql and presumably other postgres clients.
 
-start: pg-start
+start: pg-start redis
+
+redis: orb
+    docker compose up --wait redis --detach
 
 [group('postgres')]
 [script('bash')]
@@ -39,7 +42,8 @@ backup: pg-start
 restore *options: drop pg-start
     docker compose exec --user postgres --no-TTY postgres psql bridge {{ options }}
 
-alias stop := pg-stop
+stop: pg-stop
+    docker compose down redis
 
 [group('postgres')]
 pg-stop: die-if-not-local-docker orb
