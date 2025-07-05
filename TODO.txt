@@ -1,6 +1,20 @@
 IN PROGRESS:
 
 STILL TODO:
+* Some kind of smoke test for views.
+
+  I'd like to automatically
+  - figure out what views are available -- i.e., introspect `app/urls.py`
+  - for each such view, hit it a number of times:
+    - not logged in
+    - logged in as non-player (like Administrator)
+    - logged in as a player with little or no permission to see the view's contents
+    - logged in as a player with full permission to see the view's contents
+
+  In each case, just check that nothing crashed.
+
+  This will probably require selenium :-(
+
 * Performance, as usual:
 
   I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.
