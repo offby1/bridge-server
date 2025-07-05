@@ -4,7 +4,7 @@ import pytest
 from django.core.cache import cache
 from django.core.management import call_command
 
-from .models import Hand, Play, Player, Tournament
+from .models import Hand, Play, Player, Tournament, TournamentSignup
 from .models.tournament import check_for_expirations
 from .testutils import play_out_round
 
@@ -54,13 +54,9 @@ def usual_setup(db: None) -> Hand:
 def nobody_seated_nobody_signed_up(db: None) -> None:
     call_command(
         "loaddata",
-        "usual_setup",
-        "--exclude",
-        "app.hand",
+        "fresh_tournament",
     )
-    for p in Player.objects.all():
-        for b in p.boards_played.all():
-            p.boards_played.remove(b)
+    TournamentSignup.objects.all().delete()
 
 
 @pytest.fixture
