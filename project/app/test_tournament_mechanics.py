@@ -132,6 +132,10 @@ def test_last_hand_to_end_in_a_round(small_tournament_during_play: Tournament) -
             if not h.is_complete:
                 play_out_hand(h)
 
+    for h in small_tournament_during_play.hands():
+        assert h.is_complete
+        assert not h.is_abandoned
+
     assert set([str(h) for h in small_tournament_during_play.hands()]) == {
         "Tournament #1, Table #1, board#1",
         "Tournament #1, Table #1, board#2",
