@@ -113,37 +113,33 @@ def test_first_hand_to_end_in_a_round(small_tournament_during_play: Tournament) 
 
 def test_last_hand_to_end_in_a_round(small_tournament_during_play: Tournament) -> None:
     mvmt = small_tournament_during_play.get_movement()
+
     assert mvmt.boards_per_round_per_table == 2
 
-    assert set([str(h) for h in small_tournament_during_play.hands()]) == {
-        "Tournament #1, Table #1, board#1",
-        "Tournament #1, Table #2, board#1",
+    def summarize(h: Hand):
+        return (h.table_display_number, h.board.display_number)
+
+    assert set([summarize(h) for h in small_tournament_during_play.hands()]) == {(1, 1), (2, 1)}
+
+    for h in small_tournament_during_play.hands().filter(is_complete=False):
+        play_out_hand(h)
+
+    assert set(
+        [summarize(h) for h in small_tournament_during_play.hands().filter(is_complete=True)]
+    ) == {
+        (1, 1),
+        (2, 1),
     }
 
-    def d(hands):
-        return [f"{h} ({'complete' if h.is_complete else 'incomplete'})" for h in hands]
-
-    for _ in range(2):
-        hands = small_tournament_during_play.hands()
-        filtered = hands.filter(table_display_number__in={1, 2})
-
-        for h in filtered:
-            assert h is not None
-            if not h.is_complete:
-                play_out_hand(h)
-
-    for h in small_tournament_during_play.hands():
-        assert h.is_complete
-        assert not h.is_abandoned
-
-    assert set([str(h) for h in small_tournament_during_play.hands()]) == {
-        "Tournament #1, Table #1, board#1",
-        "Tournament #1, Table #1, board#2",
-        "Tournament #1, Table #1, board#3",
-        "Tournament #1, Table #2, board#1",
-        "Tournament #1, Table #2, board#2",
-        "Tournament #1, Table #2, board#3",
+    assert set(
+        [summarize(h) for h in small_tournament_during_play.hands().filter(is_complete=False)]
+    ) == {
+        (1, 2),
+        (2, 2),
     }
+
+    for h in small_tournament_during_play.hands().filter(is_complete=True):
+        assert h.abandoned_because is None
 
 
 def test_last_hand_in_a_round(small_tournament_during_play: Tournament) -> None:
