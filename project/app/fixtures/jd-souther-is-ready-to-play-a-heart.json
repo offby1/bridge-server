@@ -68,7 +68,8 @@
       "user": 1,
       "partner": 3,
       "allow_bot_to_play_for_me": true,
-      "synthetic": true
+      "synthetic": true,
+      "current_hand": 1
     }
   },
   {
@@ -80,7 +81,8 @@
       "user": 2,
       "partner": 4,
       "allow_bot_to_play_for_me": true,
-      "synthetic": true
+      "synthetic": true,
+      "current_hand": 1
     }
   },
   {
@@ -92,7 +94,8 @@
       "user": 3,
       "partner": 1,
       "allow_bot_to_play_for_me": false,
-      "synthetic": false
+      "synthetic": false,
+      "current_hand": 1
     }
   },
   {
@@ -104,7 +107,8 @@
       "user": 4,
       "partner": 2,
       "allow_bot_to_play_for_me": true,
-      "synthetic": true
+      "synthetic": true,
+      "current_hand": 1
     }
   },
   {
