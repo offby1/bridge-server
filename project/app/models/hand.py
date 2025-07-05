@@ -189,11 +189,6 @@ class HandManager(models.Manager):
         South = Player.objects.get(pk=s_k)
         West = Player.objects.get(pk=w_k)
 
-        for p in (North, East, South, West):
-            # We don't use unseat_partnership here because we'd then have to refresh from the database, and queries are
-            # expensive, Yo
-            p.abandon_my_hand(reason=f"New hand for round {pnb.zb_round_number + 1}")
-
         new_hand = self.create(
             board=board,
             North=North,
@@ -238,8 +233,8 @@ class HandManager(models.Manager):
 
         p: Player
         for p in players:
-            if (ch := p.current_hand_and_direction()) is not None:
-                msg = f"Cannot seat {p.name} because they are already playing {ch[1]} in {ch[0]}"
+            if p.current_hand is not None and not p.current_hand.is_complete:
+                msg = f"Cannot seat {p.name} because they are currently playing {p.current_hand}"
                 raise HandError(msg)
 
             # TODO -- figure out why this triggers! I expected this to trigger only if our caller was entirely on drugs,
