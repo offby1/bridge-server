@@ -120,7 +120,7 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
 
         buttons = bidding_box_buttons(
             auction=hand.auction,
-            call_post_endpoint=reverse("app:call-post", args=[hand.pk]),
+            call_post_endpoint=reverse("app:call-post"),
             disabled_because_out_of_turn=disabled,
         )
 
@@ -201,7 +201,7 @@ def _get_card_html(
         class="btn btn-primary"
         name="card" value="{c.serialize()}"
         style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
-        hx-post="{reverse("app:play-post", kwargs={"hand_pk": hand.pk})}"
+        hx-post="{reverse("app:play-post")}"
         hx-swap="none"
         >{c}</button>"""
 

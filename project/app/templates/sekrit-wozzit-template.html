@@ -2,7 +2,7 @@
 {% block content %}
     Oh maybe we'll let you futz with {{ hand }}
     Player who can play is {{ hand.player_who_may_play }}; you are {{ request.user.player }}
-    <form method="post" action="{% url 'app:play-post' hand.pk %}">
+    <form method="post" action="{% url 'app:play-post' %}">
         {% csrf_token %}
         {{ form }}
         <input type="submit" value="play">

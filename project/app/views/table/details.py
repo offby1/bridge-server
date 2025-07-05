@@ -8,14 +8,11 @@ import bridge.contract
 import bridge.seat
 from django import forms
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
 import app.models
-from app.models.types import PK
-from app.models.utils import assert_type
 from app.views import Forbid
 from app.views.misc import (
     AuthedHttpRequest,
@@ -31,23 +28,20 @@ def _auction_channel_for_table(table):
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def call_post_view(
-    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
-) -> HttpResponse:
-    if player is not None:
-        logger.warning("Got 'player' argument that I don't yet know how to deal with")
+def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
+    if request.user.player is None:
+        msg = f"You {request.user.username} are not a player"
+        return Forbid(msg)
 
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
+    hand = request.user.player.current_hand
 
-    player = request.user.player
-    assert player is not None
-    assert_type(player, app.models.Player)
+    if hand is None:
+        msg = f"{request.user.player.name} is not currently seated"
+        return Forbid(msg)
 
+    # TODO -- shouldn't this logic be in the model?
     if hand.board.tournament.play_completion_deadline_has_passed():
         return Forbid(f"{hand.board.tournament}'s play completion deadline has passed, sorry")
-
-    if hand.player_who_may_call is None:
-        return Forbid(f"Nobody is allowed to call now at hand {hand.pk}")
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
@@ -67,38 +61,31 @@ def call_post_view(
 
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
-def play_post_view(
-    request: AuthedHttpRequest, hand_pk: PK, player: app.models.Player | None = None
-) -> HttpResponse:
-    hand = None
-    if player is not None:
-        hand = player.current_hand
+def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
+    if request.user.player is None:
+        msg = f"You {request.user.username} are not a player"
+        return Forbid(msg)
 
-    if hand is not None and str(hand.pk) != str(hand_pk):
-        return Forbid(f"Get your shit together -- {hand.pk=} != {hand_pk=}")
+    player = request.user.player
+
+    hand = request.user.player.current_hand
 
     if hand is None:
-        logger.warning("Doing slow fetch; we really shudda had our caller do this for us")
-        hand = app.models.Hand.objects.get_or_404(pk=hand_pk)
-
-    who_clicked = request.user.player
-    assert who_clicked is not None
-    assert_type(who_clicked, app.models.Player)
+        msg = f"{request.user.player.name} is not currently seated"
+        return Forbid(msg)
 
     if hand.player_who_may_play is None:
         return Forbid("Hey! Ain't nobody allowed to play now")
-
-    assert who_clicked is not None
 
     if (
         hand.dummy is not None
         and hand.direction_letters_by_player[hand.player_who_may_play] == hand.dummy.seat.value
         and hand.declarer is not None
-        and hand.direction_letters_by_player[who_clicked] == hand.declarer.seat.value
+        and hand.direction_letters_by_player[player] == hand.declarer.seat.value
     ):
         pass
-    elif not (hand.open_access or who_clicked == hand.player_who_may_play):
-        msg = f"Hand {hand.pk} says: Hey! {who_clicked} can't play now; only {hand.player_who_may_play} can; {hand.open_access=}"
+    elif not (hand.open_access or player == hand.player_who_may_play):
+        msg = f"Hand {hand.pk} says: Hey! {player} can't play now; only {hand.player_who_may_play} can; {hand.open_access=}"
         logger.debug("%s", msg)
         return Forbid(msg)
 

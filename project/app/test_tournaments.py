@@ -181,7 +181,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         request = rf.post("/", data={"call": "Pass"})
         request.user = north.user
 
-        response = app.views.table.details.call_post_view(request, current_hand.pk)
+        response = app.views.table.details.call_post_view(request)
         assert response.status_code == HttpResponseForbidden.status_code
         assert b"deadline" in response.content
         assert b"has passed" in response.content

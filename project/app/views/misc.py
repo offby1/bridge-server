@@ -95,7 +95,7 @@ def logged_in_as_player_required(*, redirect=True):
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
                 return Forbid("Go away, anonymous scoundrel")
 
-            return view_function(request, *args, player=player, **kwargs)
+            return view_function(request, *args, **kwargs)
 
         if redirect:
             return login_required(non_players_piss_off)

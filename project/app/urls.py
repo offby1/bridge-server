@@ -29,7 +29,7 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("board/", board_list_view, name="board-list"),
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
-    path("call/<hand_pk>/", table.details.call_post_view, name="call-post"),
+    path("call/", table.details.call_post_view, name="call-post"),
     path("hand/", HandListView.as_view(), name="hand-list"),
     path(
         "hand/<int:tournament_pk>/<int:table_display_number>/<str:board_group>/",
@@ -46,7 +46,7 @@ urlpatterns = [
     path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),
-    path("play/<hand_pk>/", table.details.play_post_view, name="play-post"),
+    path("play/", table.details.play_post_view, name="play-post"),
     path("table/", table.details.sekrit_test_forms_view, name="sekrit-test-forms"),
     path("player/", player.player_detail_view, name="player"),
     path(
