@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING
 from django.contrib import messages as django_web_messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
 
 import app.models
+import app.models.common
 import app.models.utils
 from app.views import Forbid
 
@@ -55,6 +57,20 @@ def authenticate_from_basic_auth(request: AuthedHttpRequest) -> AbstractBaseUser
     return authenticate(request, username=u, password=p)
 
 
+def _enrich_user(user: User) -> User:
+    if not user.is_authenticated:
+        return user
+
+    # "enrichment"
+    amended_attribute_names = [
+        f"player__current_hand__{a}__user" for a in app.models.common.attribute_names
+    ]
+    user_qs = User.objects.select_related(
+        "player__current_hand__board__tournament", *amended_attribute_names
+    )
+    return user_qs.get(pk=user.pk)
+
+
 # Set redirect to False for AJAX endoints.
 def logged_in_as_player_required(*, redirect=True):
     def inner_wozzit(view_function):
@@ -62,10 +78,11 @@ def logged_in_as_player_required(*, redirect=True):
         def non_players_piss_off(
             request: AuthedHttpRequest, *args, **kwargs
         ) -> HttpResponseRedirect | HttpResponseForbidden:
-            user = request.user
-            player = getattr(user, "player", None)
+            request.user = _enrich_user(request.user)
+
+            player = getattr(request.user, "player", None)
             if player is None:
-                msg = f"You ({user.username}) ain't no player, so you can't see whatever \"{view_function.__name__}\" would have shown you."
+                msg = f"You ({request.user.username}) ain't no player, so you can't see whatever \"{view_function.__name__}\" would have shown you."
                 django_web_messages.add_message(
                     request,
                     django_web_messages.INFO,
