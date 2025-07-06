@@ -654,14 +654,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             assert self.is_complete
             assert self.table_display_number is not None
 
-            for p in self.players():
-                p._control_bot()
-
-            self.send_HTML_to_table(
-                data={
-                    "final_score": final_score_text,
-                },
-            )
+            for method in (self.send_HTML_to_table, self.send_JSON_to_players):
+                method(
+                    data={
+                        "final_score": final_score_text,
+                    },
+                )
 
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
                 mvmt = self.tournament.get_movement()
