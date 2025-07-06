@@ -52,10 +52,13 @@ def signup_view(request):
     return None
 
 
-def Forbid(e: Exception | str) -> HttpResponseForbidden:
+def Forbid(e: Exception | str, content_type: str = "text/html") -> HttpResponseForbidden:
     logger.warning("%s", f"{e=}")
-    tarted_up_html = format_html("<body>{}</body>", escape(e))
-    return HttpResponseForbidden(tarted_up_html)
+    if content_type == "text/html":
+        tarted_up_html = format_html("<body>{}</body>", escape(e))
+        return HttpResponseForbidden(tarted_up_html)
+    else:  # probably application/json but let's not be fussy
+        return HttpResponseForbidden(str(e), content_type=content_type)
 
 
 def NotFound(e: Exception | str) -> HttpResponseNotFound:

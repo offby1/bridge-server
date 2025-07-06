@@ -82,7 +82,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     elif (user := authenticate(username=username_or_pk, password=password)) is None:
         msg = f"{username_or_pk=} with that password just doesn't cut it, sorry"
         logger.info(msg)
-        return Forbid(msg)
+        return Forbid(msg, content_type="application/json")
 
     msg = f"{user=} used a regular password. Splendid."
     logger.info(msg)
