@@ -6,6 +6,7 @@ from app.models.tournament import Tournament, check_for_expirations
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from .utils import is_safe
@@ -52,10 +53,20 @@ class Command(BaseCommand):
                 if options.get("tiny", False):
                     num_players = 8
 
-            def synths() -> QuerySet:
-                return Player.objects.order_by("user__username").filter(synthetic=True)
+            # Find or create synths who will joint the new tournament.
 
-            while synths().count() < num_players:
+            def eligible_synths() -> QuerySet:
+                all_synths = Player.objects.order_by("user__username").filter(synthetic=True)
+
+                # Any existing synth with no partner is eligible.
+                unpartnered = Q(partner__isnull=True)
+
+                # Any existing synth whose partner is also a synth is also eligible.
+                has_synthetic_partner = Q(partner__synthetic=True)
+
+                return all_synths.filter(unpartnered | has_synthetic_partner)
+
+            while eligible_synths().count() < num_players:
                 p1 = Player.objects.create_synthetic()
                 p2 = Player.objects.create_synthetic()
                 p1.partner = p2
@@ -64,14 +75,14 @@ class Command(BaseCommand):
                 p2.save()
                 self.stderr.write(f"Created partners {p1.name} and {p2.name}")
 
-            for p in synths().filter(partner__isnull=True):
+            for p in eligible_synths().filter(partner__isnull=True):
                 self.stderr.write(f"{p.name} has no partner; making another synth")
                 p.partner = Player.objects.create_synthetic()
                 p.partner.partner = p
                 p.save()
                 p.partner.save()
 
-            for p in synths():
+            for p in eligible_synths():
                 if p.currently_seated:
                     p.unseat_partnership()
 
