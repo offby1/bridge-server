@@ -14,8 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_next_hand() -> app.models.Hand | None:
+    expression = django.db.models.Q(pk__in=[])
+    for direction in app.models.common.attribute_names:
+        expression |= django.db.models.Q(**{f"{direction}__allow_bot_to_play_for_me": True})
+
     return (
         app.models.Hand.objects.filter(
+            expression,
             is_complete=False,
             abandoned_because__isnull=True,
             board__tournament__completed_at__isnull=True,
