@@ -30,6 +30,7 @@ from django.http import Http404
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
+from django.utils import timezone
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
@@ -237,8 +238,6 @@ class HandManager(models.Manager):
                 msg = f"Cannot seat {p.name} because they are currently playing {p.current_hand}"
                 raise HandError(msg)
 
-            # TODO -- figure out why this triggers! I expected this to trigger only if our caller was entirely on drugs,
-            # but in fact it triggers reliably when I do `just stress --min-players=20`
             if (h := p.hand_at_which_we_played_board(board)) is not None:
                 msg = (
                     f"Whoa buddy: {p.name} has already played board #{board.display_number} at {h}"
@@ -246,6 +245,8 @@ class HandManager(models.Manager):
                 raise HandError(msg)
 
         rv = super().create(*args, **kwargs)
+        rv.last_action_time = rv.created
+        rv.save()
 
         for direction in attribute_names:
             p = kwargs[direction]
@@ -309,6 +310,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     )  # type: ignore
 
     abandoned_because = models.CharField(max_length=200, null=True)
+
+    last_action_time = models.DateTimeField(default=timezone.now)
 
     def as_link(self):
         return format_html(
@@ -507,9 +510,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         player = self.player_who_may_call
         try:
-            self.call_set.create(serialized=call.serialize())
+            the_call = self.call_set.create(serialized=call.serialize())
         except (Error, AuctionException) as e:
             raise AuctionError(str(e)) from e
+
+        self.last_action_time = the_call.created
+        self.save()
 
         logger.debug("%s: %s (%d) called %s", self, player, player.pk, call)
 
@@ -576,6 +582,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         except Error as e:
             raise PlayError(str(e)) from e
 
+        self.last_action_time = rv.created
+        self.save()
         about_to_play = self.player_who_may_play
 
         logger.debug("%s: %s (%d) played %s", self, player, player.pk, card)
