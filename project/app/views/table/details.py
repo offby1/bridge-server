@@ -39,19 +39,19 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
         msg = f"{request.user.player.name} is not currently seated"
         return Forbid(msg)
 
-    # TODO -- shouldn't this logic be in the model?
-    if hand.board.tournament.play_completion_deadline_has_passed():
-        return Forbid(f"{hand.board.tournament}'s play completion deadline has passed, sorry")
+    if request.user.player != hand.player_who_may_call:
+        return Forbid(
+            f"It's not {request.user.player.name}'s turn to call, but rather {hand.player_who_may_call.name}'s"
+        )
 
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
     try:
-        hand.add_call(
-            call=libCall,
-        )
+        hand.add_call(call=libCall)
     except (
         app.models.hand.AuctionError,
+        app.models.hand.HandError,
         bridge.auction.AuctionException,
     ) as e:
         return Forbid(str(e))
@@ -66,28 +66,16 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
         msg = f"You {request.user.username} are not a player"
         return Forbid(msg)
 
-    player = request.user.player
-
     hand = request.user.player.current_hand
 
     if hand is None:
         msg = f"{request.user.player.name} is not currently seated"
         return Forbid(msg)
 
-    if hand.player_who_may_play is None:
-        return Forbid("Hey! Ain't nobody allowed to play now")
-
-    if (
-        hand.dummy is not None
-        and hand.direction_letters_by_player[hand.player_who_may_play] == hand.dummy.seat.value
-        and hand.declarer is not None
-        and hand.direction_letters_by_player[player] == hand.declarer.seat.value
-    ):
-        pass
-    elif not (hand.open_access or player == hand.player_who_may_play):
-        msg = f"Hand {hand.pk} says: Hey! {player} can't play now; only {hand.player_who_may_play} can; {hand.open_access=}"
-        logger.debug("%s", msg)
-        return Forbid(msg)
+    if request.user.player != hand.player_who_may_play:
+        return Forbid(
+            f"It's not {request.user.player.name}'s turn to play, but rather {hand.player_who_may_play.name}'s"
+        )
 
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:

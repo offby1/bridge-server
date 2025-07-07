@@ -509,6 +509,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         self._check_for_expired_tournament()
 
         player = self.player_who_may_call
+        if player is None:
+            raise AuctionError("Nobody may call now")
+
         try:
             the_call = self.call_set.create(serialized=call.serialize())
         except (Error, AuctionException) as e:
