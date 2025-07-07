@@ -10,12 +10,6 @@ COPY server/poetry.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
 RUN poetry install --without=dev
 
-FROM python AS poetry-install-apibot
-
-COPY api-bot/poetry.lock api-bot/pyproject.toml /api-bot/
-WORKDIR /api-bot
-RUN poetry install
-
 FROM python AS app
 
 
@@ -27,12 +21,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 COPY --from=poetry-install-django /bridge/ /bridge/
 COPY /server/project /bridge/project/
 
-COPY --from=poetry-install-apibot /api-bot/ /api-bot/
-COPY /api-bot/*.py /api-bot/
-
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
 COPY /server/start-daphne.sh /service/daphne/run
 
 WORKDIR /bridge/project
 
-CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && poetry run python manage.py synchronize_bot_states && (cd /service && svscan) "]
+CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && (cd /service && svscan) "]

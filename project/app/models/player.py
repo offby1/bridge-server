@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-import os
-import pathlib
 import re
-import subprocess
 from typing import TYPE_CHECKING
 
 import more_itertools
@@ -41,11 +38,6 @@ logger = logging.getLogger(__name__)
 
 JOIN = "partnerup"
 SPLIT = "splitsville"
-
-# Experience shows that more bots than this does ... uh ... something bad; I forget what.  In any case, I've got the
-# docker stack set up to limit the number of Postgres connections to this number; so if you embiggen this, also embiggen
-# that.
-MAX_BOT_PROCESSES = 40
 
 
 class PlayerManager(models.Manager):
@@ -220,8 +212,6 @@ class Player(TimeStampedModel):
                     f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
                 )
 
-        self._control_bot()
-
     @property
     def event_HTML_hand_channel(self):
         return f"player:html:hand:{self.pk}"
@@ -244,85 +234,10 @@ class Player(TimeStampedModel):
 
         return None
 
-    # https://cr.yp.to/daemontools/svc.html
-    def _control_bot(self) -> bool:
-        # do nothing when run from a unit test, so as to reduce the noise in the log output.
-        if os.environ.get("PYTEST_VERSION") is not None:
-            return False
-
-        service_directory = pathlib.Path("/service")
-        if not service_directory.is_dir():
-            return False
-
-        def svc(flags: str) -> None:
-            logger.info("'svc %s' for %s's bot (%r)", flags, self.name, self.pk)
-
-            # No problem blocking here -- experience shows this doesn't take long
-            proc = subprocess.run(
-                [
-                    "svc",
-                    flags,
-                    str(self.pk),
-                ],
-                cwd=service_directory,
-                check=False,
-                capture_output=True,
-            )
-            if proc.stderr:
-                # Suppress a common, expected, and benign "error"
-                if b"unable to chdir" in proc.stderr and flags == "-d":
-                    pass
-                else:
-                    logger.warning(
-                        "%s",
-                        f"{proc.returncode=} {proc.stderr!r} -- {service_directory=} {flags=} {self.pk=}",
-                    )
-
-        run_dir = pathlib.Path("/service") / pathlib.Path(str(self.pk))
-
-        if not (self.allow_bot_to_play_for_me and self.currently_seated):
-            try:
-                (run_dir / "down").touch()
-            except FileNotFoundError:
-                pass
-            svc("-d")
-            return False
-
-        shell_script_text = """#!/bin/bash
-
-# wrapper script for [daemontools](https://cr.yp.to/daemontools/)
-
-set -euo pipefail
-
-printf "\n%s %s %s\n" $(date -u +%FT%T%z) pid:$$ cwd:$(pwd)
-exec /api-bot/.venv/bin/python /api-bot/apibot.py
-    """
-        run_file = run_dir / "run.notyet"
-        run_file.parent.mkdir(parents=True, exist_ok=True)
-        run_file.write_text(shell_script_text)
-        run_file.chmod(0o755)
-        run_file = run_file.rename(run_dir / "run")
-
-        (run_dir / "down").unlink(missing_ok=True)
-        svc("-u")
-        return True
-
     def toggle_bot(self, desired_state: bool | None = None) -> None:
         with transaction.atomic():
             if desired_state is None:
                 desired_state = not self.allow_bot_to_play_for_me
-
-            if desired_state is True:
-                num_bots_currently_seated = len(
-                    [
-                        p
-                        for p in Player.objects.filter(allow_bot_to_play_for_me=True)
-                        if p.currently_seated
-                    ]
-                )
-                if num_bots_currently_seated >= MAX_BOT_PROCESSES:
-                    msg = f"There are already {num_bots_currently_seated} bots; no bot for you"
-                    raise TooManyBots(msg)
 
             self.allow_bot_to_play_for_me = desired_state
             self.save()
@@ -330,7 +245,6 @@ exec /api-bot/.venv/bin/python /api-bot/apibot.py
     def save(self, *args, **kwargs) -> None:
         self._check_synthetic()
         super().save(*args, **kwargs)
-        self._control_bot()
 
     def _check_synthetic(self) -> None:
         if not self.pk:

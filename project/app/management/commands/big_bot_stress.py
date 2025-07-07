@@ -115,5 +115,3 @@ class Command(BaseCommand):
             # - add some boards to the tournament
             # - seat everyone at newly-created tables, creating (and signing up) some synths if necessary
             check_for_expirations(sender="big_bot_stress")
-
-            call_command("synchronize_bot_states")

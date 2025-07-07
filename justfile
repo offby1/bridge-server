@@ -261,12 +261,10 @@ clean: die-if-poetry-active
 [private]
 docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
 
-alias dcu := botme
-
-# typical usage: just nuke ; docker volume prune --all --force ; just botme
+# typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('development')]
 [script('bash')]
-botme *options: docker-prerequisites
+dcu *options: docker-prerequisites
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
@@ -301,7 +299,7 @@ perf-local: drop docker-prerequisites
 
 # Your kids know 'front and follow'?
 [script('bash')]
-follow: (botme "--watch")
+follow: (dcu "--watch")
 
 ensure-git-repo-clean:
     [[ -z "$(git status --porcelain)" ]]
@@ -309,22 +307,8 @@ ensure-git-repo-clean:
 ensure-branch-is-main:
     [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
 
-[script('bash')]
-ensure-bot-is-on-same-branch:
-    set -euo pipefail
-
-    our_branch="$(git symbolic-ref HEAD)"
-    cd ../api-bot
-    bot_branch="$(git symbolic-ref HEAD)"
-
-    if ! [[ "${our_branch}" = "${bot_branch}" ]]
-    then
-      echo our branch $our_branch is not the same as the bot\'s branch $bot_branch
-      false
-    fi
-
 [private]
-deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean ensure-bot-is-on-same-branch
+deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean
 
 [group('deploy')]
 [script('bash')]

@@ -259,9 +259,6 @@ class HandManager(models.Manager):
             [p.name for p in players],
         )
 
-        for p in players:
-            p._control_bot()
-
         return rv
 
 
