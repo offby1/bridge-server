@@ -50,20 +50,30 @@ class Command(BaseCommand):
                 time.sleep(1)
                 exit(0)
 
-            logger.info("%s", f"Will call or play at {hand_to_play}")
+            logger.info("\n\n%s", f"Will call or play at {hand_to_play} (pk={hand_to_play.pk})")
             self.wait_for_tempo(hand_to_play)
             xscript: HandTranscript = hand_to_play.get_xscript()
-            # TODO -- check if player has "let the bot play for me" set!
-            if hand_to_play.player_who_may_call is not None:
-                libCall = xscript.auction.random_legal_call()
 
-                hand_to_play.add_call(call=libCall)
-            elif hand_to_play.player_who_may_play is not None:
-                libPlay = xscript.slightly_less_dumb_play()
-
-                hand_to_play.add_play_from_model_player(
-                    player=hand_to_play.player_who_may_play, card=libPlay.card
-                )
+            if (p := hand_to_play.player_who_may_call) is not None:
+                logger.info("%s", f"It is {p.name}'s turn to call")
+                if p.allow_bot_to_play_for_me:
+                    hand_to_play.add_call(call=xscript.auction.random_legal_call())
+                else:
+                    logger.info("%s", f"{p.name} is human")
+                    time.sleep(hand_to_play.board.tournament.tempo_seconds)
+            elif (p := hand_to_play.player_who_may_play) is not None:
+                logger.info("%s", f"It is {p.name}'s turn to play")
+                if p.allow_bot_to_play_for_me or (
+                    p == hand_to_play.model_dummy
+                    and hand_to_play.model_declarer is not None
+                    and hand_to_play.model_declarer.allow_bot_to_play_for_me
+                ):
+                    hand_to_play.add_play_from_model_player(
+                        player=p, card=xscript.slightly_less_dumb_play().card
+                    )
+                else:
+                    logger.info("%s", f"{p.name} is human")
+                    time.sleep(hand_to_play.board.tournament.tempo_seconds)
             else:
                 raise Exception(
                     "This is confusing -- supposedly this hand is in progress, but nobody can call or play"
