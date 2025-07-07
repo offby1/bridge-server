@@ -705,10 +705,24 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         return self.auction.declarer
 
     @property
+    def model_declarer(self) -> Player | None:
+        libDeclarer = self.declarer
+        if libDeclarer is None:
+            return None
+        return getattr(self, libDeclarer.seat.name)
+
+    @property
     def dummy(self) -> libPlayer | None:
         if not self.auction.found_contract:
             return None
         return self.auction.dummy
+
+    @property
+    def model_dummy(self) -> Player | None:
+        libDummy = self.dummy
+        if not libDummy:
+            return None
+        return getattr(self, libDummy.seat.name)
 
     @property
     def player_who_may_call(self) -> Player | None:
