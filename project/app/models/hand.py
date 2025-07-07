@@ -505,10 +505,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
+        player = self.player_who_may_call
         try:
             self.call_set.create(serialized=call.serialize())
         except (Error, AuctionException) as e:
             raise AuctionError(str(e)) from e
+
+        logger.debug("%s: %s (%d) called %s", self, player, player.pk, call)
 
         now = time.time()
 
@@ -558,49 +561,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
-    def _get_current_bidding_box_html_for_player(self, p: Player) -> str:
-        from app.views.hand import _bidding_box_HTML_for_hand_for_player
-
-        return _bidding_box_HTML_for_hand_for_player(self, p)
-
-    def _get_current_trick_html(self) -> str:
-        from app.views.hand import _three_by_three_HTML_for_trick
-
-        return _three_by_three_HTML_for_trick(self)
-
-    def _get_current_hand_html(self, *, p: Player) -> str:
-        from app.views.hand import _hand_HTML_for_player
-
-        return _hand_HTML_for_player(hand=self, player=p)
-
-    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
-        assert self.dummy is not None
-        dummy_direction_letter = self.dummy.seat.name[0]
-
-        method: Callable[..., None]
-
-        kwargs: dict[str, Any]
-
-        if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
-            method = self.send_HTML_to_table
-            kwargs = dict(
-                data={
-                    "dummy_direction": self.dummy.seat.name,
-                    "dummy_html": self._get_current_hand_html(p=player_to_update),
-                }
-            )
-        else:
-            method = self.send_HTML_to_player
-            kwargs = dict(
-                data={
-                    "current_hand_direction": player_to_update.current_direction(current_hand=self),
-                    "current_hand_html": self._get_current_hand_html(p=player_to_update),
-                },
-                player=player_to_update,
-            )
-
-        method(**kwargs)  # type: ignore [arg-type]
-
     def add_play_from_model_player(self, *, player: Player, card: libCard) -> Play:
         assert_type(player, Player)
         assert_type(card, libCard)
@@ -648,6 +608,49 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
 
         return rv
+
+    def _get_current_bidding_box_html_for_player(self, p: Player) -> str:
+        from app.views.hand import _bidding_box_HTML_for_hand_for_player
+
+        return _bidding_box_HTML_for_hand_for_player(self, p)
+
+    def _get_current_trick_html(self) -> str:
+        from app.views.hand import _three_by_three_HTML_for_trick
+
+        return _three_by_three_HTML_for_trick(self)
+
+    def _get_current_hand_html(self, *, p: Player) -> str:
+        from app.views.hand import _hand_HTML_for_player
+
+        return _hand_HTML_for_player(hand=self, player=p)
+
+    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
+        assert self.dummy is not None
+        dummy_direction_letter = self.dummy.seat.name[0]
+
+        method: Callable[..., None]
+
+        kwargs: dict[str, Any]
+
+        if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
+            method = self.send_HTML_to_table
+            kwargs = dict(
+                data={
+                    "dummy_direction": self.dummy.seat.name,
+                    "dummy_html": self._get_current_hand_html(p=player_to_update),
+                }
+            )
+        else:
+            method = self.send_HTML_to_player
+            kwargs = dict(
+                data={
+                    "current_hand_direction": player_to_update.current_direction(current_hand=self),
+                    "current_hand_html": self._get_current_hand_html(p=player_to_update),
+                },
+                player=player_to_update,
+            )
+
+        method(**kwargs)  # type: ignore [arg-type]
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
         with transaction.atomic():
