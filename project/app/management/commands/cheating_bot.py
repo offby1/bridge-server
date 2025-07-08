@@ -118,8 +118,8 @@ class Command(BaseCommand):
             elif (s := hand_to_play.next_seat_to_play) is not None:
                 self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
                 p = hand_to_play.player_who_controls_seat(s)
-                self.quiet_logger._reset()
                 if p.allow_bot_to_play_for_me:
+                    self.quiet_logger._reset()
                     card = xscript.slightly_less_dumb_play().card
                     hand_to_play.add_play_from_model_player(player=p, card=card)
                     self.quiet_logger.info("%s", f"I played {card} for {p.name} at {s.name}")
