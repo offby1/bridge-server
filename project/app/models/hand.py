@@ -785,7 +785,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             p = getattr(self, d)
             if p.may_control_seat(seat=seat):
                 return p
-        raise Exception(f"Internal error: no player controls {seat=}")
+        raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
 
     @property
     def next_seat_to_play(self) -> Seat | None:
