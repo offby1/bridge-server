@@ -37,14 +37,29 @@ def get_next_hand() -> app.models.Hand | None:
 class LessAnnoyingLogger:
     def __init__(self):
         self._reset()
+        self.current_hand = None
 
     def _reset(self):
         self.invocations = 0
 
+    def note_current_hand(self, hand):
+        self.current_hand = hand
+
     def __getattr__(self, attr):
         self.invocations += 1
         if self.invocations.bit_count() == 1:  # i.e., it's a power of two
-            return getattr(logger, attr)
+            meth = getattr(logger, attr)
+
+            # Crude hack to get the current hand into each log message.
+            def amended_method(*args, **kwargs):
+                args = list(args)
+                args[0] = f"{self.current_hand}: " + args[0]
+                return meth(*args, **kwargs)
+
+            if self.current_hand is None:
+                return meth
+
+            return amended_method
         return lambda *args, **kwargs: None
 
 
@@ -63,15 +78,13 @@ class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
         while True:
             hand_to_play = get_next_hand()
+            self.quiet_logger.note_current_hand(hand_to_play)
 
             if hand_to_play is None:
                 self.quiet_logger.info("No playable hand; waiting")
                 time.sleep(1)
                 continue
 
-            self.quiet_logger.info(
-                "\n\n%s", f"Will call or play at {hand_to_play} (pk={hand_to_play.pk})"
-            )
             self.wait_for_tempo(hand_to_play)
             xscript: HandTranscript = hand_to_play.get_xscript()
 
@@ -87,10 +100,10 @@ class Command(BaseCommand):
                 self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
                 p = getattr(hand_to_play, s.name)
                 if p.allow_bot_to_play_for_me and p.may_control_seat(seat=s):
-                    hand_to_play.add_play_from_model_player(
-                        player=p, card=xscript.slightly_less_dumb_play().card
-                    )
                     self.quiet_logger._reset()
+                    card = xscript.slightly_less_dumb_play().card
+                    hand_to_play.add_play_from_model_player(player=p, card=card)
+                    self.quiet_logger.info("%s", f"I played {card} for {p.name} at {s.name}")
                 else:
                     self.quiet_logger.info("%s", f"{p.name} may not play now")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
