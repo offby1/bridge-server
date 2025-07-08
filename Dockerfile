@@ -23,6 +23,7 @@ COPY /server/project /bridge/project/
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
 COPY /server/start-daphne.sh /service/daphne/run
+COPY /server/start-bot.sh /service/bot/run
 
 WORKDIR /bridge/project
 
