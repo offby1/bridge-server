@@ -24,13 +24,17 @@ def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | Non
     # TODO -- this isn't quite right. What we *really* want is to consider only those hands for whom the current seat is
     # controlled by a bot.  But the below sometimes gets us a hand whose current seat is controlled by a human, and that
     # basically prevents us from doing any other work.
-    all_hands_with_bots = app.models.Hand.objects.filter(
-        expression,
-        is_complete=False,
-        abandoned_because__isnull=True,
-        board__tournament__completed_at__isnull=True,
-        board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
-    ).order_by("last_action_time")
+    all_hands_with_bots = (
+        app.models.Hand.objects.prepop()
+        .filter(
+            expression,
+            is_complete=False,
+            abandoned_because__isnull=True,
+            board__tournament__completed_at__isnull=True,
+            board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
+        )
+        .order_by("last_action_time")
+    )
 
     # "manually" find the oldest hand whose current seat is controlled by the bot.  ideally we'd have the database do
     # this for us, rather than doing it here in Python; but it's not clear if that's possible.
