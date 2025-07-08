@@ -11,7 +11,9 @@ class Command(BaseCommand):
         for _ in range(2):
             hand_to_play = get_next_hand()
 
-            pprint.pprint(hand_to_play.get_xscript().serializable()["auction"])
+            assert hand_to_play is not None
+            xscript = hand_to_play.get_xscript()
+            pprint.pprint(xscript.serializable()["auction"])
             print(f"{getattr(hand_to_play.player_who_may_call, 'name', None)=}")
             print(f"{getattr(hand_to_play.player_who_may_play, 'name', None)=}")
 

@@ -738,6 +738,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return None
 
+    # TODO -- this method might be confusing: it doesn't know that declarer control's dummy's hand.
+    # Best to use next_seat_to_play when possible.
     @property
     def player_who_may_play(self) -> Player | None:
         if self.is_abandoned:

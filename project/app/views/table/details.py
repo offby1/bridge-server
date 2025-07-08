@@ -72,7 +72,7 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
         msg = f"{request.user.player.name} is not currently seated"
         return Forbid(msg)
 
-    if request.user.player != hand.player_who_may_play:
+    if not request.user.player.may_control_seat():
         return Forbid(
             f"It's not {request.user.player.name}'s turn to play, but rather {hand.player_who_may_play.name}'s"
         )

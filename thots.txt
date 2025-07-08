@@ -1,0 +1,21 @@
+* May player P control the cards in hand H, seat S?
+
+if P is not the declarer, it's easy -- the answer is precisely "is seat S in fact P's seat in hand H".
+
+However, if he is, it's a bit more complex:
+
+- if the opening lead has not been made, see above.
+- if the opening lead *has* been made, then in addition to the above, if S is the dummy *and* P is the declarer, then yes.
+
+* Does the "play_post_view" need to do any sort of access control beyond catching exceptions from the library?
+
+I think so.  Imagine a hand where East is about to make the opening lead.  East would like to play the two of spade, but hasn't yet gotten around to doing so.  Meanwhile, his enemy South (who is the declarer, just to make this scenario more complex) somehow knows that East holds the *Ace* of spades, and South wishes that's what East would play.  So South could just do a POST of containing the Ace of spades, and the primary key of the relevant hand.  As far as the bridge library is concerned, that's a legal play; but obviously we don't want to allow that.
+
+So what can we do about this?
+
+- when player P does such a POST, see if it's 'their turn'.  I put that in quotes because the declarer/dummy thing makes it a bit more complex.
+  In our scenario above, it's not South's turn to play, so we'd 403 his ass.
+- alternatively: see if the card in question is in one of the hand(s) that the player controls.
+  In our scenario above, we'd see that the ace of spades isn't in either of the hands that South controls (namely, his own and the dummy's), and again 403 his ass.
+
+I will choose whichever of the above is simplest to do.

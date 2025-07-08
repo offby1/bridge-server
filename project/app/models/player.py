@@ -155,6 +155,28 @@ class Player(TimeStampedModel):
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
 
+    def may_control_seat(self, *, seat: bridge.seat.Seat | None = None) -> bool:
+        # Take declarer & dummy into account.  This isn't all that complex, but I keep getting it wrong, so it needs to
+        # be in one place, and tested.
+
+        hand = self.current_hand
+        if hand is None:
+            logger.info("%s", f"{self.name} may not play now because they have no current hand.")
+            return False
+
+        # simple case: no dummy yet
+        seats_by_player = {getattr(hand, s.name): set([s]) for s in bridge.seat.Seat}
+
+        # Now update that dict, taking into account declarer & dummy
+        if hand.play_set.count() >= 1:
+            seats_by_player[hand.model_dummy] = set()
+            seats_by_player[hand.model_declarer].add(hand.dummy.seat)
+
+        if seat is None:
+            seat = hand.next_seat_to_play
+
+        return seat in seats_by_player[self] and seat == hand.next_seat_to_play
+
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
     def hands_played(self) -> models.QuerySet:

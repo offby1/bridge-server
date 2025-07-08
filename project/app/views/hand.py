@@ -178,14 +178,9 @@ def _display_and_control(
     if hand.open_access and not hand.is_complete:
         return {"display_cards": True, "viewer_may_control_this_seat": True}
 
-    if seat == getattr(hand.dummy, "seat", None):
-        viewer_may_control_this_seat = hand.declarer == as_viewed_by.libraryThing()
-    else:
-        viewer_may_control_this_seat = hand.player_who_may_play == as_viewed_by
-
     return {
         "display_cards": True,
-        "viewer_may_control_this_seat": viewer_may_control_this_seat,
+        "viewer_may_control_this_seat": as_viewed_by.may_control_seat(seat=seat),
     }
 
 

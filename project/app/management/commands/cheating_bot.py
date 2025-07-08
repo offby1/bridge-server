@@ -83,19 +83,16 @@ class Command(BaseCommand):
                 else:
                     self.quiet_logger.info("%s", f"{p.name} is human")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
-            elif (p := hand_to_play.player_who_may_play) is not None:
-                self.quiet_logger.info("%s", f"It is {p.name}'s turn to play")
-                if p.allow_bot_to_play_for_me or (
-                    p == hand_to_play.model_dummy
-                    and hand_to_play.model_declarer is not None
-                    and hand_to_play.model_declarer.allow_bot_to_play_for_me
-                ):
+            elif (s := hand_to_play.next_seat_to_play) is not None:
+                self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
+                p = getattr(hand_to_play, s.name)
+                if p.allow_bot_to_play_for_me and p.may_control_seat(seat=s):
                     hand_to_play.add_play_from_model_player(
                         player=p, card=xscript.slightly_less_dumb_play().card
                     )
                     self.quiet_logger._reset()
                 else:
-                    self.quiet_logger.info("%s", f"{p.name} is human")
+                    self.quiet_logger.info("%s", f"{p.name} may not play now")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             else:
                 raise Exception(
