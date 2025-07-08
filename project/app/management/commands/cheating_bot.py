@@ -43,7 +43,7 @@ def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | Non
 
         if s is None:
             continue
-        player = getattr(h, s.name)
+        player = h.player_who_controls_seat(s)
         if player.allow_bot_to_play_for_me:
             return h
 

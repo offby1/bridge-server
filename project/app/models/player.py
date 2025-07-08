@@ -172,10 +172,16 @@ class Player(TimeStampedModel):
             seats_by_player[hand.model_dummy] = set()
             seats_by_player[hand.model_declarer].add(hand.dummy.seat)
 
+        active_seat = hand.next_seat_to_play or hand.next_seat_to_call
         if seat is None:
-            seat = hand.next_seat_to_play
+            seat = active_seat
 
-        return seat in seats_by_player[self] and seat == hand.next_seat_to_play
+        rv = seat in seats_by_player[self] and seat == active_seat
+        logger.info(
+            "%s",
+            f"{[s.name for s in seats_by_player[self]]=} {seat.name=} {active_seat.name=} => {rv=}",
+        )
+        return rv
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property
