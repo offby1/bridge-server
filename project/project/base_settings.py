@@ -278,6 +278,7 @@ LOGGING: dict[str, Any] = {
 
 CACHES = {
     "default": {
+        # "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         "LOCATION": "bridge_django_cache",
     }
