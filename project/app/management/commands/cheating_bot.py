@@ -30,15 +30,33 @@ def get_next_hand() -> app.models.Hand | None:
     )
 
 
+# adapted from https://stackoverflow.com/a/26092256
+
+
+class LessAnnoyingLogger:
+    def __init__(self):
+        self._reset()
+
+    def _reset(self):
+        self.invocations = 0
+
+    def __getattr__(self, attr):
+        self.invocations += 1
+        if self.invocations.bit_count() == 1:  # i.e., it's a power of two
+            return getattr(logger, attr)
+        return lambda *args, **kwargs: None
+
+
 class Command(BaseCommand):
+    def __init__(self, *args, **kwargs):
+        self.quiet_logger = LessAnnoyingLogger()
+        super().__init__(*args, **kwargs)
+
     def wait_for_tempo(self, hand_to_play: app.models.Hand) -> None:
         tempo = datetime.timedelta(seconds=hand_to_play.board.tournament.tempo_seconds)
         wait_until = hand_to_play.last_action_time + tempo
         now = django.utils.timezone.now()
         sleepy_time = max(datetime.timedelta(seconds=0), wait_until - now)
-        logger.debug(
-            "%s", f"{tempo=} {hand_to_play.last_action_time=} {wait_until=} {now=} {sleepy_time=}"
-        )
         time.sleep(sleepy_time.total_seconds())
 
     def handle(self, *_args, **_options) -> None:
@@ -46,23 +64,26 @@ class Command(BaseCommand):
             hand_to_play = get_next_hand()
 
             if hand_to_play is None:
-                logger.info("No playable hand; exiting")
+                self.quiet_logger.info("No playable hand; waiting")
                 time.sleep(1)
-                exit(0)
+                continue
 
-            logger.info("\n\n%s", f"Will call or play at {hand_to_play} (pk={hand_to_play.pk})")
+            self.quiet_logger.info(
+                "\n\n%s", f"Will call or play at {hand_to_play} (pk={hand_to_play.pk})"
+            )
             self.wait_for_tempo(hand_to_play)
             xscript: HandTranscript = hand_to_play.get_xscript()
 
             if (p := hand_to_play.player_who_may_call) is not None:
-                logger.info("%s", f"It is {p.name}'s turn to call")
+                self.quiet_logger.info("%s", f"It is {p.name}'s turn to call")
                 if p.allow_bot_to_play_for_me:
                     hand_to_play.add_call(call=xscript.auction.random_legal_call())
+                    self.quiet_logger._reset()
                 else:
-                    logger.info("%s", f"{p.name} is human")
+                    self.quiet_logger.info("%s", f"{p.name} is human")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             elif (p := hand_to_play.player_who_may_play) is not None:
-                logger.info("%s", f"It is {p.name}'s turn to play")
+                self.quiet_logger.info("%s", f"It is {p.name}'s turn to play")
                 if p.allow_bot_to_play_for_me or (
                     p == hand_to_play.model_dummy
                     and hand_to_play.model_declarer is not None
@@ -71,8 +92,9 @@ class Command(BaseCommand):
                     hand_to_play.add_play_from_model_player(
                         player=p, card=xscript.slightly_less_dumb_play().card
                     )
+                    self.quiet_logger._reset()
                 else:
-                    logger.info("%s", f"{p.name} is human")
+                    self.quiet_logger.info("%s", f"{p.name} is human")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             else:
                 raise Exception(
