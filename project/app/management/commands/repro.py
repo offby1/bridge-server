@@ -1,3 +1,4 @@
+import logging
 import pprint
 
 from django.core.cache import cache
@@ -6,10 +7,13 @@ from django.core.management.base import BaseCommand
 from app.management.commands.cheating_bot import get_next_hand
 
 
+logger = logging.getLogger(__name__)
+
+
 class Command(BaseCommand):
     def handle(self, *_args, **_options) -> None:
         for _ in range(2):
-            hand_to_play = get_next_hand()
+            hand_to_play = get_next_hand(logger=logger)
 
             assert hand_to_play is not None
             xscript = hand_to_play.get_xscript()

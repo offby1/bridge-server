@@ -13,7 +13,10 @@ from bridge.xscript import HandTranscript
 logger = logging.getLogger(__name__)
 
 
-def get_next_hand(logger: logging.Logger) -> app.models.Hand | None:
+def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | None:
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
     expression = django.db.models.Q(pk__in=[])
     for direction in app.models.common.attribute_names:
         expression |= django.db.models.Q(**{f"{direction}__allow_bot_to_play_for_me": True})
