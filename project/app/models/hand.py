@@ -517,7 +517,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         self.last_action_time = the_call.created
         self.save()
 
-        logger.debug("%s: %s (%d) called %s", self, player, player.pk, call)
+        logger.debug(
+            "%s: %s (%d) called %s; last_action_time is %s",
+            self,
+            player,
+            player.pk,
+            call,
+            self.last_action_time,
+        )
 
         now = time.time()
 
@@ -584,9 +591,16 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = rv.created
         self.save()
-        about_to_play = self.player_who_may_play
+        logger.debug(
+            "%s: %s (%d) played %s; last_action_time is %s",
+            self,
+            player,
+            player.pk,
+            card,
+            self.last_action_time,
+        )
 
-        logger.debug("%s: %s (%d) played %s", self, player, player.pk, card)
+        about_to_play = self.player_who_may_play
 
         # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why I'm doing this.
         # Maybe it's just to indicate which of their cards are legal.
