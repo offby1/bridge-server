@@ -21,16 +21,26 @@ def get_next_hand(logger: logging.Logger) -> app.models.Hand | None:
     # TODO -- this isn't quite right. What we *really* want is to consider only those hands for whom the current seat is
     # controlled by a bot.  But the below sometimes gets us a hand whose current seat is controlled by a human, and that
     # basically prevents us from doing any other work.
-    all_hands = app.models.Hand.objects.filter(
+    all_hands_with_bots = app.models.Hand.objects.filter(
         expression,
         is_complete=False,
         abandoned_because__isnull=True,
         board__tournament__completed_at__isnull=True,
         board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
     ).order_by("last_action_time")
-    for h in all_hands[0:10]:
-        logger.info("%s: %s", h.pk, h.last_action_time)
-    return all_hands.first()
+
+    # "manually" find the oldest hand whose current seat is controlled by the bot.  ideally we'd have the database do
+    # this for us, rather than doing it here in Python; but it's not clear if that's possible.
+    for h in all_hands_with_bots:
+        s = h.next_seat_to_call or h.next_seat_to_play
+
+        if s is None:
+            continue
+        player = getattr(h, s.name)
+        if player.allow_bot_to_play_for_me:
+            return h
+
+    return None
 
 
 # adapted from https://stackoverflow.com/a/26092256
@@ -100,16 +110,16 @@ class Command(BaseCommand):
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             elif (s := hand_to_play.next_seat_to_play) is not None:
                 self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
-                p = getattr(hand_to_play, s.name)
-                if p.allow_bot_to_play_for_me and p.may_control_seat(seat=s):
-                    self.quiet_logger._reset()
+                p = hand_to_play.player_who_controls_seat(s)
+                self.quiet_logger._reset()
+                if p.allow_bot_to_play_for_me:
                     card = xscript.slightly_less_dumb_play().card
                     hand_to_play.add_play_from_model_player(player=p, card=card)
                     self.quiet_logger.info("%s", f"I played {card} for {p.name} at {s.name}")
                 else:
                     self.quiet_logger.info(
                         "%s",
-                        f"{p.name} may not play now: either {p.allow_bot_to_play_for_me=} or {p.may_control_seat(seat=s)=}",
+                        f"{p.name} may not play now: {p.allow_bot_to_play_for_me=}.",
                     )
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             else:

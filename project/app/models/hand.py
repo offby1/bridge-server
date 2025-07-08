@@ -739,18 +739,23 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         return getattr(self, libDummy.seat.name)
 
     @property
-    def player_who_may_call(self) -> Player | None:
-        from . import Player
-
+    def next_seat_to_call(self) -> Seat | None:
         if self.is_abandoned:
             return None
 
         if self.auction.status is Auction.Incomplete:
             libAllowed = self.auction.allowed_caller()
             assert libAllowed is not None
-            return Player.objects.get_by_name(libAllowed.name)
+            return libAllowed.seat
 
         return None
+
+    @property
+    def player_who_may_call(self) -> Player | None:
+        s = self.next_seat_to_call
+        if s is None:
+            return None
+        return getattr(self, s.name)
 
     # TODO -- this method might be confusing: it doesn't know that declarer control's dummy's hand.
     # Best to use next_seat_to_play when possible.
@@ -774,6 +779,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             return nsp.name
 
         return ""
+
+    def player_who_controls_seat(self, seat: Seat) -> Player:
+        for d in self.direction_names:
+            p = getattr(self, d)
+            if p.may_control_seat(seat=seat):
+                return p
+        raise Exception(f"Internal error: no player controls {seat=}")
 
     @property
     def next_seat_to_play(self) -> Seat | None:
