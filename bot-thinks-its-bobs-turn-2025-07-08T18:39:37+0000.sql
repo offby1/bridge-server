@@ -852,7 +852,7 @@ COPY public.app_player (id, user_id, partner_id, synthetic, allow_bot_to_play_fo
 
 COPY public.app_tournament (id, display_number, play_completion_deadline, signup_deadline, boards_per_round_per_table, tempo_seconds, completed_at) FROM stdin;
 1	1	2025-07-08 00:01:56.862476+00	2025-07-07 23:16:56.862476+00	3	1	2025-07-08 00:01:56.862476+00
-2	2	2025-07-08 19:16:03.690798+00	2025-07-08 18:31:03.690798+00	3	1	\N
+2	2	2099-12-31 23:23:23.999999+00	2025-07-08 18:31:03.690798+00	3	1	\N
 \.
 
 
