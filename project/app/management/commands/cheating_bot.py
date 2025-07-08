@@ -13,22 +13,24 @@ from bridge.xscript import HandTranscript
 logger = logging.getLogger(__name__)
 
 
-def get_next_hand() -> app.models.Hand | None:
+def get_next_hand(logger: logging.Logger) -> app.models.Hand | None:
     expression = django.db.models.Q(pk__in=[])
     for direction in app.models.common.attribute_names:
         expression |= django.db.models.Q(**{f"{direction}__allow_bot_to_play_for_me": True})
 
-    return (
-        app.models.Hand.objects.filter(
-            expression,
-            is_complete=False,
-            abandoned_because__isnull=True,
-            board__tournament__completed_at__isnull=True,
-            board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
-        )
-        .order_by("last_action_time")
-        .first()
-    )
+    # TODO -- this isn't quite right. What we *really* want is to consider only those hands for whom the current seat is
+    # controlled by a bot.  But the below sometimes gets us a hand whose current seat is controlled by a human, and that
+    # basically prevents us from doing any other work.
+    all_hands = app.models.Hand.objects.filter(
+        expression,
+        is_complete=False,
+        abandoned_because__isnull=True,
+        board__tournament__completed_at__isnull=True,
+        board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
+    ).order_by("last_action_time")
+    for h in all_hands[0:10]:
+        logger.info("%s: %s", h.pk, h.last_action_time)
+    return all_hands.first()
 
 
 # adapted from https://stackoverflow.com/a/26092256
@@ -53,7 +55,7 @@ class LessAnnoyingLogger:
             # Crude hack to get the current hand into each log message.
             def amended_method(*args, **kwargs):
                 args = list(args)
-                args[0] = f"{self.current_hand}: " + args[0]
+                args[0] = f"hand {self.current_hand.pk}: " + args[0]
                 return meth(*args, **kwargs)
 
             if self.current_hand is None:
@@ -77,7 +79,7 @@ class Command(BaseCommand):
 
     def handle(self, *_args, **_options) -> None:
         while True:
-            hand_to_play = get_next_hand()
+            hand_to_play = get_next_hand(logger=self.quiet_logger)
             self.quiet_logger.note_current_hand(hand_to_play)
 
             if hand_to_play is None:
@@ -105,7 +107,10 @@ class Command(BaseCommand):
                     hand_to_play.add_play_from_model_player(player=p, card=card)
                     self.quiet_logger.info("%s", f"I played {card} for {p.name} at {s.name}")
                 else:
-                    self.quiet_logger.info("%s", f"{p.name} may not play now")
+                    self.quiet_logger.info(
+                        "%s",
+                        f"{p.name} may not play now: either {p.allow_bot_to_play_for_me=} or {p.may_control_seat(seat=s)=}",
+                    )
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             else:
                 raise Exception(
