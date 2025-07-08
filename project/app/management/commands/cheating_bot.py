@@ -24,6 +24,7 @@ def get_next_hand() -> app.models.Hand | None:
             is_complete=False,
             abandoned_because__isnull=True,
             board__tournament__completed_at__isnull=True,
+            board__tournament__play_completion_deadline__gt=django.utils.timezone.now(),
         )
         .order_by("last_action_time")
         .first()
