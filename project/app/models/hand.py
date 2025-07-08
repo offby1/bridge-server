@@ -782,7 +782,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     def player_who_controls_seat(self, seat: Seat) -> Player:
         for d in self.direction_names:
-            p = getattr(self, d)
+            p: Player = getattr(self, d)
             if p.may_control_seat(seat=seat):
                 return p
         raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
