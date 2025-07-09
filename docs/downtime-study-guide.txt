@@ -1,0 +1,42 @@
+What tools do my various projects (mostly the bridge server) use?
+
+Once I list most of them, I should study each to see if there are features I don't yet know about that I could be using.
+
+- bash
+- coverage
+- curl
+- daphne
+- django
+- django-eventstream
+  - I've never found really good documentation that would answer the following questions.
+  - it's not clear how I can get the current message ID for a given channel, now that I'm using Redis for persistence.
+  - it's not clear what I'm supposed to do with them once I get them.  (I used to send them to the bots, so they could send them back when they started listening; but I've gotten rid of the bots.)
+    - [ChatGPT](https://chatgpt.com/share/686efd4a-eddc-8013-a276-b5e76bc9a4a0) tells me:
+
+      Why no API [to fetch a channel's current event ID from Redis]?
+      The likely reasons:
+
+      * The intended abstraction is: “Clients track their own Last-Event-ID, and the server just serves events ≥ that ID.”
+
+      * Server-side querying of Redis events is considered an implementation detail (since Redis is assumed ephemeral).
+
+      * The library’s main use case is to serve streams to clients, not to expose event-history APIs to server code.
+
+  - It's not clear what I'm supposed to do with events whose type is something other than "message" -- "keep-alive" I imagine I just ignore, but wtf is "stream-reset"?
+  - ChatGPS above gave a reasonable answer: -- "stream-reset" means the client should drop its connection, forget about any saved event ID, and create a new connection.
+- docker
+- emacs:flycheck
+- emacs:lsp
+- git
+- ipython
+- just
+- mypy
+- orbstack
+- poetry
+- postgres
+- prometheus, grafana, &c
+- pytest
+- ruff
+- zsh
+
+Geez, that's a lot
