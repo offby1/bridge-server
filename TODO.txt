@@ -1,6 +1,10 @@
 IN PROGRESS:
 
 STILL TODO:
+* Since I seem to be abandoning the api-bot, ensure we have tests that cover the endpoint that it calls (serialized-hand, call-post-view, call-play-view).
+* Put the tournament's tempo in the tournament detail page (it's already in the tournament *list* page).
+* The "model inserts" panel in prometheus is reading zeroes for everything; no idea why.
+* I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 * It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
 * In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.

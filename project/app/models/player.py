@@ -161,7 +161,9 @@ class Player(TimeStampedModel):
 
         hand = self.current_hand
         if hand is None:
-            logger.info("%s", f"{self.name} may not play now because they have no current hand.")
+            logger.info(
+                "%s", f"{self.name} may not call or play now because they have no current hand."
+            )
             return False
 
         # simple case: no dummy yet
