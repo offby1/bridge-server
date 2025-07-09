@@ -70,3 +70,10 @@ def test_play_post_view(usual_setup, rf) -> None:
     response = c.post(reverse("app:play-post"), data={"card": players_cards_string[0:2]})
     assert response.status_code == 403
     assert "turn to play" in response.text
+
+    c.force_login(hand.player_who_may_play.user)
+    response = c.post(
+        reverse("app:play-post"), data={"card": "not really a serialized card at all"}
+    )
+    assert response.status_code == 403
+    assert "Cannot deserialize" in response.text

@@ -77,7 +77,11 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
             f"It's not {request.user.player.name}'s turn to play, but rather {hand.player_who_may_play.name}'s"
         )
 
-    card = bridge.card.Card.deserialize(request.POST["card"])
+    try:
+        card = bridge.card.Card.deserialize(request.POST["card"])
+    except Exception as e:
+        return Forbid(str(e))
+
     try:
         hand.add_play_from_model_player(player=hand.player_who_may_play, card=card)
     except (app.models.hand.PlayError, bridge.xscript.PlayError) as e:
