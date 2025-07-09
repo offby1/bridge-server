@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
+  - I imagine there's something deep in django's management command that is dropping the ball somewhere.
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 * It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
 * In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
@@ -21,10 +23,6 @@ STILL TODO:
 * Performance, as usual:
 
   I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.
-
-* I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
-
-  The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
 
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
@@ -204,6 +202,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* I wonder if using redis as the store for django-eventstream would noticeably improve things -- currently we use our database, and sending an event does a *lot* of queries.
+
+  The redis backing store doesn't yet work correctly, though; I submitted [a patch for it](https://github.com/fanout/django-eventstream/pull/159/files).  The patch was accepted, but doesn't seem to have yet made it into a release (as I write this, the current release is 5.3.2; presumably, my fix will be in 5.3.3).
+
 * Performance, as usual:
 
   I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.
