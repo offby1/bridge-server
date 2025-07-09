@@ -80,7 +80,7 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
     card = bridge.card.Card.deserialize(request.POST["card"])
     try:
         hand.add_play_from_model_player(player=hand.player_who_may_play, card=card)
-    except app.models.hand.PlayError as e:
+    except (app.models.hand.PlayError, bridge.xscript.PlayError) as e:
         return Forbid(str(e))
 
     return HttpResponse("<body>whatchoo lookin' at</body>")
