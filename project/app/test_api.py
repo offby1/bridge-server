@@ -72,6 +72,8 @@ def _no_voids(t: Tournament):
     )
     existing_hand = Hand.objects.first()
 
+    assert existing_hand is not None
+
     for p in existing_hand.players():
         p.current_hand = None
         p.save()
@@ -118,11 +120,11 @@ def test_ppv_seated_but_not_my_turn(one_club_hand):
 
     not_their_turn_player = Player.objects.exclude(pk=one_club_hand.player_who_may_play.pk).first()
     assert not_their_turn_player != one_club_hand.player_who_may_play
-    c.force_login(not_their_turn_player.user)
 
     assert one_club_hand.player_who_may_play.name == "Clint Eastwood"
     east_cards_string = getattr(one_club_hand.board, "east_cards")
 
+    c.force_login(not_their_turn_player.user)
     response = c.post(reverse("app:play-post"), data={"card": east_cards_string[0:2]})
     assert response.status_code == 403
     assert "turn to play" in response.text
@@ -176,3 +178,13 @@ def test_ppv_not_following_suit(db):
     response = c.post(reverse("app:play-post"), data={"card": "D2"})
     assert response.status_code == 403
     assert "cannot play" in response.text
+
+
+def test_ppv_cannot_play_before_auction_settles(usual_setup):
+    hand = Hand.objects.first()
+    c = Client()
+    for p in hand.players():
+        c.force_login(p.user)
+        response = c.post(reverse("app:play-post"), data={"card": "C4"})
+        assert response.status_code == 403
+        assert "Nobody may play now" in response.text
