@@ -584,6 +584,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
+        if self.next_seat_to_play is None:
+            msg = "Nobody may play now"
+            raise PlayError(msg)
+
+        if not player.may_control_seat(seat=self.next_seat_to_play):
+            raise PlayError(
+                f"It's not {player.name}'s turn to play, but rather"
+                f" {self.player_who_controls_seat(self.next_seat_to_play)}'s at {self.next_seat_to_play}"
+            )
+
+        logger.info("OK, so %s gonna play %s at %s", player.name, card, self)
+
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:

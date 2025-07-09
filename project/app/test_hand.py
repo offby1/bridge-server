@@ -246,15 +246,16 @@ def test_current_trick(usual_setup: Hand) -> None:
     assert not h.current_trick
 
     set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h)
-    declarer = h.declarer
-    assert declarer is not None
+    libDeclarer = h.declarer
+    assert libDeclarer is not None
     # TODO -- add a "lho" method to model.Player
-    first_players_seat = declarer.seat.lho()
+    first_players_seat = libDeclarer.seat.lho()
     first_player = h.players_by_direction_letter[first_players_seat.value]
     first_players_cards = first_player.dealt_cards()
 
-    second_player = h.players_by_direction_letter[first_players_seat.lho().value]
-    second_players_cards = second_player.dealt_cards()
+    dummy = h.model_dummy
+    assert dummy is not None
+    dummys_cards = dummy.dealt_cards()
 
     first_card = first_players_cards[0]
     h.add_play_from_model_player(player=first_player, card=first_card)
@@ -264,8 +265,10 @@ def test_current_trick(usual_setup: Hand) -> None:
     tt = h.current_trick[-1]
     assert tt.card == first_card
 
-    second_card = second_players_cards[0]
-    h.add_play_from_model_player(player=second_player, card=second_card)
+    second_card = dummys_cards[0]
+    model_declarer = h.model_declarer
+    assert model_declarer is not None
+    h.add_play_from_model_player(player=model_declarer, card=second_card)
 
     assert len(h.current_trick) == 2
     tt = h.current_trick[-1]

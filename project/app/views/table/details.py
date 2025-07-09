@@ -73,21 +73,11 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
         return Forbid(message, content_type=preferred_type)
 
     assert request.user.player is not None
-    hand = request.user.player.current_hand
+    hand: app.models.Hand | None = request.user.player.current_hand
 
     if hand is None:
         msg = f"{request.user.player.name} is not currently seated"
         return _forbid(msg)
-
-    if hand.player_who_may_play is None:
-        msg = "Nobody may play now"
-        return _forbid(msg)
-
-    if not request.user.player.may_control_seat(seat=hand.next_seat_to_play):
-        return _forbid(
-            f"It's not {request.user.player.name}'s turn to play, but rather"
-            f" {hand.player_who_controls_seat(hand.next_seat_to_play)}'s at {hand.next_seat_to_play}"
-        )
 
     try:
         card = bridge.card.Card.deserialize(request.POST["card"])
@@ -95,7 +85,7 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
         return _forbid(str(e))
 
     try:
-        hand.add_play_from_model_player(player=hand.player_who_may_play, card=card)
+        hand.add_play_from_model_player(player=request.user.player, card=card)
     except (app.models.hand.PlayError, bridge.xscript.PlayError) as e:
         return _forbid(str(e))
 
