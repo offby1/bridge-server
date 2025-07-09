@@ -72,6 +72,7 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
     def _forbid(message: str) -> HttpResponse:
         return Forbid(message, content_type=preferred_type)
 
+    assert request.user.player is not None
     hand = request.user.player.current_hand
 
     if hand is None:
