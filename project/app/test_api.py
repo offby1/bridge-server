@@ -43,11 +43,11 @@ def test_play_post_view(usual_setup, rf) -> None:
     assert response.status_code == 302
     assert "/accounts/login/?next=/play/" in response.url
 
-    # Not seated
     hand = Hand.objects.first()
     set_auction_to(bridge.contract.Bid(level=1, denomination=bridge.card.Suit.CLUBS), hand)
-    player, _ = Player.objects.get_or_create_synthetic()
 
+    # Not seated
+    player, _ = Player.objects.get_or_create_synthetic()
     c.force_login(player.user)
     response = c.post(reverse("app:play-post"), data={"card": "C2"})
     assert response.status_code == 403
@@ -56,24 +56,29 @@ def test_play_post_view(usual_setup, rf) -> None:
     # Seated, but not my turn
     player = Player.objects.exclude(pk=hand.player_who_may_play.pk).first()
     assert player != hand.player_who_may_play
-
     c.force_login(player.user)
 
-    players_direction = None
-    for d in hand.direction_names:
-        if getattr(hand, d) == player:
-            players_direction = d
-            break
-    assert players_direction is not None
-    players_cards_string = getattr(hand.board, f"{players_direction.lower()}_cards")
+    assert hand.player_who_may_play.name == "Clint Eastwood"
+    east_cards_string = getattr(hand.board, "east_cards")
 
-    response = c.post(reverse("app:play-post"), data={"card": players_cards_string[0:2]})
+    response = c.post(reverse("app:play-post"), data={"card": east_cards_string[0:2]})
     assert response.status_code == 403
     assert "turn to play" in response.text
 
+    # My turn, but not a valid card string
     c.force_login(hand.player_who_may_play.user)
     response = c.post(
         reverse("app:play-post"), data={"card": "not really a serialized card at all"}
     )
     assert response.status_code == 403
     assert "Cannot deserialize" in response.text
+
+    # My turn, but not my card
+    north_cards_string = getattr(hand.board, "north_cards")
+    response = c.post(
+        reverse("app:play-post"),
+        data={"card": north_cards_string[0:2]},
+        headers={"accept": "application/json"},
+    )
+    assert response.status_code == 403
+    assert "don't hold" in response.text

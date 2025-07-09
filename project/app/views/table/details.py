@@ -29,18 +29,23 @@ def _auction_channel_for_table(table):
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
+    preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
+
+    def _forbid(message: str) -> HttpResponse:
+        return Forbid(message, content_type=preferred_type)
+
     if request.user.player is None:
         msg = f"You {request.user.username} are not a player"
-        return Forbid(msg)
+        return _forbid(msg)
 
     hand = request.user.player.current_hand
 
     if hand is None:
         msg = f"{request.user.player.name} is not currently seated"
-        return Forbid(msg)
+        return _forbid(msg)
 
     if request.user.player != hand.player_who_may_call:
-        return Forbid(
+        return _forbid(
             f"It's not {request.user.player.name}'s turn to call, but rather {hand.player_who_may_call.name}'s"
         )
 
@@ -54,7 +59,7 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
         app.models.hand.HandError,
         bridge.auction.AuctionException,
     ) as e:
-        return Forbid(str(e))
+        return _forbid(str(e))
 
     return HttpResponse()
 
@@ -62,30 +67,35 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
+    preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
+
+    def _forbid(message: str) -> HttpResponse:
+        return Forbid(message, content_type=preferred_type)
+
     hand = request.user.player.current_hand
 
     if hand is None:
         msg = f"{request.user.player.name} is not currently seated"
-        return Forbid(msg)
+        return _forbid(msg)
 
     if hand.player_who_may_play is None:
         msg = "Nobody may play now"
-        return Forbid(msg)
+        return _forbid(msg)
 
     if not request.user.player.may_control_seat(seat=hand.next_seat_to_play):
-        return Forbid(
+        return _forbid(
             f"It's not {request.user.player.name}'s turn to play, but rather {hand.player_who_may_play.name}'s"
         )
 
     try:
         card = bridge.card.Card.deserialize(request.POST["card"])
     except Exception as e:
-        return Forbid(str(e))
+        return _forbid(str(e))
 
     try:
         hand.add_play_from_model_player(player=hand.player_who_may_play, card=card)
     except (app.models.hand.PlayError, bridge.xscript.PlayError) as e:
-        return Forbid(str(e))
+        return _forbid(str(e))
 
     return HttpResponse("<body>whatchoo lookin' at</body>")
 

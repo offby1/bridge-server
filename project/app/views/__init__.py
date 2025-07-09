@@ -57,8 +57,9 @@ def Forbid(e: Exception | str, content_type: str = "text/html") -> HttpResponseF
     if content_type == "text/html":
         tarted_up_html = format_html("<body>{}</body>", escape(e))
         return HttpResponseForbidden(tarted_up_html)
-    else:  # probably application/json but let's not be fussy
-        return HttpResponseForbidden(str(e), content_type=content_type)
+
+    # probably application/json but let's not be fussy
+    return HttpResponseForbidden(str(e), content_type=content_type)
 
 
 def NotFound(e: Exception | str) -> HttpResponseNotFound:
