@@ -1,4 +1,7 @@
-from app.models import Call, Hand, Play
+from django.test import Client
+from django.urls import reverse
+
+from app.models import Call, Hand, Play, Player
 
 
 def test_xscript_works_despite_caching_being_hard_yo(usual_setup) -> None:
@@ -25,3 +28,19 @@ def test_xscript_works_despite_caching_being_hard_yo(usual_setup) -> None:
     plays = list(h1.get_xscript().plays())
     assert len(plays) == 1
     assert plays[0].card.serialize() == "♦2"
+
+
+def test_play_post_view(usual_setup, rf) -> None:
+    c = Client()
+
+    # Anonymous user
+    response = c.post(reverse("app:play-post"), data={"card": "C2"})
+
+    assert response.status_code == 302
+    assert "/accounts/login/?next=/play/" in response.url
+
+    # Not seated
+    player = Player.objects.first()
+    c.force_login(player.user)
+    response = c.post(reverse("app:play-post"), data={"card": "C2"})
+    assert response.status_code == 403

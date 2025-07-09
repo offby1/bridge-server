@@ -62,14 +62,14 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
-    if request.user.player is None:
-        msg = f"You {request.user.username} are not a player"
-        return Forbid(msg)
-
     hand = request.user.player.current_hand
 
     if hand is None:
         msg = f"{request.user.player.name} is not currently seated"
+        return Forbid(msg)
+
+    if hand.player_who_may_play is None:
+        msg = "Nobody may play now"
         return Forbid(msg)
 
     if not request.user.player.may_control_seat(seat=hand.next_seat_to_play):
