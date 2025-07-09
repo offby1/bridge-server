@@ -34,7 +34,7 @@ def test_xscript_works_despite_caching_being_hard_yo(usual_setup) -> None:
     assert plays[0].card.serialize() == "♦2"
 
 
-def test_play_post_view(usual_setup, rf) -> None:
+def test_play_post_view(usual_setup, rf):
     c = Client()
 
     # Anonymous user
