@@ -294,7 +294,7 @@ perf-local: drop docker-prerequisites
 
     just whop
     docker compose up --build --detach  django django-collected-static django-migrated prometheus grafana
-    just stress --min-players=100
+    just stress --min-players=100 --tempo=0.5
     docker compose logs django --follow
 
 # Your kids know 'front and follow'?

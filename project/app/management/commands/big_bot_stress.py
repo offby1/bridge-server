@@ -22,7 +22,7 @@ everybodys_password = (
 
 class Command(BaseCommand):
     def add_arguments(self, parser) -> None:
-        parser.add_argument("--tempo-seconds", type=int, default=5)
+        parser.add_argument("--tempo-seconds", type=float, default=5.0)
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument("--min-players", type=int, default=0)
