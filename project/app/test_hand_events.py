@@ -115,12 +115,14 @@ def test_sends_final_score_just_to_table() -> None:
 
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
-    h = usual_setup
+    h: Hand = usual_setup
 
     one_hand_JSON_channel = next(h.players()).event_JSON_hand_channel
 
     def add_play(card_string: str) -> None:
-        player = h.player_who_may_play
+        seat = h.next_seat_to_play
+        assert seat is not None
+        player = h.player_who_controls_seat(seat=seat, right_this_second=True)
 
         h.add_play_from_model_player(
             player=player,
@@ -150,8 +152,6 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             print(f"{ex=}")
 
         if "dummy_html" in e.data:
-            for k, v in json.loads(json.loads(e.data)).items():
-                print(f"{k}: {str(v)[0:100]}")
             dummys_seen += 1
         if "trick_html" in e.data:
             tricks_seen += 1

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 import dataclasses
 import datetime
 import json
@@ -588,13 +588,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             msg = "Nobody may play now"
             raise PlayError(msg)
 
-        if not player.may_control_seat(seat=self.next_seat_to_play):
+        if not player.controls_seat(seat=self.next_seat_to_play, right_this_second=True):
             raise PlayError(
                 f"It's not {player.name}'s turn to play, but rather"
-                f" {self.player_who_controls_seat(self.next_seat_to_play)}'s at {self.next_seat_to_play}"
+                f" {self.player_who_controls_seat(self.next_seat_to_play, right_this_second=True)}'s at {self.next_seat_to_play}"
             )
 
-        logger.info("OK, so %s gonna play %s at %s", player.name, card, self)
+        seat_that_just_played = self.next_seat_to_play
 
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
@@ -603,22 +603,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = rv.created
         self.save()
+
         logger.debug(
-            "%s: %s (%d) played %s; last_action_time is %s",
+            "%s: %s (%d) played %s",
             self,
             player,
             player.pk,
             card,
-            self.last_action_time,
         )
-
-        about_to_play = self.player_who_may_play
 
         # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why I'm doing this.
         # Maybe it's just to indicate which of their cards are legal.
-        for update_me in [player, about_to_play]:
-            if update_me is not None:
-                self.send_HTML_update_to_appropriate_channel(player_to_update=update_me)
+        self.send_HTML_update_to_appropriate_channel(last_seat=seat_that_just_played)
 
         self.send_JSON_to_players(
             data={
@@ -658,33 +654,32 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _hand_HTML_for_player(hand=self, player=p)
 
-    def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
+    def send_HTML_update_to_appropriate_channel(self, *, last_seat: Seat) -> None:
         assert self.dummy is not None
-        dummy_direction_letter = self.dummy.seat.name[0]
 
-        method: Callable[..., None]
-
-        kwargs: dict[str, Any]
-
-        if player_to_update == self.players_by_direction_letter[dummy_direction_letter]:
-            method = self.send_HTML_to_table
-            kwargs = dict(
-                data={
-                    "dummy_direction": self.dummy.seat.name,
-                    "dummy_html": self._get_current_hand_html(p=player_to_update),
-                }
-            )
-        else:
-            method = self.send_HTML_to_player
-            kwargs = dict(
-                data={
-                    "current_hand_direction": player_to_update.current_direction(current_hand=self),
-                    "current_hand_html": self._get_current_hand_html(p=player_to_update),
-                },
-                player=player_to_update,
-            )
-
-        method(**kwargs)  # type: ignore [arg-type]
+        for seat in (last_seat, last_seat.lho()):
+            if seat == self.dummy:
+                logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
+                p = self.model_dummy
+                assert p is not None
+                self.send_HTML_to_table(
+                    data={
+                        "dummy_direction": seat.name,
+                        "dummy_html": self._get_current_hand_html(p=p),
+                    }
+                )
+            else:
+                recipient = self.player_who_controls_seat(seat, right_this_second=False)
+                logger.info(
+                    "Will send HTML to %s at %s since they are not dummy", recipient.name, seat
+                )
+                self.send_HTML_to_player(
+                    data={
+                        "current_hand_direction": seat.name,
+                        "current_hand_html": self._get_current_hand_html(p=recipient),
+                    },
+                    player=recipient,
+                )
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
         with transaction.atomic():
@@ -792,11 +787,21 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return ""
 
-    def player_who_controls_seat(self, seat: Seat) -> Player:
+    def player_who_controls_seat(self, seat: Seat, right_this_second: bool) -> Player:
         for d in self.direction_names:
             p: Player = getattr(self, d)
-            if p.may_control_seat(seat=seat):
+            assert p.current_hand == self, (
+                f"So like {p.name}'s current hand is {p.current_hand=}, but I am {self=}"
+            )
+            if p.controls_seat(seat=seat, right_this_second=right_this_second):
                 return p
+            logger.warning(
+                "Wayul, ah guess %s at %s don't control %s %s",
+                p.name,
+                d,
+                seat,
+                "right this second" if right_this_second else "generally",
+            )
         raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
 
     @property

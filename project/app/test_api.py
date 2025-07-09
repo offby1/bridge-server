@@ -170,7 +170,7 @@ def test_ppv_not_following_suit(db):
     response = c.post(reverse("app:play-post"), data={"card": "C4"})
     assert response.status_code == 200
 
-    declarer = hand.player_who_controls_seat(hand.next_seat_to_play)
+    declarer = hand.player_who_controls_seat(hand.next_seat_to_play, right_this_second=True)
     assert declarer.name == "Jeremy Northam"
 
     c.force_login(declarer.user)

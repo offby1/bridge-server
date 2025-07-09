@@ -155,7 +155,7 @@ class Player(TimeStampedModel):
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
 
-    def may_control_seat(self, *, seat: bridge.seat.Seat) -> bool:
+    def controls_seat(self, *, seat: bridge.seat.Seat, right_this_second: bool) -> bool:
         # Take declarer & dummy into account.  This isn't all that complex, but I keep getting it wrong, so it needs to
         # be in one place, and tested.
 
@@ -176,7 +176,10 @@ class Player(TimeStampedModel):
 
         active_seat = hand.next_seat_to_play or hand.next_seat_to_call
 
-        return seat in seats_by_player[self] and seat == active_seat
+        rv = seat in seats_by_player[self]
+        if right_this_second:
+            rv = rv and seat == active_seat
+        return rv
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property

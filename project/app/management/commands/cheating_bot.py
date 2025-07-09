@@ -43,7 +43,7 @@ def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | Non
 
         if s is None:
             continue
-        player = h.player_who_controls_seat(s)
+        player = h.player_who_controls_seat(s, right_this_second=True)
         if player.allow_bot_to_play_for_me:
             return h
 
@@ -117,7 +117,7 @@ class Command(BaseCommand):
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
             elif (s := hand_to_play.next_seat_to_play) is not None:
                 self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
-                p = hand_to_play.player_who_controls_seat(s)
+                p = hand_to_play.player_who_controls_seat(s, right_this_second=True)
                 if p.allow_bot_to_play_for_me:
                     self.quiet_logger._reset()
                     card = xscript.slightly_less_dumb_play().card
