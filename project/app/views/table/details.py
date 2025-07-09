@@ -85,7 +85,8 @@ def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
 
     if not request.user.player.may_control_seat(seat=hand.next_seat_to_play):
         return _forbid(
-            f"It's not {request.user.player.name}'s turn to play, but rather {hand.player_who_may_play.name}'s"
+            f"It's not {request.user.player.name}'s turn to play, but rather"
+            f" {hand.player_who_controls_seat(hand.next_seat_to_play)}'s at {hand.next_seat_to_play}"
         )
 
     try:
