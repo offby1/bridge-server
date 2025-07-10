@@ -181,7 +181,7 @@ def _display_and_control(
     return {
         "display_cards": True,
         "viewer_may_control_this_seat": as_viewed_by.controls_seat(
-            seat=seat, right_this_second=False
+            seat=seat, right_this_second=True
         ),
     }
 
