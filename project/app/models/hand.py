@@ -658,7 +658,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         assert self.dummy is not None
 
         for seat in (last_seat, last_seat.lho()):
-            if seat == self.dummy:
+            if seat == self.dummy.seat:
                 logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
                 p = self.model_dummy
                 assert p is not None
@@ -795,7 +795,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             )
             if p.controls_seat(seat=seat, right_this_second=right_this_second):
                 return p
-            logger.warning(
+            logger.debug(
                 "Wayul, ah guess %s at %s don't control %s %s",
                 p.name,
                 d,
