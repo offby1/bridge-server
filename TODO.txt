@@ -1,6 +1,14 @@
 IN PROGRESS:
 
 STILL TODO:
+* commit from origin/main (9b255123c80e7a93fd04aafc6ceea09df2000a88) to 85ce8735a81a8b0764562699c735c22ca9105f30 should be split into two chunks:
+  - replacing the API bot with the single-process cheating bot
+  - improving test coverage, and the fallout from that
+    - figure out what else I did in this chunk of commits, and rename the branch accordingly
+* consider making the cheating bot its own docker container, and removing daemontools
+* The interactive hand was showing mojibake instead of the left- and right-chevrons :-(
+* The interactive hand was frequently failing to highlight the cards panel, and similarly to activate the cards.  Almost as if it hadn't gotten the HTML message.
+  - since I now have a better idea of how django-eventstream works, maybe the JS in my pages needs to handle the "stream-reset" event
 * Since I seem to be abandoning the api-bot, ensure we have tests that cover the endpoint that it calls (serialized-hand, call-post-view, call-play-view).
 * Put the tournament's tempo in the tournament detail page (it's already in the tournament *list* page).
 * The "model inserts" panel in prometheus is reading zeroes for everything; no idea why.
