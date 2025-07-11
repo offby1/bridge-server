@@ -167,6 +167,9 @@ stress *options:
 dump:
     docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
+dump-bot:
+    docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
+
 [group('stress')]
 [script('bash')]
 tiny:
