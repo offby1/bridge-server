@@ -69,11 +69,21 @@
          htmx.process(document.getElementById(data["current_hand_direction"]));
      }
      });
- {% endif %}
+playerEventSource.addEventListener('stream-reset', function (e) {
+         const data = JSON.parse(e.data);
+         console.log("playerEventSource got one o' them stream-reset messages: " + Object.keys(data));
+     }, false);
 
- const handEventUrl = '/events/table/html/{{ hand.pk }}/';
+     {% endif %}
+
+     const handEventUrl = '/events/table/html/{{ hand.pk }}/';
  var handEventSource = new ReconnectingEventSource(handEventUrl);
  console.log(`Listening for hand events on ${handEventUrl}`);
+
+     handEventSource.addEventListener('stream-reset', function (e) {
+         const data = JSON.parse(e.data);
+         console.log("handEventSource Got one o' them stream-reset messages: " + Object.keys(data));
+     }, false);
 
      handEventSource.addEventListener('message', function (e) {
          const data = JSON.parse(e.data);
