@@ -110,8 +110,13 @@ class Command(BaseCommand):
             if (p := hand_to_play.player_who_may_call) is not None:
                 self.quiet_logger.info("%s", f"It is {p.name}'s turn to call")
                 if p.allow_bot_to_play_for_me:
-                    hand_to_play.add_call(call=xscript.auction.random_legal_call())
+                    call = xscript.auction.random_legal_call()
+                    hand_to_play.add_call(call=call)
                     self.quiet_logger._reset()
+                    self.quiet_logger.info(
+                        "%s",
+                        f"I called {call} for {p.name} at {hand_to_play.direction_letters_by_player[p]}",
+                    )
                 else:
                     self.quiet_logger.info("%s", f"{p.name} is human")
                     time.sleep(hand_to_play.board.tournament.tempo_seconds)
