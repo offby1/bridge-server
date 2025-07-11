@@ -25,6 +25,8 @@ services:
         condition: service_completed_successfully
       django-migrated:
         condition: service_completed_successfully
+      postgres:
+        condition: service_started
       redis:
         condition: service_started
     environment:
@@ -59,6 +61,14 @@ services:
         - action: sync+restart
           path: ./project
           target: /bridge/project
+  bot:
+    <<: *django
+    command: "poetry run python manage.py cheating_bot"
+    ports: []
+    depends_on:
+      - django
+
+
   django-collected-static:
     <<: *django
     command: "poetry run python manage.py collectstatic --no-input"
