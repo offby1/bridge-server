@@ -32,7 +32,8 @@ die-if-not-local-docker:
 drop: die-if-not-local-docker pg-stop pg-start
     # If we don't nuke this volume, then the next time we bring up postgres it won't recreate the "bridge" database.
     docker compose down --volumes postgres
-    just pg-start
+    docker compose down --volumes redis
+    just pg-start redis
 
 [group('postgres')]
 backup: pg-start
