@@ -265,18 +265,17 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "exemplar": true,
-          "expr": "rate(django_model_inserts_total[$__rate_interval])",
+          "expr": "rate(pg_stat_database_tup_inserted{datname=\"bridge\"}[$__rate_interval])",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": true,
-          "legendFormat": "{{model}}",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Model Inserts",
+      "title": "Database Inserts",
       "type": "timeseries"
     },
     {
