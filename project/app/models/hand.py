@@ -660,6 +660,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         current_seat = self.next_seat_to_call or self.next_seat_to_play
 
         for seat in (last_seat, current_seat):
+            if seat is None:
+                assert self.is_complete or self.is_abandoned, (
+                    f"{self} is neither complete nor abandoned; yet there is no current seat??"
+                )
+                continue
+
             if seat == self.dummy.seat:
                 logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
                 p = self.model_dummy
