@@ -657,7 +657,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def send_HTML_update_to_appropriate_channel(self, *, last_seat: Seat) -> None:
         assert self.dummy is not None
 
-        for seat in (last_seat, last_seat.lho()):
+        current_seat = self.next_seat_to_call or self.next_seat_to_play
+
+        for seat in (last_seat, current_seat):
             if seat == self.dummy.seat:
                 logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
                 p = self.model_dummy
