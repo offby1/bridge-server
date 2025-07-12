@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
 * commit from origin/main (9b255123c80e7a93fd04aafc6ceea09df2000a88) to 85ce8735a81a8b0764562699c735c22ca9105f30 should be split into two chunks:
   - replacing the API bot with the single-process cheating bot
   - improving test coverage, and the fallout from that
