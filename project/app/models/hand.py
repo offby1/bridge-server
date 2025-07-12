@@ -588,10 +588,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             msg = "Nobody may play now"
             raise PlayError(msg)
 
-        if not player.controls_seat(seat=self.next_seat_to_play, right_this_second=True):
+        whose_turn = self.player_who_controls_seat(self.next_seat_to_play, right_this_second=True)
+        if player != whose_turn:
             raise PlayError(
-                f"It's not {player.name}'s turn to play, but rather"
-                f" {self.player_who_controls_seat(self.next_seat_to_play, right_this_second=True)}'s at {self.next_seat_to_play}"
+                f"It's not {player.name}'s turn to play, but rather {whose_turn}'s (at {self.next_seat_to_play})"
             )
 
         seat_that_just_played = self.next_seat_to_play
