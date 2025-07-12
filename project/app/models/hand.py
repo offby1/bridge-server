@@ -795,13 +795,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             )
             if p.controls_seat(seat=seat, right_this_second=right_this_second):
                 return p
-            logger.debug(
-                "Wayul, ah guess %s at %s don't control %s %s",
-                p.name,
-                d,
-                seat,
-                "right this second" if right_this_second else "generally",
-            )
+
         raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
 
     @property
