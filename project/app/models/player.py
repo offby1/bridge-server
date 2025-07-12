@@ -49,6 +49,10 @@ MAX_BOT_PROCESSES = 40
 
 
 class PlayerManager(models.Manager):
+    def _update_redundant_fields(self):
+        for instance in self.all():
+            instance._update_redundant_fields()
+
     @staticmethod
     def _find_unused_username(prefix=""):
         fake = Faker()
@@ -162,6 +166,21 @@ class Player(TimeStampedModel):
     # This is redundant -- it could be computed from the transcript -- but keeping it here saves time by in effect
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
+
+    def _update_redundant_fields(self):
+        import app.models
+
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self})
+
+        for h in app.models.Hand.objects.filter(
+            expression, is_complete=False, abandoned_because__isnull=True
+        ):
+            for direction_name in attribute_names:
+                if getattr(h, direction_name) == self:
+                    self.current_hand = h
+                    self.save(update_fields=["current_hand"])
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
     @property

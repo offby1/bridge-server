@@ -128,7 +128,7 @@ manage *options: all-but-django-prep ensure-skeleton-key version-file
 collectstatic: (manage "collectstatic --no-input")
 
 [group('django')]
-fixture *options: pg-stop drop migrate (manage "loaddata " + options)
+fixture *options: pg-stop drop migrate (manage "loaddata " + options) (manage "update_redundant_fields")
     @echo To create a new fixture, do e.g. "just dumpdata"
 
 alias load := fixture
