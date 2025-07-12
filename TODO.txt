@@ -5,7 +5,6 @@ STILL TODO:
   - I imagine there's something deep in django's management command that is dropping the ball somewhere.
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 * It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
-* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
 * Some kind of smoke test for views.
 
   I'd like to automatically
