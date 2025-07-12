@@ -30,7 +30,7 @@
                         {% else %}
                             {{ user }}.
                         {% endif %}
-                        {% include "bot-checkbox-partial.html#bot-checkbox-partial" with error_message="" %}
+                        {% include "bot-checkbox.html" with error_message="" %}
                         <form method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
                             <input type="submit" value="logout" />

@@ -280,18 +280,14 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
 def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     player: Player = get_object_or_404(Player, pk=pk)
 
+    context = {"error_message": "", "user": request.user}
+
     try:
         player.toggle_bot()
     except Exception as e:
-        return TemplateResponse(
-            request,
-            "bot-checkbox-partial.html#bot-checkbox-partial",
-            context={"error_message": str(e)},
-        )
+        context["error_message"] = str(e)
 
-    return TemplateResponse(
-        request, "bot-checkbox-partial.html#bot-checkbox-partial", context={"error_message": ""}
-    )
+    return TemplateResponse(request, "bot-checkbox.html", context=context)
 
 
 def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
