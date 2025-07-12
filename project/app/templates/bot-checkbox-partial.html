@@ -1,6 +1,5 @@
 {% load partials %}
 {% partialdef bot-checkbox-partial %}
-{# TODO -- reload the whole page, or somehow update the "Hello" message, which includes whether we're a bot or not #}
 {% if user.player and not user.player.synthetic %}
     <div class="form-check form-switch" id="bot-plays-for-me-div">
         <input class="form-check-input"
