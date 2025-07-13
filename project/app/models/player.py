@@ -193,11 +193,9 @@ class Player(TimeStampedModel):
             seats_by_player[hand.model_dummy] = set()
             seats_by_player[hand.model_declarer].add(hand.dummy.seat)
 
-        active_seat = hand.next_seat_to_play or hand.next_seat_to_call
-
         rv = seat in seats_by_player[self]
         if right_this_second:
-            rv = rv and seat == active_seat
+            rv = rv and seat == (hand.next_seat_to_play or hand.next_seat_to_call)
         return rv
 
     # *all* hands to which we've ever been assigned, regardless of whether they're complete or abandoned
