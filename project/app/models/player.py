@@ -41,6 +41,10 @@ SPLIT = "splitsville"
 
 
 class PlayerManager(models.Manager):
+    def _update_redundant_fields(self):
+        for instance in self.all():
+            instance._update_redundant_fields()
+
     @staticmethod
     def _find_unused_username(prefix=""):
         fake = Faker()
@@ -154,6 +158,21 @@ class Player(TimeStampedModel):
     # This is redundant -- it could be computed from the transcript -- but keeping it here saves time by in effect
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
+
+    def _update_redundant_fields(self):
+        import app.models
+
+        expression = models.Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= models.Q(**{direction: self})
+
+        for h in app.models.Hand.objects.filter(
+            expression, is_complete=False, abandoned_because__isnull=True
+        ):
+            for direction_name in attribute_names:
+                if getattr(h, direction_name) == self:
+                    self.current_hand = h
+                    self.save(update_fields=["current_hand"])
 
     def controls_seat(self, *, seat: bridge.seat.Seat, right_this_second: bool) -> bool:
         # Take declarer & dummy into account.  This isn't all that complex, but I keep getting it wrong, so it needs to

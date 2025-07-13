@@ -1,4 +1,6 @@
 IN PROGRESS:
+* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
+  This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob, with `django-2025-07-13T15:08:13+0000`
 
 STILL TODO:
 * when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
@@ -19,7 +21,6 @@ STILL TODO:
 
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 * It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
-* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
 * Some kind of smoke test for views.
 
   I'd like to automatically

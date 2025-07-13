@@ -65,6 +65,7 @@ services:
     <<: *django
     command: "poetry run python manage.py cheating_bot"
     ports: []
+    labels: {}
     depends_on:
       - django
 

@@ -4,7 +4,6 @@ import contextlib
 import datetime
 import json
 import logging
-import time
 from typing import Any
 
 from django.contrib import messages as django_web_messages
@@ -279,32 +278,16 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    playa: Player = get_object_or_404(Player, pk=pk)
+    player: Player = get_object_or_404(Player, pk=pk)
+
+    context = {"error_message": "", "user": request.user}
 
     try:
-        wait_time = float(request.POST.get("wait_time", "0"))
-    except ValueError as e:
-        logger.warning("%s; will not wait", e)
-        wait_time = 0
-
-    logger.debug(f"Hi folks! {playa.name=} {pk=} {request.POST=}; {wait_time=}")
-
-    if wait_time > 0:
-        logger.debug("Waiting %f seconds, since %s", wait_time, request.POST)
-        time.sleep(wait_time)
-
-    try:
-        playa.toggle_bot()
+        player.toggle_bot()
     except Exception as e:
-        return TemplateResponse(
-            request,
-            "bot-checkbox-partial.html#bot-checkbox-partial",
-            context={"error_message": str(e)},
-        )
+        context["error_message"] = str(e)
 
-    return TemplateResponse(
-        request, "bot-checkbox-partial.html#bot-checkbox-partial", context={"error_message": ""}
-    )
+    return TemplateResponse(request, "bot-checkbox.html", context=context)
 
 
 def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:

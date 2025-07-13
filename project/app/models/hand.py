@@ -167,6 +167,10 @@ def enrich(qs: QuerySet) -> QuerySet:
 class HandManager(models.Manager):
     from . import Board
 
+    def _update_redundant_fields(self):
+        for instance in self.all():
+            instance._update_redundant_fields()
+
     def prepop(self) -> QuerySet:
         return enrich(self)
 
@@ -309,6 +313,11 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     abandoned_because = models.CharField(max_length=200, null=True)
 
     last_action_time = models.DateTimeField(default=timezone.now)
+
+    def _update_redundant_fields(self):
+        x = self.get_xscript()
+        self.is_complete = (x.auction.status is Auction.PassedOut) or x.num_plays == 52
+        self.save(update_fields=["is_complete"])
 
     def as_link(self):
         return format_html(
