@@ -38,6 +38,7 @@ def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | Non
 
     # "manually" find the oldest hand whose current seat is controlled by the bot.  ideally we'd have the database do
     # this for us, rather than doing it here in Python; but it's not clear if that's possible.
+    h: app.models.Hand
     for h in all_hands_with_bots:
         s = h.next_seat_to_call or h.next_seat_to_play
 

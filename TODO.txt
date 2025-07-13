@@ -4,11 +4,7 @@ IN PROGRESS:
 
 STILL TODO:
 * when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
-* commit from origin/main (9b255123c80e7a93fd04aafc6ceea09df2000a88) to 85ce8735a81a8b0764562699c735c22ca9105f30 should be split into two chunks:
-  - replacing the API bot with the single-process cheating bot
-  - improving test coverage, and the fallout from that
-    - figure out what else I did in this chunk of commits, and rename the branch accordingly
-* consider making the cheating bot its own docker container, and removing daemontools
+* figure out what I did in the "more-coverage" branch, and rename the branch accordingly; it's not just about coverage
 * The interactive hand was showing mojibake instead of the left- and right-chevrons :-(
 * The interactive hand was frequently failing to highlight the cards panel, and similarly to activate the cards.  Almost as if it hadn't gotten the HTML message.
   - since I now have a better idea of how django-eventstream works (see [docs/downtime-study-guide.txt]), maybe the JS in my pages needs to handle the "stream-reset" event
