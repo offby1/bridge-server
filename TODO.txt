@@ -1,4 +1,6 @@
 IN PROGRESS:
+* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
+  This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob, with `django-2025-07-13T15:08:13+0000`
 
 STILL TODO:
 * Since I seem to be abandoning the api-bot, ensure we have tests that cover the endpoint that it calls (serialized-hand, call-post-view, call-play-view).
