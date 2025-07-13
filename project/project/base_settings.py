@@ -102,8 +102,9 @@ FASTDEV_STRICT_IF = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 EVENTSTREAM_REDIS = {
-    "host": os.environ.get("REDIS_HOST", "localhost"),
+    "host": REDIS_HOST,
     "port": 6379,
     "db": 0,
 }
@@ -278,7 +279,9 @@ LOGGING: dict[str, Any] = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
-        "LOCATION": "bridge_django_cache",
+        # TODO -- there might be a prometheus-flavored redis cache; if so, I should use that.
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:6379",
+        # "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }

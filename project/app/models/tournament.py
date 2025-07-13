@@ -71,7 +71,9 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
 
         TournamentSignup.objects.create_synths_for(tour)
         tour.create_hands_for_round(zb_round_number=0)
-        assert tour.hands().count() == tour.get_movement().num_rounds
+        assert tour.hands().count() == tour.get_movement().num_rounds, (
+            f"Oy! {tour.hands().count()=} != {tour.get_movement().num_rounds=}"
+        )
 
         if tour.play_completion_deadline == WAY_DISTANT_PLAY_COMPLETION_DEADLINE:
             tour.play_completion_deadline = tour.compute_play_completion_deadline()

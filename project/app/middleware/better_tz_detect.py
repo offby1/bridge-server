@@ -24,7 +24,6 @@ class BetterTimezoneMiddleware:
 
                 zi = zoneinfo.ZoneInfo(tz)
                 timezone.activate(zi)
-                logger.info("Woohoo! Activated %s! Take that, mofo!", zi)
             else:
                 logger.warning(
                     'Don\'t know what to do with `session["detected_tz"]` %r since it is not a string',

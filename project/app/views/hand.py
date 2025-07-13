@@ -178,14 +178,9 @@ def _display_and_control(
     if hand.open_access and not hand.is_complete:
         return {"display_cards": True, "viewer_may_control_this_seat": True}
 
-    if seat == getattr(hand.dummy, "seat", None):
-        viewer_may_control_this_seat = hand.declarer == as_viewed_by.libraryThing()
-    else:
-        viewer_may_control_this_seat = hand.player_who_may_play == as_viewed_by
-
     return {
         "display_cards": True,
-        "viewer_may_control_this_seat": viewer_may_control_this_seat,
+        "viewer_may_control_this_seat": as_viewed_by.may_control_seat(seat=seat),
     }
 
 
@@ -633,36 +628,6 @@ def Custom403(request: HttpRequest, content: str) -> HttpResponse:
     return rv
 
 
-def _get_current_event_ids_by_player_name(hand: app.models.Hand) -> dict[str, str]:
-    # We get all the event IDs in one go, so as to avoid hitting the db four times.
-    players = list(hand.players())
-    channel_names = [p.event_JSON_hand_channel for p in players]
-
-    # From here on, we're largely re-implementing django_eventstream.eventstream.get_current_event_id :-(
-    import django_eventstream.models  # type: ignore [import-untyped]
-    import django_eventstream.utils  # type: ignore [import-untyped]
-
-    # The only difference is that we're using "filter", to get a bunch, instead of "get", to get just one.
-    raw_event_ids_by_channel_name = {
-        e.name: e
-        for e in django_eventstream.models.EventCounter.objects.filter(name__in=channel_names)
-    }
-
-    cooked_event_ids_by_player_name = {}
-    for p in players:
-        channel_name = p.event_JSON_hand_channel
-        event_counter = raw_event_ids_by_channel_name.get(channel_name, None)
-        if event_counter is None:
-            value = 0
-        else:
-            value = event_counter.value
-        cooked_event_ids_by_player_name[p.name] = django_eventstream.utils.make_id(
-            {channel_name: value}
-        )
-
-    return cooked_event_ids_by_player_name
-
-
 def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
 
@@ -698,8 +663,6 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     context = {
         "board": hand.board.display_number,
-        # Only the bot pays attention to this, so we include JSON events, not HTML ones.
-        "current_event_ids_by_player_name": _get_current_event_ids_by_player_name(hand),
         "table": hand.table_display_number,
         "tempo_seconds": hand.board.tournament.tempo_seconds,
         "tournament": hand.board.tournament.display_number,

@@ -11,8 +11,14 @@ from .testutils import play_out_round
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(autouse=True)
-def clear_django_cache():
+@pytest.fixture(autouse=True, scope="function")
+def clear_django_cache(settings):
+    settings.CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unit-tests",
+        }
+    }
     cache.clear()
 
 

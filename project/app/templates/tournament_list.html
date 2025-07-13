@@ -22,6 +22,7 @@
                 <th>#</th>
                 <th>Name</th>
                 <th>Status</th>
+                <th>Tempo</th>
                 <th>Signup Deadline</th>
                 <th>Play Completion Deadline</th>
             </tr>
@@ -34,6 +35,7 @@
                         <a href="{% url 'app:tournament' pk=tournament.pk %}">{{ tournament }}</a>
                     </td>
                     <td>{{ tournament.status_str }}</td>
+                    <td>{{ tournament.tempo_seconds }}</td>
                     <td style="{{ tournament.signup_deadline_style }}">
                         {% if tournament.signup_deadline %}
                             <time datetime="{{ tournament.signup_deadline.isoformat }}"
