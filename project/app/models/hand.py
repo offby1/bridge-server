@@ -25,6 +25,7 @@ from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import Error, models, transaction
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import Http404
 from django.urls import reverse
@@ -654,6 +655,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         from app.views.hand import _hand_HTML_for_player
 
         return _hand_HTML_for_player(hand=self, player=p)
+
+    @staticmethod
+    def has_player(player: Player) -> Q:
+        expression = Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= Q(**{direction: player})
+
+        return expression
 
     def send_HTML_update_to_appropriate_channel(self, *, player_to_update: Player) -> None:
         assert self.dummy is not None

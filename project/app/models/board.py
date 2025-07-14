@@ -19,7 +19,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.db import models
 
-from .common import attribute_names, SEAT_CHOICES
+from .common import SEAT_CHOICES
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -153,11 +153,7 @@ class Board(models.Model):
     def relationship_to(self, player: Player) -> tuple[str, Hand | None]:
         from app.models import Hand
 
-        expression = models.Q(pk__in=[])
-        for direction in attribute_names:
-            expression |= models.Q(**{direction: player})
-
-        qs = Hand.objects.filter(expression, board=self)
+        qs = Hand.objects.filter(Hand.has_player(player), board=self)
 
         if qs.exists():
             h = qs.first()

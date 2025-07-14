@@ -162,12 +162,8 @@ class Player(TimeStampedModel):
     def _update_redundant_fields(self):
         import app.models
 
-        expression = models.Q(pk__in=[])
-        for direction in attribute_names:
-            expression |= models.Q(**{direction: self})
-
         for h in app.models.Hand.objects.filter(
-            expression, is_complete=False, abandoned_because__isnull=True
+            app.models.Hand.has_player(self), is_complete=False, abandoned_because__isnull=True
         ):
             for direction_name in attribute_names:
                 if getattr(h, direction_name) == self:
@@ -202,13 +198,7 @@ class Player(TimeStampedModel):
     def hands_played(self) -> models.QuerySet:
         from app.models import Hand
 
-        hands = Hand.objects.all()
-
-        expression = models.Q(pk__in=[])
-        for direction in attribute_names:
-            expression |= models.Q(**{direction: self})
-
-        return hands.filter(expression)
+        return Hand.objects.all().filter(Hand.has_player(self))
 
     @property
     def boards_played(self) -> models.QuerySet:
