@@ -579,7 +579,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self.send_JSON_to_players(data=data)
 
-            # TODO -- html-escape it, I guess
+            # TODO -- this isn't HTML, so why are we calling send_HTML_to_table?
             self.send_HTML_to_table(data=data)
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
