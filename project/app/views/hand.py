@@ -690,7 +690,7 @@ class HandTable(tables.Table):
     )
     table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     board = tables.Column()
-    players = tables.Column()
+    players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
 
     def render_result(self, record) -> str:
