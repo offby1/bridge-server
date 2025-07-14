@@ -11,10 +11,8 @@
   - `exit`
   - start a new shell.  This gets you a login where you are a member of the "docker" group.
 * jq (`sudo apt install jq`)
-* pipx (`sudo apt install pipx`)
-  - `~/.local/bin/pipx ensurepath`
-  - `exec $SHELL`
-* poetry (`pipx install poetry`) [1]
+* uv (TBD)
+* poetry (`uv tool install poetry`) [1]
 
 [1] In theory, you could install poetry through apt; but the version you'd get isn't new enough.
 
@@ -49,12 +47,12 @@ The below is from memory; it's hard to get a fresh MacOS installation to test it
 * I use [orbstack](https://orbstack.dev/) instad of Docker Desktop, although the latter works fine
 * `brew install jq`
 * python from <https://www.python.org/downloads/macos/>
-* pipx via `/Library/Frameworks/Python.framework/Versions/Current/bin/python3 -m pip install pipx`
-* not strictly needed, but handy for keeping python up to date: `pipx install mopup`
-* `pipx install poetry`
+* uv via `brew install uv`
+* not strictly needed, but handy for keeping python up to date: `uv tool install mopup`
+* `uv tool install poetry`
 
 ### pre-commit
-Optional but slick. `pipx install pre-commit`
+Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
 
 ## Running it
 - `just runme` will start just the web server.  `DEPLOYMENT_ENVIRONMENT` will be `"development"`.
