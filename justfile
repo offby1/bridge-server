@@ -30,6 +30,7 @@ ensure-django-secret: django-secret-directory
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
     fi
 
+[parallel]
 [private]
 [script('bash')]
 ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
@@ -90,6 +91,7 @@ die-if-poetry-active:
     fi
 
 [group('virtualenv')]
+[parallel]
 lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
     poetry lock
 
@@ -116,10 +118,12 @@ pre-commit:
     -pre-commit install  --hook-type pre-commit --hook-type pre-push
 
 [group('django')]
+[parallel]
 [private]
 all-but-django-prep: pre-commit poetry-install pg-start redis
 
 [group('django')]
+[parallel]
 [private]
 manage *options: all-but-django-prep ensure-skeleton-key version-file
     cd project && poetry run python manage.py {{ options }}
@@ -181,6 +185,7 @@ tiny:
     docker compose logs django --follow
 
 [group('development')]
+[parallel]
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
@@ -190,6 +195,7 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
 
 alias runserver := runme
 
+[parallel]
 curl *options: django-superuser migrate create-cache ensure-skeleton-key
     curl -v --cookie cook --cookie-jar cook "{{ options }}"
 
@@ -261,6 +267,7 @@ clean: die-if-poetry-active
     poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
     git clean -dxff
 
+[parallel]
 [private]
 docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
 

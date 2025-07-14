@@ -3,6 +3,7 @@ What tools do my various projects (mostly the bridge server) use?
 Once I list most of them, I should study each to see if there are features I don't yet know about that I could be using.
 
 - bash
+- chrome's developer tools
 - coverage
 - curl
 - daphne
