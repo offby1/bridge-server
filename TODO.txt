@@ -3,6 +3,12 @@ IN PROGRESS:
   This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob, with `django-2025-07-13T15:08:13+0000`
 
 STILL TODO:
+* I've got this bit of code duplicated in a few places; refactor it into a method:
+
+            expression = Q(pk__in=[])
+            for direction in attribute_names:
+                expression |= Q(**{direction: played_by})
+
 * Since I seem to be abandoning the api-bot, ensure we have tests that cover the endpoint that it calls (serialized-hand, call-post-view, call-play-view).
 * Put the tournament's tempo in the tournament detail page (it's already in the tournament *list* page).
 * The "model inserts" panel in prometheus is reading zeroes for everything; probably because it works via middleware, and the bot bypasses middleware (and indeed all view code).  Maybe I can resucscitate the postgres-exporter and get stats from it.
