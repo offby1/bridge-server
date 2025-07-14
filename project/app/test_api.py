@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.core.management import call_command
 import django.db.models
 from django.test import Client
@@ -188,3 +189,50 @@ def test_ppv_cannot_play_before_auction_settles(usual_setup):
         response = c.post(reverse("app:play-post"), data={"card": "C4"})
         assert response.status_code == 403
         assert "Nobody may play now" in response.text
+
+
+def test_cpv_anonymous(usual_setup):
+    c = Client()
+
+    # Anonymous user
+    response = c.post(reverse("app:call-post"), data={"call": "pass"})
+
+    assert response.status_code == 302
+    assert "/accounts/login/?next=/call/" in response.url
+
+
+def test_cpv_not_a_player(usual_setup):
+    c = Client()
+
+    u = User.objects.create_user("voyeur")
+    c.force_login(u)
+
+    response = c.post(reverse("app:call-post"), data={"call": "pass"})
+
+    assert response.status_code == 302
+    assert response.url == "/"
+
+
+# TODO -- almost identical to test_ppv_not_seated above
+def test_cpv_not_seated(usual_setup):
+    c = Client()
+
+    player, _ = Player.objects.get_or_create_synthetic()
+    c.force_login(player.user)
+    response = c.post(reverse("app:call-post"), data={"call": "pass"})
+    assert response.status_code == 403
+    assert "not currently seated" in response.text
+
+
+def test_cpv_seated_but_not_my_turn(usual_setup):
+    c = Client()
+
+    assert usual_setup.player_who_may_call.name == "Jeremy Northam"
+
+    not_their_turn_caller = Player.objects.exclude(pk=usual_setup.player_who_may_call.pk).first()
+
+    c.force_login(not_their_turn_caller.user)
+
+    response = c.post(reverse("app:call-post"), data={"call": "pass"})
+    assert response.status_code == 403
+    assert "turn to call" in response.text

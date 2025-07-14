@@ -34,10 +34,7 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
     def _forbid(message: str) -> HttpResponse:
         return Forbid(message, content_type=preferred_type)
 
-    if request.user.player is None:
-        msg = f"You {request.user.username} are not a player"
-        return _forbid(msg)
-
+    assert request.user.player is not None
     hand = request.user.player.current_hand
 
     if hand is None:
