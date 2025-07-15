@@ -185,7 +185,7 @@ tiny:
     set -euxo pipefail
 
     just drop
-    DJANGO_SETTINGS_MODULE=project.prod_settings just botme -d
+    DJANGO_SETTINGS_MODULE=project.prod_settings just dcu -d
     just stress --tiny
     docker compose logs django --follow
 
