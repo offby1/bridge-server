@@ -73,12 +73,10 @@ playerEventSource.addEventListener('stream-reset', function (e) {
          const data = JSON.parse(e.data);
          console.log("playerEventSource got one o' them stream-reset messages: " + Object.keys(data));
      }, false);
-
-     {% endif %}
-
-     const handEventUrl = '/events/table/html/{{ hand.pk }}/';
- var handEventSource = new ReconnectingEventSource(handEventUrl);
- console.log(`Listening for hand events on ${handEventUrl}`);
+{% endif %}
+ const tableEventUrl = '/events/table/html/{{ hand.pk }}/';
+ var handEventSource = new ReconnectingEventSource(tableEventUrl);
+ console.log(`Listening for hand events on ${tableEventUrl}`);
 
      handEventSource.addEventListener('stream-reset', function (e) {
          const data = JSON.parse(e.data);

@@ -25,6 +25,7 @@ from bridge.xscript import CBS, HandTranscript
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import Error, models, transaction
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import Http404
 from django.urls import reverse
@@ -578,7 +579,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self.send_JSON_to_players(data=data)
 
-            # TODO -- html-escape it, I guess
+            # TODO -- this isn't HTML, so why are we calling send_HTML_to_table?
             self.send_HTML_to_table(data=data)
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
@@ -662,6 +663,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         from app.views.hand import _hand_HTML_for_player
 
         return _hand_HTML_for_player(hand=self, player=p)
+
+    @staticmethod
+    def has_player(player: Player) -> Q:
+        expression = Q(pk__in=[])
+        for direction in attribute_names:
+            expression |= Q(**{direction: player})
+
+        return expression
 
     def send_HTML_update_to_appropriate_channel(self, *, last_seat: Seat) -> None:
         assert self.dummy is not None

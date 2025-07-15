@@ -14,7 +14,6 @@ from django.http import (
     HttpResponseForbidden,
 )
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
-from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -692,7 +691,7 @@ class HandTable(tables.Table):
     )
     table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     board = tables.Column()
-    players = tables.Column()
+    players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
 
     def render_result(self, record) -> str:
@@ -724,11 +723,7 @@ class HandListView(tables.SingleTableMixin, FilterView):
             "board", "board__tournament", *attribute_names, *amended_attr_names
         )
         if played_by is not None:
-            expression = Q(pk__in=[])
-            for direction in attribute_names:
-                expression |= Q(**{direction: played_by})
-
-            qs = qs.filter(expression)
+            qs = qs.filter(Hand.has_player(played_by))
         return qs
 
 
