@@ -64,8 +64,17 @@ def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> di
 
     ds = hand.display_skeleton(as_dealt=False)
     our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(current_direction[0])]
+    viewer_may_control_this_seat = False
+
+    if (seat := (hand.next_seat_to_play or hand.next_seat_to_call)) is not None:
+        viewer_may_control_this_seat = player == hand.player_who_controls_seat(
+            seat, right_this_second=True
+        )
+
     card_html_by_direction = app.views.hand._get_card_html(
-        all_four=our_all_four_suit_holding, hand=hand, viewer_may_control_this_seat=True
+        all_four=our_all_four_suit_holding,
+        hand=hand,
+        viewer_may_control_this_seat=viewer_may_control_this_seat,
     )
 
     return {

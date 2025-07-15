@@ -46,13 +46,15 @@ def play_out_hand(h: app.models.Hand) -> None:
     if h.is_complete:
         pytest.fail(f"Yo Vinnie: y u want to play out {h=} which is already complete?!")
 
-    while (p := h.player_who_may_call) is not None:
+    while h.player_who_may_call is not None:
         call = h.get_xscript().auction.legal_calls()[0]
         h.add_call(call=call)
 
-    while (p := h.player_who_may_play) is not None:
+    while (ns := h.next_seat_to_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()
-        h.add_play_from_model_player(player=p, card=play.card)
+        h.add_play_from_model_player(
+            player=h.player_who_controls_seat(ns, right_this_second=True), card=play.card
+        )
 
     if h.is_complete:
         logger.info("%s played %s to completion", [p.name for p in h.players()], h)

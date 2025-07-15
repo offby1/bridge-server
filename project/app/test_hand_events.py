@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 from collections.abc import Iterable
 import json
 
@@ -8,8 +9,9 @@ import bridge.contract
 import pytest
 from django_eventstream.models import Event  # type: ignore[import-untyped]
 
-from .models import Hand, Player
-from .testutils import set_auction_to
+import app.models
+import app.views
+from . import testutils
 
 
 @pytest.fixture(autouse=True)
@@ -69,7 +71,7 @@ def test_auction_settled_messages(usual_setup) -> None:
     with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
         with CapturedEventsFromChannels(*hand_JSON_channels) as hand_json_cap:
             with CapturedEventsFromChannels(*table_channels) as table_cap:
-                set_auction_to(
+                testutils.set_auction_to(
                     bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
                     h,
                 )
@@ -87,7 +89,7 @@ def test_auction_settled_messages(usual_setup) -> None:
 
 
 def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
-    p1 = Player.objects.get(pk=1)
+    p1 = app.models.Player.objects.get(pk=1)
     hand_count_before = p1.hands_played.count()
     assert hand_count_before > 0
     p1.break_partnership()
@@ -96,7 +98,7 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
 def test_sends_final_score_just_to_table() -> None:
-    h = Hand.objects.get(pk=1)
+    h = app.models.Hand.objects.get(pk=1)
 
     assert h.player_who_may_play is not None
     libCard = bridge.card.Card.deserialize("♠A")
@@ -115,7 +117,7 @@ def test_sends_final_score_just_to_table() -> None:
 
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
-    h: Hand = usual_setup
+    h: app.models.Hand = usual_setup
 
     one_hand_JSON_channel = next(h.players()).event_JSON_hand_channel
 
@@ -131,7 +133,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
 
     with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
         with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
-            set_auction_to(
+            testutils.set_auction_to(
                 bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
                 h,
             )
@@ -161,3 +163,38 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     assert dummys_seen == 2
 
     assert tricks_seen == 3
+
+
+def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
+    h = usual_setup
+
+    testutils.set_auction_to(
+        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+        h,
+    )
+
+    assert h.dummy.seat.name == "South"
+
+    sent_events_by_channel = collections.defaultdict(list)
+
+    def send_event(*args, **kwargs) -> None:
+        sent_events_by_channel[kwargs["channel"]].append(kwargs)
+
+    monkeypatch.setattr(app.models.hand, "send_event", send_event)
+    monkeypatch.setattr(app.views.hand, "render_to_string", lambda template_name, context: context)
+
+    for card in ("d2", "h2", "s2", "c2"):
+        ns = h.next_seat_to_play
+        h.add_play_from_model_player(
+            player=h.player_who_controls_seat(ns, right_this_second=True),
+            card=bridge.card.Card.deserialize(card),
+        )
+
+    active_seats_seen = set()
+    for e in sent_events_by_channel[h.event_table_html_channel]:
+        data = e.get("data", {})
+        if (dummy_html := data.get("dummy_html")) is not None:
+            active_seats_seen.add(dummy_html["active_seat"])
+
+    assert "South" in active_seats_seen
+    assert len(active_seats_seen) > 1

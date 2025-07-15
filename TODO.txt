@@ -1,6 +1,4 @@
 IN PROGRESS:
-* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
-  This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob, with `django-2025-07-13T15:08:13+0000`
 
 STILL TODO:
 * when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
@@ -213,6 +211,10 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
+  This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob.  Relevant logs are `django-2025-07-13T15:08:13+0000`
+  I wonder if this happens if, and only if, I am the dummy.
+  * doing `just manage repro` might reproduce the problem, or maybe I've fixed the bug; who knows.
 * I've got this bit of code duplicated in a few places; refactor it into a method:
 
             expression = Q(pk__in=[])

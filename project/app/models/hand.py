@@ -142,19 +142,25 @@ class DisplaySkeleton:
         return self.holdings_by_seat[seat]
 
 
+def summarize(thing):
+    if isinstance(thing, str):
+        ellipses = ""
+        if len(thing) > 20:
+            ellipses = "..."
+        return thing[0:20] + ellipses
+    elif isinstance(thing, dict):
+        return {k: summarize(v) for k, v in thing.items()}
+    elif isinstance(thing, list):
+        return [summarize(elt) for elt in thing]
+    else:
+        return thing
+
+
 def send_timestamped_event(
     *, channel: str, data: dict[str, Any], when: float | None = None
 ) -> None:
     if when is None:
         when = time.time()
-
-    def summarize(thing):
-        if isinstance(thing, str):
-            return thing[0:20]
-        elif isinstance(thing, dict):
-            return {k: summarize(v) for k, v in thing.items()}
-        else:
-            return thing
 
     # logger.debug(f"Sending {summarize(data)=} to {channel=}")
     send_event(channel=channel, event_type="message", data=data | {"time": when})
@@ -622,10 +628,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             card,
         )
 
-        # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why I'm doing this.
-        # Maybe it's just to indicate which of their cards are legal.
-        self.send_HTML_update_to_appropriate_channel(last_seat=seat_that_just_played)
-
         self.send_JSON_to_players(
             data={
                 "hand_event": self.call_set.count() + self.play_set.count() - 1,
@@ -646,6 +648,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
+        else:
+            # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why
+            # I'm doing this.  Maybe it's just to indicate which of their cards are legal.
+            self.send_HTML_update_to_appropriate_channel(last_seat=seat_that_just_played)
 
         return rv
 
