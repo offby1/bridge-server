@@ -732,7 +732,7 @@ class HandListView(tables.SingleTableMixin, FilterView):
             "board", "board__tournament", *attribute_names, *amended_attr_names
         )
         if played_by is not None:
-            qs = qs.filter(Hand.has_player(played_by))
+            qs = qs.filter(app.models.Hand.has_player(played_by))
         return qs
 
 
