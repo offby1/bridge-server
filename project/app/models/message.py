@@ -36,7 +36,7 @@ class Lobby(models.Model):
         db_table_comment = "Serves no purpose other than acting as a target for lobby messages"
 
 
-_THE_LOBBY = None  # singleton instance, assigned later
+_THE_LOBBY: Lobby | None = None  # singleton instance, assigned later
 
 
 class Message(models.Model):

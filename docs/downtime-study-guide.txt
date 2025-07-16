@@ -32,6 +32,7 @@ Once I list most of them, I should study each to see if there are features I don
 - ipython
 - just
 - mypy
+  I'm trying daemon mode.
 - orbstack
 - poetry
 - postgres

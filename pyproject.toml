@@ -45,6 +45,9 @@ redis = "^6.2.0"
 use_gitignore=true
 ignore="H016,H020,H021,H023,H030,H031"
 
+[tool.mypy]
+exclude = "/migrations/"
+
 [tool.poetry]
 requires-poetry = ">=2.0"
 package-mode = false
