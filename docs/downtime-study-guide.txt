@@ -39,6 +39,7 @@ Once I list most of them, I should study each to see if there are features I don
 - prometheus, grafana, &c
 - pytest
 - ruff
+  I've never figured out how to get it to sort imports.
 - zsh
 
 Geez, that's a lot
