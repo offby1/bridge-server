@@ -2,12 +2,6 @@ IN PROGRESS:
 
 STILL TODO:
 * when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
-* figure out what I did in the "more-coverage" branch, and rename the branch accordingly; it's not just about coverage
-* The interactive hand was showing mojibake instead of the left- and right-chevrons :-(
-* The interactive hand was frequently failing to highlight the cards panel, and similarly to activate the cards.  Almost as if it hadn't gotten the HTML message.
-  - since I now have a better idea of how django-eventstream works (see [docs/downtime-study-guide.txt]), maybe the JS in my pages needs to handle the "stream-reset" event
-* Since I seem to be abandoning the api-bot, ensure we have tests that cover the endpoint that it calls (serialized-hand, call-post-view, call-play-view).
-* Put the tournament's tempo in the tournament detail page (it's already in the tournament *list* page).
 * The "model inserts" panel in prometheus is reading zeroes for everything; probably because it works via middleware, and the bot bypasses middleware (and indeed all view code).  Maybe I can resucscitate the postgres-exporter and get stats from it.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
