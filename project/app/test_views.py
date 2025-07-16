@@ -58,3 +58,34 @@ def test_tournament_view_after_splitsville(usual_setup, rf):
     request = rf.get("/woteva")
     request.user = some_player
     tournament.tournament_view(request, Tournament.objects.first().pk)
+
+
+def test_bot_checkbox_toggle(usual_setup, rf) -> None:
+    some_player: Player | None = Player.objects.first()
+    assert some_player is not None
+    assert not some_player.synthetic
+
+    some_player.allow_bot_to_play_for_me = False
+    some_player.save()
+
+    request = rf.post("/woteva")
+    request.user = some_player.user
+
+    def box_is_checked():
+        __traceback_hide__ = True  # noqa: F841
+        return "checked />" in response.render().text
+
+    def allowed():
+        __traceback_hide__ = True  # noqa: F841
+        some_player.refresh_from_db(fields=["allow_bot_to_play_for_me"])
+        return some_player.allow_bot_to_play_for_me
+
+    response = player.bot_checkbox_view(request, some_player.pk)
+    assert box_is_checked()
+    assert allowed()
+
+    # Once again
+
+    response = player.bot_checkbox_view(request, some_player.pk)
+    assert not box_is_checked()
+    assert not allowed()

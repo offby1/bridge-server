@@ -286,6 +286,9 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         player.toggle_bot()
     except Exception as e:
         context["error_message"] = str(e)
+    else:
+        assert request.user.player is not None
+        request.user.player.refresh_from_db(fields=["allow_bot_to_play_for_me"])
 
     return TemplateResponse(request, "bot-checkbox.html", context=context)
 
