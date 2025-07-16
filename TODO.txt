@@ -7,7 +7,7 @@ STILL TODO:
   - I imagine there's something deep in django's management command that is dropping the ball somewhere.
 
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
-* It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
+
 * Some kind of smoke test for views.
 
   I'd like to automatically
@@ -1197,6 +1197,15 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* Performance, as usual:
+
+  I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.
+
+  Ain't no bots no' mo' :-)
+
+* It seems some tests fail when I use `django.core.cache.backends.dummy.DummyCache` as the cache.  This seems Bad™.
+  This didn't reproduce :shrug:
+
 * I'm fuzzy on the details, but I think I was logged in as a player who wasn't the declarer or dummy; after the last trick was played, the browser loaded my "player home page" (e.g. `/player/1/`) instead of something more useful, like the next hand, or the review of the previous hand.
 
   I could not reproduce this; I only saw it load the `/hand/xyzzy/archive` page, which is fine.
