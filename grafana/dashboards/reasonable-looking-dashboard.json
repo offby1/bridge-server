@@ -275,7 +275,7 @@
           "useBackend": false
         }
       ],
-      "title": "Database Inserts",
+      "title": "Database Insert Rate (per second)",
       "type": "timeseries"
     },
     {
