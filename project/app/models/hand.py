@@ -634,9 +634,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
         else:
-            # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why
-            # I'm doing this.  Maybe it's just to indicate which of their cards are legal.
-            self.send_HTML_update_to_appropriate_channel(last_seat=seat_that_just_played)
+            self.send_HTML_update_to_appropriate_channels(last_seat=seat_that_just_played)
 
         return rv
 
@@ -663,9 +661,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return expression
 
-    def send_HTML_update_to_appropriate_channel(self, *, last_seat: Seat) -> None:
-        assert self.dummy is not None
-
+    def send_HTML_update_to_appropriate_channels(self, *, last_seat: Seat) -> None:
         current_seat = self.next_seat_to_call or self.next_seat_to_play
 
         for seat in (last_seat, current_seat):
