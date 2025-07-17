@@ -135,38 +135,46 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             card=bridge.card.Card.deserialize(card_string),
         )
 
-    with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
-        with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
-            testutils.set_auction_to(
-                bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-                h,
-            )
-            add_play("d2")
-            add_play("h2")
-            add_play("s2")
+    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+
+    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
+        with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
+            with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
+                testutils.set_auction_to(
+                    bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+                    h,
+                )
+                add_play("d2")
+                add_play("h2")
+                add_play("s2")
 
     assert_sane_numbering((e.data for e in hand_json_cap.events))
 
-    dummys_seen = tricks_seen = 0
+    tricks_seen = 0
     for e in table_HTML_cap.events:
         if not e.data:
             continue
-        try:
-            for k, v in json.loads(json.loads(e.data)).items():
-                print(f"{k}: {str(v)[0:100]}")
-        except Exception as ex:
-            print(f"{ex=}")
 
-        if "dummy_html" in e.data:
-            dummys_seen += 1
         if "trick_html" in e.data:
             tricks_seen += 1
 
+    assert tricks_seen == 3
+
     # Everyone gets to see the dummy after the opening lead, and everyone gets to see the *updated* dummy after it has
     # played a card.
-    assert dummys_seen == 2
+    dummys_seen = 0
 
-    assert tricks_seen == 3
+    for e in hand_html_cap.events:
+        if not e.data:
+            continue
+
+        if (
+            current_hand_html := json.loads(json.loads(e.data)).get("current_hand_html")
+        ) is not None:
+            if 'id="South"' in current_hand_html:
+                dummys_seen += 1
+
+    assert dummys_seen == 2
 
 
 def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:

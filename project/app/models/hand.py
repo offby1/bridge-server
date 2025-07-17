@@ -671,15 +671,19 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 continue
 
-            recipient = self.player_who_controls_seat(seat, right_this_second=False)
+            if self.dummy is not None and seat == self.dummy.seat:
+                recipients = self.players()
+            else:
+                recipients = [self.player_who_controls_seat(seat, right_this_second=False)]
 
-            self.send_HTML_to_player(
-                data={
-                    "current_hand_direction": seat.name,
-                    "current_hand_html": self._get_current_hand_html(p=recipient),
-                },
-                player=recipient,
-            )
+            for r in recipients:
+                self.send_HTML_to_player(
+                    data={
+                        "current_hand_direction": seat.name,
+                        "current_hand_html": self._get_current_hand_html(p=r),
+                    },
+                    player=r,
+                )
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
         with transaction.atomic():
