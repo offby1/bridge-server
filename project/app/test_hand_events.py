@@ -24,6 +24,7 @@ class CapturedEventsFromChannels:
     def __init__(self, *channel_names: str) -> None:
         self._channel_names = channel_names
         self.events: list[Event] = []
+        self.events_by_channel: dict[str, Event] = collections.defaultdict(list)
         self._message_ids_before = set(
             Event.objects.filter(channel__in=channel_names).values_list("id", flat=True),
         )
@@ -37,6 +38,8 @@ class CapturedEventsFromChannels:
             .filter(channel__in=self._channel_names)
             .exclude(id__in=self._message_ids_before)
         )
+        for e in self.events:
+            self.events_by_channel[e.channel].append(e)
         return False
 
 
@@ -97,7 +100,7 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score_just_to_table() -> None:
+def test_sends_final_score_to_each_hand() -> None:
     h = app.models.Hand.objects.get(pk=1)
 
     assert h.player_who_may_play is not None
@@ -106,13 +109,14 @@ def test_sends_final_score_just_to_table() -> None:
     hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
 
     with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
-        with CapturedEventsFromChannels(h.event_table_html_channel) as table_cap:
-            h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
+        h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
 
     def sought(datum):
         return "final_score" in datum
 
-    assert any(sought(d.data) for d in table_cap.events)
+    for events, ch in hand_html_cap.events_by_channel.items():
+        assert any(sought(d.data) for d in events)
+
     assert not any(sought(d.data) for d in hand_html_cap.events)
 
 
