@@ -386,30 +386,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             return "✘"
         return "…"
 
-    def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
-        send_timestamped_event(channel=self.event_table_html_channel, data=data)
-
     def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
         send_timestamped_event(channel=player.event_HTML_hand_channel, data=data)
 
     def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
         for p in self.players():
             send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
-
-    def send_events_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
-        table_channel = self.event_table_html_channel
-        player_channels: list[str] = []
-        for p in self.players():
-            player_channels.append(p.event_HTML_hand_channel)
-            player_channels.append(p.event_JSON_hand_channel)
-
-        all_channels = [table_channel, "all-tables", *player_channels]
-
-        data = data.copy()
-        data["hand_pk"] = self.pk
-        now = time.time()
-        for channel in all_channels:
-            send_timestamped_event(channel=channel, data=data, when=now)
 
     def send_event_to_all_players(self, *, data: dict[str, Any]) -> None:
         now = time.time()
@@ -585,8 +567,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self.send_JSON_to_players(data=data)
 
-            # TODO -- this isn't HTML, so why are we calling send_HTML_to_table?
-            self.send_HTML_to_table(data=data)
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
@@ -639,11 +619,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             }
         )
 
-        self.send_HTML_to_table(
+        send_timestamped_event(
+            channel=self.event_table_html_channel,
             data={
                 "trick_counts_string": self.trick_counts_string(),
                 "trick_html": self._get_current_trick_html(),
-            }
+            },
         )
 
         if (final_score := self.get_xscript().final_score()) is not None:
@@ -690,40 +671,26 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 continue
 
-            if seat == self.dummy.seat:
-                logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
-                p = self.model_dummy
-                assert p is not None
-                self.send_HTML_to_table(
-                    data={
-                        "dummy_direction": seat.name,
-                        "dummy_html": self._get_current_hand_html(p=p),
-                    }
-                )
-            else:
-                recipient = self.player_who_controls_seat(seat, right_this_second=False)
-                logger.info(
-                    "Will send HTML to %s at %s since they are not dummy", recipient.name, seat
-                )
-                self.send_HTML_to_player(
-                    data={
-                        "current_hand_direction": seat.name,
-                        "current_hand_html": self._get_current_hand_html(p=recipient),
-                    },
-                    player=recipient,
-                )
+            recipient = self.player_who_controls_seat(seat, right_this_second=False)
+
+            self.send_HTML_to_player(
+                data={
+                    "current_hand_direction": seat.name,
+                    "current_hand_html": self._get_current_hand_html(p=recipient),
+                },
+                player=recipient,
+            )
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
         with transaction.atomic():
             assert self.is_complete
             assert self.table_display_number is not None
 
-            for method in (self.send_HTML_to_table, self.send_JSON_to_players):
-                method(
-                    data={
-                        "final_score": final_score_text,
-                    },
-                )
+            self.send_JSON_to_players(
+                data={
+                    "final_score": final_score_text,
+                },
+            )
 
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
                 mvmt = self.tournament.get_movement()
@@ -828,7 +795,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             if p.controls_seat(seat=seat, right_this_second=right_this_second):
                 return p
 
-        raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
+        raise Exception(
+            f"Internal error: no player controls {seat.name=} of hand {self} ({self.pk=})"
+        )
 
     @property
     def next_seat_to_play(self) -> Seat | None:
@@ -994,14 +963,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     @property
     def plays(self):
         return self.play_set.order_by("id")
-
-    def toggle_open_access(self) -> None:
-        if self.is_abandoned:
-            return None
-
-        self.open_access = not self.open_access
-        self.save()
-        self.send_events_to_players_and_hand(data={"open-access-status": self.open_access})
 
     def _score_by_player(self, *, player: Player) -> int:
         fs = self.get_xscript().final_score()
