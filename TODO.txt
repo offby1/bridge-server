@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* With 2025-07-17T04:42:06+0000.sql, logged in as bob, https://bridge.offby1.info/hand/113/: I notice that when it's dummy's turn to play, the background is correctly highlighted in green -- but the cards aren't "active" :-(  I gotta F5 to make them active.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
