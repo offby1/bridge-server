@@ -567,6 +567,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self.send_JSON_to_players(data=data)
 
+            # The interactive hand page needs this to know that it's time to reload, in order to show the "play" slides.
+            # Yeah, I know; it's not HTML.  :shrug:
+            send_timestamped_event(channel=self.event_table_html_channel, data=data)
+
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
