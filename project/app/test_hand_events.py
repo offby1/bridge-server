@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 from collections.abc import Iterable
+import itertools
 import json
 
 import bridge.card
@@ -203,10 +204,12 @@ def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
         )
 
     active_seats_seen = set()
-    for e in sent_events_by_channel[h.event_table_html_channel]:
+    for e in itertools.chain.from_iterable(
+        sent_events_by_channel[p.event_HTML_hand_channel] for p in h.players()
+    ):
         data = e.get("data", {})
-        if (dummy_html := data.get("dummy_html")) is not None:
-            active_seats_seen.add(dummy_html["active_seat"])
+        if (active_seat := data.get("current_hand_html", {}).get("active_seat")) is not None:
+            active_seats_seen.add(active_seat)
 
     assert "South" in active_seats_seen
     assert len(active_seats_seen) > 1

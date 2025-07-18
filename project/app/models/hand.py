@@ -7,7 +7,7 @@ import datetime
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 import more_itertools
 from bridge.auction import Auction
@@ -671,6 +671,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 continue
 
+            recipients: Iterable[Player]
             if self.dummy is not None and seat == self.dummy.seat:
                 recipients = self.players()
             else:
