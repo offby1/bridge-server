@@ -648,10 +648,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _three_by_three_HTML_for_trick(self)
 
-    def _get_current_hand_html(self, *, p: Player) -> str:
-        from app.views.hand import _hand_HTML_for_player
+    def _get_current_seat_html(self, *, seat: Seat, viewer_may_control_this_seat: bool) -> str:
+        from app.views.hand import _hand_HTML_for_seat
 
-        return _hand_HTML_for_player(hand=self, player=p)
+        return _hand_HTML_for_seat(
+            hand=self,
+            seat=seat,
+            viewer_may_control_this_seat=viewer_may_control_this_seat,
+        )
 
     @staticmethod
     def has_player(player: Player) -> Q:
@@ -671,17 +675,21 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 continue
 
+            controlling_player = self.player_who_controls_seat(seat, right_this_second=False)
             recipients: Iterable[Player]
             if self.dummy is not None and seat == self.dummy.seat:
                 recipients = self.players()
             else:
-                recipients = [self.player_who_controls_seat(seat, right_this_second=False)]
+                recipients = [controlling_player]
 
             for r in recipients:
                 self.send_HTML_to_player(
                     data={
                         "current_hand_direction": seat.name,
-                        "current_hand_html": self._get_current_hand_html(p=r),
+                        "current_hand_html": self._get_current_seat_html(
+                            seat=seat,
+                            viewer_may_control_this_seat=r == controlling_player,
+                        ),
                     },
                     player=r,
                 )

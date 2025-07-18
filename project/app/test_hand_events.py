@@ -161,8 +161,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
 
     assert tricks_seen == 3
 
-    # Everyone gets to see the dummy after the opening lead, and everyone gets to see the *updated* dummy after it has
-    # played a card.
+    # Everyone gets to see the dummy.
     dummys_seen = 0
 
     for e in hand_html_cap.events:
@@ -175,7 +174,15 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             if 'id="South"' in current_hand_html:
                 dummys_seen += 1
 
-    assert dummys_seen == 2
+    """
+    Trick 1: East.              Everyone gets a dummy message because this is the opening lead.
+    Trick 2: South.             Everyone gets a dummy message because South *is* the dummy, and just played a card.
+    Trick 3: West.              Nobody gets a dummy message, since nothing has changed in dummy-land.
+    Trick 4: North.             Nobody gets a dummy message, since nothing has changed in dummy-land.
+
+    """
+
+    assert dummys_seen == 8
 
 
 def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:

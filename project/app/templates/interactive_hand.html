@@ -64,9 +64,16 @@
          htmx.process(container);
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
-         const container = document.getElementById(data["current_hand_direction"]);
-         container.outerHTML = current_hand_html;
-         htmx.process(document.getElementById(data["current_hand_direction"]));
+         const chd = data["current_hand_direction"]
+         const container_before = document.getElementById(chd);
+         if (container_before !== null) {
+             container_before.outerHTML = current_hand_html;
+             const container_after = document.getElementById(chd);
+             if (container_after === null) {
+                 throw new Error(`Original data had an entry for "current_hand_direction", but after swapping in ${chd}, it no longer does`);
+             }
+             htmx.process(container_after);
+         }
      }
      });
 playerEventSource.addEventListener('stream-reset', function (e) {
