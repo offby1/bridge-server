@@ -1,13 +1,15 @@
 IN PROGRESS:
 
 STILL TODO:
-* With 2025-07-17T04:42:06+0000.sql, logged in as bob, https://bridge.offby1.info/hand/113/: I notice that when it's dummy's turn to play, the background is correctly highlighted in green -- but the cards aren't "active" :-(  I gotta F5 to make them active.
+* When a tournament ends, all the hands are marked as abandoned :-(
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
   - I imagine there's something deep in django's management command that is dropping the ball somewhere.
 
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
+
+  If I'm the declarer, I'm controlling two hands.  The dummy is to the immediate left of the "Current Trick" panel, so when it lights up, I can see its edge to the left of the "Current Trick" panel; that alerts me.  But when *my* hand lights up, I can't see it because it's entirely offscreen.  Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel.
 
 * Some kind of smoke test for views.
 
@@ -203,6 +205,19 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* With 2025-07-17T04:42:06+0000.sql, logged in as bob, https://bridge.offby1.info/hand/113/: I notice that when it's dummy's turn to play, the background is correctly highlighted in green -- but the cards aren't "active" :-(  I gotta F5 to make them active.
+  I suspect the way to fix this is to entirely remove the "table events" channel -- I currently use it to describe the dummy's hand, but iirc, nothing else; it'd be simpler and more accurate to simply send the dummy to each player, customized as needed.
+
+  So I gotta inventory all the places where I use that channel, to see what I use it for.  Perhaps instead of nixing it entirely, I can just not send holdings to it.
+
+    Hand event listener saw auction_history_html
+    Hand event listener saw contract_text,contract
+    Hand event listener saw dummy_direction,dummy_html <--- dis! Nuke dis!!
+    Hand event listener saw final_score
+    Hand event listener saw trick_counts_string,trick_html
+    Player event listener saw bidding_box_html,hand_pk
+    Player event listener saw current_hand_direction,current_hand_html
+
 * when I first click the "let the bot play for me button", it immediately slides back to unchecked.  Clearly the bot is playing for me, though.
 * In app:hand-dispatch, the dummy's panel is always highlighted in green -- even when it's not the dummy's turn.
   This only reproduces sometimes; I last saw it in prod, at https://bridge.offby1.info/hand/96/, logged in as bob.  Relevant logs are `django-2025-07-13T15:08:13+0000`

@@ -14,9 +14,6 @@ class Command(BaseCommand):
                 continue
 
             if (updater := getattr(manager, "_update_redundant_fields", None)) is None:
-                self.stderr.write(
-                    f"No '_update_redundant_fields' attribute in {manager=}; continuing"
-                )
                 continue
 
             updater()

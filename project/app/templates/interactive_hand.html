@@ -64,9 +64,16 @@
          htmx.process(container);
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
-         const container = document.getElementById(data["current_hand_direction"]);
-         container.outerHTML = current_hand_html;
-         htmx.process(document.getElementById(data["current_hand_direction"]));
+         const chd = data["current_hand_direction"]
+         const container_before = document.getElementById(chd);
+         if (container_before !== null) {
+             container_before.outerHTML = current_hand_html;
+             const container_after = document.getElementById(chd);
+             if (container_after === null) {
+                 throw new Error(`Original data had an entry for "current_hand_direction", but after swapping in ${chd}, it no longer does`);
+             }
+             htmx.process(container_after);
+         }
      }
      });
 playerEventSource.addEventListener('stream-reset', function (e) {
@@ -104,18 +111,6 @@ playerEventSource.addEventListener('stream-reset', function (e) {
              container.innerHTML = auction_history_html;
 
              document.querySelector("#auction").scrollIntoView()
-         } else if ("dummy_html" in data) {
-             const dummy_html = data["dummy_html"];
-             const dummy_direction = data["dummy_direction"];
-             const container = document.getElementById (dummy_direction);
-             if (container === null) {
-                 /* The auction ended, but we're still showing the auction carousel. Reload to pick up the play carousel. */
-                 window.location.reload();
-                 return;
-             }
-             container.outerHTML = dummy_html;
-
-             htmx.process(document.getElementById (dummy_direction));
          } else if ("contract_text" in data) {
              /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
              window.location.reload();

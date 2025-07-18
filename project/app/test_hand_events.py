@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 from collections.abc import Iterable
+import itertools
 import json
 
 import bridge.card
@@ -24,6 +25,7 @@ class CapturedEventsFromChannels:
     def __init__(self, *channel_names: str) -> None:
         self._channel_names = channel_names
         self.events: list[Event] = []
+        self.events_by_channel: dict[str, Event] = collections.defaultdict(list)
         self._message_ids_before = set(
             Event.objects.filter(channel__in=channel_names).values_list("id", flat=True),
         )
@@ -37,6 +39,8 @@ class CapturedEventsFromChannels:
             .filter(channel__in=self._channel_names)
             .exclude(id__in=self._message_ids_before)
         )
+        for e in self.events:
+            self.events_by_channel[e.channel].append(e)
         return False
 
 
@@ -97,7 +101,7 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score_just_to_table() -> None:
+def test_sends_final_score_to_each_hand() -> None:
     h = app.models.Hand.objects.get(pk=1)
 
     assert h.player_who_may_play is not None
@@ -106,13 +110,14 @@ def test_sends_final_score_just_to_table() -> None:
     hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
 
     with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
-        with CapturedEventsFromChannels(h.event_table_html_channel) as table_cap:
-            h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
+        h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
 
     def sought(datum):
         return "final_score" in datum
 
-    assert any(sought(d.data) for d in table_cap.events)
+    for events, ch in hand_html_cap.events_by_channel.items():
+        assert any(sought(d.data) for d in events)
+
     assert not any(sought(d.data) for d in hand_html_cap.events)
 
 
@@ -131,38 +136,53 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             card=bridge.card.Card.deserialize(card_string),
         )
 
-    with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
-        with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
-            testutils.set_auction_to(
-                bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-                h,
-            )
-            add_play("d2")
-            add_play("h2")
-            add_play("s2")
+    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+
+    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
+        with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
+            with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
+                testutils.set_auction_to(
+                    bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+                    h,
+                )
+                add_play("d2")
+                add_play("h2")
+                add_play("s2")
 
     assert_sane_numbering((e.data for e in hand_json_cap.events))
 
-    dummys_seen = tricks_seen = 0
+    tricks_seen = 0
     for e in table_HTML_cap.events:
         if not e.data:
             continue
-        try:
-            for k, v in json.loads(json.loads(e.data)).items():
-                print(f"{k}: {str(v)[0:100]}")
-        except Exception as ex:
-            print(f"{ex=}")
 
-        if "dummy_html" in e.data:
-            dummys_seen += 1
         if "trick_html" in e.data:
             tricks_seen += 1
 
-    # Everyone gets to see the dummy after the opening lead, and everyone gets to see the *updated* dummy after it has
-    # played a card.
-    assert dummys_seen == 2
-
     assert tricks_seen == 3
+
+    # Everyone gets to see the dummy.
+    dummys_seen = 0
+
+    for e in hand_html_cap.events:
+        if not e.data:
+            continue
+
+        if (
+            current_hand_html := json.loads(json.loads(e.data)).get("current_hand_html")
+        ) is not None:
+            if 'id="South"' in current_hand_html:
+                dummys_seen += 1
+
+    """
+    Trick 1: East.              Everyone gets a dummy message because this is the opening lead.
+    Trick 2: South.             Everyone gets a dummy message because South *is* the dummy, and just played a card.
+    Trick 3: West.              Nobody gets a dummy message, since nothing has changed in dummy-land.
+    Trick 4: North.             Nobody gets a dummy message, since nothing has changed in dummy-land.
+
+    """
+
+    assert dummys_seen == 8
 
 
 def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
@@ -191,10 +211,12 @@ def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
         )
 
     active_seats_seen = set()
-    for e in sent_events_by_channel[h.event_table_html_channel]:
+    for e in itertools.chain.from_iterable(
+        sent_events_by_channel[p.event_HTML_hand_channel] for p in h.players()
+    ):
         data = e.get("data", {})
-        if (dummy_html := data.get("dummy_html")) is not None:
-            active_seats_seen.add(dummy_html["active_seat"])
+        if (active_seat := data.get("current_hand_html", {}).get("active_seat")) is not None:
+            active_seats_seen.add(active_seat)
 
     assert "South" in active_seats_seen
     assert len(active_seats_seen) > 1

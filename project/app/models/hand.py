@@ -7,7 +7,7 @@ import datetime
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 import more_itertools
 from bridge.auction import Auction
@@ -386,30 +386,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             return "✘"
         return "…"
 
-    def send_HTML_to_table(self, *, data: dict[str, Any]) -> None:
-        send_timestamped_event(channel=self.event_table_html_channel, data=data)
-
     def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
         send_timestamped_event(channel=player.event_HTML_hand_channel, data=data)
 
     def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
         for p in self.players():
             send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
-
-    def send_events_to_players_and_hand(self, *, data: dict[str, Any]) -> None:
-        table_channel = self.event_table_html_channel
-        player_channels: list[str] = []
-        for p in self.players():
-            player_channels.append(p.event_HTML_hand_channel)
-            player_channels.append(p.event_JSON_hand_channel)
-
-        all_channels = [table_channel, "all-tables", *player_channels]
-
-        data = data.copy()
-        data["hand_pk"] = self.pk
-        now = time.time()
-        for channel in all_channels:
-            send_timestamped_event(channel=channel, data=data, when=now)
 
     def send_event_to_all_players(self, *, data: dict[str, Any]) -> None:
         now = time.time()
@@ -585,8 +567,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self.send_JSON_to_players(data=data)
 
-            # TODO -- this isn't HTML, so why are we calling send_HTML_to_table?
-            self.send_HTML_to_table(data=data)
+            # The interactive hand page needs this to know that it's time to reload, in order to show the "play" slides.
+            # Yeah, I know; it's not HTML.  :shrug:
+            send_timestamped_event(channel=self.event_table_html_channel, data=data)
+
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
@@ -639,19 +623,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             }
         )
 
-        self.send_HTML_to_table(
+        send_timestamped_event(
+            channel=self.event_table_html_channel,
             data={
                 "trick_counts_string": self.trick_counts_string(),
                 "trick_html": self._get_current_trick_html(),
-            }
+            },
         )
 
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
         else:
-            # TODO -- see if I really need to send an HTML update to "about_to_play"; at the moment I can't remember why
-            # I'm doing this.  Maybe it's just to indicate which of their cards are legal.
-            self.send_HTML_update_to_appropriate_channel(last_seat=seat_that_just_played)
+            self.send_HTML_update_to_appropriate_channels(last_seat=seat_that_just_played)
 
         return rv
 
@@ -665,10 +648,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _three_by_three_HTML_for_trick(self)
 
-    def _get_current_hand_html(self, *, p: Player) -> str:
-        from app.views.hand import _hand_HTML_for_player
+    def _get_current_seat_html(self, *, seat: Seat, viewer_may_control_this_seat: bool) -> str:
+        from app.views.hand import _hand_HTML_for_seat
 
-        return _hand_HTML_for_player(hand=self, player=p)
+        return _hand_HTML_for_seat(
+            hand=self,
+            seat=seat,
+            viewer_may_control_this_seat=viewer_may_control_this_seat,
+        )
 
     @staticmethod
     def has_player(player: Player) -> Q:
@@ -678,9 +665,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return expression
 
-    def send_HTML_update_to_appropriate_channel(self, *, last_seat: Seat) -> None:
-        assert self.dummy is not None
-
+    def send_HTML_update_to_appropriate_channels(self, *, last_seat: Seat) -> None:
         current_seat = self.next_seat_to_call or self.next_seat_to_play
 
         for seat in (last_seat, current_seat):
@@ -690,27 +675,23 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
                 continue
 
-            if seat == self.dummy.seat:
-                logger.info("%s is the dummy; will send dummy HTML to the entire table", seat)
-                p = self.model_dummy
-                assert p is not None
-                self.send_HTML_to_table(
-                    data={
-                        "dummy_direction": seat.name,
-                        "dummy_html": self._get_current_hand_html(p=p),
-                    }
-                )
+            controlling_player = self.player_who_controls_seat(seat, right_this_second=False)
+            recipients: Iterable[Player]
+            if self.dummy is not None and seat == self.dummy.seat:
+                recipients = self.players()
             else:
-                recipient = self.player_who_controls_seat(seat, right_this_second=False)
-                logger.info(
-                    "Will send HTML to %s at %s since they are not dummy", recipient.name, seat
-                )
+                recipients = [controlling_player]
+
+            for r in recipients:
                 self.send_HTML_to_player(
                     data={
                         "current_hand_direction": seat.name,
-                        "current_hand_html": self._get_current_hand_html(p=recipient),
+                        "current_hand_html": self._get_current_seat_html(
+                            seat=seat,
+                            viewer_may_control_this_seat=r == controlling_player,
+                        ),
                     },
-                    player=recipient,
+                    player=r,
                 )
 
     def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
@@ -718,12 +699,11 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             assert self.is_complete
             assert self.table_display_number is not None
 
-            for method in (self.send_HTML_to_table, self.send_JSON_to_players):
-                method(
-                    data={
-                        "final_score": final_score_text,
-                    },
-                )
+            self.send_JSON_to_players(
+                data={
+                    "final_score": final_score_text,
+                },
+            )
 
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
                 mvmt = self.tournament.get_movement()
@@ -828,7 +808,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             if p.controls_seat(seat=seat, right_this_second=right_this_second):
                 return p
 
-        raise Exception(f"Internal error: no player controls {seat=} of hand {self.pk=}")
+        raise Exception(
+            f"Internal error: no player controls {seat.name=} of hand {self} ({self.pk=})"
+        )
 
     @property
     def next_seat_to_play(self) -> Seat | None:
@@ -994,14 +976,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     @property
     def plays(self):
         return self.play_set.order_by("id")
-
-    def toggle_open_access(self) -> None:
-        if self.is_abandoned:
-            return None
-
-        self.open_access = not self.open_access
-        self.save()
-        self.send_events_to_players_and_hand(data={"open-access-status": self.open_access})
 
     def _score_by_player(self, *, player: Player) -> int:
         fs = self.get_xscript().final_score()

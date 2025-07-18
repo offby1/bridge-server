@@ -19,7 +19,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.html import escape, format_html
+from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_filters import FilterSet  # type: ignore[import-untyped]
@@ -57,19 +57,11 @@ def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetim
     return stamp
 
 
-def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> dict[str, Any] | None:
-    current_direction = player.current_direction(current_hand=hand)
-    if current_direction is None:
-        return None
-
+def _seat_div_context(
+    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+) -> dict[str, Any]:
     ds = hand.display_skeleton(as_dealt=False)
-    our_all_four_suit_holding = ds.holdings_by_seat[bridge.seat.Seat(current_direction[0])]
-    viewer_may_control_this_seat = False
-
-    if (seat := (hand.next_seat_to_play or hand.next_seat_to_call)) is not None:
-        viewer_may_control_this_seat = player == hand.player_who_controls_seat(
-            seat, right_this_second=True
-        )
+    our_all_four_suit_holding = ds.holdings_by_seat[seat]
 
     card_html_by_direction = app.views.hand._get_card_html(
         all_four=our_all_four_suit_holding,
@@ -80,7 +72,7 @@ def _hand_div_context(*, hand: app.models.Hand, player: app.models.Player) -> di
     return {
         "active_seat": hand.active_seat_name,
         "cards": card_html_by_direction,
-        "id": current_direction,
+        "id": seat.name,
     }
 
 
@@ -316,12 +308,28 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
     return render_to_string("3x3-trick-display.html", context)
 
 
-def _hand_HTML_for_player(*, hand: app.models.Hand, player: app.models.Player) -> str:
-    context = _hand_div_context(hand=hand, player=player)
-    if not context:
-        return escape("""<div>No hand for you!</div>""")
-    context = context | {"class": "hand bigfont"}
-    return render_to_string("hand-div.html", context)
+def _hand_context_for_player(
+    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+) -> dict[str, Any]:
+    context = _seat_div_context(
+        hand=hand, seat=seat, viewer_may_control_this_seat=viewer_may_control_this_seat
+    )
+    return context | {"class": "hand bigfont"}
+
+
+def _hand_HTML_for_seat(
+    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+) -> str:
+    context = _hand_context_for_player(
+        hand=hand,
+        seat=seat,
+        viewer_may_control_this_seat=viewer_may_control_this_seat,
+    )
+
+    return render_to_string(
+        "hand-div.html",
+        context,
+    )
 
 
 def auction_history_HTML_for_table(
