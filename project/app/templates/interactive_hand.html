@@ -39,6 +39,7 @@
  const playerEventUrl = '/events/player/html/hand/{{ user.player.pk }}/';
  var playerEventSource = new ReconnectingEventSource(playerEventUrl);
  console.log(`Listening for player events on ${playerEventUrl}`);
+ var autoScrollTimer;
  playerEventSource.addEventListener('message', function (e) {
      const data = JSON.parse(e.data);
      console.log("Player event listener saw " + Object.keys(data));
@@ -60,7 +61,7 @@
          container.innerHTML = bidding_box_html;
 
          /* We just replaced the buttons, onto which HTMX had added some attributes or listeners or something, with
-         plain HTML that lacks that mojo.  So we now tell htmx to restore the mojo. */
+            plain HTML that lacks that mojo.  So we now tell htmx to restore the mojo. */
          htmx.process(container);
      } else if ("current_hand_html" in data) {
          current_hand_html = data["current_hand_html"]
@@ -73,62 +74,75 @@
                  throw new Error(`Original data had an entry for "current_hand_direction", but after swapping in ${chd}, it no longer does`);
              }
              htmx.process(container_after);
+             /* Scroll the active carousel li into view after a few seconds of "inactivity". */
+             clearTimeout(autoScrollTimer);
+             autoScrollTimer = setTimeout(() => {
+                 const activeBit = document.querySelector(".active");
+                 if (activeBit !== null) {
+                     activeBit.scrollIntoView ();
+                 }
+             }, 5000); // milliseconds
+
+             /* Scrolling counts as "activity". */
+             document.querySelector("ul.carousel").addEventListener ("scroll", (event) => {
+                 clearTimeout(autoScrollTimer);
+             });
          }
      }
-     });
-playerEventSource.addEventListener('stream-reset', function (e) {
-         const data = JSON.parse(e.data);
-         console.log("playerEventSource got one o' them stream-reset messages: " + Object.keys(data));
-     }, false);
-{% endif %}
+ });
+ playerEventSource.addEventListener('stream-reset', function (e) {
+     const data = JSON.parse(e.data);
+     console.log("playerEventSource got one o' them stream-reset messages: " + Object.keys(data));
+ }, false);
+ {% endif %}
  const tableEventUrl = '/events/table/html/{{ hand.pk }}/';
  var handEventSource = new ReconnectingEventSource(tableEventUrl);
  console.log(`Listening for hand events on ${tableEventUrl}`);
 
-     handEventSource.addEventListener('stream-reset', function (e) {
-         const data = JSON.parse(e.data);
-         console.log("handEventSource Got one o' them stream-reset messages: " + Object.keys(data));
-     }, false);
+ handEventSource.addEventListener('stream-reset', function (e) {
+     const data = JSON.parse(e.data);
+     console.log("handEventSource Got one o' them stream-reset messages: " + Object.keys(data));
+ }, false);
 
-     handEventSource.addEventListener('message', function (e) {
-         const data = JSON.parse(e.data);
-         console.log("Hand event listener saw " + Object.keys(data));
-         if ("trick_counts_string" in data) {
-             const trick_counts_string = data["trick_counts_string"];
-             const container = document.getElementById("trick-counts-string");
-             container.textContent = trick_counts_string;
-         }
+ handEventSource.addEventListener('message', function (e) {
+     const data = JSON.parse(e.data);
+     console.log("Hand event listener saw " + Object.keys(data));
+     if ("trick_counts_string" in data) {
+         const trick_counts_string = data["trick_counts_string"];
+         const container = document.getElementById("trick-counts-string");
+         container.textContent = trick_counts_string;
+     }
 
-         if ("trick_html" in data) {
-             const trick_html = data["trick_html"];
-             const container = document.getElementById("_3x3-container");
-             container.innerHTML = trick_html;
+     if ("trick_html" in data) {
+         const trick_html = data["trick_html"];
+         const container = document.getElementById("_3x3-container");
+         container.innerHTML = trick_html;
 
-             document.querySelector("#_3x3-container").scrollIntoView()
-         } else if ("auction_history_html" in data) {
-             const auction_history_html = data["auction_history_html"]
-             const container = document.getElementById ("auction");
-             container.innerHTML = auction_history_html;
+         document.querySelector("#_3x3-container").scrollIntoView()
+     } else if ("auction_history_html" in data) {
+         const auction_history_html = data["auction_history_html"]
+         const container = document.getElementById ("auction");
+         container.innerHTML = auction_history_html;
 
-             document.querySelector("#auction").scrollIntoView()
-         } else if ("contract_text" in data) {
-             /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
-             window.location.reload();
-         } else if ("final_score" in data) {
-             /* The hand is over.  Let's move on to the next thing. */
-             window.location.reload();
-         }
-     }, false);
+         document.querySelector("#auction").scrollIntoView()
+     } else if ("contract_text" in data) {
+         /* The auction just settled, so we need to stop showing the auction slides, and instead show the play slides. */
+         window.location.reload();
+     } else if ("final_score" in data) {
+         /* The hand is over.  Let's move on to the next thing. */
+         window.location.reload();
+     }
+ }, false);
 
-     htmx.on("htmx:responseError", function(evt) {
-         const errorToast = document.getElementById('errorToast');
-         const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
+ htmx.on("htmx:responseError", function(evt) {
+     const errorToast = document.getElementById('errorToast');
+     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(errorToast);
 
-         const errorText = document.getElementById('errorText');
-         errorText.innerHTML = evt.detail.xhr.responseText;
+     const errorText = document.getElementById('errorText');
+     errorText.innerHTML = evt.detail.xhr.responseText;
 
-         toastBootstrap.show();
-     });
+     toastBootstrap.show();
+ });
 
     </script>
 {% endblock scripts %}

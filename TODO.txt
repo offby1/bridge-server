@@ -6,6 +6,10 @@ IN PROGRESS:
   Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel ... although that seems less than straightforward (<https://chatgpt.com/share/687bfcf4-3660-8013-bcd6-b831310b1d82>).
 
   Maybe I should bring back that little row of three dots -- call, iirc, the "scroll position indicator" -- and flash one of them green  when the corresponding li.carousel is lit up ... except it seems they're not individually addressable :-(
+
+  Maybe I should just start a timer when it lights up, and
+  - if the user scrolls at all, cancel the timer;
+  - if the timer expires, scroll the lit-up bit into view
 
 STILL TODO:
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
