@@ -538,7 +538,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.send_JSON_to_players(
             data={
-                "hand_event": self.call_set.count() - 1,
                 "hand_pk": self.pk,
                 "new-call": {"serialized": call.serialize()},
                 "tempo_seconds": self.board.tournament.tempo_seconds,
@@ -614,7 +613,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.send_JSON_to_players(
             data={
-                "hand_event": self.call_set.count() + self.play_set.count() - 1,
                 "new-play": {
                     "hand_pk": self.pk,
                     "serialized": card.serialize(),

@@ -46,25 +46,7 @@ class CapturedEventsFromChannels:
         return False
 
 
-def assert_sane_numbering(json_messages: Iterable[str]) -> None:
-    __tracebackhide__ = True
 
-    all_parsed_messages = [json.loads(json.loads(m)) for m in json_messages if m]
-    relevant_parsed_messages = [
-        m for m in all_parsed_messages if ("new-call" in m or "new-play" in m)
-    ]
-
-    actual = [m.get("hand_event") for m in relevant_parsed_messages]
-
-    bogons = [m for m in relevant_parsed_messages if m.get("hand_event") is None]
-    if bogons:
-        pytest.fail(f'Hey man, some messages in {bogons} lack a "hand_event" key')
-
-    expected = list(range(len(actual)))
-    if actual != expected:
-        for m in relevant_parsed_messages:
-            print(m)
-        pytest.fail(f"{actual=} != {expected=} :-(")
 
 
 def test_auction_settled_messages(usual_setup) -> None:
