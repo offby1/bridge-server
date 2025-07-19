@@ -711,19 +711,26 @@ class HandTable(tables.Table):
     players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
 
-    def render_result(self, record) -> str:
-        summary_for_this_viewer, _ = record.summary_as_viewed_by(
-            as_viewed_by=getattr(self.request.user, "player", None),
-        )
-        return summary_for_this_viewer
-
     def render_board(self, value) -> SafeString:
         return format_html(
-            """<a href="{}">{}</a>""", reverse("app:board-archive", kwargs=dict(pk=value.pk)), value
+            """<a href="{}">{}</a>""",
+            reverse("app:board-archive", kwargs=dict(pk=value.pk)),
+            value.display_number,
         )
 
     def render_players(self, value) -> SafeString:
         return SafeString(", ".join([p.as_link() for p in value]))
+
+    def render_result(self, record) -> SafeString:
+        summary_for_this_viewer, _ = record.summary_as_viewed_by(
+            as_viewed_by=getattr(self.request.user, "player", None),
+        )
+        return format_html(
+            """<a href="{}">Hand {}: {}</a>""",
+            reverse("app:hand-dispatch", kwargs=dict(pk=record.pk)),
+            record.pk,
+            summary_for_this_viewer,
+        )
 
 
 class HandListView(tables.SingleTableMixin, FilterView):
