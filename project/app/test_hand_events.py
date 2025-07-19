@@ -188,3 +188,20 @@ def test_dummys_hand_isnt_always_highlighted(
 
     assert "South" in active_seats_seen
     assert len(active_seats_seen) > 1
+
+
+def test_end_of_tournament(nearly_completed_tournament) -> None:
+    def abandoned_hands():
+        return nearly_completed_tournament.hands().filter(abandoned_because__isnull=False)
+
+    assert not nearly_completed_tournament.is_complete
+    assert abandoned_hands().count() == 0
+
+    hand: app.models.Hand = nearly_completed_tournament.hands().filter(is_complete=False).first()
+    assert hand is not None
+    hand.add_play_from_model_player(player=hand.West, card=bridge.card.Card.deserialize("SA"))
+
+    nearly_completed_tournament.refresh_from_db()
+
+    assert nearly_completed_tournament.is_complete
+    assert abandoned_hands().count() == 0

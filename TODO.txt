@@ -3,7 +3,6 @@ IN PROGRESS:
 STILL TODO:
 * Links in the table at app:hand-list should go to *hands*, not boards; if someone wants the latter, they can look at app:board-list.
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
-* When a tournament ends, all the hands are marked as abandoned :-(
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
@@ -207,6 +206,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* When a tournament ends, all the hands are marked as abandoned :-(
 * After playing the last trick in a hand, the interactive view doesn't reload to show the recap.
   To reproduce:
   - `just fixture nearly_completed_tournament`

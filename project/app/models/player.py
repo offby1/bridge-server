@@ -223,13 +223,6 @@ class Player(TimeStampedModel):
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
                     p.abandon_my_hand(reason=reason)
-        if reason is not None and self.partner is not None:
-            channel = Message.channel_name_from_player_pks(self.pk, self.partner.pk)
-            send_event(
-                channel=channel,
-                event_type="message",
-                data=reason,
-            )
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
         with transaction.atomic():

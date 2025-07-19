@@ -495,11 +495,12 @@ class Tournament(models.Model):
                 self.completed_at = (
                     timezone.now() if all_hands_are_complete else self.play_completion_deadline
                 )
-                self.abandon_all_hands(
-                    reason=f"Play completion deadline ({self.play_completion_deadline}) has passed"
-                    if self.play_completion_deadline_has_passed()
-                    else "All hands are complete"
-                )
+                if self.play_completion_deadline_has_passed():
+                    self.abandon_all_hands(
+                        reason=f"Play completion deadline ({self.play_completion_deadline}) has passed"
+                    )
+                else:
+                    self.players().update(current_hand=None)
                 self.save()
 
     def save(self, *args, **kwargs) -> None:
