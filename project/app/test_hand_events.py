@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Iterable
 import itertools
-import json
-
-from typing import Any
 
 import bridge.card
 import bridge.contract
 import pytest
-from django_eventstream.models import Event  # type: ignore[import-untyped]
 
 import app.models
 import app.views
@@ -23,57 +18,55 @@ def capture_events_in_database(settings):
     settings.EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
 
-class CapturedEventsFromChannels:
-    def __init__(self, *channel_names: str) -> None:
-        self._channel_names = channel_names
-        self.events: list[Event] = []
-        self.events_by_channel: dict[str, Event] = collections.defaultdict(list)
-        self._message_ids_before = set(
-            Event.objects.filter(channel__in=channel_names).values_list("id", flat=True),
-        )
+@pytest.fixture()
+def sent_events_by_channel(monkeypatch):
+    rv = collections.defaultdict(list)
 
-    def __enter__(self):
-        return self
+    def send_event(*args, **kwargs) -> None:
+        rv[kwargs["channel"]].append(kwargs)
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.events = (
-            Event.objects.order_by("created")
-            .filter(channel__in=self._channel_names)
-            .exclude(id__in=self._message_ids_before)
-        )
-        for e in self.events:
-            self.events_by_channel[e.channel].append(e)
-        return False
+    monkeypatch.setattr(app.models.hand, "send_event", send_event)
+
+    return rv
 
 
-
-
-
-def test_auction_settled_messages(usual_setup) -> None:
+def test_auction_settled_messages(usual_setup, sent_events_by_channel) -> None:
     h = usual_setup
 
-    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
-    hand_JSON_channels = [p.event_JSON_hand_channel for p in h.players()]
-    table_channels = [h.event_table_html_channel]
-
-    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
-        with CapturedEventsFromChannels(*hand_JSON_channels) as hand_json_cap:
-            with CapturedEventsFromChannels(*table_channels) as table_cap:
-                testutils.set_auction_to(
-                    bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-                    h,
-                )
-
-    assert sum(["new-call" in e.data for e in hand_json_cap.events]) == 16
-    assert_sane_numbering(
-        (e.data for e in hand_json_cap.events if e.channel == hand_JSON_channels[0])
+    testutils.set_auction_to(
+        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+        h,
     )
-    assert sum(["contract" in e.data for e in table_cap.events]) == 1
+
+    player_JSON_events = list(
+        itertools.chain.from_iterable(
+            (v for k, v in sent_events_by_channel.items() if "player:json:" in k)
+        )
+    )
+    player_HTML_events = list(
+        itertools.chain.from_iterable(
+            (v for k, v in sent_events_by_channel.items() if "player:html:" in k)
+        )
+    )
+    table_HTML_events = list(
+        itertools.chain.from_iterable(
+            (v for k, v in sent_events_by_channel.items() if "table:html:" in k)
+        )
+    )
+
+    # Four calls, each sent to all four players.
+    calls_seen = 0
+    for e in player_JSON_events:
+        if "new-call" in e["data"]:
+            calls_seen += 1
+    assert calls_seen == 16
+
+    assert sum(["contract" in e["data"] for e in table_HTML_events]) == 1
 
     # Between two and four bidding box HTMLs per call.  Two would be if we were efficient, and only re-sent them when
     # they went from active to inactive, or vice-versa; four would be if we were dumb and just always sent it, even if
     # it was inactive on the last call and is inactive on the current call.
-    assert 2 * 4 <= sum(["bidding_box_html" in e.data for e in hand_html_cap.events]) <= 4 * 4
+    assert 2 * 4 <= sum(["bidding_box_html" in e["data"] for e in player_HTML_events]) <= 4 * 4
 
 
 def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
@@ -85,17 +78,9 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score(monkeypatch) -> None:
-    sent_events_by_channel = collections.defaultdict(list)
+def test_sends_final_score(monkeypatch, sent_events_by_channel) -> None:
+    from .models import Hand
 
-    def send_timestamped_event(
-        channel: str, data: dict[str, Any], when: float | None = None
-    ) -> None:
-        sent_events_by_channel[channel].append(data)
-
-    from .models import Hand, hand
-
-    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
     h1: Hand = Hand.objects.get(pk=1)
     player = h1.player_who_may_play
     assert player is not None
@@ -103,13 +88,13 @@ def test_sends_final_score(monkeypatch) -> None:
 
     h1.add_play_from_model_player(player=player, card=libCard)
 
-    assert any("final_score" in d for d in sent_events_by_channel["table:html:1"])
+    assert any("final_score" in e["data"] for e in sent_events_by_channel["table:html:1"])
 
 
-def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
+def test_includes_dummy_in_new_play_event_for_opening_lead(
+    usual_setup, sent_events_by_channel, monkeypatch
+) -> None:
     h: app.models.Hand = usual_setup
-
-    one_hand_JSON_channel = next(h.players()).event_JSON_hand_channel
 
     def add_play(card_string: str) -> None:
         seat = h.next_seat_to_play
@@ -121,27 +106,33 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
             card=bridge.card.Card.deserialize(card_string),
         )
 
-    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+    # So that our events contain, not HTML, but simple dicts.  That way we don't have to parse 'em.
+    monkeypatch.setattr(app.views.hand, "render_to_string", lambda template_name, context: context)
 
-    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
-        with CapturedEventsFromChannels(one_hand_JSON_channel) as hand_json_cap:
-            with CapturedEventsFromChannels(h.event_table_html_channel) as table_HTML_cap:
-                testutils.set_auction_to(
-                    bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
-                    h,
-                )
-                add_play("d2")
-                add_play("h2")
-                add_play("s2")
+    testutils.set_auction_to(
+        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.DIAMONDS),
+        h,
+    )
 
-    assert_sane_numbering((e.data for e in hand_json_cap.events))
+    add_play("d2")
+    add_play("h2")
+    add_play("s2")
+
+    player_HTML_events = list(
+        itertools.chain.from_iterable(
+            (v for k, v in sent_events_by_channel.items() if "player:html:" in k)
+        )
+    )
+    table_HTML_events = list(
+        itertools.chain.from_iterable(
+            (v for k, v in sent_events_by_channel.items() if "table:html:" in k)
+        )
+    )
 
     tricks_seen = 0
-    for e in table_HTML_cap.events:
-        if not e.data:
-            continue
 
-        if "trick_html" in e.data:
+    for e in table_HTML_events:
+        if "trick_html" in e["data"]:
             tricks_seen += 1
 
     assert tricks_seen == 3
@@ -149,14 +140,9 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     # Everyone gets to see the dummy.
     dummys_seen = 0
 
-    for e in hand_html_cap.events:
-        if not e.data:
-            continue
-
-        if (
-            current_hand_html := json.loads(json.loads(e.data)).get("current_hand_html")
-        ) is not None:
-            if 'id="South"' in current_hand_html:
+    for e in player_HTML_events:
+        if (current_hand_html := e["data"].get("current_hand_html")) is not None:
+            if current_hand_html.get("id") == "South":
                 dummys_seen += 1
 
     """
@@ -170,7 +156,9 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:
     assert dummys_seen == 8
 
 
-def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
+def test_dummys_hand_isnt_always_highlighted(
+    usual_setup, monkeypatch, sent_events_by_channel
+) -> None:
     h = usual_setup
 
     testutils.set_auction_to(
@@ -180,12 +168,7 @@ def test_dummys_hand_isnt_always_highlighted(usual_setup, monkeypatch) -> None:
 
     assert h.dummy.seat.name == "South"
 
-    sent_events_by_channel = collections.defaultdict(list)
-
-    def send_event(*args, **kwargs) -> None:
-        sent_events_by_channel[kwargs["channel"]].append(kwargs)
-
-    monkeypatch.setattr(app.models.hand, "send_event", send_event)
+    # So that our events contain, not HTML, but simple dicts.  That way we don't have to parse 'em.
     monkeypatch.setattr(app.views.hand, "render_to_string", lambda template_name, context: context)
 
     for card in ("d2", "h2", "s2", "c2"):
