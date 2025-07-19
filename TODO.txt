@@ -1,4 +1,11 @@
 IN PROGRESS:
+* Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
+
+  If I'm the declarer, I'm controlling two hands.  The dummy is to the immediate left of the "Current Trick" panel, so when it lights up, I can see its edge to the left of the "Current Trick" panel; that alerts me.  But when *my* hand lights up, I can't see it because it's entirely offscreen.
+
+  Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel ... although that seems less than straightforward (<https://chatgpt.com/share/687bfcf4-3660-8013-bcd6-b831310b1d82>).
+
+  Maybe I should bring back that little row of three dots -- call, iirc, the "scroll position indicator" -- and flash one of them green  when the corresponding li.carousel is lit up ... except it seems they're not individually addressable :-(
 
 STILL TODO:
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
@@ -6,14 +13,6 @@ STILL TODO:
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
   - I imagine there's something deep in django's management command that is dropping the ball somewhere.
-
-* Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
-
-  If I'm the declarer, I'm controlling two hands.  The dummy is to the immediate left of the "Current Trick" panel, so when it lights up, I can see its edge to the left of the "Current Trick" panel; that alerts me.  But when *my* hand lights up, I can't see it because it's entirely offscreen.
-
-  Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel ... although that seems less than straightforward (<https://chatgpt.com/share/687bfcf4-3660-8013-bcd6-b831310b1d82>).
-
-  Maybe I should bring back that little row of three dots -- call, iirc, the "scroll position indicator" -- and flash one of them green when the corresponding li.carousel is lit up.
 
 * Some kind of smoke test for views.
 
