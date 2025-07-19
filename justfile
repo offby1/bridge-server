@@ -186,7 +186,7 @@ tiny:
 
     just drop
     DJANGO_SETTINGS_MODULE=project.prod_settings just dcu -d
-    just stress --tiny
+    just stress --tiny --tempo=0
     docker compose logs django --follow
 
 [group('development')]
