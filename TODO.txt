@@ -9,7 +9,11 @@ STILL TODO:
 
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 
-  If I'm the declarer, I'm controlling two hands.  The dummy is to the immediate left of the "Current Trick" panel, so when it lights up, I can see its edge to the left of the "Current Trick" panel; that alerts me.  But when *my* hand lights up, I can't see it because it's entirely offscreen.  Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel.
+  If I'm the declarer, I'm controlling two hands.  The dummy is to the immediate left of the "Current Trick" panel, so when it lights up, I can see its edge to the left of the "Current Trick" panel; that alerts me.  But when *my* hand lights up, I can't see it because it's entirely offscreen.
+
+  Maybe, instead of having just two or three panels side-by-side, they should be in an endless cycle, so that when my hand lights up, it'd be visible to the *right* of the "Current Trick" panel ... although that seems less than straightforward (<https://chatgpt.com/share/687bfcf4-3660-8013-bcd6-b831310b1d82>).
+
+  Maybe I should bring back that little row of three dots -- call, iirc, the "scroll position indicator" -- and flash one of them green when the corresponding li.carousel is lit up.
 
 * Some kind of smoke test for views.
 
@@ -26,6 +30,18 @@ STILL TODO:
   This will probably require selenium :-(
 
   chatgpt suggests [locust](https://docs.locust.io/en/stable/installation.html), and I see that [nanorepublica](https://discord.com/channels/856567261900832808/1172942795414183976/1197234202500943963) and [Pat](https://discord.com/channels/856567261900832808/1172942795414183976/1370703160770953257) recommend it.
+
+  Otoh, it might be easy to do it by hand:
+  - introspect to find all the views
+  - prepare maybe four or five users of various flavors
+    - anonymous
+    - player not in any tournament
+    - player in a tournament but not seated (if that's even possible)
+    - player seated in hand H
+  - sic each user on each view
+    We might need to have multiple variants of some views, like "the hand we're currently sitting at" and "some hand we are *not* sitting at"
+
+    In each case, just check that the response code is < 500; anything else would be too hard for a smoke test.
 
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
