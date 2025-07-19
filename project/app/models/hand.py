@@ -699,10 +699,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             assert self.is_complete
             assert self.table_display_number is not None
 
-            self.send_JSON_to_players(
+            send_timestamped_event(
+                channel=self.event_table_html_channel,
                 data={
                     "final_score": final_score_text,
                 },
+                when=self.last_action_time.timestamp(),
             )
 
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:

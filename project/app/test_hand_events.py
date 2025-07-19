@@ -5,6 +5,8 @@ from collections.abc import Iterable
 import itertools
 import json
 
+from typing import Any
+
 import bridge.card
 import bridge.contract
 import pytest
@@ -101,24 +103,25 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score_to_each_hand() -> None:
-    h = app.models.Hand.objects.get(pk=1)
+def test_sends_final_score(monkeypatch) -> None:
+    sent_events_by_channel = collections.defaultdict(list)
 
-    assert h.player_who_may_play is not None
+    def send_timestamped_event(
+        channel: str, data: dict[str, Any], when: float | None = None
+    ) -> None:
+        sent_events_by_channel[channel].append(data)
+
+    from .models import Hand, hand
+
+    monkeypatch.setattr(hand, "send_timestamped_event", send_timestamped_event)
+    h1: Hand = Hand.objects.get(pk=1)
+    player = h1.player_who_may_play
+    assert player is not None
     libCard = bridge.card.Card.deserialize("♠A")
 
-    hand_HTML_channels = [p.event_HTML_hand_channel for p in h.players()]
+    h1.add_play_from_model_player(player=player, card=libCard)
 
-    with CapturedEventsFromChannels(*hand_HTML_channels) as hand_html_cap:
-        h.add_play_from_model_player(player=h.player_who_may_play, card=libCard)
-
-    def sought(datum):
-        return "final_score" in datum
-
-    for events, ch in hand_html_cap.events_by_channel.items():
-        assert any(sought(d.data) for d in events)
-
-    assert not any(sought(d.data) for d in hand_html_cap.events)
+    assert any("final_score" in d for d in sent_events_by_channel["table:html:1"])
 
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(usual_setup) -> None:

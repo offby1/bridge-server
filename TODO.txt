@@ -206,6 +206,13 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* After playing the last trick in a hand, the interactive view doesn't reload to show the recap.
+  To reproduce:
+  - `just fixture nearly_completed_tournament`
+  - `just --no-deps runme`
+  - open browser; log in as Adam West
+  - Play your one remaining card (the Ace of Spades)
+  - behold: http://localhost:9000/hand/1/ still shows the last trick
 * With 2025-07-17T04:42:06+0000.sql, logged in as bob, https://bridge.offby1.info/hand/113/: I notice that when it's dummy's turn to play, the background is correctly highlighted in green -- but the cards aren't "active" :-(  I gotta F5 to make them active.
   I suspect the way to fix this is to entirely remove the "table events" channel -- I currently use it to describe the dummy's hand, but iirc, nothing else; it'd be simpler and more accurate to simply send the dummy to each player, customized as needed.
 
