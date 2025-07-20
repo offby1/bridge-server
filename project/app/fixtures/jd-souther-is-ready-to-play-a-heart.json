@@ -8,7 +8,7 @@
       "display_number": 1,
       "signup_deadline": "2000-01-01T00:00:00Z",
       "play_completion_deadline": "2999-12-31T23:49:49.999Z",
-      "tempo_seconds": 20.0
+      "tempo_seconds": 0.5
     }
   },
   {
@@ -80,8 +80,8 @@
       "modified": "2000-01-01T00:00:00Z",
       "user": 2,
       "partner": 4,
-      "allow_bot_to_play_for_me": true,
-      "synthetic": true,
+      "allow_bot_to_play_for_me": false,
+      "synthetic": false,
       "current_hand": 1
     }
   },
@@ -93,7 +93,7 @@
       "modified": "2000-01-01T00:00:00Z",
       "user": 3,
       "partner": 1,
-      "allow_bot_to_play_for_me": false,
+      "allow_bot_to_play_for_me": true,
       "synthetic": false,
       "current_hand": 1
     }
