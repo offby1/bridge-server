@@ -1,7 +1,0 @@
-How to test this:
-
-Play a hand as declarer, against three bots; and ensure both dummy and declarer's cards slide into view as needed.
-
-- `just fixture jd-souther-is-ready-to-play-a-heart && just --no-deps runme`
-- log in as Clint Eastwood
-- in another window: `just --no-deps manage cheating_bot`
