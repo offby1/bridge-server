@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
