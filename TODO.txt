@@ -7,7 +7,7 @@ IN PROGRESS:
 
   Maybe I should bring back that little row of three dots -- call, iirc, the "scroll position indicator" -- and flash one of them green  when the corresponding li.carousel is lit up ... except it seems they're not individually addressable :-(
 
-  Maybe I should just start a timer when it lights up, and
+  👉 Maybe I should just start a timer when it lights up, and 👈
   - if the user scrolls at all, cancel the timer;
   - if the timer expires, scroll the lit-up bit into view
 
