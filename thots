@@ -1,0 +1,38 @@
+Who knows, maybe I can do it all with some JS in the browser.
+
+# First
+
+Just look at the existing thing.
+
+- `just tiny`
+- twiddle thumbs until http://localhost:9000/hand/ shows four complete hands (why does it take so long?)
+- `docker compose stop bot`
+- hack stuff by hand:
+  - in the django shell:
+```
+h2 = Hand.objects.get(pk=2)
+h2.play_set.all().delete()
+h2.call_set.all().delete()
+h2.is_complete = False
+h2.save()
+h2.board.tournament.completed_at = None
+h2.board.tournament.save()
+from app.models.common import attribute_names
+for attr in attribute_names:
+    getattr(h2, attr).current_hand = None;
+    getattr(h2, attr).save()
+cache.clear()
+```
+
+  - in pgadmin4:
+    - change user 2's name to "bob"
+    - change corresponding player (namely, 1): "synthetic" => false; "allow_bot_to_play_for_me" => true
+  - `just manage changepassword bob`
+  - `just backup`
+  - hack the backup file and scoot the play completion deadline into the future
+  - `just restore <` the-backup-file
+  - `just dumpdata` ; save that as `project/app/fixtures/four-hands.json`
+- `just --no-deps runme`
+- log in as bob, look at h2
+- `docker compose start bot`
+- as *those* players play, the hand should update.
