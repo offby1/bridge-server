@@ -4,6 +4,7 @@ Once I list most of them, I should study each to see if there are features I don
 
 - bash
 - chrome's developer tools
+  - the performance stuff is intriguing.
 - coverage
 - curl
 - daphne

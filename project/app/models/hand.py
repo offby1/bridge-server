@@ -825,6 +825,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     # Do `Hand.objects.select_related(*attribute_names)` when fetching users, lest you do lots of extra queries.
     def players(self) -> Generator[Player]:
+        # Player.objects.filter(pk__in=self.player_pks()) is a simpler query, but it ignores any prefetching we may have
+        # done.
         for attribute_name in attribute_names:
             yield getattr(self, attribute_name)
 
