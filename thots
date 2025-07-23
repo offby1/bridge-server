@@ -36,3 +36,9 @@ cache.clear()
 - log in as bob, look at h2
 - `docker compose start bot`
 - as *those* players play, the hand should update.
+
+# Wait how about
+
+./set-up-four-hands.sh
+
+Then log in as Bob and manually play one hand
