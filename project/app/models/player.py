@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import datetime
+import json
 import logging
+import pickle
+import random
 import re
 from typing import TYPE_CHECKING
 
@@ -159,6 +163,41 @@ class Player(TimeStampedModel):
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
 
+    random_state = models.BinaryField(null=True)
+
+    def _rng_seed_from_current_board(self) -> str:
+        my_direction_name = None
+        assert self.current_hand is not None
+
+        for d in self.current_hand.direction_names:
+            if self == getattr(self.current_hand, d):
+                my_direction_name = d
+                break
+
+        assert my_direction_name is not None
+
+        return json.dumps(
+            (
+                self.current_hand.board.tournament.display_number,
+                self.current_hand.table_display_number,
+                self.current_hand.board.display_number,
+                my_direction_name,
+            )
+        )
+
+    @contextlib.contextmanager
+    def rng(self):
+        rv = random.Random()
+
+        if self.random_state is None:
+            rv.seed(self._rng_seed_from_current_board())
+            self.random_state = pickle.dumps(rv.getstate())
+
+        rv.setstate(pickle.loads(self.random_state))
+        yield rv
+        self.random_state = pickle.dumps(rv.getstate())
+        self.save()
+
     def _update_redundant_fields(self):
         import app.models
 
@@ -270,6 +309,8 @@ class Player(TimeStampedModel):
 
     def save(self, *args, **kwargs) -> None:
         self._check_synthetic()
+        if self.current_hand is None:
+            self.random_state = None
         super().save(*args, **kwargs)
 
     def _check_synthetic(self) -> None:
@@ -504,6 +545,12 @@ class Player(TimeStampedModel):
             models.CheckConstraint(
                 name="synthetic_players_must_allow_bot_to_play_for_them",
                 condition=models.Q(synthetic=False) | models.Q(allow_bot_to_play_for_me=True),
+            ),  # type: ignore [call-arg]
+            models.CheckConstraint(
+                name="random_state_is_set_only_when_seated",
+                condition=~(
+                    models.Q(current_hand__isnull=True) & models.Q(random_state__isnull=False)
+                ),
             ),  # type: ignore [call-arg]
         ]
 

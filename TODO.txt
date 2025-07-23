@@ -1,4 +1,5 @@
 IN PROGRESS:
+* Maybe have the bot keep [random state](https://docs.python.org/3.13/library/random.html#random.getstate) for each player, so that its behavior is deterministic.  It'd have to load that state from somewhere before asking the library to make a call or play, and then save it back right afterwards.  That state is pickleable, but not trivially json-able.
 
 STILL TODO:
 * Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.

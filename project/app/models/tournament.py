@@ -500,7 +500,7 @@ class Tournament(models.Model):
                         reason=f"Play completion deadline ({self.play_completion_deadline}) has passed"
                     )
                 else:
-                    self.players().update(current_hand=None)
+                    self.players().update(current_hand=None, random_state=None)
                 self.save()
 
     def save(self, *args, **kwargs) -> None:
