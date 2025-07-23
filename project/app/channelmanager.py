@@ -41,7 +41,10 @@ class MyChannelManager(DefaultChannelManager):
             # logger.warning(f"{player.name=} ({player_pk=}) => {rv=}")
             return rv
 
-        # hand messages, alas, are private.
+        # hand messages, alas, are private to those players who aren't allowed to see the board.
+
+        # BUGBUG -- use some unified permissions system; this code bars those who have *already played this board* from
+        # receiving messages.
         if (hand_pk := models.Hand.hand_pk_from_event_table_html_channel(channel)) is not None:
             try:
                 hand = models.Hand.objects.get(pk=hand_pk)
@@ -50,12 +53,12 @@ class MyChannelManager(DefaultChannelManager):
                 return False
             else:
                 rv = player in hand.players()
-                # logger.warning(f"{player=} in  {hand.players()=} => {rv=}")
+                logger.warning(f"{player.name=} in  {[p.name for p in hand.players()]=} => {rv=}")
                 return rv
 
         if channel == "partnerships":
             return True
 
         # everything else is visible to everyone, although I don't think there *are* any other messages.
-        # logger.warning("OK, so wtf is channel %s?", channel)
+        logger.warning("OK, so wtf is channel %s?", channel)
         return True

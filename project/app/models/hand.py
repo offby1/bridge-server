@@ -162,7 +162,7 @@ def send_timestamped_event(
     if when is None:
         when = time.time()
 
-    # logger.debug(f"Sending {summarize(data)=} to {channel=}")
+    logger.debug(f"Sending {summarize(data)=} to {channel=}")
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
