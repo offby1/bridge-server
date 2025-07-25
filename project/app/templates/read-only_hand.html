@@ -59,3 +59,19 @@
     </table>
 </div>
 {% endblock content %}
+{% block scripts %}
+    <script>
+ const tableEventUrl = '/events/table/html/{{ hand.pk }}/';
+ var handEventSource = new ReconnectingEventSource(tableEventUrl);
+ console.log(`Listening for hand events on ${tableEventUrl}`);
+
+ handEventSource.addEventListener('message', function (e) {
+     const data = JSON.parse(e.data);
+     console.log("Hand event listener saw " + Object.keys(data));
+     window.location.reload();
+
+ }, false);
+
+
+    </script>
+{% endblock scripts %}

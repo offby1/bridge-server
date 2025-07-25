@@ -41,21 +41,20 @@ class MyChannelManager(DefaultChannelManager):
             # logger.warning(f"{player.name=} ({player_pk=}) => {rv=}")
             return rv
 
-        # hand messages, alas, are private.
+        # "table" messages are visible to those currently playing the table, as well as those who have played it in the
+        # past.
         if (hand_pk := models.Hand.hand_pk_from_event_table_html_channel(channel)) is not None:
             try:
                 hand = models.Hand.objects.get(pk=hand_pk)
             except models.Hand.DoesNotExist:
                 logger.info("Hand %s does not exist => False", hand_pk)
                 return False
-            else:
-                rv = player in hand.players()
-                # logger.warning(f"{player=} in  {hand.players()=} => {rv=}")
-                return rv
+
+            return player.hand_at_which_we_played_board(hand.board) is not None
 
         if channel == "partnerships":
             return True
 
         # everything else is visible to everyone, although I don't think there *are* any other messages.
-        # logger.warning("OK, so wtf is channel %s?", channel)
+        logger.warning("OK, so wtf is channel %s?", channel)
         return True
