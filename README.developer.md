@@ -76,4 +76,4 @@ Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
 
 - First "log in": `just curl-login`
 
-- Now "tail" the stream: `just curl https://django.server.orb.local/events/hand/1/` e.g.
+- Now "tail" the stream: `just curl http://localhost:9000/events/player/json/1/` e.g.
