@@ -10,9 +10,11 @@ import app.testutils
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         # make one user human
         p1 = app.models.Player.objects.first()
+
+        assert p1 is not None
 
         # This skirts a safeguard in Player.save()
         app.models.Player.objects.filter(pk=p1.pk).update(
@@ -34,6 +36,7 @@ class Command(BaseCommand):
             .filter(is_complete=False)
             .first()
         )
+        assert viewable_hand is not None
         subprocess.run(
             [
                 "open",
