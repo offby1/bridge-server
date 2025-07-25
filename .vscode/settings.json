@@ -1,7 +1,9 @@
 {
-    "python.testing.pytestArgs": [
-        "project"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "extensions.ignoreRecommendations": true,
+    "github.copilot.chat.enabled": false
+    "github.copilot.enable": false,
+    "github.copilot.inlineSuggest.enable": false,
+    "python.testing.pytestArgs": ["project"],
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false
 }
