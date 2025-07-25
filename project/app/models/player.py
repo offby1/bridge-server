@@ -19,6 +19,7 @@ from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.html import format_html
@@ -45,6 +46,10 @@ SPLIT = "splitsville"
 
 
 class PlayerManager(models.Manager):
+    def prepop(self) -> QuerySet:
+        amended_attr_names = [f"current_hand__{a}" for a in attribute_names]
+        return Player.objects.select_related("current_hand", *amended_attr_names)
+
     def _update_redundant_fields(self):
         for instance in self.all():
             instance._update_redundant_fields()
