@@ -103,10 +103,10 @@ STILL TODO:
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
   - I've also got a [Django-tasks](https://github.com/realOrangeOne/django-tasks) branch; that was a struggle from start to finish, and I never got it working. There's a [Django Enhancement Proposal](  https://github.com/django/deps/blob/5746805dfb062a99555b5e5bbc5b1685212aba2c/accepted/0014-background-workers.rst#L26) for it.
-  - [Some dude on discord](https://discord.com/channels/856567261900832808/857643169046462475/1349500371378372640) wrote <https://tkte.ch/chancy/>, and mentioned it to me as a possible alternative
   - <https://django-tasks-scheduler.readthedocs.io/en/latest/> also exists! Ai yi yi, paradox of choice
+  - [Tyler Kennedy](https://discord.com/channels/856567261900832808/857643169046462475/1349500371378372640) wrote <https://tkte.ch/chancy/>, and mentioned it to me as a possible alternative
 
-  [Tyler Kennedy](https://github.com/tktech/) says:
+    He says:
 
     > (I'm biased, Chancy is my project)
     >
