@@ -355,7 +355,6 @@ def _background_css_color(player: Player) -> str:
     return "darkgrey"
 
 
-@logged_in_as_player_required(redirect=False)
 def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
     has_partner = request.GET.get("has_partner")
     has_partner_filter = None
