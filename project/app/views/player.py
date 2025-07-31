@@ -21,7 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape, format_html
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
@@ -359,12 +359,23 @@ def _background_css_color(player: Player) -> str:
 
 
 class PlayerTable(tables.Table):
-    who = tables.Column()
+    who = tables.Column(accessor=tables.A("user__username"))
     partner = tables.Column()
-    where = tables.Column()
+    where = tables.Column(empty_values=())
     signed_up_for = tables.Column()
     last_activity = tables.Column()
     action = tables.Column()
+
+    def render_where(self, record) -> SafeString:
+        hand = record.current_hand
+        if hand:
+            return format_html(
+                """ <a href="{}">Table {}</a> """,
+                reverse("app:hand-dispatch", kwargs=dict(pk=hand.pk)),
+                hand.table_display_number,
+            )
+        else:
+            return format_html("""<a href="{}">lobby</a>""", reverse("app:lobby"))
 
 
 class PlayerFilter(FilterSet):
