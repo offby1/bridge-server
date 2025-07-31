@@ -24,6 +24,9 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_filters import FilterSet  # type: ignore[import-untyped]
+from django_filters.views import FilterView
+import django_tables2 as tables  # type: ignore[import-untyped]
 
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
@@ -353,6 +356,34 @@ def _background_css_color(player: Player) -> str:
         return "lightgrey"
 
     return "darkgrey"
+
+
+class PlayerTable(tables.Table):
+    who = tables.Column()
+    partner = tables.Column()
+    where = tables.Column()
+    signed_up_for = tables.Column()
+    last_activity = tables.Column()
+    action = tables.Column()
+
+
+class PlayerFilter(FilterSet):
+    class Meta:
+        model = Player
+        exclude = ["random_state"]
+
+
+class PlayerListView(tables.SingleTableMixin, FilterView):
+    model = Player
+    table_class = PlayerTable
+    template_name = "new_player_list.html"
+
+    filterset_class = PlayerFilter
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        base = super().get_context_data(**kwargs)
+        base["title"] = "Some players, Yo"
+        return base
 
 
 def player_list_view(request: AuthedHttpRequest) -> HttpResponse:

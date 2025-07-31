@@ -64,6 +64,7 @@ urlpatterns = [
         name="player-by-name-or-pk",
     ),
     path("players/", player.player_list_view, name="players"),
+    path("new-players/", player.PlayerListView.as_view(), name="new-players"),
     path("send_lobby_message/", lobby.send_lobby_message, name="send_lobby_message"),
     path(
         "send_player_message/<recipient_pk>",
