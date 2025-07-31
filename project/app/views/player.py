@@ -362,16 +362,26 @@ def _background_css_color(player: Player) -> str:
 class PlayerTable(tables.Table):
     who = tables.Column(accessor=tables.A("user__username"), verbose_name="Who")
     partner = tables.Column()
-    where = tables.Column(empty_values=())
-    signed_up_for = tables.Column()
+    where = tables.Column(empty_values=(), order_by=["current_hand"])
+    signed_up_for = tables.Column(empty_values=(), order_by=["tournamentsignup"])
     last_activity = tables.Column()
     action = tables.Column()
 
-    def render_who(self, record) -> SafeString:
-        return sedate_link(record, self.request.user)
-
     def render_partner(self, record) -> SafeString:
         return sedate_link(record.partner, self.request.user)
+
+    def render_signed_up_for(self, record) -> SafeString:
+        if (ts := getattr(record, "tournamentsignup", None)) is not None:
+            t = ts.tournament
+            rv = format_html(
+                """ <a href="{}"> {} </a> """,
+                reverse("app:tournament", kwargs=dict(pk=t.pk)),
+                t,
+            )
+            logger.warning("%s", rv)
+            return rv
+
+        return ""
 
     def render_where(self, record) -> SafeString:
         hand = record.current_hand
@@ -383,6 +393,9 @@ class PlayerTable(tables.Table):
             )
         else:
             return format_html("""<a href="{}">lobby</a>""", reverse("app:lobby"))
+
+    def render_who(self, record) -> SafeString:
+        return sedate_link(record, self.request.user)
 
 
 class PlayerFilter(FilterSet):
