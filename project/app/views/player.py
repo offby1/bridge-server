@@ -31,6 +31,7 @@ import django_tables2 as tables  # type: ignore[import-untyped]
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
+from app.templatetags.player_extras import sedate_link
 from .misc import AuthedHttpRequest, logged_in_as_player_required
 from . import Forbid
 
@@ -359,12 +360,18 @@ def _background_css_color(player: Player) -> str:
 
 
 class PlayerTable(tables.Table):
-    who = tables.Column(accessor=tables.A("user__username"))
+    who = tables.Column(accessor=tables.A("user__username"), verbose_name="Who")
     partner = tables.Column()
     where = tables.Column(empty_values=())
     signed_up_for = tables.Column()
     last_activity = tables.Column()
     action = tables.Column()
+
+    def render_who(self, record) -> SafeString:
+        return sedate_link(record, self.request.user)
+
+    def render_partner(self, record) -> SafeString:
+        return sedate_link(record.partner, self.request.user)
 
     def render_where(self, record) -> SafeString:
         hand = record.current_hand
@@ -390,10 +397,11 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
     template_name = "new_player_list.html"
 
     filterset_class = PlayerFilter
+    table_pagination = {"per_page": 15}
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         base = super().get_context_data(**kwargs)
-        base["title"] = "Some players, Yo"
+        base["title"] = "Players"
         return base
 
 
