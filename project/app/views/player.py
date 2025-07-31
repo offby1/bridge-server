@@ -18,6 +18,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
+from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape, format_html
@@ -364,8 +365,17 @@ class PlayerTable(tables.Table):
     partner = tables.Column()
     where = tables.Column(empty_values=(), order_by=["current_hand"])
     signed_up_for = tables.Column(empty_values=(), order_by=["tournamentsignup"])
-    last_activity = tables.Column()
+    last_activity = tables.Column(
+        accessor=tables.A("last_action"), orderable=False, empty_values=()
+    )
     action = tables.Column()
+
+    def render_last_activity(self, value) -> SafeString:
+        from django.utils import timezone
+
+        when = timezone.localtime(value[0])
+
+        return format_html("{}{}: {}", localize(when), when.tzname(), value[1])
 
     def render_partner(self, record) -> SafeString:
         return sedate_link(record.partner, self.request.user)
