@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 from django.contrib import messages as django_web_messages
-from django.core.paginator import Paginator
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -16,7 +15,7 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.templatetags.l10n import localize
@@ -27,7 +26,7 @@ from django.utils.safestring import mark_safe, SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
-from django_filters.views import FilterView
+from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
 
 from app.models import Message, PartnerException, Player
@@ -393,15 +392,13 @@ class PlayerTable(tables.Table):
     def render_signed_up_for(self, record) -> SafeString:
         if (ts := getattr(record, "tournamentsignup", None)) is not None:
             t = ts.tournament
-            rv = format_html(
+            return format_html(
                 """ <a href="{}"> {} </a> """,
                 reverse("app:tournament", kwargs=dict(pk=t.pk)),
                 t,
             )
-            logger.warning("%s", rv)
-            return rv
 
-        return ""
+        return SafeString("")
 
     def render_where(self, record) -> SafeString:
         hand = record.current_hand
@@ -427,7 +424,7 @@ class PlayerFilter(FilterSet):
 class PlayerListView(tables.SingleTableMixin, FilterView):
     model = Player
     table_class = PlayerTable
-    template_name = "new_player_list.html"
+    template_name = "player_list.html"
 
     filterset_class = PlayerFilter
     table_pagination = {"per_page": 15}
@@ -436,76 +433,3 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
         base = super().get_context_data(**kwargs)
         base["title"] = "Players"
         return base
-
-
-def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
-    has_partner = request.GET.get("has_partner")
-    has_partner_filter = None
-    exclude_me = request.GET.get("exclude_me")
-
-    qs = Player.objects.all()
-    filter_description = []
-
-    viewer = getattr(request.user, "player", None)
-
-    if (
-        viewer is not None
-        and exclude_me is not None
-        and {"True": True, "False": False}.get(exclude_me) is True
-    ):
-        qs = qs.exclude(pk=viewer.pk).exclude(partner=viewer)
-        filter_description.append(f"excluding {viewer}")
-
-    if (
-        has_partner is not None
-        and (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None
-    ):
-        qs = qs.exclude(partner__isnull=has_partner_filter)
-        filter_description.append(("with" if has_partner_filter else "without") + " a partner")
-
-    filtered_count = qs.count()
-
-    paginator = Paginator(qs, 15)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    # Smuggle some display stuff in there.
-
-    for player in page_obj:
-        setattr(
-            player,
-            "action_button",
-            (
-                _get_partner_action_from_context(
-                    request=request, subject=player, as_viewed_by=viewer
-                )
-                or None
-            ),
-        )
-        setattr(
-            player,
-            "age_style",
-            format_html(""" --bs-table-bg: {}; """, _background_css_color(player)),
-        )
-
-    context = {
-        "filtered_count": filtered_count,
-        "page_obj": page_obj,
-        "this_pages_players": json.dumps([p.pk for p in page_obj]),
-        "title": ("Players " + ", ".join(filter_description)) if filter_description else "",
-    }
-
-    # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
-    # create a synthetic player.
-    if (
-        viewer is not None
-        and viewer.partner is None
-        and has_partner_filter is False
-        and filtered_count == 0
-    ):
-        context["create_synth_partner_button"] = _create_synth_partner_button(request)
-        context["create_synth_partner_next"] = (
-            reverse("app:tournament-list") + "?open_for_signups=True"
-        )
-
-    return render(request, "player_list.html", context)
