@@ -17,6 +17,7 @@ from django.http import (
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.templatetags.l10n import localize
 from django.urls import reverse
@@ -96,15 +97,13 @@ def _get_partner_action_from_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
 ) -> dict[str, Any] | None:
     """
-    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise "Nuttin'".  Otherwise ...
-
     Each player has (for our purposes) a few possible states:
 
     * no partner, unseated
     * partner, unseated
     * partner, seated
 
-    Otherwise
+    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise nuttin'.  Otherwise ...
 
     | viewer state      | subject state     | outcome                                                        |
     |-------------------+-------------------+----------------------------------------------------------------|
@@ -368,7 +367,18 @@ class PlayerTable(tables.Table):
     last_activity = tables.Column(
         accessor=tables.A("last_action"), orderable=False, empty_values=()
     )
-    action = tables.Column()
+    action = tables.Column(empty_values=(), orderable=False)
+
+    def render_action(self, record) -> SafeString:
+        return render_to_string(
+            "player_action.html",
+            request=self.request,
+            context={
+                "action_button": _get_partner_action_from_context(
+                    request=self.request, subject=record, as_viewed_by=self.request.user.player
+                ),
+            },
+        )
 
     def render_last_activity(self, value) -> SafeString:
         from django.utils import timezone
