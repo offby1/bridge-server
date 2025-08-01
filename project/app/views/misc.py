@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import datetime
 import functools
 import logging
 from typing import TYPE_CHECKING
@@ -94,6 +95,19 @@ def logged_in_as_player_required(*, redirect=True):
                     return HttpResponseRedirect(home)
                 logger.debug(f"{player=}, and {redirect=}, so returning ye olde 403")
                 return Forbid("Go away, anonymous scoundrel")
+
+            last_login_dt = player.user.last_login
+            if last_login_dt is None:
+                last_login_dt = datetime.datetime.min.replace(tzinfo=datetime.UTC)
+
+            if player.last_action is None:
+                last_action_dt = datetime.datetime.min.replace(tzinfo=datetime.UTC)
+            else:
+                last_action_dt = datetime.datetime.fromisoformat(player.last_action[0])
+
+            if last_login_dt > last_action_dt:
+                player.last_action = (last_login_dt, "logged in")
+                player.save()
 
             return view_function(request, *args, **kwargs)
 

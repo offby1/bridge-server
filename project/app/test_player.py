@@ -45,7 +45,7 @@ def test_player_timestamp_updates(db, everybodys_password) -> None:
 
     assert new_guy.created == new_guy.modified == Today
 
-    assert new_guy.last_action() == (Today, "joined")
+    assert new_guy.last_action == (Today, "joined")
 
 
 def test_synth_signup(db) -> None:

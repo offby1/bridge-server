@@ -514,6 +514,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = the_call.created
         self.save()
+        player.last_action = (the_call.created, "called")
+        player.save()
 
         logger.debug(
             "%s: %s (%d) called %s; last_action_time is %s",
@@ -602,6 +604,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = rv.created
         self.save()
+        player.last_action = (rv.created, "played")
+        player.save()
 
         logger.debug(
             "%s: %s (%d) played %s",

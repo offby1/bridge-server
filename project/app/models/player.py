@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import datetime
 import json
 import logging
 import pickle
@@ -18,6 +17,7 @@ import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models.query import QuerySet
 from django.urls import reverse
@@ -123,6 +123,12 @@ class PlayerManager(models.Manager):
     def currently_seated(self) -> models.QuerySet:
         return self.filter(current_hand__isnull=False)
 
+    def create(self, *args, **kwargs) -> "Player":
+        rv = super().create(*args, **kwargs)
+        rv.last_action = (rv.created, "joined")
+        rv.save(update_fields=["last_action"])
+        return rv
+
 
 class PlayerException(Exception):
     pass
@@ -167,6 +173,13 @@ class Player(TimeStampedModel):
     # This is redundant -- it could be computed from the transcript -- but keeping it here saves time by in effect
     # caching it.
     current_hand = models.ForeignKey("Hand", on_delete=models.CASCADE, null=True)
+
+    # Also redundant.
+    last_action = models.JSONField(
+        null=True,
+        db_comment="Tuple: [timestamp, str].  The string values can be 'joined', 'logged in', 'called', 'played'",  # type: ignore [call-overload]
+        encoder=DjangoJSONEncoder,
+    )
 
     random_state = models.BinaryField(null=True)
 
@@ -248,19 +261,6 @@ class Player(TimeStampedModel):
     @property
     def boards_played(self) -> models.QuerySet:
         return Board.objects.filter(pk__in=self.hands_played)
-
-    def last_action(self) -> tuple[datetime.datetime, str]:
-        rv = (self.created, "joined")
-        if self.user.last_login and self.user.last_login > rv[0]:
-            rv = (self.user.last_login, "logged in")
-        if (h := self.hands_played.order_by("-id").first()) is not None:
-            # TODO: somehow narrow stuff down to the most recent action that *we* took in this hand, as opposed to my
-            # partner or opponents
-            hand_last_action = h.last_action()
-            if hand_last_action[0] > rv[0]:
-                rv = hand_last_action
-
-        return rv
 
     def unseat_partnership(self, reason: str | None = None) -> None:
         with transaction.atomic():

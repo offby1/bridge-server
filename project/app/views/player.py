@@ -343,20 +343,25 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
 
 
 def _row_style(record: Player) -> str:
-    color = "darkgrey"
+    def color():
+        when = datetime.datetime.min.replace(tzinfo=datetime.UTC)
 
-    now = timezone.now()
-    when, what = record.last_action()
+        if record.last_action is not None:
+            when = datetime.datetime.fromisoformat(record.last_action[0])
 
-    if now - when < datetime.timedelta(seconds=3600):
-        color = "white"
+        now = timezone.now()
 
-    if now - when < datetime.timedelta(seconds=3600 * 24):
-        color = "lightgrey"
+        if now - when < datetime.timedelta(seconds=3600):
+            return "white"
+
+        if now - when < datetime.timedelta(seconds=3600 * 24):
+            return "lightgrey"
+
+        return "darkgrey"
 
     return format_html(
         "border: 1px dotted; --bs-table-bg: {}",
-        color,
+        color(),
     )
 
 
@@ -367,9 +372,7 @@ class PlayerTable(tables.Table):
     tournament = tables.Column(
         empty_values=(), order_by=["tournamentsignup"], verbose_name="Tournament"
     )
-    last_activity = tables.Column(
-        accessor=tables.A("last_action"), orderable=False, empty_values=()
-    )
+    last_activity = tables.Column(accessor=tables.A("last_action"), empty_values=())
     action = tables.Column(empty_values=(), orderable=False)
 
     def render_action(self, record) -> SafeString:
@@ -390,9 +393,12 @@ class PlayerTable(tables.Table):
     def render_last_activity(self, value) -> SafeString:
         from django.utils import timezone
 
-        when = timezone.localtime(value[0])
+        if value is None:
+            return SafeString("")
 
-        return format_html("{}{}: {}", localize(when), when.tzname(), value[1])
+        when = timezone.localtime(datetime.datetime.fromisoformat(value[0]))
+        what = value[1]
+        return format_html("{}{}: {}", localize(when), when.tzname(), what)
 
     def render_partner(self, record) -> SafeString:
         return sedate_link(record.partner, self.request.user)
@@ -435,7 +441,8 @@ class PlayerTable(tables.Table):
 class PlayerFilter(FilterSet):
     class Meta:
         model = Player
-        exclude = ["random_state"]
+        # TODO -- allow filtering on the components of last_action
+        exclude = ["last_action", "random_state"]
 
 
 def _players_for_tournament(tournament_display_number: int) -> Q:
