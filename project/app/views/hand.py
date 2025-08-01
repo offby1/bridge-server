@@ -702,14 +702,14 @@ class HandFilter(FilterSet):
 
 
 class HandTable(tables.Table):
-    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
-    tournament_number = tables.Column(
-        accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
-    )
-    table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     board = tables.Column()
     players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
+    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
+    table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
+    tournament_number = tables.Column(
+        accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
+    )
 
     def render_board(self, value) -> SafeString:
         return format_html(

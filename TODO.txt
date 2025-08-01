@@ -3,7 +3,6 @@ IN PROGRESS:
 STILL TODO:
 * Investigate front-endy stuff as described in `docs/frontend-ideas.md`
 * Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
-* Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
 * Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
@@ -215,6 +214,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
+  I did app:players.
 * Maybe have the bot keep [random state](https://docs.python.org/3.13/library/random.html#random.getstate) for each player, so that its behavior is deterministic.  It'd have to load that state from somewhere before asking the library to make a call or play, and then save it back right afterwards.  That state is pickleable, but not trivially json-able.
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 

@@ -1,0 +1,20 @@
+{% load fastdev %}
+{% load player_extras %}
+{% block player_action %}
+    {% if action_button %}
+        <form method="post" action="{{ action_button.form_action }}">
+            {% csrf_token %}
+            <button class="btn btn-primary"
+                    type="submit"
+                    name="action"
+                    value="{{ action_button.button_submit_value }}">{{ action_button.button_content }}</button>
+            {% ifexists action_button.input_hidden_value %}
+            <input type="hidden"
+                   name="next"
+                   value="{{ action_button.input_hidden_value }}" />
+        {% endifexists %}
+    {% else %}
+        <hr />
+    {% endif %}
+</form>
+{% endblock player_action %}

@@ -2,84 +2,27 @@
 {% extends "base.html" %}
 {% load fastdev %}
 {% load player_extras %}
-{% block title %}
-    Players {{ page_obj.start_index }} through {{ page_obj.end_index }}
-{% endblock title %}
+{% load render_table from django_tables2 %}
 {% block content %}
     {% block player_list %}
-        <h3>{{ title }}</h3>
-        <table id="player-list"
-               class="table caption-top"
-               data-players="{{ this_pages_players }}">
-            <caption>Players {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}</caption>
-            <thead>
-                <tr>
-                    <th scope="col">Who</th>
-                    <th scope="col">Partner</th>
-                    <th scope="col">Where</th>
-                    <th scope="col">Signed Up For</th>
-                    <th scope="col">Last Activity</th>
-                    <th scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for player in page_obj %}
-                    <tr style="border: 1px dotted; {{ player.age_style }}">
-                        <th>{{ player|sedate_link:user }}</th>
-                        <td>
-                            {% if player.partner %}
-                                {{ player.partner|sedate_link:user }}
-                            {% else %}
-                                😢
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if player.current_hand %}
-                                <a href="{% url 'app:hand-dispatch' pk=player.pk %}">Table {{ player.current_hand.table_display_number }}</a>
-                            {% else %}
-                                <a href="{% url 'app:lobby' %}">lobby</a>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if player.tournamentsignup %}
-                                <a href="{% url 'app:tournament' pk=player.tournamentsignup.tournament.pk %}">
-                                    {{ player.tournamentsignup.tournament }}
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td>{{ player.last_action.0 }}{{ player.last_action.0|date:"e" }}: {{ player.last_action.1 }}</td>
-                        <td>
-                            {% if player.action_button %}
-                                <form method="post" action="{{ player.action_button.form_action }}">
-                                    {% csrf_token %}
-                                    <button class="btn btn-primary"
-                                            type="submit"
-                                            name="action"
-                                            value="{{ player.action_button.button_submit_value }}">
-                                        {{ player.action_button.button_content }}
-                                    </button>
-                                    {% ifexists player.action_button.input_hidden_value %}
-                                    <input type="hidden"
-                                           name="next"
-                                           value="{{ player.action_button.input_hidden_value }}" />
-                                {% endifexists %}
-                            {% else %}
-                                <hr />
-                            {% endif %}
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% ifexists create_synth_partner_button %}
-    <form action="{% url 'app:player-create-synthetic-partner' %}"
-          method="post">
-        {% csrf_token %}
-        {{ create_synth_partner_button }}
-        <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
-    </form>
-{% endifexists %}
-{% include "pagination-controls.html" %}
+        <h3>{{ title }} {{ table.page.start_index }} through {{ table.page.end_index }} of {{ table.paginator.count }}</h3>
+        <div style="display: flex">
+            <form method="get" action="">
+                <input type="submit" value="clear">
+            </form>
+            <form method="get" action="" style="display: flex">
+                {{ form }}
+                <input type="submit" value="filter">
+            </form>
+        </div>
+        {% render_table table %}
+        {% ifexists create_synth_partner_button %}
+        <form action="{% url 'app:player-create-synthetic-partner' %}"
+              method="post">
+            {% csrf_token %}
+            {{ create_synth_partner_button }}
+            <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
+        </form>
+    {% endifexists %}
 {% endblock player_list %}
 {% endblock content %}

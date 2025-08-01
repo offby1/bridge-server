@@ -7,7 +7,8 @@ import logging
 from typing import Any
 
 from django.contrib import messages as django_web_messages
-from django.core.paginator import Paginator
+from django.db.models import Q
+from django.db.models.query import QuerySet
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -16,18 +17,25 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
+from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape, format_html
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_filters import FilterSet  # type: ignore[import-untyped]
+from django_filters.views import FilterView  # type: ignore[import-untyped]
+import django_tables2 as tables  # type: ignore[import-untyped]
 
+from app.forms import TournamentForm
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
+from app.templatetags.player_extras import sedate_link
 from .misc import AuthedHttpRequest, logged_in_as_player_required
 from . import Forbid
 
@@ -91,15 +99,13 @@ def _get_partner_action_from_context(
     *, request: AuthedHttpRequest, subject: Player, as_viewed_by: Player | None
 ) -> dict[str, Any] | None:
     """
-    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise "Nuttin'".  Otherwise ...
-
     Each player has (for our purposes) a few possible states:
 
     * no partner, unseated
     * partner, unseated
     * partner, seated
 
-    Otherwise
+    If viewer == subject, the outcome is "splitsville" if viewer has a partner; otherwise nuttin'.  Otherwise ...
 
     | viewer state      | subject state     | outcome                                                        |
     |-------------------+-------------------+----------------------------------------------------------------|
@@ -318,12 +324,6 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
-def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
-    return format_html(
-        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
-    )
-
-
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
@@ -342,87 +342,158 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
     return HttpResponseRedirect(next_)
 
 
-def _background_css_color(player: Player) -> str:
+def _row_style(record: Player) -> str:
+    color = "darkgrey"
+
     now = timezone.now()
-    when, what = player.last_action()
+    when, what = record.last_action()
 
     if now - when < datetime.timedelta(seconds=3600):
-        return "white"
+        color = "white"
 
     if now - when < datetime.timedelta(seconds=3600 * 24):
-        return "lightgrey"
+        color = "lightgrey"
 
-    return "darkgrey"
+    return format_html(
+        "border: 1px dotted; --bs-table-bg: {}",
+        color,
+    )
 
 
-def player_list_view(request: AuthedHttpRequest) -> HttpResponse:
-    has_partner = request.GET.get("has_partner")
-    has_partner_filter = None
-    exclude_me = request.GET.get("exclude_me")
+class PlayerTable(tables.Table):
+    who = tables.Column(accessor=tables.A("user__username"), verbose_name="Who")
+    partner = tables.Column()
+    where = tables.Column(empty_values=(), order_by=["current_hand"])
+    tournament = tables.Column(
+        empty_values=(), order_by=["tournamentsignup"], verbose_name="Tournament"
+    )
+    last_activity = tables.Column(
+        accessor=tables.A("last_action"), orderable=False, empty_values=()
+    )
+    action = tables.Column(empty_values=(), orderable=False)
 
-    qs = Player.objects.all()
-    filter_description = []
+    def render_action(self, record) -> SafeString:
+        as_viewed_by = getattr(self.request.user, "player", None)
+        if as_viewed_by is None:
+            return SafeString("")
 
-    viewer = getattr(request.user, "player", None)
+        return render_to_string(
+            "player_action.html",
+            request=self.request,
+            context={
+                "action_button": _get_partner_action_from_context(
+                    request=self.request, subject=record, as_viewed_by=as_viewed_by
+                ),
+            },
+        )
 
-    if (
-        viewer is not None
-        and exclude_me is not None
-        and {"True": True, "False": False}.get(exclude_me) is True
-    ):
-        qs = qs.exclude(pk=viewer.pk).exclude(partner=viewer)
-        filter_description.append(f"excluding {viewer}")
+    def render_last_activity(self, value) -> SafeString:
+        from django.utils import timezone
 
-    if (
-        has_partner is not None
-        and (has_partner_filter := {"True": True, "False": False}.get(has_partner)) is not None
-    ):
-        qs = qs.exclude(partner__isnull=has_partner_filter)
-        filter_description.append(("with" if has_partner_filter else "without") + " a partner")
+        when = timezone.localtime(value[0])
 
-    filtered_count = qs.count()
+        return format_html("{}{}: {}", localize(when), when.tzname(), value[1])
 
-    paginator = Paginator(qs, 15)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    def render_partner(self, record) -> SafeString:
+        return sedate_link(record.partner, self.request.user)
 
-    # Smuggle some display stuff in there.
+    def render_tournament(self, record) -> SafeString:
+        if (ts := getattr(record, "tournamentsignup", None)) is not None:
+            t = ts.tournament
+            return format_html(
+                """ <a href="{}"> {} </a> """,
+                reverse("app:tournament", kwargs=dict(pk=t.pk)),
+                t,
+            )
+        elif record.current_hand is not None:
+            t = record.current_hand.board.tournament
+            return format_html(
+                """ <a href="{}"> {} </a> """,
+                reverse("app:tournament", kwargs=dict(pk=t.pk)),
+                t,
+            )
+        return SafeString("")
 
-    for player in page_obj:
-        setattr(
-            player,
-            "action_button",
-            (
-                _get_partner_action_from_context(
-                    request=request, subject=player, as_viewed_by=viewer
+    def render_where(self, record) -> SafeString:
+        hand = record.current_hand
+        if hand:
+            return format_html(
+                """ <a href="{}">Table {}</a> """,
+                reverse("app:hand-dispatch", kwargs=dict(pk=hand.pk)),
+                hand.table_display_number,
+            )
+        else:
+            return format_html("""<a href="{}">lobby</a>""", reverse("app:lobby"))
+
+    def render_who(self, record) -> SafeString:
+        return sedate_link(record, self.request.user)
+
+    class Meta:
+        row_attrs = {"style": _row_style}
+
+
+class PlayerFilter(FilterSet):
+    class Meta:
+        model = Player
+        exclude = ["random_state"]
+
+
+class PlayerListView(tables.SingleTableMixin, FilterView):
+    model = Player
+    table_class = PlayerTable
+    template_name = "player_list.html"
+
+    filterset_class = PlayerFilter
+    table_pagination = {"per_page": 15}
+
+    has_partner: bool | None
+
+    def get_queryset(self) -> QuerySet:
+        qs = self.model.objects.prepop()
+
+        if (seated := self.request.GET.get("seated")) is not None:
+            qs = qs.filter(current_hand__isnull=(seated.lower() != "true"))
+
+        if (hp := self.request.GET.get("has_partner")) is not None:
+            self.has_partner = hp.lower() == "true"
+            qs = qs.filter(partner__isnull=not self.has_partner)
+        else:
+            self.has_partner = None
+
+        if (tournament_display_number := self.request.GET.get("tournament")) is not None:
+            current_hand = Q(
+                current_hand__board__tournament__display_number=tournament_display_number
+            )
+            signup = Q(tournamentsignup__tournament__display_number=tournament_display_number)
+            qs = qs.filter(current_hand | signup)
+
+        if (
+            exclude_me := self.request.GET.get("exclude_me")
+        ) is not None and self.request.user.player is not None:
+            if exclude_me.lower() == "true":
+                qs = qs.exclude(pk=self.request.user.player.pk).exclude(
+                    partner=self.request.user.player
                 )
-                or None
-            ),
-        )
-        setattr(
-            player,
-            "age_style",
-            format_html(""" --bs-table-bg: {}; """, _background_css_color(player)),
-        )
 
-    context = {
-        "filtered_count": filtered_count,
-        "page_obj": page_obj,
-        "this_pages_players": json.dumps([p.pk for p in page_obj]),
-        "title": ("Players " + ", ".join(filter_description)) if filter_description else "",
-    }
+        return qs
 
-    # If viewer has no partner, and there are no other players who lack partners, add a button with which the viewer can
-    # create a synthetic player.
-    if (
-        viewer is not None
-        and viewer.partner is None
-        and has_partner_filter is False
-        and filtered_count == 0
-    ):
-        context["create_synth_partner_button"] = _create_synth_partner_button(request)
-        context["create_synth_partner_next"] = (
-            reverse("app:tournament-list") + "?open_for_signups=True"
-        )
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Players"
 
-    return render(request, "player_list.html", context)
+        if (
+            self.request.user is not None
+            and getattr(self.request.user, "player", None) is not None
+            and self.request.user.player.partner is None
+            and not self.has_partner
+            and self.get_queryset().count() == 0
+        ):
+            context["create_synth_partner_button"] = format_html(
+                """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
+            )
+            context["create_synth_partner_next"] = (
+                reverse("app:tournament-list") + "?open_for_signups=True"
+            )
+
+        context["form"] = TournamentForm()
+        return context
