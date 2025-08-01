@@ -373,12 +373,16 @@ class PlayerTable(tables.Table):
     action = tables.Column(empty_values=(), orderable=False)
 
     def render_action(self, record) -> SafeString:
+        as_viewed_by = getattr(self.request.user, "player", None)
+        if as_viewed_by is None:
+            return SafeString("")
+
         return render_to_string(
             "player_action.html",
             request=self.request,
             context={
                 "action_button": _get_partner_action_from_context(
-                    request=self.request, subject=record, as_viewed_by=self.request.user.player
+                    request=self.request, subject=record, as_viewed_by=as_viewed_by
                 ),
             },
         )
@@ -479,6 +483,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
 
         if (
             self.request.user is not None
+            and getattr(self.request.user, "player", None) is not None
             and self.request.user.player.partner is None
             and not self.has_partner
             and self.get_queryset().count() == 0
