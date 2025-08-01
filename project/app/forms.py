@@ -30,6 +30,8 @@ class SignupForm(forms.Form):
 
 
 class TournamentForm(forms.Form):
-    tournament = forms.ModelChoiceField(
-        queryset=Tournament.objects.order_by("-display_number").all()
+    tournament_display_number = forms.ModelChoiceField(
+        label="tournament",
+        queryset=Tournament.objects.order_by("-display_number").all(),
+        to_field_name="display_number",
     )

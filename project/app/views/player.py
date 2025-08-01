@@ -438,6 +438,12 @@ class PlayerFilter(FilterSet):
         exclude = ["random_state"]
 
 
+def _players_for_tournament(tournament_display_number: int) -> Q:
+    current_hand = Q(current_hand__board__tournament__display_number=tournament_display_number)
+    signup = Q(tournamentsignup__tournament__display_number=tournament_display_number)
+    return current_hand | signup
+
+
 class PlayerListView(tables.SingleTableMixin, FilterView):
     model = Player
     table_class = PlayerTable
@@ -460,12 +466,10 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
         else:
             self.has_partner = None
 
-        if (tournament_display_number := self.request.GET.get("tournament")) is not None:
-            current_hand = Q(
-                current_hand__board__tournament__display_number=tournament_display_number
-            )
-            signup = Q(tournamentsignup__tournament__display_number=tournament_display_number)
-            qs = qs.filter(current_hand | signup)
+        if (
+            tournament_display_number := self.request.GET.get("tournament_display_number")
+        ) is not None:
+            qs = qs.filter(_players_for_tournament(tournament_display_number))
 
         if (
             exclude_me := self.request.GET.get("exclude_me")
