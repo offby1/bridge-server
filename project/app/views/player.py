@@ -7,6 +7,8 @@ import logging
 from typing import Any
 
 from django.contrib import messages as django_web_messages
+from django.db.models import Q
+from django.db.models.query import QuerySet
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -29,6 +31,7 @@ from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
 
+from app.forms import TournamentForm
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
@@ -321,12 +324,6 @@ def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 
 
-def _create_synth_partner_button(request: AuthedHttpRequest) -> str:
-    return format_html(
-        """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
-    )
-
-
 @require_http_methods(["POST"])
 @logged_in_as_player_required(redirect=False)
 def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResponse:
@@ -362,7 +359,9 @@ class PlayerTable(tables.Table):
     who = tables.Column(accessor=tables.A("user__username"), verbose_name="Who")
     partner = tables.Column()
     where = tables.Column(empty_values=(), order_by=["current_hand"])
-    signed_up_for = tables.Column(empty_values=(), order_by=["tournamentsignup"])
+    tournament = tables.Column(
+        empty_values=(), order_by=["tournamentsignup"], verbose_name="Tournament"
+    )
     last_activity = tables.Column(
         accessor=tables.A("last_action"), orderable=False, empty_values=()
     )
@@ -389,7 +388,7 @@ class PlayerTable(tables.Table):
     def render_partner(self, record) -> SafeString:
         return sedate_link(record.partner, self.request.user)
 
-    def render_signed_up_for(self, record) -> SafeString:
+    def render_tournament(self, record) -> SafeString:
         if (ts := getattr(record, "tournamentsignup", None)) is not None:
             t = ts.tournament
             return format_html(
@@ -397,7 +396,13 @@ class PlayerTable(tables.Table):
                 reverse("app:tournament", kwargs=dict(pk=t.pk)),
                 t,
             )
-
+        elif record.current_hand is not None:
+            t = record.current_hand.board.tournament
+            return format_html(
+                """ <a href="{}"> {} </a> """,
+                reverse("app:tournament", kwargs=dict(pk=t.pk)),
+                t,
+            )
         return SafeString("")
 
     def render_where(self, record) -> SafeString:
@@ -429,7 +434,53 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
     filterset_class = PlayerFilter
     table_pagination = {"per_page": 15}
 
+    has_partner: bool | None
+
+    def get_queryset(self) -> QuerySet:
+        qs = self.model.objects.prepop()
+
+        if (seated := self.request.GET.get("seated")) is not None:
+            qs = qs.filter(current_hand__isnull=(seated.lower() != "true"))
+
+        if (hp := self.request.GET.get("has_partner")) is not None:
+            self.has_partner = hp.lower() == "true"
+            qs = qs.filter(partner__isnull=not self.has_partner)
+        else:
+            self.has_partner = None
+
+        if (tournament_display_number := self.request.GET.get("tournament")) is not None:
+            current_hand = Q(
+                current_hand__board__tournament__display_number=tournament_display_number
+            )
+            signup = Q(tournamentsignup__tournament__display_number=tournament_display_number)
+            qs = qs.filter(current_hand | signup)
+
+        if (
+            exclude_me := self.request.GET.get("exclude_me")
+        ) is not None and self.request.user.player is not None:
+            if exclude_me.lower() == "true":
+                qs = qs.exclude(pk=self.request.user.player.pk).exclude(
+                    partner=self.request.user.player
+                )
+
+        return qs
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        base = super().get_context_data(**kwargs)
-        base["title"] = "Players"
-        return base
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Players"
+
+        if (
+            self.request.user is not None
+            and self.request.user.player.partner is None
+            and not self.has_partner
+            and self.get_queryset().count() == 0
+        ):
+            context["create_synth_partner_button"] = format_html(
+                """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
+            )
+            context["create_synth_partner_next"] = (
+                reverse("app:tournament-list") + "?open_for_signups=True"
+            )
+
+        context["form"] = TournamentForm()
+        return context

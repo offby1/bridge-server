@@ -6,6 +6,15 @@
 {% block content %}
     {% block player_list %}
         <h3>{{ title }} {{ table.page.start_index }} through {{ table.page.end_index }} of {{ table.paginator.count }}</h3>
+        <div style="display: flex">
+            <form method="get" action="">
+                <input type="submit" value="clear">
+            </form>
+            <form method="get" action="" style="display: flex">
+                {{ form }}
+                <input type="submit" value="filter">
+            </form>
+        </div>
         {% render_table table %}
         {% ifexists create_synth_partner_button %}
         <form action="{% url 'app:player-create-synthetic-partner' %}"
