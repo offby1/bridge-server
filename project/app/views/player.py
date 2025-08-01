@@ -342,17 +342,22 @@ def player_create_synthetic_partner_view(request: AuthedHttpRequest) -> HttpResp
     return HttpResponseRedirect(next_)
 
 
-def _background_css_color(player: Player) -> str:
+def _row_style(record: Player) -> str:
+    color = "darkgrey"
+
     now = timezone.now()
-    when, what = player.last_action()
+    when, what = record.last_action()
 
     if now - when < datetime.timedelta(seconds=3600):
-        return "white"
+        color = "white"
 
     if now - when < datetime.timedelta(seconds=3600 * 24):
-        return "lightgrey"
+        color = "lightgrey"
 
-    return "darkgrey"
+    return format_html(
+        "border: 1px dotted; --bs-table-bg: {}",
+        color,
+    )
 
 
 class PlayerTable(tables.Table):
@@ -418,6 +423,9 @@ class PlayerTable(tables.Table):
 
     def render_who(self, record) -> SafeString:
         return sedate_link(record, self.request.user)
+
+    class Meta:
+        row_attrs = {"style": _row_style}
 
 
 class PlayerFilter(FilterSet):
