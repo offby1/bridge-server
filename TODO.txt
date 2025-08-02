@@ -56,6 +56,11 @@ STILL TODO:
   - make it scroll by one <li> at a time, instead; or maybe
   - bring back the little dots along the bottom that did exactly that
 
+  To repro:
+  - `just fixture usual_setup`
+  - `just --no-deps runme`
+  - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
+
 * We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
 
   Dunno if this would save significant time, memory, or CPU; but it's an idea.
@@ -98,8 +103,6 @@ STILL TODO:
   Only let them do this if I've got a confirmed email address for them; I imagine that'd reduce spam.
 
   I *think* "Getting a confirmed email address" is something that django, or a widely-used third-party library, can do for me.
-
-* player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
 
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
@@ -218,6 +221,9 @@ MAYBE TODO:
 DONE:
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
   I did app:players.
+
+* player_list ought to let you click a column header to control the sort order.  The default order should be "most-recently-active players first".
+
 * Maybe have the bot keep [random state](https://docs.python.org/3.13/library/random.html#random.getstate) for each player, so that its behavior is deterministic.  It'd have to load that state from somewhere before asking the library to make a call or play, and then save it back right afterwards.  That state is pickleable, but not trivially json-able.
 * Often I'll be looking at the "current trick" panel of app:hand-dispatch, and it's my turn but I won't realize it.  Then I wonder "why is nobody playing".  I need some visual way to indicate that it's my turn to play -- maybe slide the carousel over to my hand, or flash green, or something.  Maybe flash the left-arrow thing green, suggesting that I slide over to see what's going on over there.
 
