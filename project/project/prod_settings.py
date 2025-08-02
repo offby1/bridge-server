@@ -1,6 +1,8 @@
+import logging
 import os
 
 import sentry_sdk
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 from .base_settings import *  # noqa
 from .base_settings import LOGGING, VERSION
@@ -32,4 +34,10 @@ sentry_sdk.init(  # type: ignore
     # there is an active span.
     profile_lifecycle="trace",
     release=VERSION,
+    _experiments={
+        "enable_logs": True,
+    },
+    integrations=[
+        LoggingIntegration(sentry_logs_level=logging.INFO),
+    ],
 )
