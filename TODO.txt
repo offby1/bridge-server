@@ -36,6 +36,8 @@ STILL TODO:
 
     In each case, just check that the response code is < 500; anything else would be too hard for a smoke test.
 
+  I've got [a conversation about this at ChatGPT](https://chatgpt.com/share/688e54d4-a4a0-8013-a453-41ccb223e983).
+
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
   I wonder if switching the eventstore to redis (as above) would reduce the number of needed postgresql connections.
