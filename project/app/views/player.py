@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from django.contrib import messages as django_web_messages
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from django.http import (
     HttpRequest,
@@ -375,6 +375,15 @@ class PlayerTable(tables.Table):
     last_activity = tables.Column(accessor=tables.A("last_action"), empty_values=())
     action = tables.Column(empty_values=(), orderable=False)
 
+    def order_last_activity(self, queryset, is_descending):
+        f_clause = F("last_action")
+        if is_descending:
+            f_clause = f_clause.desc(nulls_last=True)
+        else:
+            f_clause = f_clause.asc(nulls_first=True)
+
+        return (queryset.order_by(f_clause), True)
+
     def render_action(self, record) -> SafeString:
         as_viewed_by = getattr(self.request.user, "player", None)
         if as_viewed_by is None:
@@ -398,7 +407,7 @@ class PlayerTable(tables.Table):
 
         when = timezone.localtime(datetime.datetime.fromisoformat(value[0]))
         what = value[1]
-        return format_html("{}{}: {}", localize(when), when.tzname(), what)
+        return format_html("{} {}: {}", localize(when), when.tzname(), what)
 
     def render_partner(self, record) -> SafeString:
         return sedate_link(record.partner, self.request.user)
@@ -462,7 +471,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
     has_partner: bool | None
 
     def get_queryset(self) -> QuerySet:
-        qs = self.model.objects.prepop()
+        qs = self.model.objects.prepop().order_by(F("last_action").desc(nulls_last=True))
 
         if (seated := self.request.GET.get("seated")) is not None:
             qs = qs.filter(current_hand__isnull=(seated.lower() != "true"))
