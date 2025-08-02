@@ -19,7 +19,7 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 # /etc/init.d/ssh restart
 
 # adduser ubuntu # annoyingly interactive.
-# # use the password in my password manager.
+# # use the password in my Google password manager (user eric.hanchrow.test@gmail.com; entry "hetzner.com", in the note).
 # exit
 ```
 
@@ -31,8 +31,8 @@ If that's all good, do `ssh root@hetz-prod` again and continue ...
 # apt -y upgrade
 # apt install -y htop docker.io
 # usermod --append --groups sudo,docker ubuntu
-# # create a file in /etc/sudoers.d like
-# #    ubuntu ALL=(ALL) NOPASSWD:ALL
+# cat > /etc/sudoers.d/99-no-password-for-ubuntu
+  ubuntu ALL=(ALL) NOPASSWD:ALL
 # su - ubuntu
 $ mkdir -vp ~/.ssh
 $ cd .ssh
