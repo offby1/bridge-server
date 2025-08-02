@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import home_view, lobby, player, signup_view, table, three_way_login
+from .views import home_view, lobby, player, robots_dot_txt, signup_view, table, three_way_login
 from .views.board import (
     board_archive_view,
     board_list_view,
@@ -64,6 +64,7 @@ urlpatterns = [
         name="player-by-name-or-pk",
     ),
     path("players/", player.PlayerListView.as_view(), name="players"),
+    path("robots.txt", robots_dot_txt, name="robots.txt"),
     path("send_lobby_message/", lobby.send_lobby_message, name="send_lobby_message"),
     path(
         "send_player_message/<recipient_pk>",

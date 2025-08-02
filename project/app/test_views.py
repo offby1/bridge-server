@@ -1,6 +1,8 @@
 import base64
 import json
 
+import pytest
+
 from django.conf import settings
 from django.core.cache import cache
 from django.test.client import Client
@@ -89,3 +91,24 @@ def test_bot_checkbox_toggle(usual_setup, rf) -> None:
     response = player.bot_checkbox_view(request, some_player.pk)
     assert not box_is_checked()
     assert not allowed()
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        ("/",),
+        ("/some-random-404",),
+        ("/admin"),
+    ],
+)
+def test_adds_x_robots_tag_header(url, db):
+    c = Client()
+    response = c.get(url)
+    assert response.headers["X-Robots-Tag"] == "none"
+
+
+def test_serves_robots_dot_txt(db):
+    c = Client()
+    response = c.get("/robots.txt")
+    assert response.status_code == 200
+    assert b"Disallow:" in response.content

@@ -1,7 +1,12 @@
 import logging
 
 from django.contrib import messages as django_web_messages
-from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+    HttpResponseNotFound,
+    HttpResponseForbidden,
+)
 from django.utils.html import escape, format_html
 from django.shortcuts import render
 from django.template.response import TemplateResponse
@@ -64,3 +69,12 @@ def Forbid(e: Exception | str, content_type: str = "text/html") -> HttpResponseF
 
 def NotFound(e: Exception | str) -> HttpResponseNotFound:
     return HttpResponseNotFound(escape(e))
+
+
+# https://developers.google.com/search/docs/crawling-indexing/robots/intro
+def robots_dot_txt(request):
+    return HttpResponse(
+        "User-agent: *\nDisallow: /\n",
+        headers={"Content-Type": "text/plain"},
+        status=200,
+    )
