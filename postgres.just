@@ -20,13 +20,17 @@ pg-start: orb
 [private]
 [script('bash')]
 die-if-not-local-docker:
-    set -euox pipefail
+    set -euo pipefail
 
-    if [ ${DOCKER_CONTEXT:-} != "orbstack" ]
-    then
-       echo "Not a great idea to drop a production database, eh what?"
-       false
-    fi
+    case ${DOCKER_CONTEXT:-} in
+        "orbstack"|"default")
+            echo "DOCKER_CONTEXT is '$DOCKER_CONTEXT' so I guess it's OK to nuke everything."
+        ;;
+        *)
+            echo "Not a great idea to drop a production database, eh what?"
+            false
+            ;;
+    esac
 
 [group('postgres')]
 drop: die-if-not-local-docker pg-stop pg-start
