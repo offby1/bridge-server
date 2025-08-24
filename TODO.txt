@@ -1,6 +1,9 @@
 IN PROGRESS:
 
 STILL TODO:
+* Ideas from chess.offby1.info:
+  - switch to "uv".  There's already a "uv-ify" branch but it's pretty old.
+  - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
 * Investigate front-endy stuff as described in `docs/frontend-ideas.md`
 * Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
