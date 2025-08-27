@@ -12,9 +12,6 @@
   - start a new shell.  This gets you a login where you are a member of the "docker" group.
 * jq (`sudo apt install jq`)
 * uv (TBD)
-* poetry (`uv tool install poetry`) [1]
-
-[1] In theory, you could install poetry through apt; but the version you'd get isn't new enough.
 
 ### Debian 12 ("bookworm")
 
@@ -22,7 +19,6 @@
 * to finalize "pipx"
   - `pipx ensurepath`
   - `exec $SHELL`
-* poetry (`pipx install poetry`) [1]
 * "just"
   - `curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to $HOME/.local/bin`
 * docker and friends
@@ -49,7 +45,6 @@ The below is from memory; it's hard to get a fresh MacOS installation to test it
 * python from <https://www.python.org/downloads/macos/>
 * uv via `brew install uv`
 * not strictly needed, but handy for keeping python up to date: `uv tool install mopup`
-* `uv tool install poetry`
 
 ### pre-commit
 Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
@@ -59,7 +54,7 @@ Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
 
   😭😭 **on every Debian and Ubuntu box I've tried it on, this fails with ` Unable to find installation candidates for pyqt5-qt5 (5.15.15)`** 😭😭
 
-  You can work around this by doing `poetry remove python-lsp-server` but geez.
+  You might be able to work around this by somehow removing `python-lsp-server` but geez.
 
 - `just dcu` will bring up the docker-compose stack, which includes the web server and bots (and postgres).  It conflicts with `just runme` since they both try to listen on the same port.
 `DEPLOYMENT_ENVIRONMENT` will be `"staging"` on the laptop, and `"production"` elsewhere.  When running on the laptop, you can fool it into thinking it's production by invoking e.g. `DJANGO_SETTINGS_MODULE=project.prod_settings HOSTNAME=yeah.im.production.trustme just dcu`
