@@ -6,7 +6,7 @@
         {
             "label": "just build it damn it",
             "type": "shell",
-            "command": "just poetry-install"
+            "command": "just uv-install"
         }
     ]
 }

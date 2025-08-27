@@ -6,7 +6,7 @@
     "python.testing.pytestArgs": ["project"],
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
-    "python-envs.defaultEnvManager": "ms-python.python:poetry",
-    "python-envs.defaultPackageManager": "ms-python.python:poetry",
+    "python-envs.defaultEnvManager": "ms-python.python:uv",
+    "python-envs.defaultPackageManager": "ms-python.python:uv",
     "python-envs.pythonProjects": []
 }
