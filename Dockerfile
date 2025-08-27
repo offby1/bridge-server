@@ -1,24 +1,30 @@
 FROM python:3.13-slim-bullseye AS python
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
-  POETRY_NO_INTERACTION=1 \
-  PYTHONUNBUFFERED=t
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN pip install -U pip setuptools; pip install poetry
+RUN apt -y update
+RUN apt -y install git
 
-FROM python AS poetry-install-django
+ENV PYTHONUNBUFFERED=t
 
-COPY server/poetry.lock server/pyproject.toml /bridge/
+FROM python AS uv-install-django
+
+COPY server/uv.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
-RUN poetry install --without=dev
+RUN ["uv", "sync", "--no-dev"]
 
-FROM python AS app
+FROM python:3.13-slim-bullseye
+RUN adduser --disabled-password bridge
 
-COPY --from=poetry-install-django /bridge/ /bridge/
+COPY --from=uv-install-django /bin/uv /bin/uvx /bin/
+COPY --from=uv-install-django /bridge/ /bridge/
+
 COPY /server/project /bridge/project/
 
 # Note that someone -- typically docker-compose -- needs to have run "collectstatic" and "migrate" first
 COPY /server/start-daphne.sh /bridge/project
 
+RUN chown -R bridge:bridge /bridge
+
 WORKDIR /bridge/project
 
-CMD ["bash", "-c", "cd /bridge/project/ && poetry run python manage.py createcachetable && ./start-daphne.sh"]
+CMD ["bash", "-c", "cd /bridge/project/ && uv run --no-dev python manage.py createcachetable && ./start-daphne.sh"]

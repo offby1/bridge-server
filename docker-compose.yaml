@@ -63,7 +63,7 @@ services:
           target: /bridge/project
   bot:
     <<: *django
-    command: "poetry run python manage.py cheating_bot"
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "cheating_bot"]
     ports: []
     labels: {}
     depends_on:
@@ -72,14 +72,14 @@ services:
 
   django-collected-static:
     <<: *django
-    command: "poetry run python manage.py collectstatic --no-input"
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "collectstatic", "--no-input"]
     restart: "no"
     ports: []
     depends_on: []
 
   django-migrated:
     <<: *django
-    command: "poetry run python manage.py migrate --noinput"
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "migrate", "--noinput"]
     restart: "no"
     ports: []
     depends_on:

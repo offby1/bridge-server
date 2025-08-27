@@ -244,7 +244,6 @@ cover *options: (test options)
 # Nix the virtualenv and anything not checked in to git, but leave the database.
 [script('bash')]
 clean:
-    rm -rfv .venv
     git clean -dxff
 
 [parallel]
