@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
 * Ideas from chess.offby1.info:
   - switch to "uv".  There's already a "uv-ify" branch but it's pretty old.
   - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
