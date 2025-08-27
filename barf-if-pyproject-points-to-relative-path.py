@@ -18,7 +18,7 @@ if PRE_COMMIT_REMOTE_BRANCH != "refs/heads/main":
 with open(pyproject_fn, "rb") as inf:
     pyproject_data = tomllib.load(inf)
 
-bridge = pyproject_data["tool"]["poetry"]["dependencies"]["bridge"]
+bridge = pyproject_data["tool"]["uv"]["sources"]["bridge"]
 
 if "path" in bridge:
     print(f"Looks like the library is referred to by a relative path: {bridge=}")

@@ -12,11 +12,6 @@ export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" }
 export HOSTNAME := env("HOSTNAME", `hostname`)
 export PYTHONUNBUFFERED := "t"
 
-# Keep this true as long as I occasionally use Visual Studio Code --
-# that IDE seems not to understand the world when this is false, and it confuses me to have two venvs for a single project.
-
-export POETRY_VIRTUALENVS_IN_PROJECT := "true"
-
 [private]
 default:
     just --list
@@ -38,12 +33,12 @@ ensure-django-secret: django-secret-directory
 [parallel]
 [private]
 [script('bash')]
-ensure-skeleton-key: poetry-install-no-dev ensure-django-secret
+ensure-skeleton-key: uv-install-no-dev ensure-django-secret
     set -euo pipefail
     touch "{{ DJANGO_SKELETON_KEY_FILE }}"
     if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
     then
-    cd project && poetry run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
+    cd project && uv run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -80,36 +75,16 @@ die-if-virtualenv-remarkably-hosed:
         exit 1
     esac
 
-[private]
-[script('bash')]
-die-if-poetry-active:
-    if [[ -n "${POETRY_ACTIVE:-}" || -n "${VIRTUAL_ENV:-}" ]]
-    then
-      if [[ -n "${VSCODE_ENV_REPLACE:-}" ]]
-         then echo "I guess this is VSC; let's soldier on and see what happens"
-      else
-        echo Hey man some environment variables suggest that a virtualenv is active
-        env | sort | grep --extended "POETRY_ACTIVE|VIRTUAL_ENV"
-
-        false
-      fi
-    fi
+[group('virtualenv')]
+uv-install: uv-install-no-dev
+    uv sync
 
 [group('virtualenv')]
-[parallel]
-lock: die-if-poetry-active die-if-virtualenv-remarkably-hosed
-    poetry lock
+uv-install-no-dev:
+    uv sync --no-dev
 
-[group('virtualenv')]
-poetry-install: poetry-install-no-dev
-    poetry install
-
-[group('virtualenv')]
-poetry-install-no-dev: die-if-poetry-active lock
-    poetry install --without=dev
-
-mypy: poetry-install
-    poetry run dmypy run -- .
+mypy: uv-install
+    uv run dmypy run -- .
 
 alias version := version-file
 
@@ -125,13 +100,13 @@ pre-commit:
 [group('django')]
 [parallel]
 [private]
-all-but-django-prep: pre-commit poetry-install pg-start redis
+all-but-django-prep: pre-commit uv-install pg-start redis
 
 [group('django')]
 [parallel]
 [private]
 manage *options: all-but-django-prep ensure-skeleton-key version-file
-    cd project && poetry run python manage.py {{ options }}
+    cd project && uv run python manage.py {{ options }}
 
 [group('django')]
 collectstatic: (manage "collectstatic --no-input")
@@ -155,7 +130,7 @@ shell: migrate (manage "shell_plus --print-sql ")
 # Like "shell", but has no dependencies, so starts up fast (if stuff is already built).
 [group('django')]
 sp:
-    cd project && poetry run python manage.py shell_plus --print-sql
+    cd project && uv run python manage.py shell_plus --print-sql
 
 [group('django')]
 makemigrations *options: (manage "makemigrations " + options)
@@ -196,7 +171,7 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
     set -euxo pipefail
     cd project
     export DJANGO_SETTINGS_MODULE=project.dev_settings
-    poetry run python manage.py runserver 9000 {{ options }}
+    uv run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
 
@@ -225,12 +200,12 @@ t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Run individual tests with no dependencies
 k *options:
-    cd project && poetry run pytest --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG  -vv -k {{ options }}
+    cd project && uv run pytest --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG  -vv -k {{ options }}
 
 # Draw a nice entity-relationship diagram
 [group('django')]
 graph: migrate
-    cd project && poetry run python manage.py graph_models --no-inheritance app | dot -Tsvg > $TMPDIR/graph.svg
+    cd project && uv run python manage.py graph_models --no-inheritance app | dot -Tsvg > $TMPDIR/graph.svg
     open $TMPDIR/graph.svg
 
 # Run all the tests
@@ -244,12 +219,12 @@ test *options: makemigrations mypy collectstatic
 
     case "${PYINSTRUMENT:-}" in
     t*)
-      pyinstrument_exe=$(poetry env info --path)/bin/pyinstrument
-      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pyinstrument_exe} -m pytest ${pytest_args}
+      pyinstrument_exe={{ justfile_dir() }}/.venv/bin/pyinstrument
+      uv run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pyinstrument_exe} -m pytest ${pytest_args}
     ;;
     *)
-      pytest_exe=$(poetry env info --path)/bin/pytest
-      poetry run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} ${pytest_args}
+      pytest_exe={{ justfile_dir() }}/.venv/bin/pytest
+      uv run coverage run --rcfile={{ justfile_dir() }}/pyproject.toml --branch ${pytest_exe} ${pytest_args}
     ;;
     esac
 
@@ -263,18 +238,17 @@ ft: (t "-n 8")
 cover *options: (test options)
     set -euox pipefail
     cd project
-    poetry run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
+    uv run coverage html --rcfile={{ justfile_dir() }}/pyproject.toml --show-contexts
     open htmlcov/index.html
 
 # Nix the virtualenv and anything not checked in to git, but leave the database.
 [script('bash')]
-clean: die-if-poetry-active
-    poetry env info --path | tee >((echo -n "poetry env: " ; cat) > /dev/tty) | xargs --no-run-if-empty rm -rf
+clean:
     git clean -dxff
 
 [parallel]
 [private]
-docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key start
+docker-prerequisites: version-file orb uv-install-no-dev ensure-skeleton-key start
 
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('development')]

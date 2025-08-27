@@ -1,9 +1,9 @@
 (
- (python-mode
+ (nil
   .
   (
-   (lsp-pylsp-server-command . ("poetry" "run" "pylsp"))
+   (lsp-pylsp-server-command . ("uv" "run" "pylsp"))
    (eval . (ignore-errors
-             (add-to-list 'exec-path (concat (file-name-as-directory (car (process-lines "poetry" "env" "info" "--path"))) "bin"))))
+             (add-to-list 'exec-path (file-name-parent-directory (concat (car (process-lines "uv" "python" "find")))))))
    ))
  )

@@ -18,8 +18,8 @@ I once managed to get py-spy working on MacOS (it wasn't easy); I have not been 
 
 ```shell
 $ docker compose exec -it django bash
-# htop # to find out the PID you care about (typically daphne)
-# poetry run py-spy top --pid PID
+# pr /proc/*/cmdline | tr '\000' ' ' | uniq # to find out the PID you care about (typically daphne)
+# uv run --no-dev py-spy top --pid PID
 ```
 
 ## Other ideas to explore
