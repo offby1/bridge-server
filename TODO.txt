@@ -5,8 +5,9 @@ STILL TODO:
 
 * When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
 * Ideas from chess.offby1.info:
-  - switch to "uv".  There's already a "uv-ify" branch but it's pretty old.
   - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
+    Also: django-types still doesn't know that the HttpResponse class has a "text" attribute, whereas [django-stubs does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
+
 * Investigate front-endy stuff as described in `docs/frontend-ideas.md`
 * Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
@@ -44,13 +45,13 @@ STILL TODO:
 
   I've got [a conversation about this at ChatGPT](https://chatgpt.com/share/688e54d4-a4a0-8013-a453-41ccb223e983).
 
+  Spooky Luky's [django functest](https://django-functest.readthedocs.io/en/latest/usage.html) might be useful.
+
 * Think hard about that limit of 40 postgresql connections -- wouldn't that mean I could never have more than 40 people playing at once?
 
   I wonder if switching the eventstore to redis (as above) would reduce the number of needed postgresql connections.
 
 * After we've finished a hand, we see the _everything_read_only view. Sometimes that view shows a link to the current hand; but sometimes it doesn't.  I assume the latter happens when we're waiting for the next round to start.  Reloading the page (eventually) causes that link to appear; but this page should have the usual "listen for an SSE and update itself" logic, just for that link.
-
-* Consider switching from "django-types" to "django-stubs", because the former still doesn't know that the HttpResponse class has a "text" attribute, whereas [the latter does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
@@ -225,6 +226,9 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Switch to "uv".  There's already a "uv-ify" branch but it's pretty old.
+
+* When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
 * Much as I dislike class-based views, I gotta admit, the hand list looks pretty nice.  Maybe use that technique elsewhere.
   I did app:players.
 
