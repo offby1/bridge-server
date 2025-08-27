@@ -35,12 +35,12 @@ Once I list most of them, I should study each to see if there are features I don
 - mypy
   I'm trying daemon mode.
 - orbstack
-- poetry
 - postgres
 - prometheus, grafana, &c
 - pytest
 - ruff
   I've never figured out how to get it to sort imports.
+- uv
 - zsh
 
 Geez, that's a lot
