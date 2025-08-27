@@ -279,7 +279,7 @@ docker-prerequisites: version-file orb poetry-install-no-dev ensure-skeleton-key
 # typical usage: just nuke ; docker volume prune --all --force ; just dcu
 [group('development')]
 [script('bash')]
-dcu *options: docker-prerequisites
+dc *options: docker-prerequisites
     set -euo pipefail
 
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
@@ -289,7 +289,9 @@ dcu *options: docker-prerequisites
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
-    docker compose up --build {{ options }}
+    docker compose {{ options }}
+
+dcu *options: (dc "up --build " + options)
 
 alias perf := perf-local
 
