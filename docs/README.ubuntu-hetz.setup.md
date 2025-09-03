@@ -1,4 +1,4 @@
-On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do:
+On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do (these steps ought to be automatable via [the hetzner cloud API CLI](https://github.com/hetznercloud/cli) or [the Python equivalent](https://github.com/hetznercloud/hcloud-python)):
 
 - navigated to <https://console.hetzner.cloud/projects/4228251/servers/create>
 - chose Hillsboro, OR as the location
@@ -10,7 +10,7 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 - clicked "Create and Buy Now"
 - copied the IP address of the newly-created machine into the `Host hetz-prod` stanza of `~/.ssh/config`, as the `hostname` entry
 
-- `ssh root@hetz-prod`, then
+- `ssh root@hetz-prod`, then (these manual steps are being obviated by [an ansible setup](https://gitlab.com/offby1/ansible-inventory)):
 
 ```shell
 # vi /etc/ssh/sshd_config
