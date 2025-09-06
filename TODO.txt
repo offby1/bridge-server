@@ -1,6 +1,8 @@
 IN PROGRESS:
 
 STILL TODO:
+* Why am I not using [this](https://github.com/lorserker/ben)?
+  - answer: because I only just now discovered it.
 * consider https://django-registration.readthedocs.io
 
 * When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.

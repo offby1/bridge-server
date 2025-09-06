@@ -22,3 +22,6 @@ Some existing play-bridge-online services:
 
 * [Swan Games](http://www.swangames.com/main/index.html)
   Wikipedia mentions it, but the site seems to be gone.
+
+* [IntoBridge](https://intobridge.com/experience/)
+  Only just discovered it; might be somehow related to https://github.com/lorserker/ben
