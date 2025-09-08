@@ -117,9 +117,9 @@ class Board(models.Model):
 
     display_number = models.SmallIntegerField()
 
+    # TODO vulnerabilities and dealer could be"GeneratedField"s, based on display_number
     ns_vulnerable = models.BooleanField()
     ew_vulnerable = models.BooleanField()
-
     dealer = models.CharField(db_comment="""corresponds to bridge library's "direction" """)  # type: ignore
 
     north_cards = models.CharField(max_length=26)
