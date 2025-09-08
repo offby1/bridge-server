@@ -30,6 +30,7 @@ Once I list most of them, I should study each to see if there are features I don
 - emacs:flycheck
 - emacs:lsp
 - git
+- htmx
 - ipython
 - just
 - mypy

@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* Look into [Django-Htmx-Patterns](https://github.com/spookylukey/django-htmx-patterns/tree/master)
 * Why am I not using [this](https://github.com/lorserker/ben)?
   - answer: because I only just now discovered it.
 * consider https://django-registration.readthedocs.io
