@@ -120,6 +120,7 @@ STILL TODO:
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
   - Would Celery work? if not,why not?
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
+  - https://github.com/rq/django-rq
   - I've also got a [Django-tasks](https://github.com/realOrangeOne/django-tasks) branch.  However, it's not clear that I can tell a task to run e.g. "0 minutes after the current tournament's play-completion deadline passes"; instead, it looks like I can only specify a time in a decorator, which of course only gets evaluated once, when the web server starts.
   - <https://django-tasks-scheduler.readthedocs.io/en/latest/> also exists! Ai yi yi, paradox of choice
   - [Tyler Kennedy](https://discord.com/channels/856567261900832808/857643169046462475/1349500371378372640) wrote <https://tkte.ch/chancy/>, and mentioned it to me as a possible alternative
