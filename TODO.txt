@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* Adopt some of [the postgres/docker/justfile grooviness from my django-chess project](https://gitlab.com/offby1/django-chess/-/commit/36be3973343ba179a392382df2a02f864c7dfda2)
 * Look into [Django-Htmx-Patterns](https://github.com/spookylukey/django-htmx-patterns/tree/master)
 * Why am I not using [this](https://github.com/lorserker/ben)?
   - answer: because I only just now discovered it.
