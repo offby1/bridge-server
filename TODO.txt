@@ -9,8 +9,6 @@ STILL TODO:
   - local development looks hard, because it uses anaconda and x86-specific stuff (i.e., I can't use my Mac and would have to use an x86 box)
 * consider https://django-registration.readthedocs.io
 
-* When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
-
 * Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
   - There was no indication that the deadline had expired
 * Ideas from chess.offby1.info:
@@ -237,6 +235,8 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
+
 * If we make a call after the play deadline has expired, we see the "Uh oh" toast.
 
 * Switch to "uv".  There's already a "uv-ify" branch but it's pretty old.
