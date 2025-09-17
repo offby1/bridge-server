@@ -5,6 +5,8 @@ STILL TODO:
 * Look into [Django-Htmx-Patterns](https://github.com/spookylukey/django-htmx-patterns/tree/master)
 * Why am I not using [this](https://github.com/lorserker/ben)?
   - answer: because I only just now discovered it.
+  - and because it's not ready for prime time.  The docker container immediately fails with a complaint about being unable to import "colorama"; adding "colorama" to requirements.txt and then rebuilding the image doesn't help
+  - local development looks hard, because it uses anaconda and x86-specific stuff (i.e., I can't use my Mac and would have to use an x86 box)
 * consider https://django-registration.readthedocs.io
 
 * When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
