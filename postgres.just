@@ -60,7 +60,7 @@ dump-docker-context:
     @docker context inspect --format json | jq '.[].Endpoints.docker.Host'
 
 orb:
-    if [ "{{ os() }}" = "macos" ]; then orb start; else echo not mac I guess; fi
+    if [ "{{ os() }}" = "macos" ]; then orbctl start; else echo not mac I guess; fi
     just dump-docker-context
 
 [script('bash')]
