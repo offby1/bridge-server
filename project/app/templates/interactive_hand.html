@@ -157,8 +157,11 @@
      } else if ("final_score" in data) {
          /* The hand is over.  Let's move on to the next thing. */
          window.location.reload();
+     } else if ("play_completion_deadline" in data) {
+         /* The tournament ended.  Reloading should display the message to that effect. */
+         window.location.reload();
      }
- }, false);
+     }, false);
 
  htmx.on("htmx:responseError", function(evt) {
      const errorToast = document.getElementById('errorToast');

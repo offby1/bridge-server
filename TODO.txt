@@ -1,4 +1,7 @@
 IN PROGRESS:
+* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
+  - There was no indication that the deadline had expired
+
 
 STILL TODO:
 * Look into [playwright](https://playwright.dev/) -- might be an easier-to-use selenium
@@ -10,8 +13,6 @@ STILL TODO:
   - local development looks hard, because it uses anaconda and x86-specific stuff (i.e., I can't use my Mac and would have to use an x86 box)
 * consider https://django-registration.readthedocs.io
 
-* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
-  - There was no indication that the deadline had expired
 * Ideas from chess.offby1.info:
   - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
     Also: django-types still doesn't know that the HttpResponse class has a "text" attribute, whereas [django-stubs does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).

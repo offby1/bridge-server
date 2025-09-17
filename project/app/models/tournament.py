@@ -11,6 +11,7 @@ from django.core.signals import request_finished
 from django.db import models, transaction
 from django.dispatch import receiver
 from django.utils import timezone
+from django_eventstream import send_event  # type: ignore[import-untyped]
 
 
 from bridge.xscript import BrokenDownScore
@@ -96,6 +97,13 @@ def check_for_expirations(sender, **kwargs) -> None:
                 deadline_str = t.play_completion_deadline.isoformat()
                 t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
                 t.save()
+
+                for h in t.hands():
+                    send_event(
+                        channel=h.event_table_html_channel,
+                        event_type="message",
+                        data={"play_completion_deadline": t.play_completion_deadline},
+                    )
                 continue
 
             if t.signup_deadline_has_passed():
