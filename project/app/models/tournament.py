@@ -460,6 +460,9 @@ class Tournament(models.Model):
     def hands(self) -> models.QuerySet:
         from app.models import Hand
 
+        board_set = getattr(self, "board_set", None)
+        if board_set is None:
+            return Hand.objects.none()
         return Hand.objects.filter(board__in=self.board_set.all()).distinct()
 
     def abandon_all_hands(self, reason: str) -> None:
