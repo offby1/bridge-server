@@ -92,7 +92,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "django_http_compression",
     "django_prometheus",
-    "template_partials",
     "tz_detect",
     "app",
 ]

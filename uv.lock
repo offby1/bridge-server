@@ -171,7 +171,6 @@ dependencies = [
     { name = "django-log-request-id" },
     { name = "django-prometheus" },
     { name = "django-tables2" },
-    { name = "django-template-partials" },
     { name = "django-tz-detect" },
     { name = "django-watchfiles" },
     { name = "docutils" },
@@ -232,7 +231,6 @@ requires-dist = [
     { name = "django-log-request-id", specifier = ">=2.1.0,<3" },
     { name = "django-prometheus" },
     { name = "django-tables2", specifier = "==2.*" },
-    { name = "django-template-partials" },
     { name = "django-tz-detect", specifier = ">=0.5.0,<0.6" },
     { name = "django-watchfiles", specifier = ">=1.4.0" },
     { name = "docutils" },
@@ -843,18 +841,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/0f/497ebb829a0f6d93ac8ae720b114a413e6e3a6eb0682f15c7a8d59f69464/django_tables2-2.7.5.tar.gz", hash = "sha256:fb5dcaa09379cf3947598ec7e1bd5f26ed63aafdee3b23963446763bbeac37bf", size = 128618, upload-time = "2025-01-02T07:49:42.674Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/66/6d454db3edcd285b767caaa790c3e7a3969c91bb6f93601d9a879aab06f2/django_tables2-2.7.5-py3-none-any.whl", hash = "sha256:d9338937797207ffb6f481be2125c5ec3a0bb1858d409c672cc25fc5d654cb22", size = 95984, upload-time = "2025-01-02T07:49:39.752Z" },
-]
-
-[[package]]
-name = "django-template-partials"
-version = "25.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c1/7f/9eca482fbfd42f2ae19fa77fa231c0d2ba6ec7caf0ced16926480e1d746b/django_template_partials-25.2.tar.gz", hash = "sha256:55044e4a12d5d3adbc02df0758eb08fcd4e3451203e02a819f9853451696aef6", size = 17787, upload-time = "2025-09-17T13:31:37.761Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9f/30/96a9d0e70efd00af9b9c011111b5eba48d17914e5b3d39516d4a7cc7e7fb/django_template_partials-25.2-py2.py3-none-any.whl", hash = "sha256:4c4f6569bd2d016281700a215c09ba4b7a4bbd2da95ce15d8c1ae76d36da44b4", size = 9621, upload-time = "2025-09-17T13:31:36.452Z" },
 ]
 
 [[package]]
