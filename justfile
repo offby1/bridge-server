@@ -77,11 +77,11 @@ die-if-virtualenv-remarkably-hosed:
 
 [group('virtualenv')]
 uv-install: uv-install-no-dev
-    uv sync --quiet
+    uv sync --quiet --prerelease=allow
 
 [group('virtualenv')]
 uv-install-no-dev:
-    uv sync --quiet --no-dev
+    uv sync --quiet --no-dev --prerelease=allow
 
 mypy: uv-install ty
     uv run dmypy run -- .
