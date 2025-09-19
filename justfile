@@ -230,7 +230,7 @@ test *options: makemigrations mypy collectstatic
 
 # Fast tests (i.e., run in parallel)
 [group('development')]
-ft: (t "-n 8")
+ft *options: (t "-n 8 " + options)
 
 # Display coverage from a test run
 [group('development')]
