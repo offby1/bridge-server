@@ -88,7 +88,7 @@ def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
 
     possessive_noun = format_html("{}'s", subject.as_link())
     if subject == as_viewed_by:
-        possessive_noun = format_html("Your")
+        possessive_noun = SafeString("Your")
 
     if subject.partner == as_viewed_by:
         text = format_html("{} partner is, gosh, you!", possessive_noun)
@@ -516,7 +516,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
             and not self.has_partner
             and self.get_queryset().count() == 0
         ):
-            context["create_synth_partner_button"] = format_html(
+            context["create_synth_partner_button"] = SafeString(
                 """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
             )
             context["create_synth_partner_next"] = (
