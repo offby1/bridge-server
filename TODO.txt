@@ -1,7 +1,4 @@
 IN PROGRESS:
-* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
-  - There was no indication that the deadline had expired
-
 
 STILL TODO:
 * Look into [playwright](https://playwright.dev/) -- might be an easier-to-use selenium
@@ -237,6 +234,31 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
+  - There was no indication that the deadline had expired
+
+  Testing ideas
+
+  In another branch, I tried testing with pytest-django's "live_server" fixture, and playwright; never got it working.
+
+  So just a manual test :-|
+
+  Using the `nearly_completed_tournament` fixture
+
+  - `just fixture nearly_completed_tournament`
+  - `just runserver`
+  - log in as I guess Clint, view hand 1
+  - `just shell` and set the tournament's expiry to now
+    - ```t = Tournament.objects.first()
+        from django.utils.timezone import now
+        t.play_completion_deadline = now()
+        t.save()
+        from app.models import tournament
+        tournament.check_for_expirations.__wrapped__("some manual test")
+      ```
+  - trigger things by opening a new browser window at the home page
+  - hopefully the "hand 1" page will have reloaded
+
 * When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
 
 * If we make a call after the play deadline has expired, we see the "Uh oh" toast.
