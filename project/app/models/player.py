@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 import more_itertools
 
-import bridge.auction
 import bridge.card
 import bridge.seat
 import bridge.table
@@ -176,6 +175,7 @@ class Player(TimeStampedModel):
 
     # Also redundant.
     last_action = models.JSONField(
+        blank=True,
         null=True,
         db_comment="Tuple: [timestamp, str].  The string values can be 'joined', 'logged in', 'called', 'played'",  # type: ignore [call-overload]
         encoder=DjangoJSONEncoder,
