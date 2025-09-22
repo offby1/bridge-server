@@ -10,8 +10,6 @@ STILL TODO:
   - local development looks hard, because it uses anaconda and x86-specific stuff (i.e., I can't use my Mac and would have to use an x86 box)
 * consider https://django-registration.readthedocs.io
 
-* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
-  - There was no indication that the deadline had expired
 * Ideas from chess.offby1.info:
   - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
     Also: django-types still doesn't know that the HttpResponse class has a "text" attribute, whereas [django-stubs does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
@@ -236,6 +234,31 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
+  - There was no indication that the deadline had expired
+
+  Testing ideas
+
+  In another branch, I tried testing with pytest-django's "live_server" fixture, and playwright; never got it working.
+
+  So just a manual test :-|
+
+  Using the `nearly_completed_tournament` fixture
+
+  - `just fixture nearly_completed_tournament`
+  - `just runserver`
+  - log in as I guess Clint, view hand 1
+  - `just shell` and set the tournament's expiry to now
+    - ```t = Tournament.objects.first()
+        from django.utils.timezone import now
+        t.play_completion_deadline = now()
+        t.save()
+        from app.models import tournament
+        tournament.check_for_expirations.__wrapped__("some manual test")
+      ```
+  - trigger things by opening a new browser window at the home page
+  - hopefully the "hand 1" page will have reloaded
+
 * When bulding the docker image, the "chown" step takes an annoyingly long time (five seconds, maybe).  Perhaps I could eliminate that step by doing USER before any of the COPY commands.
 
 * If we make a call after the play deadline has expired, we see the "Uh oh" toast.
