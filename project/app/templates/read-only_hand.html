@@ -11,7 +11,7 @@
     </div>
     {% if hand.is_abandoned %}
         <div>
-            <h1 style="text-align: center; color: red">This hand was abandoned: {{ hand.abandoned_because }}</h1>
+            <h1 style="text-align: center; color: red">This hand was abandoned because {{ hand.abandoned_because }}</h1>
         </div>
     {% endif %}
     {% ifexists request.user.player %}

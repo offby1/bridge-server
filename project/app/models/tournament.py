@@ -95,7 +95,7 @@ def check_for_expirations(sender, **kwargs) -> None:
             if t.play_completion_deadline_has_passed():
                 t.completed_at = t.play_completion_deadline
                 deadline_str = t.play_completion_deadline.isoformat()
-                t.abandon_all_hands(reason=f"Play completion deadline ({deadline_str}) has passed")
+                t.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
                 t.save()
 
                 for h in t.hands():
@@ -508,7 +508,7 @@ class Tournament(models.Model):
                 )
                 if self.play_completion_deadline_has_passed():
                     self.abandon_all_hands(
-                        reason=f"Play completion deadline ({self.play_completion_deadline}) has passed"
+                        reason=f"play completion deadline ({self.play_completion_deadline}) has passed"
                     )
                 else:
                     self.players().update(current_hand=None, random_state=None)
