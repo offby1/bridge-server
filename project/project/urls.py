@@ -31,6 +31,7 @@ def automatic_workspace_folders_view(request: HttpRequest) -> HttpResponse:
 urlpatterns = [
     path("", include("app.urls")),
     path("", include("django_prometheus.urls")),
+    path("__reload__/", include("django_browser_reload.urls")),
     path(".well-known/appspecific/com.chrome.devtools.json", automatic_workspace_folders_view),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),

@@ -37,6 +37,8 @@ dependencies = [
     "pyroscope-io>=0.8.11,<0.9 ; sys_platform != 'darwin'",
     "django-filter~=25.1",
     "redis>=6.2.0,<7",
+    "django-browser-reload>=1.21.0",
+    "django-watchfiles>=1.4.0",
 ]
 
 [dependency-groups]

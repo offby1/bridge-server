@@ -20,6 +20,10 @@ if os.environ.get("PYINSTRUMENT", "").lower().startswith("t"):
     MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
     MIDDLEWARE = ["pyinstrument.middleware.ProfilerMiddleware"] + MIDDLEWARE
 
+INSTALLED_APPS.append("django_browser_reload")
+INSTALLED_APPS.append("django_watchfiles")
+MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
+
 LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore  [index]
 LOGGING["loggers"]["django_eventstream"] = {"handlers": ["console"], "level": "DEBUG"}  # type: ignore  [index]
 LOGGING["root"]["level"] = "DEBUG"  # type: ignore  [index]
