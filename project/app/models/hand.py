@@ -1049,7 +1049,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         fs = self.get_xscript().final_score()
 
         if fs is None:
-            trick_summary = "still being played"
+            trick_summary = (
+                "Tournament expired" if self.tournament.is_complete else "still being played"
+            )
         elif fs == 0:
             total_score = 0
             trick_summary = "Passed Out"
