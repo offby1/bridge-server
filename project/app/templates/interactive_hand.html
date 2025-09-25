@@ -107,7 +107,7 @@
                  if (activeBit !== null) {
                      activeBit.scrollIntoView ();
                  }
-             }, 5000); // milliseconds
+             }, data["tempo_seconds"] * 2000); // milliseconds.
 
              /* Scrolling counts as "activity". */
              document.querySelector("ul.carousel").addEventListener ("scroll", (event) => {
