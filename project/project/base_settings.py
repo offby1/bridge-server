@@ -272,6 +272,9 @@ LOGGING: dict[str, Any] = {
         "faker.factory": {
             "level": "CRITICAL",  # please shut up please please please
         },
+        "matplotlib": {
+            "level": "INFO",
+        },
         "urllib3.connectionpool": {
             "level": "INFO",
         },
