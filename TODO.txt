@@ -2,6 +2,7 @@ IN PROGRESS:
 
 STILL TODO:
 * It seems there's a "standard" notation for bridge hands -- [pbn](https://www.tistis.nl/pbn/).  Maybe support it?
+  - Specifically, add "export to PBN" button to the hand archive page
 * Better bot play! "lorserker/ben" (below) is one idea, but I couldn't get that working.
   - <https://endplay.readthedocs.io> is at least installable.  So far this is the only package I've found that seems worthwhile.
   Some hits from searching for `python "duplicate" bridge engine`:
@@ -9,7 +10,6 @@ STILL TODO:
   - https://github.com/bookchris/ben is a fork of lorserker/ben; maybe it actually works.  No Dockerfile, though :-|
   - https://www.reddit.com/r/bridge/comments/j7m7eo/tricky_bridge_is_live_on_ios/ refers to a bot <https://www.meadowlarksoftware.us/> but that's a 404
 * Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere.
-* Look into [playwright](https://playwright.dev/) -- might be an easier-to-use selenium
 * Adopt some of [the postgres/docker/justfile grooviness from my django-chess project](https://gitlab.com/offby1/django-chess/-/commit/36be3973343ba179a392382df2a02f864c7dfda2)
 * Look into [Django-Htmx-Patterns](https://github.com/spookylukey/django-htmx-patterns/tree/master)
 * Why am I not using [this](https://github.com/lorserker/ben)?
@@ -1315,6 +1315,12 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* Look into [playwright](https://playwright.dev/) -- might be an easier-to-use selenium
+  - I did, but iiuc, it requires that I use pytest-django's "live_server" fixture, and that is broken: it isn't serving any of the static files.  In particular, all my lovely javascript is just a buncha 404s, so the page is utterly static :-|
+
+    [This bug report](https://github.com/pytest-dev/pytest-django/issues/294) seems relevant, but is very old, and suggests
+    a kludgy workaround that I'd prefer not to do.
+
 * Performance, as usual:
 
   I've eliminated redundant queries from a number of views (by simply looking at the django debug toolbar's "SQL" panel).  But there are more to do -- in particular, "serialized-hand-detail", "call-post", and "play-post" are the ones that the bots use, and hence matter the most during a stress run.

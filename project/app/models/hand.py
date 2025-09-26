@@ -692,6 +692,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                             seat=seat,
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
+                        "tempo_seconds": self.tournament.tempo_seconds,
                     },
                     player=r,
                 )

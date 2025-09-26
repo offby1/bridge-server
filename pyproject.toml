@@ -67,7 +67,7 @@ dev = [
 package = false
 
 [tool.uv.sources]
-bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "bb876c704ab98f09c76585cd3535c6d4def3df3e" }
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "1d0ff80ecc96a1234b1df57441ce0a49a30d100c" }
 
 [build-system]
 requires = ["hatchling"]
