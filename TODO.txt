@@ -73,26 +73,6 @@ STILL TODO:
 
   I actually did this in "main" but it triggers some sorta race condition, leading to an assertion failure, in main 😭
 
-* Long suit trouble: scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.  So either
-  - make it scroll by one <li> at a time, instead; or maybe
-  - bring back the little dots along the bottom that did exactly that
-
-  To repro:
-  - `just fixture usual_setup`
-  - `just --no-deps runme`
-  - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
-
-  Similarly, an archived hand with long suits displays badly.
-
-  To repro:
-  - `just fixture nearly_completed_tournament`
-  - `just --no-deps runme`
-  - somehow expire the tournament
-  - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
-  - note that the long suits overwrite the three-by-three-trick-display
-
-  Maybe I should tell the smallest div that encloses all four suits to grow scrollbars if necessary.
-
 * We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
 
   Dunno if this would save significant time, memory, or CPU; but it's an idea.
@@ -253,6 +233,28 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Long suit trouble: An archived hand with long suits displays badly.
+
+  To repro:
+  - `just fixture nearly_completed_tournament`
+  - `just --no-deps runme`
+  - somehow expire the tournament
+  - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
+  - note that the long suits overwrite the three-by-three-trick-display
+
+  I told the smallest div that encloses all four suits to grow scrollbars if necessary.
+
+  Also: scrolling from my hand, through the dummy, to the current trick, can be tedious if both hands have a long suit.  Clicking the little left'n'right arrows doesn't scroll by the entire <li>; instead it seems to scroll by the width in pixels of the visible area.  This is a reasonable thing for a scrollbar to do, but it's not convenient here.
+
+  To repro:
+  - `just fixture usual_setup`
+  - `just --no-deps runme`
+  - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
+
+  This doesn't seem that burdensome on my laptop, but it's pretty bad on mobile.
+
+  I brought back the little dots along the bottom (the "scroll marker group").
+
 * Errors aren't clearly displayed.  For example: I started a game, then left it (in the auction) for a few hours; in that time, the play deadline expired.  When I came back to the page:
   - There was no indication that the deadline had expired
 

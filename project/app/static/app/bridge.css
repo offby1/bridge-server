@@ -63,11 +63,14 @@ body {
 }
 
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
+
 ul.carousel {
   width: 90%;
   height: 90%;
   display: flex;
+  anchor-name: --my-carousel;
   overflow-x: scroll;
+  scroll-marker-group: after;
   scroll-snap-type: x mandatory;
   anchor-name: --myCarousel;
 }
@@ -118,6 +121,29 @@ ul.carousel::scroll-button(right) {
   left: calc(anchor(right) - 45px);
 }
 
+ul.carousel::scroll-marker-group {
+  position: absolute;
+  position-anchor: --my-carousel;
+  top: calc(anchor(bottom) - 70px);
+  justify-self: anchor-center;
+
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+li::scroll-marker {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  border: 2px solid black;
+  border-radius: 50%;
+}
+li::scroll-marker:target-current {
+  background-color: black;
+}
+
 li.carousel {
   list-style-type: none;
   background-color: #eee;
@@ -156,6 +182,7 @@ li.carousel {
 
 .hand {
     display: grid;
+    overflow-x: auto;
     grid-template-rows: 25% 25% 25% 25%;
 }
 .btn {
