@@ -91,6 +91,8 @@ STILL TODO:
   - point browser at <http://localhost:9000/hand/1/> ; login as "Clint Eastwood"
   - note that the long suits overwrite the three-by-three-trick-display
 
+  Maybe I should tell the smallest div that encloses all four suits to grow scrollbars if necessary.
+
 * We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
 
   Dunno if this would save significant time, memory, or CPU; but it's an idea.
