@@ -65,7 +65,7 @@ body {
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 
 ul.carousel {
-  width: 90%;
+  width: 80vw;
   height: 90%;
   display: flex;
   anchor-name: --my-carousel;
@@ -160,7 +160,7 @@ li.carousel {
     font-weight: 100;
     font-style: normal;
 
-    font-size: 8cqh;
+    font-size: 6vw;
 }
 
 .mediumfont {
