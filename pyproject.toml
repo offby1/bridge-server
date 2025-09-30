@@ -67,6 +67,7 @@ dev = [
 package = false
 
 [tool.uv.sources]
+# bridge = { path = "../library" }
 bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "1d0ff80ecc96a1234b1df57441ce0a49a30d100c" }
 
 [build-system]
