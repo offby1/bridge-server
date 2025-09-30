@@ -6,7 +6,7 @@ authors = [{ name = "Eric Hanchrow", email = "eric.hanchrow@gmail.com" }]
 requires-python = ">=3.12,<3.14"
 readme = "README.md"
 dependencies = [
-    "django==5.*",
+    "django==6.*",
     "django-debug-toolbar",
     "django-extensions",
     "faker>=26.0.0,<27",
