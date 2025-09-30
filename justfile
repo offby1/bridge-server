@@ -83,8 +83,12 @@ uv-install: uv-install-no-dev
 uv-install-no-dev:
     uv sync --no-dev
 
-mypy: uv-install
+mypy: uv-install ty
     uv run dmypy run -- .
+
+# Not yet useful, but probably will be soon
+ty: uv-install
+    uvx ty check --quiet --extra-search-path project || true
 
 alias version := version-file
 
