@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <link href="bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="mediumfont" style="display: flex;">
+            <span class="btn inactive-button">♣T</span>
+            <span class="btn inactive-button">♣9</span>
+        </div>
+    </body>
+</html>
+<style>
+ * {
+     outline: 1px solid red;
+ }
+
+ /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
+ .inactive-button {
+     pointer-events: none;
+     cursor: default;
+ }
+
+ .mediumfont {
+     font-family: monospace;
+     font-size: 50cqh;
+ }
+
+ .btn {
+     --bs-btn-font-size: revert;
+     --bs-btn-color: black;
+     --bs-btn-bg: #ccc
+ }
+
+</style>
