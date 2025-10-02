@@ -5,9 +5,12 @@
         <link href="bootstrap.min.css" rel="stylesheet">
     </head>
     <body>
-        <div class="mediumfont" style="display: flex;">
-            <span class="btn inactive-button">♣T</span>
-            <span class="btn inactive-button">♣9</span>
+        <div class="mediumfont suit grid">
+            <div class="item">♣T</div>
+            <div class="item">♣9</div>
+        </div>
+        <div class="mediumfont suit hearts grid">
+            <div class="item">♥J</div>
         </div>
     </body>
 </html>
@@ -16,21 +19,32 @@
      outline: 1px solid red;
  }
 
- /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
- .inactive-button {
-     pointer-events: none;
-     cursor: default;
- }
 
  .mediumfont {
      font-family: monospace;
-     font-size: 50cqh;
  }
 
- .btn {
-     --bs-btn-font-size: revert;
-     --bs-btn-color: black;
-     --bs-btn-bg: #ccc
+ .suit {
+     display: flex;
+     div {
+     }
+ }
+
+ .hearts, .diamonds {
+     color: red;
+ }
+
+ .grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+ }
+
+ .item {
+     aspect-ratio: 3/5;
+     min-height: 0;
+     overflow: auto;
+     font-size: 4.5cqw;
+     text-align: center;
  }
 
 </style>
