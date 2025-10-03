@@ -94,18 +94,18 @@ class BoardListView(tables.SingleTableMixin, FilterView):
     template_name = "board_list.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        original = super().get_context_data(**kwargs)
-        option_elts = {
-            "option_elts": [
+        dropdown_list_items = [
+            SafeString("""<li><a class="dropdown-item" href="?">--all--</a></li>"""),
+        ]
+        for tournament in app.models.Tournament.objects.order_by("-display_number").all():
+            dropdown_list_items.append(
                 format_html(
-                    """<option value="{}">{}</option>""",
+                    """<li><a class="dropdown-item" href="?tournament__display_number={}">{}</a></li>""",
                     tournament.display_number,
                     tournament,
                 )
-                for tournament in app.models.Tournament.objects.order_by("-display_number").all()
-            ]
-        }
-        return original | option_elts
+            )
+        return super().get_context_data(**kwargs) | {"dropdown_list_items": dropdown_list_items}
 
     def get_queryset(self) -> QuerySet:
         return self.model.objects.nicely_ordered()
