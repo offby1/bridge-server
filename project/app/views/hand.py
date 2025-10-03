@@ -757,6 +757,7 @@ class HandListView(tables.SingleTableMixin, FilterView):
     def get_queryset(self) -> QuerySet:
         amended_attr_names = [f"{a}__user" for a in attribute_names]
         played_by = self.request.GET.get("played_by")
+        assert self.model is not None
         qs = self.model.objects.select_related(
             "board", "board__tournament", *attribute_names, *amended_attr_names
         )
