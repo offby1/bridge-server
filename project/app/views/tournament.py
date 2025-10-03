@@ -16,7 +16,6 @@ from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
 
 import app.models
-import app.models.common
 import app.models.tournament
 from app.utils.movements import Movement, _group_letter
 

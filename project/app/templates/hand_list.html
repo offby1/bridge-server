@@ -2,7 +2,7 @@
 {% load player_extras %}
 {% load render_table from django_tables2 %}
 {% block title %}
-    Hands
+    Hands {{ table.page.start_index }} through {{ table.page.end_index }} of {{ object_list | length }}
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
