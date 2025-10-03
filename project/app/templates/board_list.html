@@ -6,19 +6,15 @@
 {% block content %}
     {% block board_list %}
         {% if filter %}
-            <div style="display: grid; grid-template-columns: 25% 75%;">
-                <form action="" method="get" class="form form-inline">
-                    <div class="form-group has-success">
-                        <input type="number"
-                               name="tournament__display_number"
-                               step="any"
-                               class="form-control"
-                               placeholder="Tournament"
-                               title=""
-                               id="id_tournament__display_number">
-                    </div>
-                </form>
-            </div>
+            <form action="" method="get" class="form form-inline" style="display: flex">
+                <div class="form-group has-success">
+                    <select class="form-select" name="tournament__display_number">
+                        <option value="">--Choose a Tournament--</option>
+                        {% for option_elt in option_elts %}{{ option_elt }}{% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Filter by tournament</button>
+            </form>
         {% endif %}
         {% render_table table %}
     {% endblock board_list %}

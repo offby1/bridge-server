@@ -1,6 +1,6 @@
 IN PROGRESS:
 * Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere (`board_list_view`, `tournament_list_view`).
-  - I should somehow populate the "tournament" input thingy with just the valid values.
+  - Consider https://getbootstrap.com/docs/5.0/components/dropdowns/ instead of a <form> with a <select>.
 
 STILL TODO:
 * The "let the bot play for me button" is still flaky.  Hard to describe but easy to see if we're doing "big_bot_stress" with a tempo of 0.
