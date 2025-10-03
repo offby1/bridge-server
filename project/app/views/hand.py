@@ -740,6 +740,20 @@ class HandListView(tables.SingleTableMixin, FilterView):
 
     filterset_class = HandFilter
 
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        dropdown_list_items = [
+            SafeString("""<li><a class="dropdown-item" href="?">--all--</a></li>"""),
+        ]
+        for tournament in app.models.Tournament.objects.order_by("-display_number").all():
+            dropdown_list_items.append(
+                format_html(
+                    """<li><a class="dropdown-item" href="?board__tournament__display_number={}">{}</a></li>""",
+                    tournament.display_number,
+                    tournament,
+                )
+            )
+        return super().get_context_data(**kwargs) | {"dropdown_list_items": dropdown_list_items}
+
     def get_queryset(self) -> QuerySet:
         amended_attr_names = [f"{a}__user" for a in attribute_names]
         played_by = self.request.GET.get("played_by")
