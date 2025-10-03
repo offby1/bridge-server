@@ -1,30 +1,25 @@
 {% extends "base.html" %}
+{% load render_table from django_tables2 %}
 {% block title %}
-    Boards {{ page_obj.start_index }} through {{ page_obj.end_index }}
+    Boards
 {% endblock title %}
 {% block content %}
     {% block board_list %}
-        <table class="table caption-top">
-            <caption>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}</caption>
-            <thead>
-                <tr>
-                    <th>Board #</th>
-                    <th>Tournament #</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for board in page_obj %}
-                    <tr>
-                        <th>{{ board.display_number }}</th>
-                        <td>{{ board.tournament.display_number }}</td>
-                        <td>
-                            <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% include "pagination-controls.html" %}
+        {% if filter %}
+            <div style="display: grid; grid-template-columns: 25% 75%;">
+                <form action="" method="get" class="form form-inline">
+                    <div class="form-group has-success">
+                        <input type="number"
+                               name="tournament__display_number"
+                               step="any"
+                               class="form-control"
+                               placeholder="Tournament"
+                               title=""
+                               id="id_tournament__display_number">
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+        {% render_table table %}
     {% endblock board_list %}
 {% endblock content %}
