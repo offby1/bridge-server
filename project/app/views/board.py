@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import operator
+from typing import Any
 
 from django.conf import settings
-from django.core.paginator import Paginator
+from django.db.models.query import QuerySet
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import SafeString
+from django_filters import FilterSet  # type: ignore[import-untyped]
+from django_filters.views import FilterView  # type: ignore[import-untyped]
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
+import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
 from app.models.types import PK
+from app.views.misc import make_tournament_filter_dropdown_list_items
 
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
@@ -59,22 +67,39 @@ def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     )
 
 
-def board_list_view(request: HttpRequest) -> TemplateResponse:
-    board_list = app.models.Board.objects.nicely_ordered()
-    tournament = request.GET.get("tournament")
-    if tournament is not None:
-        board_list = board_list.filter(tournament=tournament)
+class BoardFilter(FilterSet):
+    class Meta:
+        model = app.models.Board
+        fields = ["tournament__display_number"]
 
-    per_page = request.GET.get("per_page", 16)
-    paginator = Paginator(board_list, per_page)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
 
-    context = {
-        "filtered_count": paginator.count,
-        "page_obj": page_obj,
-    }
-    if tournament is not None:
-        context |= {"tournament": tournament}
+class BoardTable(tables.Table):
+    board_number = tables.Column(accessor=tables.A("display_number"), verbose_name="Board #")
+    tournament_number = tables.Column(
+        accessor=tables.A("tournament__display_number"), verbose_name="Tournament #"
+    )
+    summary = tables.Column(empty_values=())
 
-    return TemplateResponse(request=request, template="board_list.html", context=context)
+    def render_summary(self, record) -> SafeString:
+        return format_html(
+            """<a href="{}">{}</a>""",
+            reverse("app:board-archive", kwargs=dict(pk=record.pk)),
+            record,
+        )
+
+
+class BoardListView(tables.SingleTableMixin, FilterView):
+    filterset_class = BoardFilter
+    model = app.models.Board
+    table_class = BoardTable
+    template_name = "board_list.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        return super().get_context_data(**kwargs) | {
+            "dropdown_list_items": make_tournament_filter_dropdown_list_items(
+                self.request, "tournament__display_number"
+            )
+        }
+
+    def get_queryset(self) -> QuerySet:
+        return self.model.objects.nicely_ordered()

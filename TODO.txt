@@ -13,7 +13,6 @@ STILL TODO:
   - https://github.com/BSalita/ML-Contract-Bridge also requires anaconda.  The repo appears to be a collection of jupyter notebooks, plus some code which uses the C++ double-dummy solver.
   - https://github.com/bookchris/ben is a fork of lorserker/ben; maybe it actually works.  No Dockerfile, though :-|
   - https://www.reddit.com/r/bridge/comments/j7m7eo/tricky_bridge_is_live_on_ios/ refers to a bot <https://www.meadowlarksoftware.us/> but that's a 404
-* Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere.
 * Adopt some of [the postgres/docker/justfile grooviness from my django-chess project](https://gitlab.com/offby1/django-chess/-/commit/36be3973343ba179a392382df2a02f864c7dfda2)
 * Look into [Django-Htmx-Patterns](https://github.com/spookylukey/django-htmx-patterns/tree/master)
 * Why am I not using [this](https://github.com/lorserker/ben)?
@@ -237,6 +236,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere (`tournament_list_view`).
 * Long suit trouble: An archived hand with long suits displays badly.
 
   To repro:

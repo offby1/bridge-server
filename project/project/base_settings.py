@@ -150,7 +150,12 @@ LOGIN_REDIRECT_URL = "app:player"
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
 
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5-responsive.html"
-
+DJANGO_TABLES2_TABLE_ATTRS = {
+    "class": "table table-hover",
+    "thead": {
+        "class": "table-light",
+    },
+}
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -258,6 +263,9 @@ LOGGING: dict[str, Any] = {
             "level": "INFO",
         },
         "daphne.http_protocol": {
+            "level": "INFO",
+        },
+        "debug_toolbar.store": {
             "level": "INFO",
         },
         "django.channels.server": {
