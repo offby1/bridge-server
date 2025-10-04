@@ -17,6 +17,7 @@ import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
 from app.models.types import PK
+from app.views.misc import make_tournament_filter_dropdown_list_items
 
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
@@ -94,22 +95,11 @@ class BoardListView(tables.SingleTableMixin, FilterView):
     template_name = "board_list.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        dropdown_list_items = [
-            SafeString("""<li><a class="dropdown-item" href="?">--all--</a></li>"""),
-        ]
-
-        for tournament in app.models.Tournament.objects.order_by("-display_number").all():
-            query_dict = self.request.GET.copy()
-            query_dict["tournament__display_number"] = str(tournament.display_number)
-
-            dropdown_list_items.append(
-                format_html(
-                    """<li><a class="dropdown-item" href="?{}">{}</a></li>""",
-                    query_dict.urlencode(),
-                    tournament,
-                )
+        return super().get_context_data(**kwargs) | {
+            "dropdown_list_items": make_tournament_filter_dropdown_list_items(
+                self.request, "tournament__display_number"
             )
-        return super().get_context_data(**kwargs) | {"dropdown_list_items": dropdown_list_items}
+        }
 
     def get_queryset(self) -> QuerySet:
         return self.model.objects.nicely_ordered()

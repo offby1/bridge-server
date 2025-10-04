@@ -1,10 +1,5 @@
 IN PROGRESS:
 * Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere (`tournament_list_view`).
-  - The fancy tournament-filter dropdown doesn't preserve existing query string in the URL.  To repro:
-    - ensure the db has lots of hands -- grab the prod one and restore from it, e.g.
-    - visit http://localhost:9000/hand/?played_by=1&page=2
-    - choose a tournament from the dropdown
-    - note that the URL now looks like e.g. `http://localhost:9000/hand/?board__tournament__display_number=21` -- the `played_by` is gone
 
 STILL TODO:
 * The "let the bot play for me button" is still flaky.  Hard to describe but easy to see if we're doing "big_bot_stress" with a tempo of 0.

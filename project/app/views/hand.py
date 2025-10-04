@@ -31,7 +31,11 @@ from app.models.common import attribute_names
 from app.models.types import PK
 from app.models.utils import assert_type
 from app.views import Forbid, NotFound
-from app.views.misc import AuthedHttpRequest, logged_in_as_player_required
+from app.views.misc import (
+    AuthedHttpRequest,
+    logged_in_as_player_required,
+    make_tournament_filter_dropdown_list_items,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -741,18 +745,11 @@ class HandListView(tables.SingleTableMixin, FilterView):
     filterset_class = HandFilter
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        dropdown_list_items = [
-            SafeString("""<li><a class="dropdown-item" href="?">--all--</a></li>"""),
-        ]
-        for tournament in app.models.Tournament.objects.order_by("-display_number").all():
-            dropdown_list_items.append(
-                format_html(
-                    """<li><a class="dropdown-item" href="?board__tournament__display_number={}">{}</a></li>""",
-                    tournament.display_number,
-                    tournament,
-                )
+        return super().get_context_data(**kwargs) | {
+            "dropdown_list_items": make_tournament_filter_dropdown_list_items(
+                self.request, "board__tournament__display_number"
             )
-        return super().get_context_data(**kwargs) | {"dropdown_list_items": dropdown_list_items}
+        }
 
     def get_queryset(self) -> QuerySet:
         amended_attr_names = [f"{a}__user" for a in attribute_names]
