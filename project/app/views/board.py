@@ -97,11 +97,15 @@ class BoardListView(tables.SingleTableMixin, FilterView):
         dropdown_list_items = [
             SafeString("""<li><a class="dropdown-item" href="?">--all--</a></li>"""),
         ]
+
         for tournament in app.models.Tournament.objects.order_by("-display_number").all():
+            query_dict = self.request.GET.copy()
+            query_dict["tournament__display_number"] = str(tournament.display_number)
+
             dropdown_list_items.append(
                 format_html(
-                    """<li><a class="dropdown-item" href="?tournament__display_number={}">{}</a></li>""",
-                    tournament.display_number,
+                    """<li><a class="dropdown-item" href="?{}">{}</a></li>""",
+                    query_dict.urlencode(),
                     tournament,
                 )
             )
