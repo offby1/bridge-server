@@ -18,7 +18,7 @@ def test_board_list_view(db, rf, everybodys_password) -> None:
     request = rf.get("/woteva/", data={"per_page": max(1, Board.objects.count())})
     request.user = some_player.user
 
-    response = app.views.board.board_list_view(request=request)
+    response = app.views.board.BoardListView.as_view()(request=request)
 
     assert response.status_code == 200
     response.render()
@@ -36,7 +36,7 @@ def test_board_list_view(db, rf, everybodys_password) -> None:
         request = rf.get("/woteva/", data={"tournament": t.pk})
         request.user = some_player.user
 
-        response = app.views.board.board_list_view(request=request)
+        response = app.views.board.BoardListView.as_view()(request=request)
         assert response.status_code == 200
 
         response.render()

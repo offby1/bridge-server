@@ -2,23 +2,20 @@
 {% load player_extras %}
 {% load render_table from django_tables2 %}
 {% block title %}
-    Hands
+    Hands {{ table.page.start_index }} through {{ table.page.end_index }} of {{ object_list | length }}
 {% endblock title %}
 {% block content %}
     {% block hand_list %}
         {% if filter %}
-            <div style="display: grid; grid-template-columns: 25% 75%;">
-                <form action="" method="get" class="form form-inline">
-                    <div class="form-group has-success">
-                        <input type="number"
-                               name="board__tournament__display_number"
-                               step="any"
-                               class="form-control"
-                               placeholder="Tournament"
-                               title=""
-                               id="id_board__tournament__display_number">
-                    </div>
-                </form>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle"
+                        type="button"
+                        id="dropdownMenuButton1"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">Filter by Tournament</button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    {% for li in dropdown_list_items %}{{ li }}{% endfor %}
+                </ul>
             </div>
         {% endif %}
         {% render_table table %}

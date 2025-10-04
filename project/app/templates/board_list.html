@@ -1,30 +1,22 @@
 {% extends "base.html" %}
+{% load render_table from django_tables2 %}
 {% block title %}
-    Boards {{ page_obj.start_index }} through {{ page_obj.end_index }}
+    Boards {{ table.page.start_index }} through {{ table.page.end_index }} of {{ object_list | length }}
 {% endblock title %}
 {% block content %}
     {% block board_list %}
-        <table class="table caption-top">
-            <caption>Boards {{ page_obj.start_index }} through {{ page_obj.end_index }} of {{ filtered_count }}</caption>
-            <thead>
-                <tr>
-                    <th>Board #</th>
-                    <th>Tournament #</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for board in page_obj %}
-                    <tr>
-                        <th>{{ board.display_number }}</th>
-                        <td>{{ board.tournament.display_number }}</td>
-                        <td>
-                            <a href="{% url 'app:board-archive' pk=board.pk %}">{{ board }}</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% include "pagination-controls.html" %}
+        {% if filter %}
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle"
+                        type="button"
+                        id="dropdownMenuButton1"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">Filter by Tournament</button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    {% for li in dropdown_list_items %}{{ li }}{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        {% render_table table %}
     {% endblock board_list %}
 {% endblock content %}

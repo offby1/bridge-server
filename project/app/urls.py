@@ -3,7 +3,7 @@ from django.urls import path
 from .views import home_view, lobby, player, robots_dot_txt, signup_view, table, three_way_login
 from .views.board import (
     board_archive_view,
-    board_list_view,
+    BoardListView,
 )
 from .views.hand import (
     auction_partial_view,
@@ -27,7 +27,7 @@ app_name = "app"
 
 urlpatterns = [
     path("", home_view, name="home"),
-    path("board/", board_list_view, name="board-list"),
+    path("board/", BoardListView.as_view(), name="board-list"),
     path("board/<int:pk>/", board_archive_view, name="board-archive"),
     path("call/", table.details.call_post_view, name="call-post"),
     path("hand/", HandListView.as_view(), name="hand-list"),

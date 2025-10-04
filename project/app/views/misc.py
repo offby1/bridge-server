@@ -5,7 +5,8 @@ import binascii
 import datetime
 import functools
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
+
 
 from django.contrib import messages as django_web_messages
 from django.contrib.auth import authenticate
@@ -13,6 +14,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponseForbidden, HttpResponseRedirect
 from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import SafeString
 
 import app.models
 import app.models.common
@@ -117,3 +120,28 @@ def logged_in_as_player_required(*, redirect=True):
         return non_players_piss_off
 
     return inner_wozzit
+
+
+def make_tournament_filter_dropdown_list_items(
+    request: HttpRequest, lookup: str
+) -> Iterator[SafeString]:
+    query_dict = request.GET.copy()
+    query_dict.pop(lookup, None)
+
+    yield (
+        format_html(
+            """<li><a class="dropdown-item" href="?{}">--all--</a></li>""",
+            query_dict.urlencode(),
+        )
+    )
+
+    for tournament in app.models.Tournament.objects.order_by("-display_number").all():
+        query_dict[lookup] = str(tournament.display_number)
+
+        yield (
+            format_html(
+                """<li><a class="dropdown-item" href="?{}">{}</a></li>""",
+                query_dict.urlencode(),
+                tournament,
+            )
+        )
