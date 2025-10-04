@@ -260,6 +260,9 @@ LOGGING: dict[str, Any] = {
         "daphne.http_protocol": {
             "level": "INFO",
         },
+        "debug_toolbar.store": {
+            "level": "INFO",
+        },
         "django.channels.server": {
             "level": "INFO",
         },
