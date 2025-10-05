@@ -5,12 +5,12 @@
         <link href="bootstrap.min.css" rel="stylesheet">
     </head>
     <body>
-        <div class="mediumfont clubs grid">
-            <div class="item">♣T</div>
-            <div class="item">♣9</div>
+        <div class="suit clubs">
+            <span>♣T</span>
+            <span>♣9</span>
         </div>
-        <div class="mediumfont hearts grid">
-            <div class="item">♦J</div>
+        <div class="suit hearts">
+            <span>♦J</span>
         </div>
     </body>
 </html>
@@ -20,29 +20,22 @@
  }
 
 
- .mediumfont {
+ .suit {
      font-family: monospace;
+     display: flex;
+     span {
+         aspect-ratio: 3/5;
+         font-size: 5rem;
+         text-align: center;
+     }
  }
 
  .clubs, .spades {
      color: black;
-     display: flex;
  }
 
  .hearts, .diamonds {
      color: red;
-     display: flex;
- }
-
- .grid {
-     display: grid;
-     grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
- }
-
- .item {
-     aspect-ratio: 3/5;
-     font-size: 5rem;
-     text-align: center;
  }
 
 </style>
