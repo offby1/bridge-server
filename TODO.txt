@@ -1,7 +1,4 @@
 IN PROGRESS:
-* Cards are way too large on mobile.  Even when I tell Chrome to "zoom" down to 50%, only two and a half cards can fit in the slot I've allocated for them.   See [The-Cards-Are-Too-Damned-Big.png]
-
-  - Maybe have the cards not be square -- have them be, I dunno, shaped like *actual playing cards* -- taller than they are wide.
 
 STILL TODO:
 * The "let the bot play for me button" is still flaky.  Hard to describe but easy to see if we're doing "big_bot_stress" with a tempo of 0.
@@ -236,6 +233,9 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Cards are way too large on mobile.  Even when I tell Chrome to "zoom" down to 50%, only two and a half cards can fit in the slot I've allocated for them.   See [The-Cards-Are-Too-Damned-Big.png]
+
+  - Maybe have the cards not be square -- have them be, I dunno, shaped like *actual playing cards* -- taller than they are wide.
 * Much as I dislike class-based views, I gotta admit, the hand and player lists (using django_tables2) look pretty nice.  Maybe use that technique elsewhere (`tournament_list_view`).
 * Long suit trouble: An archived hand with long suits displays badly.
 
