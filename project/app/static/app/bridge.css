@@ -6,8 +6,16 @@ xx* {
     border: 1px solid;
     height: 50%;
     font-family: monospace;
+}
+
+.northsouth {
     display: grid;
-    grid-template-columns: 25em 25em 25em;
+    grid-template-columns: 1fr 2fr 1fr;
+}
+
+.eastwest {
+    display: grid;
+    grid-template-columns: 3fr 5cqw 3fr;
 }
 
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
@@ -65,7 +73,7 @@ body {
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 
 ul.carousel {
-  width: 90%;
+  width: 80vw;
   height: 90%;
   display: flex;
   anchor-name: --my-carousel;
@@ -160,7 +168,7 @@ li.carousel {
     font-weight: 100;
     font-style: normal;
 
-    font-size: 8cqh;
+    font-size: 6vw;
 }
 
 .mediumfont {

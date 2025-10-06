@@ -15,7 +15,7 @@ register.filter("sedate_link", sedate_link)
 
 def styled_link(value: Player, arg: User, style_attrs=None):
     if style_attrs is None:
-        style_attrs = ["font-size: xx-large"]
+        style_attrs = ["font-size: 3vw"]
     comment = ""
 
     subject = value

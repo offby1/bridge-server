@@ -1,30 +1,32 @@
 {% load fastdev %}
 <div id="four-hands">
-    {# North at the top as per the Bridge Writing Style Guide #}
-    {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
-    <div></div>
-    <div>
-        {{ card_display.North.player.display_name|safe }}:
-        {% include "hand-div.html" with cards=card_display.North.cards id="north" %}
+    <div class="northsouth">
+        <div></div>
+        {# North at the top as per the Bridge Writing Style Guide #}
+        {# https://www.w3schools.com/css/css3_flexbox_container.asp #}
+        <div>
+            {{ card_display.North.player.display_name|safe }}:
+            {% include "hand-div.html" with cards=card_display.North.cards id="north" %}
+        </div>
+        <div></div>
     </div>
-    <div></div>
-    <div>
-        {{ card_display.West.player.display_name|safe }}:
-        {% include "hand-div.html" with cards=card_display.West.cards id="west" %}
+    <div class="eastwest">
+        <div>
+            {{ card_display.West.player.display_name|safe }}:
+            {% include "hand-div.html" with cards=card_display.West.cards id="west" %}
+        </div>
+        <div></div>
+        <div>
+            {{ card_display.East.player.display_name|safe }}:
+            {% include "hand-div.html" with cards=card_display.East.cards id="east" %}
+        </div>
     </div>
-    <div id="_3x3-container">
-        {% ifexists three_by_three_trick_display %}
-        {% include "3x3-trick-display.html" %}
-    {% endifexists %}
-</div>
-<div>
-    {{ card_display.East.player.display_name|safe }}:
-    {% include "hand-div.html" with cards=card_display.East.cards id="east" %}
-</div>
-<div></div>
-<div>
-    {{ card_display.South.player.display_name|safe }}:
-    {% include "hand-div.html" with cards=card_display.South.cards id="south" %}
-</div>
-<div></div>
+    <div class="northsouth">
+        <div></div>
+        <div>
+            {{ card_display.South.player.display_name|safe }}:
+            {% include "hand-div.html" with cards=card_display.South.cards id="south" %}
+        </div>
+        <div></div>
+    </div>
 </div>
