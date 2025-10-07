@@ -3,7 +3,7 @@ name = "bridge_server"
 version = "0.1.0"
 description = "An online bridge game"
 authors = [{ name = "Eric Hanchrow", email = "eric.hanchrow@gmail.com" }]
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.14"
 readme = "README.md"
 dependencies = [
     "django==5.*",
