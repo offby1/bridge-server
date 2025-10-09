@@ -61,7 +61,11 @@ dev = [
     "pytest-xdist==3.*",
     "freezegun==1.*",
     "setproctitle==1.*",
+    "basedpyright>=1.31.6",
 ]
+
+[tool.basedpyright]
+include = ["project"]
 
 [tool.uv]
 package = false
