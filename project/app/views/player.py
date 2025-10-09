@@ -281,12 +281,10 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
     )
 
 
-@require_http_methods(["POST"])
-@logged_in_as_player_required(redirect=False)
-def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+def _bot_checkbox_view_context(request: AuthedHttpRequest, pk: PK) -> dict[str, Any]:
     player: Player = get_object_or_404(Player, pk=pk)
 
-    context = {"error_message": "", "user": request.user}
+    context = {"error_message": ""}
 
     try:
         player.toggle_bot()
@@ -296,10 +294,17 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         assert request.user.player is not None
         request.user.player.refresh_from_db(fields=["allow_bot_to_play_for_me"])
 
+    return context
+
+
+@require_http_methods(["POST"])
+@logged_in_as_player_required(redirect=False)
+def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
+    context = _bot_checkbox_view_context(request, pk)
     return TemplateResponse(request, "bot-checkbox.html", context=context)
 
 
-def by_name_or_pk_view(request: HttpRequest, name_or_pk: str) -> HttpResponse:
+def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
     p = Player.objects.filter(user__username=name_or_pk).first()
 
     if p is None:

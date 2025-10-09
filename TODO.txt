@@ -1,7 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* The "let the bot play for me button" is still flaky.  Hard to describe but easy to see if we're doing "big_bot_stress" with a tempo of 0.
 * It seems there's a "standard" notation for bridge hands -- [pbn](https://www.tistis.nl/pbn/).  Maybe support it?
   - Specifically, add "export to PBN" button to the hand archive page
 * Better bot play! "lorserker/ben" (below) is one idea, but I couldn't get that working.
@@ -233,6 +232,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The "let the bot play for me button" is still flaky.  Hard to describe but easy to see if we're doing "big_bot_stress" with a tempo of 0.
 * Cards are way too large on mobile.  Even when I tell Chrome to "zoom" down to 50%, only two and a half cards can fit in the slot I've allocated for them.   See [The-Cards-Are-Too-Damned-Big.png]
 
   - Maybe have the cards not be square -- have them be, I dunno, shaped like *actual playing cards* -- taller than they are wide.

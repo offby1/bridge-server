@@ -1,10 +1,26 @@
 from django.contrib import auth
 
 from app.models import Board, Hand, Player, Tournament, TournamentSignup
-from app.views.player import _players_for_tournament
+from app.views.player import _players_for_tournament, _bot_checkbox_view_context
 
 
-def test_player_tournament_filter_thingy(db, rf, everybodys_password) -> None:
+def test_bot_checkbox_toggle(usual_setup, rf) -> None:
+    player = Player.objects.filter(synthetic=False).first()
+
+    assert player is not None
+
+    pk = player.pk
+    request = rf.get("/woteva/", data={"pk": pk})
+    request.user = player.user
+
+    before = player.allow_bot_to_play_for_me
+    context = _bot_checkbox_view_context(request, pk)
+    assert context == {"error_message": ""}
+    after = player.allow_bot_to_play_for_me
+    assert after != before
+
+
+def test_player_tournament_filter_thingy(db, everybodys_password) -> None:
     def player_named(name: str) -> Player:
         user, _ = auth.models.User.objects.get_or_create(
             username=name, password=everybodys_password

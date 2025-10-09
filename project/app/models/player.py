@@ -304,12 +304,9 @@ class Player(TimeStampedModel):
 
         return None
 
-    def toggle_bot(self, desired_state: bool | None = None) -> None:
+    def toggle_bot(self) -> None:
         with transaction.atomic():
-            if desired_state is None:
-                desired_state = not self.allow_bot_to_play_for_me
-
-            self.allow_bot_to_play_for_me = desired_state
+            self.allow_bot_to_play_for_me = not self.allow_bot_to_play_for_me
             self.save()
 
     def save(self, *args, **kwargs) -> None:

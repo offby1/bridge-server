@@ -110,6 +110,7 @@ class Command(BaseCommand):
 
             if (p := hand_to_play.player_who_may_call) is not None:
                 self.quiet_logger.info("%s", f"It is {p.name}'s turn to call")
+                p.refresh_from_db(fields=["allow_bot_to_play_for_me"])
                 if p.allow_bot_to_play_for_me:
                     call = xscript.auction.best_call_from_endplay(
                         pbn=xscript.endplay_deal.to_pbn(),
@@ -127,6 +128,7 @@ class Command(BaseCommand):
             elif (s := hand_to_play.next_seat_to_play) is not None:
                 self.quiet_logger.info("%s", f"It is {s.name}'s turn to play")
                 p = hand_to_play.player_who_controls_seat(s, right_this_second=True)
+                p.refresh_from_db(fields=["allow_bot_to_play_for_me"])
                 if p.allow_bot_to_play_for_me:
                     self.quiet_logger._reset()
                     card = xscript.slightly_less_dumb_play().card
