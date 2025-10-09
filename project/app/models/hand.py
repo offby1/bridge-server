@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Generator
+from collections.abc import Iterable, Generator
 import dataclasses
 import datetime
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 import more_itertools
 from bridge.auction import Auction
