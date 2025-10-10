@@ -167,6 +167,7 @@ dependencies = [
     { name = "django-extensions" },
     { name = "django-fastdev" },
     { name = "django-filter" },
+    { name = "django-http-compression" },
     { name = "django-log-request-id" },
     { name = "django-prometheus" },
     { name = "django-tables2" },
@@ -227,6 +228,7 @@ requires-dist = [
     { name = "django-extensions" },
     { name = "django-fastdev" },
     { name = "django-filter", specifier = "~=25.1" },
+    { name = "django-http-compression", specifier = ">=1.0.0" },
     { name = "django-log-request-id", specifier = ">=2.1.0,<3" },
     { name = "django-prometheus" },
     { name = "django-tables2", specifier = "==2.*" },
@@ -791,6 +793,20 @@ dependencies = [
     { name = "werkzeug" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cb/d0/2c7b04fa864073cd8cb324f8674672162282d97540d56732cbd3a9ae5bca/django-grip-3.5.2.tar.gz", hash = "sha256:1ee1601492cd110256bd03e4a68797a9fbefa27c15f5a838bf245df97db0450c", size = 7626, upload-time = "2025-03-24T18:53:58.677Z" }
+
+[[package]]
+name = "django-http-compression"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/41/c3bb038751e51b937698a3d26cc02d7704e250fee6c8f7574b87401f1ec0/django_http_compression-1.0.0.tar.gz", hash = "sha256:3b0460e278385be36efef533822d4c9f3017447676bc8877874cdb6442116639", size = 14395, upload-time = "2025-10-10T15:38:58.561Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/11/f710c52513f297245e7f19d9a4d82913ea4b601995bd46cb7b95963a7ecd/django_http_compression-1.0.0-py3-none-any.whl", hash = "sha256:cc9bd44d9c29ee03cd183638a874da5666a2386ce73631a2ea56e351fe8744cb", size = 8612, upload-time = "2025-10-10T15:38:56.16Z" },
+]
 
 [[package]]
 name = "django-log-request-id"

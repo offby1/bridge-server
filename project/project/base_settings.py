@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "debug_toolbar",
     "django_extensions",
+    "django_http_compression",
     "django_prometheus",
     "template_partials",
     "tz_detect",
@@ -113,6 +114,7 @@ EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 
 
 MIDDLEWARE = [
+    "django_http_compression.middleware.HttpCompressionMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
     "log_request_id.middleware.RequestIDMiddleware",

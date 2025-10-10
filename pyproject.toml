@@ -39,6 +39,7 @@ dependencies = [
     "redis>=6.2.0,<7",
     "django-browser-reload>=1.21.0",
     "django-watchfiles>=1.4.0",
+    "django-http-compression>=1.0.0",
 ]
 
 [dependency-groups]
