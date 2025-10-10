@@ -174,7 +174,6 @@ tiny:
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
-    export DJANGO_SETTINGS_MODULE=project.dev_settings
     uv run python manage.py runserver 9000 {{ options }}
 
 alias runserver := runme
