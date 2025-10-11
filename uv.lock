@@ -145,7 +145,7 @@ wheels = [
 [[package]]
 name = "bridge"
 version = "0.1.0"
-source = { git = "https://gitlab.com/offby1/bridge.git?rev=1d0ff80ecc96a1234b1df57441ce0a49a30d100c#1d0ff80ecc96a1234b1df57441ce0a49a30d100c" }
+source = { git = "https://gitlab.com/offby1/bridge.git?rev=7d302bf5dc1f05659e4b3cd5aba158865b92f561#7d302bf5dc1f05659e4b3cd5aba158865b92f561" }
 dependencies = [
     { name = "colorama" },
     { name = "endplay" },
@@ -219,7 +219,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bridge", git = "https://gitlab.com/offby1/bridge.git?rev=1d0ff80ecc96a1234b1df57441ce0a49a30d100c" },
+    { name = "bridge", git = "https://gitlab.com/offby1/bridge.git?rev=7d302bf5dc1f05659e4b3cd5aba158865b92f561" },
     { name = "daphne" },
     { name = "django", specifier = "==5.*" },
     { name = "django-browser-reload", specifier = ">=1.21.0" },
