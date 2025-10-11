@@ -50,7 +50,7 @@
 {{ missing_matchpoint_explanation }}
 <hr />
 {% endifexists %}
-<a href="{% url 'app:board-list' %}?tournament={{ tournament.pk }}">Boards</a>.
+<a href="{% url 'app:board-list' %}?tournament__display_number={{ tournament.display_number }}">Boards</a>.
 {% elif tournament.status_str == "Running" %}
 <span style="font-size: 2em;">
     {% if tournament.play_completion_deadline %}
