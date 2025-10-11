@@ -222,6 +222,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The tournament filter on app:players is the old, klunky kind from 1995! Make it new and shiny and bootstrappy, like how board_list.html does it.
 * Consider switching from mypy to pyright -- Luke Plant (who uses Emacs) [has done so](https://lukeplant.me.uk/blog/posts/python-type-hints-pyastgrep-case-study/#pyright)
 * Better bot play! "lorserker/ben" (below) is one idea, but I couldn't get that working.
   - <https://endplay.readthedocs.io> is at least installable.  So far this is the only package I've found that seems worthwhile.

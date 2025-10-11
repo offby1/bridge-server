@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from .models import Player, Tournament
+from .models import Player
 
 
 class SignupForm(forms.Form):
@@ -27,13 +27,3 @@ class SignupForm(forms.Form):
             password=self.cleaned_data["password"],
         )
         Player.objects.create(user=u)
-
-
-class TournamentForm(forms.Form):
-    tournament_display_number = forms.ModelChoiceField(
-        label="tournament",
-        queryset=Tournament.objects.filter(completed_at__isnull=True)
-        .order_by("-display_number")
-        .all(),
-        to_field_name="display_number",
-    )

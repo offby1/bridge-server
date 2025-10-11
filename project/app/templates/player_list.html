@@ -9,15 +9,18 @@
 {% block content %}
     {% block player_list %}
         <h3>{{ title }} {{ table.page.start_index }} through {{ table.page.end_index }} of {{ table.paginator.count }}</h3>
-        <div style="display: flex">
-            <form method="get" action="">
-                <input type="submit" value="clear">
-            </form>
-            <form method="get" action="" style="display: flex">
-                {{ form }}
-                <input type="submit" value="filter">
-            </form>
-        </div>
+        {% if filter %}
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle"
+                        type="button"
+                        id="dropdownMenuButton1"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">Filter by Tournament</button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    {% for li in dropdown_list_items %}{{ li }}{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
         {% render_table table %}
         {% ifexists create_synth_partner_button %}
         <form action="{% url 'app:player-create-synthetic-partner' %}"

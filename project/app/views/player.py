@@ -31,12 +31,15 @@ from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
 import django_tables2 as tables  # type: ignore[import-untyped]
 
-from app.forms import TournamentForm
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
-from .misc import AuthedHttpRequest, logged_in_as_player_required
+from .misc import (
+    AuthedHttpRequest,
+    logged_in_as_player_required,
+    make_tournament_filter_dropdown_list_items,
+)
 from . import Forbid
 
 logger = logging.getLogger(__name__)
@@ -488,7 +491,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
             self.has_partner = None
 
         if (
-            tournament_display_number := self.request.GET.get("tournament_display_number")
+            tournament_display_number := self.request.GET.get("tournament__display_number")
         ) is not None:
             qs = qs.filter(_players_for_tournament(tournament_display_number))
 
@@ -520,5 +523,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
                 reverse("app:tournament-list") + "?open_for_signups=True"
             )
 
-        context["form"] = TournamentForm()
+        context["dropdown_list_items"] = make_tournament_filter_dropdown_list_items(
+            self.request, "tournament__display_number"
+        )
         return context
