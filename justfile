@@ -336,5 +336,20 @@ beta: docker-prerequisites
     docker compose up --build --detach
     docker compose logs django --follow
 
+[group('deploy')]
+[script('bash')]
+mini: docker-prerequisites
+    set -euox pipefail
+
+    export COMPOSE_PROFILES=prod
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export DOCKER_CONTEXT=mini
+    export GIT_VERSION="$(cat project/VERSION)"
+
+    docker compose up --build --detach
+    docker compose logs django --follow
+
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
