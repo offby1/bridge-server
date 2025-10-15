@@ -53,6 +53,7 @@ services:
       caddy: ${CADDY_HOSTNAME:-}
       caddy.reverse_proxy: "{{upstreams 9000}}"
 
+    restart: unless-stopped
     develop:
       # Create a `watch` configuration to update the app
       # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
@@ -127,6 +128,8 @@ services:
       start_period: 10s
       start_interval: 1s
 
+    restart: unless-stopped
+
   postgres-exporter:
     environment:
       - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
@@ -174,6 +177,7 @@ services:
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
+    restart: unless-stopped
 
 secrets:
   django_secret:
