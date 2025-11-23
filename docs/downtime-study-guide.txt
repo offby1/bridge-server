@@ -40,7 +40,7 @@ Once I list most of them, I should study each to see if there are features I don
 - prometheus, grafana, &c
 - pytest
 - ruff
-  I've never figured out how to get it to sort imports.
+  I'm not sure it's properly sorting imports.
 - tailscale
   I don't really need this, and barely mention it in any of the files in this repo; but it's handy for fiddling around (in particular, it's got a built-in ssl-certificate-fetching thing), and fun.
 - uv

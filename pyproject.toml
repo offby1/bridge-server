@@ -99,6 +99,10 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 ignore = ["T201", "T203"]
+extend-select = ["I"]   # enable isort rules
+
+[tool.ruff.lint.isort]
+known-first-party = ["bridge"]  # optional but (in theory) helps grouping.  In practice, doesn't seem to do anything.
 
 [tool.coverage.run]
 dynamic_context = "test_function"
