@@ -1,6 +1,13 @@
 IN PROGRESS:
 
 STILL TODO:
+* Consider using a formal state machine library for the tournament.  Granted this is overkill, but why not.  Some likely-looking libraries:
+  - <https://python-statemachine.readthedocs.io/en/latest/>
+    Docs certainly look good.
+  - <https://github.com/pytransitions/transitions>
+  - <https://github.com/opsani/statesman>
+* Consider replacing the vulnerability and dealer columns in the "board" model with properties, since they can be easily computed from the board's display number.  Or maybe (Django 6 only) use those newfangled [generated field](https://docs.djangoproject.com/en/6.0/ref/models/fields/#django.db.models.GeneratedField)s.
+  [Holy Mother of God](https://chatgpt.com/share/69244ac2-e010-8013-bb32-bf0d5f0b22ba)
 * Consider https://data-star.dev/; aims to be easier to use than HTMX
 * It seems there's a "standard" notation for bridge hands -- [pbn](https://www.tistis.nl/pbn/).  Maybe support it?
   - Specifically, add "export to PBN" button to the hand archive page
