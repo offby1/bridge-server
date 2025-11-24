@@ -3,9 +3,9 @@ from __future__ import annotations
 import collections
 from typing import Any
 
+import pytest
 from django.contrib import auth
 
-import pytest
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
@@ -15,7 +15,6 @@ from bridge.table import Player as libPlayer
 
 from .models import AuctionError, Board, Hand, Player, board, hand
 from .testutils import set_auction_to
-
 from .views.hand import (
     _bidding_box_context_for_hand,
     _bidding_box_HTML_for_hand_for_player,
@@ -303,6 +302,72 @@ def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> N
     assert first_player is not None
     assert any("contract" in e for e in sent_events_by_channel[f"player:json:{first_player.pk}"])
     assert any("contract" in e for e in sent_events_by_channel[f"table:html:{h.pk}"])
+
+
+def test_board_attributes_from_display_number():
+    with pytest.raises(AssertionError):
+        board.board_attributes_from_display_number(display_number=0, rng_seeds=[])
+
+    class N_S:
+        pass
+
+    class E_W:
+        pass
+
+    class All:
+        pass
+
+    # See https://en.wikipedia.org/wiki/Board_%28bridge%29#Set_of_boards
+    expectations_by_board_number = {
+        1: ["N", None],
+        2: ["E", N_S],
+        3: ["S", E_W],
+        4: ["W", All],
+        5: ["N", N_S],
+        6: ["E", E_W],
+        7: ["S", All],
+        8: ["W", None],
+        9: ["N", E_W],
+        10: ["E", All],
+        11: ["S", None],
+        12: ["W", N_S],
+        13: ["N", All],
+        14: ["E", None],
+        15: ["S", N_S],
+        16: ["W", E_W],
+    }
+
+    for dn in range(1, 32):
+        expected = expectations_by_board_number[(dn - 1) % 16 + 1]
+
+        # e.g.
+        # {
+        #     "dealer": "N",
+        #     "display_number": 1,
+        #     "east_cards": "♣5♣7♣J♦6♦9♦T♦J♦Q♥4♥6♥7♠4♠T",
+        #     "ew_vulnerable": False,
+        #     "north_cards": "♣2♣6♦2♦5♦K♦A♥2♥9♠3♠6♠9♠J♠Q",
+        #     "ns_vulnerable": False,
+        #     "south_cards": "♣4♣8♣9♣A♦3♦8♥3♥5♥8♥T♠7♠8♠A",
+        #     "west_cards": "♣3♣T♣Q♣K♦4♦7♥J♥Q♥K♥A♠2♠5♠K",
+        # }
+        actual = board.board_attributes_from_display_number(display_number=dn, rng_seeds=[])
+        expected_vuln = None
+        match [actual["ew_vulnerable"], actual["ns_vulnerable"]]:
+            case [False, False]:
+                expected_vuln = None
+            case [False, True]:
+                expected_vuln = N_S
+            case [True, False]:
+                expected_vuln = E_W
+            case [True, True]:
+                expected_vuln = All
+            case _:
+                assert False, f"wtf is {actual=}"
+
+        simplified_actual = [actual["dealer"], expected_vuln]
+
+        assert simplified_actual == expected
 
 
 @pytest.mark.django_db

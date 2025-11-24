@@ -9,15 +9,15 @@ from typing import TYPE_CHECKING, Any
 
 import more_itertools
 
-from bridge.card import Card
-from bridge.seat import Seat
-
 # A "board" is a little tray with four slots, labeled "North", "East", "West", and "South".  The labels might be red,
 # indicating that that pair is vulnerable; or not.  https://en.wikipedia.org/wiki/Board_(bridge) One of the four slots
 # says "dealer" next to it.  In each slot are -- you guessed it -- 13 cards.  The board is thus a pre-dealt hand.
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
+
+from bridge.card import Card
+from bridge.seat import Seat
 
 from .common import SEAT_CHOICES
 
@@ -44,10 +44,12 @@ def board_attributes_from_display_number(
     display_number: int,
     rng_seeds: list[bytes],
 ) -> dict[str, Any]:
+    assert display_number > 0, f"{display_number=} should be > 0"
+
     disp_mod_16 = display_number % 16
     dealer = "NESW"[(disp_mod_16 - 1) % 4]
     only_ns_vuln = disp_mod_16 in (2, 5, 12, 15)
-    only_ew_vuln = disp_mod_16 in (3, 6, 9, 16)
+    only_ew_vuln = disp_mod_16 in (0, 3, 6, 9)
     all_vuln = disp_mod_16 in (4, 7, 10, 13)
 
     def deserialize_hand(cards: list[Card]) -> str:
