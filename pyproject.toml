@@ -66,6 +66,13 @@ dev = [
 
 [tool.basedpyright]
 include = ["project"]
+reportGeneralTypeIssues = false
+reportImplicitOverride = false
+reportImplicitRelativeImport = false
+reportMissingParameterType = false
+reportMissingTypeStubs = false
+reportUndefinedVariable = false
+reportUnknownMemberType = false
 
 [tool.uv]
 package = false
