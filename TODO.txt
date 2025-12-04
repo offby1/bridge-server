@@ -113,6 +113,14 @@ STILL TODO:
   I *think* "Getting a confirmed email address" is something that django, or a widely-used third-party library, can do for me.
 
 * Replace `app.models.tournament.check_for_expirations` with something more sensible
+  - Consider two dumb management commands.  One would be:
+    Run forever:
+      find the tournament for which signups are active, and whose signup period expires soonest.
+      if there is one, and if its deadline is not in the future:
+         do the "signup expired" stuff for that tournament (and of course mark it as "in progress")
+      sleep until the start of the next minute
+    The other would be pretty much the same, except it looks at the play expiration.
+    It might be nice to finish the "state-machine-for-tournaments" branch before doing this.
   - Would Celery work? if not,why not?
   - I've got a "django-q2" branch that uses a third-party scheduler; iirc it kinda mostly works.
   - https://github.com/rq/django-rq
