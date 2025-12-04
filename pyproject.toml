@@ -3,10 +3,10 @@ name = "bridge_server"
 version = "0.1.0"
 description = "An online bridge game"
 authors = [{ name = "Eric Hanchrow", email = "eric.hanchrow@gmail.com" }]
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
 dependencies = [
-    "django==5.*",
+    "django==6.*",
     "django-debug-toolbar",
     "django-extensions",
     "faker>=26.0.0,<27",
@@ -15,7 +15,6 @@ dependencies = [
     "bridge",
     "django-eventstream",
     "daphne",
-    "django-template-partials",
     "whitenoise[brotli]>=6.7.0,<7",
     "retrying>=1.3.4,<2",
     "sseclient",

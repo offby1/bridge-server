@@ -1,26 +1,25 @@
 import logging
 from typing import Any
 
+import django.db.models
+import django_tables2 as tables  # type: ignore[import-untyped]
 from django.db.models import Case, Value, When
-from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-import django.db.models
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
-import django_tables2 as tables  # type: ignore[import-untyped]
-
-from app.views import Forbid
-from app.views.misc import AuthedHttpRequest
 
 import app.models
 import app.models.tournament
 from app.utils.movements import Movement, _group_letter
+from app.views import Forbid
+from app.views.misc import AuthedHttpRequest
 
 from .misc import logged_in_as_player_required
-
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +120,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
         if not viewer_signup.exists():
             logger.debug("#%s's status is %s", t.display_number, t.status())
             if t.status() is app.models.tournament.OpenForSignup:
-                context["button"] = format_html(
+                context["button"] = SafeString(
                     """<button class="btn btn-primary" type="submit">Sign Me Up, Daddy-O</button>"""
                 )
         else:
@@ -137,7 +136,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 
             logger.debug(f"{non_synths_signed_up_besides_us.exists()=}")
             if not non_synths_signed_up_besides_us.exists():
-                context["speed_things_up_button"] = format_html(
+                context["speed_things_up_button"] = SafeString(
                     """<button class="btn btn-primary" type="submit">Skip the Deadline</button>"""
                 )
 
@@ -176,7 +175,7 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
     context = {"tournament_list": all_, "description": "", "button": ""}
 
     if not app.models.Tournament.objects.open_for_signups().exists():
-        context["button"] = format_html(
+        context["button"] = SafeString(
             """<button class="btn btn-primary" type="submit">Gimme new tournament, Yo</button>"""
         )
 

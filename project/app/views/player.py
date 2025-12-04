@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Any
 
+import django_tables2 as tables  # type: ignore[import-untyped]
 from django.contrib import messages as django_web_messages
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
@@ -24,23 +25,23 @@ from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape, format_html
-from django.utils.safestring import mark_safe, SafeString
+from django.utils.safestring import SafeString, mark_safe
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
-import django_tables2 as tables  # type: ignore[import-untyped]
 
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
+
+from . import Forbid
 from .misc import (
     AuthedHttpRequest,
     logged_in_as_player_required,
     make_tournament_filter_dropdown_list_items,
 )
-from . import Forbid
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
 
     possessive_noun = format_html("{}'s", subject.as_link())
     if subject == as_viewed_by:
-        possessive_noun = format_html("Your")
+        possessive_noun = SafeString("Your")
 
     if subject.partner == as_viewed_by:
         text = format_html("{} partner is, gosh, you!", possessive_noun)
@@ -516,7 +517,7 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
             and not self.has_partner
             and self.get_queryset().count() == 0
         ):
-            context["create_synth_partner_button"] = format_html(
+            context["create_synth_partner_button"] = SafeString(
                 """<button class="btn btn-primary" type="submit">Gimme synthetic partner, Yo</button>"""
             )
             context["create_synth_partner_next"] = (
