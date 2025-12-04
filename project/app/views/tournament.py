@@ -1,27 +1,25 @@
 import logging
 from typing import Any
 
+import django.db.models
+import django_tables2 as tables  # type: ignore[import-untyped]
 from django.db.models import Case, Value, When
-from django.template.response import TemplateResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-import django.db.models
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
-import django_tables2 as tables  # type: ignore[import-untyped]
-
-from app.views import Forbid
-from app.views.misc import AuthedHttpRequest
 
 import app.models
 import app.models.tournament
 from app.utils.movements import Movement, _group_letter
+from app.views import Forbid
+from app.views.misc import AuthedHttpRequest
 
 from .misc import logged_in_as_player_required
-
 
 logger = logging.getLogger(__name__)
 

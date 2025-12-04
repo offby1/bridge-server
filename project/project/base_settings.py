@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
