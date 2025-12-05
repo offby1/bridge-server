@@ -27,23 +27,22 @@ when any of those hands ends:
 
 import collections
 import datetime
-from typing import Generator
+from typing import Iterable
 
-from freezegun import freeze_time
 import pytest
+from freezegun import freeze_time
 
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
 
 from .testutils import play_out_hand, play_out_round
 
-
 SIGNUP_DEADLINE = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
 PLAY_COMPLETION_DEADLINE = SIGNUP_DEADLINE + datetime.timedelta(seconds=3600)
 
 
 @pytest.fixture
-def small_tournament_at_signup_deadline(db) -> Generator[Tournament]:
+def small_tournament_at_signup_deadline(db) -> Iterable[Tournament]:
     with freeze_time(SIGNUP_DEADLINE):
         # set signup deadline to be more or less "now"
         t: Tournament
@@ -67,7 +66,7 @@ def small_tournament_at_signup_deadline(db) -> Generator[Tournament]:
 
 
 @pytest.fixture
-def small_tournament_during_play(small_tournament_at_signup_deadline) -> Generator[Tournament]:
+def small_tournament_during_play(small_tournament_at_signup_deadline) -> Iterable[Tournament]:
     with freeze_time(SIGNUP_DEADLINE + (PLAY_COMPLETION_DEADLINE - SIGNUP_DEADLINE) // 2):
         _do_signup_expired_stuff(small_tournament_at_signup_deadline)
 

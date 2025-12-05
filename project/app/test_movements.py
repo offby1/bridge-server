@@ -1,13 +1,12 @@
 import collections
 import datetime
-from typing import Generator
+from typing import Iterable
 
-from freezegun import freeze_time
 import more_itertools
 import pytest
 import tabulate
-
 from django.contrib import auth
+from freezegun import freeze_time
 
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
@@ -16,7 +15,7 @@ from app.utils.movements import BoardGroup, Movement, Pair, PlayersAndBoardsForO
 from .testutils import play_out_hand
 
 
-def example_pairs(n: int) -> Generator[Pair]:
+def example_pairs(n: int) -> Iterable[Pair]:
     def ns_first(pair_name: str) -> tuple[bool, int]:
         direction, number = pair_name.split()
         return (bool(direction == "EW"), int(number))

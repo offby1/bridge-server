@@ -11,7 +11,7 @@
 """
 
 import datetime
-from typing import Generator
+from typing import Iterable
 
 import freezegun
 import pytest
@@ -114,7 +114,7 @@ def test_player_has_played_board(
 
 
 @pytest.fixture
-def tournament_starting_now(fresh_tournament: Hand) -> Generator[Hand]:
+def tournament_starting_now(fresh_tournament: Hand) -> Iterable[Hand]:
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
 
