@@ -1,17 +1,27 @@
 # How to auth
 
-## Scattered notes
-I seem to have a lot of these "ideas for better django auth" files scattered all over.
 
-- An "allauth" branch in this repo.  Works pretty well, but it'd be nice to not require a password to get things rolling.
-- A "django-passkeys" branch in this repo -- hopelessly broken
-- <https://python-social-auth.readthedocs.io/en/latest/configuration/django.html>
-- <https://django-oauth-toolkit.readthedocs.io/en/latest/>
+## An "allauth" branch in this repo.
+
+Works pretty well, but it'd be nice to not require a password to get things rolling.
+
+## A "django-passkeys" branch in this repo
+
+hopelessly broken
+
+## [python-social-auth](https://python-social-auth.readthedocs.io/en/latest/configuration/django.html)
+
+Looks pretty complex at first glance
+
+## [django-oauth-toolkit](https://django-oauth-toolkit.readthedocs.io/en/latest/)
+
   Haven't looked into this, but it seems to not be moribund
-- [ChatGPT](https://chatgpt.com/share/69346cfb-08cc-8013-abf6-e0f226a704fc) suggests [webauthn](https://github.com/duo-labs/py_webauthn)
-- Something called "[webauthn-rp](https://webauthn-rp.readthedocs.io/en/latest/index.html)" (see below)
 
-## webauthn-rp specifically
+## [py_webauthn](https://github.com/duo-labs/py_webauthn)
+
+as suggested by [ChatGPT](https://chatgpt.com/share/69346cfb-08cc-8013-abf6-e0f226a704fc)
+
+## [webauthn-rp](https://webauthn-rp.readthedocs.io/en/latest/index.html)
 
 ### How I got it working
 
@@ -25,7 +35,7 @@ Good Lord was it a pain in the ass getting it working on Mac.
 - If you invoke the code like `python -m flask --app examples.flask.app run  --host=localhost --port=6543`, that skips the database init step, so you get mysterious failures.
   The workaround: just do `python -m examples.flask.app`
 
-#### also Got it working on ubuntu 22.04 "jammy"
+### also Got it working on ubuntu 22.04 "jammy"
 
 ... but that's pointless now that I've managed to get it working on the Mac
 
@@ -57,3 +67,7 @@ index ced96f8..ee70fdd 100644
 multipass info --all # to get the VM's IP address
 ssh -L5000:localhost:5000 ubuntu@192.168.65.14`
 ```
+## auth0
+They're some sorta web service, which apparently I signed up for.  I haven't looked into it at all yet.
+
+https://manage.auth0.com/dashboard/
