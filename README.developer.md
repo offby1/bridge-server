@@ -60,9 +60,9 @@ Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
 `DEPLOYMENT_ENVIRONMENT` will be `"staging"` on the laptop, and `"production"` elsewhere.  When running on the laptop, you can fool it into thinking it's production by invoking e.g. `DJANGO_SETTINGS_MODULE=project.prod_settings HOSTNAME=yeah.im.production.trustme just dcu`
 
 - `just prod` does what `just dcu` does, plus:
-  - it deploys to a docker context named "hetz-prod", instead of locally.
+  - it deploys to a docker context named "hetz-bridge", instead of locally.
     - you need to have prepared a host as per [this](docs/README.ubuntu-hetz.setup.md)
-    - `docker context create hetz-prod --docker "host=ssh://ubuntu@your-hetzner-host"`
+    - `docker context create hetz-bridge --docker "host=ssh://ubuntu@your-hetzner-host"`
     - no, of course it doesn't have to be Hetzner; that's just the one hosting provider for which I've written up detailed instructions.
 
   - it enables the "prod" profile, which includes "caddy", which is a TLS-doing reverse proxy *that gets TLS certificates for me automatically* 🎉

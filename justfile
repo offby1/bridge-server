@@ -314,7 +314,7 @@ prod: deploy-prerequisites
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export DOCKER_CONTEXT=hetz-prod
+    export DOCKER_CONTEXT=hetz-bridge
     export GIT_VERSION="$(cat project/VERSION)"
 
     docker compose up --build --detach

@@ -8,9 +8,9 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 - accepted the default SSH pub key that I'd already uploaded
 - activated the firewall I've already created, named "ssh and https"
 - clicked "Create and Buy Now"
-- copied the IP address of the newly-created machine into the `Host hetz-prod` stanza of `~/.ssh/config`, as the `hostname` entry
+- copied the IP address of the newly-created machine into the `Host hetz-bridge` stanza of `~/.ssh/config`, as the `hostname` entry
 
-- `ssh root@hetz-prod`, then (these manual steps are being obviated by [an ansible setup](https://gitlab.com/offby1/ansible-inventory)):
+- `ssh root@hetz-bridge`, then (these manual steps are being obviated by [an ansible setup](https://gitlab.com/offby1/ansible-inventory)):
 
 ```shell
 # vi /etc/ssh/sshd_config
@@ -23,8 +23,8 @@ On Hetzner (Ubuntu VERSION="24.04.1 LTS (Noble Numbat)") here's what I had to do
 # exit
 ```
 
-Now `ssh hetz-prod` and make sure it just says "Permission denied", as opposed to prompting for a password!!
-If that's all good, do `ssh root@hetz-prod` again and continue ...
+Now `ssh hetz-bridge` and make sure it just says "Permission denied", as opposed to prompting for a password!!
+If that's all good, do `ssh root@hetz-bridge` again and continue ...
 
 ```shell
 # apt update
@@ -51,5 +51,5 @@ $ exit
 ```
 
 - On my laptop:
-  - update `~/.ssh/config` so that I can just "ssh hetz-prod"
-  - `docker context create hetz-prod --docker "host=ssh://ubuntu@hetz-prod"`
+  - update `~/.ssh/config` so that I can just "ssh hetz-bridge"
+  - `docker context create hetz-bridge --docker "host=ssh://ubuntu@hetz-bridge"`
