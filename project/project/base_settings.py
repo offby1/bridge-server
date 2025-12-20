@@ -98,6 +98,14 @@ INSTALLED_APPS = [
 
 FASTDEV_STRICT_IF = True
 
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = (
+    31536000  # https://docs.djangoproject.com/en/6.0/ref/middleware/#http-strict-transport-security
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
 # This works because tailscale's "serve" and "funnel" commands set these headers for us.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True

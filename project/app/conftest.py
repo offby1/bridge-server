@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True, scope="function")
+def no_ssl_redirect(settings) -> None:
+    settings.SECURE_SSL_REDIRECT = False
+
+
+@pytest.fixture(autouse=True, scope="function")
 def clear_django_cache(settings):
     settings.CACHES = {
         "default": {
