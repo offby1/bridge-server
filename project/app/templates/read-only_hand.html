@@ -5,7 +5,9 @@
 {% endblock title %}
 {% block content %}
     <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
-        <h2>Review of {{ terse_description }}</h2>
+        <h2>
+            Review of {{ terse_description }}, played at {{ hand.last_action_time }} {{ hand.last_action_time | date:"e" }}
+        </h2>
         <h2>{{ hand.auction.status }}</h2>
         <h1>{{ score }}</h1>
     </div>
