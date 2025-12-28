@@ -6,12 +6,15 @@
 
 * git (`sudo apt install git`)
 * just (`sudo apt install snapd && sudo snap install --edge --classic just`)
-* docker & docker-compose (`sudo apt install docker-compose-v2`)
+* docker & docker-compose
+  - `sudo apt install docker-compose-v2`
   - `sudo usermod --append --groups docker $USER`
   - `exit`
   - start a new shell.  This gets you a login where you are a member of the "docker" group.
 * jq (`sudo apt install jq`)
-* uv (TBD)
+* uv
+  - `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  - `exec $SHELL`
 
 ### Debian 12 ("bookworm")
 
@@ -64,7 +67,6 @@ Optional but slick. `uv tool install pre-commit --with pre-commit-uv`
     - you need to have prepared a host as per [this](docs/README.ubuntu-hetz.setup.md)
     - `docker context create hetz-bridge --docker "host=ssh://ubuntu@your-hetzner-host"`
     - no, of course it doesn't have to be Hetzner; that's just the one hosting provider for which I've written up detailed instructions.
-
   - it enables the "prod" profile, which includes "caddy", which is a TLS-doing reverse proxy *that gets TLS certificates for me automatically* 🎉
 
 ## Using curl to examine event stream
