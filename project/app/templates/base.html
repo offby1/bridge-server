@@ -32,7 +32,7 @@
                         {% include "bot-checkbox.html" with error_message="" %}
                         <form method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
-                            <input type="submit" value="logout" />
+                            <input type="submit" value="logout" class="btn btn-outline-danger btn-sm" />
                             <input type="hidden" name="next" value="/" />
                         </form>
                     {% else %}
