@@ -233,3 +233,13 @@ li h2 {
 .active {
     background-color: lightgreen;
 }
+
+.nav-link {
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    transform: translateX(4px);
+}
