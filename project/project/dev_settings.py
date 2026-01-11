@@ -21,7 +21,7 @@ if os.environ.get("PYINSTRUMENT", "").lower().startswith("t"):
     MIDDLEWARE = ["pyinstrument.middleware.ProfilerMiddleware"] + MIDDLEWARE
 
 INSTALLED_APPS.append("django_browser_reload")
-INSTALLED_APPS.append("django_watchfiles")
+# INSTALLED_APPS.append("django_watchfiles")  # Temporarily disabled due to Django 6.0 compatibility issue
 MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 LOGGING["loggers"]["django.channels.server"]["level"] = logging.WARNING  # type: ignore  [index]
