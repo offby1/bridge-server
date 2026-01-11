@@ -13,6 +13,7 @@ DEBUG = False
 # "staging": running on my laptop with docker
 # "production": running on my EC2 box or some other cloud server, with docker
 DEPLOYMENT_ENVIRONMENT = "production" if os.getenv("COMPOSE_PROFILES") == "prod" else "staging"
+SECURE_SSL_REDIRECT = True
 
 if DEPLOYMENT_ENVIRONMENT == "production":
     LOGGING["handlers"]["console"]["level"] = "INFO"
