@@ -231,7 +231,8 @@ li h2 {
 }
 
 .active {
-    background-color: lightgreen;
+    background-color: #d4edda; /* Bootstrap success light */
+    border-left: 4px solid #28a745; /* Accent border */
 }
 
 .nav-link {
