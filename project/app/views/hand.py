@@ -4,17 +4,15 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Callable
 
-import bridge.seat
-import bridge.xscript
-from bridge.auction import Auction
+import django_tables2 as tables  # type: ignore[import-untyped]
 from django.conf import settings
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
+from django.db.models.query import QuerySet
 from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseForbidden,
 )
-from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
-from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
@@ -24,9 +22,10 @@ from django.utils.safestring import SafeString
 from django.views.decorators.http import require_http_methods
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
-import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
+import bridge.seat
+import bridge.xscript
 from app.models.common import attribute_names
 from app.models.types import PK
 from app.models.utils import assert_type
@@ -36,13 +35,14 @@ from app.views.misc import (
     logged_in_as_player_required,
     make_tournament_filter_dropdown_list_items,
 )
+from bridge.auction import Auction
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Iterable
 
-    from bridge.xscript import HandTranscript
-    import datetime
     from app.models.hand import AllFourSuitHoldings, Hand
+    from bridge.xscript import HandTranscript
 
 
 logger = logging.getLogger(__name__)
@@ -757,7 +757,7 @@ class HandListView(tables.SingleTableMixin, FilterView):
         assert self.model is not None
         qs = self.model.objects.select_related(
             "board", "board__tournament", *attribute_names, *amended_attr_names
-        )
+        ).order_by("-board_id")
         if played_by is not None:
             qs = qs.filter(app.models.Hand.has_player(played_by))
         return qs
