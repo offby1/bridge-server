@@ -1,6 +1,12 @@
 IN PROGRESS:
 
 STILL TODO:
+* `create_insecure_superuser` should *check* if the admin already exists, and not try to create it if so.  Currently it spews a scary warning and then says "oh wait, ignore that warning"
+* /hand/ ought to list the most-recent hands first.
+* "Claim" and "Concede" buttons, at least if you're declarer
+
+  Might want endplay to check if the claim is guaranteed, and reject it if not.
+
 * Consider using a formal state machine library for the tournament.  Granted this is overkill, but why not.  Some likely-looking libraries:
   - <https://python-statemachine.readthedocs.io/en/latest/>
     Docs certainly look good.
@@ -205,8 +211,6 @@ STILL TODO:
   Return a 50whatever "throttled" response to any play or call post that comes too soon after the previous one.  Include a header that says when it's OK to try again.  That header's time should be e.g. one second in the future.  I might have to teach the browser to automatically retry; the alternative would be an annoying popup.  If the latter, at least I should show some visual thingy that makes it clear when it's OK to call or play.  (A shrinking bar, maybe?)
 
   Perhaps allow each table to set its own tempo, down to some minimum that will keep the server unstressed, and the browsers capable of following along (1/2 second might be OK).
-
-* "Claim" and "Concede" buttons, at least if you're declarer
 
 * when brenda speaks to james, but james' browser is looking at anything other than brenda's page, james needs to get an alert.
   In particular: I should make this like every other website with built-in chat:
