@@ -14,3 +14,4 @@
 /README.*.html
 __pycache__/
 /.dmypy.json
+/.claude/

@@ -32,7 +32,7 @@
                         {% include "bot-checkbox.html" with error_message="" %}
                         <form method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
-                            <input type="submit" value="logout" />
+                            <input type="submit" value="logout" class="btn btn-outline-danger btn-sm" />
                             <input type="hidden" name="next" value="/" />
                         </form>
                     {% else %}
@@ -103,12 +103,17 @@
     </div>
     <div class="row"></div>
     {% if messages %}
-        <div>
-            <ul class="messages">
-                {% for message in messages %}
-                    <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
+                     role="alert">
+                    {{ message }}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
         </div>
     {% endif %}
     <div id="content" class="container">
