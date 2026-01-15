@@ -10,6 +10,7 @@
 /project/htmlcov/
 /project/prof/
 /project/static_root/*
+!/project/static_root/.gitkeep
 /project/VERSION
 /README.*.html
 __pycache__/

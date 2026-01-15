@@ -113,7 +113,11 @@ manage *options: all-but-django-prep ensure-skeleton-key version-file
     cd project && uv run python manage.py {{ options }}
 
 [group('django')]
-collectstatic: (manage "collectstatic --no-input")
+[script('bash')]
+collectstatic:
+    set -euxo pipefail
+    mkdir -p project/static_root
+    cd project && uv run python manage.py collectstatic --no-input --clear && touch static_root/.gitkeep
 
 [group('django')]
 fixture *options: pg-stop drop migrate (manage "loaddata " + options) (manage "update_redundant_fields")
@@ -234,6 +238,21 @@ test *options: makemigrations mypy collectstatic
 # Fast tests (i.e., run in parallel)
 [group('development')]
 ft *options: (t "-n 8 " + options)
+
+# Run UI tests with Playwright (visible browser)
+[group('development')]
+ui-test *options: collectstatic
+    cd project && uv run pytest -m playwright --headed {{ options }}
+
+# Run UI tests in headless mode (faster, for CI)
+[group('development')]
+ui-test-headless *options: collectstatic
+    cd project && uv run pytest -m playwright {{ options }}
+
+# Run UI tests on mobile viewport
+[group('development')]
+ui-test-mobile *options: collectstatic
+    cd project && uv run pytest -m playwright --headed --device="iPhone 12" {{ options }}
 
 # Display coverage from a test run
 [group('development')]
