@@ -78,5 +78,7 @@ class SocialSignupForm(forms.Form):
         user = self.sociallogin.user
         user.username = self.cleaned_data["username"]
         user.save()
-        # Player creation is handled by CustomSocialAccountAdapter.save_user()
+        # Create Player object if it doesn't exist
+        if not hasattr(user, "player"):
+            Player.objects.create(user=user)
         return user
