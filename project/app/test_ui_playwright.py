@@ -117,9 +117,6 @@ def test_four_hands_mobile_layout_stacks_vertically(page: Page, live_server, com
     )
 
 
-@pytest.mark.skip(
-    reason="CSS not served by Django test server - pseudo-elements require static files"
-)
 @pytest.mark.django_db(transaction=True)
 def test_four_hands_mobile_shows_compass_labels(page: Page, live_server, completed_hand):
     """
@@ -219,9 +216,6 @@ def test_login_page_loads(page: Page, live_server):
     # For visual regression testing with CSS, consider using production/staging environment.
 
 
-@pytest.mark.skip(
-    reason="CSS not served by Django test server - wrapping tests require static files"
-)
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.slow
 def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_hand):
