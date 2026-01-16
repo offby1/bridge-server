@@ -1,6 +1,6 @@
 # Deploying Google OAuth to Production
 
-This guide explains how to securely deploy your Google OAuth credentials to the production server.
+This guide explains how to deploy your Google OAuth credentials to production. The credentials stay on your **local machine** and are securely transmitted to the production host during deployment via Docker secrets.
 
 ## Prerequisites
 
@@ -10,62 +10,30 @@ This guide explains how to securely deploy your Google OAuth credentials to the 
    - `https://bridge.offby1.info/accounts/google/login/callback/` (production)
    - `https://beta.bridge.offby1.info/accounts/google/login/callback/` (beta)
    - `http://localhost:9000/accounts/google/login/callback/` (development)
+4. Your credentials are saved locally at:
+   - `~/Library/Application Support/info.offby1.bridge/google_oauth_client_id`
+   - `~/Library/Application Support/info.offby1.bridge/google_oauth_client_secret`
 
-## Step 1: Copy Credentials to Production Host
+## How It Works
 
-From your local machine, securely copy the credentials using `scp`:
+The deployment follows the same pattern as your existing Django secrets:
 
-```bash
-# Copy client ID
-scp ~/Library/Application\ Support/info.offby1.bridge/google_oauth_client_id \
-    ubuntu@YOUR_PROD_IP:~/google_oauth_client_id
+1. `just prod` reads credential files from **your local machine**
+2. Exports them as environment variables
+3. Docker Compose (via SSH context) sends these to the production host
+4. Docker creates secrets from the environment variables
+5. Django container reads them from `/run/secrets/`
 
-# Copy client secret
-scp ~/Library/Application\ Support/info.offby1.bridge/google_oauth_client_secret \
-    ubuntu@YOUR_PROD_IP:~/google_oauth_client_secret
-```
+**Important:** Credentials never need to be manually copied to the production host. They're transmitted securely during deployment.
 
-Replace `YOUR_PROD_IP` with your actual production server IP or hostname.
+## Step 1: Configure Environment Variables
 
-## Step 2: Place Credentials Securely on Host
-
-SSH to your production server and move the credentials to a secure location:
-
-```bash
-ssh ubuntu@YOUR_PROD_IP
-
-# Create secure directory for secrets (if it doesn't exist)
-sudo mkdir -p /opt/bridge/secrets
-sudo chown ubuntu:ubuntu /opt/bridge/secrets
-chmod 700 /opt/bridge/secrets
-
-# Move credentials there
-mv ~/google_oauth_client_id /opt/bridge/secrets/
-mv ~/google_oauth_client_secret /opt/bridge/secrets/
-
-# Set restrictive permissions (only owner can read)
-chmod 600 /opt/bridge/secrets/google_oauth_*
-
-# Verify permissions
-ls -la /opt/bridge/secrets/
-```
-
-Expected output:
-```
-drwx------ 2 ubuntu ubuntu 4096 ... .
-drwxr-xr-x 3 ubuntu ubuntu 4096 ... ..
--rw------- 1 ubuntu ubuntu   72 ... google_oauth_client_id
--rw------- 1 ubuntu ubuntu   40 ... google_oauth_client_secret
-```
-
-## Step 3: Configure Environment Variables
-
-On your **local machine** (where you run `just prod`), ensure these environment variables are set before deployment:
+On your **local machine** (where you run `just prod`), set these environment variables to point to your local credential files:
 
 ```bash
 # Add to your shell profile (~/.zshrc, ~/.bashrc, or ~/.profile)
-export GOOGLE_OAUTH_CLIENT_ID_FILE="/opt/bridge/secrets/google_oauth_client_id"
-export GOOGLE_OAUTH_CLIENT_SECRET_FILE="/opt/bridge/secrets/google_oauth_client_secret"
+export GOOGLE_OAUTH_CLIENT_ID_FILE="$HOME/Library/Application Support/info.offby1.bridge/google_oauth_client_id"
+export GOOGLE_OAUTH_CLIENT_SECRET_FILE="$HOME/Library/Application Support/info.offby1.bridge/google_oauth_client_secret"
 ```
 
 Reload your shell:
@@ -73,7 +41,7 @@ Reload your shell:
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
-## Step 4: Deploy
+## Step 2: Deploy
 
 Now deploy normally using:
 
@@ -82,12 +50,12 @@ just prod
 ```
 
 The `prod` recipe will:
-1. Read the credential files from the production host paths you specified
+1. Read the credential files from **your local machine**
 2. Export them as environment variables
-3. Docker Compose will inject them as secrets into the Django container
-4. Django will read them at `/run/secrets/google_oauth_client_id` and `/run/secrets/google_oauth_client_secret`
+3. Docker Compose sends them to the production host and injects them as secrets into the Django container
+4. Django reads them at `/run/secrets/google_oauth_client_id` and `/run/secrets/google_oauth_client_secret`
 
-## Step 5: Verify Deployment
+## Step 3: Verify Deployment
 
 After deployment, check that OAuth is working:
 
@@ -111,10 +79,10 @@ docker context use hetz-bridge
 docker compose exec django sh -c 'ls -la /run/secrets/google_oauth_*'
 ```
 
-If files are missing, verify:
-1. Environment variables are set on your local machine
-2. Files exist at the paths specified in the environment variables
-3. You have SSH access to read the files on the remote host
+If files are missing, verify on your **local machine** (where you run `just prod`):
+1. Environment variables are set: `echo $GOOGLE_OAUTH_CLIENT_ID_FILE`
+2. Files exist at those paths: `ls -la "$GOOGLE_OAUTH_CLIENT_ID_FILE"`
+3. Files contain the credentials (not empty): `cat "$GOOGLE_OAUTH_CLIENT_ID_FILE"`
 
 ### OAuth redirect URI mismatch
 
@@ -148,28 +116,35 @@ site.save()
 ## Security Notes
 
 1. **Never commit credentials to git** - They're loaded from files outside the repo
-2. **File permissions** - Credentials should be `chmod 600` (owner read/write only)
-3. **Directory permissions** - Secret directory should be `chmod 700` (owner access only)
+2. **Credentials stay local** - Files remain on your local machine; they're transmitted securely during deployment via SSH
+3. **File permissions** - Local credential files should be `chmod 600` (owner read/write only)
 4. **Backup** - Keep a secure backup of your OAuth credentials (password manager, etc.)
-5. **Rotation** - If credentials are compromised, regenerate them in Google Cloud Console and redeploy
+5. **Rotation** - If credentials are compromised, regenerate them in Google Cloud Console, update your local files, and redeploy
 
 ## Beta Environment
 
-For beta deployment, use the same steps but:
-1. Use beta server IP/hostname
-2. Ensure credentials are at the same paths on the beta host
-3. Run `just beta` instead of `just prod`
+For beta deployment:
+1. Ensure the same environment variables are set on your local machine (they point to the same local credential files)
+2. Run `just beta` instead of `just prod`
 
-The beta environment will use the same OAuth app, but ensure the beta redirect URI is registered:
+The beta environment will use the same OAuth app (same credentials), but ensure the beta redirect URI is registered:
 ```
 https://beta.bridge.offby1.info/accounts/google/login/callback/
 ```
 
 ## Optional: Disabling OAuth
 
-If you want to temporarily disable OAuth without removing the credentials:
+If you want to temporarily disable OAuth:
+
+1. **On your local machine**, unset the environment variables:
+   ```bash
+   unset GOOGLE_OAUTH_CLIENT_ID_FILE
+   unset GOOGLE_OAUTH_CLIENT_SECRET_FILE
+   ```
+2. Redeploy with `just prod`
+
+Or:
 
 1. Remove the redirect URIs from Google Cloud Console (OAuth will fail gracefully)
-2. Or, delete the credential files from `/opt/bridge/secrets/` on the host
 
 The Django app is designed to work without OAuth credentials - the "Sign in with Google" button simply won't appear if credentials aren't configured.
