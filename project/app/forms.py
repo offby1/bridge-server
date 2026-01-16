@@ -49,6 +49,12 @@ class SocialSignupForm(SocialAccountSignupForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Remove email confirmation field (not needed for OAuth)
+        if "email2" in self.fields:
+            del self.fields["email2"]
+        # Remove email field (comes from OAuth provider)
+        if "email" in self.fields:
+            del self.fields["email"]
         # Customize the username field
         self.fields["username"].widget.attrs.update(
             {"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
