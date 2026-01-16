@@ -81,6 +81,32 @@ class SocialSignupFormTestCase(TestCase):
         self.assertIn("username", form.errors)
         self.assertIn("already taken", str(form.errors["username"]))
 
+    def test_try_save_returns_tuple(self):
+        """Test that try_save() returns a tuple of (user, response)."""
+        # Create a user
+        user = User(username="", email="test@example.com")
+
+        # Create a simple mock sociallogin
+        class MockSocialLogin:
+            def __init__(self, user):
+                self.user = user
+
+        # Create form with data
+        form = SocialSignupForm(
+            data={"username": "testuser"},
+            sociallogin=MockSocialLogin(user),
+        )
+
+        self.assertTrue(form.is_valid())
+
+        # try_save should return a tuple
+        result = form.try_save(request=None)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        returned_user, response = result
+        self.assertEqual(returned_user.username, "testuser")
+        self.assertIsNone(response)
+
 
 class CustomSocialAccountAdapterTestCase(TestCase):
     """Test the CustomSocialAccountAdapter."""

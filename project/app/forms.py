@@ -69,7 +69,8 @@ class SocialSignupForm(forms.Form):
 
     def try_save(self, request):
         """Try to save the form. Called by allauth during signup flow."""
-        return self.save(request)
+        user = self.save(request)
+        return user, None  # Return tuple of (user, response)
 
     def save(self, request):
         """Save the user with the chosen username. Called by allauth."""
