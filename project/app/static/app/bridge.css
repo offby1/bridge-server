@@ -148,14 +148,20 @@ body {
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 
 ul.carousel {
-  width: 80vw;
-  height: 90%;
+  width: 100vw; /* Use full width on mobile */
+  height: 90vh;
   display: flex;
   anchor-name: --my-carousel;
   overflow-x: scroll;
   scroll-marker-group: after;
   scroll-snap-type: x mandatory;
   anchor-name: --myCarousel;
+}
+
+@media (min-width: 768px) {
+  ul.carousel {
+    width: 85vw; /* Narrower on desktop */
+  }
 }
 
 ul.carousel::scroll-button(*) {
@@ -254,13 +260,31 @@ li.carousel {
     flex-direction: row;
     align-items: center;
     gap: 0.25rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     div { span, button {width: 2em; }}
 }
+
+.spades div, .hearts div, .diamonds div, .clubs div {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease;
+}
+
+.spades div:hover, .hearts div:hover, .diamonds div:hover, .clubs div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .hearts, .diamonds {
-    color: red;
+    color: #dc3545; /* Bootstrap danger red - more vibrant */
 }
 .spades, .clubs {
-    color: black;
+    color: #212529; /* True black */
 }
 
 /* Mobile optimization for four-hands view only: readable cards that fit 13 cards in a row */
@@ -283,6 +307,21 @@ li.carousel {
         gap: 0.3rem;
         padding: 0.3rem;
     }
+
+    /* Compact Mobile Card Layout - general improvements */
+    .spades, .hearts, .diamonds, .clubs {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .bigfont {
+        font-size: clamp(1.25rem, 3vh, 2rem); /* Even smaller on mobile */
+    }
+
+    .hand {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
 }
 
 .hand {
@@ -298,6 +337,17 @@ li.carousel {
 
 li h2 {
     text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+@media (max-width: 767px) {
+    li h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
 }
 
 .three-by-three-trick-display {
