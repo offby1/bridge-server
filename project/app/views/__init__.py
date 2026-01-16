@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.contrib import messages as django_web_messages
 from django.http import (
     HttpResponse,
@@ -12,7 +11,6 @@ from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import escape, format_html
-from django.utils.safestring import mark_safe
 
 from app.forms import SignupForm
 
@@ -20,13 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 def home_view(request):
-    if settings.DEPLOYMENT_ENVIRONMENT == "development":
-        django_web_messages.add_message(
-            request,
-            django_web_messages.INFO,
-            mark_safe("Hey! I am an alert."),
-        )
-
     if hasattr(request.user, "player"):
         return HttpResponseRedirect(reverse("app:player", kwargs={"pk": request.user.player.pk}))
     return render(request, "home.html")
