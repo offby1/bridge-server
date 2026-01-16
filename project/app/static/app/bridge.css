@@ -310,8 +310,13 @@ li.carousel {
 
     /* Compact Mobile Card Layout - general improvements */
     .spades, .hearts, .diamonds, .clubs {
-        flex-wrap: wrap;
-        gap: 0.5rem;
+        flex-wrap: nowrap; /* Keep cards in single row */
+        gap: 0.1rem; /* Minimal gap between cards */
+        padding: 0.2rem; /* Reduce container padding */
+    }
+
+    .spades div, .hearts div, .diamonds div, .clubs div {
+        padding: 0.1rem 0.15rem; /* Minimal padding on cards */
     }
 
     .bigfont {
