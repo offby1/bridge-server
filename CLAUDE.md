@@ -255,6 +255,19 @@ just k "test_hand and auction"   # Pattern matching
 
 **Coverage**: `just test` generates HTML report in `htmlcov/`. Open `htmlcov/index.html` in browser.
 
+### Code Quality Checks
+
+**CRITICAL**: Always run `just mypy` before committing code. Type checking must pass.
+
+Pre-commit hooks will run automatically on `git commit`:
+- Trailing whitespace removal
+- Django-upgrade (auto-updates Django API usage)
+- Ruff linting and formatting
+- djLint (Django template linting)
+- Justfile formatting
+
+If hooks fail, they may auto-fix issues. Review changes and re-commit.
+
 ### Database Migrations
 
 **Creating migrations**: Django automatically detects model changes.

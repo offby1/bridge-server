@@ -194,6 +194,8 @@ def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_
 
     # On desktop, East and West should be roughly at the same vertical position
     # (side by side, not stacked)
+    assert east_box is not None, "East hand element not found"
+    assert west_box is not None, "West hand element not found"
     assert abs(east_box["y"] - west_box["y"]) < 50, (
         "East and West should be side-by-side on desktop"
     )
@@ -256,10 +258,14 @@ def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_ha
             if len(cards) > 1:
                 # Check that all cards are roughly at the same vertical position
                 # (i.e., they're in a single row, not wrapped)
-                first_card_y = cards[0].bounding_box()["y"]
+                first_card_box = cards[0].bounding_box()
+                assert first_card_box is not None, f"First {suit} card not visible"
+                first_card_y = first_card_box["y"]
 
                 for card in cards[1:]:
-                    card_y = card.bounding_box()["y"]
+                    card_box = card.bounding_box()
+                    assert card_box is not None, f"{suit} card not visible"
+                    card_y = card_box["y"]
                     # Allow small variance (5px) for alignment
                     assert abs(card_y - first_card_y) < 5, (
                         f"{suit} cards wrapped to multiple rows on mobile"
