@@ -95,7 +95,7 @@ def test_four_hands_mobile_layout_stacks_vertically(page: Page, live_server, com
     page.goto(f"{live_server.url}/accounts/login/")
     page.fill('input[name="username"]', user.username)
     page.fill('input[name="password"]', "testpass123")
-    page.click('input[type="submit"]')
+    page.click('button[type="submit"]')
 
     # Navigate to completed hand
     page.goto(f"{live_server.url}/hand/{hand.pk}/")
@@ -136,7 +136,7 @@ def test_four_hands_mobile_shows_compass_labels(page: Page, live_server, complet
     page.goto(f"{live_server.url}/accounts/login/")
     page.fill('input[name="username"]', user.username)
     page.fill('input[name="password"]', "testpass123")
-    page.click('input[type="submit"]')
+    page.click('button[type="submit"]')
 
     # Navigate to completed hand
     page.goto(f"{live_server.url}/hand/{hand.pk}/")
@@ -178,7 +178,7 @@ def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_
     page.goto(f"{live_server.url}/accounts/login/")
     page.fill('input[name="username"]', user.username)
     page.fill('input[name="password"]', "testpass123")
-    page.click('input[type="submit"]')
+    page.click('button[type="submit"]')
 
     # Set desktop viewport BEFORE navigating so CSS media queries apply correctly
     page.set_viewport_size({"width": 1280, "height": 800})
@@ -239,7 +239,7 @@ def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_ha
     page.goto(f"{live_server.url}/accounts/login/")
     page.fill('input[name="username"]', user.username)
     page.fill('input[name="password"]', "testpass123")
-    page.click('input[type="submit"]')
+    page.click('button[type="submit"]')
     page.goto(f"{live_server.url}/hand/{hand.pk}/")
 
     # Check each suit in North hand (visible because open_access=True)
