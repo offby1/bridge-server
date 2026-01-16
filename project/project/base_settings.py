@@ -198,17 +198,17 @@ SOCIALACCOUNT_FORMS = {
 }
 
 # Google OAuth settings
-SOCIALACCOUNT_PROVIDERS = {}
-if GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET:
-    SOCIALACCOUNT_PROVIDERS["google"] = {
+# Note: OAuth credentials are stored in the database via SocialApp model,
+# not in settings. The setup_oauth management command creates/updates the
+# SocialApp object automatically on deployment.
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {"access_type": "online"},
-        "APP": {
-            "client_id": GOOGLE_OAUTH_CLIENT_ID,
-            "secret": GOOGLE_OAUTH_CLIENT_SECRET,
-            "key": "",
-        },
+        # Don't define APP here - it creates a duplicate in-memory SocialApp
+        # alongside the database SocialApp, causing MultipleObjectsReturned errors
     }
+}
 
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
 
