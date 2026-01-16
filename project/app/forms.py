@@ -60,6 +60,10 @@ class SocialSignupForm(forms.Form):
         kwargs.pop("email_addresses", None)
         super().__init__(*args, **kwargs)
 
+    def try_save(self, request):
+        """Try to save the form. Called by allauth during signup flow."""
+        return self.save(request)
+
     def save(self, request):
         """Save the user with the chosen username. Called by allauth."""
         # Get the user from the sociallogin object
