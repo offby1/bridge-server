@@ -241,18 +241,18 @@ ft *options: (t "-n 8 " + options)
 
 # Run UI tests with Playwright (visible browser)
 [group('development')]
-ui-test *options: collectstatic
-    cd project && uv run pytest -m playwright --headed {{ options }}
+ui-test *options:
+    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright --headed {{ options }}
 
 # Run UI tests in headless mode (faster, for CI)
 [group('development')]
-ui-test-headless *options: collectstatic
-    cd project && uv run pytest -m playwright {{ options }}
+ui-test-headless *options:
+    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright {{ options }}
 
 # Run UI tests on mobile viewport
 [group('development')]
-ui-test-mobile *options: collectstatic
-    cd project && uv run pytest -m playwright --headed --device="iPhone 12" {{ options }}
+ui-test-mobile *options:
+    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright --headed --device="iPhone 12" {{ options }}
 
 # Display coverage from a test run
 [group('development')]

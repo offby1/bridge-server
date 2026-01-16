@@ -171,14 +171,14 @@ def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_
     hand, users_players = completed_hand
     user, player = users_players[0]
 
+    # Set desktop viewport BEFORE navigating so CSS media queries apply correctly
+    page.set_viewport_size({"width": 1280, "height": 800})
+
     # Login
     page.goto(f"{live_server.url}/accounts/login/")
     page.fill('input[name="username"]', user.username)
     page.fill('input[name="password"]', "testpass123")
     page.click('button[type="submit"]')
-
-    # Set desktop viewport BEFORE navigating so CSS media queries apply correctly
-    page.set_viewport_size({"width": 1280, "height": 800})
 
     # Navigate to completed hand
     page.goto(f"{live_server.url}/hand/{hand.pk}/")

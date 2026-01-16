@@ -28,17 +28,20 @@ DATABASES = {
     },
 }
 
-# Use WhiteNoise but with a simpler storage backend for tests
-# This allows serving static files directly from app directories without collectstatic
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",  # No manifest needed
-    }
-}
-
-# For tests, we want to serve static files from app directories
-# WhiteNoise will handle this when DEBUG=True
+# For tests, enable DEBUG mode to serve static files without collectstatic
+# WhiteNoise will serve files from app static directories when DEBUG=True
 DEBUG = True
+
+# Use Django's default static files storage for tests (no compression, no manifest)
+# This allows serving files directly from app directories without running collectstatic
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # Disable some security features that interfere with test server
 SESSION_COOKIE_SECURE = False
