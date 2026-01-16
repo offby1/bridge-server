@@ -1,5 +1,5 @@
-from allauth.socialaccount.forms import (
-    SignupForm as SocialAccountSignupForm,  # type: ignore [import-untyped]
+from allauth.socialaccount.forms import (  # type: ignore [import-untyped]
+    SignupForm as SocialAccountSignupForm,
 )
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
