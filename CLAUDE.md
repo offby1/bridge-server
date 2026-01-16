@@ -25,7 +25,14 @@ just ft                 # Fast tests (parallel, 8 workers via pytest-xdist)
 just t                  # Tests with exitfirst and failed-first
 just k <pattern>        # Run specific test by name (e.g., just k hand_events)
 just mypy               # Type checking with dmypy daemon
+
+# UI Tests (Playwright)
+just ui-test-headless   # Run UI tests headless (PREFERRED - won't interfere with laptop use)
+just ui-test            # Run UI tests headed (visible browser - avoid during active work)
+just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 ```
+
+**Important**: Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
 
 ### Database
 ```bash
