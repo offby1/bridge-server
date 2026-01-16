@@ -192,9 +192,8 @@ ACCOUNT_SIGNUP_FIELDS = [
     "username*",
     "password1*",
     "password2*",
-]  # Required fields (* = required)
+]  # Required fields (* = required) - for traditional signups
 ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_SIGNUP_FORM_CLASS = "app.forms.AllauthSignupForm"
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_STORE_TOKENS = False  # Don't need tokens

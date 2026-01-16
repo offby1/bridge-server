@@ -2,11 +2,13 @@ from allauth.socialaccount.adapter import (  # type: ignore [import-untyped]
     DefaultSocialAccountAdapter,
 )
 
+from app.models import Player
+
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """
     Custom adapter to handle social account signup flow.
-    Forces username selection for OAuth users.
+    Forces username selection for OAuth users and creates Player objects.
     """
 
     def is_auto_signup_allowed(self, request, sociallogin):
@@ -16,4 +18,12 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def populate_user(self, request, sociallogin, data):
         """Populate user from social data. Username set by form."""
         user = super().populate_user(request, sociallogin, data)
+        return user
+
+    def save_user(self, request, sociallogin, form=None):
+        """Save the user and create associated Player object."""
+        user = super().save_user(request, sociallogin, form)
+        # Create Player object for social account users
+        if not hasattr(user, "player"):
+            Player.objects.create(user=user)
         return user
