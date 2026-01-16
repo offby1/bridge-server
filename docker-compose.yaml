@@ -25,6 +25,8 @@ services:
         condition: service_completed_successfully
       django-migrated:
         condition: service_completed_successfully
+      django-oauth-setup:
+        condition: service_completed_successfully
       postgres:
         condition: service_started
       redis:
@@ -89,6 +91,17 @@ services:
     ports: []
     depends_on:
       - postgres
+
+  django-oauth-setup:
+    <<: *django
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "setup_oauth"]
+    restart: "no"
+    ports: []
+    depends_on:
+      django-migrated:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
 
   postgres:
     image: postgres:17
