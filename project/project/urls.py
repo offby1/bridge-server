@@ -36,6 +36,7 @@ urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path(".well-known/appspecific/com.chrome.devtools.json", automatic_workspace_folders_view),
     path("accounts/login/", LoginView.as_view(form_class=LoginForm), name="login"),
+    path("accounts/", include("allauth.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),

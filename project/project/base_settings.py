@@ -64,6 +64,22 @@ API_SKELETON_KEY = from_env_var_file(
 if API_SKELETON_KEY is not None:
     API_SKELETON_KEY = API_SKELETON_KEY.rstrip()
 
+try:
+    GOOGLE_OAUTH_CLIENT_ID = from_env_var_file(
+        "GOOGLE_OAUTH_CLIENT_ID_FILE",
+        "/Users/not-workme/Library/Application Support/info.offby1.bridge/google_oauth_client_id",
+    )
+except FileNotFoundError:
+    GOOGLE_OAUTH_CLIENT_ID = None
+
+try:
+    GOOGLE_OAUTH_CLIENT_SECRET = from_env_var_file(
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE",
+        "/Users/not-workme/Library/Application Support/info.offby1.bridge/google_oauth_client_secret",
+    )
+except FileNotFoundError:
+    GOOGLE_OAUTH_CLIENT_SECRET = None
+
 ALLOWED_HOSTS = [
     ".offby1.info",
     ".orb.local",
@@ -87,16 +103,23 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # Required by allauth
     "django_tables2",
     "debug_toolbar",
     "django_extensions",
     "django_http_compression",
     "django_prometheus",
     "tz_detect",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
     "app",
 ]
 
 FASTDEV_STRICT_IF = True
+
+SITE_ID = 1  # Required by django.contrib.sites
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -135,6 +158,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "app.middleware.simple_access_log.RequestLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -154,6 +178,36 @@ INTERNAL_IPS = [
 ROOT_URLCONF = "project.urls"
 
 LOGIN_REDIRECT_URL = "app:player"
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  # Keep for traditional login
+    "allauth.account.auth_backends.AuthenticationBackend",  # Add for allauth
+]
+
+# Allauth configuration
+ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_SIGNUP_FORM_CLASS = "app.forms.AllauthSignupForm"
+SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = False  # Don't need tokens
+SOCIALACCOUNT_ADAPTER = "app.adapters.CustomSocialAccountAdapter"
+
+# Google OAuth settings
+SOCIALACCOUNT_PROVIDERS = {}
+if GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET:
+    SOCIALACCOUNT_PROVIDERS["google"] = {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "APP": {
+            "client_id": GOOGLE_OAUTH_CLIENT_ID,
+            "secret": GOOGLE_OAUTH_CLIENT_SECRET,
+            "key": "",
+        },
+    }
 
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
 

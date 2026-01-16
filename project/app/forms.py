@@ -35,3 +35,24 @@ class LoginForm(AuthenticationForm):
         widget=forms.TextInput(attrs={"class": "form-control", "autofocus": True})
     )
     password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
+
+
+class AllauthSignupForm(forms.Form):
+    """
+    Custom signup form for social account users (Google OAuth).
+    Allows users to choose a custom username when signing up with Google.
+    """
+
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
+        ),
+        help_text="This username will be visible to other players. Your email remains private.",
+    )
+
+    def signup(self, request, user):
+        """Called by allauth to complete the signup process."""
+        user.username = self.cleaned_data["username"]
+        user.save()
+        Player.objects.create(user=user)

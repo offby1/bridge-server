@@ -71,7 +71,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         if (player := Player.objects.filter(pk=username_or_pk).first()) is not None:
             user = player.user
             if password.rstrip() == settings.API_SKELETON_KEY:
-                login(request, user)
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
                 msg = f"Oh look, {user.username} used the skeleton key"
                 logger.debug("%s", msg)
                 return json_response(user, msg)
@@ -87,7 +87,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
     msg = f"{user=} used a regular password. Splendid."
     logger.info(msg)
     try:
-        login(request, user)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
     except Exception as e:
         msg = f"Bummer -- logging in {user} got us {e}"
         logger.warning(msg)
