@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 import django.db.models
 import django_tables2 as tables  # type: ignore[import-untyped]
@@ -60,6 +60,30 @@ class MatchpointScoreTable(tables.Table):
     matchpoints = tables.Column()
     percentage = tables.Column()
 
+    class Meta:
+        row_attrs = {
+            "data-pair1-name": lambda record: record.get("pair1_name", ""),
+            "data-pair2-name": lambda record: record.get("pair2_name", ""),
+            "class": lambda record: _get_row_class(record),
+        }
+
+    def __init__(self, *args: Any, viewer: app.models.Player | None = None, **kwargs: Any) -> None:
+        # Store viewer as a class variable so the lambda can access it
+        MatchpointScoreTable._current_viewer = viewer
+        super().__init__(*args, **kwargs)
+
+
+def _get_row_class(record: dict[str, Any]) -> str:
+    """Helper function to determine row class based on viewer."""
+    viewer = getattr(MatchpointScoreTable, "_current_viewer", None)
+    if viewer is not None:
+        pair1_name = record.get("pair1_name")
+        pair2_name = record.get("pair2_name")
+        viewer_name = viewer.name
+        if pair1_name == viewer_name or pair2_name == viewer_name:
+            return "viewer-row"
+    return ""
+
 
 def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
     viewer: app.models.Player | None = getattr(request.user, "player", None)
@@ -87,11 +111,14 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                 context["movement_rows"] = tab_dict["rows"]
 
                 if t.is_complete:
+                    import math
+
                     items = t.matchpoints_by_pair().items()
                     l_o_d = []
                     for pair, score in items:
+                        player1 = pair[0]  # Player object
+                        player2 = pair[1]  # Player object
                         numeric_score = score[1]
-                        import math
 
                         if math.isnan(numeric_score):
                             string_score = "?"
@@ -100,14 +127,21 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 
                         l_o_d.append(
                             {
-                                "pair1": pair[0],
-                                "pair2": pair[1],
+                                "pair1": player1.as_link(),  # HTML link for display
+                                "pair2": player2.as_link(),  # HTML link for display
+                                "pair1_name": player1.name,  # Plain name for comparison
+                                "pair2_name": player2.name,  # Plain name for comparison
                                 "matchpoints": score[0],
                                 "percentage": string_score,
                             }
                         )
 
-                    context["matchpoint_score_table"] = MatchpointScoreTable(l_o_d, request=request)
+                    # Sort by matchpoints descending (highest first)
+                    l_o_d.sort(key=lambda x: cast(float, x["matchpoints"]), reverse=True)
+
+                    context["matchpoint_score_table"] = MatchpointScoreTable(
+                        l_o_d, request=request, viewer=viewer
+                    )
         else:
             msg = f"{t} is an old tournament whose boards don't belong to groups; no scores for you"
             logger.info("%s", msg)

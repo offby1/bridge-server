@@ -264,5 +264,143 @@ def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_ha
                     )
 
 
+@pytest.mark.django_db(transaction=True)
+def test_tournament_results_highlight_viewer_row(page: Page, live_server, db):
+    """
+    Test that the viewer's row in tournament results is highlighted with viewer-row class.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from app.models import Board, Hand, Player, Tournament
+    from app.testutils import play_out_hand
+
+    # Create 4 users/players for a simple tournament
+    users_players = []
+    for name in ["alice", "bob", "charlie", "diane"]:
+        u = User.objects.create_user(username=name, password="pass123")
+        p = Player.objects.create(user=u)
+        users_players.append((u, p))
+
+    # Make them partners
+    users_players[0][1].partner = users_players[1][1]  # alice + bob
+    users_players[0][1].save()
+    users_players[2][1].partner = users_players[3][1]  # charlie + diane
+    users_players[2][1].save()
+
+    # Create tournament with signup deadline in the past
+    now = datetime.now(timezone.utc)
+    tournament = Tournament.objects.create(
+        signup_deadline=now - timedelta(hours=1),  # In the past
+        play_completion_deadline=now + timedelta(hours=1),
+        boards_per_round_per_table=1,  # Single board per round
+    )
+
+    # Create a single board
+    board = Board.objects.create(
+        tournament=tournament,
+        display_number=1,
+        dealer="N",
+        ns_vulnerable=False,
+        ew_vulnerable=False,
+        north_cards="♠A♠K♠Q♠J♠T♠9♠8♠7♠6♠5♠4♠3♠2",
+        south_cards="♥A♥K♥Q♥J♥T♥9♥8♥7♥6♥5♥4♥3♥2",
+        east_cards="♦A♦K♦Q♦J♦T♦9♦8♦7♦6♦5♦4♦3♦2",
+        west_cards="♣A♣K♣Q♣J♣T♣9♣8♣7♣6♣5♣4♣3♣2",
+        group="A",
+    )
+
+    # Create and complete a hand
+    hand = Hand.objects.create(
+        board=board,
+        North=users_players[0][1],  # alice
+        South=users_players[1][1],  # bob
+        East=users_players[2][1],  # charlie
+        West=users_players[3][1],  # diane
+        table_display_number=1,
+    )
+
+    # Play out the hand to completion
+    play_out_hand(hand)
+
+    # Verify hand is actually complete
+    hand.refresh_from_db()
+    assert hand.is_complete, "Hand should be complete"
+
+    # Mark tournament as complete
+    tournament.completed_at = datetime.now(timezone.utc)
+    tournament.save()
+
+    # Verify tournament shows as complete
+    assert tournament.is_complete, "Tournament should be complete"
+
+    # Login as bob
+    page.goto(f"{live_server.url}/accounts/login/")
+    page.fill('input[name="username"]', "bob")
+    page.fill('input[name="password"]', "pass123")
+    page.click('button[type="submit"]')
+
+    # Navigate to tournament page
+    page.goto(f"{live_server.url}/tournament/{tournament.pk}/")
+
+    # Debug: Take screenshot immediately
+    page.screenshot(path="test_output_tournament_before_check.png")
+
+    # Wait for the page to load
+    page.wait_for_load_state("networkidle")
+
+    # Try to find any table on the page
+    tables = page.locator("table").all()
+    print(f"Found {len(tables)} tables on the page")
+
+    # If no tables, print the page content for debugging
+    if len(tables) == 0:
+        content = page.content()
+        print("Page HTML:")
+        print(content[:2000])  # Print first 2000 chars
+        raise AssertionError("No tables found on tournament page")
+
+    # Find the matchpoint score table specifically
+    # It should be the one with Pair1, Pair2, Matchpoints, Percentage headers
+    score_table = None
+    for i, table in enumerate(tables):
+        headers = table.locator("th").all_text_contents()
+        print(f"Table {i} headers: {headers}")
+        # Check if any header contains "Matchpoints" (may have whitespace)
+        if any("Matchpoints" in h for h in headers):
+            score_table = table
+            break
+
+    if score_table is None:
+        # Print page content for debugging
+        content = page.content()
+        print("\n=== Page HTML (first 3000 chars) ===")
+        print(content[:3000])
+        print("\n=== Looking for 'Complete' status ===")
+        if "Complete" in content:
+            print("Found 'Complete' in page")
+        else:
+            print("'Complete' NOT found in page")
+
+    assert score_table is not None, f"No matchpoint table found. Tables on page: {len(tables)}"
+
+    # Find the row containing "bob"
+    bob_row = score_table.locator("tr", has_text="bob")
+    expect(bob_row).to_be_visible()
+
+    # Check that the row has the viewer-row class
+    row_class = bob_row.get_attribute("class")
+    print(f"Bob's row class attribute: {row_class}")
+    assert row_class is not None, "Row should have a class attribute"
+    assert "viewer-row" in row_class, f"Expected 'viewer-row' in class, got: {row_class}"
+
+    # Verify the row has the yellow background color (from CSS)
+    bg_color = bob_row.evaluate("el => window.getComputedStyle(el).backgroundColor")
+    # #fff3cd converts to rgb(255, 243, 205)
+    assert bg_color == "rgb(255, 243, 205)", f"Expected yellow background, got: {bg_color}"
+
+    # Take a screenshot for visual verification
+    page.screenshot(path="test_output_tournament_highlight.png")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--headed"])

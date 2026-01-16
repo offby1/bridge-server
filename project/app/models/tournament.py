@@ -13,20 +13,19 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django_eventstream import send_event  # type: ignore[import-untyped]
 
-
-from bridge.xscript import BrokenDownScore
-
 import app.models
 import app.models.common
+import app.utils.movements
+import app.utils.scoring
 from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
 from app.models.types import PK
 from app.models.utils import assert_type
-import app.utils.movements
-import app.utils.scoring
+from bridge.xscript import BrokenDownScore
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
     from django.db.models.manager import RelatedManager
 
     from app.models import Hand, Player
@@ -229,7 +228,9 @@ class Tournament(models.Model):
     def is_complete(self) -> bool:
         return self.completed_at is not None
 
-    def matchpoints_by_pair(self) -> dict[tuple[str, str], tuple[int, float]]:
+    def matchpoints_by_pair(
+        self,
+    ) -> dict[tuple[app.models.player.Player, app.models.player.Player], tuple[int, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
         def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
             if fs == 0:
@@ -251,9 +252,8 @@ class Tournament(models.Model):
         )
 
         scorer = app.utils.scoring.Scorer(hands=list(hands))
-        return {
-            (k[0].as_link(), k[1].as_link()): v for k, v in scorer.matchpoints_by_pairs().items()
-        }
+        # Return Player objects, not HTML strings
+        return scorer.matchpoints_by_pairs()
 
     def players(self) -> models.QuerySet:
         hands = self.hands()
