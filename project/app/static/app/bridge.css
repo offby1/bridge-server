@@ -20,6 +20,17 @@ xx* {
 
 /* Mobile: stack East/West vertically instead of side-by-side */
 @media (max-width: 767px) {
+    .northsouth {
+        /* Make North/South full width on mobile instead of 3-column grid */
+        display: block;
+    }
+
+    .northsouth > div:first-child,
+    .northsouth > div:last-child {
+        /* Hide the empty side columns on mobile */
+        display: none;
+    }
+
     .eastwest {
         display: flex;
         flex-direction: column;
@@ -312,11 +323,20 @@ li.carousel {
     .spades, .hearts, .diamonds, .clubs {
         flex-wrap: nowrap; /* Keep cards in single row */
         gap: 0.1rem; /* Minimal gap between cards */
-        padding: 0.2rem; /* Reduce container padding */
+        padding: 0; /* Remove container padding on mobile */
+        background: none; /* Remove background on mobile */
+        box-shadow: none; /* Remove shadow on mobile */
     }
 
     .spades div, .hearts div, .diamonds div, .clubs div {
         padding: 0.1rem 0.15rem; /* Minimal padding on cards */
+        background: none; /* Remove card background on mobile */
+        box-shadow: none; /* Remove card shadow on mobile */
+    }
+
+    .spades div:hover, .hearts div:hover, .diamonds div:hover, .clubs div:hover {
+        transform: none; /* Disable hover effects on mobile */
+        box-shadow: none;
     }
 
     .bigfont {
@@ -335,6 +355,39 @@ li.carousel {
     grid-template-rows: auto auto auto auto; /* Let content determine height */
     gap: 0.5rem; /* Spacing between suits */
     padding: 0.5rem;
+}
+
+#toast-one-hand {
+    /* Reset Bootstrap toast-container positioning that interferes with hand layout */
+    position: static;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+#toast-one-hand .toast-container {
+    /* Reset Bootstrap toast-container positioning */
+    position: static;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+#toast-one-hand > div:not(.toast-container) {
+    /* Ensure the hand container takes full width */
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#south #toast-one-hand,
+#south #toast-one-hand .toast-container,
+#south .hand {
+    /* Explicitly fix South's alignment */
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    width: 100%;
 }
 .btn {
     --bs-btn-font-size: revert;
