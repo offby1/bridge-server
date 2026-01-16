@@ -294,6 +294,10 @@ dc *options: docker-prerequisites
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
+    # Google OAuth credentials (optional - gracefully handles if files don't exist)
+    export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
+    export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
+
     tput rmam                   # disables line wrapping
     trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
 
