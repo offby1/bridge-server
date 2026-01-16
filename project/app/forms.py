@@ -1,6 +1,3 @@
-from allauth.socialaccount.forms import (  # type: ignore [import-untyped]
-    SignupForm as SocialAccountSignupForm,
-)
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
@@ -40,39 +37,34 @@ class LoginForm(AuthenticationForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
 
 
-class SocialSignupForm(SocialAccountSignupForm):
+class SocialSignupForm(forms.Form):
     """
     Custom signup form for social account users (Google OAuth).
     Allows users to choose a custom username when signing up with Google.
     Only asks for username - email comes from OAuth provider.
     """
 
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
+        ),
+        help_text="This username will be visible to other players. Your email remains private.",
+    )
+
     def __init__(self, *args, **kwargs):
+        # Accept sociallogin kwarg that allauth passes, but we don't need it
+        self.sociallogin = kwargs.pop("sociallogin", None)
+        # Accept other allauth kwargs
+        kwargs.pop("initial", None)
+        kwargs.pop("email_addresses", None)
         super().__init__(*args, **kwargs)
-        # Remove email confirmation field (not needed for OAuth)
-        if "email2" in self.fields:
-            del self.fields["email2"]
-        # Remove email field (comes from OAuth provider)
-        if "email" in self.fields:
-            del self.fields["email"]
-        # Customize the username field
-        self.fields["username"].widget.attrs.update(
-            {"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
-        )
-        self.fields[
-            "username"
-        ].help_text = "This username will be visible to other players. Your email remains private."
-
-    def clean_email(self):
-        """Override parent's clean_email since we don't have email field."""
-        return self.sociallogin.email_addresses[0].email if self.sociallogin else ""
-
-    def clean_email2(self):
-        """Override parent's clean_email2 since we don't have email2 field."""
-        return None
 
     def save(self, request):
-        """Save the user with the chosen username."""
-        user = super().save(request)
+        """Save the user with the chosen username. Called by allauth."""
+        # Get the user from the sociallogin object
+        user = self.sociallogin.user
+        user.username = self.cleaned_data["username"]
+        user.save()
         # Player creation is handled by CustomSocialAccountAdapter.save_user()
         return user
