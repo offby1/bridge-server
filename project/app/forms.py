@@ -63,6 +63,14 @@ class SocialSignupForm(SocialAccountSignupForm):
             "username"
         ].help_text = "This username will be visible to other players. Your email remains private."
 
+    def clean_email(self):
+        """Override parent's clean_email since we don't have email field."""
+        return self.sociallogin.email_addresses[0].email if self.sociallogin else ""
+
+    def clean_email2(self):
+        """Override parent's clean_email2 since we don't have email2 field."""
+        return None
+
     def save(self, request):
         """Save the user with the chosen username."""
         user = super().save(request)

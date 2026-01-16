@@ -1,0 +1,366 @@
++ cd project
++ uv run python manage.py runserver 9000
+Watching for file changes with StatReloader
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=MainThread request_id=none autoreload.py(681) run_with_reloader Watching for file changes with StatReloader
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=django-main-thread request_id=none server.py(120) run HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=django-main-thread request_id=none server.py(129) run Configuring endpoint tcp:port=9000:interface=127.0.0.1
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=django-main-thread request_id=none server.py(160) listen_success Listening on TCP address 127.0.0.1:9000
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=ThreadPoolExecutor-1_0 request_id=9eb2000d586c4c88b7b3b9f827648563 simple_access_log.py(24) __call__ 127.0.0.1 user='' GET:/__reload__/events/ ...
+2026-01-16T18:52:30+0000 INFO  pid=35562 thread=ThreadPoolExecutor-1_0 request_id=9eb2000d586c4c88b7b3b9f827648563 simple_access_log.py(50) __call__ 127.0.0.1 user='' GET:/__reload__/events/ => 200 ms=2
+2026-01-16T18:52:31+0000 INFO  pid=35562 thread=ThreadPoolExecutor-2_0 request_id=6984a81cb38d4d83a58d351baeedbc13 simple_access_log.py(24) __call__ 127.0.0.1 user='' GET:/accounts/3rdparty/signup/ ...
+Internal Server Error: /accounts/3rdparty/signup/
+Traceback (most recent call last):
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 555, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 555, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 285, in _get_response_async
+    response = await sync_to_async(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 504, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/current_thread_executor.py", line 40, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 559, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 174, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 107, in render
+    slots["default"] = [self.nodelist.render(context)]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 56, in render
+    result = self.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 114, in render
+    return render_to_string(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 174, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1150, in render
+    output = self.filter_expression.resolve(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 269, in resolve_override
+    self.var.resolve(context)
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 928, in resolve
+    value = self._resolve_lookup(context)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1000, in _resolve_lookup
+    current = current()
+              ^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/utils.py", line 87, in as_p
+    return self.render(self.template_name_p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/utils.py", line 54, in render
+    context = context or self.get_context()
+                         ^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 234, in get_context
+    top_errors = self.non_field_errors().copy()
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 259, in non_field_errors
+    return self.errors.get(
+           ^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 201, in errors
+    self.full_clean()
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 383, in fastdev_full_clean
+    raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
+django_fastdev.apps.InvalidCleanMethod: Clean method clean_email of class SocialSignupForm won't apply to any field. Available fields:
+
+    username
+2026-01-16T18:52:31+0000 ERROR pid=35562 thread=asyncio_0 request_id=6984a81cb38d4d83a58d351baeedbc13 log.py(249) log_message Internal Server Error: /accounts/3rdparty/signup/
+Traceback (most recent call last):
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 555, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 555, in thread_handler
+    raise exc_info[1]
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 285, in _get_response_async
+    response = await sync_to_async(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 504, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/current_thread_executor.py", line 40, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/asgiref/sync.py", line 559, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 174, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 483, in extends_render
+    return orig_extends_render(self, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 107, in render
+    slots["default"] = [self.nodelist.render(context)]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 56, in render
+    result = self.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/allauth/templatetags/allauth.py", line 114, in render
+    return render_to_string(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 174, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1150, in render
+    output = self.filter_expression.resolve(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 269, in resolve_override
+    self.var.resolve(context)
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 928, in resolve
+    value = self._resolve_lookup(context)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/template/base.py", line 1000, in _resolve_lookup
+    current = current()
+              ^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/utils.py", line 87, in as_p
+    return self.render(self.template_name_p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/utils.py", line 54, in render
+    context = context or self.get_context()
+                         ^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 234, in get_context
+    top_errors = self.non_field_errors().copy()
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 259, in non_field_errors
+    return self.errors.get(
+           ^^^^^^^^^^^
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django/forms/forms.py", line 201, in errors
+    self.full_clean()
+  File "/Users/not-workme/git-repositories/me/bridge/server/.venv/lib/python3.12/site-packages/django_fastdev/apps.py", line 383, in fastdev_full_clean
+    raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
+django_fastdev.apps.InvalidCleanMethod: Clean method clean_email of class SocialSignupForm won't apply to any field. Available fields:
+
+    username
+2026-01-16T18:52:31+0000 INFO  pid=35562 thread=ThreadPoolExecutor-2_0 request_id=6984a81cb38d4d83a58d351baeedbc13 simple_access_log.py(50) __call__ 127.0.0.1 user='' GET:/accounts/3rdparty/signup/ => 500 ms=71
+HTTP GET /accounts/3rdparty/signup/ 500 [0.14, 127.0.0.1:58314]
+2026-01-16T18:52:31+0000 ERROR pid=35562 thread=django-main-thread request_id=6984a81cb38d4d83a58d351baeedbc13 runserver.py(194) log_action HTTP GET /accounts/3rdparty/signup/ 500 [0.14, 127.0.0.1:58314]
+2026-01-16T18:52:32+0000 INFO  pid=35562 thread=ThreadPoolExecutor-3_0 request_id=5588df88e8cf4be6ab2d293e806c4e7e simple_access_log.py(24) __call__ 127.0.0.1 user='' GET:/.well-known/appspecific/com.chrome.devtools.json ...
+2026-01-16T18:52:32+0000 INFO  pid=35562 thread=ThreadPoolExecutor-3_0 request_id=5588df88e8cf4be6ab2d293e806c4e7e simple_access_log.py(50) __call__ 127.0.0.1 user='' GET:/.well-known/appspecific/com.chrome.devtools.json => 200 ms=1
+2026-01-16T18:52:32+0000 INFO  pid=35562 thread=ThreadPoolExecutor-10_0 request_id=162d999f076046aea21dee2d2e835baf simple_access_log.py(24) __call__ 127.0.0.1 user='' GET:/__reload__/events/ ...
+2026-01-16T18:52:32+0000 INFO  pid=35562 thread=ThreadPoolExecutor-10_0 request_id=162d999f076046aea21dee2d2e835baf simple_access_log.py(50) __call__ 127.0.0.1 user='' GET:/__reload__/events/ => 200 ms=1
+error: Interrupted by SIGINT

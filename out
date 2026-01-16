@@ -1,0 +1,12 @@
+Performing system checks...
+
+January 16, 2026 - 18:52:30
+Django version 6.0, using settings 'project.dev_settings'
+Starting ASGI/Daphne version 4.2.1 development server at http://127.0.0.1:9000/
+Quit the server with CONTROL-C.
+
+os.environ["DJANGO_SETTINGS_MODULE"]='project.dev_settings'
+settings.DEPLOYMENT_ENVIRONMENT='development' settings.SECURE_SSL_REDIRECT=False
+settings.VERSION='363e3d57 2026-01-16'
+settings.GIT_SYMBOLIC_REF='refs/heads/social-auth'
+System check identified no issues (0 silenced).
