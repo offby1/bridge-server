@@ -1,13 +1,27 @@
-<div class="pagination">
-    <span class="step-links">
-        {% if page_obj.has_previous %}
-            <a href="{% querystring page=1 %}">&laquo; first</a>
-            <a href="{% querystring page=page_obj.previous_page_number %}">previous</a>
-        {% endif %}
-        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</span>
-        {% if page_obj.has_next %}
-            <a href="{% querystring page=page_obj.next_page_number %}">next</a>
-            <a href="{% querystring page=page_obj.paginator.num_pages %}">last &raquo;</a>
-        {% endif %}
-    </span>
-</div>
+<nav aria-label="Pagination">
+    <div class="d-flex justify-content-between align-items-center gap-3 my-3">
+        <div class="btn-group" role="group" aria-label="Previous navigation">
+            {% if page_obj.has_previous %}
+                <a href="{% querystring page=1 %}"
+                   class="btn btn-sm btn-outline-secondary">&laquo; First</a>
+                <a href="{% querystring page=page_obj.previous_page_number %}"
+                   class="btn btn-sm btn-outline-secondary">Previous</a>
+            {% else %}
+                <button class="btn btn-sm btn-outline-secondary disabled" disabled>&laquo; First</button>
+                <button class="btn btn-sm btn-outline-secondary disabled" disabled>Previous</button>
+            {% endif %}
+        </div>
+        <span class="badge bg-secondary">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <div class="btn-group" role="group" aria-label="Next navigation">
+            {% if page_obj.has_next %}
+                <a href="{% querystring page=page_obj.next_page_number %}"
+                   class="btn btn-sm btn-outline-secondary">Next</a>
+                <a href="{% querystring page=page_obj.paginator.num_pages %}"
+                   class="btn btn-sm btn-outline-secondary">Last &raquo;</a>
+            {% else %}
+                <button class="btn btn-sm btn-outline-secondary disabled" disabled>Next</button>
+                <button class="btn btn-sm btn-outline-secondary disabled" disabled>Last &raquo;</button>
+            {% endif %}
+        </div>
+    </div>
+</nav>

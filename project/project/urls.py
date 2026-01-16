@@ -2,9 +2,11 @@ import json
 import pathlib
 
 import django_eventstream  # type: ignore [import-untyped]
+from app.forms import LoginForm
 from debug_toolbar.toolbar import debug_toolbar_urls  # type: ignore [import-untyped]
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth.views import LoginView
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.urls import include, path
 
@@ -33,6 +35,7 @@ urlpatterns = [
     path("", include("django_prometheus.urls")),
     path("__reload__/", include("django_browser_reload.urls")),
     path(".well-known/appspecific/com.chrome.devtools.json", automatic_workspace_folders_view),
+    path("accounts/login/", LoginView.as_view(form_class=LoginForm), name="login"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
