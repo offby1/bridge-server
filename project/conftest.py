@@ -16,17 +16,19 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.test_settings")
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
-@pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
     """
-    Terminate test database connections and drop the database manually if pytest-django failed.
+    Clean up test database and force exit to prevent hanging.
 
-    The live_server fixture keeps database connections open, causing pytest-django's
-    database teardown to fail. This hook cleans up after that failure, ensuring
-    subsequent test runs can create the database fresh.
+    pytest-django's live_server fixture keeps database connections open and
+    creates non-daemon threads that don't terminate cleanly. This hook cleans
+    up the database and forces exit if needed.
     """
+    import threading
+    import time
+
+    # First, try to clean up the test database
     try:
-        # Terminate all connections to the test database
         subprocess.run(
             [
                 "docker",
@@ -41,10 +43,11 @@ def pytest_sessionfinish(session, exitstatus):
                 "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
                 "WHERE datname = 'test_bridge' AND pid <> pg_backend_pid();",
             ],
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             check=False,
+            timeout=5,
         )
-        # Drop the test database if it still exists
         subprocess.run(
             [
                 "docker",
@@ -58,12 +61,23 @@ def pytest_sessionfinish(session, exitstatus):
                 "-c",
                 "DROP DATABASE IF EXISTS test_bridge;",
             ],
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             check=False,
+            timeout=5,
         )
     except Exception:
-        # If docker isn't available, skip cleanup
         pass
+
+    def force_exit():
+        time.sleep(1)  # Give normal cleanup a chance
+        # Force exit - live_server threads don't clean up properly
+        # Use os._exit() instead of sys.exit() to bypass cleanup and terminate immediately
+        os._exit(exitstatus)
+
+    # Start the force-exit timer in a daemon thread
+    timer = threading.Thread(target=force_exit, daemon=True)
+    timer.start()
 
 
 @pytest.fixture(scope="session")
