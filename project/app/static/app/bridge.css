@@ -18,6 +18,91 @@ xx* {
     grid-template-columns: 3fr 5cqw 3fr;
 }
 
+/* Mobile: stack East/West vertically instead of side-by-side */
+@media (max-width: 767px) {
+    .northsouth {
+        /* Make North/South full width on mobile instead of 3-column grid */
+        display: block;
+    }
+
+    .northsouth > div:first-child,
+    .northsouth > div:last-child {
+        /* Hide the empty side columns on mobile */
+        display: none;
+    }
+
+    .eastwest {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .eastwest > div:nth-child(2) {
+        display: none; /* Hide the empty middle div on mobile */
+    }
+
+    /* Add prominent compass direction labels */
+    #north::before {
+        content: "NORTH ▲";
+        display: block;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: white;
+        background: #0d6efd;
+        padding: 0.5rem;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+        margin: -0.3rem -0.3rem 0.5rem -0.3rem;
+    }
+
+    #south::before {
+        content: "SOUTH ▼";
+        display: block;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: white;
+        background: #0d6efd;
+        padding: 0.5rem;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+        margin: -0.3rem -0.3rem 0.5rem -0.3rem;
+    }
+
+    #east::before {
+        content: "EAST ▶";
+        display: block;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: white;
+        background: #28a745;
+        padding: 0.5rem;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+        margin: -0.3rem -0.3rem 0.5rem -0.3rem;
+    }
+
+    #west::before {
+        content: "WEST ◀";
+        display: block;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: white;
+        background: #28a745;
+        padding: 0.5rem;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+        margin: -0.3rem -0.3rem 0.5rem -0.3rem;
+    }
+
+    /* Add border around each hand for clarity */
+    #north, #south, #east, #west {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.3rem;
+        background: #f8f9fa;
+    }
+}
+
 /* from https://www.perplexity.ai/search/in-bootstrap-how-can-i-use-the-Tp82tQ57R3emdSxPG.c79g */
 .inactive-button {
   pointer-events: none;
@@ -74,14 +159,27 @@ body {
 /* From https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages */
 
 ul.carousel {
-  width: 80vw;
-  height: 90%;
+  width: 100vw; /* Use full width on mobile */
+  height: 90vh;
   display: flex;
   anchor-name: --my-carousel;
   overflow-x: scroll;
   scroll-marker-group: after;
   scroll-snap-type: x mandatory;
   anchor-name: --myCarousel;
+}
+
+@media (max-width: 767px) {
+  ul.carousel {
+    /* Reduce height on mobile to leave room for content above (contract, trick counts) */
+    height: 60vh;
+  }
+}
+
+@media (min-width: 768px) {
+  ul.carousel {
+    width: 85vw; /* Narrower on desktop */
+  }
 }
 
 ul.carousel::scroll-button(*) {
@@ -168,8 +266,7 @@ li.carousel {
     font-optical-sizing: auto;
     font-weight: 100;
     font-style: normal;
-
-    font-size: 6vw;
+    font-size: 6vw; /* Original size - works well for carousel view */
 }
 
 .mediumfont {
@@ -180,19 +277,124 @@ li.carousel {
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     div { span, button {width: 2em; }}
 }
+
+.spades div, .hearts div, .diamonds div, .clubs div {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease;
+}
+
+.spades div:hover, .hearts div:hover, .diamonds div:hover, .clubs div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .hearts, .diamonds {
-    color: red;
+    color: #dc3545; /* Bootstrap danger red - more vibrant */
 }
 .spades, .clubs {
-    color: black;
+    color: #212529; /* True black */
+}
+
+/* Mobile optimization for four-hands view only: readable cards that fit 13 cards in a row */
+@media (max-width: 767px) {
+    #four-hands .bigfont {
+        font-size: 1rem; /* Slightly larger now that we have full width */
+    }
+
+    #four-hands .spades div, #four-hands .hearts div, #four-hands .diamonds div, #four-hands .clubs div,
+    #four-hands .spades span, #four-hands .hearts span, #four-hands .diamonds span, #four-hands .clubs span,
+    #four-hands .spades button, #four-hands .hearts button, #four-hands .diamonds button, #four-hands .clubs button {
+        width: 1.7em; /* Compact but readable */
+    }
+
+    #four-hands .spades, #four-hands .hearts, #four-hands .diamonds, #four-hands .clubs {
+        gap: 0.2rem;
+    }
+
+    #four-hands .hand {
+        gap: 0.3rem;
+        padding: 0.3rem;
+    }
+
+    /* Compact Mobile Card Layout - general improvements */
+    .spades, .hearts, .diamonds, .clubs {
+        flex-wrap: nowrap; /* Keep cards in single row */
+        gap: 0.1rem; /* Minimal gap between cards */
+        padding: 0; /* Remove container padding on mobile */
+        background: none; /* Remove background on mobile */
+        box-shadow: none; /* Remove shadow on mobile */
+    }
+
+    .spades div, .hearts div, .diamonds div, .clubs div {
+        padding: 0.1rem 0.15rem; /* Minimal padding on cards */
+        background: none; /* Remove card background on mobile */
+        box-shadow: none; /* Remove card shadow on mobile */
+    }
+
+    .spades div:hover, .hearts div:hover, .diamonds div:hover, .clubs div:hover {
+        transform: none; /* Disable hover effects on mobile */
+        box-shadow: none;
+    }
+
+    .bigfont {
+        font-size: clamp(1.25rem, 3vh, 2rem); /* Even smaller on mobile */
+    }
+
+    .hand {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
 }
 
 .hand {
     display: grid;
     overflow-x: auto;
-    grid-template-rows: 25% 25% 25% 25%;
+    grid-template-rows: auto auto auto auto; /* Let content determine height */
+    gap: 0.5rem; /* Spacing between suits */
+    padding: 0.5rem;
+}
+
+#toast-one-hand {
+    /* Reset Bootstrap toast-container positioning that interferes with hand layout */
+    position: static;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+#toast-one-hand .toast-container {
+    /* Reset Bootstrap toast-container positioning */
+    position: static;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+#toast-one-hand > div:not(.toast-container) {
+    /* Ensure the hand container takes full width */
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#south #toast-one-hand,
+#south #toast-one-hand .toast-container,
+#south .hand {
+    /* Explicitly fix South's alignment */
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    width: 100%;
 }
 .btn {
     --bs-btn-font-size: revert;
@@ -200,6 +402,17 @@ li.carousel {
 
 li h2 {
     text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+@media (max-width: 767px) {
+    li h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
 }
 
 .three-by-three-trick-display {
@@ -248,4 +461,15 @@ li h2 {
 button:focus, a:focus, input:focus {
     outline: 2px solid #0d6efd;
     outline-offset: 2px;
+}
+
+.viewer-row {
+    background-color: #fff3cd !important; /* Bootstrap warning light yellow */
+    font-weight: 600;
+    border-left: 4px solid #ffc107; /* Bootstrap warning accent */
+}
+
+.viewer-row td {
+    background-color: #fff3cd !important; /* Ensure cells are also highlighted */
+    font-weight: 600;
 }

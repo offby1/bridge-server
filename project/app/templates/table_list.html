@@ -4,34 +4,36 @@
 {% endblock title %}
 {% block content %}
     {% block table_list %}
-        <table class="table caption-top">
-            {# yep, it's a table of tables #}
-            <caption>{{ page_title }}; {{ filtered_count }} total</caption>
-            <thead>
-                <tr>
-                    <th>Tournament #</th>
-                    <th>Table #</th>
-                    <th>Current Status</th>
-                    <th>Number of Boards played</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for table in page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover caption-top">
+                {# yep, it's a table of tables #}
+                <caption>{{ page_title }}; {{ filtered_count }} total</caption>
+                <thead>
                     <tr>
-                        <th>{{ table.tournament.display_number }}</th>
-                        <th>{{ table.display_number }}</th>
-                        <td>
-                            {% if table.has_hand %}
-                                <a href="{% url 'app:hand-dispatch' table.current_hand.pk %}">{{ table.summary_for_this_viewer }}</a>
-                            {% else %}
-                                {{ table.summary_for_this_viewer }}
-                            {% endif %}
-                        </td>
-                        <td>{{ table.played_hands_string }}</td>
+                        <th scope="col">Tournament #</th>
+                        <th scope="col">Table #</th>
+                        <th scope="col">Current Status</th>
+                        <th scope="col">Number of Boards played</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for table in page_obj %}
+                        <tr>
+                            <td>{{ table.tournament.display_number }}</td>
+                            <td>{{ table.display_number }}</td>
+                            <td>
+                                {% if table.has_hand %}
+                                    <a href="{% url 'app:hand-dispatch' table.current_hand.pk %}">{{ table.summary_for_this_viewer }}</a>
+                                {% else %}
+                                    {{ table.summary_for_this_viewer }}
+                                {% endif %}
+                            </td>
+                            <td>{{ table.played_hands_string }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% include "pagination-controls.html" %}
     {% endblock table_list %}
 {% endblock content %}

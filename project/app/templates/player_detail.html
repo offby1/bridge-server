@@ -4,34 +4,39 @@
 {% partialdef partnership-status-partial %}
 {% block partnership-status-html %}
     <div id="partnership-status"
-         style="border: 1px solid"
+         class="card mb-3"
          data-player="{{ user.player.pk }}"
          {% if user.player.partner %}data-player-partner="{{ user.player.partner.pk }}"{% endif %}
          data-subject="{{ subject.pk }}"
          {% if subject.partner %}data-subject-partner="{{ subject.partner.pk }}"{% endif %}>
-        <div class="row">
-            <div class="col">
-                {% if text %}{{ text }}{% endif %}
-            </div>
-            <div class="col">
-                {% ifexists button_context %}
-                <form method="post" action="{{ button_context.form_action }}">
-                    {% csrf_token %}
-                    <button class="btn btn-primary"
-                            type="submit"
-                            name="action"
-                            value="{{ button_context.button_submit_value }}">
-                        {{ button_context.button_content }}
-                    </button>
-                    {% ifexists button_context.input_hidden_value %}
-                    <input type="hidden"
-                           name="next"
-                           value="{{ button_context.input_hidden_value }}" />
-                {% endifexists %}
-            </form>
-        {% else %}
-            ...
-        {% endifexists %}
+        <div class="card-header">
+            <h5 class="card-title mb-0">Partnership Status</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col">
+                    {% if text %}{{ text }}{% endif %}
+                </div>
+                <div class="col-auto">
+                    {% ifexists button_context %}
+                    <form method="post" action="{{ button_context.form_action }}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary"
+                                type="submit"
+                                name="action"
+                                value="{{ button_context.button_submit_value }}">
+                            {{ button_context.button_content }}
+                        </button>
+                        {% ifexists button_context.input_hidden_value %}
+                        <input type="hidden"
+                               name="next"
+                               value="{{ button_context.input_hidden_value }}" />
+                    {% endifexists %}
+                </form>
+            {% else %}
+                ...
+            {% endifexists %}
+        </div>
     </div>
 </div>
 </div>

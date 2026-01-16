@@ -21,25 +21,28 @@
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
-                <div id="hello-user" class="navbar-brand">
+                <div id="hello-user" class="navbar-brand d-flex align-items-center gap-2">
                     {% if user.is_authenticated %}
-                        Hello,
-                        {% if user.player %}
-                            {{ user.player.as_link }}.
-                        {% else %}
-                            {{ user }}.
-                        {% endif %}
+                        <span>Hello,
+                            {% if user.player %}
+                                {{ user.player.as_link }}
+                            {% else %}
+                                {{ user }}
+                            {% endif %}
+                        </span>
                         {% include "bot-checkbox.html" with error_message="" %}
-                        <form method="post" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <input type="submit" value="logout" class="btn btn-outline-danger btn-sm" />
-                            <input type="hidden" name="next" value="/" />
-                        </form>
                     {% else %}
-                        <a href="{% url 'app:signup' %}">Sign Up</a>
-                        |<a href="{% url 'login' %}">Login</a>
+                        <a href="{% url 'app:signup' %}" class="btn btn-sm btn-outline-primary">Sign Up</a>
+                        <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Log In</a>
                     {% endif %}
                 </div>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}" class="d-flex">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Log Out</button>
+                        <input type="hidden" name="next" value="/" />
+                    </form>
+                {% endif %}
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="offcanvas"

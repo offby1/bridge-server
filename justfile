@@ -12,6 +12,15 @@ export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" }
 export HOSTNAME := env("HOSTNAME", `hostname`)
 export PYTHONUNBUFFERED := "t"
 
+# Settings to use for tests (overrides the default dev_settings)
+
+TEST_DJANGO_SETTINGS := "project.test_settings"
+
+# Helper to run pytest with test settings
+[private]
+pytest-test *args:
+    cd project && DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }} uv run pytest {{ args }}
+
 [private]
 default:
     just --list
@@ -113,7 +122,11 @@ manage *options: all-but-django-prep ensure-skeleton-key version-file
     cd project && uv run python manage.py {{ options }}
 
 [group('django')]
-collectstatic: (manage "collectstatic --no-input")
+[script('bash')]
+collectstatic:
+    set -euxo pipefail
+    mkdir -p project/static_root
+    cd project && uv run python manage.py collectstatic --no-input --clear && touch static_root/.gitkeep
 
 [group('django')]
 fixture *options: pg-stop drop migrate (manage "loaddata " + options) (manage "update_redundant_fields")
@@ -203,7 +216,7 @@ t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Run individual tests with no dependencies
 k *options:
-    cd project && uv run pytest --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG  -vv -k {{ options }}
+    just pytest-test --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG -vv -k {{ options }}
 
 # Draw a nice entity-relationship diagram
 [group('django')]
@@ -216,6 +229,7 @@ graph: migrate
 [script('bash')]
 test *options: makemigrations mypy collectstatic
     set -euxo pipefail
+    export DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }}
     cd project
 
     pytest_args="--create-db --log-cli-level=WARNING {{ options }}"
@@ -234,6 +248,21 @@ test *options: makemigrations mypy collectstatic
 # Fast tests (i.e., run in parallel)
 [group('development')]
 ft *options: (t "-n 8 " + options)
+
+# Run UI tests with Playwright (visible browser)
+[group('development')]
+ui-test *options:
+    just pytest-test -m playwright --headed {{ options }}
+
+# Run UI tests in headless mode (faster, for CI)
+[group('development')]
+ui-test-headless *options:
+    just pytest-test -m playwright {{ options }}
+
+# Run UI tests on mobile viewport
+[group('development')]
+ui-test-mobile *options:
+    just pytest-test -m playwright --headed --device="iPhone 12" {{ options }}
 
 # Display coverage from a test run
 [group('development')]
