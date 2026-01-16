@@ -1,3 +1,6 @@
+from allauth.socialaccount.forms import (
+    SignupForm as SocialAccountSignupForm,  # type: ignore [import-untyped]
+)
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
@@ -37,22 +40,25 @@ class LoginForm(AuthenticationForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
 
 
-class AllauthSignupForm(forms.Form):
+class SocialSignupForm(SocialAccountSignupForm):
     """
     Custom signup form for social account users (Google OAuth).
     Allows users to choose a custom username when signing up with Google.
+    Only asks for username - email comes from OAuth provider.
     """
 
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(
-            attrs={"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
-        ),
-        help_text="This username will be visible to other players. Your email remains private.",
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Customize the username field
+        self.fields["username"].widget.attrs.update(
+            {"autofocus": True, "placeholder": "Choose a username", "class": "form-control"}
+        )
+        self.fields[
+            "username"
+        ].help_text = "This username will be visible to other players. Your email remains private."
 
-    def signup(self, request, user):
-        """Called by allauth to complete the signup process."""
-        user.username = self.cleaned_data["username"]
-        user.save()
-        Player.objects.create(user=user)
+    def save(self, request):
+        """Save the user with the chosen username."""
+        user = super().save(request)
+        # Player creation is handled by CustomSocialAccountAdapter.save_user()
+        return user

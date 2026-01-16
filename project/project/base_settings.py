@@ -187,17 +187,15 @@ AUTHENTICATION_BACKENDS = [
 
 # Allauth configuration
 ACCOUNT_LOGIN_METHODS = {"username"}  # Users log in with username (not email)
-ACCOUNT_SIGNUP_FIELDS = [
-    "email*",
-    "username*",
-    "password1*",
-    "password2*",
-]  # Required fields (* = required) - for traditional signups
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_STORE_TOKENS = False  # Don't need tokens
 SOCIALACCOUNT_ADAPTER = "app.adapters.CustomSocialAccountAdapter"
+# Only ask for username during social signup (email comes from OAuth provider)
+SOCIALACCOUNT_FORMS = {
+    "signup": "app.forms.SocialSignupForm",
+}
 
 # Google OAuth settings
 SOCIALACCOUNT_PROVIDERS = {}
