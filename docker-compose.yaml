@@ -33,6 +33,8 @@ services:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
+      GOOGLE_OAUTH_CLIENT_ID_FILE: /run/secrets/google_oauth_client_id
+      GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       PGHOST: postgres
@@ -45,6 +47,8 @@ services:
     secrets:
       - django_secret
       - django_skeleton_key
+      - google_oauth_client_id
+      - google_oauth_client_secret
     init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
@@ -184,3 +188,7 @@ secrets:
     environment: "DJANGO_SECRET_KEY"
   django_skeleton_key:
     environment: "DJANGO_SKELETON_KEY"
+  google_oauth_client_id:
+    environment: "GOOGLE_OAUTH_CLIENT_ID"
+  google_oauth_client_secret:
+    environment: "GOOGLE_OAUTH_CLIENT_SECRET"
