@@ -169,6 +169,13 @@ ul.carousel {
   anchor-name: --myCarousel;
 }
 
+@media (max-width: 767px) {
+  ul.carousel {
+    /* Reduce height on mobile to leave room for content above (contract, trick counts) */
+    height: 60vh;
+  }
+}
+
 @media (min-width: 768px) {
   ul.carousel {
     width: 85vw; /* Narrower on desktop */
