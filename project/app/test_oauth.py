@@ -57,6 +57,30 @@ class SocialSignupFormTestCase(TestCase):
         result_user = form.save(request=None)
         self.assertEqual(result_user.username, "testuser")
 
+    def test_form_rejects_duplicate_username(self):
+        """Test that form validation rejects duplicate usernames."""
+        # Create an existing user
+        User.objects.create_user(username="existinguser", password="pass")
+
+        # Create a new user for OAuth
+        user = User(username="", email="newuser@example.com")
+
+        # Create a simple mock sociallogin
+        class MockSocialLogin:
+            def __init__(self, user):
+                self.user = user
+
+        # Try to create form with duplicate username
+        form = SocialSignupForm(
+            data={"username": "existinguser"},
+            sociallogin=MockSocialLogin(user),
+        )
+
+        # Form should not be valid
+        self.assertFalse(form.is_valid())
+        self.assertIn("username", form.errors)
+        self.assertIn("already taken", str(form.errors["username"]))
+
 
 class CustomSocialAccountAdapterTestCase(TestCase):
     """Test the CustomSocialAccountAdapter."""

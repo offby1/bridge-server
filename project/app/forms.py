@@ -60,6 +60,13 @@ class SocialSignupForm(forms.Form):
         kwargs.pop("email_addresses", None)
         super().__init__(*args, **kwargs)
 
+    def clean_username(self):
+        """Validate that username is unique."""
+        username = self.cleaned_data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("This username is already taken. Please choose another.")
+        return username
+
     def try_save(self, request):
         """Try to save the form. Called by allauth during signup flow."""
         return self.save(request)
