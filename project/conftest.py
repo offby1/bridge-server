@@ -6,15 +6,13 @@ import os
 
 import pytest
 
+# Use test-specific settings that enable static file serving
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.test_settings")
+
 # Allow Django database operations in async context for Playwright tests
 # This is necessary because pytest-playwright creates an async event loop
 # but Django's database operations are synchronous
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
-
-
-# Note: Static files (CSS/JS) don't load properly in Django's test server
-# even with WhiteNoise configured. This is a known Django testing limitation.
-# Tests focus on HTML structure and functionality rather than visual appearance.
 
 
 @pytest.fixture(scope="session")

@@ -79,7 +79,6 @@ def completed_hand(db, authenticated_user):
     return hand, users_players
 
 
-@pytest.mark.skip(reason="CSS not served by Django test server - layout tests require static files")
 @pytest.mark.django_db(transaction=True)
 def test_four_hands_mobile_layout_stacks_vertically(page: Page, live_server, completed_hand):
     """
@@ -166,7 +165,6 @@ def test_four_hands_mobile_shows_compass_labels(page: Page, live_server, complet
     page.screenshot(path="test_output_mobile_compass_labels.png")
 
 
-@pytest.mark.skip(reason="CSS not served by Django test server - layout tests require static files")
 @pytest.mark.django_db(transaction=True)
 def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_hand):
     """
