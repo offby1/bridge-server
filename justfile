@@ -12,6 +12,15 @@ export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" }
 export HOSTNAME := env("HOSTNAME", `hostname`)
 export PYTHONUNBUFFERED := "t"
 
+# Settings to use for tests (overrides the default dev_settings)
+
+TEST_DJANGO_SETTINGS := "project.test_settings"
+
+# Helper to run pytest with test settings
+[private]
+pytest-test *args:
+    cd project && DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }} uv run pytest {{ args }}
+
 [private]
 default:
     just --list
@@ -207,7 +216,7 @@ t *options: makemigrations mypy (test "--exitfirst --failed-first " + options)
 
 # Run individual tests with no dependencies
 k *options:
-    cd project && uv run pytest --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG  -vv -k {{ options }}
+    just pytest-test --exitfirst --failed-first --showlocals -s --log-cli-level=DEBUG -vv -k {{ options }}
 
 # Draw a nice entity-relationship diagram
 [group('django')]
@@ -220,6 +229,7 @@ graph: migrate
 [script('bash')]
 test *options: makemigrations mypy collectstatic
     set -euxo pipefail
+    export DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }}
     cd project
 
     pytest_args="--create-db --log-cli-level=WARNING {{ options }}"
@@ -242,17 +252,17 @@ ft *options: (t "-n 8 " + options)
 # Run UI tests with Playwright (visible browser)
 [group('development')]
 ui-test *options:
-    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright --headed {{ options }}
+    just pytest-test -m playwright --headed {{ options }}
 
 # Run UI tests in headless mode (faster, for CI)
 [group('development')]
 ui-test-headless *options:
-    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright {{ options }}
+    just pytest-test -m playwright {{ options }}
 
 # Run UI tests on mobile viewport
 [group('development')]
 ui-test-mobile *options:
-    cd project && DJANGO_SETTINGS_MODULE=project.test_settings uv run pytest -m playwright --headed --device="iPhone 12" {{ options }}
+    just pytest-test -m playwright --headed --device="iPhone 12" {{ options }}
 
 # Display coverage from a test run
 [group('development')]
