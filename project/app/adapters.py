@@ -1,5 +1,5 @@
-from allauth.socialaccount.adapter import (
-    DefaultSocialAccountAdapter,  # type: ignore [import-untyped]
+from allauth.socialaccount.adapter import (  # type: ignore [import-untyped]
+    DefaultSocialAccountAdapter,
 )
 
 
