@@ -186,10 +186,14 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Allauth configuration
-ACCOUNT_AUTHENTICATION_METHOD = "username"
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"username"}  # Users log in with username (not email)
+ACCOUNT_SIGNUP_FIELDS = [
+    "email*",
+    "username*",
+    "password1*",
+    "password2*",
+]  # Required fields (* = required)
 ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_SIGNUP_FORM_CLASS = "app.forms.AllauthSignupForm"
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
 SOCIALACCOUNT_QUERY_EMAIL = True
