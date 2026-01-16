@@ -127,3 +127,8 @@ markers = [
     "playwright: marks tests as UI tests (deselect with '-m \"not playwright\"')",
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
+filterwarnings = [
+    # Suppress expected database teardown error from live_server fixture
+    # Our pytest_sessionfinish hook cleans up the database after this warning
+    "ignore:Error when trying to teardown test databases.*database.*is being accessed:pytest.PytestWarning",
+]

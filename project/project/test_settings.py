@@ -20,9 +20,9 @@ DATABASES = {
         "PASSWORD": os.environ.get("PGPASS", "postgres"),
         "USER": os.environ.get("PGUSER", "postgres"),
         # Disable persistent connections for tests
-        "CONN_MAX_AGE": 0,
+        "CONN_MAX_AGE": 0,  # type: ignore[dict-item]
         # Configure test database to allow forceful drop
-        "TEST": {
+        "TEST": {  # type: ignore[dict-item]
             "NAME": "test_bridge",
         },
     },
