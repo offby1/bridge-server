@@ -7,8 +7,8 @@ import 'postgres.just'
 DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
-export GOOGLE_OAUTH_CLIENT_ID := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
-export GOOGLE_OAUTH_CLIENT_SECRET := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
+export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
+export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
