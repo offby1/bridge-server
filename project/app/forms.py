@@ -77,7 +77,7 @@ class SocialSignupForm(forms.Form):
         # Get the user from the sociallogin object
         user = self.sociallogin.user
         user.username = self.cleaned_data["username"]
-        # Don't call user.save() here - let allauth's adapter.save_user() handle it
-        # This ensures the SocialAccount is created properly
+        # Must save the user to give it a primary key before login
+        user.save()
         # Player creation is handled by CustomSocialAccountAdapter.save_user()
         return user

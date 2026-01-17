@@ -20,8 +20,8 @@ just sp                 # Quick shell_plus (no dependencies)
 
 ### Testing
 ```bash
-just test               # Full test suite with coverage report (HTML in htmlcov/)
-just ft                 # Fast tests (parallel, 8 workers via pytest-xdist)
+just ft                 # Fast tests (parallel, 8 workers via pytest-xdist) - PREFERRED for development
+just test               # Full test suite with coverage report (HTML in htmlcov/) - slower
 just t                  # Tests with exitfirst and failed-first
 just k <pattern>        # Run specific test by name (e.g., just k hand_events)
 just mypy               # Type checking with dmypy daemon
@@ -32,7 +32,10 @@ just ui-test            # Run UI tests headed (visible browser - avoid during ac
 just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 ```
 
-**Important**: Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
+**Important Testing Notes**:
+- **Always use `just ft` for quick test verification during development** - it's much faster than `just test`
+- Use `just test` only when you need coverage reports or are doing final verification
+- Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
 
 ### Database
 ```bash

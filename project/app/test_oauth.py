@@ -111,8 +111,8 @@ class SocialSignupFormTestCase(TestCase):
         self.assertEqual(returned_user.username, "testuser")
         self.assertIsNone(response)
 
-    def test_form_save_sets_username_without_saving_user(self):
-        """Test that form.save() sets username but doesn't save user yet."""
+    def test_form_save_sets_username_and_saves_user(self):
+        """Test that form.save() sets username and saves user to DB."""
         # Create a user (not saved to DB yet)
         user = User(username="", email="playertest@example.com")
 
@@ -129,12 +129,13 @@ class SocialSignupFormTestCase(TestCase):
 
         self.assertTrue(form.is_valid())
 
-        # Save should set username but not persist to DB
+        # Save should set username and persist to DB (required for login signal)
         result_user = form.save(request=None)
         self.assertEqual(result_user.username, "playertestuser")
 
-        # User should not be in database yet (adapter.save_user() handles that)
-        self.assertFalse(User.objects.filter(username="playertestuser").exists())
+        # User should be in database with a primary key (needed before login)
+        self.assertTrue(User.objects.filter(username="playertestuser").exists())
+        self.assertIsNotNone(result_user.pk)
 
 
 class CustomSocialAccountAdapterTestCase(TestCase):
