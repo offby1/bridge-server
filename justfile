@@ -183,10 +183,12 @@ tiny:
     just stress --tiny --tempo=0
     docker compose logs django bot --follow
 
+setup-oauth: (manage "setup_oauth")
+
 [group('development')]
 [parallel]
 [script('bash')]
-runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
+runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key setup-oauth
     set -euxo pipefail
     cd project
     uv run python manage.py runserver 9000 {{ options }}
