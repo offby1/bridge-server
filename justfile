@@ -284,26 +284,10 @@ clean:
 [private]
 docker-prerequisites: version-file orb uv-install-no-dev ensure-skeleton-key start
 
-# typical usage: just nuke ; docker volume prune --all --force ; just dcu
-[group('development')]
-[script('bash')]
-dc *options: docker-prerequisites
-    set -euo pipefail
+alias dc := dcu
 
-    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export GIT_VERSION="$(cat project/VERSION)"
-
-    # Google OAuth credentials (optional - gracefully handles if files don't exist)
-    export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
-    export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
-
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-
-    docker compose {{ options }}
-
-dcu *options: (dc "up --build " + options)
+dcu:
+    @echo Use "just dev" now ; false
 
 alias perf := perf-local
 
@@ -326,10 +310,6 @@ perf-local: drop docker-prerequisites
     just stress --min-players=100 --tempo=0.5
     docker compose logs django --follow
 
-# Your kids know 'front and follow'?
-[script('bash')]
-follow: (dcu "--watch")
-
 ensure-git-repo-clean:
     [[ -z "$(git status --porcelain)" ]]
 
@@ -339,17 +319,17 @@ ensure-branch-is-main:
 [private]
 deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean
 
-[group('deploy')]
+[private]
 [script('bash')]
-prod: deploy-prerequisites
+_deploy hostname profile context:
     set -euo pipefail
 
-    export CADDY_HOSTNAME=bridge.offby1.info
-    export COMPOSE_PROFILES=prod
+    export CADDY_HOSTNAME="{{ hostname }}"
+    export COMPOSE_PROFILES={{ profile }}
+    export DOCKER_CONTEXT={{ context }}
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE=project.prod_settings
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export DOCKER_CONTEXT=hetz-bridge
     export GIT_VERSION="$(cat project/VERSION)"
 
     # Google OAuth credentials (optional - gracefully handles if files don't exist)
@@ -360,39 +340,13 @@ prod: deploy-prerequisites
     docker compose logs django --follow
 
 [group('deploy')]
-[script('bash')]
-beta: docker-prerequisites
-    set -euo pipefail
-
-    export CADDY_HOSTNAME=beta.bridge.offby1.info
-    export COMPOSE_PROFILES=beta
-    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export DOCKER_CONTEXT=hetz-beta
-    export GIT_VERSION="$(cat project/VERSION)"
-
-    # Google OAuth credentials (optional - gracefully handles if files don't exist)
-    export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
-    export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
-
-    docker compose up --build --detach
-    docker compose logs django --follow
+prod: deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge")
 
 [group('deploy')]
-[script('bash')]
-mini: docker-prerequisites
-    set -euox pipefail
+beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta")
 
-    export COMPOSE_PROFILES=prod
-    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export DOCKER_CONTEXT=mini
-    export GIT_VERSION="$(cat project/VERSION)"
-
-    docker compose up --build --detach
-    docker compose logs django --follow
+[group('deploy')]
+dev: docker-prerequisites && (_deploy "localhost" "dev" "default")
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
