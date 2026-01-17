@@ -27,15 +27,18 @@ class Command(BaseCommand):
             # Development: use Tailscale hostname if available, otherwise localhost
             if hostname and ".ts.net" in hostname:
                 domain = hostname
-                site_name = f"Bridge Server (Development - {hostname})"
+                site_name = (
+                    f"Bridge Dev ({hostname[:20]})"  # Truncate hostname to fit 50 char limit
+                )
             else:
                 domain = "localhost:9000"
-                site_name = "Bridge Server (Development)"
+                site_name = "Bridge Dev (localhost)"
 
         # Get or update the current site
         site = Site.objects.get_current()
         site.domain = domain
         site.name = site_name
+        self.stdout.write(self.style.SUCCESS(f"Configuring site {site.name} at {site.domain} ..."))
         site.save()
         self.stdout.write(self.style.SUCCESS(f"Site configured: {site.name} at {site.domain}"))
 
