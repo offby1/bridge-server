@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from allauth.socialaccount.models import (  # type: ignore[import-untyped]
     SocialAccount,
+    SocialLogin,
 )
 from allauth.socialaccount.providers.google.provider import (  # type: ignore[import-untyped]
     GoogleProvider,
@@ -181,11 +182,22 @@ class OAuthFlowEndToEndTestCase(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        from allauth.socialaccount.models import SocialApp
+
         # Create Site (required by allauth)
         self.site = Site.objects.get_current()
         self.site.domain = "testserver"
         self.site.name = "Test Server"
         self.site.save()
+
+        # Create SocialApp for Google (required by GoogleProvider)
+        self.social_app = SocialApp.objects.create(
+            provider=GoogleProvider.id,
+            name="Google",
+            client_id="test-client-id",
+            secret="test-secret",
+        )
+        self.social_app.sites.add(self.site)
 
     def test_username_submission_creates_player(self):
         """Test that submitting username creates User and Player objects."""
@@ -295,3 +307,74 @@ class OAuthFlowEndToEndTestCase(TestCase):
 
         # Player should be created
         self.assertTrue(Player.objects.filter(user=user).exists())
+
+    def test_complete_oauth_signup_flow_from_empty_database(self):
+        """
+        End-to-end test simulating real OAuth signup flow.
+
+        This test covers the exact manual steps:
+        1. Start with empty database (TestCase provides this)
+        2. User completes Google OAuth
+        3. User chooses username
+        4. User is logged in
+        5. User has Player object and can access player views
+
+        This test would have caught both recent bugs:
+        - Missing user.save() causing "no primary key" error during login
+        - Missing Player creation causing "ain't no player" error
+        """
+        # Step 1: Simulate Google OAuth callback completing
+        # Create a user as Google OAuth would (no username yet)
+        user = User()
+        user.email = "newgoogleuser@example.com"
+        # Don't save yet - allauth doesn't save until form submission
+
+        # Create SocialAccount linking this user to Google
+        social_account = SocialAccount(
+            user=user,
+            provider=GoogleProvider.id,
+            uid="google-test-uid-12345",
+            extra_data={"email": "newgoogleuser@example.com", "name": "Test User"},
+        )
+
+        # Create SocialLogin object with provider (what allauth creates)
+        provider = GoogleProvider(request=None, app=self.social_app)
+        sociallogin = SocialLogin(user=user, account=social_account, provider=provider)
+
+        # Store sociallogin in session (allauth does this after OAuth callback)
+        # This is what allauth's complete_social_login does
+        session = self.client.session
+        session["socialaccount_sociallogin"] = sociallogin.serialize()
+        session.save()
+
+        # Step 2: POST username to signup form (what user does on signup page)
+        response = self.client.post(
+            "/accounts/3rdparty/signup/",
+            {"username": "newgoogleuser"},
+            follow=True,
+        )
+
+        # Step 3: Verify successful signup and login
+        self.assertEqual(response.status_code, 200)
+
+        # User should be logged in (this triggers user_logged_in signal)
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(response.wsgi_request.user.username, "newgoogleuser")
+
+        # Step 4: Verify User was created and saved to database
+        self.assertTrue(User.objects.filter(username="newgoogleuser").exists())
+        created_user = User.objects.get(username="newgoogleuser")
+        self.assertIsNotNone(created_user.pk)  # Should have primary key
+        self.assertEqual(created_user.email, "newgoogleuser@example.com")
+
+        # Step 5: Verify Player object was created
+        self.assertTrue(Player.objects.filter(user=created_user).exists())
+        player = Player.objects.get(user=created_user)
+        self.assertEqual(player.user, created_user)
+
+        # Step 6: Verify user can access player-required views
+        # (This would fail with "ain't no player" if Player wasn't created)
+        response = self.client.get(f"/player/{created_user.pk}/")
+        self.assertEqual(response.status_code, 200)
+        # Should not see the "ain't no player" error message
+        self.assertNotContains(response, "ain't no player")
