@@ -188,7 +188,7 @@ AUTHENTICATION_BACKENDS = [
 # Allauth configuration
 ACCOUNT_LOGIN_METHODS = {"username"}  # Users log in with username (not email)
 ACCOUNT_EMAIL_VERIFICATION = "none"  # No email verification
-ACCOUNT_EMAIL_REQUIRED = False  # Don't require email
+ACCOUNT_SIGNUP_FIELDS = ["username*", "password1*", "password2*"]  # Don't collect email
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
 SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask OAuth providers for email
 SOCIALACCOUNT_STORE_TOKENS = False  # Don't need tokens
