@@ -34,7 +34,9 @@ just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 
 **Important Testing Notes**:
 - **Always use `just ft` for quick test verification during development** - it's much faster than `just test`
-- Use `just test` only when you need coverage reports or are doing final verification
+- **Check coverage after every important code change** - Run `just test` to generate coverage reports, then check `htmlcov/index.html` to ensure new code is tested
+- **Always use `just` commands, not `uv run` directly** - The justfile sets up required environment variables that `uv run` lacks. Direct `uv run` commands will often fail.
+- Use `just test` when you need coverage reports or are doing final verification before committing
 - Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
 
 ### Database

@@ -374,7 +374,7 @@ class OAuthFlowEndToEndTestCase(TestCase):
 
         # Step 6: Verify user can access player-required views
         # (This would fail with "ain't no player" if Player wasn't created)
-        response = self.client.get(f"/player/{created_user.pk}/")
+        response = self.client.get(f"/player/{player.pk}/")
         self.assertEqual(response.status_code, 200)
         # Should not see the "ain't no player" error message
         self.assertNotContains(response, "ain't no player")
