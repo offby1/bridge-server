@@ -10,7 +10,8 @@
                hx-swap="none"
                hx-trigger="keyup[key=='Enter']"
                {% if chat_disabled %}disabled{% endif %} />
-        <button hx-include="#input"
+        <button class="btn btn-primary"
+                hx-include="#input"
                 hx-post="{{ chat_post_endpoint }}"
                 hx-swap="none"
                 {% if chat_disabled %}disabled{% endif %}>
@@ -37,6 +38,9 @@
                     height: 200px">
             {% for message in chat_messages %}{{ message }}{% endfor %}
         </div>
+    </div>
+    <div class="bg-warning-subtle text-warning-emphasis">
+        <small>Chats are *not* encrypted! This site's administrators can see everything!!</small>
     </div>
 </div>
 {% endpartialdef chat-html-partial %}

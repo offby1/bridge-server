@@ -27,7 +27,11 @@
         </li>
     </ul>
     <hr style="height: 10px; background-color: black; border: none;">
-    {% include "chat-partial.html#chat-html-partial" %}
+    {% if user.player.is_oauth_verified and player.is_oauth_verified %}
+        {% include "chat-partial.html#chat-html-partial" %}
+    {% else %}
+        <div>Hmph, either you or {{ player }} aren't signed in via Google, so you're not allowed to chat.</div>
+    {% endif %}
 {% endblock content %}
 {% block scripts %}
     {% include "chat-scripts.js" %}

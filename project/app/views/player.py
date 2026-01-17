@@ -171,7 +171,13 @@ def _partnership_context(
 
 
 def _chat_disabled_explanation(*, sender, recipient) -> str | None:
-    # You can always mumble to yourself.
+    if not sender.is_oauth_verified:
+        return "You must sign in with Google to use chat"
+    if not recipient.is_oauth_verified:
+        return f"{recipient.name} hasn't signed in with Google, so you can't chat with them"
+
+    # You can always mumble to yourself ... if you're OAuthed.  (Otherwise you'd use my bridge server as your own
+    # private cloud storage.)
     if sender == recipient:
         return None
 

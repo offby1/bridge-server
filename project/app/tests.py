@@ -5,15 +5,20 @@ import logging
 import re
 
 import pytest
-from bridge.card import Suit as libSuit
-from bridge.contract import Bid as libBid
-from bridge.seat import Seat as libSeat
+from allauth.socialaccount.models import SocialAccount  # type: ignore [import-untyped]
+from allauth.socialaccount.providers.google.provider import (  # type: ignore [import-untyped]
+    GoogleProvider,
+)
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.test import Client
 from django.urls import reverse
+
+from bridge.card import Suit as libSuit
+from bridge.contract import Bid as libBid
+from bridge.seat import Seat as libSeat
 
 from .models import (
     Board,
@@ -23,7 +28,6 @@ from .models import (
     Player,
     PlayerException,
 )
-
 from .testutils import set_auction_to
 from .views import hand, player
 
@@ -238,6 +242,15 @@ def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
     h = usual_setup
     north = h.modPlayer_by_seat(libSeat.NORTH)
 
+    # Make fixture players OAuth-verified so they can chat
+    for seat in libSeat:
+        player = h.modPlayer_by_seat(seat)
+        SocialAccount.objects.create(
+            user=player.user,
+            provider=GoogleProvider.id,
+            uid=f"test-uid-{seat.name}",
+        )
+
     def hey_bob(*, target=None, sender_player=None) -> HttpResponse:
         c = Client()
 
@@ -260,12 +273,17 @@ def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
     assert response.status_code == 403  # we're both at a table, so we can't talk
     assert b"already seated" in response.content
 
+    # Create lobby players - both OAuth-verified
     for n in ("lobbyboy", "lobbygirl"):
-        Player.objects.create(
-            user=auth.models.User.objects.create(
-                username=n,
-                password=everybodys_password,
-            ),
+        user = auth.models.User.objects.create(
+            username=n,
+            password=everybodys_password,
+        )
+        Player.objects.create(user=user)
+        SocialAccount.objects.create(
+            user=user,
+            provider=GoogleProvider.id,
+            uid=f"test-uid-{n}",
         )
 
     lobbyboy = Player.objects.get_by_name("lobbyboy")
@@ -277,6 +295,17 @@ def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
 
     response = hey_bob(target=lobbygirl, sender_player=lobbyboy)
     assert response.status_code == 200
+
+    # Test OAuth restriction: create non-OAuth user
+    non_oauth_user = auth.models.User.objects.create(
+        username="non_oauth_user",
+        password=everybodys_password,
+    )
+    non_oauth_player = Player.objects.create(user=non_oauth_user)
+
+    response = hey_bob(target=lobbygirl, sender_player=non_oauth_player)
+    assert response.status_code == 403
+    assert b"must sign in with Google" in response.content
 
 
 def test_only_recipient_can_read_messages(usual_setup: Hand):
