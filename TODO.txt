@@ -5,7 +5,9 @@ STILL TODO:
   - Improve the UI generally.  I did a smidgen four days ago, but could do lots more.
   - re-attempt generated fields (I tried this earlier, by hand, in the `GeneratedFields` branch, and gave up)
   - have it fix the appearance on mobile.  E.g., I seem to recall needing to scroll around to see everything.
+    [Pretty sure I've done this]
   - have it fix up all the type complaints.  Maybe have it switch to django-stubs.  Maybe have it dump `mypy` in favor of `ty`.
+    I actually tried this, on the `social-auth-django-stubs` branch.  Claude wound up adding *more* "type: ignore"s and "cast"s, so I abandoned that work.
   - Maybe have it create Android or iOS apps!
 * `create_insecure_superuser` should *check* if the admin already exists, and not try to create it if so.  Currently it spews a scary warning and then says "oh wait, ignore that warning"
 * /hand/ ought to list the most-recent hands first.
