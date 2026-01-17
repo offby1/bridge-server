@@ -111,11 +111,10 @@ class SocialSignupFormTestCase(TestCase):
         self.assertEqual(returned_user.username, "testuser")
         self.assertIsNone(response)
 
-    def test_form_save_creates_player(self):
-        """Test that form.save() creates Player object."""
-        # Create a user (simulating what allauth does)
+    def test_form_save_sets_username_without_saving_user(self):
+        """Test that form.save() sets username but doesn't save user yet."""
+        # Create a user (not saved to DB yet)
         user = User(username="", email="playertest@example.com")
-        user.save()
 
         # Create a simple mock sociallogin
         class MockSocialLogin:
@@ -130,14 +129,12 @@ class SocialSignupFormTestCase(TestCase):
 
         self.assertTrue(form.is_valid())
 
-        # Save should create Player
+        # Save should set username but not persist to DB
         result_user = form.save(request=None)
-
-        # Verify Player was created
-        self.assertTrue(Player.objects.filter(user=result_user).exists())
-        player = Player.objects.get(user=result_user)
-        self.assertEqual(player.user, result_user)
         self.assertEqual(result_user.username, "playertestuser")
+
+        # User should not be in database yet (adapter.save_user() handles that)
+        self.assertFalse(User.objects.filter(username="playertestuser").exists())
 
 
 class CustomSocialAccountAdapterTestCase(TestCase):

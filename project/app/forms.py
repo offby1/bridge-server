@@ -77,8 +77,7 @@ class SocialSignupForm(forms.Form):
         # Get the user from the sociallogin object
         user = self.sociallogin.user
         user.username = self.cleaned_data["username"]
-        user.save()
-        # Create Player object if it doesn't exist
-        if not hasattr(user, "player"):
-            Player.objects.create(user=user)
+        # Don't call user.save() here - let allauth's adapter.save_user() handle it
+        # This ensures the SocialAccount is created properly
+        # Player creation is handled by CustomSocialAccountAdapter.save_user()
         return user

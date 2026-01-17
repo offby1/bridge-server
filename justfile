@@ -321,14 +321,14 @@ deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo
 
 [private]
 [script('bash')]
-_deploy hostname profile context:
+_deploy hostname profile context settings_module:
     set -euo pipefail
 
     export CADDY_HOSTNAME="{{ hostname }}"
     export COMPOSE_PROFILES={{ profile }}
     export DOCKER_CONTEXT={{ context }}
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
+    export DJANGO_SETTINGS_MODULE={{ settings_module }}
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
@@ -340,13 +340,13 @@ _deploy hostname profile context:
     docker compose logs django --follow
 
 [group('deploy')]
-prod: deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge")
+prod: deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge" "project.prod_settings")
 
 [group('deploy')]
-beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta")
+beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta" "project.prod_settings")
 
 [group('deploy')]
-dev: docker-prerequisites && (_deploy "localhost" "dev" "default")
+dev: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings")
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
