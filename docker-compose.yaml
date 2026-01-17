@@ -39,6 +39,7 @@ services:
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
+      HOSTNAME: ${HOSTNAME:-} # for Tailscale hostname detection in setup_oauth
       PGHOST: postgres
       PGPASS: postgres
       PYROSCOPE_HOST: pyroscope
