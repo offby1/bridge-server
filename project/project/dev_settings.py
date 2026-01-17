@@ -30,6 +30,3 @@ LOGGING["root"]["level"] = "DEBUG"  # type: ignore  [index]
 
 # See notes in prod_settings
 DEPLOYMENT_ENVIRONMENT = "development"
-
-# Email backend for development - print emails to console instead of sending
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

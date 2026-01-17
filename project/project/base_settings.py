@@ -187,12 +187,13 @@ AUTHENTICATION_BACKENDS = [
 
 # Allauth configuration
 ACCOUNT_LOGIN_METHODS = {"username"}  # Users log in with username (not email)
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "none"  # No email verification
+ACCOUNT_EMAIL_REQUIRED = False  # Don't require email
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Force username selection
-SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask OAuth providers for email
 SOCIALACCOUNT_STORE_TOKENS = False  # Don't need tokens
 SOCIALACCOUNT_ADAPTER = "app.adapters.CustomSocialAccountAdapter"
-# Only ask for username during social signup (email comes from OAuth provider)
+# Only ask for username during social signup
 SOCIALACCOUNT_FORMS = {
     "signup": "app.forms.SocialSignupForm",
 }
@@ -203,12 +204,19 @@ SOCIALACCOUNT_FORMS = {
 # SocialApp object automatically on deployment.
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        "SCOPE": ["profile", "email"],
+        "SCOPE": ["profile"],  # Only request profile, not email
         "AUTH_PARAMS": {"access_type": "online"},
         # Don't define APP here - it creates a duplicate in-memory SocialApp
         # alongside the database SocialApp, causing MultipleObjectsReturned errors
     }
 }
+
+# Email configuration - explicitly disable
+# We don't send email for several reasons:
+# 1. No benefit - OAuth providers already verify identity
+# 2. High cost - requires SMTP service (difficult and expensive)
+# 3. Reduced complexity - one less thing to maintain
+EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"  # Silently discard all emails
 
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
 
