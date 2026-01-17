@@ -9,10 +9,6 @@ import re
 from typing import TYPE_CHECKING
 
 import more_itertools
-
-import bridge.card
-import bridge.seat
-import bridge.table
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -26,6 +22,10 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from faker import Faker
 
+import bridge.card
+import bridge.seat
+import bridge.table
+
 from .board import Board
 from .common import attribute_names
 from .message import Message
@@ -33,9 +33,10 @@ from .playaz import WireCharacterProvider
 from .types import PK_from_str
 
 if TYPE_CHECKING:
+    import app.models
+
     from .hand import Hand
     from .types import PK
-    import app.models
 
 logger = logging.getLogger(__name__)
 
@@ -337,6 +338,18 @@ class Player(TimeStampedModel):
     @property
     def looking_for_partner(self):
         return self.partner is None
+
+    @property
+    def is_oauth_verified(self) -> bool:
+        """
+        Returns True if this player signed up via OAuth (e.g., Google).
+
+        OAuth users have been verified by a third-party provider (Google verifies
+        email, phone number, etc.), which provides a higher level of trust than
+        anonymous signups. Use this to restrict privileged features like chat to
+        reduce abuse potential.
+        """
+        return self.user.socialaccount_set.exists()  # type: ignore [attr-defined]
 
     def _send_partnership_messages(self, *, action, old_partner_pk=None):
         if action == JOIN:
