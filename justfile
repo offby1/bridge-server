@@ -188,7 +188,7 @@ setup-oauth: (manage "setup_oauth")
 [group('development')]
 [parallel]
 [script('bash')]
-runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key setup-oauth
+runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
     cd project
     uv run python manage.py runserver 9000 {{ options }}
@@ -231,7 +231,7 @@ graph: migrate
 # Run all the tests
 [group('development')]
 [script('bash')]
-test *options: makemigrations mypy collectstatic
+test *options: makemigrations mypy collectstatic setup-oauth
     set -euxo pipefail
     export DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }}
     cd project
