@@ -110,11 +110,11 @@ INSTALLED_APPS = [
     "django_http_compression",
     "django_prometheus",
     "tz_detect",
+    "app",  # Must come before allauth so our templates override allauth's
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    "app",
 ]
 
 FASTDEV_STRICT_IF = True
