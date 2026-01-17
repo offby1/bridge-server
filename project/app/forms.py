@@ -79,6 +79,12 @@ class SocialSignupForm(forms.Form):
         user.username = self.cleaned_data["username"]
         # Must save the user to give it a primary key before login
         user.save()
+
+        # Save the SocialAccount to link User with Google account
+        # This creates the record in socialaccount_socialaccount table
+        self.sociallogin.account.user = user
+        self.sociallogin.account.save()
+
         # Create Player object for this user (use get_or_create for safety)
         Player.objects.get_or_create(user=user)
         return user

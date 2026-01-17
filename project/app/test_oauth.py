@@ -45,15 +45,23 @@ class SocialSignupFormTestCase(TestCase):
         # Create a user
         user = User(username="", email="test@example.com")
 
+        # Create a mock social account
+        mock_account = SocialAccount(
+            provider=GoogleProvider.id,
+            uid="test-uid-123",
+            extra_data={"email": "test@example.com"},
+        )
+
         # Create a simple mock sociallogin
         class MockSocialLogin:
-            def __init__(self, user):
+            def __init__(self, user, account):
                 self.user = user
+                self.account = account
 
         # Create form with data
         form = SocialSignupForm(
             data={"username": "testuser"},
-            sociallogin=MockSocialLogin(user),
+            sociallogin=MockSocialLogin(user, mock_account),
         )
 
         self.assertTrue(form.is_valid())
@@ -61,6 +69,9 @@ class SocialSignupFormTestCase(TestCase):
         # Save should set username
         result_user = form.save(request=None)
         self.assertEqual(result_user.username, "testuser")
+
+        # Verify SocialAccount was created
+        self.assertTrue(SocialAccount.objects.filter(user=result_user).exists())
 
     def test_form_rejects_duplicate_username(self):
         """Test that form validation rejects duplicate usernames."""
@@ -91,15 +102,23 @@ class SocialSignupFormTestCase(TestCase):
         # Create a user
         user = User(username="", email="test@example.com")
 
+        # Create a mock social account
+        mock_account = SocialAccount(
+            provider=GoogleProvider.id,
+            uid="test-uid-456",
+            extra_data={"email": "test@example.com"},
+        )
+
         # Create a simple mock sociallogin
         class MockSocialLogin:
-            def __init__(self, user):
+            def __init__(self, user, account):
                 self.user = user
+                self.account = account
 
         # Create form with data
         form = SocialSignupForm(
             data={"username": "testuser"},
-            sociallogin=MockSocialLogin(user),
+            sociallogin=MockSocialLogin(user, mock_account),
         )
 
         self.assertTrue(form.is_valid())
@@ -117,15 +136,23 @@ class SocialSignupFormTestCase(TestCase):
         # Create a user (not saved to DB yet)
         user = User(username="", email="playertest@example.com")
 
+        # Create a mock social account
+        mock_account = SocialAccount(
+            provider=GoogleProvider.id,
+            uid="test-uid-789",
+            extra_data={"email": "playertest@example.com"},
+        )
+
         # Create a simple mock sociallogin
         class MockSocialLogin:
-            def __init__(self, user):
+            def __init__(self, user, account):
                 self.user = user
+                self.account = account
 
         # Create form with data
         form = SocialSignupForm(
             data={"username": "playertestuser"},
-            sociallogin=MockSocialLogin(user),
+            sociallogin=MockSocialLogin(user, mock_account),
         )
 
         self.assertTrue(form.is_valid())
@@ -137,6 +164,12 @@ class SocialSignupFormTestCase(TestCase):
         # User should be in database with a primary key (needed before login)
         self.assertTrue(User.objects.filter(username="playertestuser").exists())
         self.assertIsNotNone(result_user.pk)
+
+        # SocialAccount should be created and linked to user
+        self.assertTrue(SocialAccount.objects.filter(user=result_user).exists())
+        social_account = SocialAccount.objects.get(user=result_user)
+        self.assertEqual(social_account.provider, GoogleProvider.id)
+        self.assertEqual(social_account.uid, "test-uid-789")
 
 
 class CustomSocialAccountAdapterTestCase(TestCase):
@@ -371,6 +404,13 @@ class OAuthFlowEndToEndTestCase(TestCase):
         self.assertTrue(Player.objects.filter(user=created_user).exists())
         player = Player.objects.get(user=created_user)
         self.assertEqual(player.user, created_user)
+
+        # Step 5b: Verify SocialAccount was created (links User to Google account)
+        # This is CRITICAL - without this, user can't log in with Google again
+        self.assertTrue(SocialAccount.objects.filter(user=created_user).exists())
+        social_account_in_db = SocialAccount.objects.get(user=created_user)
+        self.assertEqual(social_account_in_db.provider, GoogleProvider.id)
+        self.assertEqual(social_account_in_db.uid, "google-test-uid-12345")
 
         # Step 6: Verify user can access player-required views
         # (This would fail with "ain't no player" if Player wasn't created)
