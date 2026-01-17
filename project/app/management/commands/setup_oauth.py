@@ -15,6 +15,7 @@ class Command(BaseCommand):
         # Note: beta uses COMPOSE_PROFILES=beta but DEPLOYMENT_ENVIRONMENT="staging"
         compose_profiles = os.environ.get("COMPOSE_PROFILES", "")
         deployment_env = os.environ.get("DEPLOYMENT_ENVIRONMENT", "development")
+        hostname = os.environ.get("HOSTNAME", "")
 
         if deployment_env == "production" or compose_profiles == "prod":
             domain = "bridge.offby1.info"
@@ -23,8 +24,13 @@ class Command(BaseCommand):
             domain = "beta.bridge.offby1.info"
             site_name = "Bridge Server (Beta)"
         else:
-            domain = "localhost:9000"
-            site_name = "Bridge Server (Development)"
+            # Development: use Tailscale hostname if available, otherwise localhost
+            if hostname and ".ts.net" in hostname:
+                domain = hostname
+                site_name = f"Bridge Server (Development - {hostname})"
+            else:
+                domain = "localhost:9000"
+                site_name = "Bridge Server (Development)"
 
         # Get or update the current site
         site = Site.objects.get_current()
