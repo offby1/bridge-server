@@ -179,7 +179,7 @@ tiny:
     set -euxo pipefail
 
     just drop
-    DJANGO_SETTINGS_MODULE=project.prod_settings just dcu -d
+    DJANGO_SETTINGS_MODULE=project.prod_settings just dev -d
     just stress --tiny --tempo=0
     docker compose logs django bot --follow
 
@@ -323,7 +323,7 @@ deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo
 
 [private]
 [script('bash')]
-_deploy hostname profile context settings_module:
+_deploy hostname profile context settings_module *options:
     set -euo pipefail
 
     export CADDY_HOSTNAME="{{ hostname }}"
@@ -338,7 +338,7 @@ _deploy hostname profile context settings_module:
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
 
-    docker compose up --build --detach
+    docker compose up --build {{ options }}
     docker compose logs django --follow
 
 [group('deploy')]
@@ -348,7 +348,7 @@ prod: deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge"
 beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta" "project.prod_settings")
 
 [group('deploy')]
-dev: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings")
+dev *options: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
