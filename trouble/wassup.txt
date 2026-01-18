@@ -1,0 +1,23 @@
+A bug:
+
+* From the project root directory, load the database with `just restore < trouble/2026-01-18T17:10:28+0000.sql`
+* Start the web server via `just runme`
+* Visit http://127.0.0.1:9000/hand/138/
+
+  You'll see
+
+  Anonymous users like AnonymousUser can view only those boards that have been fully played
+
+This is wrong, because the tournament is complete -- completed tournaments are supposed to be visible to everybody.
+
+* Now log out
+* Again visit http://127.0.0.1:9000/accounts/login/
+* log in as user "bob", password "!"
+
+  You will now see
+
+    This hand was abandoned because play completion deadline (2025-09-28T16:13:51.704288+00:00) has passed
+
+  That is correct.
+
+So: the bug is that a user who isn't associated with the hand (or its related tournament) is prevented from seeing the hand, even though the tournament is complete.
