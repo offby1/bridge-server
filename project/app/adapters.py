@@ -15,11 +15,6 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         """Return False to force username selection page."""
         return False
 
-    def populate_user(self, request, sociallogin, data):
-        """Populate user from social data. Username set by form."""
-        user = super().populate_user(request, sociallogin, data)
-        return user
-
     def save_user(self, request, sociallogin, form=None):
         """Save the user and create associated Player object."""
         user = super().save_user(request, sociallogin, form)
