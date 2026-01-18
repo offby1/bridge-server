@@ -41,7 +41,7 @@ class SocialSignupForm(forms.Form):
     """
     Custom signup form for social account users (Google OAuth).
     Allows users to choose a custom username when signing up with Google.
-    Only asks for username - email comes from OAuth provider.
+    Only asks for username - we don't store email addresses.
     """
 
     username = forms.CharField(
