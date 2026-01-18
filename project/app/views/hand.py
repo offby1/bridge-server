@@ -544,13 +544,11 @@ def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 def _error_response_or_viewfunc(
     hand: app.models.Hand,
     user: AbstractBaseUser | AnonymousUser,
-    check_if_will_be_played_again: bool = True,
 ) -> HttpResponseForbidden | Callable[..., HttpResponse]:
     board = hand.board
 
-    if check_if_will_be_played_again:
-        if not board.will_be_played_again():
-            return _everything_read_only_view
+    if not board.will_be_played_again():
+        return _everything_read_only_view
 
     player = getattr(user, "player", None)
 
@@ -655,9 +653,7 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     hand = app.models.Hand.objects.get_or_404(pk=pk)
 
-    # This view is currently only called by bots, and bots only run when a hand is in progress -- that is, they don't review completed hands.
-    # So there's no point checking if this board is completed; skipping that check saves a query or two.
-    resp = _error_response_or_viewfunc(hand, request.user, check_if_will_be_played_again=False)
+    resp = _error_response_or_viewfunc(hand, request.user)
 
     if isinstance(resp, HttpResponseForbidden):
         return Custom403(request, resp.text)  # type: ignore[attr-defined]
