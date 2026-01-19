@@ -350,5 +350,8 @@ beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-be
 [group('deploy')]
 dev *options: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
 
+[group('deploy')]
+mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "dev" "mini" "project.dev_settings")
+
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
