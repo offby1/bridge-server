@@ -7,7 +7,7 @@ from .utils import is_safe
 
 class Command(BaseCommand):
     def handle(self, *args, **options) -> None:
-        if not is_safe(self.stderr):
+        if not is_safe(self.stdout):
             msg = "I dunno, creating a superuser with a hard-coded password, in production, seems like a bad idea?"
             raise CommandError(
                 msg,
