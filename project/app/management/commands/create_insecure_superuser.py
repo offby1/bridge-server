@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
-from django.db.utils import IntegrityError
+from django.db import transaction
 
 from .utils import is_safe
 
@@ -13,10 +13,10 @@ class Command(BaseCommand):
                 msg,
             )
 
-        username = "admin"
-        try:
-            User.objects.create_superuser(
-                username=username, password="admin", email="admin@admin.com"
-            )
-        except IntegrityError as e:
-            self.stderr.write(f"Superuser {username!r} probably already exists -- {e}")
+        with transaction.atomic():
+            if user := User.objects.filter(is_superuser=True).first():
+                self.stdout.write(f"Superuser {user.username!r} already exists.")
+            else:
+                kwargs = {"username": "admin", "password": "admin", "email": "admin@admin.com"}
+                User.objects.create_superuser(**kwargs)
+                self.stdout.write(f"Created superuser {kwargs!r}.")
