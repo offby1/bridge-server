@@ -280,7 +280,7 @@ def _three_by_three_trick_display_context_for_hand(
 
         player = player_names_by_direction_letter[direction]
 
-        return f"""<div {class_attribute}>{player}<span style="color: {color}">{card or "__"}</span></div>"""
+        return f"""{player}<div {class_attribute}><span style="color: {color}">{card or "__"}</span></div>"""
 
     arrow = ""
     if lead_came_from is not None:
