@@ -1,6 +1,9 @@
 IN PROGRESS:
 
 STILL TODO:
+* Bigger mostly-bot tournaments?  If I'm playing all by myself, or with a single human partner, I typically create a new tournament, sign us up, and then "skip the deadline".  That ensures that the tournament has just four players: me, my partner, and two bots.
+
+  But it might be fun to play against a whole swarm of bots.  Perhaps the "skip the deadline" button should have, next to it, a spinner that lets me control the number of tables in the tournament (with the minimum, as well as the default, being four).
 * Fix title for pages like http://127.0.0.1:9000/hand/138/ -- we did something like this way back in
 
   commit 0582b3689b6ea4ee9a3927645df5fc6fdb3501dc

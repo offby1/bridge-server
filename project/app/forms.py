@@ -7,9 +7,11 @@ from .models import Player
 
 
 class SignupForm(forms.Form):
-    username = forms.CharField(widget=forms.TextInput(attrs={"autofocus": True}))
-    password = forms.CharField(widget=forms.PasswordInput)
-    password_again = forms.CharField(widget=forms.PasswordInput)
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={"autofocus": True, "class": "form-control"})
+    )
+    password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
+    password_again = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
 
     def clean(self):
         cleaned_data = super().clean()

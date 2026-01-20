@@ -11,7 +11,6 @@ from django.db.models.query import QuerySet
 
 from .utils import is_safe
 
-
 # In [1]: from django.contrib.auth.hashers import make_password
 # In [2]: make_password(".")
 # Out[2]: 'pbkdf2_sha256$870000$2hIscex1sYiQd86rzIuNEb$C1t3fgjQJ00VLQA6H7Hg25GGjkyLc9CBfkzNTSbqYTU='
@@ -29,7 +28,7 @@ class Command(BaseCommand):
         group.add_argument("--tiny", default=False, action="store_true")
 
     def handle(self, *_args, **options) -> None:
-        if not is_safe(self.stderr):
+        if not is_safe(self.stdout):
             msg = "I dunno, creating a fleet of killer bots, in production, seems like a bad idea?"
             raise CommandError(
                 msg,
