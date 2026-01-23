@@ -58,6 +58,11 @@ urlpatterns = [
         include(django_eventstream.urls),
         {"format-channels": ["player:json:{player_id}"]},
     ),
+    path(
+        "events/player/bot-checkbox/<player_id>/",
+        include(django_eventstream.urls),
+        {"format-channels": ["player:bot-checkbox:{player_id}"]},
+    ),
     # This gets events for one specific table.
     path(
         "events/table/html/<hand_id>/",

@@ -292,7 +292,7 @@ def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> N
 
     sent_events_by_channel: dict[str, list[Any]] = collections.defaultdict(list)
 
-    def send_event(*, channel, event_type, data):
+    def send_event(*, channel, event_type, data, **kwargs):
         sent_events_by_channel[channel].append(data)
 
     monkeypatch.setattr(hand, "send_event", send_event)

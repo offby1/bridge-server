@@ -30,7 +30,11 @@
                                 {{ user }}
                             {% endif %}
                         </span>
-                        {% include "bot-checkbox.html" with error_message="" %}
+                        <div hx-ext="sse"
+                             sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
+                             sse-swap="message"
+                             hx-target="#bot-plays-for-me-div"
+                             hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
                     {% else %}
                         <a href="{% url 'app:signup' %}" class="btn btn-sm btn-outline-primary">Sign Up</a>
                         <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Log In</a>
