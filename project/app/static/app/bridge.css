@@ -4,8 +4,9 @@ xx* {
 
 #four-hands {
     border: 1px solid;
-    height: 50%;
     font-family: monospace;
+    padding: 0.5rem;
+    overflow: visible;
 }
 
 .northsouth {
@@ -15,7 +16,7 @@ xx* {
 
 .eastwest {
     display: grid;
-    grid-template-columns: 3fr 5cqw 3fr;
+    grid-template-columns: 3fr 5vw 3fr;
 }
 
 /* Mobile: stack East/West vertically instead of side-by-side */
@@ -160,7 +161,7 @@ body {
 
 ul.carousel {
   width: 100vw; /* Use full width on mobile */
-  height: 90vh;
+  height: 70vh;
   display: flex;
   anchor-name: --my-carousel;
   overflow-x: scroll;
@@ -259,6 +260,9 @@ li.carousel {
 
   flex: 0 0 100%;
   scroll-snap-align: center;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .bigfont {
@@ -270,7 +274,7 @@ li.carousel {
 }
 
 .mediumfont {
-    font-size: 5cqh;
+    font-size: 2.5vh;
 }
 
 .spades, .hearts, .diamonds, .clubs {
@@ -417,7 +421,7 @@ li h2 {
 
 .three-by-three-trick-display {
     display: grid;
-    height: 50cqh;
+    height: 40vh;
     grid-template-columns: 1fr 1fr 1fr;
 
     div {
@@ -434,7 +438,7 @@ li h2 {
         font-weight: 100;
         font-style: normal;
 
-        font-size: 8cqh;
+        font-size: 6vh;
         justify-self: center;
     }
     div.grid-column {
