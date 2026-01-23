@@ -319,7 +319,7 @@ ensure-branch-is-main:
     [[ "$(git symbolic-ref HEAD)" = "refs/heads/main" ]]
 
 [private]
-deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean
+prod-deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean
 
 [private]
 [script('bash')]
@@ -338,11 +338,11 @@ _deploy hostname profile context settings_module *options:
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
 
-    docker compose up --build {{ options }}
+    docker compose up --build --detach {{ options }}
     docker compose logs django --follow
 
 [group('deploy')]
-prod: deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge" "project.prod_settings")
+prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge" "project.prod_settings")
 
 [group('deploy')]
 beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta" "project.prod_settings")
