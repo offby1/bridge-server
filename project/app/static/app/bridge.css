@@ -4,8 +4,9 @@ xx* {
 
 #four-hands {
     border: 1px solid;
-    height: 50%;
     font-family: monospace;
+    padding: 0.5rem;
+    overflow: visible;
 }
 
 .northsouth {
@@ -15,7 +16,7 @@ xx* {
 
 .eastwest {
     display: grid;
-    grid-template-columns: 3fr 5cqw 3fr;
+    grid-template-columns: 3fr 5vw 3fr;
 }
 
 /* Mobile: stack East/West vertically instead of side-by-side */
@@ -160,7 +161,7 @@ body {
 
 ul.carousel {
   width: 100vw; /* Use full width on mobile */
-  height: 90vh;
+  height: 70vh;
   display: flex;
   anchor-name: --my-carousel;
   overflow-x: scroll;
@@ -259,6 +260,9 @@ li.carousel {
 
   flex: 0 0 100%;
   scroll-snap-align: center;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .bigfont {
@@ -266,11 +270,11 @@ li.carousel {
     font-optical-sizing: auto;
     font-weight: 100;
     font-style: normal;
-    font-size: 6vw; /* Original size - works well for carousel view */
+    font-size: 3.5vw;
 }
 
 .mediumfont {
-    font-size: 5cqh;
+    font-size: 2.5vh;
 }
 
 .spades, .hearts, .diamonds, .clubs {
@@ -278,7 +282,7 @@ li.carousel {
     flex-direction: row;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.5rem;
+    padding: 0.25rem;
     background: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -286,7 +290,7 @@ li.carousel {
 }
 
 .spades div, .hearts div, .diamonds div, .clubs div {
-    padding: 0.25rem 0.5rem;
+    padding: 0.15rem 0.3rem;
     border-radius: 4px;
     background: white;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -360,8 +364,8 @@ li.carousel {
     display: grid;
     overflow-x: auto;
     grid-template-rows: auto auto auto auto; /* Let content determine height */
-    gap: 0.5rem; /* Spacing between suits */
-    padding: 0.5rem;
+    gap: 0.25rem; /* Spacing between suits */
+    padding: 0.25rem;
 }
 
 #toast-one-hand {
@@ -417,7 +421,7 @@ li h2 {
 
 .three-by-three-trick-display {
     display: grid;
-    height: 50cqh;
+    height: 40vh;
     grid-template-columns: 1fr 1fr 1fr;
 
     div {
@@ -434,7 +438,7 @@ li h2 {
         font-weight: 100;
         font-style: normal;
 
-        font-size: 8cqh;
+        font-size: 6vh;
         justify-self: center;
     }
     div.grid-column {
@@ -443,9 +447,13 @@ li h2 {
     }
 }
 
-.active {
-    background-color: #d4edda; /* Bootstrap success light */
-    border-left: 4px solid #28a745; /* Accent border */
+/* Style the suit containers when the hand is active */
+.active .spades,
+.active .hearts,
+.active .diamonds,
+.active .clubs {
+    background-color: #d4edda; /* Light green highlight */
+    border: 2px solid #28a745; /* Subtle green border */
 }
 
 .nav-link {
