@@ -447,9 +447,13 @@ li h2 {
     }
 }
 
-.active {
-    background-color: #d4edda; /* Bootstrap success light */
-    border-left: 4px solid #28a745; /* Accent border */
+/* Style the suit containers when the hand is active */
+.active .spades,
+.active .hearts,
+.active .diamonds,
+.active .clubs {
+    background-color: #d4edda; /* Light green highlight */
+    border: 2px solid #28a745; /* Subtle green border */
 }
 
 .nav-link {
