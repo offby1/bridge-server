@@ -266,7 +266,7 @@ ui-test-headless *options:
 # Run UI tests on mobile viewport
 [group('development')]
 ui-test-mobile *options:
-    just pytest-test -m playwright --headed --device="iPhone 12" {{ options }}
+    just pytest-test -m playwright --headed --device='"iPhone 12"' {{ options }}
 
 # Display coverage from a test run
 [group('development')]
