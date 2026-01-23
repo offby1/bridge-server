@@ -1,17 +1,30 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Iterable, Generator
 import dataclasses
 import datetime
 import json
 import logging
 import time
+from collections.abc import Generator, Iterable
 from typing import TYPE_CHECKING, Any
 
 import more_itertools
-from bridge.auction import Auction
-from bridge.auction import AuctionException
+from django.contrib import admin
+from django.core.cache import cache
+from django.db import Error, models, transaction
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.http import Http404
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.functional import cached_property
+from django.utils.html import format_html
+from django_eventstream import send_event  # type: ignore [import-untyped]
+from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
+from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
+
+from bridge.auction import Auction, AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
@@ -22,26 +35,11 @@ from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
 from bridge.table import Table as libTable
 from bridge.xscript import CBS, HandTranscript
-from django.contrib import admin
-from django.core.cache import cache
-from django.db import Error, models, transaction
-from django.db.models import Q
-from django.db.models.query import QuerySet
-from django.http import Http404
-from django.urls import reverse
-from django.utils.functional import cached_property
-from django.utils.html import format_html
-from django.utils import timezone
-from django_eventstream import send_event  # type: ignore [import-untyped]
-from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
-from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
-
 
 from ..utils import movements
 from .common import attribute_names
 from .player import Player
 from .tournament import Tournament
-
 from .types import PK, PK_from_str
 from .utils import assert_type
 
@@ -515,7 +513,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         self.last_action_time = the_call.created
         self.save()
         player.last_action = (the_call.created, "called")
-        player.save()
+        player.save(update_fields=["last_action"])  # FIX: Only update last_action field
 
         logger.debug(
             "%s: %s (%d) called %s; last_action_time is %s",
@@ -605,7 +603,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         self.last_action_time = rv.created
         self.save()
         player.last_action = (rv.created, "played")
-        player.save()
+        player.save(update_fields=["last_action"])  # FIX: Only update last_action field
 
         logger.debug(
             "%s: %s (%d) played %s",
@@ -1072,7 +1070,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             for attribute_name in attribute_names:
                 p: Player = getattr(self, attribute_name)
                 p.current_hand = self  # type: ignore [assignment]
-                p.save()
+                p.save(update_fields=["current_hand"])
 
     def __str__(self) -> str:
         return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
