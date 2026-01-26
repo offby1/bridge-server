@@ -1,6 +1,11 @@
 IN PROGRESS:
 
 STILL TODO:
+* Have the "This hand was abandoned because play completion deadline has passed" message incorporate the deadline using the user's preferred timezone.
+  This is harder than it sounds, since the code that currently generates that message runs without any particular request session context -- and even if it had such a session, there's no guarantee that the request that wants to look at the hand uses the same timezone as the request that triggered tournament.check_for_expirations.
+
+  I suspect I need to come up with a very short list of "reasons why a hand was abandoned" (right now I can think of two: "play completion deadline has passed" and "one of the players left the table"), and represent those items as enums, and store the enums in the database instead of strings.  Then, when it's time to display an abandoned hand, we render a string based on that enum *and* the request's preferred timezone.
+
 * Bigger mostly-bot tournaments?  If I'm playing all by myself, or with a single human partner, I typically create a new tournament, sign us up, and then "skip the deadline".  That ensures that the tournament has just four players: me, my partner, and two bots.
 
   But it might be fun to play against a whole swarm of bots.  Perhaps the "skip the deadline" button should have, next to it, a spinner that lets me control the number of tables in the tournament (with the minimum, as well as the default, being four).
