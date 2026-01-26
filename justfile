@@ -183,7 +183,7 @@ tiny:
     just stress --tiny --tempo=0
     docker compose logs django bot --follow
 
-setup-oauth: (manage "setup_oauth")
+setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
 [parallel]
