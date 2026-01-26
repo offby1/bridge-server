@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import collections
+import datetime
+import zoneinfo
 from typing import Any
 
 import pytest
 from django.contrib import auth
+from django.utils import timezone
 
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
@@ -13,7 +16,7 @@ from bridge.contract import Pass as libPass
 from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
-from .models import AuctionError, Board, Hand, Player, board, hand
+from .models import AuctionError, Board, Hand, Player, board, hand, tournament
 from .testutils import set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
@@ -389,6 +392,25 @@ def test_predictable_shuffles():
     # Cards are different
     for k in ("north_cards", "east_cards", "south_cards", "west_cards"):
         assert attrs1_empty[k] != attrs1_golly[k]
+
+
+def test_abandoned_hands_message_uses_browsers_preferred_timezone(
+    usual_setup, everybodys_password
+) -> None:
+    h = Hand.objects.first()
+    assert h is not None
+    assert h.abandoned_because is None
+
+    timezone.activate(zoneinfo.ZoneInfo("America/Los_Angeles"))
+
+    t = h.tournament
+    way_back_when = datetime.datetime.fromisoformat("2001-01-01T00:00:00Z")
+    t.play_completion_deadline = way_back_when
+    t.save()
+    tournament.check_for_expirations(sender="some unit test")
+    h.refresh_from_db()
+    assert h.abandoned_because is not None
+    assert "Sun Dec 31 16:00:00 2000 PST" in h.abandoned_because
 
 
 def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:

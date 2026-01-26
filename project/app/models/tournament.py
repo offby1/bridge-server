@@ -93,7 +93,7 @@ def check_for_expirations(sender, **kwargs) -> None:
         for t in incompletes:
             if t.play_completion_deadline_has_passed():
                 t.completed_at = t.play_completion_deadline
-                deadline_str = t.play_completion_deadline.isoformat()
+                deadline_str = timezone.localtime(t.play_completion_deadline).strftime("%c %Z")
                 t.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
                 t.save()
 
