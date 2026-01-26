@@ -2,7 +2,6 @@ import base64
 import json
 
 import pytest
-
 from django.conf import settings
 from django.core.cache import cache
 from django.test.client import Client
@@ -75,7 +74,9 @@ def test_bot_checkbox_toggle(usual_setup, rf) -> None:
 
     def box_is_checked():
         __traceback_hide__ = True  # noqa: F841
-        return "checked />" in response.render().text
+        text = response.render().text
+        # Check for "checked" attribute, allowing for other attributes after it
+        return "checked" in text and 'type="checkbox"' in text
 
     def allowed():
         __traceback_hide__ = True  # noqa: F841

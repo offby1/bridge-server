@@ -41,6 +41,11 @@ class MyChannelManager(DefaultChannelManager):
             # logger.warning(f"{player.name=} ({player_pk=}) => {rv=}")
             return rv
 
+        # Bot checkbox updates are private to the player.
+        if (player_pk := models.Player.player_pk_from_bot_checkbox_channel(channel)) is not None:
+            rv = player_pk == player.pk
+            return rv
+
         # "table" messages are visible to those currently playing the table, as well as those who have played it in the
         # past.
         if (hand_pk := models.Hand.hand_pk_from_event_table_html_channel(channel)) is not None:

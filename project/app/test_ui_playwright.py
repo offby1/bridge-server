@@ -345,8 +345,9 @@ def test_tournament_results_highlight_viewer_row(page: Page, live_server, db):
     # Debug: Take screenshot immediately
     page.screenshot(path="test_output_tournament_before_check.png")
 
-    # Wait for the page to load
-    page.wait_for_load_state("networkidle")
+    # Wait for the page to load (use domcontentloaded instead of networkidle
+    # because SSE connections keep the network active)
+    page.wait_for_load_state("domcontentloaded")
 
     # Try to find any table on the page
     tables = page.locator("table").all()

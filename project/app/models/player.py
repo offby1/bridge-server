@@ -9,6 +9,7 @@ import re
 from typing import TYPE_CHECKING
 
 import more_itertools
+from dirtyfields import DirtyFieldsMixin  # type: ignore [import-untyped]
 from django.contrib import admin, auth
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -142,7 +143,7 @@ class PartnerException(PlayerException):
     pass
 
 
-class Player(TimeStampedModel):
+class Player(DirtyFieldsMixin, TimeStampedModel):
     objects = PlayerManager()
 
     user = models.OneToOneField(
@@ -305,16 +306,83 @@ class Player(TimeStampedModel):
 
         return None
 
+    @property
+    def bot_checkbox_channel(self):
+        return f"player:bot-checkbox:{self.pk}"
+
+    @staticmethod
+    def player_pk_from_bot_checkbox_channel(cn: str) -> PK | None:
+        if (m := re.match(r"player:bot-checkbox:(?P<player_id>.*)", cn)) is not None:
+            return PK_from_str(m.groups()[0])
+
+        return None
+
     def toggle_bot(self) -> None:
         with transaction.atomic():
             self.allow_bot_to_play_for_me = not self.allow_bot_to_play_for_me
             self.save()
 
     def save(self, *args, **kwargs) -> None:
+        # Capture dirty fields before saving
+        dirty_fields = self.get_dirty_fields() if self.pk else {}
+
         self._check_synthetic()
         if self.current_hand is None:
             self.random_state = None
         super().save(*args, **kwargs)
+
+        # Broadcast changes after successful save
+        if dirty_fields:
+            self._broadcast_changes(dirty_fields)
+
+    def _broadcast_changes(self, dirty_fields: dict) -> None:
+        """Send SSE updates for changed fields."""
+        from django.template.loader import render_to_string
+
+        # Bot toggle changed OR current_hand changed (which affects dummy status)
+        if "allow_bot_to_play_for_me" in dirty_fields or "current_hand_id" in dirty_fields:
+            logger.info(
+                "Player %s (pk=%s) allow_bot_to_play_for_me changed: %s -> %s",
+                self.name,
+                self.pk,
+                dirty_fields["allow_bot_to_play_for_me"],
+                self.allow_bot_to_play_for_me,
+            )
+
+            # Render HTML for web clients on dedicated bot checkbox channel
+            # Use dedicated SSE template that takes player directly
+            html = render_to_string("bot-checkbox-sse.html", {"player": self})
+            logger.debug(
+                "Broadcasting checkbox HTML to channel %s: %s",
+                self.bot_checkbox_channel,
+                html[:100],
+            )
+            send_event(
+                channel=self.bot_checkbox_channel,
+                event_type="message",
+                data=html,
+                json_encode=False,
+            )
+
+            # Send JSON for bots/API clients
+            send_event(
+                channel=self.event_JSON_hand_channel,
+                event_type="message",
+                data={"allow_bot_to_play_for_me": self.allow_bot_to_play_for_me},
+            )
+
+            # If this player is declarer, also update dummy's checkbox
+            # (since declarer controls both their own hand and dummy's hand)
+            if self.current_hand and self.current_hand.model_declarer == self:
+                dummy = self.current_hand.model_dummy
+                if dummy:
+                    dummy_html = render_to_string("bot-checkbox-sse.html", {"player": dummy})
+                    send_event(
+                        channel=dummy.bot_checkbox_channel,
+                        event_type="message",
+                        data=dummy_html,
+                        json_encode=False,
+                    )
 
     def _check_synthetic(self) -> None:
         if not self.pk:
@@ -334,6 +402,24 @@ class Player(TimeStampedModel):
             seat=bridge.seat.Seat(direction_name[0].upper()),
             name=self.name,
         )
+
+    @property
+    def is_dummy(self) -> bool:
+        """Return True if this player is currently dummy in their active hand."""
+        if self.current_hand is None:
+            return False
+        return self.current_hand.model_dummy == self
+
+    @property
+    def effective_allow_bot_to_play_for_me(self) -> bool:
+        """Return the effective bot setting for this player.
+
+        If this player is dummy, returns the declarer's setting (since declarer controls dummy).
+        Otherwise, returns this player's own setting.
+        """
+        if self.is_dummy and self.current_hand and self.current_hand.model_declarer:
+            return self.current_hand.model_declarer.allow_bot_to_play_for_me
+        return self.allow_bot_to_play_for_me
 
     @property
     def looking_for_partner(self):

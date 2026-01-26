@@ -7,10 +7,16 @@
                hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
                hx-swap="outerHTML"
                hx-target="#bot-plays-for-me-div"
-               {% if user.player.allow_bot_to_play_for_me %}checked{% endif %} />
-        <label class="form-check-label" for="bot-plays-for-me-switch">
+               {% if user.player.effective_allow_bot_to_play_for_me %}checked{% endif %}
+               {% if user.player.is_dummy %}disabled{% endif %}
+               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %} />
+        <label class="form-check-label"
+               for="bot-plays-for-me-switch"
+               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>
             {% if error_message %}
                 {{ error_message }}
+            {% elif user.player.is_dummy %}
+                Let the computer play for me (dummy)
             {% else %}
                 Let the computer play for me
             {% endif %}

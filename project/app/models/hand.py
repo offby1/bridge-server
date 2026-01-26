@@ -524,6 +524,18 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.last_action_time,
         )
 
+        if dummy_player := self.model_dummy:
+            # Notify dummy player's checkbox to update (becomes disabled)
+            from django.template.loader import render_to_string
+
+            html = render_to_string("bot-checkbox-sse.html", {"player": dummy_player})
+            send_event(
+                channel=dummy_player.bot_checkbox_channel,
+                event_type="message",
+                data=html,
+                json_encode=False,
+            )
+
         now = time.time()
 
         for p in self.players():
