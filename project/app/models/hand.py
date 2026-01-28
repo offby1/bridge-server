@@ -24,6 +24,8 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
 
+from app.sse_channels import SSEChannels
+from app.sse_events import create_player_hand_event, create_table_event
 from bridge.auction import Auction, AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
@@ -160,7 +162,7 @@ def send_timestamped_event(
     if when is None:
         when = time.time()
 
-    # logger.debug(f"Sending {summarize(data)=} to {channel=}")
+    logger.debug(f"Sending {summarize(data)=} to {channel=}")
     send_event(channel=channel, event_type="message", data=data | {"time": when})
 
 
@@ -363,7 +365,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def event_table_html_channel(self):
-        return f"table:html:{self.pk}"
+        return SSEChannels.table_html(self.pk)
 
     @staticmethod
     def hand_pk_from_event_table_html_channel(cn: str) -> PK | None:
@@ -541,10 +543,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         for p in self.players():
             send_timestamped_event(
                 channel=p.event_HTML_hand_channel,
-                data={
-                    "bidding_box_html": self._get_current_bidding_box_html_for_player(p),
-                    "hand_pk": self.pk,
-                },
+                data=create_player_hand_event(
+                    bidding_box_html=self._get_current_bidding_box_html_for_player(p),
+                    hand_pk=self.pk,
+                ),
                 when=now,
             )
 
@@ -560,7 +562,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         send_timestamped_event(
             channel=self.event_table_html_channel,
-            data={"auction_history_html": auction_history_HTML_for_table(hand=self)},
+            data=create_table_event(auction_history_html=auction_history_HTML_for_table(hand=self)),
             when=now,
         )
 
@@ -579,8 +581,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.send_JSON_to_players(data=data)
 
             # The interactive hand page needs this to know that it's time to reload, in order to show the "play" slides.
-            # Yeah, I know; it's not HTML.  :shrug:
-            send_timestamped_event(channel=self.event_table_html_channel, data=data)
+            send_timestamped_event(
+                channel=self.event_table_html_channel,
+                data=data,  # Send the full data dict including both contract_text and contract
+            )
 
         elif self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
@@ -637,10 +641,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         send_timestamped_event(
             channel=self.event_table_html_channel,
-            data={
-                "trick_counts_string": self.trick_counts_string(),
-                "trick_html": self._get_current_trick_html(),
-            },
+            data=create_table_event(
+                trick_counts_string=self.trick_counts_string(),
+                trick_html=self._get_current_trick_html(),
+            ),
         )
 
         if (final_score := self.get_xscript().final_score()) is not None:
@@ -696,14 +700,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             for r in recipients:
                 self.send_HTML_to_player(
-                    data={
-                        "current_hand_direction": seat.name,
-                        "current_hand_html": self._get_current_seat_html(
+                    data=create_player_hand_event(
+                        current_hand_direction=seat.name,
+                        current_hand_html=self._get_current_seat_html(
                             seat=seat,
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
-                        "tempo_seconds": self.tournament.tempo_seconds,
-                    },
+                        tempo_seconds=self.tournament.tempo_seconds,
+                    ),
                     player=r,
                 )
 
@@ -714,9 +718,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             send_timestamped_event(
                 channel=self.event_table_html_channel,
-                data={
-                    "final_score": final_score_text,
-                },
+                data=create_table_event(
+                    final_score={"text": final_score_text},
+                ),
                 when=self.last_action_time.timestamp(),
             )
 

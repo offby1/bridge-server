@@ -32,6 +32,8 @@ just ui-test            # Run UI tests headed (visible browser - avoid during ac
 just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 ```
 
+**CRITICAL**: ALWAYS use `just k <pattern>` to run individual tests. NEVER use `pytest` directly or `uv run pytest`. The `just k` command is the standard way to run tests in this project.
+
 **Important**: Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
 
 ### Database

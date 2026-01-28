@@ -26,6 +26,8 @@ from faker import Faker
 import bridge.card
 import bridge.seat
 import bridge.table
+from app.sse_channels import SSEChannels
+from app.sse_events import PartnershipEvent
 
 from .board import Board
 from .common import attribute_names
@@ -286,7 +288,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     @property
     def event_HTML_hand_channel(self):
-        return f"player:html:hand:{self.pk}"
+        return SSEChannels.player_html_hand(self.pk)
 
     @staticmethod
     def player_pk_from_event_HTML_hand_channel(cn: str) -> PK | None:
@@ -297,7 +299,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     @property
     def event_JSON_hand_channel(self):
-        return f"player:json:{self.pk}"
+        return SSEChannels.player_json(self.pk)
 
     @staticmethod
     def player_pk_from_event_JSON_hand_channel(cn: str) -> PK | None:
@@ -308,7 +310,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     @property
     def bot_checkbox_channel(self):
-        return f"player:bot-checkbox:{self.pk}"
+        return SSEChannels.player_bot_checkbox(self.pk)
 
     @staticmethod
     def player_pk_from_bot_checkbox_channel(cn: str) -> PK | None:
@@ -341,22 +343,10 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
         # Bot toggle changed OR current_hand changed (which affects dummy status)
         if "allow_bot_to_play_for_me" in dirty_fields or "current_hand_id" in dirty_fields:
-            logger.info(
-                "Player %s (pk=%s) allow_bot_to_play_for_me changed: %s -> %s",
-                self.name,
-                self.pk,
-                dirty_fields["allow_bot_to_play_for_me"],
-                self.allow_bot_to_play_for_me,
-            )
-
             # Render HTML for web clients on dedicated bot checkbox channel
             # Use dedicated SSE template that takes player directly
             html = render_to_string("bot-checkbox-sse.html", {"player": self})
-            logger.debug(
-                "Broadcasting checkbox HTML to channel %s: %s",
-                self.bot_checkbox_channel,
-                html[:100],
-            )
+
             send_event(
                 channel=self.bot_checkbox_channel,
                 event_type="message",
@@ -434,21 +424,16 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                 ),
             )
 
-        # We always send two arrays, even though one is empty.  That's because I'm too stupid a JS programmer to deal
-        # with missing attributes.
-        data = {"split": [], "joined": []}
-
+        # We always send two arrays, even though one is empty for consistent client-side handling
         if action == SPLIT:
-            data["split"] = [old_partner_pk, self.pk]
+            event_data = PartnershipEvent(split=[old_partner_pk, self.pk], joined=[])
         else:
-            data["joined"] = [self.partner.pk, self.pk]
-
-        channel = "partnerships"
+            event_data = PartnershipEvent(split=[], joined=[self.partner.pk, self.pk])
 
         send_event(
-            channel=channel,
+            channel=SSEChannels.PARTNERSHIPS,
             event_type="message",
-            data=data,
+            data=event_data.to_dict(),
         )
 
     def partner_with(self, other):
