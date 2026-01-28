@@ -38,6 +38,7 @@ just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 - **Always use `just` commands, not `uv run` directly** - The justfile sets up required environment variables that `uv run` lacks. Direct `uv run` commands will often fail.
 - Use `just test` when you need coverage reports or are doing final verification before committing
 - Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
+- Use `just k <pattern>` to run individual tests. NEVER use `pytest` directly or `uv run pytest`. The `just k` command is the standard way to run individual tests in this project.
 
 ### Database
 ```bash

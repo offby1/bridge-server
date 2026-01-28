@@ -1,7 +1,6 @@
 import logging
 import time
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,18 +20,18 @@ class RequestLoggingMiddleware:
             f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
         )
 
-        logger.info(
-            "%s ...",
-            common_prefix,
-        )
+        # logger.info(
+        #     "%s ...",
+        #     common_prefix,
+        # )
 
         before = time.time()
         response = self.get_response(request)
         after = time.time()
 
-        duration_ms = int(round((after - before) * 1000))
+        int(round((after - before) * 1000))
 
-        response_prefix = common_prefix + f" => {response.status_code}"
+        common_prefix + f" => {response.status_code}"
 
         # The debug toolbar adds this header.
         if (server_timing := response.headers.get("Server-Timing")) is not None:
@@ -40,16 +39,16 @@ class RequestLoggingMiddleware:
                 name, duration, desc = wat.split(";")
                 _, duration = duration.split("=")
                 _, desc = desc.split("=")
-                logger.info(
-                    "%s [%s: %s]",
-                    response_prefix,
-                    desc,
-                    duration,
-                )
+                # logger.info(
+                #     "%s [%s: %s]",
+                #     response_prefix,
+                #     desc,
+                #     duration,
+                # )
 
-        logger.info(
-            "%s ms=%d",
-            response_prefix,
-            duration_ms,
-        )
+        # logger.info(
+        #     "%s ms=%d",
+        #     response_prefix,
+        #     duration_ms,
+        # )
         return response

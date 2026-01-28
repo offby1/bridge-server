@@ -3,6 +3,7 @@ import logging
 from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore [import-untyped]
 
 from app.models.utils import UserMitPlaya
+from app.sse_channels import SSEChannels
 
 from . import models
 
@@ -57,7 +58,7 @@ class MyChannelManager(DefaultChannelManager):
 
             return player.hand_at_which_we_played_board(hand.board) is not None
 
-        if channel == "partnerships":
+        if channel == SSEChannels.PARTNERSHIPS:
             return True
 
         # everything else is visible to everyone, although I don't think there *are* any other messages.
