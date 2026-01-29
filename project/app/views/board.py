@@ -3,17 +3,17 @@ from __future__ import annotations
 import operator
 from typing import Any
 
+import django_tables2 as tables  # type: ignore[import-untyped]
 from django.conf import settings
 from django.db.models.query import QuerySet
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
-import django_tables2 as tables  # type: ignore[import-untyped]
 
 import app.models
 from app.models.types import PK
@@ -78,7 +78,7 @@ class BoardTable(tables.Table):
     tournament_number = tables.Column(
         accessor=tables.A("tournament__display_number"), verbose_name="Tournament #"
     )
-    summary = tables.Column(empty_values=())
+    summary = tables.Column(empty_values=(), orderable=False)
 
     def render_summary(self, record) -> SafeString:
         return format_html(
