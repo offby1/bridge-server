@@ -1,6 +1,17 @@
 IN PROGRESS:
 
 STILL TODO:
+* Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
+  Since this is online bridge, I suppose they'd be "Crystal"-colored.
+* Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
+* Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.
+* During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
+* If I am logged in, and have a current hand, there should be a big "Current Hand" button in the navbar, regardless of what page I'm on.
+* It'd be nice to have finer control for "Let the computer play for me" than just "yes" or "no": how about
+  - no
+  - just this hand
+  - just gimme a hint for the current call or play
+* As soon as I click "Skip the deadline", it should take me directly to my current hand; instead, it takes me to the relevant tournament.
 * Have the "This hand was abandoned because play completion deadline has passed" message incorporate the deadline using the user's preferred timezone.
   This is harder than it sounds, since the code that currently generates that message runs without any particular request session context -- and even if it had such a session, there's no guarantee that the request that wants to look at the hand uses the same timezone as the request that triggered tournament.check_for_expirations.
 
