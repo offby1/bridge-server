@@ -15,10 +15,9 @@
                {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>
             {% if error_message %}
                 {{ error_message }}
-            {% elif user.player.is_dummy %}
-                Computer plays this hand for me (dummy)
             {% else %}
                 Computer plays this hand for me
+                {% if user.player.is_dummy %}(dummy){% endif %}
             {% endif %}
         </label>
     </div>

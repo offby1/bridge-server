@@ -54,7 +54,7 @@ class BotCheckboxEvent:
     Channel: /events/player/bot-checkbox/{player_pk}/
     """
 
-    html: str  # Rendered bot-checkbox-sse.html
+    html: str  # Rendered bot-checkbox.html
 
 
 @dataclass

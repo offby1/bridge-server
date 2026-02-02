@@ -536,9 +536,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         if dummy_player := self.model_dummy:
             # Notify dummy player's checkbox to update (becomes disabled)
+            from types import SimpleNamespace
+
             from django.template.loader import render_to_string
 
-            html = render_to_string("bot-checkbox-sse.html", {"player": dummy_player})
+            html = render_to_string(
+                "bot-checkbox.html",
+                {"user": SimpleNamespace(player=dummy_player), "error_message": None},
+            )
             send_event(
                 channel=dummy_player.bot_checkbox_channel,
                 event_type="message",

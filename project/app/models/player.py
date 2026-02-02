@@ -345,8 +345,11 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
         # Bot toggle changed OR current_hand changed (which affects dummy status)
         if "allow_bot_to_play_for_me" in dirty_fields or "current_hand_id" in dirty_fields:
             # Render HTML for web clients on dedicated bot checkbox channel
-            # Use dedicated SSE template that takes player directly
-            html = render_to_string("bot-checkbox-sse.html", {"player": self})
+            from types import SimpleNamespace
+
+            html = render_to_string(
+                "bot-checkbox.html", {"user": SimpleNamespace(player=self), "error_message": None}
+            )
 
             send_event(
                 channel=self.bot_checkbox_channel,
@@ -367,7 +370,12 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
             if self.current_hand and self.current_hand.model_declarer == self:
                 dummy = self.current_hand.model_dummy
                 if dummy:
-                    dummy_html = render_to_string("bot-checkbox-sse.html", {"player": dummy})
+                    from types import SimpleNamespace
+
+                    dummy_html = render_to_string(
+                        "bot-checkbox.html",
+                        {"user": SimpleNamespace(player=dummy), "error_message": None},
+                    )
                     send_event(
                         channel=dummy.bot_checkbox_channel,
                         event_type="message",
