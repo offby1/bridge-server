@@ -422,7 +422,6 @@ def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
     assert north.name in message or south.name in message
 
 
-@pytest.mark.skip(reason="I suspect this is pointless")
 def test_is_abandoned_defection(usual_setup, everybodys_password) -> None:
     h = Hand.objects.first()
     assert h is not None
@@ -432,6 +431,8 @@ def test_is_abandoned_defection(usual_setup, everybodys_password) -> None:
 
     south: Player | None = north.partner
     assert south is not None
+
+    north.break_partnership()
 
     # Now put north and south into some other hand
     new_player_names = ["e2", "w2"]
@@ -462,4 +463,4 @@ def test_is_abandoned_defection(usual_setup, everybodys_password) -> None:
     message = h.abandoned_because
 
     assert north.name in message or south.name in message
-    assert "defected, those bastards" in message
+    assert "left" in message
