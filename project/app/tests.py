@@ -345,13 +345,13 @@ def test_splitsville_side_effects(usual_setup: Hand, rf, monkeypatch) -> None:
     monkeypatch.setattr(app.models.player, "send_event", mock_send_event)
     response = player.player_detail_view(request, north.pk)
 
-    assert len(send_event_kwargs_log) == 1
-    the_kwargs = send_event_kwargs_log.pop()
+    first_partnership_channel_message = next(
+        d for d in send_event_kwargs_log if d["channel"] == "partnerships"
+    )
 
-    assert the_kwargs["channel"] == "partnerships"
-    assert the_kwargs["data"]["joined"] == []
+    assert first_partnership_channel_message["data"]["joined"] == []
 
-    assert set(the_kwargs["data"]["split"]) == {north_pk, north_partner_pk}
+    assert set(first_partnership_channel_message["data"]["split"]) == {north_pk, north_partner_pk}
 
     assert response.status_code == 302
 
@@ -359,13 +359,14 @@ def test_splitsville_side_effects(usual_setup: Hand, rf, monkeypatch) -> None:
     assert north.partner is None
 
     # Now do it again -- bob ain't got no partner no mo, so we should get an error.
+    send_event_kwargs_log = []
     response = player.player_detail_view(request, north.pk)
     assert 400 <= response.status_code <= 499
 
     assert b"cannot" in response.content.lower()
     assert b"partner" in response.content.lower()
 
-    assert len(send_event_kwargs_log) == 0
+    assert not [d for d in send_event_kwargs_log if d["channel"] == "partnerships"]
 
 
 def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) -> None:

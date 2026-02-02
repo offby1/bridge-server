@@ -321,6 +321,14 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     last_action_time = models.DateTimeField(default=timezone.now)
 
+    def _clear_bot_flags(self) -> None:
+        p: Player
+        for p in (getattr(self, direction) for direction in attribute_names):
+            # TODO -- do we need to send an SSE message to tell browsers to update the corresponding toggle element?
+            if not p.synthetic:
+                p.allow_bot_to_play_for_me = False
+                p.save(update_fields=["allow_bot_to_play_for_me"])
+
     def _update_redundant_fields(self):
         x = self.get_xscript()
         self.is_complete = (x.auction.status is Auction.PassedOut) or x.num_plays == 52
@@ -723,6 +731,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 ),
                 when=self.last_action_time.timestamp(),
             )
+
+            self._clear_bot_flags()
 
             if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
                 mvmt = self.tournament.get_movement()

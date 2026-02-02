@@ -276,6 +276,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
         with transaction.atomic():
             if (h := self.current_hand) is not None:
                 h.abandoned_because = reason or f"{self.name} left"
+                h._clear_bot_flags()
                 h.save()
 
                 self.current_hand = None

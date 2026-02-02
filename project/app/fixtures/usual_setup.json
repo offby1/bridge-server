@@ -49,7 +49,7 @@
       "last_action": ["2000-01-01T00:00:00Z", "spawned"],
       "modified": "2000-01-01T00:00:00Z",
       "partner": 3,
-      "synthetic": true,
+      "synthetic": false,
       "user": 1
     },
     "model": "app.player",

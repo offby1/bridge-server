@@ -1,9 +1,9 @@
 import datetime
 import importlib
 
-from freezegun import freeze_time
 from django.conf import settings
 from django.contrib import auth
+from freezegun import freeze_time
 
 from app.models import Hand, Player, Tournament
 
@@ -67,3 +67,18 @@ def test_synth_signup(db) -> None:
     with freeze_time(t.signup_deadline + datetime.timedelta(seconds=1)):
         mvmt = t.get_movement()
         assert mvmt.num_rounds == 2
+
+
+def test_bot_is_disabled_at_start_of_hand(usual_setup) -> None:
+    assert Hand.objects.count() == 1
+    the_hand = Hand.objects.first()
+    assert the_hand is not None
+    num_bots = sum(p.allow_bot_to_play_for_me for p in the_hand.players())
+    assert num_bots > 0
+
+    for p in the_hand.players():
+        p.abandon_my_hand()
+
+    the_hand.refresh_from_db()
+    num_bots = sum(p.allow_bot_to_play_for_me for p in the_hand.players())
+    assert num_bots == 0
