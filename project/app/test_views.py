@@ -1,5 +1,6 @@
 import base64
 import json
+from html.parser import HTMLParser
 
 import pytest
 from django.conf import settings
@@ -72,11 +73,26 @@ def test_bot_checkbox_toggle(usual_setup, rf) -> None:
     request = rf.post("/woteva")
     request.user = some_player.user
 
+    class CheckboxParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.checkbox_checked = False
+            self.found_checkbox = False
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "input":
+                attrs_dict = dict(attrs)
+                if attrs_dict.get("id") == "bot-plays-for-me-switch":
+                    self.found_checkbox = True
+                    self.checkbox_checked = "checked" in attrs_dict
+
     def box_is_checked():
         __traceback_hide__ = True  # noqa: F841
-        text = response.render().text
-        # Check for "checked" attribute, allowing for other attributes after it
-        return "checked" in text and 'type="checkbox"' in text
+        html = response.render().content.decode()
+        parser = CheckboxParser()
+        parser.feed(html)
+        assert parser.found_checkbox, "Checkbox element not found in HTML"
+        return parser.checkbox_checked
 
     def allowed():
         __traceback_hide__ = True  # noqa: F841
@@ -84,12 +100,16 @@ def test_bot_checkbox_toggle(usual_setup, rf) -> None:
         return some_player.allow_bot_to_play_for_me
 
     response = player.bot_checkbox_view(request, some_player.pk)
+    response.render()
+    print(response.content.decode())
     assert box_is_checked()
     assert allowed()
 
     # Once again
 
     response = player.bot_checkbox_view(request, some_player.pk)
+    response.render()
+    print(response.content.decode())
     assert not box_is_checked()
     assert not allowed()
 

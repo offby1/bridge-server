@@ -319,7 +319,7 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
     """Stub endpoint for hint requests. TODO: Implement hint logic."""
     p: Player = get_object_or_404(Player, pk=player_pk)
-    h: Hand = p.current_hand
+    h: Hand | None = p.current_hand
 
     if h is None:
         return HttpResponse(status=200, content=escape(f"{p} has no current hand"))
@@ -333,11 +333,12 @@ def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
         )
         return HttpResponse(status=200, content=escape(f"If I were you, I'd call {call}"))
 
-    if h.player_who_controls_seat(h.next_seat_to_play, right_this_second=True):
-        card = xscript.slightly_less_dumb_play().card
-        return HttpResponse(
-            status=200, content=escape(f"If I were {h.next_seat_to_play}, I'd play {card}")
-        )
+    if (s := h.next_seat_to_play) is not None:
+        if h.player_who_controls_seat(s, right_this_second=True):
+            card = xscript.slightly_less_dumb_play().card
+            return HttpResponse(
+                status=200, content=escape(f"If I were {h.next_seat_to_play}, I'd play {card}")
+            )
 
     return HttpResponse(status=200, content=escape(f"It's not {p}'s turn to call or play"))
 
