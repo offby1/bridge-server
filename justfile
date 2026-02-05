@@ -17,6 +17,7 @@ export PYTHONUNBUFFERED := "t"
 # Settings to use for tests (overrides the default dev_settings)
 
 TEST_DJANGO_SETTINGS := "project.test_settings"
+DEV_SERVER_PORT := "9000"
 
 # Helper to run pytest with test settings
 [private]
@@ -190,8 +191,23 @@ setup-oauth: migrate (manage "setup_oauth")
 [script('bash')]
 runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
+
+    # Pre-flight check: fail cleanly if port is already in use
+    set +x  # Turn off command echo for cleaner error messages
+    if ! python3 -c "import socket; s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('127.0.0.1', {{ DEV_SERVER_PORT }})); s.close()" 2>/dev/null; then
+        echo "ERROR: Port {{ DEV_SERVER_PORT }} is already in use!"
+        echo "Possible causes:"
+        echo "  - Docker stack is running: Check with 'docker compose ps'"
+        echo "  - Another dev server is running"
+        echo "To fix:"
+        echo "  - Stop Docker: 'docker compose down'"
+        echo "  - Or kill the process using port {{ DEV_SERVER_PORT }}"
+        exit 1
+    fi
+    set -x  # Re-enable command echo
+
     cd project
-    uv run python manage.py runserver 9000 {{ options }}
+    uv run python manage.py runserver {{ DEV_SERVER_PORT }} {{ options }}
 
 alias runserver := runme
 
@@ -204,7 +220,7 @@ curl-login:
     set -euxo pipefail
     b64_blob=$(echo -n bob:. | base64)
     header="Authorization: Basic ${b64_blob}"
-    curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:9000/three-way-login/
+    curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:{{ DEV_SERVER_PORT }}/three-way-login/
 
 create-cache: (manage "createcachetable")
 
