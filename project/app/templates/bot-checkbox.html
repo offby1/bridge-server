@@ -1,24 +1,33 @@
 {% if user.player and not user.player.synthetic %}
-    <div class="form-check form-switch" id="bot-plays-for-me-div">
-        <input class="form-check-input"
-               type="checkbox"
-               role="switch"
-               id="bot-plays-for-me-switch"
-               hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
-               hx-swap="outerHTML"
-               hx-target="#bot-plays-for-me-div"
-               {% if user.player.effective_allow_bot_to_play_for_me %}checked{% endif %}
-               {% if user.player.is_dummy %}disabled{% endif %}
-               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %} />
-        <label class="form-check-label"
-               for="bot-plays-for-me-switch"
-               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>
-            {% if error_message %}
-                {{ error_message }}
-            {% else %}
-                Computer plays this hand for me
-                {% if user.player.is_dummy %}(dummy){% endif %}
-            {% endif %}
-        </label>
+    <div class="d-flex align-items-center gap-2 border rounded px-3 py-2"
+         id="bot-plays-for-me-div">
+        <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   role="switch"
+                   id="bot-plays-for-me-switch"
+                   hx-post="{% url 'app:bot-checkbox-toggle' user.player.pk %}"
+                   hx-swap="outerHTML"
+                   hx-target="#bot-plays-for-me-div"
+                   {% if user.player.effective_allow_bot_to_play_for_me %}checked{% endif %}
+                   {% if user.player.is_dummy %}disabled{% endif %}
+                   {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}
+                   onchange="document.getElementById('hint-button').style.display = this.checked ? 'none' : 'inline-block';" />
+            <label class="form-check-label"
+                   for="bot-plays-for-me-switch"
+                   {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>
+                {% if error_message %}
+                    {{ error_message }}
+                {% else %}
+                    Computer plays this hand for me
+                    {% if user.player.is_dummy %}(dummy){% endif %}
+                {% endif %}
+            </label>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-primary"
+                id="hint-button"
+                style="display: {% if user.player.effective_allow_bot_to_play_for_me %}none{% else %}inline-block{% endif %}"
+                title="Get a hint for your next move">Give me a hint</button>
     </div>
 {% endif %}
