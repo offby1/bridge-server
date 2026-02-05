@@ -21,7 +21,8 @@
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
-                <div id="hello-user" class="navbar-brand d-flex align-items-center gap-2">
+                <div id="hello-user"
+                     class="navbar-brand d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
                     {% if user.is_authenticated %}
                         <span>Hello,
                             {% if user.player %}
@@ -30,7 +31,7 @@
                                 {{ user }}
                             {% endif %}
                         </span>
-                        <div class="d-flex align-items-center gap-2 border rounded px-3 py-2">
+                        <div class="d-flex flex-column flex-sm-row align-items-center gap-2 border rounded px-2 px-sm-3 py-2">
                             <div hx-ext="sse"
                                  sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
                                  sse-swap="message"
@@ -38,9 +39,9 @@
                                  hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
                             {% if user.player and not user.player.synthetic %}
                                 <button type="button"
-                                        class="btn btn-sm btn-outline-primary"
+                                        class="btn btn-sm btn-outline-primary w-100 w-sm-auto"
                                         id="hint-button"
-                                        style="display: {% if user.player.effective_allow_bot_to_play_for_me %}none{% else %}inline-block{% endif %}"
+                                        style="display: {% if user.player.effective_allow_bot_to_play_for_me %}none{% else %}block{% endif %}"
                                         title="Get a hint for your next move"
                                         hx-get="{% url 'app:hint' user.player.pk %}"
                                         hx-target="#hint-modal-body"
