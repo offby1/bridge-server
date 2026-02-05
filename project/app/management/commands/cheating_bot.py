@@ -2,13 +2,12 @@ import datetime
 import logging
 import time
 
-from django.core.management.base import BaseCommand
+import app.models
 import django.db.models
 import django.utils.timezone
+from django.core.management.base import BaseCommand
 
-import app.models
 from bridge.xscript import HandTranscript
-
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +111,7 @@ class Command(BaseCommand):
                 self.quiet_logger.info("%s", f"It is {p.name}'s turn to call")
                 p.refresh_from_db(fields=["allow_bot_to_play_for_me"])
                 if p.allow_bot_to_play_for_me:
-                    call = xscript.auction.best_call_from_endplay(
+                    call = xscript.auction.make_standard_american_call(
                         pbn=xscript.endplay_deal.to_pbn(),
                         vuln=xscript.endplay_vulnerability(),
                     )
