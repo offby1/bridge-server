@@ -31,7 +31,7 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
 
-from app.models import Message, PartnerException, Player
+from app.models import Hand, Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
@@ -318,20 +318,28 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 @logged_in_as_player_required(redirect=False)
 def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
     """Stub endpoint for hint requests. TODO: Implement hint logic."""
-    get_object_or_404(Player, pk=player_pk)
-    # TODO: Implement hint logic here
-    # see if we're in the auction or the play.  If neither, return some sort of failure code.
-    # Might also be easier to code if we return a failure code if it's not this player's turn.
+    p: Player = get_object_or_404(Player, pk=player_pk)
+    h: Hand = p.current_hand
 
-    # if auction, imitate the bot:
+    if h is None:
+        return HttpResponse(status=200, content=escape(f"{p} has no current hand"))
 
-    # xscript.auction.make_standard_american_call(
-    #                     pbn=xscript.endplay_deal.to_pbn(),
-    #                     vuln=xscript.endplay_vulnerability(),
-    #                 )
-    # else it's play, and again imitate the bot:
-    # card = xscript.slightly_less_dumb_play().card
-    return HttpResponse(status=200, content=escape("Imagine I'm a call or a play"))
+    xscript = h.get_xscript()
+
+    if p == h.player_who_may_call:
+        call = xscript.auction.make_standard_american_call(
+            pbn=xscript.endplay_deal.to_pbn(),
+            vuln=xscript.endplay_vulnerability(),
+        )
+        return HttpResponse(status=200, content=escape(f"If I were you, I'd call {call}"))
+
+    if h.player_who_controls_seat(h.next_seat_to_play, right_this_second=True):
+        card = xscript.slightly_less_dumb_play().card
+        return HttpResponse(
+            status=200, content=escape(f"If I were {h.next_seat_to_play}, I'd play {card}")
+        )
+
+    return HttpResponse(status=200, content=escape(f"It's not {p}'s turn to call or play"))
 
 
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
