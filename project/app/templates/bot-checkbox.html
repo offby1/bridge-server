@@ -28,6 +28,8 @@
                 class="btn btn-sm btn-outline-primary"
                 id="hint-button"
                 style="display: {% if user.player.effective_allow_bot_to_play_for_me %}none{% else %}inline-block{% endif %}"
-                title="Get a hint for your next move">Give me a hint</button>
+                title="Get a hint for your next move"
+                hx-get="{% url 'app:hint' user.player.pk %}"
+                hx-swap="none">Give me a hint</button>
     </div>
 {% endif %}

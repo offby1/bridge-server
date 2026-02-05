@@ -314,6 +314,26 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     return TemplateResponse(request, "bot-checkbox.html", context=context)
 
 
+@require_http_methods(["GET"])
+@logged_in_as_player_required(redirect=False)
+def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
+    """Stub endpoint for hint requests. TODO: Implement hint logic."""
+    get_object_or_404(Player, pk=player_pk)
+    # TODO: Implement hint logic here
+    # see if we're in the auction or the play.  If neither, return some sort of failure code.
+    # Might also be easier to code if we return a failure code if it's not this player's turn.
+
+    # if auction, imitate the bot:
+
+    # xscript.auction.make_standard_american_call(
+    #                     pbn=xscript.endplay_deal.to_pbn(),
+    #                     vuln=xscript.endplay_vulnerability(),
+    #                 )
+    # else it's play, and again imitate the bot:
+    # card = xscript.slightly_less_dumb_play().card
+    return HttpResponse(status=200, content=b"Imagine I'm a call or a play")
+
+
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
     p = Player.objects.filter(user__username=name_or_pk).first()
 

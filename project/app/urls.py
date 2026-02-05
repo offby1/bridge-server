@@ -2,19 +2,18 @@ from django.urls import path
 
 from .views import home_view, lobby, player, robots_dot_txt, signup_view, table, three_way_login
 from .views.board import (
-    board_archive_view,
     BoardListView,
+    board_archive_view,
 )
 from .views.hand import (
-    auction_partial_view,
-    hand_dispatch_view,
     HandListView,
     HandsByTableAndBoardGroupView,
+    auction_partial_view,
+    hand_dispatch_view,
     hand_serialized_view,
     hand_xscript_updates_view,
     open_access_toggle_view,
 )
-
 from .views.tournament import (
     new_tournament_view,
     tournament_list_view,
@@ -58,6 +57,7 @@ urlpatterns = [
     path(
         "player/<int:pk>/bot-checkbox-toggle/", player.bot_checkbox_view, name="bot-checkbox-toggle"
     ),
+    path("hint/<int:player_pk>/", player.hint_view, name="hint"),
     path(
         "player-by-name-or-pk/<str:name_or_pk>/",
         player.by_name_or_pk_view,
