@@ -331,7 +331,7 @@ def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
     #                 )
     # else it's play, and again imitate the bot:
     # card = xscript.slightly_less_dumb_play().card
-    return HttpResponse(status=200, content=b"Imagine I'm a call or a play")
+    return HttpResponse(status=200, content=escape("Imagine I'm a call or a play"))
 
 
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
