@@ -2,6 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Conventions
+
+- Always read CLAUDE.md and justfile before starting any task. Use `just` commands (e.g., `just k` for tests) instead of raw shell commands.
+- Never write to personal memory files — all documentation goes in version-controlled project docs.
+
+## Change Philosophy
+
+- Prefer minimal, targeted fixes. Do NOT over-engineer solutions or make unnecessary changes across multiple files.
+- Before proposing a fix, identify the minimum number of changes needed and confirm the approach before implementing.
+
+## Testing
+
+- Always run tests after making changes using the project's test runner (check justfile first).
+- Write minimal reproducing tests before fixing bugs when possible.
+- Do not write unnecessary test files or disable tests to make things pass.
+
+## Safety & Production
+
+- NEVER attempt to access production systems, Docker contexts, or databases unless explicitly asked.
+- NEVER store passwords, keys, or secrets in plaintext or commit them to the repository.
+
+## Approach
+
+- When stuck after 2 failed attempts on the same problem, STOP and explain what you've tried and ask the user for direction instead of continuing to loop.
+- Do not make claims about the user's setup (OS, services, accounts) without verifying first.
+
 ## Project Overview
 
 This is an online Bridge card game server built with Django 6.0. It supports both human players (via web UI) and AI bots (via REST API), with real-time game updates delivered through Server-Sent Events (SSE).
