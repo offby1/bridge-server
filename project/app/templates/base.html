@@ -37,7 +37,7 @@
                                  sse-swap="message"
                                  hx-target="#bot-plays-for-me-div"
                                  hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
-                            {% if user.player and not user.player.synthetic %}
+                            {% if user.player and not user.player.synthetic and user.player.current_hand %}
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary w-100 w-sm-auto"
                                         id="hint-button"

@@ -17,7 +17,11 @@
             {% if error_message %}
                 {{ error_message }}
             {% else %}
-                Computer plays this hand for me
+                {% if user.player.current_hand %}
+                    Computer plays this hand for me
+                {% else %}
+                    Computer plays next hand for me
+                {% endif %}
                 {% if user.player.is_dummy %}(dummy){% endif %}
             {% endif %}
         </label>
