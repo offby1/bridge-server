@@ -6,7 +6,21 @@ IN PROGRESS:
 
 STILL TODO:
 * Doing "Splitsville" properly abandons the *hand*, but it should probably hose the entire tournament, or something.
-  Not sure what to do here, tbh.
+  <docs/Laws-of-Duplicate-Bridge.pdf>, Law 12, says
+
+    2.(a) When owing to an irregularity no result
+    can be obtained [see also C1(d)], the
+    Director awards an artificial adjusted
+    score according to responsibility for the
+    irregularity: average minus (at most 40%
+    of the available matchpoints in pairs) to a
+    contestant directly at fault, average (50%
+    in pairs) to a contestant only partly at fault,
+    and average plus (at least 60% in pairs) to a
+    contestant in no way at fault.
+
+  I guess I'd have to complete the tournament, and every time the "broken" pair comes up to play, the hand is skipped, but marked with "placeholder" scores -- we won't know the actual scores until the rest of the tournament finishes.
+
 * When I do a deployment, the server stops for a few seconds while Docker does whatever the hell it's doing.  We call this "an outage" :-\  Anyhoo ... in an ideal world, I'd somehow ensure that people can continue to play during the deployment (that would probably require some fancy A/B setup, which I'm too cheap and lazy to consider now).  However: perhaps I could, when the new version starts, *notice* that some tournaments were interrupted for the deployment, note the length of the outage in seconds, and extend the various deadlines by that amount. 🤷
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
