@@ -531,6 +531,16 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
     def currently_seated(self) -> bool:
         return self.current_hand is not None
 
+    # This is intended for the front-end to display, or hide, the #hint-button.  But I haven't yet figured out how to do
+    # that.
+    def is_my_turn_to_call_or_play(self) -> bool:
+        return (
+            self.currently_seated
+            and self.current_hand is not None
+            and self
+            in (self.current_hand.player_who_may_call, self.current_hand.player_who_may_play)
+        )
+
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         """The string is a capitalized word, like "East"."""
         if self.current_hand is not None:

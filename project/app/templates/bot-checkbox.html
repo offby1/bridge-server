@@ -10,7 +10,7 @@
                {% if user.player.effective_allow_bot_to_play_for_me %}checked{% endif %}
                {% if user.player.is_dummy %}disabled{% endif %}
                {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}
-               onchange="var btn = document.getElementById('hint-button'); if(btn) btn.style.display = this.checked ? 'none' : 'inline-block';" />
+               onchange="var btn = document.getElementById('hint-button'); if(btn && this.checked) btn.style.visibility = 'hidden';" />
         <label class="form-check-label"
                for="bot-plays-for-me-switch"
                {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>

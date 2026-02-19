@@ -559,6 +559,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 data=create_player_hand_event(
                     bidding_box_html=self._get_current_bidding_box_html_for_player(p),
                     hand_pk=self.pk,
+                    show_hint_button=p.is_my_turn_to_call_or_play(),
                 ),
                 when=now,
             )
@@ -720,6 +721,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
                         tempo_seconds=self.tournament.tempo_seconds,
+                        show_hint_button=r.is_my_turn_to_call_or_play(),
                     ),
                     player=r,
                 )

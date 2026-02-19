@@ -41,7 +41,7 @@
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary w-100 w-sm-auto"
                                         id="hint-button"
-                                        style="display: {% if user.player.effective_allow_bot_to_play_for_me %}none{% else %}block{% endif %}"
+                                        style="visibility: {% if user.player.effective_allow_bot_to_play_for_me or not user.player.is_my_turn_to_call_or_play %}hidden{% else %}visible{% endif %}"
                                         title="Get a hint for your next move"
                                         hx-get="{% url 'app:hint' user.player.pk %}"
                                         hx-target="#hint-modal-body"

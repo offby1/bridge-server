@@ -26,6 +26,13 @@ export function initPlayerEventStream(playerEventUrl, playerId) {
         if ("current_hand_html" in data) {
             autoScrollTimer = updateCurrentHand(data, autoScrollTimer);
         }
+
+        if ("show_hint_button" in data) {
+            const btn = document.getElementById("hint-button");
+            if (btn) {
+                btn.style.visibility = data.show_hint_button ? "visible" : "hidden";
+            }
+        }
     });
 
     playerEventSource.addEventListener('stream-reset', function (e) {
