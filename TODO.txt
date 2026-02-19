@@ -1,6 +1,10 @@
 IN PROGRESS:
 
 STILL TODO:
+* Katie's declarer. She just won the trick, but it hasn't scrolled her hand into view.
+* After the bot makes the opening lead, both Katie and I have had to reload the page in order to see it.
+* The hint button should only be visible if it's my turn to play.
+* The hand, and tournament list, pages on mobile are a mess.  See <Screenshot_20260218-185652.png> and <Screenshot_20260218-185812.png>
 * Doing "Splitsville" properly abandons the *hand*, but it should probably hose the entire tournament, or something.
   <docs/Laws-of-Duplicate-Bridge.pdf>, Law 12, says
 
