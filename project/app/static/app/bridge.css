@@ -136,21 +136,16 @@ xx* {
   animation: throb 1s infinite;
 }
 
-:root {
-  --navbar-height: 100px;
-}
-
-.navbar {
-  height: var(--navbar-height);
+/* Reserve space for the absolutely-positioned hamburger menu below lg breakpoint */
+@media (max-width: 991px) {
+    .navbar .container-fluid {
+        padding-right: 3.5rem;
+    }
 }
 
 caption {
     font-size: 1.25em;
     font-weight: 600;
-}
-
-body {
-  padding-top: var(--navbar-height);
 }
 
 .humanize-me {
