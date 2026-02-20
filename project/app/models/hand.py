@@ -559,7 +559,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 data=create_player_hand_event(
                     bidding_box_html=self._get_current_bidding_box_html_for_player(p),
                     hand_pk=self.pk,
-                    show_hint_button=p.is_my_turn_to_call_or_play(),
+                    show_hint_button=p.is_my_turn_to_interact(),
                 ),
                 when=now,
             )
@@ -721,7 +721,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
                         tempo_seconds=self.tournament.tempo_seconds,
-                        show_hint_button=r.is_my_turn_to_call_or_play(),
+                        show_hint_button=r.is_my_turn_to_interact(),
                     ),
                     player=r,
                 )
@@ -805,6 +805,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return None
 
+    # For UI stuff, "player_who_controls_seat" is likely what you want here.
     @property
     def player_who_may_call(self) -> Player | None:
         s = self.next_seat_to_call
@@ -812,8 +813,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             return None
         return getattr(self, s.name)
 
-    # TODO -- this method might be confusing: it doesn't know that declarer control's dummy's hand.
-    # Best to use next_seat_to_play when possible.
+    # For UI stuff, "player_who_controls_seat" is likely what you want here.
     @property
     def player_who_may_play(self) -> Player | None:
         if self.is_abandoned:
