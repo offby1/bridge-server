@@ -188,6 +188,24 @@ function updateAuctionHistory(html) {
 }
 
 /**
+ * Initialize carousel prev/next buttons
+ */
+export function initCarouselButtons() {
+    const carousel = document.querySelector("ul.carousel");
+    const prevBtn = document.querySelector(".carousel-prev");
+    const nextBtn = document.querySelector(".carousel-next");
+
+    if (!carousel || !prevBtn || !nextBtn) return;
+
+    prevBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: -carousel.clientWidth, behavior: "smooth" });
+    });
+    nextBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: carousel.clientWidth, behavior: "smooth" });
+    });
+}
+
+/**
  * Initialize error toast for HTMX response errors
  */
 export function initErrorToast() {

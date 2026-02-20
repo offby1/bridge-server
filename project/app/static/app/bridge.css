@@ -162,7 +162,6 @@ ul.carousel {
   overflow-x: scroll;
   scroll-marker-group: after;
   scroll-snap-type: x mandatory;
-  anchor-name: --myCarousel;
 }
 
 @media (max-width: 767px) {
@@ -178,50 +177,27 @@ ul.carousel {
   }
 }
 
-ul.carousel::scroll-button(*) {
+.carousel-container {
+  display: flex;
+  align-items: center;
+}
+
+.carousel-nav-btn {
   border: 0;
   font-size: 2rem;
   background: none;
   color: rgb(0 0 0 / 0.7);
   cursor: pointer;
-  position: absolute;
-  position-anchor: --myCarousel;
+  flex-shrink: 0;
 }
 
-ul.carousel::scroll-button(*):hover,
-ul.carousel::scroll-button(*):focus {
+.carousel-nav-btn:hover,
+.carousel-nav-btn:focus {
   color: rgb(0 0 0 / 1);
 }
 
-ul.carousel::scroll-button(*):active {
+.carousel-nav-btn:active {
   translate: 1px 1px;
-}
-
-ul.carousel::scroll-button(*):disabled {
-  color: rgb(0 0 0 / 0.2);
-  cursor: unset;
-}
-
-ul.carousel::scroll-button(left) {
-  content: "◄";
-}
-
-ul.carousel::scroll-button(right) {
-  content: "►";
-}
-
-ul.carousel::scroll-button(*) {
-  position: absolute;
-  position-anchor: --myCarousel;
-  align-self: anchor-center;
-}
-
-ul.carousel::scroll-button(left) {
-  right: calc(anchor(left) - 45px);
-}
-
-ul.carousel::scroll-button(right) {
-  left: calc(anchor(right) - 45px);
 }
 
 ul.carousel::scroll-marker-group {
