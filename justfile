@@ -354,7 +354,16 @@ _deploy hostname profile context settings_module *options:
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
 
-    docker compose up --build --detach {{ options }}
+    # Build new image while old containers keep serving traffic
+    docker compose build django
+
+    # Run one-shot setup services (migrations, collectstatic, oauth) with the new image
+    docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
+    docker compose wait django-collected-static django-migrated django-oauth-setup
+
+    # Swap in the new django container (and bot); --no-deps avoids restarting postgres/redis/caddy
+    just dump
+    docker compose up --detach --no-deps --force-recreate django bot {{ options }}
     docker compose logs django --follow
 
 [group('deploy')]
