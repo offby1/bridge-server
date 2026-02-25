@@ -54,6 +54,7 @@ As mentioned by "boxed" on discord.  Looks interesting.
 
 ### Heroku
 
+* I read somewhere (February, 2026) that they're shutting down.
 * The "python buildpack" doesn't know what to do with poetry
 * Unclear if they help with TLS at all
 * Unclear if they will let me use `daphne`, somewhere I read that I gotta use `gunicorn`
