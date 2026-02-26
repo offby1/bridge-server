@@ -39,7 +39,7 @@ All commands use [Just](https://just.systems/) command runner. See `justfile` fo
 ### Development
 ```bash
 just runme              # Start Django dev server on localhost:9000 (native, no Docker)
-just dcu                # Start full Docker Compose stack (Django + Postgres + Redis + Bots)
+just dev                # Start full Docker Compose stack (Django + Postgres + Redis + Bots)
 just shell              # Django shell with pre-populated queries
 just sp                 # Quick shell_plus (no dependencies)
 ```
