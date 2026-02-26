@@ -391,6 +391,31 @@ def test_predictable_shuffles():
         assert attrs1_empty[k] != attrs1_golly[k]
 
 
+def test_declarer_hint_visible_on_dummys_turn(usual_setup: Hand) -> None:
+    h = usual_setup
+    set_auction_to(libBid(level=1, denomination=libSuit.DIAMONDS), h)
+
+    declarer = h.model_declarer
+    dummy = h.model_dummy
+    assert declarer is not None
+    assert dummy is not None
+
+    # Opening lead: LHO of declarer plays first
+    lib_declarer = h.declarer
+    assert lib_declarer is not None
+    opening_leader_seat = lib_declarer.seat.lho()
+    opening_leader = h.players_by_direction_letter[opening_leader_seat.value]
+    opening_leaders_cards = opening_leader.dealt_cards()
+    h.add_play_from_model_player(player=opening_leader, card=opening_leaders_cards[0])
+
+    # Now it's dummy's turn to play, but declarer controls dummy's hand
+    assert h.next_seat_to_play == dummy.libraryThing().seat
+
+    assert declarer.is_my_turn_to_interact(), (
+        "Declarer should see the hint button when it's dummy's turn to play"
+    )
+
+
 def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
     assert Hand.objects.count() > 0
 

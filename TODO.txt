@@ -1,10 +1,8 @@
 IN PROGRESS:
-* It'd be nice to have finer control for "Let the computer play for me" than just "yes" or "no": how about
-  - no
-  - just this hand
-  - just gimme a hint for the current call or play
 
 STILL TODO:
+* Katie's declarer. She just won the trick, but it hasn't scrolled her hand into view.
+* After the bot makes the opening lead, both Katie and I have had to reload the page in order to see it.
 * Doing "Splitsville" properly abandons the *hand*, but it should probably hose the entire tournament, or something.
   <docs/Laws-of-Duplicate-Bridge.pdf>, Law 12, says
 
@@ -295,6 +293,12 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* The hand, and tournament list, pages on mobile are a mess.  See <Screenshot_20260218-185652.png> and <Screenshot_20260218-185812.png>
+* The hint button should only be visible if it's my turn to play.
+* It'd be nice to have finer control for "Let the computer play for me" than just "yes" or "no": how about
+  - no
+  - just this hand
+  - just gimme a hint for the current call or play
 * The tournament filter on app:players is the old, klunky kind from 1995! Make it new and shiny and bootstrappy, like how board_list.html does it.
 * Consider switching from mypy to pyright -- Luke Plant (who uses Emacs) [has done so](https://lukeplant.me.uk/blog/posts/python-type-hints-pyastgrep-case-study/#pyright)
 * Better bot play! "lorserker/ben" (below) is one idea, but I couldn't get that working.

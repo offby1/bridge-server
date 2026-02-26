@@ -22,6 +22,7 @@ class PlayerHandEvent:
     current_hand_direction: Optional[str] = None  # "north", "south", etc.
     tempo_seconds: Optional[float] = None
     hand_pk: Optional[int] = None
+    show_hint_button: Optional[bool] = None
 
     def to_dict(self):
         """Return only non-None fields (without deep copying)"""

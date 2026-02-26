@@ -26,6 +26,13 @@ export function initPlayerEventStream(playerEventUrl, playerId) {
         if ("current_hand_html" in data) {
             autoScrollTimer = updateCurrentHand(data, autoScrollTimer);
         }
+
+        if ("show_hint_button" in data) {
+            const btn = document.getElementById("hint-button");
+            if (btn) {
+                btn.style.visibility = data.show_hint_button ? "visible" : "hidden";
+            }
+        }
     });
 
     playerEventSource.addEventListener('stream-reset', function (e) {
@@ -178,6 +185,24 @@ function updateAuctionHistory(html) {
         container.innerHTML = html;
         container.scrollIntoView();
     }
+}
+
+/**
+ * Initialize carousel prev/next buttons
+ */
+export function initCarouselButtons() {
+    const carousel = document.querySelector("ul.carousel");
+    const prevBtn = document.querySelector(".carousel-prev");
+    const nextBtn = document.querySelector(".carousel-next");
+
+    if (!carousel || !prevBtn || !nextBtn) return;
+
+    prevBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: -carousel.clientWidth, behavior: "smooth" });
+    });
+    nextBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: carousel.clientWidth, behavior: "smooth" });
+    });
 }
 
 /**

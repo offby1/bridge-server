@@ -31,7 +31,7 @@ from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet  # type: ignore[import-untyped]
 from django_filters.views import FilterView  # type: ignore[import-untyped]
 
-from app.models import Message, PartnerException, Player
+from app.models import Hand, Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
@@ -312,6 +312,35 @@ def _bot_checkbox_view_context(request: AuthedHttpRequest, pk: PK) -> dict[str, 
 def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
     context = _bot_checkbox_view_context(request, pk)
     return TemplateResponse(request, "bot-checkbox.html", context=context)
+
+
+@require_http_methods(["GET"])
+@logged_in_as_player_required(redirect=False)
+def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
+    """Stub endpoint for hint requests. TODO: Implement hint logic."""
+    p: Player = get_object_or_404(Player, pk=player_pk)
+    h: Hand | None = p.current_hand
+
+    if h is None:
+        return HttpResponse(status=200, content=escape(f"{p} has no current hand"))
+
+    xscript = h.get_xscript()
+
+    if p == h.player_who_may_call:
+        call = xscript.auction.make_standard_american_call(
+            pbn=xscript.endplay_deal.to_pbn(),
+            vuln=xscript.endplay_vulnerability(),
+        )
+        return HttpResponse(status=200, content=escape(f"If I were you, I'd call {call}"))
+
+    if (s := h.next_seat_to_play) is not None:
+        if h.player_who_controls_seat(s, right_this_second=True):
+            card = xscript.slightly_less_dumb_play().card
+            return HttpResponse(
+                status=200, content=escape(f"If I were {h.next_seat_to_play}, I'd play {card}")
+            )
+
+    return HttpResponse(status=200, content=escape(f"It's not {p}'s turn to call or play"))
 
 
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:

@@ -531,6 +531,15 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
     def currently_seated(self) -> bool:
         return self.current_hand is not None
 
+    # This is intended for the front-end to display, or hide, the #hint-button.
+    def is_my_turn_to_interact(self) -> bool:
+        if not self.currently_seated or self.current_hand is None:
+            return False
+
+        return self.controls_seat(
+            seat=self.current_hand.next_seat_to_call, right_this_second=True
+        ) or self.controls_seat(seat=self.current_hand.next_seat_to_play, right_this_second=True)
+
     def current_hand_and_direction(self) -> tuple[Hand, str] | None:
         """The string is a capitalized word, like "East"."""
         if self.current_hand is not None:

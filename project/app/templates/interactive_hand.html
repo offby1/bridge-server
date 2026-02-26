@@ -61,7 +61,7 @@
 {% endblock upper-right-column %}
 {% block scripts %}
     <script type="module">
-        import { initPlayerEventStream, initTableEventStream, initErrorToast } from "{% static 'app/bridge-game.js' %}";
+        import { initPlayerEventStream, initTableEventStream, initErrorToast, initCarouselButtons } from "{% static 'app/bridge-game.js' %}";
 
         {% if user.is_authenticated %}
         initPlayerEventStream(
@@ -72,5 +72,6 @@
 
         initTableEventStream('/events/table/html/{{ hand.pk }}/');
         initErrorToast();
+        initCarouselButtons();
     </script>
 {% endblock scripts %}

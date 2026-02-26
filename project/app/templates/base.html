@@ -21,7 +21,8 @@
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
-                <div id="hello-user" class="navbar-brand d-flex align-items-center gap-2">
+                <div id="hello-user"
+                     class="navbar-brand d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
                     {% if user.is_authenticated %}
                         <span>Hello,
                             {% if user.player %}
@@ -30,11 +31,26 @@
                                 {{ user }}
                             {% endif %}
                         </span>
-                        <div hx-ext="sse"
-                             sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
-                             sse-swap="message"
-                             hx-target="#bot-plays-for-me-div"
-                             hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
+                        <div class="d-flex flex-column flex-md-row align-items-center gap-2 border rounded px-2 px-md-3 py-2">
+                            <div hx-ext="sse"
+                                 sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
+                                 sse-swap="message"
+                                 hx-target="#bot-plays-for-me-div"
+                                 hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
+                            {% if user.player and not user.player.synthetic and user.player.current_hand %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary w-100 w-sm-auto"
+                                        id="hint-button"
+                                        style="visibility: {% if user.player.effective_allow_bot_to_play_for_me or not user.player.is_my_turn_to_call_or_play %}hidden{% else %}visible{% endif %}"
+                                        title="Get a hint for your next move"
+                                        hx-get="{% url 'app:hint' user.player.pk %}"
+                                        hx-target="#hint-modal-body"
+                                        hx-swap="innerHTML"
+                                        hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getOrCreateInstance(document.getElementById('hint-modal')).show(); }">
+                                    Give me a hint
+                                </button>
+                            {% endif %}
+                        </div>
                     {% else %}
                         <a href="{% url 'app:signup' %}" class="btn btn-sm btn-outline-primary">Sign Up</a>
                         <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Log In</a>
@@ -47,7 +63,7 @@
                         <input type="hidden" name="next" value="/" />
                     </form>
                 {% endif %}
-                <button class="navbar-toggler"
+                <button class="navbar-toggler position-absolute top-0 end-0 mt-2 me-2"
                         type="button"
                         data-bs-toggle="offcanvas"
                         data-bs-target="#offcanvasNavbar"
@@ -127,6 +143,30 @@
         {% block content %}
         {% endblock content %}
     </div>
+    <!-- Hint Modal -->
+    <div class="modal fade"
+         id="hint-modal"
+         tabindex="-1"
+         aria-labelledby="hint-modal-label"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="hint-modal-label">Hint</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="hint-modal-body">
+                    <!-- Hint content will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 <!-- see https://docs.sentry.io/platforms/javascript/ -->
 <script src="{% static 'app/browser.sentry-cdn.com/10.36.0/bundle.tracing.replay.feedback.min.js' %}"
@@ -175,4 +215,16 @@
 <script src="{% static 'app/sse.js' %}"></script>
 {% block scripts %}
 {% endblock scripts %}
+<script>
+    // Dynamically set body padding to match the navbar's actual height
+    (function() {
+        var navbar = document.querySelector('.navbar');
+        if (!navbar) return;
+        function updatePadding() {
+            document.body.style.paddingTop = navbar.offsetHeight + 'px';
+        }
+        updatePadding();
+        new ResizeObserver(updatePadding).observe(navbar);
+    })();
+</script>
 </html>

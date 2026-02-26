@@ -9,14 +9,19 @@
                hx-target="#bot-plays-for-me-div"
                {% if user.player.effective_allow_bot_to_play_for_me %}checked{% endif %}
                {% if user.player.is_dummy %}disabled{% endif %}
-               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %} />
+               {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}
+               onchange="var btn = document.getElementById('hint-button'); if(btn && this.checked) btn.style.visibility = 'hidden';" />
         <label class="form-check-label"
                for="bot-plays-for-me-switch"
                {% if user.player.is_dummy %}title="Declarer controls dummy's hand"{% endif %}>
             {% if error_message %}
                 {{ error_message }}
             {% else %}
-                Computer plays this hand for me
+                {% if user.player.current_hand %}
+                    Computer plays this hand for me
+                {% else %}
+                    Computer plays next hand for me
+                {% endif %}
                 {% if user.player.is_dummy %}(dummy){% endif %}
             {% endif %}
         </label>
