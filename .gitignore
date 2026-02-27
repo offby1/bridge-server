@@ -1,7 +1,10 @@
+!/project/static_root/.gitkeep
+/.claude/
+/.dmypy.json
 /[0-9]*.sql
 /bot-2025*
 /cook
-/django-2025*
+/django-20*+0000
 /docs/*.html
 /how-tz-detect-works.html
 /project/.coverage
@@ -10,9 +13,6 @@
 /project/htmlcov/
 /project/prof/
 /project/static_root/*
-!/project/static_root/.gitkeep
 /project/VERSION
 /README.*.html
 __pycache__/
-/.dmypy.json
-/.claude/
