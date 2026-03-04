@@ -19,7 +19,6 @@ STILL TODO:
 
   I guess I'd have to complete the tournament, and every time the "broken" pair comes up to play, the hand is skipped, but marked with "placeholder" scores -- we won't know the actual scores until the rest of the tournament finishes.
 
-* When I do a deployment, the server stops for a few seconds while Docker does whatever the hell it's doing.  We call this "an outage" :-\  Anyhoo ... in an ideal world, I'd somehow ensure that people can continue to play during the deployment (that would probably require some fancy A/B setup, which I'm too cheap and lazy to consider now).  However: perhaps I could, when the new version starts, *notice* that some tournaments were interrupted for the deployment, note the length of the outage in seconds, and extend the various deadlines by that amount. 🤷
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
 * Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
@@ -1398,6 +1397,16 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* When I do a deployment, the server stops for a few seconds while Docker does whatever the hell it's doing.  We call this "an outage" :-\  Anyhoo ... in an ideal world, I'd somehow ensure that people can continue to play during the deployment (that would probably require some fancy A/B setup, which I'm too cheap and lazy to consider now).  However: perhaps I could, when the new version starts, *notice* that some tournaments were interrupted for the deployment, note the length of the outage in seconds, and extend the various deadlines by that amount. 🤷
+
+  I made the deployment outage shorter; that might be good enough.
+
+    da400a80dc1895ffcb81f6f2d34642b5c1c8a056
+    Author:     Eric Hanchrow <eric.hanchrow@gmail.com>
+    AuthorDate: 2026-02-23 09:10:52 -0800
+
+    Reduce deployment downtime by building before stopping
+
 * Why am I not using [this](https://github.com/lorserker/ben)?
   - answer: because I only just now discovered it.
   - and because it's not ready for prime time.  The docker container immediately fails with a complaint about being unable to import "colorama"; adding "colorama" to requirements.txt and then rebuilding the image doesn't help
