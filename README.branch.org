@@ -1,0 +1,9 @@
+| Model      | Notes                                                                              |
+|------------+------------------------------------------------------------------------------------|
+| Hand       | "Tournament #, Table #, board#", \_terse_description invokes Board.__str__         |
+| Board      | "Board # tournament#, group {self.group}" + vuln + dealer                          |
+| Tournament | Not sure it's used anywhere! "tournament #" + "Completed" or "3 hands played" e.g. |
+
+I think what's been irking me is: Hand.__str__ mentions the tournament number before the board number, whereas Board.__str__ has both of those in the opposite order.
+
+Also I suspect we can entirely do without the "group" letter in Board.__str__.  wtf are groups, anyway?
