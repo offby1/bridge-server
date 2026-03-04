@@ -638,7 +638,7 @@ def _terse_description(hand: Hand) -> str:
     return format_html(
         '<a href="{}">{}</a>',
         reverse("app:board-archive", kwargs=dict(pk=hand.board.pk)),
-        hand.board,
+        hand,
     )
 
 

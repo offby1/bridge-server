@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load fastdev %}
 {% block title %}
-    Review of {{ hand }}
+    {{ hand }}
 {% endblock title %}
 {% block content %}
     <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
