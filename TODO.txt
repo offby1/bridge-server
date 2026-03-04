@@ -1,6 +1,14 @@
 IN PROGRESS:
 
 STILL TODO:
+* Looking at the `app:hand-dispatch` page, I see lots of errors like this:
+
+  2026-03-04T12:58:39+0000 WARNING pid=40807 thread=django-main-thread request_id=a3872e1bc81841099fe741b264478bea runserver.py(191) log_action HTTP GET /events/table/html/237/ 400 [0.06, 127.0.0.1:57177]
+
+  That suggests that the browser is trying to do the reconnectingeventsource thing, which is dumb, since this particular hand is finished.
+
+  Granted, it's faintly possible that the server might want to update stuff in the page's header, like "is the bot playing for me", or "should the hint button be visible", but geez
+
 * Katie's declarer. She just won the trick, but it hasn't scrolled her hand into view.
 * After the bot makes the opening lead, both Katie and I have had to reload the page in order to see it.
 * Doing "Splitsville" properly abandons the *hand*, but it should probably hose the entire tournament, or something.
