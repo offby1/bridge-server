@@ -43,22 +43,6 @@
         {% include "carousel_style_auction.html" with id=viewers_seat.name %}
     {% endif %}
 {% endblock content %}
-{% block upper-right-column %}
-    {% if DEPLOYMENT_ENVIRONMENT != "production" %}
-        <div class="col">
-            <div class="form-check form-switch">
-                <input class="form-check-input"
-                       type="checkbox"
-                       role="switch"
-                       id="god-mode-switch"
-                       hx-post="{% url 'app:open-access-toggle' hand.pk %}"
-                       hx-swap="none"
-                       {% if hand.open_access %}checked{% endif %} />
-                <label class="form-check-label" for="god-mode-switch">✨GOD MODE🦄</label>
-            </div>
-        </div>
-    {% endif %}
-{% endblock upper-right-column %}
 {% block scripts %}
     <script type="module">
         import { initPlayerEventStream, initTableEventStream, initErrorToast, initCarouselButtons } from "{% static 'app/bridge-game.js' %}";
