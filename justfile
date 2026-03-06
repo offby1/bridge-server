@@ -159,6 +159,8 @@ makemigrations *options: (manage "makemigrations " + options)
 migrate: makemigrations create-cache (manage "migrate")
 
 # Whop docker upside the haid -- in an attempt to prevent "failed to set up container networking: network blahblah not found"
+
+# See `why-whop.md`
 [group('docker')]
 whop:
     docker compose down
@@ -378,7 +380,7 @@ prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-br
 beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta" "project.prod_settings")
 
 [group('deploy')]
-dev *options: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
+dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
 
 [group('deploy')]
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "dev" "mini" "project.dev_settings")
