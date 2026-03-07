@@ -1,3 +1,4 @@
+# -*-just-*-
 # Data is "visible" from Mac at ~/OrbStack/docker/volumes/pg-data/, even when the
 # container is not running.
 # What's the deal with e.g. `PGUSER` and `POSTGRES_USER`?
@@ -75,5 +76,8 @@ docker-nuke: die-if-not-local-docker orb
 
     echo "Removing plugins!"
     docker plugin ls --quiet | xargs --no-run-if-empty docker plugin rm
+
+    echo "Killing stale networks!"
+    docker network prune --force
 
     echo "Done!"
