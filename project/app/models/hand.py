@@ -522,7 +522,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = the_call.created
         self.save()
-        player.last_action = (the_call.created, "called")
+        player.last_action = (the_call.created, "called")  # type: ignore [assignment]
         player.save(update_fields=["last_action"])  # FIX: Only update last_action field
 
         logger.debug(
@@ -632,7 +632,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self.last_action_time = rv.created
         self.save()
-        player.last_action = (rv.created, "played")
+        player.last_action = (rv.created, "played")  # type: ignore [assignment]
         player.save(update_fields=["last_action"])  # FIX: Only update last_action field
 
         logger.debug(

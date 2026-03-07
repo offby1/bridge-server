@@ -2,10 +2,6 @@ from __future__ import annotations
 
 import logging
 
-import bridge.auction
-import bridge.card
-import bridge.contract
-import bridge.seat
 from django import forms
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
@@ -13,6 +9,10 @@ from django.utils.html import format_html
 from django.views.decorators.http import require_http_methods
 
 import app.models
+import bridge.auction
+import bridge.card
+import bridge.contract
+import bridge.seat
 from app.views import Forbid
 from app.views.misc import (
     AuthedHttpRequest,
@@ -30,6 +30,7 @@ def _auction_channel_for_table(table):
 @logged_in_as_player_required()
 def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
     preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
+    assert preferred_type is not None
 
     def _forbid(message: str) -> HttpResponse:
         return Forbid(message, content_type=preferred_type)
@@ -65,6 +66,7 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
 @logged_in_as_player_required()
 def play_post_view(request: AuthedHttpRequest) -> HttpResponse:
     preferred_type = request.get_preferred_type(["text/html", "application/json"])  # type: ignore [attr-defined]
+    assert preferred_type is not None
 
     def _forbid(message: str) -> HttpResponse:
         return Forbid(message, content_type=preferred_type)
