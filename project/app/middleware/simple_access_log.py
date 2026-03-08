@@ -16,39 +16,19 @@ class RequestLoggingMiddleware:
 
         user = getattr(getattr(request, "user", None), "username", None)
 
-        common_prefix = (
-            f"{request.META['REMOTE_ADDR']} {user=} {request.method}:{request.path_info}"
-        )
-
-        # logger.info(
-        #     "%s ...",
-        #     common_prefix,
-        # )
-
         before = time.time()
         response = self.get_response(request)
         after = time.time()
+        duration_ms = int(round((after - before) * 1000))
 
-        int(round((after - before) * 1000))
-
-        common_prefix + f" => {response.status_code}"
-
-        # The debug toolbar adds this header.
-        if (server_timing := response.headers.get("Server-Timing")) is not None:
-            for wat in server_timing.split(", "):
-                name, duration, desc = wat.split(";")
-                _, duration = duration.split("=")
-                _, desc = desc.split("=")
-                # logger.info(
-                #     "%s [%s: %s]",
-                #     response_prefix,
-                #     desc,
-                #     duration,
-                # )
-
-        # logger.info(
-        #     "%s ms=%d",
-        #     response_prefix,
-        #     duration_ms,
-        # )
+        # Pass each item as a separate parameter, so that Sentry can "see" them as individual items
+        logger.info(
+            "%s %s %s:%s => %s ms=%d",
+            request.META["REMOTE_ADDR"],
+            f"{user=}",
+            request.method,
+            request.path_info,
+            response.status_code,
+            duration_ms,
+        )
         return response

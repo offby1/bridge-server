@@ -300,6 +300,16 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Log messages still don't seem to have client IP address in them.  `DOCKER_CONTEXT=hetz-bridge just dump` shows a bunch of logs (mostly errors from hackers probing for PHP vulnerabilities) but none has a client IP address.
+
+  Looks liks this commit nuked the logging:
+  ```
+    commit ba11a5f0dd27744baf2fd7c8fd81a9e8e169e7b2
+    Author: Eric Hanchrow <eric.hanchrow@gmail.com>
+    Date:   2026-01-28 08:37:18 -0800
+
+        Refactor front-end for improved clarity and maintainability
+   ```
 * The hand, and tournament list, pages on mobile are a mess.  See <Screenshot_20260218-185652.png> and <Screenshot_20260218-185812.png>
 * The hint button should only be visible if it's my turn to play.
 * It'd be nice to have finer control for "Let the computer play for me" than just "yes" or "no": how about
