@@ -345,8 +345,8 @@ _deploy hostname profile context settings_module *options:
     set -euo pipefail
 
     export CADDY_HOSTNAME="{{ hostname }}"
-    export COMPOSE_PROFILES={{ profile }}
-    export DOCKER_CONTEXT={{ context }}
+    export COMPOSE_PROFILES={{ profile }} # prod and beta get caddy; dev doesn't
+    export DOCKER_CONTEXT={{ context }}   # roughly equivalent to hostname, except for "default"
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE={{ settings_module }}
     export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
@@ -383,7 +383,7 @@ beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-be
 dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
 
 [group('deploy')]
-mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "dev" "mini" "project.dev_settings")
+mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta" "mini" "project.prod_settings")
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
