@@ -545,4 +545,23 @@ class Tournament(models.Model):
 
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
-    list_display = ["display_number", "is_complete", "signup_deadline", "play_completion_deadline"]
+    list_display = [
+        "display_number",
+        "is_complete",
+        "signup_deadline_tz",
+        "play_completion_deadline_tz",
+    ]
+
+    date_format = "%FT%T%z"
+
+    @admin.display(description="signup deadline")
+    def signup_deadline_tz(self, obj):
+        return obj.signup_deadline.strftime(self.date_format) if obj.signup_deadline else None
+
+    @admin.display(description="play completion deadline")
+    def play_completion_deadline_tz(self, obj):
+        return (
+            obj.play_completion_deadline.strftime(self.date_format)
+            if obj.play_completion_deadline
+            else None
+        )
