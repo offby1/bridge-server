@@ -76,6 +76,7 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
                 logger.debug("%s", msg)
                 return json_response(user, msg)
 
+            msg = f"Player {username_or_pk} tried the skeleton key but it didn't match"
             logger.info(msg)
             return Forbid(msg)
 

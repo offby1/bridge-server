@@ -16,7 +16,9 @@ class Command(BaseCommand):
         request.user = Player.objects.get_by_name("bob").user
 
         number = 5
-        total_seconds = timeit.timeit(lambda: player.player_list_view(request), number=number)
+        total_seconds = timeit.timeit(
+            lambda: player.PlayerListView.as_view()(request), number=number
+        )
         sys.stderr.write(
             f"{total_seconds=} for {number=} calls, mean {total_seconds / number} seconds\n",
         )

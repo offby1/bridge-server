@@ -1,15 +1,15 @@
+import django.db.models
+import pytest
 from django.contrib.auth.models import User
 from django.core.management import call_command
-import django.db.models
+from django.http import HttpResponseRedirect
 from django.test import Client
 from django.urls import reverse
 
-import pytest
-
 import bridge.card
 import bridge.contract
-
 from app.models import Board, Call, Hand, Play, Player, Tournament
+
 from .testutils import set_auction_to
 
 
@@ -92,7 +92,7 @@ def test_ppv_anon(usual_setup):
     # Anonymous user
     response = c.post(reverse("app:play-post"), data={"card": "C2"})
 
-    assert response.status_code == 302
+    assert isinstance(response, HttpResponseRedirect)
     assert "/accounts/login/?next=/play/" in response.url
 
 
@@ -197,7 +197,7 @@ def test_cpv_anonymous(usual_setup):
     # Anonymous user
     response = c.post(reverse("app:call-post"), data={"call": "pass"})
 
-    assert response.status_code == 302
+    assert isinstance(response, HttpResponseRedirect)
     assert "/accounts/login/?next=/call/" in response.url
 
 
@@ -209,7 +209,7 @@ def test_cpv_not_a_player(usual_setup):
 
     response = c.post(reverse("app:call-post"), data={"call": "pass"})
 
-    assert response.status_code == 302
+    assert isinstance(response, HttpResponseRedirect)
     assert response.url == "/"
 
 

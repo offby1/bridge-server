@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import logging
 import time
@@ -12,7 +14,9 @@ from bridge.xscript import HandTranscript
 logger = logging.getLogger(__name__)
 
 
-def get_next_hand(logger: logging.Logger | None = None) -> app.models.Hand | None:
+def get_next_hand(
+    logger: logging.Logger | LessAnnoyingLogger | None = None,
+) -> app.models.Hand | None:
     if logger is None:
         logger = logging.getLogger(__name__)
 
@@ -69,14 +73,16 @@ class LessAnnoyingLogger:
         if self.invocations.bit_count() == 1:  # i.e., it's a power of two
             meth = getattr(logger, attr)
 
-            # Crude hack to get the current hand into each log message.
-            def amended_method(*args, **kwargs):
-                args = list(args)
-                args[0] = f"hand {self.current_hand.pk}: " + args[0]
-                return meth(*args, **kwargs)
-
             if self.current_hand is None:
                 return meth
+
+            # Crude hack to get the current hand into each log message.
+            hand_pk = self.current_hand.pk
+
+            def amended_method(*args, **kwargs):
+                args = list(args)
+                args[0] = f"hand {hand_pk}: " + args[0]
+                return meth(*args, **kwargs)
 
             return amended_method
         return lambda *args, **kwargs: None

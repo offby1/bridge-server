@@ -100,7 +100,7 @@ mypy: uv-install ty
 
 # Not yet useful, but probably will be soon
 ty: uv-install
-    uvx ty check --quiet --extra-search-path project || true
+    uvx ty check --quiet --extra-search-path project --extra-search-path stubs || true
 
 alias version := version-file
 

@@ -12,6 +12,7 @@ from allauth.socialaccount.providers.google.provider import (  # type: ignore[im
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core import mail
+from django.http import HttpResponseRedirect
 from django.test import TestCase, override_settings
 
 from app.adapters import CustomSocialAccountAdapter
@@ -331,7 +332,7 @@ class OAuthFlowEndToEndTestCase(TestCase):
         )
 
         # Should redirect to login page after signup
-        self.assertEqual(response.status_code, 302)
+        assert isinstance(response, HttpResponseRedirect)
         self.assertIn("/accounts/login/", response.url)
 
         # User should be created
