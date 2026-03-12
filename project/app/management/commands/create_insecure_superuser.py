@@ -16,6 +16,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             if user := User.objects.filter(is_superuser=True).first():
                 self.stdout.write(f"Superuser {user.username!r} already exists.")
+                self.stdout.write("`just manage changepassword admin` to change it.")
             else:
                 kwargs = {"username": "admin", "password": "admin", "email": "admin@admin.com"}
                 User.objects.create_superuser(**kwargs)
