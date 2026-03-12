@@ -210,7 +210,7 @@ class Tournament(models.Model):
 
     boards_per_round_per_table = models.PositiveSmallIntegerField(default=3)
 
-    completed_at = models.DateTimeField(null=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     display_number = models.SmallIntegerField(unique=True)
 
