@@ -531,9 +531,9 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
         ) is not None:
             qs = qs.filter(_players_for_tournament(tournament_display_number))
 
-        if (
-            exclude_me := self.request.GET.get("exclude_me")
-        ) is not None and self.request.user.player is not None:
+        if (exclude_me := self.request.GET.get("exclude_me")) is not None and getattr(
+            self.request.user, "player", None
+        ) is not None:
             if exclude_me.lower() == "true":
                 qs = qs.exclude(pk=self.request.user.player.pk).exclude(
                     partner=self.request.user.player
