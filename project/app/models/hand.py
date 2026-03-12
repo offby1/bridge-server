@@ -688,7 +688,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         )
 
     @staticmethod
-    def has_player(player: Player) -> Q:
+    def has_player(player: Player | int | str) -> Q:
         expression = Q(pk__in=[])
         for direction in attribute_names:
             expression |= Q(**{direction: player})

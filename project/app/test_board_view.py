@@ -1,6 +1,7 @@
 import re
 
 from django.contrib import auth
+from django.template.response import TemplateResponse
 
 import app.views.board
 from app.models import Board, Player, Tournament
@@ -19,6 +20,7 @@ def test_board_list_view(db, rf, everybodys_password) -> None:
     request.user = some_player.user
 
     response = app.views.board.BoardListView.as_view()(request=request)
+    assert isinstance(response, TemplateResponse)
 
     assert response.status_code == 200
     response.render()
@@ -37,6 +39,7 @@ def test_board_list_view(db, rf, everybodys_password) -> None:
         request.user = some_player.user
 
         response = app.views.board.BoardListView.as_view()(request=request)
+        assert isinstance(response, TemplateResponse)
         assert response.status_code == 200
 
         response.render()

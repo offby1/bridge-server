@@ -1,14 +1,14 @@
+import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
-
-import pytest
+from django.template.response import TemplateResponse
 
 import bridge.card
 import bridge.contract
 
 from .models import Board, Hand, Player, Tournament
 from .views.board import board_archive_view
-from .views.hand import _interactive_view, HandListView, hand_serialized_view
+from .views.hand import HandListView, _interactive_view, hand_serialized_view
 from .views.tournament import tournament_view
 
 
@@ -75,6 +75,7 @@ def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_q
 
     with django_assert_max_num_queries(5):
         wat = HandListView.as_view()(request)
+        assert isinstance(wat, TemplateResponse)
         wat.render()
 
 

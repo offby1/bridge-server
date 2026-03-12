@@ -4,9 +4,9 @@ import contextlib
 import datetime
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
-import django_tables2 as tables  # type: ignore[import-untyped]
+import django_tables2 as tables
 from django.contrib import messages as django_web_messages
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
@@ -28,8 +28,8 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString, mark_safe
 from django.views.decorators.http import require_http_methods
 from django_eventstream import send_event  # type: ignore [import-untyped]
-from django_filters import FilterSet  # type: ignore[import-untyped]
-from django_filters.views import FilterView  # type: ignore[import-untyped]
+from django_filters import FilterSet
+from django_filters.views import FilterView
 
 from app.models import Hand, Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
@@ -438,7 +438,9 @@ class PlayerTable(tables.Table):
             request=self.request,
             context={
                 "action_button": _get_partner_action_from_context(
-                    request=self.request, subject=record, as_viewed_by=as_viewed_by
+                    request=cast(AuthedHttpRequest, self.request),
+                    subject=record,
+                    as_viewed_by=as_viewed_by,
                 ),
             },
         )
@@ -498,7 +500,7 @@ class PlayerFilter(FilterSet):
         exclude = ["last_action", "random_state"]
 
 
-def _players_for_tournament(tournament_display_number: int) -> Q:
+def _players_for_tournament(tournament_display_number: int | str) -> Q:
     current_hand = Q(current_hand__board__tournament__display_number=tournament_display_number)
     signup = Q(tournamentsignup__tournament__display_number=tournament_display_number)
     return current_hand | signup
@@ -531,13 +533,11 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
         ) is not None:
             qs = qs.filter(_players_for_tournament(tournament_display_number))
 
-        if (exclude_me := self.request.GET.get("exclude_me")) is not None and getattr(
-            self.request.user, "player", None
+        if (exclude_me := self.request.GET.get("exclude_me")) is not None and (
+            player := getattr(self.request.user, "player", None)
         ) is not None:
             if exclude_me.lower() == "true":
-                qs = qs.exclude(pk=self.request.user.player.pk).exclude(
-                    partner=self.request.user.player
-                )
+                qs = qs.exclude(pk=player.pk).exclude(partner=player)
 
         return qs
 
@@ -547,8 +547,8 @@ class PlayerListView(tables.SingleTableMixin, FilterView):
 
         if (
             self.request.user is not None
-            and getattr(self.request.user, "player", None) is not None
-            and self.request.user.player.partner is None
+            and (player := getattr(self.request.user, "player", None)) is not None
+            and player.partner is None
             and not self.has_partner
             and self.get_queryset().count() == 0
         ):

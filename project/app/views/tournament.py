@@ -2,7 +2,7 @@ import logging
 from typing import Any, cast
 
 import django.db.models
-import django_tables2 as tables  # type: ignore[import-untyped]
+import django_tables2 as tables
 from django.db.models import Case, Value, When
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -55,6 +55,8 @@ def annotate_grid_with_hand_links(
 
 
 class MatchpointScoreTable(tables.Table):
+    _current_viewer: app.models.Player | None = None
+
     pair1 = tables.Column()
     pair2 = tables.Column()
     matchpoints = tables.Column()

@@ -96,6 +96,7 @@ ignore="H016,H020,H021,H023,H030,H031"
 
 [tool.mypy]
 exclude = "/migrations/"
+mypy_path = "stubs"
 
 [tool.pydocstyle]
 # Disable pydocstyle entirely.
