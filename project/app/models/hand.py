@@ -1106,7 +1106,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 p.save(update_fields=["current_hand"])
 
     def __str__(self) -> str:
-        return f"Tournament #{self.tournament.display_number}, Table #{self.table_display_number}, board#{self.board.display_number}"
+        return f"{self.board} at table #{self.table_display_number}"
 
     class Meta:
         constraints = [

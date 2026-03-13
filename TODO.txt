@@ -29,7 +29,6 @@ STILL TODO:
 
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
-* Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
 * Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
 * If I am logged in, and have a current hand, there should be a big "Current Hand" button in the navbar, regardless of what page I'm on.
@@ -300,6 +299,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
 * Log messages still don't seem to have client IP address in them.  `DOCKER_CONTEXT=hetz-bridge just dump` shows a bunch of logs (mostly errors from hackers probing for PHP vulnerabilities) but none has a client IP address.
 
   Looks liks this commit nuked the logging:

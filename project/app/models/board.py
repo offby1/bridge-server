@@ -287,7 +287,7 @@ class Board(models.Model):
         return rv
 
     def short_string(self) -> str:
-        return f"Board #{self.display_number} tournament#{self.tournament.display_number}, group {self.group}"
+        return f"Tournament#{self.tournament.display_number}, board #{self.display_number}"
 
     def vulnerability_string(self) -> str:
         if self.ns_vulnerable and self.ew_vulnerable:
