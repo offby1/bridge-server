@@ -30,6 +30,24 @@ STILL TODO:
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
 * Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.
+  In particular, I'd like to know wassup with tournament 1, board 3:
+
+        | hand  | clubs    | diamonds | hearts     | spades     |
+        |-------+----------+----------+------------+------------|
+        | North | ♣2♣4♣7♣8 | ♦7♦8♦Q♦A | ♥K         | ♠4♠T♠J♠Q   |
+        | East  | ♣9♣Q     | ♦3♦4♦5♦K | ♥7♥A       | ♠3♠6♠7♠9♠A |
+        | South | ♣5♣J♣K♣A | ♦9♦J     | ♥4♥6♥9♥T♥J | ♠8♠K       |
+        | West  | ♣3♣6♣T   | ♦2♦6♦T   | ♥2♥3♥5♥8♥Q | ♠2♠5       |
+
+        | W                | N   | E         | S             |
+        | _sen. davis-nick | eth | _gus-prez | _michael-polk |
+        |------------------+-----+-----------+---------------|
+        |                  |     |           | 1♥            |
+        | Pass             | 1♠  | 2♠        | Pass          |
+        | Pass             |     |           |               |
+
+  East overcalled 1♠ with 2♠, which is, I dunno, a cue bid?
+
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
 * If I am logged in, and have a current hand, there should be a big "Current Hand" button in the navbar, regardless of what page I'm on.
 * As soon as I click "Skip the deadline", it should take me directly to my current hand; instead, it takes me to the relevant tournament.
