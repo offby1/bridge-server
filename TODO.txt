@@ -1,5 +1,4 @@
 IN PROGRESS:
-* Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
 
 STILL TODO:
 * Looking at the `app:hand-dispatch` page, I see lots of errors like this:
@@ -300,6 +299,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
 * Log messages still don't seem to have client IP address in them.  `DOCKER_CONTEXT=hetz-bridge just dump` shows a bunch of logs (mostly errors from hackers probing for PHP vulnerabilities) but none has a client IP address.
 
   Looks liks this commit nuked the logging:
