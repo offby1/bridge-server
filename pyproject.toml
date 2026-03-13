@@ -83,8 +83,8 @@ typeCheckingMode = "off"
 package = false
 
 [tool.uv.sources]
-# bridge = { path = "../library", editable = true }
-bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "161d8aa00534b0cea71b80449e4d26c149c557ed" }
+# bridge = { path = "../library", editable = true}
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "2051ad77a1d784565053f3ab6bd76aad2dcaab59" }
 
 [build-system]
 requires = ["hatchling"]
