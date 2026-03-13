@@ -1,6 +1,7 @@
 IN PROGRESS:
 
 STILL TODO:
+* I suspect I haven't needed the "skeleton key" stuff in ages -- iirc, that was from when the bot didn't cheat, and instead communicated over the API.  (Why'd I change the bot, anyway?  Probably to allow it to play better without having to actually write code that knows how to play bridge :-))
 * Looking at the `app:hand-dispatch` page, I see lots of errors like this:
 
   2026-03-04T12:58:39+0000 WARNING pid=40807 thread=django-main-thread request_id=a3872e1bc81841099fe741b264478bea runserver.py(191) log_action HTTP GET /events/table/html/237/ 400 [0.06, 127.0.0.1:57177]
