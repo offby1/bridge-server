@@ -317,7 +317,6 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 @require_http_methods(["GET"])
 @logged_in_as_player_required(redirect=False)
 def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
-    """Stub endpoint for hint requests. TODO: Implement hint logic."""
     p: Player = get_object_or_404(Player, pk=player_pk)
     h: Hand | None = p.current_hand
 
