@@ -359,8 +359,8 @@ _deploy hostname profile context settings_module *options:
     # Ensure the stuff that we depend on is up to date
     docker compose pull --ignore-buildable
 
-    # Build new image while old containers keep serving traffic
-    docker compose build django
+    # Build new images while old containers keep serving traffic
+    docker compose build
 
     docker compose up --detach --wait postgres redis # only needed when those services aren't already running
 
