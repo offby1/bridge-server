@@ -18,11 +18,17 @@
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% for row in hand.auction.fancy_HTML_display %}
+        {% for row in hand.auction_display_with_explanations %}
             <tr>
-                {% for call in row %}
+                {% for cell in row %}
                     <td>
-                        {% if call is not None %}{{ call|safe }}{% endif %}
+                        {% if cell is not None %}
+                            {% if cell.explanation %}
+                                <span title="{{ cell.explanation }}">{{ cell.html|safe }}</span>
+                            {% else %}
+                                {{ cell.html|safe }}
+                            {% endif %}
+                        {% endif %}
                     </td>
                 {% endfor %}
             </tr>

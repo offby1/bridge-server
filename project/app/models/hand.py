@@ -516,7 +516,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             raise AuctionError("Nobody may call now")
 
         try:
-            the_call = self.call_set.create(serialized=call.serialize())
+            the_call = self.call_set.create(
+                serialized=call.serialize(), explanation=call.explanation
+            )
         except (Error, AuctionException) as e:
             raise AuctionError(str(e)) from e
 
@@ -567,7 +569,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         self.send_JSON_to_players(
             data={
                 "hand_pk": self.pk,
-                "new-call": {"serialized": call.serialize()},
+                "new-call": {"serialized": call.serialize(), "explanation": call.explanation},
                 "tempo_seconds": self.board.tournament.tempo_seconds,
             }
         )
@@ -975,6 +977,27 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             ),
         )
 
+    def auction_display_with_explanations(self) -> list[list[dict[str, str] | None]]:
+        """Return the auction in 2D table form (like fancy_HTML_display) with explanations from DB."""
+        html_rows = self.auction.fancy_HTML_display()
+        db_calls = list(self.calls.all())
+
+        result: list[list[dict[str, str] | None]] = []
+        call_index = 0
+        for row in html_rows:
+            result_row: list[dict[str, str] | None] = []
+            for cell in row:
+                if cell is None:
+                    result_row.append(None)
+                else:
+                    explanation = (
+                        db_calls[call_index].explanation if call_index < len(db_calls) else ""
+                    )
+                    result_row.append({"html": str(cell), "explanation": explanation})
+                    call_index += 1
+            result.append(result_row)
+        return result
+
     @property
     def last_annotated_call(self) -> tuple[Seat, Call]:
         seat = self.call_set.order_by("-id").first()
@@ -1164,6 +1187,13 @@ class Call(ExportModelOperationsMixin("call"), TimeStampedModel):  # type: ignor
     serialized = models.CharField(  # type: ignore
         max_length=10,
         db_comment="A short string with which we can create a bridge.contract.Call object",
+    )
+
+    explanation = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        db_comment="Why the player made this call, e.g. from a bidding convention",
     )
 
     objects = CallManager()

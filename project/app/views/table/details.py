@@ -50,6 +50,10 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
     serialized_call: str = request.POST["call"]
     libCall = bridge.contract.Bid.deserialize(serialized_call)
 
+    explanation = request.POST.get("explanation", "")
+    if explanation:
+        libCall = libCall.with_explanation(explanation)
+
     try:
         hand.add_call(call=libCall)
     except (
