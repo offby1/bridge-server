@@ -1097,7 +1097,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return (f"{auction_status}: {trick_summary}", total_score)
 
-    def save(self, *args, **kwargs) -> None:
+    def save(self, *_args, **kwargs) -> None:
         super().save(**kwargs)
         if self.abandoned_because is None:
             for attribute_name in attribute_names:
