@@ -169,9 +169,7 @@
     </div>
 </body>
 <!-- see https://docs.sentry.io/platforms/javascript/ -->
-<script src="{% static 'app/browser.sentry-cdn.com/10.36.0/bundle.tracing.replay.feedback.min.js' %}"
-        integrity="sha384-fVDXtZOkFqw2qVut51bPb0skYisOiM1eKd7keiBIynBCt7d4moX48x+WxNDOYCj8"
-        crossorigin="anonymous"></script>
+<script src="{% static 'app/browser.sentry-cdn.com/10.36.0/bundle.tracing.replay.feedback.min.js' %}"></script>
 <script>
      window.sentryOnLoad = function () {
          Sentry.init({
