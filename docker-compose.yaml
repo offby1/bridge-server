@@ -9,6 +9,7 @@ volumes:
 
 services:
   django: &django
+    image: bridge-django
     build:
       context: ..
       dockerfile: ./server/Dockerfile
@@ -80,7 +81,7 @@ services:
 
   django-collected-static:
     <<: *django
-    command: ["uv", "run", "--no-dev", "python", "manage.py", "collectstatic", "--no-input"]
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "collectstatic", "--no-input", "--clear"]
     restart: "no"
     ports: []
     depends_on: []
