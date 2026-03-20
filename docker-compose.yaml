@@ -9,6 +9,7 @@ volumes:
 
 services:
   django: &django
+    image: bridge-django
     build:
       context: ..
       dockerfile: ./server/Dockerfile
