@@ -34,6 +34,11 @@ repos:
     - id: djlint-django
       exclude: 'bootstrap-fiddling.html'
 
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.24.0
+  hooks:
+    - id: gitleaks
+
 # Prevent me from using a pyproject.toml that says that the library is in ../library
 # That doesn't work "in production", but I keep forgetting.
 - repo: local

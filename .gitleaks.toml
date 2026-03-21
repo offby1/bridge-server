@@ -1,0 +1,9 @@
+# Custom gitleaks rules for secrets that the default ruleset misses.
+# Google registered the GOCSPX- pattern with GitHub's push protection,
+# but gitleaks doesn't know about it by default.
+
+[[rules]]
+id = "google-oauth-client-secret"
+description = "Google OAuth Client Secret"
+regex = '''GOCSPX-[a-zA-Z0-9_-]{28,}'''
+keywords = ["gocspx"]
