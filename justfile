@@ -140,7 +140,7 @@ alias loaddata := fixture
 
 [group('django')]
 dumpdata: all-but-django-prep ensure-skeleton-key version-file
-    just --no-deps manage dumpdata app auth | jq > {{ datetime_utc("%FT%T%z") }}.json
+    just --no-deps manage dumpdata app auth | jq | ./redact-secrets.sh > {{ datetime_utc("%FT%T%z") }}.json
     @echo Now move that file to project/app/fixtures
 
 # You can add  --print-sql-location to see a stack trace on *every* *damned* *query* :-)

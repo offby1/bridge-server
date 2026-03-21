@@ -46,7 +46,7 @@ prod-backup:
 
 [group('postgres')]
 backup: pg-start
-    docker compose exec --user postgres postgres pg_dump bridge > {{ datetime_utc("%FT%T%z") }}.sql
+    docker compose exec --user postgres postgres pg_dump bridge | ./redact-secrets.sh > {{ datetime_utc("%FT%T%z") }}.sql
 
 [group('postgres')]
 restore *options: drop pg-start
