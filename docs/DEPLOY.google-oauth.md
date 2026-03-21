@@ -5,6 +5,7 @@ This guide explains how to deploy your Google OAuth credentials to production. T
 ## Prerequisites
 
 1. You've created OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/)
+   - Note: the URL to this project is <https://console.cloud.google.com/auth/clients/717889496624-mabeh1tfribiocm11uu2h7ufnrimijgj.apps.googleusercontent.com>
 2. You've configured the OAuth consent screen
 3. You've added authorized redirect URIs:
    - `https://bridge.offby1.info/accounts/google/login/callback/` (production)
