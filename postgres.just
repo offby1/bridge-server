@@ -41,6 +41,10 @@ drop: die-if-not-local-docker pg-stop pg-start
     just pg-start redis
 
 [group('postgres')]
+prod-backup:
+    DOCKER_CONTEXT=hetz-bridge just backup
+
+[group('postgres')]
 backup: pg-start
     docker compose exec --user postgres postgres pg_dump bridge > {{ datetime_utc("%FT%T%z") }}.sql
 
