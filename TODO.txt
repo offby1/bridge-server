@@ -1,11 +1,6 @@
 IN PROGRESS:
 
 STILL TODO:
-* If you accidentally click the wrong bid, or play the wrong card, God help you -- there's no way to take it back.
-  So ... maybe there should be a confirmation popup after every call or play? That'd solve the problem, but it'd be annoying, too.
-  Maybe https://courses.cs.washington.edu/courses/cse340/ will help.
-  This item is a dupe: I also had
-  - Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * I suspect I haven't needed the "skeleton key" stuff in ages -- iirc, that was from when the bot didn't cheat, and instead communicated over the API.  (Why'd I change the bot, anyway?  Probably to allow it to play better without having to actually write code that knows how to play bridge :-))
 * Looking at the `app:hand-dispatch` page, I see lots of errors like this:
 
@@ -291,6 +286,11 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* If you accidentally click the wrong bid, or play the wrong card, God help you -- there's no way to take it back.
+  So ... maybe there should be a confirmation popup after every call or play? That'd solve the problem, but it'd be annoying, too.
+  Maybe https://courses.cs.washington.edu/courses/cse340/ will help.
+  This item is a dupe: I also had
+  - Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * /hand/ ought to list the most-recent hands first.
 * `create_insecure_superuser` should *check* if the admin already exists, and not try to create it if so.  Currently it spews a scary warning and then says "oh wait, ignore that warning"
 * Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.

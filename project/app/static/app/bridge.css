@@ -452,3 +452,20 @@ button:focus, a:focus, input:focus {
     background-color: #fff3cd !important; /* Ensure cells are also highlighted */
     font-weight: 600;
 }
+
+/* Select-then-confirm: highlight the selected card/bid */
+.confirm-click.selected {
+    --bs-btn-bg: #ffc107 !important;
+    background-color: #ffc107 !important;
+    outline: 3px solid #ff6600;
+    outline-offset: 2px;
+    transform: translateY(-6px) scale(1.15);
+    box-shadow: 0 6px 16px rgba(255, 102, 0, 0.5);
+    z-index: 10;
+    animation: pulse-selected 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-selected {
+    from { box-shadow: 0 6px 16px rgba(255, 102, 0, 0.5); }
+    to   { box-shadow: 0 6px 24px rgba(255, 102, 0, 0.8); }
+}

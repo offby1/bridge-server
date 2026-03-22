@@ -199,10 +199,11 @@ def _get_card_html(
     def _card_to_button(c: bridge.card.Card) -> str:
         return f"""<button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary confirm-click"
         name="card" value="{c.serialize()}"
         style="--bs-btn-color: {c.color}; --bs-btn-bg: #ccc"
         hx-post="{reverse("app:play-post")}"
+        hx-trigger="confirmed"
         hx-swap="none"
         >{c}</button>"""
 
@@ -475,13 +476,16 @@ def bidding_box_buttons(
             class_ = "btn btn-danger"
 
         # All one line for ease of unit testing
+        confirm_class = " confirm-click" if active else ""
+        hx_trigger = """hx-trigger="confirmed" """ if active else ""
         return (
             """<button type="button" """
             + """hx-include="this" """
             + f"""hx-post="{call_post_endpoint}" """
+            + hx_trigger
             + """hx-swap="none" """
             + f"""name="call" value="{call.serialize()}" """
-            + f"""class="{class_}" {"" if active else "disabled"}>"""
+            + f"""class="{class_}{confirm_class}" {"" if active else "disabled"}>"""
             + text
             + """</button>\n"""
         )

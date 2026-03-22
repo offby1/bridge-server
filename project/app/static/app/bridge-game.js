@@ -206,6 +206,36 @@ export function initCarouselButtons() {
 }
 
 /**
+ * Select-then-confirm: first click selects a card/bid, second click confirms it.
+ * Clicking a different button switches the selection. Clicking outside deselects.
+ */
+export function initConfirmClick() {
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".confirm-click");
+
+        if (!btn) {
+            // Clicked outside any confirm-click button — deselect all
+            document.querySelectorAll(".confirm-click.selected").forEach(el => {
+                el.classList.remove("selected");
+            });
+            return;
+        }
+
+        if (btn.classList.contains("selected")) {
+            // Second click on selected button — confirm the action
+            btn.classList.remove("selected");
+            btn.dispatchEvent(new CustomEvent("confirmed"));
+        } else {
+            // First click — select this button, deselect any others
+            document.querySelectorAll(".confirm-click.selected").forEach(el => {
+                el.classList.remove("selected");
+            });
+            btn.classList.add("selected");
+        }
+    });
+}
+
+/**
  * Initialize error toast for HTMX response errors
  */
 export function initErrorToast() {
