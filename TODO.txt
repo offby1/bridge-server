@@ -4,6 +4,8 @@ STILL TODO:
 * If you accidentally click the wrong bid, or play the wrong card, God help you -- there's no way to take it back.
   So ... maybe there should be a confirmation popup after every call or play? That'd solve the problem, but it'd be annoying, too.
   Maybe https://courses.cs.washington.edu/courses/cse340/ will help.
+  This item is a dupe: I also had
+  - Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * I suspect I haven't needed the "skeleton key" stuff in ages -- iirc, that was from when the bot didn't cheat, and instead communicated over the API.  (Why'd I change the bot, anyway?  Probably to allow it to play better without having to actually write code that knows how to play bridge :-))
 * Looking at the `app:hand-dispatch` page, I see lots of errors like this:
 
@@ -33,25 +35,6 @@ STILL TODO:
 
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
-* Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.
-  In particular, I'd like to know wassup with tournament 1, board 3:
-
-        | hand  | clubs    | diamonds | hearts     | spades     |
-        |-------+----------+----------+------------+------------|
-        | North | ♣2♣4♣7♣8 | ♦7♦8♦Q♦A | ♥K         | ♠4♠T♠J♠Q   |
-        | East  | ♣9♣Q     | ♦3♦4♦5♦K | ♥7♥A       | ♠3♠6♠7♠9♠A |
-        | South | ♣5♣J♣K♣A | ♦9♦J     | ♥4♥6♥9♥T♥J | ♠8♠K       |
-        | West  | ♣3♣6♣T   | ♦2♦6♦T   | ♥2♥3♥5♥8♥Q | ♠2♠5       |
-
-        | W                | N   | E         | S             |
-        | _sen. davis-nick | eth | _gus-prez | _michael-polk |
-        |------------------+-----+-----------+---------------|
-        |                  |     |           | 1♥            |
-        | Pass             | 1♠  | 2♠        | Pass          |
-        | Pass             |     |           |               |
-
-  East overcalled 1♠ with 2♠, which is, I dunno, a cue bid?
-
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
 * If I am logged in, and have a current hand, there should be a big "Current Hand" button in the navbar, regardless of what page I'm on.
 * As soon as I click "Skip the deadline", it should take me directly to my current hand; instead, it takes me to the relevant tournament.
@@ -63,16 +46,6 @@ STILL TODO:
 * Bigger mostly-bot tournaments?  If I'm playing all by myself, or with a single human partner, I typically create a new tournament, sign us up, and then "skip the deadline".  That ensures that the tournament has just four players: me, my partner, and two bots.
 
   But it might be fun to play against a whole swarm of bots.  Perhaps the "skip the deadline" button should have, next to it, a spinner that lets me control the number of tables in the tournament (with the minimum, as well as the default, being four).
-* Fix title for pages like http://127.0.0.1:9000/hand/138/ -- we did something like this way back in
-
-  commit 0582b3689b6ea4ee9a3927645df5fc6fdb3501dc
-  Author: Eric Hanchrow <eric.hanchrow@gmail.com>
-  Date:   2024-10-25 14:06:52 -0700
-
-      Set titles for most pages
-
-  but apparently some of that got lost.
-
 * Big ideas for Claude:
   - Improve the UI generally.  I did a smidgen four days ago, but could do lots more.
   - re-attempt generated fields (I tried this earlier, by hand, in the `GeneratedFields` branch, and gave up)
@@ -81,8 +54,6 @@ STILL TODO:
   - have it fix up all the type complaints.  Maybe have it switch to django-stubs.  Maybe have it dump `mypy` in favor of `ty`.
     I actually tried this, on the `social-auth-django-stubs` branch.  Claude wound up adding *more* "type: ignore"s and "cast"s, so I abandoned that work.
   - Maybe have it create Android or iOS apps!
-* `create_insecure_superuser` should *check* if the admin already exists, and not try to create it if so.  Currently it spews a scary warning and then says "oh wait, ignore that warning"
-* /hand/ ought to list the most-recent hands first.
 * "Claim" and "Concede" buttons, at least if you're declarer
 
   Might want endplay to check if the claim is guaranteed, and reject it if not.
@@ -105,10 +76,9 @@ STILL TODO:
   - replace "django-types" with "django-stubs[compatible-mypy]"; the latter was easy to set up, and lets me do "mypy --strict".
     Also: django-types still doesn't know that the HttpResponse class has a "text" attribute, whereas [django-stubs does](https://github.com/typeddjango/django-stubs/commit/c3b4a7a7189ce7591b097ba54287e0d9c956fafe).
 * Investigate front-endy stuff as described in `docs/frontend-ideas.md`
-* Consider some sort of confirmation action after calls and plays: it's awfully easy to accidentally touch the screen, or click the mouse, and make a call or play that you didn't intend.
 * I've kludged up a "LessAnnoyingLogger" class in the bot; either find, or create, something similar that bases its display-or-not decision on whether the current message is the same as the previous message -- as opposed to what it does now, which is: "is the count of messages (since it was last "reset") a power of two?".  This is an old technique; you see it in logs that say "previous message repeated 12345 times".
   https://docs.python.org/3/library/logging.handlers.html#logging.handlers.MemoryHandler might be useful here.
-* Dig further into https://github.com/django/daphne/issues/552 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
+* Dig further into https://github.com/django/daphne/issues/577 -- the devs indeed fixed the problem that I reported (i.e., the repro scenario that I provided now does the right thing), but it turns out that's not enough: when I start the docker stack, and then do "runme", the latter emits the CRITICAL warning but doesn't exit.
   - I imagine there's something deep in django's management command that is dropping the ball somewhere.
 
 * Some kind of smoke test for views.
@@ -321,6 +291,27 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* /hand/ ought to list the most-recent hands first.
+* `create_insecure_superuser` should *check* if the admin already exists, and not try to create it if so.  Currently it spews a scary warning and then says "oh wait, ignore that warning"
+* Every time the bot makes a call or play, have it emit its reasoning *somewhere*.  Maybe just dump it into the django log; maybe make it accessible to players via the Web UI.
+  In particular, I'd like to know wassup with tournament 1, board 3:
+
+        | hand  | clubs    | diamonds | hearts     | spades     |
+        |-------+----------+----------+------------+------------|
+        | North | ♣2♣4♣7♣8 | ♦7♦8♦Q♦A | ♥K         | ♠4♠T♠J♠Q   |
+        | East  | ♣9♣Q     | ♦3♦4♦5♦K | ♥7♥A       | ♠3♠6♠7♠9♠A |
+        | South | ♣5♣J♣K♣A | ♦9♦J     | ♥4♥6♥9♥T♥J | ♠8♠K       |
+        | West  | ♣3♣6♣T   | ♦2♦6♦T   | ♥2♥3♥5♥8♥Q | ♠2♠5       |
+
+        | W                | N   | E         | S             |
+        | _sen. davis-nick | eth | _gus-prez | _michael-polk |
+        |------------------+-----+-----------+---------------|
+        |                  |     |           | 1♥            |
+        | Pass             | 1♠  | 2♠        | Pass          |
+        | Pass             |     |           |               |
+
+  East overcalled 1♠ with 2♠, which is, I dunno, a cue bid?
+
 * Rationalize the descriptive strings for hands, boards, tournaments, &c.  I can't think of specifics right now, but it seems we do things different ways on different pages.
 * Log messages still don't seem to have client IP address in them.  `DOCKER_CONTEXT=hetz-bridge just dump` shows a bunch of logs (mostly errors from hackers probing for PHP vulnerabilities) but none has a client IP address.
 
@@ -1437,6 +1428,18 @@ DONE:
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
 NOT DONE:
+* Fix title for pages like http://127.0.0.1:9000/hand/138/ -- we did something like this way back in
+
+  commit 0582b3689b6ea4ee9a3927645df5fc6fdb3501dc
+  Author: Eric Hanchrow <eric.hanchrow@gmail.com>
+  Date:   2024-10-25 14:06:52 -0700
+
+      Set titles for most pages
+
+  but apparently some of that got lost.
+
+  -- I cannot remember what I thought looked bad about the title of that page.  I'm looking now, and it's "Tournament#23, board #1, Neither side vulnerable, dealt by North at table #1", which seems reasonable.
+
 * When I do a deployment, the server stops for a few seconds while Docker does whatever the hell it's doing.  We call this "an outage" :-\  Anyhoo ... in an ideal world, I'd somehow ensure that people can continue to play during the deployment (that would probably require some fancy A/B setup, which I'm too cheap and lazy to consider now).  However: perhaps I could, when the new version starts, *notice* that some tournaments were interrupted for the deployment, note the length of the outage in seconds, and extend the various deadlines by that amount. 🤷
 
   I made the deployment outage shorter; that might be good enough.
