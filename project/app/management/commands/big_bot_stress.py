@@ -52,7 +52,7 @@ class Command(BaseCommand):
                 if options.get("tiny", False):
                     num_players = 8
 
-            # Find or create synths who will joint the new tournament.
+            # Find or create synths who will join the new tournament.
 
             def eligible_synths() -> QuerySet:
                 all_synths = Player.objects.order_by("user__username").filter(synthetic=True)
