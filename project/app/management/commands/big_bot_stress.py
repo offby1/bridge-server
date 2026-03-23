@@ -99,7 +99,8 @@ class Command(BaseCommand):
                 self.stderr.write(f"Signed {p.name} up for t#{t.display_number}")
                 p.user.password = everybodys_password
                 p.user.save()
-                p.toggle_bot(True)
+                p.allow_bot_to_play_for_me = True
+                p.save()
 
             t.signup_deadline = datetime.datetime.now(tz=datetime.UTC)
 
