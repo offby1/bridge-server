@@ -198,7 +198,7 @@ wheels = [
 [[package]]
 name = "bridge"
 version = "0.1.0"
-source = { git = "https://gitlab.com/offby1/bridge.git?rev=2051ad77a1d784565053f3ab6bd76aad2dcaab59#2051ad77a1d784565053f3ab6bd76aad2dcaab59" }
+source = { git = "https://gitlab.com/offby1/bridge.git?rev=7939ddbdcc7de9ca135b610a287987e7451d6dc9#7939ddbdcc7de9ca135b610a287987e7451d6dc9" }
 dependencies = [
     { name = "colorama" },
     { name = "endplay" },
@@ -275,7 +275,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bridge", git = "https://gitlab.com/offby1/bridge.git?rev=2051ad77a1d784565053f3ab6bd76aad2dcaab59" },
+    { name = "bridge", git = "https://gitlab.com/offby1/bridge.git?rev=7939ddbdcc7de9ca135b610a287987e7451d6dc9" },
     { name = "daphne" },
     { name = "django", specifier = "==6.*" },
     { name = "django-allauth", extras = ["socialaccount"], specifier = ">=65.4.0,<66" },
