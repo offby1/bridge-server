@@ -84,4 +84,4 @@ class WireCharacterProvider(Provider):
     double_barreled_names = [f"{n1}-{n2}" for n1, n2 in itertools.product(first_names, repeat=2)]
 
     def playa(self):
-        return self.random_element(self.double_barreled_names)
+        return self.random_element(self.first_names)
