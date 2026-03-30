@@ -189,9 +189,8 @@ tiny:
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
-[parallel]
 [script('bash')]
-runme *options: ft version-file django-superuser migrate create-cache ensure-skeleton-key
+_notests *options: version-file django-superuser migrate create-cache ensure-skeleton-key
     set -euxo pipefail
 
     # Pre-flight check: fail cleanly if port is already in use
@@ -210,6 +209,11 @@ runme *options: ft version-file django-superuser migrate create-cache ensure-ske
 
     cd project
     uv run python manage.py runserver {{ DEV_SERVER_PORT }} {{ options }}
+
+[group('development')]
+[parallel]
+[script('bash')]
+runme *options: ft (_notests options)
 
 alias runserver := runme
 
