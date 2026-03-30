@@ -41,6 +41,7 @@ dependencies = [
     "django-watchfiles>=1.4.0",
     "django-http-compression>=1.0.0",
     "django-allauth[socialaccount]>=65.4.0,<66",
+    "django-cors-headers>=4.9.0",
 ]
 
 [dependency-groups]

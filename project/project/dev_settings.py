@@ -30,3 +30,9 @@ LOGGING["root"]["level"] = "DEBUG"  # type: ignore  [index]
 
 # See notes in prod_settings
 DEPLOYMENT_ENVIRONMENT = "development"
+
+# Allow requests from the Flutter dev server
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]

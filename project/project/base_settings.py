@@ -93,6 +93,7 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "corsheaders",
     "daphne",
     "django_fastdev",
     "django_eventstream",
@@ -143,6 +144,7 @@ EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # must be near the top
     "django_http_compression.middleware.HttpCompressionMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "app.middleware.swallow_annoying_exception.SwallowAnnoyingExceptionMiddleware",
