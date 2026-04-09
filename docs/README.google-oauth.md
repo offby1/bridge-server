@@ -229,6 +229,7 @@ Add similar Google button after the signup form button.
      - `http://localhost:9000/accounts/google/login/callback/`
      - `https://bridge.offby1.info/accounts/google/login/callback/`
    - Save Client ID and Client Secret
+   - The URL for the new thing, if you want to edit it, is `https://console.cloud.google.com/apis/credentials?authuser=1&project=oauth-mojo-for-bridge-server&supportedpurview=project`
 
 2. **Store Credentials Locally**:
    ```bash
