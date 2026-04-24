@@ -1,4 +1,4 @@
-set unstable := true
+set unstable
 
 import 'postgres.just'
 
