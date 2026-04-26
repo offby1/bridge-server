@@ -140,4 +140,7 @@ filterwarnings = [
     # Suppress expected database teardown error from live_server fixture
     # Our pytest_sessionfinish hook cleans up the database after this warning
     "ignore:Error when trying to teardown test databases.*database.*is being accessed:pytest.PytestWarning",
+    # django-eventstream returns async iterables; pytest-django's live_server uses WSGI,
+    # which falls back to async_to_sync. Production uses Daphne (ASGI), so this is test-only noise.
+    "ignore:StreamingHttpResponse must consume asynchronous iterators:Warning",
 ]
