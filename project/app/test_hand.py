@@ -5,6 +5,8 @@ from typing import Any
 
 import pytest
 from django.contrib import auth
+from django.test import Client
+from django.urls import reverse
 
 from bridge.card import Card, Rank
 from bridge.card import Suit as libSuit
@@ -414,6 +416,50 @@ def test_declarer_hint_visible_on_dummys_turn(usual_setup: Hand) -> None:
     assert declarer.is_my_turn_to_interact(), (
         "Declarer should see the hint button when it's dummy's turn to play"
     )
+
+
+def _render_hand_page_for(player: Player, h: Hand) -> str:
+    # Play for yourself, so the bot toggle doesn't independently hide the button.
+    player.allow_bot_to_play_for_me = False
+    player.save()
+    assert not player.effective_allow_bot_to_play_for_me
+
+    client = Client()
+    assert client.login(username=player.name, password=".")
+    response = client.get(reverse("app:hand-dispatch", kwargs={"pk": h.pk}), follow=True)
+    return response.content.decode()
+
+
+def test_hint_button_visible_in_rendered_page_on_your_turn(usual_setup: Hand) -> None:
+    h = usual_setup
+    on_turn = h.player_who_may_call
+    assert on_turn is not None
+    assert not on_turn.synthetic
+    assert on_turn.is_my_turn_to_interact()
+
+    content = _render_hand_page_for(on_turn, h)
+    assert 'id="hint-button"' in content
+    assert "visibility: visible" in content, "hint button should be visible on your turn"
+
+
+def test_hint_button_hidden_in_rendered_page_when_not_your_turn(usual_setup: Hand) -> None:
+    # Regression: base.html keyed visibility off a nonexistent attribute
+    # (is_my_turn_to_call_or_play). Under django-fastdev's strict-if, the
+    # missing lookup made `not <missing>` falsy, so the button rendered
+    # *visible* even when it wasn't your turn. The real method is
+    # is_my_turn_to_interact.
+    h = usual_setup
+    on_turn = h.player_who_may_call
+    assert on_turn is not None
+
+    # Pre-auction, only the dealer may act; pick a seated player who is NOT on turn.
+    off_turn = next(p for p in h.players() if p.pk != on_turn.pk)
+    assert not off_turn.synthetic
+    assert not off_turn.is_my_turn_to_interact()
+
+    content = _render_hand_page_for(off_turn, h)
+    assert 'id="hint-button"' in content  # button is in the DOM...
+    assert "visibility: hidden" in content, "hint button must be hidden when it's not your turn"
 
 
 def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
