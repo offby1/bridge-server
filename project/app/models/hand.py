@@ -401,22 +401,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         for p in self.players():
             send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
 
-    def send_event_to_all_players(self, *, data: dict[str, Any]) -> None:
-        now = time.time()
-        for p in self.players():
-            self.send_event_to_player(player_pk=p.pk, data=data, now=now)
-
-    def send_event_to_player(
-        self, *, player_pk: PK, data: dict[str, Any], now: float | None = None
-    ) -> None:
-        if now is None:
-            now = time.time()
-
-        p = Player.objects.get(pk=player_pk)
-        player_channel = p.event_HTML_hand_channel
-
-        send_timestamped_event(channel=player_channel, data=data | {"hand_pk": self.pk}, when=now)
-
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
     summary_for_this_viewer: str
