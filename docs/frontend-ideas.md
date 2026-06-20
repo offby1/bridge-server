@@ -7,4 +7,7 @@
 - https://alpinejs.dev/ -- it looks awfully simple, slick, well-documented, and reactive.
 - <https://tailwindcss.com/> I keep hearing about this
   Basically lets you squash your CSS file into your HTML, so your html is cluttered with dozens of obscure CSS class names.
+- <https://daisyui.com/>
+  > daisyUI adds class names to Tailwind CSS for all common UI components.
+  > Class names like `btn`, `card`, `toggle` and many more.
 - <https://unpoly.com/> looks a lot like HTMX, albeit fancier.
