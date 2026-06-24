@@ -85,3 +85,6 @@ class WireCharacterProvider(Provider):
 
     def playa(self):
         return self.random_element(self.first_names)
+
+    def double_barreled_playa(self):
+        return self.random_element(self.double_barreled_names)

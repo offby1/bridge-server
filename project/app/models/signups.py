@@ -46,18 +46,19 @@ class TournamentSignupManager(models.Manager):
                 break
 
             logger.debug(
-                f"{len(signed_up_pairs)=} is odd, so we will create one synthetic player partnership (i.e., two players)."
+                f"{len(signed_up_pairs)=} is odd, so we need one synthetic player partnership (i.e., two players)."
             )
-            p2 = Player.objects.create_synthetic()
-            p2.partner = Player.objects.create_synthetic()
-            p2.partner.partner = p2
-            p2.partner.save()
-            p2.save()
+            # Reuse idle (unpartnered) synthetic players if any are lying around,
+            # only minting brand-new ones as a last resort.  This keeps us from
+            # endlessly accumulating bots (and exhausting the name pool).
+            p1, _ = Player.objects.get_or_create_synthetic()
+            p2, _ = Player.objects.get_or_create_synthetic(pk=p1.pk)
+            p1.partner_with(p2)
 
-            for p in (p2, p2.partner):
+            for p in (p1, p2):
                 TournamentSignup.objects.create(tournament=tour, player=p)
 
-            logger.debug("Created synths %s and %s for '%s'", p2, p2.partner, tour)
+            logger.debug("Provided synths %s and %s for '%s'", p1, p2, tour)
 
         assert len(signed_up_pairs) % 2 == 0
         logger.debug("%d pairs are waiting", len(signed_up_pairs))

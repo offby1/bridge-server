@@ -22,6 +22,7 @@ from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from faker import Faker
+from faker.exceptions import UniquenessException
 
 import bridge.card
 import bridge.seat
@@ -63,12 +64,24 @@ class PlayerManager(models.Manager):
         Faker.seed(0)
         fake.add_provider(WireCharacterProvider)
 
-        while True:
-            # Ensure neither the prefixed, nor the unprefixed, version exists.
-            unprefixed_candidate = fake.unique.playa().lower()
-            candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
-            if not auth.models.User.objects.filter(username__in=candidates).exists():
-                return candidates[-1]
+        # Try the short, pretty single names first; once they're all taken,
+        # fall back to the much larger pool of double-barreled combinations so
+        # we never run out.  We reseed to 0 above (deliberately) so names are
+        # always generated in the same order.
+        for generator in (fake.unique.playa, fake.unique.double_barreled_playa):
+            try:
+                while True:
+                    # Ensure neither the prefixed, nor the unprefixed, version exists.
+                    unprefixed_candidate = generator().lower()
+                    candidates = [unprefixed_candidate, prefix + unprefixed_candidate]
+                    if not auth.models.User.objects.filter(username__in=candidates).exists():
+                        return candidates[-1]
+            except UniquenessException:
+                # This pool is exhausted; move on to the next (larger) one.
+                continue
+
+        msg = "Ran out of synthetic player names"
+        raise RuntimeError(msg)
 
     def create_synthetic(self) -> Player:
         new_user = auth.models.User.objects.create_user(

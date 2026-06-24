@@ -5,7 +5,49 @@ from django.conf import settings
 from django.contrib import auth
 from freezegun import freeze_time
 
-from app.models import Hand, Player, Tournament
+from app.models import Hand, Player, Tournament, TournamentSignup
+from app.models.playaz import WireCharacterProvider
+
+
+def test_synthetic_username_falls_back_to_double_barreled_when_pool_exhausted(db) -> None:
+    # Occupy every single-name slot (prefixed, the way create_synthetic stores
+    # them) so the small ~74-name pool is completely full.
+    for name in WireCharacterProvider.first_names:
+        auth.models.User.objects.create(username="_" + name.lower())
+
+    # This used to raise faker's UniquenessException after 1,000 attempts.
+    username = Player.objects._find_unused_username(prefix="_")
+
+    # Instead it falls back to the much larger double-barreled pool, so we never
+    # actually run out of names.
+    double_barreled = {n.lower() for n in WireCharacterProvider.double_barreled_names}
+    assert username[1:] in double_barreled
+    assert not auth.models.User.objects.filter(username=username).exists()
+
+
+def test_create_synths_for_reuses_idle_synthetic_players(db) -> None:
+    t = Tournament.objects.create()
+
+    # One signed-up pair == odd, so padding with one more pair is needed.
+    s1 = Player.objects.create_synthetic()
+    s2 = Player.objects.create_synthetic()
+    s1.partner_with(s2)
+    t.sign_up_player_and_partner(s1)
+    assert len(list(t.signed_up_pairs())) == 1
+
+    # Two idle (unpartnered) bots are lying around to be reused.
+    idle1 = Player.objects.create_synthetic()
+    idle2 = Player.objects.create_synthetic()
+    count_before = Player.objects.count()
+
+    TournamentSignup.objects.create_synths_for(t)
+
+    # The idle bots got reused as the padding pair -- no brand-new players minted.
+    assert Player.objects.count() == count_before
+    assert len(list(t.signed_up_pairs())) == 2
+    idle1.refresh_from_db()
+    idle2.refresh_from_db()
+    assert idle1.partner == idle2
 
 
 def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
