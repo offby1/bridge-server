@@ -26,52 +26,17 @@ when any of those hands ends:
 """
 
 import collections
-import datetime
-from typing import Iterable
 
 import pytest
-from freezegun import freeze_time
 
-from app.models import Hand, Player, Tournament
-from app.models.tournament import _do_signup_expired_stuff
+from app.models import Hand, Tournament
 
-from .testutils import play_out_hand, play_out_round
-
-SIGNUP_DEADLINE = datetime.datetime.fromisoformat("2000-01-01T00:00:00Z")
-PLAY_COMPLETION_DEADLINE = SIGNUP_DEADLINE + datetime.timedelta(seconds=3600)
+from .testutils import create_a_tournament, play_out_hand, play_out_round
 
 
 @pytest.fixture
-def small_tournament_at_signup_deadline(db) -> Iterable[Tournament]:
-    with freeze_time(SIGNUP_DEADLINE):
-        # set signup deadline to be more or less "now"
-        t: Tournament
-        t, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
-            boards_per_round_per_table=2, play_completion_deadline=PLAY_COMPLETION_DEADLINE
-        )
-
-        # Create 8 players
-        for _ in range(4):
-            p1 = Player.objects.create_synthetic()
-            p2 = Player.objects.create_synthetic()
-            p1.partner_with(p2)
-
-        # Sign 'em all up
-        for p in Player.objects.all():
-            t.sign_up_player_and_partner(p)
-
-        assert t.hands().count() == 0
-
-        yield t
-
-
-@pytest.fixture
-def small_tournament_during_play(small_tournament_at_signup_deadline) -> Iterable[Tournament]:
-    with freeze_time(SIGNUP_DEADLINE + (PLAY_COMPLETION_DEADLINE - SIGNUP_DEADLINE) // 2):
-        _do_signup_expired_stuff(small_tournament_at_signup_deadline)
-
-        assert small_tournament_at_signup_deadline.hands().count() == 2
-        yield small_tournament_at_signup_deadline
+def small_tournament_during_play(db) -> Tournament:
+    return create_a_tournament(stage="playing", boards_per_round_per_table=2)
 
 
 def test_start_of_round_creates_one_hand_per_table(

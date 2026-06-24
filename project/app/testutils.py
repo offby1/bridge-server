@@ -1,14 +1,85 @@
+import datetime
 import logging
+from typing import Literal
 
 import pytest
+from django.utils import timezone
 
 import app.models
 import bridge.contract
 import bridge.table
+from app.models.tournament import _do_signup_expired_stuff
 from app.models.utils import assert_type
 
-
 logger = logging.getLogger(__name__)
+
+
+def create_a_tournament(
+    *,
+    stage: Literal["open", "playing", "complete"] = "complete",
+    num_pairs: int = 4,
+    boards_per_round_per_table: int = 2,
+) -> app.models.Tournament:
+    """Create a tournament populated with `num_pairs` pairs of synthetic players.
+
+    `stage` controls how far the tournament is advanced:
+
+    - "open": open for signups; players are signed up but no hands exist yet.
+    - "playing": signups are expired and round-0 hands are created, but none
+      have been played.
+    - "complete": every round is played out, so the returned tournament
+      `.is_complete`.
+
+    No `freeze_time` is needed: we sign players up while the tournament is open,
+    then backdate `signup_deadline` so the movement can be computed.  The
+    play-completion deadline (computed at signup expiry, ~tens of minutes out)
+    stays comfortably ahead of the instantaneous playout.
+    """
+    t = app.models.Tournament.objects.create(
+        boards_per_round_per_table=boards_per_round_per_table,
+    )
+
+    # Sign up only the pairs we just made; signing up `Player.objects.all()`
+    # would sweep in already-seated players from other tournaments and fail the
+    # not-seated check in sign_up_player_and_partner().
+    created_pairs = []
+    for _ in range(num_pairs):
+        p1 = app.models.Player.objects.create_synthetic()
+        p2 = app.models.Player.objects.create_synthetic()
+        p1.partner_with(p2)
+        created_pairs.append(p1)
+
+    for p in created_pairs:
+        t.sign_up_player_and_partner(p)
+
+    # No hands exist until the signup deadline expires.
+    assert not t.hands().exists(), f"{t} has hands before its signup deadline expired"
+
+    if stage == "open":
+        return t
+
+    # The signup deadline must be in the past before a movement can be
+    # computed, but it had to be in the future (above) for signups to be
+    # accepted.  Backdate it now that everyone's signed up.
+    t.signup_deadline = timezone.now() - datetime.timedelta(seconds=10)
+    t.save()
+
+    _do_signup_expired_stuff(t)
+
+    # Expiry creates exactly one hand per table for the first round.
+    num_tables = len(t.get_movement().table_settings_by_zb_table_number)
+    assert t.hands().count() == num_tables, (
+        f"{t}: expected one hand per table ({num_tables}), got {t.hands().count()}"
+    )
+
+    if stage == "complete":
+        t.refresh_from_db()
+        while not t.is_complete:
+            play_out_round(t)
+            t.refresh_from_db()
+
+    t.refresh_from_db()
+    return t
 
 
 def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.models.Hand:
