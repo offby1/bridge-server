@@ -2,31 +2,23 @@ import logging
 import types
 
 import pytest
-
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseForbidden
-from django.utils.timezone import now
 
 from app.models import Hand, Player, Tournament
-from app.models.tournament import _do_signup_expired_stuff
+from app.testutils import create_a_tournament, play_out_hand
 from app.views.hand import (
     _error_response_or_viewfunc,
     _everything_read_only_view,
     _interactive_view,
 )
-from app.testutils import play_out_hand
 
 logger = logging.getLogger()
 
 
 @pytest.fixture
 def setup(db) -> Tournament:
-    t = Tournament.objects.create(boards_per_round_per_table=1)
-    Player.objects.ensure_eight_players_signed_up(tournament=t)
-    t.signup_deadline = now()
-    t.save()
-
-    _do_signup_expired_stuff(t)
+    t = create_a_tournament(stage="playing", boards_per_round_per_table=1)
 
     # play board 1 fully
     b1_hands = Hand.objects.filter(board__display_number=1)

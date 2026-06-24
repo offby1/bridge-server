@@ -16,6 +16,10 @@
               rel="stylesheet">
         <link href="{% static "app/bridge.css" %}" rel="stylesheet">
         <link rel="icon" type="image/png" href="{% static "app/spadesuit.png" %}" />
+        <link rel="alternate"
+              type="application/rss+xml"
+              title="Bridge: hands from completed tournaments"
+              href="{% url 'app:tournaments-rss' %}" />
     </head>
     {% tz_detect %}
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
