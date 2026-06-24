@@ -365,6 +365,12 @@ class Tournament(models.Model):
                 assert self.signup_deadline_has_passed(), (
                     f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
                 )
+                # Pad an odd number of pairs with a synthetic partnership so the
+                # movement never needs a phantom.  _do_signup_expired_stuff does
+                # this too, but it runs in a (throttled) request_finished signal,
+                # so the first page view after the deadline passes can reach here
+                # first -- and a phantom would otherwise trip the assertion below.
+                TournamentSignup.objects.create_synths_for(self)
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"signed_up_pairs => {pairs=}")
 

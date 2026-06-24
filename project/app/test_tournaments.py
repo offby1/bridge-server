@@ -1,13 +1,13 @@
 import datetime
 import logging
 
-from freezegun import freeze_time
 import pytest
-from bridge.contract import Call
 from django.contrib import auth
-from django.utils.timezone import now
 from django.http.response import HttpResponseForbidden
+from django.utils.timezone import now
+from freezegun import freeze_time
 
+import app.models.board
 import app.views.hand
 import app.views.table.details
 from app.models import (
@@ -18,14 +18,14 @@ from app.models import (
     Tournament,
     TournamentSignup,
 )
-import app.models.board
 from app.models.tournament import (
-    check_for_expirations,
     NotOpenForSignupError,
+    OpenForSignup,
     PlayerNeedsPartnerError,
     Running,
-    OpenForSignup,
+    check_for_expirations,
 )
+from bridge.contract import Call
 
 from .testutils import play_out_hand, play_out_round
 
@@ -288,6 +288,36 @@ def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (1, 0)
+
+
+def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated) -> None:
+    """A tournament whose signup deadline passes with an odd number of pairs --
+    but *before* the synth-padding has run -- used to 500 the tournament page:
+    get_movement() built a phantom pair and tripped `assert num_phantoms == 0`.
+
+    This reproduces that first-page-view-after-the-deadline state by backdating
+    the deadline without calling _do_signup_expired_stuff (which is what creates
+    the padding synths via request_finished)."""
+    open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+
+    s1 = Player.objects.create_synthetic()
+    s2 = Player.objects.create_synthetic()
+    s1.partner_with(s2)
+    open_tournament.sign_up_player_and_partner(s1)
+
+    open_tournament.signup_deadline = now() - datetime.timedelta(seconds=10)
+    open_tournament.save()
+
+    assert not open_tournament.hands().exists()
+    pairs_before = len(list(open_tournament.signed_up_pairs()))
+    assert pairs_before % 2 == 1  # odd -- would have needed a phantom
+
+    movement = open_tournament.get_movement()  # used to raise AssertionError
+
+    # The odd pairs got padded with a real synthetic partnership, not a phantom,
+    # so the cached movement is fully playable.
+    assert movement.num_phantoms == 0
+    assert len(list(open_tournament.signed_up_pairs())) == pairs_before + 1
 
 
 def test_no_boards_vanishes_after_play_deadline(fresh_tournament: Tournament) -> None:
