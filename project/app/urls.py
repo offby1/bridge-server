@@ -5,6 +5,7 @@ from .views.board import (
     BoardListView,
     board_archive_view,
 )
+from .views.feeds import CompletedTournamentsFeed
 from .views.hand import (
     HandListView,
     HandsByTableAndBoardGroupView,
@@ -73,6 +74,7 @@ urlpatterns = [
     ),
     path("signup/", signup_view, name="signup"),
     path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
+    path("tournaments.rss/", CompletedTournamentsFeed(), name="tournaments-rss"),
     path("tournament/", tournament_list_view, name="tournament-list"),
     path("tournament/<int:pk>/", tournament_view, name="tournament"),
     path("tournament/signup/<int:pk>/", tournament_signup_view, name="tournament-signup"),
