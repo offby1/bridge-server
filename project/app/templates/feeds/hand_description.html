@@ -1,0 +1,11 @@
+<p>{{ score_line }}</p>
+<p>
+    <a href="{{ hand_url }}">View this hand</a>
+</p>
+<ul>
+    {% for seat in seats %}
+        <li>
+            {{ seat.direction }}: <a href="{{ seat.url }}">{{ seat.name }}</a>
+        </li>
+    {% endfor %}
+</ul>

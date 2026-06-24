@@ -1,15 +1,15 @@
 import logging
+from typing import Any
 
 from django.contrib.syndication.views import Feed
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
-from django.utils.html import format_html, format_html_join
 
 import app.models
 
 logger = logging.getLogger(__name__)
 
-# In compass order, paired with the matching Hand FK attribute name.
+# In compass order; each name is also the matching Hand FK attribute.
 _SEATS = ("North", "East", "South", "West")
 
 
@@ -22,6 +22,10 @@ class CompletedTournamentsFeed(Feed):
 
     title = "Bridge: hands from completed tournaments"
     description = "Every hand played in a completed tournament, newest first."
+
+    # The per-item body is rendered from a template; get_context_data() below
+    # supplies it with the score line, the hand link, and the seated players.
+    description_template = "feeds/hand_description.html"
 
     def __call__(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # Stash the request so the item_* methods can build absolute URLs that
@@ -57,25 +61,22 @@ class CompletedTournamentsFeed(Feed):
     def item_link(self, item: app.models.Hand) -> str:  # type: ignore[override]
         return self._abs("app:hand-dispatch", pk=item.pk)
 
-    def item_description(self, item: app.models.Hand) -> str:  # type: ignore[override]
-        summary, score = item.summary_as_viewed_by(as_viewed_by=None)
-        score_line = summary if score in ("-", None) else f"{summary} ({score})"
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        hand: app.models.Hand = kwargs["item"]
 
-        seats = format_html_join(
-            "\n",
-            '<li>{}: <a href="{}">{}</a></li>',
-            (
-                (direction, self._abs("app:player", pk=player.pk), player.name)
-                for direction, player in ((seat, getattr(item, seat)) for seat in _SEATS)
-            ),
-        )
-
-        return format_html(
-            '<p>{}</p>\n<p><a href="{}">View this hand</a></p>\n<ul>\n{}\n</ul>',
-            score_line,
-            self._abs("app:hand-dispatch", pk=item.pk),
-            seats,
-        )
+        summary, score = hand.summary_as_viewed_by(as_viewed_by=None)
+        context["score_line"] = summary if score in ("-", None) else f"{summary} ({score})"
+        context["hand_url"] = self._abs("app:hand-dispatch", pk=hand.pk)
+        context["seats"] = [
+            {
+                "direction": seat,
+                "url": self._abs("app:player", pk=getattr(hand, seat).pk),
+                "name": getattr(hand, seat).name,
+            }
+            for seat in _SEATS
+        ]
+        return context
 
     def item_pubdate(self, item: app.models.Hand):  # type: ignore[override]
         return item.board.tournament.completed_at
