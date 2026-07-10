@@ -349,7 +349,7 @@ _deploy hostname profile context settings_module *options:
     set -euo pipefail
 
     export CADDY_HOSTNAME="{{ hostname }}"
-    export COMPOSE_PROFILES={{ profile }} # prod and beta get caddy; dev doesn't
+    export COMPOSE_PROFILES={{ profile }} # prod and beta get caddy + monitoring; dev doesn't
     export DOCKER_CONTEXT={{ context }}   # roughly equivalent to hostname, except for "default"
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE={{ settings_module }}
@@ -370,21 +370,33 @@ _deploy hostname profile context settings_module *options:
 
     # Run one-shot setup services (migrations, collectstatic, oauth) with the new image
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
-    docker compose wait django-collected-static django-migrated django-oauth-setup
+    docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
     # Swap in the new django container (and bot); --no-deps avoids restarting postgres/redis/caddy
     just dump
     docker compose up --detach --no-deps --force-recreate django bot {{ options }}
-    docker compose logs django --follow
+
+    # Bring up the monitoring stack when its profile is active (prod/beta).  `_deploy` only ups
+    # named services, so these need an explicit `up`; the guard keeps them off in dev.
+    # --force-recreate reattaches them to the current network, in case they're stranded leftovers.
+    if [[ ",${COMPOSE_PROFILES:-}," == *",monitoring,"* ]]; then
+        docker compose up --detach --force-recreate grafana prometheus postgres-exporter pyroscope
+    fi
+
+    docker compose logs django --follow || true
 
 [group('deploy')]
-prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod" "hetz-bridge" "project.prod_settings")
+prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod,monitoring" "hetz-bridge" "project.prod_settings")
 
 [group('deploy')]
-beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta" "hetz-beta" "project.prod_settings")
+beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta,monitoring" "hetz-beta" "project.prod_settings")
 
 [group('deploy')]
 dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
+
+# Like `just dev`, but also brings up the monitoring stack (grafana/prometheus/&c.) locally.
+[group('deploy')]
+dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " + options)
 
 [group('deploy')]
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta" "mini" "project.prod_settings")

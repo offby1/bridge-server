@@ -150,6 +150,8 @@ services:
     restart: unless-stopped
 
   postgres-exporter:
+    profiles:
+      - monitoring
     environment:
       - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
       - DATA_SOURCE_USER=postgres
@@ -159,6 +161,8 @@ services:
   # Cadged from https://github.com/docker/awesome-compose/blob/master/prometheus-grafana/compose.yaml
   grafana:
     build: grafana
+    profiles:
+      - monitoring
     depends_on:
       - pyroscope
       - prometheus
@@ -175,6 +179,8 @@ services:
 
   prometheus:
     build: prometheus
+    profiles:
+      - monitoring
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
@@ -188,6 +194,8 @@ services:
       - prom_data:/prometheus
 
   pyroscope:
+    profiles:
+      - monitoring
     image: grafana/pyroscope
     ports:
       - "127.0.0.1:4040:4040"
