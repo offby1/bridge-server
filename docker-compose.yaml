@@ -152,6 +152,9 @@ services:
   postgres-exporter:
     profiles:
       - monitoring
+    depends_on:
+      - postgres
+    restart: unless-stopped
     environment:
       - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
       - DATA_SOURCE_USER=postgres
