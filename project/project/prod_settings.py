@@ -12,8 +12,16 @@ DEBUG = False
 # "development": running on my laptop without docker
 # "staging": running on my laptop with docker
 # "production": running on my EC2 box or some other cloud server, with docker
-DEPLOYMENT_ENVIRONMENT = "production" if os.getenv("COMPOSE_PROFILES") == "prod" else "staging"
+DEPLOYMENT_ENVIRONMENT = (
+    "production" if "prod" in os.getenv("COMPOSE_PROFILES", "").split(",") else "staging"
+)
 SECURE_SSL_REDIRECT = True
+
+# Prometheus scrapes django:9000/metrics directly (not through Caddy), so the request carries no
+# X-Forwarded-Proto header; SECURE_SSL_REDIRECT would 301 it to https://django:9000, which daphne's
+# plain-HTTP port can't complete (the scrape then dies with "context deadline exceeded").  Exempt the
+# metrics endpoint from the redirect so the internal scrape works over HTTP.
+SECURE_REDIRECT_EXEMPT = [r"^metrics$"]
 
 if DEPLOYMENT_ENVIRONMENT == "production":
     LOGGING["handlers"]["console"]["level"] = "INFO"
