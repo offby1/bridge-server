@@ -401,5 +401,14 @@ dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " 
 [group('deploy')]
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta,monitoring" "mini" "project.prod_settings")
 
+# `tailscale serve` persists on the host and is idempotent, so this is a one-time-per-host setup.
+# Override the host for beta: `just tailscale-serve root@hetz-beta`.
+# Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
+[group('deploy')]
+tailscale-serve ssh_host="root@hetz-bridge":
+    ssh {{ ssh_host }} 'tailscale serve --bg --tcp 3000 tcp://127.0.0.1:3000 \
+        && tailscale serve --bg --tcp 9090 tcp://127.0.0.1:9090 \
+        && tailscale serve status'
+
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
