@@ -399,7 +399,7 @@ dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" 
 dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " + options)
 
 [group('deploy')]
-mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta" "mini" "project.prod_settings")
+mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta,monitoring" "mini" "project.prod_settings")
 
 # Kill it all.  Kill it all, with fire.
 nuke: clean docker-nuke
