@@ -246,8 +246,9 @@ def main() -> int:
     for t in threads:
         t.start()
 
+    # ok/s = accepted (2xx/3xx) per second; 429/s = rate-limited per second.
     print(
-        f"{'elapsed':>8} {'req/s':>7} {'429/s':>6} {'done':>7} {'err':>5} "
+        f"{'elapsed':>8} {'req/s':>7} {'ok/s':>6} {'429/s':>6} {'done':>7} {'err':>5} "
         f"{'p50':>6} {'p95':>6} {'max':>8}   canary"
     )
     try:
@@ -257,6 +258,7 @@ def main() -> int:
             window = stats.snapshot_window()
             lats = sorted(latency * 1000 for latency, _ in window)  # ms
             rps = len(window)
+            n_ok = sum(1 for _, status in window if 200 <= status < 400)  # accepted this second
             n429 = sum(1 for _, status in window if status == 429)  # rate-limited this second
             c = stats.latest_canary()
             if c is None:
@@ -267,7 +269,7 @@ def main() -> int:
                 flag = " !!" if c_ms > 1000 else ""
                 canary_str = f"{c_ms:8.0f}ms [{c_status}]{flag}"
             print(
-                f"{elapsed:7.0f}s {rps:7d} {n429:6d} {stats.total:7d} {stats.errors:5d} "
+                f"{elapsed:7.0f}s {rps:7d} {n_ok:6d} {n429:6d} {stats.total:7d} {stats.errors:5d} "
                 f"{pct(lats, 50):5.0f}m {pct(lats, 95):5.0f}m {pct(lats, 100):7.0f}m"
                 f"   {canary_str}"
             )
@@ -280,13 +282,20 @@ def main() -> int:
 
     print("-" * 78)
     by_status = ", ".join(f"{code}={n}" for code, n in sorted(stats.status.items())) or "(none)"
-    print(f"Total requests: {stats.total}   errors/timeouts: {stats.errors}")
+    accepted = sum(n for code, n in stats.status.items() if 200 <= code < 400)
+    limited = stats.status.get(429, 0)
+    elapsed_s = max(1e-9, time.monotonic() - started)
+    print(
+        f"Total: {stats.total}   accepted (2xx/3xx): {accepted} "
+        f"(~{accepted / elapsed_s:.1f}/s)   rate-limited (429): {limited}   "
+        f"errored/timed out: {stats.errors}"
+    )
     print(f"By status: {by_status}   (0 = errored out / timed out)")
     print("Pool test: if the canary latency climbed or timed out, you reproduced the")
     print("pool-exhaustion that took prod down.")
     print("Rate-limit test (aim --base-url at Caddy, NOT :9000): a working per-IP limit")
-    print("shows 429/s carrying most of the load, accepted (2xx/3xx) responses plateauing")
-    print("at the configured rate, and err staying 0.")
+    print("shows accepted (ok/s) plateauing at the configured rate while 429/s carries")
+    print("the rest, and err staying 0.")
     return 0
 
 
