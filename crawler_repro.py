@@ -7,11 +7,12 @@ On 2026-07-15 a crawler (93.123.109.102) spent ~90s walking the sortable /
 filterable list views -- /players/, /hand/, /board/ -- following every
 combination of tournament filter x sort column x page number. Each URL is a
 distinct, uncached, prefetch+count query. Fired concurrently they saturated
-Daphne's sync-view thread pool (already thinned by ~176 long-lived SSE
-connections), and latency climbed monotonically: 63ms -> 3600ms. The tell in
+Daphne's sync-view thread pool (the asgiref thread executor that runs our sync
+Django views), and latency climbed monotonically: 63ms -> 3600ms. The tell in
 the logs was that even a trivial `GET /player/N/ => 302` redirect -- which does
 essentially no DB work -- was taking 3+ seconds. That's worker/connection-pool
-exhaustion, not slow SQL.
+exhaustion, not slow SQL. (SSE connections played no part: the crawler never
+requested any /events/ URL, so it created none.)
 
 What this script does
 ---------------------
