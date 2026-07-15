@@ -376,6 +376,13 @@ _deploy hostname profile context settings_module *options:
     just dump
     docker compose up --detach --no-deps --force-recreate django bot {{ options }}
 
+    # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
+    # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh
+    # host never starts it (older hosts only kept it alive via restart:unless-stopped).
+    if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
+        docker compose up --detach --force-recreate caddy
+    fi
+
     # Bring up the monitoring stack when its profile is active (prod/beta).  `_deploy` only ups
     # named services, so these need an explicit `up`; the guard keeps them off in dev.
     # --force-recreate reattaches them to the current network, in case they're stranded leftovers.
