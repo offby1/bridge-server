@@ -142,9 +142,37 @@ the `prod`/`beta` compose profiles, and the `dev` profile omits it (justfile:
 Grafana/Prometheus) to the mac-mini context — and has no main-branch/clean-tree
 guard, so it deploys this branch as-is. To verify:
 
-1. Deploy this branch to the mini: `just mini`.
-2. Aim the script at **the mini's Caddy hostname, not `:9000`** — hitting Daphne
-   directly bypasses the edge and shows zero limiting (a misleading "pass"):
+1. Deploy this branch to the mini: `just mini`. (As of the `[merge to main]`
+   `_deploy` fix, this starts Caddy itself; older revisions relied on Caddy
+   already running and silently didn't start it on a fresh host.) Make sure
+   ports 80 and 443 are free on the mini first — e.g. turn off any
+   `tailscale funnel`/`serve` bound to 443, or Caddy's port bind will fail.
+
+2. **Give Caddy a cert it can actually serve — the `.ts.net` gotcha.** Caddy
+   can't get a public Let's Encrypt cert for a `.ts.net` name and won't
+   self-sign a public-looking TLD, so out of the box the TLS handshake fails
+   server-side (`curl` shows `tlsv1 alert internal error`) and *every* request
+   in the script comes back status `0`: you'll see `err` == total and **no
+   429s** — a non-result, not a limiter failure. Fix it for the test with a
+   **temporary** label on the `django` service, then redeploy:
+
+   ```yaml
+       labels:
+         caddy: ${CADDY_HOSTNAME:-}
+         caddy.reverse_proxy: "{{upstreams 9000}}"
+         caddy.import: ratelimit
+         caddy.tls: internal        # TEMP — do NOT commit; prod needs real public certs
+   ```
+
+   `just mini` again to apply (caddy-docker-proxy reconfigures when django is
+   recreated), and `git checkout docker-compose.yaml` when you're done. Confirm
+   TLS now completes:
+   `curl -svk https://erics-mac-mini.tail571dc2.ts.net/player/1/ 2>&1 | tail -5`
+   → should reach a `302`, not an `internal error`.
+
+3. Aim the script at **Caddy, not `:9000`** (hitting Daphne directly bypasses
+   the edge and shows zero limiting — a misleading "pass"), with `--insecure`
+   for the internal-CA cert:
 
    ```bash
    python3 project/app/manually_test_rate_limiting.py \
@@ -152,17 +180,24 @@ guard, so it deploys this branch as-is. To verify:
        --concurrency 20 --duration 30
    ```
 
-   (`--insecure` because Caddy serves a `.ts.net` name with its internal CA, not
-   a public cert.)
+4. **Pass criterion:** `ok/s` (accepted 2xx/3xx) plateaus at the configured rate
+   — ~5/s for `events 50 / window 10s`, after an initial burst of ~50 — while
+   `429/s` carries the rest and `err` stays 0 (Caddy sheds cleanly: no 5xx, no
+   timeouts). A passing run looks like:
 
-3. **Pass criterion:** accepted (2xx/3xx) responses plateau at the configured
-   rate (~5/s for 50 events / 10s) while the rest come back **429**, and `err`
-   stays 0 (Caddy sheds cleanly — no 5xx, no timeouts). Watch the `429/s` column
-   and the `By status:` summary line. In the mini's Grafana, Postgres backends
-   (`sum(pg_stat_database_numbackends)`) should stay flat — the flood never
-   reaches the app.
+   ```
+    elapsed   req/s   ok/s  429/s    done   err    p95   canary
+         1s      77     45     32      77     0   486m   [302]   <- ~50-event burst allowance
+         2s     177      0    177     254     0   166m   [429]
+        30s     200      3    197    5067     0   185m   [429]
+   -------------------------------------------------------------
+   Total: 5067   accepted (2xx/3xx): ~200 (~7/s)   rate-limited (429): ~4865   errored: 0
+   ```
+
+   In the mini's Grafana, Postgres backends (`sum(pg_stat_database_numbackends)`)
+   should stay flat — the flood never reaches the app.
 
 Caveat: the limit keys on client IP, so running from one machine means the
-`canary` shares the bucket and gets 429'd too (correct behavior). To see the
-"other users unaffected" property, hit the app from a second IP (e.g. your
+`canary` shares the bucket and flips to `[429]` too (correct behavior). To see
+the "other users unaffected" property, hit the app from a second IP (e.g. your
 phone on cellular) while the flood runs.
