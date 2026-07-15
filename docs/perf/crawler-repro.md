@@ -1,8 +1,9 @@
-# Reproducing the list-view crawler load (`crawler_repro.py`)
+# Reproducing the list-view crawler load (`project/app/manually_test_rate_limiting.py`)
 
-Companion doc for `crawler_repro.py` (repo root). That script reproduces the
-crawler that made prod unresponsive on 2026-07-15, so you can watch the
-failure happen on your laptop and experiment with fixes.
+Companion doc for `project/app/manually_test_rate_limiting.py`. That script
+reproduces the crawler that made prod unresponsive on 2026-07-15, so you can
+watch the failure happen on your laptop and experiment with fixes — and it
+doubles as a manual test for the Caddy rate limit (below).
 
 ## Background: what took prod down
 
@@ -68,10 +69,15 @@ and page number is a distinct crawlable URL — a combinatorial crawler trap.
 
 ## Quick start
 
+Pool-exhaustion repro (no Caddy needed — you're stressing Daphne directly):
+
 ```bash
-just runme                       # start local dev server on :9000 first
-python3 crawler_repro.py         # default: 20 workers, runs until Ctrl-C
+just runme                                              # local dev server on :9000
+python3 project/app/manually_test_rate_limiting.py      # default: 20 workers, until Ctrl-C
 ```
+
+For the **rate-limit** test you need Caddy in front — see "Testing the Caddy
+rate limit" below.
 
 Pure Python 3 stdlib — no install, no venv. **Never aim it at prod.**
 
@@ -109,8 +115,8 @@ starves because the flood ate the pool.
    that's the intended way to explore the cliff.
 2. **Dev server ≠ prod server.** `just runme` uses Django's dev server, not
    Daphne — the thread/connection-pool dynamics differ. To reproduce the actual
-   ASGI behavior faithfully, run the flood against `just dcu` (the Docker stack
-   runs Daphne like prod).
+   ASGI behavior faithfully, run the flood against a Docker stack (`just dev`
+   locally, or `just mini`), which runs Daphne like prod.
 
 ## Fixes worth testing against it
 
@@ -124,3 +130,39 @@ starves because the flood ate the pool.
   above). Unauthenticated list views are free ammunition for a crawler.
 - Make the list queries cheaper — index the sort/filter columns, bound
   pagination. (Buys headroom, but doesn't remove the failure mode on its own.)
+
+## Testing the Caddy rate limit
+
+The per-IP rate limit lives at Caddy (`caddy/Caddyfile`, plugin built in via
+`caddy/Dockerfile`), so you can only test it against a stack that actually runs
+Caddy. **`just runme`, `just dev`, and `just dcu` do not** — Caddy is gated to
+the `prod`/`beta` compose profiles, and the `dev` profile omits it (justfile:
+"prod and beta get caddy + monitoring; dev doesn't"). The convenient option is
+**`just mini`**, which deploys the `beta,monitoring` profile (Caddy *and*
+Grafana/Prometheus) to the mac-mini context — and has no main-branch/clean-tree
+guard, so it deploys this branch as-is. To verify:
+
+1. Deploy this branch to the mini: `just mini`.
+2. Aim the script at **the mini's Caddy hostname, not `:9000`** — hitting Daphne
+   directly bypasses the edge and shows zero limiting (a misleading "pass"):
+
+   ```bash
+   python3 project/app/manually_test_rate_limiting.py \
+       --base-url https://erics-mac-mini.tail571dc2.ts.net --insecure \
+       --concurrency 20 --duration 30
+   ```
+
+   (`--insecure` because Caddy serves a `.ts.net` name with its internal CA, not
+   a public cert.)
+
+3. **Pass criterion:** accepted (2xx/3xx) responses plateau at the configured
+   rate (~5/s for 50 events / 10s) while the rest come back **429**, and `err`
+   stays 0 (Caddy sheds cleanly — no 5xx, no timeouts). Watch the `429/s` column
+   and the `By status:` summary line. In the mini's Grafana, Postgres backends
+   (`sum(pg_stat_database_numbackends)`) should stay flat — the flood never
+   reaches the app.
+
+Caveat: the limit keys on client IP, so running from one machine means the
+`canary` shares the bucket and gets 429'd too (correct behavior). To see the
+"other users unaffected" property, hit the app from a second IP (e.g. your
+phone on cellular) while the flood runs.

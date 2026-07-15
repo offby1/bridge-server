@@ -22,15 +22,23 @@ low-rate "canary" thread measures a cheap endpoint (a /player/N/ redirect by
 default) so you can watch an innocent request degrade while the flood runs --
 the same signature you saw in prod. Raise --concurrency until latency climbs.
 
-Standalone: Python 3 stdlib only, no dependencies, no venv needed.
+It doubles as a manual rate-limit test: aimed at Caddy (which fronts the app in
+the Docker stack), the per-status / 429-per-second output shows the edge
+shedding excess load before it reaches Daphne (see the summary printed at exit).
+
+Standalone: Python 3 stdlib only, no dependencies, no venv needed. Not a pytest
+test (the name deliberately doesn't match `test_*.py`); run it by hand.
 
 Examples
 --------
-    # Start the app first (native dev server on :9000):
+    # Run from the repo root. Start the app first (native dev server on :9000):
     #   just runme
-    python3 crawler_repro.py
-    python3 crawler_repro.py --concurrency 60 --duration 60
-    python3 crawler_repro.py --base-url https://beta.bridge.offby1.info --insecure
+    python3 project/app/manually_test_rate_limiting.py
+    python3 project/app/manually_test_rate_limiting.py --concurrency 60 --duration 60
+
+    # To exercise Caddy's per-IP rate limit, aim at Caddy -- NOT :9000, which
+    # bypasses it (run the Docker stack, e.g. `just dcu`):
+    python3 project/app/manually_test_rate_limiting.py --base-url https://localhost --insecure
 
 Point it at your own local instance. Do NOT aim it at prod.
 """
@@ -46,7 +54,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from collections import deque
+from collections import Counter, deque
 
 # The query-param space the real crawler walked. Adjust the ranges to match
 # whatever data your local DB actually has (see --tournaments / --pages).
@@ -128,6 +136,7 @@ class Stats:
         self.window: deque[tuple[float, int]] = deque()  # (latency, status) since last report
         self.total = 0
         self.errors = 0
+        self.status: Counter[int] = Counter()  # cumulative count per HTTP status (0 = errored out)
         self.canary: deque[tuple[float, float, int]] = deque(
             maxlen=20
         )  # (wallclock, latency, status)
@@ -136,6 +145,7 @@ class Stats:
         with self.lock:
             self.window.append((latency, status))
             self.total += 1
+            self.status[status] += 1
             if status == 0 or status >= 500:
                 self.errors += 1
 
@@ -237,8 +247,8 @@ def main() -> int:
         t.start()
 
     print(
-        f"{'elapsed':>8} {'req/s':>7} {'done':>7} {'err':>5} "
-        f"{'p50':>7} {'p95':>7} {'max':>8}   canary"
+        f"{'elapsed':>8} {'req/s':>7} {'429/s':>6} {'done':>7} {'err':>5} "
+        f"{'p50':>6} {'p95':>6} {'max':>8}   canary"
     )
     try:
         while not stop.is_set():
@@ -247,6 +257,7 @@ def main() -> int:
             window = stats.snapshot_window()
             lats = sorted(latency * 1000 for latency, _ in window)  # ms
             rps = len(window)
+            n429 = sum(1 for _, status in window if status == 429)  # rate-limited this second
             c = stats.latest_canary()
             if c is None:
                 canary_str = "  (none yet)"
@@ -256,8 +267,8 @@ def main() -> int:
                 flag = " !!" if c_ms > 1000 else ""
                 canary_str = f"{c_ms:8.0f}ms [{c_status}]{flag}"
             print(
-                f"{elapsed:7.0f}s {rps:7d} {stats.total:7d} {stats.errors:5d} "
-                f"{pct(lats, 50):6.0f}m {pct(lats, 95):6.0f}m {pct(lats, 100):7.0f}m"
+                f"{elapsed:7.0f}s {rps:7d} {n429:6d} {stats.total:7d} {stats.errors:5d} "
+                f"{pct(lats, 50):5.0f}m {pct(lats, 95):5.0f}m {pct(lats, 100):7.0f}m"
                 f"   {canary_str}"
             )
             if args.duration and elapsed >= args.duration:
@@ -268,9 +279,14 @@ def main() -> int:
         stop.set()
 
     print("-" * 78)
+    by_status = ", ".join(f"{code}={n}" for code, n in sorted(stats.status.items())) or "(none)"
     print(f"Total requests: {stats.total}   errors/timeouts: {stats.errors}")
-    print("If the canary latency climbed while the flood ran (or it started")
-    print("timing out), you've reproduced the pool-exhaustion that took prod down.")
+    print(f"By status: {by_status}   (0 = errored out / timed out)")
+    print("Pool test: if the canary latency climbed or timed out, you reproduced the")
+    print("pool-exhaustion that took prod down.")
+    print("Rate-limit test (aim --base-url at Caddy, NOT :9000): a working per-IP limit")
+    print("shows 429/s carrying most of the load, accepted (2xx/3xx) responses plateauing")
+    print("at the configured rate, and err staying 0.")
     return 0
 
 
