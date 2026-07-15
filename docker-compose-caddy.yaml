@@ -3,9 +3,16 @@ volumes:
 
 services:
   caddy:
-    # Unlike the official caddy image, this is falling-down-easy to configure as a lets-encrypt-certificate-fetching
-    # reverse proxy.
-    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    # Like lucaslorentz/caddy-docker-proxy:ci-alpine (falling-down-easy to configure as a
+    # lets-encrypt-certificate-fetching reverse proxy), but built locally to add the caddy-ratelimit
+    # plugin. See caddy/Dockerfile and caddy/Caddyfile.
+    build: ./caddy
+    environment:
+      # Tell caddy-docker-proxy to merge our base Caddyfile (global `order` + the
+      # (ratelimit) snippet) with the docker-label config. The file is baked into
+      # the image (see caddy/Dockerfile), NOT bind-mounted -- a repo-path bind
+      # mount fails over remote docker contexts (mini, hetz).
+      - CADDY_DOCKER_CADDYFILE_PATH=/etc/caddy/Caddyfile
     ports:
       - 80:80
       - 443:443

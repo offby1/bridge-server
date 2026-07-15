@@ -1,0 +1,29 @@
+# Base Caddyfile merged with the docker-label config by caddy-docker-proxy
+# (via CADDY_DOCKER_CADDYFILE_PATH). It supplies two things the labels can't
+# express cleanly:
+#
+#   1. the global `order` directive that tells Caddy where the third-party
+#      rate_limit handler runs in the chain, and
+#   2. a reusable (ratelimit) snippet, applied to the site with a
+#      `caddy.import: ratelimit` label on the django service.
+#
+# Rationale + the failure it guards against: docs/perf/crawler-repro.md.
+
+{
+    order rate_limit before reverse_proxy
+}
+
+# Per-client-IP limit. `key {remote_host}` is the real client IP because Caddy
+# terminates TLS at the edge (no upstream proxy in front of it). 50 events per
+# rolling 10s ~= 5 req/s sustained with small bursts; legit traffic runs
+# ~0.1 req/s, so this is ~50x headroom. Over the limit -> HTTP 429 + Retry-After,
+# emitted by Caddy without ever reaching Daphne or opening a Postgres connection.
+(ratelimit) {
+    rate_limit {
+        zone per_ip {
+            key    {remote_host}
+            events 50
+            window 10s
+        }
+    }
+}
