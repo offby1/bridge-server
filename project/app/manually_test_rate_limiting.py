@@ -108,13 +108,19 @@ def make_opener(insecure: bool) -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(*handlers)
 
 
-def fetch(opener: urllib.request.OpenerDirector, url: str, timeout: float) -> tuple[int, float]:
+def fetch(
+    opener: urllib.request.OpenerDirector,
+    url: str,
+    timeout: float,
+    headers: dict[str, str],
+) -> tuple[int, float]:
     """Return (status_code, elapsed_seconds). status 0 means the request errored
     out (timeout / connection refused) -- which is itself the symptom once the
     server stops answering."""
     start = time.monotonic()
+    req = urllib.request.Request(url, headers=headers)
     try:
-        with opener.open(url, timeout=timeout) as resp:
+        with opener.open(req, timeout=timeout) as resp:
             resp.read()
             return resp.status, time.monotonic() - start
     except urllib.error.HTTPError as e:
@@ -137,6 +143,7 @@ class Stats:
         self.total = 0
         self.errors = 0
         self.status: Counter[int] = Counter()  # cumulative count per HTTP status (0 = errored out)
+        self.client_saturated = 0  # open-loop: dispatches skipped because in-flight cap was hit
         self.canary: deque[tuple[float, float, int]] = deque(
             maxlen=20
         )  # (wallclock, latency, status)
@@ -152,6 +159,10 @@ class Stats:
     def record_canary(self, latency: float, status: int) -> None:
         with self.lock:
             self.canary.append((time.monotonic(), latency, status))
+
+    def note_saturated(self) -> None:
+        with self.lock:
+            self.client_saturated += 1
 
     def snapshot_window(self) -> list[tuple[float, int]]:
         with self.lock:
@@ -206,41 +217,112 @@ def main() -> int:
         action="store_true",
         help="skip TLS verification (for https local/self-signed)",
     )
+    parser.add_argument(
+        "--rate",
+        type=float,
+        default=0.0,
+        help="open-loop: dispatch this many requests/sec regardless of completion "
+        "(0 = closed-loop, use --concurrency). Needed to reproduce the unbounded "
+        "pileup/wedge -- closed-loop only reaches a slow equilibrium.",
+    )
+    parser.add_argument(
+        "--max-inflight",
+        type=int,
+        default=2000,
+        help="open-loop only: cap on simultaneous in-flight requests (protects the "
+        "client); hitting it is reported as client-saturated.",
+    )
+    parser.add_argument(
+        "--header",
+        action="append",
+        default=[],
+        metavar="'K: V'",
+        help="extra request header, repeatable (e.g. --header 'X-Forwarded-Proto: https' "
+        "to hit Daphne directly without SECURE_SSL_REDIRECT 301ing you).",
+    )
     args = parser.parse_args()
 
     def parse_range(s: str) -> range:
         lo, _, hi = s.partition("-")
         return range(int(lo), int(hi) + 1) if hi else range(int(lo), int(lo) + 1)
 
+    headers: dict[str, str] = {}
+    for h in args.header:
+        key, _, value = h.partition(":")
+        headers[key.strip()] = value.strip()
+
     urls = build_url_space(args.base_url, parse_range(args.tournaments), parse_range(args.pages))
     canary_url = args.base_url.rstrip("/") + args.canary_path
 
     print(f"Target        : {args.base_url}")
     print(f"URL space     : {len(urls)} distinct list-view URLs")
-    print(f"Concurrency   : {args.concurrency} worker threads (closed-loop)")
+    if args.rate:
+        print(f"Mode          : open-loop {args.rate:g} req/s (max in-flight {args.max_inflight})")
+    else:
+        print(f"Mode          : closed-loop, {args.concurrency} worker threads")
+    if headers:
+        print(f"Headers       : {headers}")
     print(f"Canary        : {canary_url} every {args.canary_interval}s")
     print(f"Duration      : {'until Ctrl-C' if args.duration == 0 else f'{args.duration}s'}")
     print("-" * 78)
-    print("Tip: run with --concurrency 5, then 20, then 60, and watch the canary climb.\n")
+    if args.rate:
+        print("Open-loop: fires at a fixed rate regardless of completion -- this is what")
+        print("reproduces the unbounded pileup/wedge. Raise --rate past capacity.\n")
+    else:
+        print("Closed-loop reaches a slow-but-alive equilibrium; use --rate for the wedge.\n")
 
     stats = Stats()
     stop = threading.Event()
     opener = make_opener(args.insecure)
 
-    def worker() -> None:
-        rnd = random.Random()
+    def do_request() -> None:
+        status, latency = fetch(opener, random.choice(urls), args.timeout, headers)
+        stats.record(latency, status)
+
+    def closed_loop_worker() -> None:
         while not stop.is_set():
-            status, latency = fetch(opener, rnd.choice(urls), args.timeout)
-            stats.record(latency, status)
+            do_request()
+
+    def open_loop_dispatcher() -> None:
+        # Fire at a fixed rate regardless of completion, each request in its own
+        # daemon thread, so slow responses let in-flight requests pile up without
+        # bound -- the arrival pattern a real crawler has, and the one a closed
+        # loop can't produce. A semaphore caps concurrent in-flight to protect the
+        # client; overflow is counted (client, not server, was the limit).
+        inflight = threading.BoundedSemaphore(args.max_inflight)
+        interval = 1.0 / args.rate
+
+        def run_one() -> None:
+            try:
+                do_request()
+            finally:
+                inflight.release()
+
+        next_t = time.monotonic()
+        while not stop.is_set():
+            if inflight.acquire(blocking=False):
+                threading.Thread(target=run_one, daemon=True).start()
+            else:
+                stats.note_saturated()
+            next_t += interval
+            delay = next_t - time.monotonic()
+            if delay > 0:
+                stop.wait(delay)
 
     def canary() -> None:
         probe = make_opener(args.insecure)
         while not stop.is_set():
-            status, latency = fetch(probe, canary_url, args.timeout)
+            status, latency = fetch(probe, canary_url, args.timeout, headers)
             stats.record_canary(latency, status)
             stop.wait(args.canary_interval)
 
-    threads = [threading.Thread(target=worker, daemon=True) for _ in range(args.concurrency)]
+    if args.rate:
+        threads = [threading.Thread(target=open_loop_dispatcher, daemon=True)]
+    else:
+        threads = [
+            threading.Thread(target=closed_loop_worker, daemon=True)
+            for _ in range(args.concurrency)
+        ]
     threads.append(threading.Thread(target=canary, daemon=True))
     started = time.monotonic()
     for t in threads:
@@ -291,6 +373,12 @@ def main() -> int:
         f"errored/timed out: {stats.errors}"
     )
     print(f"By status: {by_status}   (0 = errored out / timed out)")
+    if args.rate and stats.client_saturated:
+        print(
+            f"Client-saturated: {stats.client_saturated} dispatches skipped (in-flight hit "
+            f"--max-inflight={args.max_inflight}). The client, not the server, was the "
+            f"limit here -- raise --max-inflight or use a beefier/closer client."
+        )
     print("Pool test: if the canary latency climbed or timed out, you reproduced the")
     print("pool-exhaustion that took prod down.")
     print("Rate-limit test (aim --base-url at Caddy, NOT :9000): a working per-IP limit")
