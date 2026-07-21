@@ -363,8 +363,11 @@ _deploy hostname profile context settings_module *options:
     # Ensure the stuff that we depend on is up to date
     docker compose pull --ignore-buildable
 
-    # Build new images while old containers keep serving traffic
-    docker compose build
+    # Build the shared bridge-django image ONCE. Building it via all five django-*
+    # services in parallel makes them race to export the same tag (buildkit:
+    # image "bridge-django:latest" already exists), so build only `django` here.
+    # The distinct caddy/grafana/prometheus images are built at `up` time (--build) below.
+    docker compose build django
 
     docker compose up --detach --wait postgres redis # only needed when those services aren't already running
 
@@ -380,14 +383,14 @@ _deploy hostname profile context settings_module *options:
     # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh
     # host never starts it (older hosts only kept it alive via restart:unless-stopped).
     if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
-        docker compose up --detach --force-recreate caddy
+        docker compose up --detach --build --force-recreate caddy
     fi
 
     # Bring up the monitoring stack when its profile is active (prod/beta).  `_deploy` only ups
     # named services, so these need an explicit `up`; the guard keeps them off in dev.
     # --force-recreate reattaches them to the current network, in case they're stranded leftovers.
     if [[ ",${COMPOSE_PROFILES:-}," == *",monitoring,"* ]]; then
-        docker compose up --detach --force-recreate grafana prometheus postgres-exporter pyroscope
+        docker compose up --detach --build --force-recreate grafana prometheus postgres-exporter pyroscope
     fi
 
     docker compose logs django --follow || true

@@ -60,6 +60,7 @@ services:
     labels:
       caddy: ${CADDY_HOSTNAME:-}
       caddy.reverse_proxy: "{{upstreams 9000}}"
+      caddy.import: ratelimit   # per-IP rate limit; snippet defined in caddy/Caddyfile
 
     restart: unless-stopped
     develop:
