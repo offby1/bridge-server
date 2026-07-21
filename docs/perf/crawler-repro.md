@@ -107,16 +107,41 @@ starves because the flood ate the pool.
 - **Change the canary** with `--canary-path` / `--canary-interval` to measure a
   different "innocent" endpoint's degradation.
 
-## Two caveats that matter
+## Caveats that matter
 
 1. **Closed-loop, not open-loop.** Workers wait for each response, so the load
    self-throttles and won't spiral your laptop — but that also *under*-represents
-   a real crawler's unbounded pileup. Crank `--concurrency` to compensate;
-   that's the intended way to explore the cliff.
+   a real crawler's unbounded pileup. Crank `--concurrency` to compensate — but
+   see caveat 3: over a remote/tailscale path the *path*, not `--concurrency`, is
+   the limit.
 2. **Dev server ≠ prod server.** `just runme` uses Django's dev server, not
    Daphne — the thread/connection-pool dynamics differ. To reproduce the actual
    ASGI behavior faithfully, run the flood against a Docker stack (`just dev`
    locally, or `just mini`), which runs Daphne like prod.
+3. **This tester over `tailscale serve` (or any single remote client) cannot
+   saturate Daphne.** Measured on the mini: a 200-thread flood from a laptop
+   through `tailscale serve` (:443 → django) left Postgres backends idle at **8**
+   while the client saw 2–8s latencies — the load never arrived. The throttle is
+   the `tailscale serve` proxy plus a single laptop driving 200 concurrent HTTPS
+   through CPython (the GIL + a full TLS handshake per request cap real client
+   concurrency). Don't chase `backends=8`: it means the path, not Daphne, is the
+   bottleneck. To actually reproduce **backend saturation**, run a real
+   concurrent load tool *near* the server, straight at Daphne:
+
+   ```bash
+   # on the mini, bypassing tailscale AND Caddy:
+   ulimit -n 8192
+   ab -t 20 -c 150 -H "X-Forwarded-Proto: https" \
+      "http://127.0.0.1:9000/players/?tournament__display_number=1"
+   ```
+
+   With that, backends climb 8 → ~100 and p95 latency hits several seconds — the
+   outage signature. Gotchas: `X-Forwarded-Proto: https` is required (else
+   `SECURE_SSL_REDIRECT` 301s every request to a cheap no-DB redirect and nothing
+   saturates); on macOS use `127.0.0.1`, not `localhost` (`ab` fails with
+   `apr_socket_connect: Invalid argument`); and raise the default 256 fd limit.
+   The Python tester over tailscale is fine for watching **Caddy shed load**
+   (429s) — just not for saturating Daphne.
 
 ## Fixes worth testing against it
 
