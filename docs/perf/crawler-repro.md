@@ -158,6 +158,11 @@ starves because the flood ate the pool.
 
 ## Testing the Caddy rate limit
 
+> To *prove the fix works* (reproduce the blackout on `main`, then show it gone
+> on this branch), follow the A/B procedure in
+> [`rate-limit-ab-validation.md`](rate-limit-ab-validation.md). The quick check
+> below just confirms the limiter is wired up and shedding load.
+
 The per-IP rate limit lives at Caddy (`caddy/Caddyfile`, plugin built in via
 `caddy/Dockerfile`), so you can only test it against a stack that actually runs
 Caddy. **`just runme`, `just dev`, and `just dcu` do not** — Caddy is gated to
