@@ -1,0 +1,194 @@
+❯ Our A/B test has convinced me that we've fixed the problem ... but I *still*
+  don't understand the original problem. Can you explain it again?
+
+⏺ Yes — let me build it from the ground up, because the pieces got scattered
+  across a long investigation. Here's the whole thing in one place.
+
+  The one-sentence version
+
+  Your server can only work on a limited number of requests at the same time;
+  the crawler sent expensive requests faster than the server could finish them,
+  so they piled up until the server couldn't make progress on anything —
+  including ordinary users — and effectively froze.
+
+  1. The setup: limited concurrent capacity
+
+  Your Django views are synchronous, running under an async server (Daphne). To
+  bridge that, each request's view runs on a worker thread, and Python's GIL
+  means only so much real work happens at once. So the app has a bounded number
+  of "execution slots." Under normal traffic (~0.1 requests/second) that's
+  endless headroom — you never come close.
+
+  2. What the crawler did
+
+  It walked your list views — /players/?tournament=…&sort=…&page=…, /hand/,
+  /board/. Two things made this nasty:
+
+  - Every combination is a distinct URL (tournament × sort-column × page), so to
+  the crawler it looked like thousands of fresh pages to follow — it kept
+  going.
+  - Those are your most expensive endpoints. Each one does a big prefetch +
+  count + sort over all players/hands across every tournament — ~150–300 ms of
+  work each, and uncached. (This is exactly why an empty DB couldn't reproduce
+  it — the cost is in querying real data.)
+
+  And it fired many at once, from one IP, with no login required and nothing
+  throttling it.
+
+  3. The tipping point (the actual mechanism)
+
+  Think of a small coffee shop with a few baristas. Normally a trickle of
+  customers — fine. Then a tour bus dumps 300 people who each order something
+  that takes a couple minutes. The baristas can only make so many drinks at
+  once, so the line grows without bound. Now even someone who just wants to ask
+  the time can't get served — they're stuck behind the mob. Eventually the shop
+  is so jammed that nothing moves. It's open, but effectively dead.
+
+  That's your server:
+
+  - Requests arrived faster than they could be completed, so the number "in
+  flight" grew until every execution slot was occupied.
+  - New requests had to wait for a slot — so latency climbed for everything. The
+  tell in the logs: even a trivial GET /player/N/ → 302 redirect (which does
+  essentially no work) took 3+ seconds — it couldn't even get a slot to run.
+  - This is a cliff, not a slope: below capacity latency is flat; the moment
+  arrival rate exceeds completion capacity, the backlog runs away. That's why it
+  went from fine to frozen fast.
+  - Finally the process was so backed up it stopped answering anything — even
+  health checks — so it got killed/restarted. That's the "host is unresponsive"
+  you saw.
+
+  4. What the metrics said — and what was a red herring
+
+  This is where it got confusing, so let me pin it down:
+
+  - The database was NOT the bottleneck. Individual queries stayed ~1–2 ms the
+  whole time. The problem was upstream of the DB — the app couldn't run the
+  request handlers, not the queries.
+  - Postgres backends spiked to 176 / 200 — alarming, but that was a symptom,
+  not the cause: each stuck request held its DB connection open (Django only
+  releases a connection when the request finishes, and these never did). It came
+  close to the 200-connection cap, which was a second way it could have died —
+  but it wasn't what tipped it over.
+  - SSE connections were a total red herring — the crawler never touched
+  /events/; there just happened to be ~176 of them in the logs, coincidentally
+  the same number, from ordinary users.
+
+  So: the binding constraint was the single Daphne process's capacity to execute
+  sync views, full stop.
+
+  5. Why the rate limit fixes it
+
+  The fix doesn't make the app faster or the queries cheaper — it stops the
+  flood from reaching the app. Caddy now caps requests to ~5/second per IP and
+  rejects the rest at the edge with a cheap 429. So the crawler's 300/s never
+  becomes 300 execution slots — Daphne only ever sees a trickle and never piles
+  up. That's precisely the before/after your A/B just showed: without it, 300/s
+  → Daphne jammed → 8,900 failures / 502s; with it, the same 300/s → 8,850 shed
+  as 429 → app stays healthy.
+
+  The catch it doesn't cover: a distributed flood from many IPs would each get
+  their own 5/s bucket — that's a different mitigation (a global cap / bounding
+  total in-flight requests). But the actual attack was one IP, which is exactly
+  what per-IP limiting defeats.
+
+  Does that finally make it click — or is there a specific piece (the
+  sync-views-on-async part, or the backends-as-symptom part) you want me to go
+  deeper on?
+
+✻ Worked for 1m 16s
+
+❯ That helps, but I have two questions:
+  * You say the requests "piled up", which implies there's some sort of queue
+  somewhere -- precisely what is that queue?
+  * Why, after the crawler gave up, did the server *remain* wedged?  Why didn't
+  it slowly crawl through the backlog and eventually return to normal?
+
+⏺ Two excellent questions — they get at the parts that are usually hand-waved.
+  Let me be precise, and flag where I'm certain vs. inferring.
+
+  1. Where is the queue, exactly?
+
+  There isn't one queue — there are a few, stacked. Requests pile up in the two
+  that live inside the Daphne process:
+
+  (a) Daphne's asyncio event loop — one live Task per connection. Daphne is
+  async, so accepting a connection is cheap. Every accepted request becomes a
+  live ASGI coroutine (a Task) on the single event loop. Because accepting is
+  cheap and finishing is not, the number of concurrent Tasks balloons. You saw
+  this exact pile in the original crash log: 193 pending application instances …
+  took too long to shut down and was killed — those 193 were these in-flight
+  Tasks.
+
+  (b) The thread-pool executor that runs your synchronous views — the actual
+  bottleneck. Your Django views are sync, so under ASGI each one is handed to
+  asgiref's sync_to_async executor to run on a worker thread. That executor has
+  a limited number of threads and, behind them, an unbounded work queue
+  (Python's ThreadPoolExecutor uses an unbounded SimpleQueue). When every thread
+  is busy, each waiting request sits in that queue as a pending future, and its
+  Task in (a) is parked await-ing it. This is the "waiting to run" queue — and
+  because it's unbounded, it grows without limit instead of pushing back. That
+  trivial 302 that took 3 seconds? It was sitting in this queue waiting for a
+  thread.
+
+  (Upstream there are more buffers — the kernel's TCP accept backlog, Caddy's
+  own connection handling — but those aren't what bound you; the executor is.)
+
+  So "piled up" = a growing set of live Tasks on the event loop, each blocked on
+  an ever-growing backlog of view-executions waiting for a scarce worker
+  thread.
+
+  (Caveat: the exact thread-pool sizing/thread_sensitive semantics are
+  asgiref-version-specific and I won't overclaim them — but the shape, "limited
+  threads + unbounded backlog," is the mechanism.)
+
+  2. Why it stayed wedged instead of draining
+
+  This is the sharp part, and the answer is: it wasn't just a big backlog to
+  chew through — it fell into a self-sustaining jam. The technical name is a
+  metastable failure: the system has two stable states (healthy and jammed), and
+  once something shoves it into the jammed state, a feedback loop keeps it
+  there even after the original trigger is gone. Crucially, the load needed to
+  stay jammed is far lower than the load needed to get jammed — so the crawler
+  leaving didn't drop it below the recovery line.
+
+  The feedback loops in your case:
+
+  - Held connections don't release. CONN_MAX_AGE=0 means a request's Postgres
+  connection is freed only when the request finishes — and these requests
+  weren't finishing. So ~162 connections stayed pinned open (we measured them
+  flat at ~162 from 07:53 through 08:00+, not draining).
+  - A degraded DB makes everything slower. Postgres carrying ~160 held backends
+  is itself degraded (memory, scheduling), so each query gets slower → requests
+  hold their slot and connection longer → the backlog drains slower than it
+  would have. Self-reinforcing.
+  - New arrivals never stop entirely. Even after the crawler quit, health
+  checks, keepalives, and (especially) client retries keep opening connections,
+  and Daphne keeps cheaply accepting them — so the in-flight set never actually
+  shrinks toward zero.
+  - Thrash overhead. Hundreds of concurrent Tasks + threads contending for the
+  GIL means the process spends its cycles context-switching rather than
+  completing requests — so effective throughput in the jammed state is lower
+  than normal, right when it needs to be higher to catch up.
+
+  Put together: to recover, the server would need to complete requests faster
+  than new ones (retries + keepalives) arrive and free connections faster than
+  they pile — but every one of those loops pushes the other way. So it sat
+  pinned rather than crawling back.
+
+  The evidence backs this: backends flat at ~162, the /metrics scrape stopped
+  (the process wasn't even answering), and it never self-recovered — it took a
+  restart to fix. That's the tell: a restart is the sledgehammer that drops all
+  the piled Tasks and connections at once, resetting straight back to the
+  healthy state. There was no gentle path back; the jam had to be cleared in one
+  blow. (That's literally what "killed 193 pending application instances" was —
+  the restart clearing the pile.)
+
+  (Honest caveat: I can't prove from the data which feedback loop dominated — DB
+  degradation vs. GIL thrash vs. retry storm. But "pinned backends + stopped
+  responding + only a restart fixes it" is the unmistakable signature of
+  metastable congestion collapse, not a system slowly working off a backlog.)
+
+  And this is the deeper reason the rate limit works so well: by shedding the
+  flood at the edge, it stops you from ever crossing the "get jammed" threshold
+  — so you never enter the state that would otherwise trap you.
