@@ -343,6 +343,7 @@ ensure-branch-is-main:
 [private]
 prod-deploy-prerequisites: docker-prerequisites ensure-branch-is-main ensure-git-repo-clean
 
+[continue]
 [private]
 [script('bash')]
 _deploy hostname profile context settings_module *options:
