@@ -1,7 +1,6 @@
 import app.models
 from django.core.management.base import BaseCommand
 
-
 # The idea: many of our models have methods with names like `_check_this` and `_check_that`.  They take no arguments, and are invoked in the model's overridden "save" method; of course, they check constraints (which cannot be expressed as actual Django model constraints, since they involve more than one instance).
 
 # So: run each of them on each object, and report and problems.

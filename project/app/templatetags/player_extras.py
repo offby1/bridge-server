@@ -1,6 +1,7 @@
 from django import template
 from django.contrib.auth.models import User
 from django.utils.html import format_html
+
 from app.models import Player
 
 register = template.Library()

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Generator
 import dataclasses
 import itertools
 import logging
-from collections.abc import Sequence
 import string
+from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, Any
 
 import more_itertools

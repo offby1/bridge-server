@@ -1,4 +1,5 @@
 from collections.abc import Hashable
+
 from .scoring import Hand, Scorer
 
 

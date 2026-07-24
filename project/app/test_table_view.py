@@ -1,4 +1,5 @@
 import pytest
+
 from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
