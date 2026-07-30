@@ -87,7 +87,7 @@ package = false
 
 # Swiped from https://blog.pecar.me/how-to-safely-update-your-dependencies/
 exclude-newer = "5 days"
-exclude-newer-package = { django = "1 day", ruff = "1 minute" }
+exclude-newer-package = { django = "1 day" }
 
 [tool.uv.sources]
 # bridge = { path = "../library", editable = true}

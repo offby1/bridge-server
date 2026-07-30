@@ -14,7 +14,6 @@ exclude-newer-span = "P5D"
 
 [options.exclude-newer-package]
 django = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
-ruff = { timestamp = "0001-01-01T00:00:00Z", span = "PT1M" }
 
 [[package]]
 name = "anyio"
