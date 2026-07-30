@@ -1,7 +1,7 @@
 from django.contrib import auth
 
 from app.models import Board, Hand, Player, Tournament, TournamentSignup
-from app.views.player import _players_for_tournament, _bot_checkbox_view_context
+from app.views.player import _bot_checkbox_view_context, _players_for_tournament
 
 
 def test_bot_checkbox_toggle(usual_setup, rf) -> None:

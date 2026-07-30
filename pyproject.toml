@@ -53,7 +53,9 @@ dev = [
     "types-tqdm>=4.66.0.20240417,<5",
     "python-lsp-server[autopep8, flake8, mccabe, pyflakes, pylint, rope, websockets, yapf]",
     "logging-tree==1.*",
-    "ruff",
+    # NOTE: ruff's version is ALSO pinned in .pre-commit-config.yaml (the
+    # ruff-pre-commit `rev:`). These two must be kept in sync MANUALLY.
+    "ruff==0.16.*",
     "ipdb>=0.13.13,<0.14",
     "pytest-django==4.*",
     "pytest-profiling==1.*",
@@ -113,10 +115,17 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D212"
 line-length = 100
 target-version = "py313"
 unsafe-fixes = true
+# Mirror the pre-commit hook exclusions so `uv run ruff` and pre-commit agree.
+# ruff 0.16 also began formatting code blocks inside markdown by default; keep
+# docs out of scope for this upgrade.
+extend-exclude = ["*/migrations/*", "*.md"]
 
 [tool.ruff.lint]
+# ruff 0.16 broadened its default `select`. Pin the rule set explicitly so this
+# upgrade preserves the project's historical lint policy: ruff's old default
+# (E4/E7/E9/F) plus isort (I). Adopting the newer defaults is a separate change.
+select = ["E4", "E7", "E9", "F", "I"]
 ignore = ["T201", "T203"]
-extend-select = ["I"]   # enable isort rules
 
 [tool.ruff.lint.isort]
 known-first-party = ["bridge"]  # optional but (in theory) helps grouping.  In practice, doesn't seem to do anything.

@@ -3,12 +3,13 @@ from __future__ import annotations
 import collections
 import itertools
 
-import bridge.card
-import bridge.contract
 import pytest
 
 import app.models
 import app.views
+import bridge.card
+import bridge.contract
+
 from . import testutils
 
 

@@ -1,11 +1,11 @@
 import contextlib
 from typing import Any
 
+import humanize
 from django import template
 from django.conf import settings
 from django.utils.html import format_html
 from django.utils.timezone import now
-import humanize
 
 register = template.Library()
 

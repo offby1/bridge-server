@@ -9,7 +9,6 @@ from app.models import Message, Player
 
 from .misc import logged_in_as_player_required
 
-
 logger = logging.getLogger(__name__)
 
 
