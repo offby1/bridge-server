@@ -1,9 +1,9 @@
 import datetime
 import importlib
 
+import time_machine
 from django.conf import settings
 from django.contrib import auth
-from freezegun import freeze_time
 
 from app.models import Hand, Player, Tournament, TournamentSignup
 from app.models.playaz import WireCharacterProvider
@@ -80,7 +80,7 @@ def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
 def test_player_timestamp_updates(db, everybodys_password) -> None:
     Today = datetime.datetime.fromisoformat("2020-02-20T20:20:20Z")
 
-    with freeze_time(Today):
+    with time_machine.travel(Today, tick=False):
         new_guy = Player.objects.create(
             user=auth.models.User.objects.create(username="new guy", password=everybodys_password),
         )
@@ -106,7 +106,7 @@ def test_synth_signup(db) -> None:
     Player.objects.ensure_eight_players_signed_up(tournament=t)
     assert Player.objects.count() == 8
 
-    with freeze_time(t.signup_deadline + datetime.timedelta(seconds=1)):
+    with time_machine.travel(t.signup_deadline + datetime.timedelta(seconds=1), tick=False):
         mvmt = t.get_movement()
         assert mvmt.num_rounds == 2
 

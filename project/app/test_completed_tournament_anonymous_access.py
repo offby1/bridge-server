@@ -8,8 +8,8 @@ to all hands once a tournament is complete.
 
 import datetime
 
-import freezegun
 import pytest
+import time_machine
 from django.contrib.auth.models import AnonymousUser
 
 from app.models import Hand, Player, Tournament
@@ -38,7 +38,7 @@ def completed_tournament_with_abandoned_hand(nearly_completed_tournament: Tourna
 
     # Fast forward past the deadline and check for expirations
     # This will mark incomplete hands as abandoned and mark the tournament as complete
-    with freezegun.freeze_time(deadline + datetime.timedelta(hours=1)):
+    with time_machine.travel(deadline + datetime.timedelta(hours=1), tick=False):
         check_for_expirations(__name__)
 
     # Reload the tournament and hand

@@ -13,8 +13,8 @@
 import datetime
 from typing import Iterable
 
-import freezegun
 import pytest
+import time_machine
 
 from app.models import Board, Hand, Player, Tournament
 from app.models.tournament import check_for_expirations
@@ -123,7 +123,7 @@ def tournament_starting_now(fresh_tournament: Hand) -> Iterable[Hand]:
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
 
-    with freezegun.freeze_time(Today):
+    with time_machine.travel(Today, tick=False):
         check_for_expirations(__name__)
 
         hand: Hand | None = Hand.objects.first()

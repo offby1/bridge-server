@@ -2,10 +2,10 @@ import datetime
 import logging
 
 import pytest
+import time_machine
 from django.contrib import auth
 from django.http.response import HttpResponseForbidden
 from django.utils.timezone import now
-from freezegun import freeze_time
 
 import app.models.board
 import app.views.hand
@@ -115,7 +115,7 @@ def test_completing_one_tournament_deletes_related_signups(
     Ricky.save()
     Lucy.save()
 
-    with freeze_time(Today):
+    with time_machine.travel(Today, tick=False):
         the_tournament.sign_up_player_and_partner(Ricky)
 
         assert TournamentSignup.objects.filter(player=Ricky).exists()
@@ -142,14 +142,14 @@ def test_play_completion_deadline(usual_setup) -> None:
     assert hand is not None
     the_tournament = hand.tournament
 
-    with freeze_time(SignupDeadlineDay):
+    with time_machine.travel(SignupDeadlineDay, tick=False):
         the_tournament.signup_deadline = SignupDeadlineDay
         the_tournament.play_completion_deadline = PlayCompletionDeadline
         the_tournament.save()
 
         hand.add_call(call=Call.deserialize("Pass"))
 
-    with freeze_time(DayAfter):
+    with time_machine.travel(DayAfter, tick=False):
         check_for_expirations(sender="Some unit test")
         with pytest.raises(HandError):
             hand.add_call(call=Call.deserialize("Pass"))
@@ -177,7 +177,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
     the_tournament.play_completion_deadline = Tomorrow
     the_tournament.save()
 
-    with freeze_time(DayAfter):
+    with time_machine.travel(DayAfter, tick=False):
         request = rf.post("/", data={"call": "Pass"})
         request.user = north.user
 
@@ -215,7 +215,9 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
     with pytest.raises(PlayerNeedsPartnerError):
         open_tournament.sign_up_player_and_partner(east)
 
-    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
+    with time_machine.travel(
+        open_tournament.signup_deadline + datetime.timedelta(seconds=1), tick=False
+    ):
         with pytest.raises(NotOpenForSignupError):
             open_tournament.sign_up_player_and_partner(east)
 
@@ -226,7 +228,9 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
     expected = {north, south, east, west}
     assert actual == expected
 
-    with freeze_time(open_tournament.signup_deadline - datetime.timedelta(seconds=10)):
+    with time_machine.travel(
+        open_tournament.signup_deadline - datetime.timedelta(seconds=10), tick=False
+    ):
         east.break_partnership()
 
         assert not TournamentSignup.objects.filter(
@@ -324,6 +328,8 @@ def test_no_boards_vanishes_after_play_deadline(fresh_tournament: Tournament) ->
     assert fresh_tournament.hands().count() == 0
     assert fresh_tournament.pk is not None
     assert fresh_tournament.play_completion_deadline is not None
-    with freeze_time(fresh_tournament.play_completion_deadline + datetime.timedelta(seconds=20)):
+    with time_machine.travel(
+        fresh_tournament.play_completion_deadline + datetime.timedelta(seconds=20), tick=False
+    ):
         fresh_tournament.maybe_complete()
         assert fresh_tournament.pk is None

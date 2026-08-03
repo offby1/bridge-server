@@ -5,8 +5,8 @@ from typing import Iterable
 import more_itertools
 import pytest
 import tabulate
+import time_machine
 from django.contrib import auth
-from freezegun import freeze_time
 
 from app.models import Hand, Player, Tournament
 from app.models.tournament import _do_signup_expired_stuff
@@ -128,7 +128,7 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
     Player.objects.get_by_name("e1").partner_with(Player.objects.get_by_name("w1"))
     Player.objects.get_by_name("e2").partner_with(Player.objects.get_by_name("w2"))
 
-    with freeze_time(datetime.datetime(2000, 1, 1)):
+    with time_machine.travel(datetime.datetime(2000, 1, 1), tick=False):
         open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups(
             boards_per_round_per_table=1
         )
@@ -136,7 +136,9 @@ def test_pairs_and_boards_move(db, everybodys_password) -> None:
         for n in ("n1", "n2", "e1", "e2"):
             open_tournament.sign_up_player_and_partner(Player.objects.get_by_name(n))
 
-    with freeze_time(open_tournament.signup_deadline + datetime.timedelta(seconds=1)):
+    with time_machine.travel(
+        open_tournament.signup_deadline + datetime.timedelta(seconds=1), tick=False
+    ):
         _do_signup_expired_stuff(open_tournament)
         assert open_tournament.hands().exists()
 
