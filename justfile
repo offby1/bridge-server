@@ -400,7 +400,7 @@ _deploy hostname profile context settings_module *options:
 prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod,monitoring" "hetz-bridge" "project.prod_settings")
 
 [group('deploy')]
-beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta,monitoring" "hetz-beta" "project.prod_settings")
+beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta,monitoring" "hetz-bridge-beta" "project.prod_settings")
 
 [group('deploy')]
 dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
@@ -413,7 +413,7 @@ dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " 
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta,monitoring" "mini" "project.prod_settings")
 
 # `tailscale serve` persists on the host and is idempotent, so this is a one-time-per-host setup.
-# Override the host for beta: `just tailscale-serve root@hetz-beta`.
+# Override the host for beta: `just tailscale-serve root@hetz-bridge-beta`.
 # Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
 [group('deploy')]
 tailscale-serve ssh_host="root@hetz-bridge":

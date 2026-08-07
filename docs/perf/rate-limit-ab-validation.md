@@ -61,7 +61,7 @@ git checkout main && just beta
 flood has no front door:
 
 ```bash
-CADDY_HOSTNAME=beta.bridge.offby1.info DOCKER_CONTEXT=hetz-beta \
+CADDY_HOSTNAME=beta.bridge.offby1.info DOCKER_CONTEXT=hetz-bridge-beta \
   COMPOSE_PROFILES=beta,monitoring docker compose up -d caddy
 ```
 
