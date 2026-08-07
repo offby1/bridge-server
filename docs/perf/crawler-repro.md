@@ -67,6 +67,59 @@ Read-out:
 `SingleTableMixin` + django-filter `FilterView`: every sortable column, filter,
 and page number is a distinct crawlable URL — a combinatorial crawler trap.
 
+## Second outage: the distributed flood (2026-08-04)
+
+The per-IP rate limit (below) stopped the single-IP crawler. Three weeks later
+the site fell over again — same wedge signature — *despite* the fix, because the
+flood was **distributed**:
+
+- **24,391 distinct source IPs** hit the list views, each making only **2–4
+  requests** (max 4 across a two-week log). No IP came near the 5 req/s per-IP
+  limit, so Caddy had nothing to reject — a per-IP bucket is useless when every
+  client makes a handful of requests and leaves. (One IP, `93.123.109.10`, was
+  in the original attacker's `/24` — plausibly the same actor gone distributed.)
+- Same mechanism as 2026-07-15: list-view requests piled up in Daphne's
+  execution path — ~100 stuck in-flight at the restart (84 `/players/`, 7
+  `/board/`, 6 `/hand/`), latencies 44ms → 27s, no app errors, no DB-connection
+  exhaustion. With Caddy in front it surfaced as **502 Bad Gateway** (Caddy's
+  upstream stopped answering) rather than a raw wedge.
+
+**Lesson: a per-IP limit defends against a single-IP flood; a distributed
+botnet needs an *aggregate* cap.**
+
+### Capacity, measured (beta = cpx21, same as prod)
+
+To size an aggregate cap you need the throughput ceiling. Measured with an `ab`
+concurrency ramp straight at Daphne (`127.0.0.1:9000`, `X-Forwarded-Proto:
+https`, bypassing Caddy):
+
+| endpoint | ceiling | shape |
+|---|---|---|
+| list view (`/players/?tournament=…`) | **~40 req/s** | plateaus at concurrency **2**; beyond that only latency grows — GIL-bound |
+| cheap 302 (`/player/1/`) | **~90 req/s** | peaks at c=8, then *congestion-collapses* (72 → 51 → 19/s as concurrency climbs) — every request pays the full middleware stack under the GIL |
+
+For scale, real legit load: **median 3 req/min (0.05/s); busiest minute in two
+weeks 3.5/s** — ~1000× below capacity, so there's huge room to cap aggressively
+without touching real users.
+
+### The fix: tiered rate limits (`caddy/Caddyfile`)
+
+Three zones, each shedding at the edge as `429` before a request reaches Daphne.
+Rule of thumb: **measure the ceiling, halve it.**
+
+| zone | scope | limit | why |
+|---|---|---|---|
+| `per_ip` | one client IP | 5/s (50 / 10s) | single-IP flood; keeps one IP from eating the shared budgets |
+| `list_views` | `/players* /board* /hand* /tournament*`, aggregate | 20/s | ½ the ~40/s list-view ceiling |
+| `whole_site` | everything, aggregate | 45/s | ½ the ~90/s cheap-request ceiling — backstop for a pivot to any other endpoint |
+
+Why three and not one: a single site-wide 20/s cap would `429` legitimate
+page-load bursts (a page load = HTML + several static files + `tz_detect` + an
+SSE connect); a single *loose* cap wouldn't protect the fragile ~40/s list
+views. So — a tight cap on the expensive paths, a looser backstop on everything.
+Deployed and verified live on beta (2026-08); full before/after A/B in
+[`rate-limit-ab-validation.md`](rate-limit-ab-validation.md).
+
 ## Quick start
 
 Pool-exhaustion repro (no Caddy needed — you're stressing Daphne directly):
