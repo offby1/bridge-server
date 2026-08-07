@@ -13,17 +13,48 @@
     order rate_limit before reverse_proxy
 }
 
-# Per-client-IP limit. `key {remote_host}` is the real client IP because Caddy
-# terminates TLS at the edge (no upstream proxy in front of it). 50 events per
-# rolling 10s ~= 5 req/s sustained with small bursts; legit traffic runs
-# ~0.1 req/s, so this is ~50x headroom. Over the limit -> HTTP 429 + Retry-After,
-# emitted by Caddy without ever reaching Daphne or opening a Postgres connection.
+# Three complementary limits, all shedding at the edge (HTTP 429 + Retry-After)
+# before a request reaches Daphne or opens a Postgres connection. A request must
+# pass every applicable zone; the tightest one wins. Thresholds were measured on
+# beta (cpx21, same as prod) with an `ab` concurrency ramp; real legit traffic
+# peaks at ~3.5 req/s (busiest minute in two weeks), so all three sit far above
+# legit and below where Daphne collapses. See docs/perf/crawler-repro.md.
+#
+#   * per_ip     -- any single client IP. `key {remote_host}` is the real client
+#                   IP (Caddy terminates TLS at the edge). 50/10s ~= 5 req/s.
+#                   Defeats a single-IP flood (the 2026-07-15 crawler) and keeps
+#                   one IP from eating the shared budgets below.
+#   * list_views -- AGGREGATE across ALL IPs for the expensive, crawlable
+#                   endpoints (list views + tournament pages incl. the slow RSS
+#                   feed). `key static` = one shared bucket. 20/s ~= half their
+#                   measured ~40 req/s ceiling. Defeats a *distributed* botnet
+#                   crawl of these paths (the 2026-08-04 outage: ~24k IPs, <=4
+#                   requests each -- every IP under the per-IP limit, yet the
+#                   total still buried Daphne).
+#   * whole_site -- AGGREGATE across ALL IPs and ALL paths: the catch-all
+#                   backstop for a flood that pivots to some other endpoint.
+#                   45/s ~= half the ~90 req/s ceiling of even a cheap request
+#                   (every request pays the full middleware stack under the GIL,
+#                   so the whole app caps near there).
 (ratelimit) {
     rate_limit {
         zone per_ip {
             key    {remote_host}
             events 50
             window 10s
+        }
+        zone list_views {
+            match {
+                path /players/* /board/* /hand/* /tournament*
+            }
+            key    static
+            events 20
+            window 1s
+        }
+        zone whole_site {
+            key    static
+            events 45
+            window 1s
         }
     }
 }
