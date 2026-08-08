@@ -170,6 +170,8 @@ whop:
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
 
+# TODO -- embed the docker context, or some similar discriminator, into the name of the log file, so that I can tell
+# where the logs came from.
 dump:
     docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
