@@ -26,16 +26,26 @@ ones owned by the dev server. Six is Chrome's HTTP/1.1 limit per origin, shared
 across all tabs. With all six consumed, every further request queues in the browser
 until one frees up, which is why the page eventually unsticks on its own.
 
-**Six sockets for two streams means they leak.** `/tournament/1/` opens only two
-long-lived connections: the bot-checkbox stream (`project/app/templates/base.html:40`)
-and `django_browser_reload` (enabled in `dev_settings.py`). The bot-checkbox stream
-re-dials roughly once a minute, and each previous socket stays `ESTABLISHED` on both
-ends instead of closing. Four re-dials appeared in two minutes of idling.
+**Every page navigation leaks one stream for about a minute.** We added
+`app/middleware/sse_stream_log.py` to log each stream's open and close. Lining the
+opens up against the access log settles it:
 
-**The reconnects are already backing off.** A later HAR shows one stream ending after
-40s and its replacement starting 15s afterward. `ReconnectingEventSource` begins at
-about 3s and escalates, so a 15s delay means the stream had been flapping for a while
-before that capture began.
+    21:15:42  GET /player/       opened stream #6   (1 open)
+    21:15:53  GET /players/      opened stream #8   (4 open)
+    21:15:55  GET /tournament/   opened stream #9   (5 open)
+    21:15:56  GET /tournament/   opened stream #10  (5 open)
+    21:15:57  GET /tournament/1/ opened stream #11  (6 open)  <- cap reached
+    21:16:53  streams #6, #7 and #11 closed after 55-70s
+
+`base.html` put the bot-checkbox stream on every page, so each navigation opened a new
+one while the departed page's stream stayed open for another 55 to 70 seconds. Six
+navigations inside a minute -- logging in, creating a partner, creating a tournament,
+opening it -- exhausted the budget. That is ordinary clicking, not unusual usage.
+
+**The server, not the client, always ends these streams.** Every close we logged was a
+`CancelledError`; none was a clean exhaust. `django_eventstream/views.py:227` writes a
+keep-alive only every 20s and cannot detect a departed client until a write fails, so
+a stream outlives its page by one to three keep-alive cycles.
 
 ## What we ruled out
 
@@ -71,22 +81,35 @@ multiplex roughly 100 streams over a single connection. The six-socket ceiling a
 to `just runme` and `just dev`, which both serve plain HTTP/1.1. We have not verified
 this against production.
 
+## The fix
+
+`base.html` now attaches `sse-connect` only when `user.player.current_hand` is set,
+which is where the checkbox can actually change underneath the viewer. Everywhere else
+it renders the same checkbox with no stream attached. That removes one leaked socket
+per page view across the whole site.
+
+`app/middleware/sse_stream_log.py` stays in place. It costs nothing when no stream is
+open and it turns any recurrence into a log line instead of an afternoon.
+
+Two smaller consumers remain, and we left both alone for now:
+`django_browser_reload` (dev only) and the chat stream
+(`app/templates/chat-partial.html:34`, only on pages with chat).
+
+Two other approaches we considered and did not take. Serving dev over TLS would get
+browsers onto HTTP/2, which multiplexes roughly 100 streams over one connection; that
+raises the ceiling but hides the leak rather than fixing it. Shortening
+django-eventstream's keep-alive would shrink the window in which a departed page's
+stream lingers, but the interval is hardcoded.
+
 ## Still open
 
-- **What makes the bot-checkbox stream flap.** `django_eventstream/views.py:227` emits
-  a keep-alive every 20s and never ends the stream itself, and a healthy stream stayed
-  open for over five minutes in one capture. Something intermittent drops it, and each
-  drop pins another socket. The next step we chose is to log every stream open and
-  close, with a reason, so the next occurrence explains itself instead of costing
-  another afternoon.
-- **Why a closed stream's socket stays `ESTABLISHED`** on both ends rather than being
-  released.
 - **`/hand/1/` shows that nobody has called**, even with "Computer plays this hand for
   me" toggled and the bot visibly working. This reproduces on `main` as well, so it is
   not an upgrade regression. It is plausibly the same root cause, because a hand page
-  opens four long-lived streams (`base.html:40`, `bridge-game.js:12`,
-  `bridge-game.js:51`, plus `django_browser_reload`) and the updates arrive over
-  exactly the connections that cannot be established. We have not confirmed that.
+  opens several long-lived streams (`bridge-game.js:12`, `bridge-game.js:51`, the chat
+  stream, plus `django_browser_reload`) and the updates arrive over exactly the
+  connections that cannot be established. Retest this now that the fix has landed; if
+  it persists, the SSE stream log will show whether those streams ever opened.
 
 ## Unrelated: Google OAuth on `django.server.orb.local`
 
