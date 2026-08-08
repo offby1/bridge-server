@@ -36,11 +36,21 @@
                             {% endif %}
                         </span>
                         <div class="d-flex flex-column flex-md-row align-items-center gap-2 border rounded px-2 px-md-3 py-2">
-                            <div hx-ext="sse"
-                                 sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
-                                 sse-swap="message"
-                                 hx-target="#bot-plays-for-me-div"
-                                 hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
+                            {# Subscribe only where the checkbox can change underneath us, namely while #}
+                            {# the player is at a hand.  This stream used to be on every page, and #}
+                            {# because a departed page's stream lingers for up to 70s (django-eventstream #}
+                            {# only notices the client left when a keep-alive write fails), six #}
+                            {# navigations in a minute exhausted Chrome's six-connection-per-origin #}
+                            {# budget and stalled every subsequent request.  See TROUBLE.md. #}
+                            {% if user.player and not user.player.synthetic and user.player.current_hand %}
+                                <div hx-ext="sse"
+                                     sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
+                                     sse-swap="message"
+                                     hx-target="#bot-plays-for-me-div"
+                                     hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
+                            {% else %}
+                                <div>{% include "bot-checkbox.html" with error_message="" %}</div>
+                            {% endif %}
                             {% if user.player and not user.player.synthetic and user.player.current_hand %}
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary w-100 w-sm-auto"

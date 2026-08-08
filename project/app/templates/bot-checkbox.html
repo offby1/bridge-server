@@ -1,3 +1,9 @@
+{# This is the swap payload: base.html includes it, and views/player.py plus #}
+{# models/player.py and models/hand.py re-render it into #bot-plays-for-me-div with #}
+{# hx-swap="outerHTML".  Do NOT move the hx-ext="sse" / sse-connect wrapper in here. #}
+{# The element owning the connection has to survive the swap; if the payload carried #}
+{# sse-connect, htmx would open a fresh EventSource on every toggle and every server #}
+{# push.  See TROUBLE.md. #}
 {% if user.player and not user.player.synthetic %}
     <div class="form-check form-switch" id="bot-plays-for-me-div">
         <input class="form-check-input"
