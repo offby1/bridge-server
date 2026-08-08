@@ -135,17 +135,50 @@ a call, play a card. Nothing clever. It will be documentation that happens to ex
 so it should read as an example first and be factored for testability second.
 
 **The tests we will write**, driven against `live_server`, which already works here
-(`app/test_ui_playwright.py` uses it):
+(`app/test_ui_playwright.py` uses it). They divide sharply by cost, so we should write
+them in this order and decide after the first group whether the second is worth it.
+
+*Cheap: ordinary HTTP, no streaming.* These need only `requests`, and they behave like
+every other test in the suite.
 
 - Authenticate and fetch a serialized hand, asserting the documented shape.
-- Follow a hand: connect, have the server record a call, assert the client sees it.
-- Recover: disconnect mid-hand, let calls happen while away, reconnect, re-fetch, and
-  assert the client's view matches server truth. This is the test that would prove the
-  recovery story above, and it is the one we have never exercised.
-- Play a hand to completion through the client, which is the real claim: that somebody
-  else could write one of these.
+- Make a call and play a card through the client, then assert the effect via a fresh
+  `/serialized/hand/<pk>/`.
+- Re-sync: let calls happen, then fetch the serialized hand and assert the client's view
+  matches server truth. This is half of the recovery story, and the half that does not
+  need a live stream.
+- Play a hand to completion by polling `/serialized/hand/<pk>/` between actions. That
+  demonstrates the real claim — somebody else could write one of these — without
+  touching SSE at all, which is exactly how `cheating_bot` already operates.
 
-Expect friction. django-eventstream yields async iterables, `live_server` is WSGI and
-falls back to `async_to_sync` (see the `filterwarnings` entries in `pyproject.toml`),
-and a test that reads a stream designed to run forever needs a deliberate stopping
-condition. Budget for that rather than being surprised by it.
+*Expensive: needs a live stream.* Only these two require reading events as they arrive.
+
+- Follow a hand: connect, have the server record a call, assert the client sees the
+  event.
+- Recover across a disconnect: read events, drop the connection mid-hand, let calls
+  happen while away, reconnect, and assert the client catches up.
+
+### What "expensive" means here
+
+Not token volume in itself; the cost is that failures in this area are slow and opaque,
+and slow opaque iterations are what actually run up a bill. Three specific hazards, all
+of which land on the first streaming test and none of which recur once it works:
+
+- **The code path under test is not the one we ship.** django-eventstream yields async
+  iterables, and `live_server` is WSGI, so it falls back to `async_to_sync`;
+  `pyproject.toml`'s `filterwarnings` already documents this. Production runs Daphne.
+  A streaming test can therefore pass while production breaks, or buffer instead of
+  streaming and never yield the event it waits for.
+- **Hanging is the default failure mode.** A stream built to run forever, read by a test
+  with no timeout, does not fail; it hangs, and under pytest-xdist it hangs quietly. The
+  `pytest_sessionfinish` hook in `conftest.py` that force-exits because "live_server
+  keeps database connections open and creates non-daemon threads that don't terminate
+  cleanly" is evidence this area has bitten us before. Any streaming test needs an
+  explicit read timeout and stopping condition from the first line.
+- **Redis becomes a hard test dependency.** `eventstream.py:29` branches on
+  `EVENTSTREAM_REDIS`, which `base_settings.py` sets unconditionally, so delivery in
+  these tests goes through a real Redis rather than anything in-memory.
+
+The cheap group gives us genuine contract coverage of the endpoint's shape and
+semantics. The expensive group is the only thing that proves events actually arrive over
+the wire. Both are worth having; only the first is obviously worth having *first*.
