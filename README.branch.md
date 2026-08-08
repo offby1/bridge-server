@@ -158,26 +158,53 @@ every other test in the suite.
 - Recover across a disconnect: read events, drop the connection mid-hand, let calls
   happen while away, reconnect, and assert the client catches up.
 
-### What "expensive" means here
+### The streaming tests will run against daphne, not `live_server`
 
-Not token volume in itself; the cost is that failures in this area are slow and opaque,
-and slow opaque iterations are what actually run up a bill. Three specific hazards, all
-of which land on the first streaming test and none of which recur once it works:
+`live_server` is WSGI-only, and not by pytest-django's choice: Django's
+`LiveServerThread` hardcodes `server_class = ThreadedWSGIServer` and builds its app from
+`WSGIHandler()` (`django/test/testcases.py:1735-1761`). django-eventstream yields async
+iterables, so under `live_server` they reach us through an `async_to_sync` fallback,
+which `pyproject.toml`'s `filterwarnings` already notes. That means a streaming test
+run under `live_server` does not exercise the code path we ship, and can pass while
+production breaks, or buffer instead of streaming and never yield the event it waits
+for.
 
-- **The code path under test is not the one we ship.** django-eventstream yields async
-  iterables, and `live_server` is WSGI, so it falls back to `async_to_sync`;
-  `pyproject.toml`'s `filterwarnings` already documents this. Production runs Daphne.
-  A streaming test can therefore pass while production breaks, or buffer instead of
-  streaming and never yield the event it waits for.
+Django keeps the WSGI server because `LiveServerTestCase` predates ASGI, because an ASGI
+live server would mean a third-party dependency, and above all because the fixture hands
+the server thread the test's own database connection (`testcases.py:1754-1758`) so the
+server sees uncommitted data and everything rolls back. That trick does not survive an
+event loop. Channels ships `ChannelsLiveServerTestCase` to work around all of this,
+which is good evidence the gap is real and widely felt.
+
+We will spin daphne ourselves in a fixture instead. Daphne is already a dependency, we
+already run it in development and production, and the tests already require Postgres and
+Redis, so a server process is no new class of burden. What we get for it is the real
+code path.
+
+The tradeoffs and wrinkles we should expect:
+
+- **No shared transaction.** A separate process cannot see our test's uncommitted data,
+  so these tests need `django_db(transaction=True)` and committed fixtures. They will be
+  slower and will tear down differently from the rest of the suite. This is the same
+  price `ChannelsLiveServerTestCase` pays.
+- **`test_settings.py` hardcodes the database name.** It sets `"NAME": "bridge"` with
+  `TEST: {"NAME": "test_bridge"}`, so a daphne subprocess inheriting those settings would
+  connect to the development database rather than the test one. We will need the name to
+  come from the environment before the fixture can point daphne at `test_bridge`.
 - **Hanging is the default failure mode.** A stream built to run forever, read by a test
   with no timeout, does not fail; it hangs, and under pytest-xdist it hangs quietly. The
   `pytest_sessionfinish` hook in `conftest.py` that force-exits because "live_server
   keeps database connections open and creates non-daemon threads that don't terminate
-  cleanly" is evidence this area has bitten us before. Any streaming test needs an
-  explicit read timeout and stopping condition from the first line.
-- **Redis becomes a hard test dependency.** `eventstream.py:29` branches on
-  `EVENTSTREAM_REDIS`, which `base_settings.py` sets unconditionally, so delivery in
-  these tests goes through a real Redis rather than anything in-memory.
+  cleanly" is evidence this area has bitten us before. Every streaming test needs an
+  explicit read timeout and stopping condition from the first line, and the fixture needs
+  a readiness poll on startup and a terminate-with-timeout on teardown.
+- **Redis is load-bearing here.** `eventstream.py:29` branches on `EVENTSTREAM_REDIS`,
+  which `base_settings.py` sets unconditionally, so delivery in these tests goes through
+  a real Redis rather than anything in-memory.
+
+None of that is token-expensive in itself. The cost is that failures in this area are
+slow and opaque, and slow opaque iterations are what actually run up a bill. All of it
+lands on the first streaming test; once one works, the second is a variation.
 
 The cheap group gives us genuine contract coverage of the endpoint's shape and
 semantics. The expensive group is the only thing that proves events actually arrive over
