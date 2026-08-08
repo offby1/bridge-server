@@ -254,7 +254,7 @@ class OAuthFlowEndToEndTestCase(TestCase):
         self.assertEqual(player.user, result_user)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         ACCOUNT_EMAIL_VERIFICATION="optional",
     )
     def test_oauth_signup_sends_verification_email(self):

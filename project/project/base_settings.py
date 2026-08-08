@@ -218,7 +218,11 @@ SOCIALACCOUNT_PROVIDERS = {
 # 1. No benefit - OAuth providers already verify identity
 # 2. High cost - requires SMTP service (difficult and expensive)
 # 3. Reduced complexity - one less thing to maintain
-EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"  # Silently discard all emails
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.dummy.EmailBackend"  # Silently discard all emails
+    }
+}
 
 GITLAB_HOMEPAGE = "https://gitlab.com/offby1/bridge-server/"
 
