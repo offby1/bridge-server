@@ -70,10 +70,21 @@ cannot replay the gap, so it sets `reset = True` and `eventresponse.py:36-39` em
 `stream-reset` event naming the affected channels. It means "you missed events, I can't
 tell you which, re-sync from scratch."
 
-Today we ignore it. `bridge-game.js:38-41` and `bridge-game.js:54-57` parse the payload
-and write it to the console. Nothing re-syncs, so a client that misses events stays
-silently stale until the viewer reloads. That is very likely one reason a hand page can
-sit showing no calls while the bot plays on.
+Today it never fires at all. `EVENTSTREAM_STORAGE_CLASS` is unset, so `get_storage()`
+returns `None` and `eventstream.py:124` skips the branch that would raise a reset. With
+no storage there is also no replay: a reconnecting client's `Last-Event-ID` is parsed
+and then effectively ignored. Whatever happened while it was disconnected is simply
+gone, and nothing tells it so. The gap is silent by construction, which is worse than a
+reset we mishandle.
+
+And we would mishandle it. `bridge-game.js:38-41` and `bridge-game.js:54-57` parse the
+payload and write it to the console; nothing re-syncs. Between the two, a client that
+misses events stays stale until the viewer reloads, which is very likely one reason a
+hand page can sit showing no calls while the bot plays on.
+
+Enabling storage is therefore a prerequisite, not a detail. `app/test_stream_reset.py`
+covers both sides of that step: one test pins the current storage-free behaviour and
+will fail when we turn storage on, and the rest prove the mechanism works once we do.
 
 Consolidating onto one connection raises the stakes: a single reset now means every
 channel that client cares about may be stale, not just one.
