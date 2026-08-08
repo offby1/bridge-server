@@ -1,10 +1,9 @@
-# Branch goal: two SSE connections per client, not six
+# Branch goal: one SSE connection per client, not six
 
 ## What we're doing
 
-Collapse the seven per-channel `/events/...` endpoints into **two**: one shared stream
-that every client gets, and one per-player stream carrying everything meant for that
-authenticated player alone.
+Collapse the seven per-channel `/events/...` endpoints into **one**, whose channel set
+the server computes per request.
 
 ## Why
 
@@ -23,33 +22,74 @@ tidier regardless of transport.
 
 ## The plan
 
-**One shared stream.** Channels that are identical for everyone, currently `lobby` and
-`all-tables`. No per-viewer content, so nothing here needs the viewer's identity.
-
-**One per-player stream.** Everything addressed to a single authenticated player:
-their bot-checkbox, their private hand HTML, their chat channels, and the table
-channel for whichever hand the page is showing. The client asks for one connection;
-the server decides what belongs on it.
+One endpoint. `MyChannelManager.get_channels_for_request()` returns the union of the
+shared channels (`lobby`, `all-tables`), that player's private channels (bot-checkbox,
+private hand HTML, chat), and the table channel for whichever hand the page is showing.
 
 We don't need new machinery for the routing. `django_eventstream` already asks the
 channel manager for a channel set when a URL doesn't hardcode one
-(`eventrequest.py:60-66`), and we already have `app/channelmanager.py`. Each of the two
-endpoints becomes a path with no `channels` kwarg, and `MyChannelManager` computes the
-set from the request. Permission checks stay where they are, in `can_read_channel`.
+(`eventrequest.py:60-66`), and we already have `app/channelmanager.py`. The endpoint
+becomes a path with no `channels` kwarg. Mixing scopes on one socket weakens nothing,
+because `can_read_channel` still vets every channel individually.
 
-Three things need attention:
+### Why one and not two
+
+Splitting into a public stream and a private one sounds tidy, but it doesn't reduce
+anything today: `can_read_channel` returns `False` for anyone without a player
+(`channelmanager.py:16-25`), so anonymous visitors read nothing at all. Every client
+that reads anything is authenticated and would therefore hold both connections, which
+is two sockets per tab where one would do. The constraint is sockets per client, not
+endpoints per permission class.
+
+We do want unauthenticated users to observe games in progress some day. When that
+happens, some channels become readable without a player, and a second public endpoint
+starts earning its socket. That's a change to `can_read_channel` first; the split
+follows from it rather than preceding it.
+
+### Three things need attention
 
 - **Event types.** Every `send_event` call currently passes `"message"`, which works
   only because each channel has its own connection. Once several kinds of update share
   a socket, each needs a distinct event type so htmx's `sse-swap` and our JS listeners
-  can tell them apart and target the right element.
+  can tell them apart and target the right element. This is the bulk of the work.
 - **The table channel is page-dependent.** A viewer can be looking at a hand that isn't
-  their current one, so the per-player endpoint needs the hand as a parameter that
+  their current one, so the endpoint needs the hand as a parameter that
   `get_channels_for_request` reads from `view_kwargs`.
-- **The channel set is fixed at connect time.** When a player's situation changes, for
-  instance when they're seated at a new hand, the client has to re-subscribe.
-  `django_eventstream` has `stream-reset` for exactly this, and `bridge-game.js`
-  already listens for it.
+- **The channel set is bound at connect time**, and nothing can add a channel to a live
+  connection. To pick up a channel it doesn't have, for instance after being seated at
+  a new hand, the client must close and reopen the `EventSource`. A page navigation
+  does that for free; anything that changes a player's situation without a navigation
+  needs to re-dial deliberately.
+
+## `stream-reset`, and why we don't trust it yet
+
+`stream-reset` is not a subscription-management mechanism, which is easy to assume from
+the name. `eventstream.py:132-147` raises it when a client reconnects with a
+`Last-Event-ID` whose events have already aged out of storage: django-eventstream
+cannot replay the gap, so it sets `reset = True` and `eventresponse.py:36-39` emits a
+`stream-reset` event naming the affected channels. It means "you missed events, I can't
+tell you which, re-sync from scratch."
+
+Today we ignore it. `bridge-game.js:38-41` and `bridge-game.js:54-57` parse the payload
+and write it to the console. Nothing re-syncs, so a client that misses events stays
+silently stale until the viewer reloads. That is very likely one reason a hand page can
+sit showing no calls while the bot plays on.
+
+Consolidating onto one connection raises the stakes: a single reset now means every
+channel that client cares about may be stale, not just one.
+
+So this branch treats `stream-reset` as work in its own right, and it doesn't ship
+until automated tests cover it:
+
+- **Server side.** Connect to the endpoint with a stale or bogus `Last-Event-ID` and
+  assert the stream emits `event: stream-reset` naming the expected channels. This
+  needs no timing games; an id that never existed takes the same code path as one that
+  expired.
+- **Client side.** The handler must re-fetch state rather than log. A Playwright test
+  should force a reset and assert the DOM catches up to the true server state.
+- **End to end.** Drop events on the floor while a client is connected, then confirm
+  the client notices and recovers. This is the case we most want to be confident in,
+  because it is the one nobody exercises by hand.
 
 ## Not in scope
 
