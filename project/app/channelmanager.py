@@ -40,9 +40,10 @@ class MyChannelManager(DefaultChannelManager):
         # The hand being viewed isn't necessarily the viewer's current one, and the chat
         # partner isn't derivable from the viewer either, so pages pass both in.
         #
-        # Insist the hand parses as a primary key.  One that doesn't would build a
-        # channel name that none of the patterns below recognise, and
-        # can_read_channel's final "visible to everyone" branch would wave it through.
+        # Both are validated here rather than left to `can_read_channel`, which would
+        # now deny them anyway: a parameter we can see is junk is better dropped than
+        # turned into a channel name and refused, and the warning names the parameter
+        # instead of the mangled channel it produced.
         if (raw_hand_pk := request.GET.get("hand")) is not None:
             try:
                 channels.add(SSEChannels.table_html(PK_from_str(raw_hand_pk)))
@@ -50,8 +51,7 @@ class MyChannelManager(DefaultChannelManager):
                 logger.warning("Ignoring unparseable hand %r in %s", raw_hand_pk, request.path)
         # A chat channel *is* `players:<pk>_<pk>` -- see Message.channel_name_from_players
         # -- and is not prefixed, whatever the URL of the old per-channel endpoint
-        # suggested.  Insist it parses as one; otherwise `can_read_channel` reaches its
-        # final "visible to everyone" branch and waves the name through.
+        # suggested.
         if chat_channel := request.GET.get("chat"):
             if models.Message.player_pks_from_channel_name(chat_channel) is None:
                 logger.warning("Ignoring unparseable chat %r in %s", chat_channel, request.path)
@@ -110,9 +110,16 @@ class MyChannelManager(DefaultChannelManager):
 
             return player.hand_at_which_we_played_board(hand.board) is not None
 
-        if channel == SSEChannels.PARTNERSHIPS:
+        # Global channels: no per-viewer content, so any logged-in player may read them.
+        # Nothing publishes to `all-tables` today; it keeps its endpoint and its place
+        # here so that connecting to it stays a no-op rather than an error.
+        if channel in {SSEChannels.LOBBY, SSEChannels.PARTNERSHIPS, SSEChannels.ALL_TABLES}:
             return True
 
-        # everything else is visible to everyone, although I don't think there *are* any other messages.
-        logger.warning("OK, so wtf is channel %s?", channel)
-        return True
+        # Deny by default.  This used to allow anything it didn't recognise, on the
+        # grounds that there weren't any other messages.  That held while every channel
+        # came from the URLconf, and stopped holding when /events/all/ began building
+        # channel names from query parameters: a malformed name reached here, matched no
+        # pattern above, and was allowed.  Twice.
+        logger.warning("Denying unrecognised channel %r for %s", channel, player.name)
+        return False

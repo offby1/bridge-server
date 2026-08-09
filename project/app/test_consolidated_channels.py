@@ -6,12 +6,16 @@ and `MyChannelManager.get_channels_for_request` decides what "everything" means 
 viewer making the request. See README.branch.md.
 """
 
+import inspect
+from typing import cast
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
 from app.channelmanager import MyChannelManager
 from app.models import Hand, Message, Player
+from app.models.utils import UserMitPlaya
 from app.sse_channels import SSEChannels
 
 
@@ -63,12 +67,11 @@ def test_an_unreadable_channel_is_dropped_rather_than_refused(usual_setup: Hand)
 
 @pytest.mark.django_db
 def test_a_hand_that_is_not_a_primary_key_is_ignored(usual_setup: Hand) -> None:
-    """`can_read_channel` waves through any channel it doesn't recognise.
+    """`?hand=abc` would build `table:html:abc`, which is nobody's channel.
 
-    Its final branch returns True for unrecognised names, so `?hand=abc` would build
-    `table:html:abc`, match none of the patterns, and be allowed. Nothing publishes
-    there, so this isn't a leak, but subscribing to junk on the say-so of a query
-    parameter is not a habit worth having.
+    `can_read_channel` denies unrecognised names now, so this is belt and braces --
+    but it is cheaper to not ask for a junk channel than to be refused one, and when
+    this check was written the catch-all still allowed them.
 
     "Not a primary key" rather than "not a number": the check goes through
     `PK_from_str`, so it follows `app/models/types.py` if primary keys ever stop being
@@ -118,7 +121,7 @@ def test_a_chat_channel_naming_other_players_is_dropped(usual_setup: Hand) -> No
 
 @pytest.mark.django_db
 def test_a_chat_channel_that_is_not_a_channel_name_is_ignored(usual_setup: Hand) -> None:
-    """Junk must not reach `can_read_channel`'s catch-all, which returns True."""
+    """Don't ask for a channel we know is junk, even though it would now be refused."""
     player = Player.objects.first()
     assert player is not None
 
@@ -132,6 +135,58 @@ def test_the_old_per_channel_endpoints_still_work(usual_setup: Hand) -> None:
     assert player is not None
 
     assert _channels(user=player.user, view_kwargs={"channels": ["lobby"]}) == {"lobby"}
+
+
+@pytest.mark.django_db
+def test_can_read_channel_denies_names_it_does_not_recognise(usual_setup: Hand) -> None:
+    """The catch-all used to allow them, which cost us two bugs on /events/all/."""
+    player = Player.objects.first()
+    assert player is not None
+
+    assert not MyChannelManager().can_read_channel(
+        cast(UserMitPlaya, player.user), "no-such-channel"
+    )
+
+
+@pytest.mark.django_db
+def test_every_channel_we_publish_to_is_readable_by_its_audience(usual_setup: Hand) -> None:
+    """Deny-by-default is only safe if the allow list is complete.
+
+    If a channel we actually `send_event` to isn't recognised here, subscribers get
+    silence, and on the consolidated connection one such channel takes the whole stream
+    down with an EventPermissionError.
+    """
+    hand = usual_setup
+    player = next(iter(hand.players()))
+    assert player.partner is not None
+    manager = MyChannelManager()
+
+    # Walk SSEChannels rather than listing it, so a channel added later is covered
+    # without anyone having to remember this test. Constants are channel names; the rest
+    # are functions, and their parameter names say which primary key they want.
+    available_pks = {"player_pk": player.pk, "hand_pk": hand.pk}
+    channels = []
+    for name in vars(SSEChannels):
+        if name.startswith("_"):
+            continue
+        member = getattr(SSEChannels, name)
+        if isinstance(member, str):
+            channels.append(member)
+            continue
+        wanted = inspect.signature(member).parameters
+        unknown = set(wanted) - set(available_pks)
+        assert not unknown, (
+            f"SSEChannels.{name} wants {sorted(unknown)}, which this test can't supply. "
+            f"Add it to available_pks."
+        )
+        channels.append(member(**{p: available_pks[p] for p in wanted}))
+
+    # Chat lives on Message, which owns the `players:<pk>_<pk>` format.
+    channels.append(Message.channel_name_from_players(player, player.partner))
+
+    assert len(channels) >= 8, f"Only found {len(channels)}; has SSEChannels moved?"
+    for channel in channels:
+        assert manager.can_read_channel(cast(UserMitPlaya, player.user), channel), channel
 
 
 @pytest.mark.django_db
