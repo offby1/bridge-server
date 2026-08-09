@@ -19,23 +19,9 @@ from app.models.tournament import (
 )
 
 
-def _the_tournament_with_signups() -> Tournament:
-    """Return the tournament that the `nobody_seated` fixture signed everybody up for.
-
-    That fixture leaves two tournaments in the database: the one it created and filled,
-    and a stray one from the `fresh_tournament` fixture it builds on, whose signup
-    deadline is in 1970 and which has no signups at all.
-
-    So don't reach for `Tournament.objects.first()` -- it returns the stray, which the
-    clock deletes on sight for being empty. A test that does that fails for reasons
-    unrelated to what it was checking, which cost us a puzzled ten minutes.
-    """
-    return Tournament.objects.exclude(tournamentsignup=None).distinct().get()
-
-
 @pytest.mark.django_db
 def test_a_passed_signup_deadline_creates_hands(nobody_seated: None) -> None:
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
     assert not tour.hands().exists()
 
     with time_machine.travel(tour.signup_deadline + datetime.timedelta(seconds=1), tick=False):
@@ -51,7 +37,7 @@ def test_running_twice_creates_one_set_of_hands(nobody_seated: None) -> None:
     Sequential runs are the easy half -- two clocks interleaved is the case the
     database has to settle -- but if this fails, nothing else is worth checking.
     """
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
 
     with time_machine.travel(tour.signup_deadline + datetime.timedelta(seconds=1), tick=False):
         advance_expired_tournaments()
@@ -63,7 +49,7 @@ def test_running_twice_creates_one_set_of_hands(nobody_seated: None) -> None:
 
 @pytest.mark.django_db
 def test_a_passed_play_deadline_completes_the_tournament(nobody_seated: None) -> None:
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
 
     with time_machine.travel(tour.signup_deadline + datetime.timedelta(seconds=1), tick=False):
         advance_expired_tournaments()
@@ -83,7 +69,7 @@ def test_a_passed_play_deadline_completes_the_tournament(nobody_seated: None) ->
 @pytest.mark.django_db
 def test_completing_twice_keeps_the_first_answer(nobody_seated: None) -> None:
     """The conditional UPDATE is the claim; a second caller must match zero rows."""
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
 
     with time_machine.travel(tour.signup_deadline + datetime.timedelta(seconds=1), tick=False):
         advance_expired_tournaments()
@@ -104,7 +90,7 @@ def test_completing_twice_keeps_the_first_answer(nobody_seated: None) -> None:
 
 @pytest.mark.django_db
 def test_we_wake_for_a_deadline_sooner_than_the_ceiling(nobody_seated: None) -> None:
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
     soon = timezone.now() + WAKE_AT_LEAST_EVERY / 2
     # .update() rather than .save(): we're moving a deadline, not signing anybody up.
     Tournament.objects.filter(pk=tour.pk).update(signup_deadline=soon)
@@ -118,7 +104,7 @@ def test_we_wake_at_the_ceiling_for_a_deadline_beyond_it(nobody_seated: None) ->
 
     Something created in the meantime should not have to wait for it.
     """
-    tour = _the_tournament_with_signups()
+    tour = Tournament.objects.get()
     now = timezone.now()
     assert tour.signup_deadline > now + WAKE_AT_LEAST_EVERY
 
@@ -144,8 +130,11 @@ def test_the_sentinel_deadline_is_not_something_to_wake_for(nobody_seated: None)
     """A tournament whose movement isn't known yet carries a deadline a billion years out.
 
     Sleeping until then would be a bug; sleeping until its *signup* deadline is right.
+
+    Put the tournament into that state explicitly. The fixture's own tournament expires
+    in 2999, which is far away but is a real answer, whereas the sentinel means "we
+    can't know this yet" and has to be skipped.
     """
-    tour = _the_tournament_with_signups()
-    assert tour.play_completion_deadline == WAY_DISTANT_PLAY_COMPLETION_DEADLINE
+    Tournament.objects.update(play_completion_deadline=WAY_DISTANT_PLAY_COMPLETION_DEADLINE)
 
     assert advance_expired_tournaments() < WAY_DISTANT_PLAY_COMPLETION_DEADLINE

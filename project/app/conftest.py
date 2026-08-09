@@ -1,8 +1,10 @@
+import datetime
 import logging
 
 import pytest
 from django.core.cache import cache
 from django.core.management import call_command
+from django.utils import timezone
 
 from .models import Hand, Play, Player, Tournament, TournamentSignup
 from .models.tournament import advance_expired_tournaments
@@ -72,9 +74,19 @@ def nobody_seated_nobody_signed_up(db: None) -> None:
 
 @pytest.fixture
 def nobody_seated(nobody_seated_nobody_signed_up) -> None:
-    current_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
+    """One tournament, open for signups, with everybody signed up to it.
+
+    Reopen the tournament `nobody_seated_nobody_signed_up` loaded, rather than calling
+    `get_or_create_tournament_open_for_signups()` and letting it create a second one:
+    the loaded tournament's signup deadline is in 1970, so it would not qualify. Leaving
+    two behind means a test asking for "the tournament" gets an ambiguous answer, and
+    `Tournament.objects.first()` gets the empty one.
+    """
+    Tournament.objects.update(signup_deadline=timezone.now() + datetime.timedelta(seconds=300))
+
+    tournament = Tournament.objects.get()
     for p in Player.objects.all():
-        current_tournament.sign_up_player_and_partner(p)
+        tournament.sign_up_player_and_partner(p)
 
 
 @pytest.fixture

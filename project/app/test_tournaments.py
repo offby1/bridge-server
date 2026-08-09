@@ -300,8 +300,8 @@ def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated) ->
     get_movement() built a phantom pair and tripped `assert num_phantoms == 0`.
 
     This reproduces that first-page-view-after-the-deadline state by backdating
-    the deadline without calling _do_signup_expired_stuff (which is what creates
-    the padding synths via request_finished)."""
+    the deadline without calling _do_signup_expired_stuff, which is what creates
+    the padding synths once the clock gets to this tournament."""
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
 
     s1 = Player.objects.create_synthetic()
