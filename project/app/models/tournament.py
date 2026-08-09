@@ -21,7 +21,7 @@ from app.models.signups import TournamentSignup
 from app.models.throttle import throttle
 from app.models.types import PK
 from app.models.utils import assert_type
-from app.sse_events import create_table_event
+from app.sse_events import SSEEventTypes, create_table_event
 from bridge.xscript import BrokenDownScore
 
 if TYPE_CHECKING:
@@ -101,7 +101,7 @@ def check_for_expirations(sender, **kwargs) -> None:
                 for h in t.hands():
                     send_event(
                         channel=h.event_table_html_channel,
-                        event_type="message",
+                        event_type=SSEEventTypes.TABLE,
                         data=create_table_event(
                             play_completion_deadline=t.play_completion_deadline.isoformat()
                         ),

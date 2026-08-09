@@ -5,6 +5,7 @@ import pytest
 import bridge.card
 import bridge.contract
 from app.models import Hand
+from app.sse_events import SSEEventTypes
 
 
 @pytest.mark.django_db
@@ -50,7 +51,7 @@ def test_dummy_checkbox_updates_when_contract_determined(usual_setup: Hand) -> N
 
         # Verify the HTML contains disabled attribute
         html_call = dummy_updates[0]
-        assert html_call.kwargs["event_type"] == "message"
+        assert html_call.kwargs["event_type"] == SSEEventTypes.BOT_CHECKBOX
         html_content = html_call.kwargs["data"]
         assert "disabled" in html_content, "Checkbox should be disabled for dummy"
         assert "dummy" in html_content.lower(), "Should indicate this is dummy"

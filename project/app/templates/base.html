@@ -45,7 +45,7 @@
                             {% if user.player and not user.player.synthetic and user.player.current_hand %}
                                 <div hx-ext="sse"
                                      sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
-                                     sse-swap="message"
+                                     sse-swap="bot-checkbox"
                                      hx-target="#bot-plays-for-me-div"
                                      hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
                             {% else %}

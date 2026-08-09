@@ -25,7 +25,7 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
 
 from app.sse_channels import SSEChannels
-from app.sse_events import create_player_hand_event, create_table_event
+from app.sse_events import SSEEventTypes, create_player_hand_event, create_table_event
 from bridge.auction import Auction, AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
@@ -157,13 +157,13 @@ def summarize(thing):
 
 
 def send_timestamped_event(
-    *, channel: str, data: dict[str, Any], when: float | None = None
+    *, channel: str, event_type: str, data: dict[str, Any], when: float | None = None
 ) -> None:
     if when is None:
         when = time.time()
 
-    logger.debug(f"Sending {summarize(data)=} to {channel=}")
-    send_event(channel=channel, event_type="message", data=data | {"time": when})
+    logger.debug(f"Sending {summarize(data)=} as {event_type=} to {channel=}")
+    send_event(channel=channel, event_type=event_type, data=data | {"time": when})
 
 
 def enrich(qs: QuerySet) -> QuerySet:
@@ -395,11 +395,17 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         return "…"
 
     def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
-        send_timestamped_event(channel=player.event_HTML_hand_channel, data=data)
+        send_timestamped_event(
+            channel=player.event_HTML_hand_channel,
+            event_type=SSEEventTypes.PLAYER_HAND,
+            data=data,
+        )
 
-    def send_JSON_to_players(self, *, data: dict[str, Any]) -> None:
+    def send_JSON_to_players(self, *, event_type: str, data: dict[str, Any]) -> None:
         for p in self.players():
-            send_timestamped_event(channel=p.event_JSON_hand_channel, data=data)
+            send_timestamped_event(
+                channel=p.event_JSON_hand_channel, event_type=event_type, data=data
+            )
 
     # These attributes are set by view code.  The values come from method calls that take a Player as an argument; we do
     # this because it's not possible for the template to invoke a method that requires an argument.
@@ -532,7 +538,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             )
             send_event(
                 channel=dummy_player.bot_checkbox_channel,
-                event_type="message",
+                event_type=SSEEventTypes.BOT_CHECKBOX,
                 data=html,
                 json_encode=False,
             )
@@ -542,6 +548,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         for p in self.players():
             send_timestamped_event(
                 channel=p.event_HTML_hand_channel,
+                event_type=SSEEventTypes.PLAYER_HAND,
                 data=create_player_hand_event(
                     bidding_box_html=self._get_current_bidding_box_html_for_player(p),
                     hand_pk=self.pk,
@@ -551,17 +558,19 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             )
 
         self.send_JSON_to_players(
+            event_type=SSEEventTypes.BOT_NEW_CALL,
             data={
                 "hand_pk": self.pk,
                 "new-call": {"serialized": call.serialize(), "explanation": call.explanation},
                 "tempo_seconds": self.board.tournament.tempo_seconds,
-            }
+            },
         )
 
         from app.views.hand import auction_history_HTML_for_table
 
         send_timestamped_event(
             channel=self.event_table_html_channel,
+            event_type=SSEEventTypes.TABLE,
             data=create_table_event(auction_history_html=auction_history_HTML_for_table(hand=self)),
             when=now,
         )
@@ -578,11 +587,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 },
             }
 
-            self.send_JSON_to_players(data=data)
+            self.send_JSON_to_players(event_type=SSEEventTypes.BOT_CONTRACT, data=data)
 
             # The interactive hand page needs this to know that it's time to reload, in order to show the "play" slides.
             send_timestamped_event(
                 channel=self.event_table_html_channel,
+                event_type=SSEEventTypes.TABLE,
                 data=data,  # Send the full data dict including both contract_text and contract
             )
 
@@ -630,17 +640,19 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         )
 
         self.send_JSON_to_players(
+            event_type=SSEEventTypes.BOT_NEW_PLAY,
             data={
                 "new-play": {
                     "hand_pk": self.pk,
                     "serialized": card.serialize(),
                 },
                 "tempo_seconds": self.board.tournament.tempo_seconds,
-            }
+            },
         )
 
         send_timestamped_event(
             channel=self.event_table_html_channel,
+            event_type=SSEEventTypes.TABLE,
             data=create_table_event(
                 trick_counts_string=self.trick_counts_string(),
                 trick_html=self._get_current_trick_html(),
@@ -719,6 +731,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             send_timestamped_event(
                 channel=self.event_table_html_channel,
+                event_type=SSEEventTypes.TABLE,
                 data=create_table_event(
                     final_score={"text": final_score_text},
                 ),

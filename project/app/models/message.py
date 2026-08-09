@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.html import format_html
 
+from app.sse_events import SSEEventTypes
+
 from .types import PK, PK_from_str
 
 logger = logging.getLogger(__name__)
@@ -106,6 +108,7 @@ class Message(models.Model):
     ):
         return cls._create_event_args(
             channel_name=cls.channel_name_from_players(from_player, recipient),
+            event_type=SSEEventTypes.CHAT,
             from_player=from_player,
             message=message,
             recipient_obj=recipient,
@@ -119,13 +122,14 @@ class Message(models.Model):
 
         return cls._create_event_args(
             channel_name="lobby",
+            event_type=SSEEventTypes.LOBBY,
             from_player=from_player,
             message=message,  # it's like a jungle, sometimes.  It makes me wonder how I keep from going under.
             recipient_obj=_THE_LOBBY,
         )
 
     @classmethod
-    def _create_event_args(cls, *, channel_name, from_player, message, recipient_obj):
+    def _create_event_args(cls, *, channel_name, event_type, from_player, message, recipient_obj):
         if len(message) > 100:
             logger.warning(f"Truncating annoyingly-long ({len(message)} characters) message")
             message = message[0:100]
@@ -138,7 +142,7 @@ class Message(models.Model):
 
         return [
             channel_name,
-            "message",
+            event_type,
             obj.as_html(),
         ]
 

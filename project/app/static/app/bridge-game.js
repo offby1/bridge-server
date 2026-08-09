@@ -14,7 +14,8 @@ export function initPlayerEventStream(playerEventUrl, playerId) {
 
     let autoScrollTimer;
 
-    playerEventSource.addEventListener('message', function (e) {
+    // Event names come from SSEEventTypes in app/sse_events.py; they must agree.
+    playerEventSource.addEventListener('player-hand', function (e) {
         const data = JSON.parse(e.data);
         console.log("Player event listener saw " + Object.keys(data));
 
@@ -56,7 +57,8 @@ export function initTableEventStream(tableEventUrl) {
         console.log("handEventSource got stream-reset: " + Object.keys(data));
     });
 
-    handEventSource.addEventListener('message', function (e) {
+    // Event names come from SSEEventTypes in app/sse_events.py; they must agree.
+    handEventSource.addEventListener('table', function (e) {
         const data = JSON.parse(e.data);
         console.log("Hand event listener saw " + Object.keys(data));
 

@@ -10,6 +10,45 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+class SSEEventTypes:
+    """The `event:` name each kind of update travels under.
+
+    Every event used to travel as `"message"`. On the browser's channels that worked
+    only because each channel had its own connection, so the channel implied the
+    meaning; we are consolidating those onto a single connection (see README.branch.md),
+    where it no longer holds. htmx's `sse-swap` and our JS listeners subscribe by event
+    name, so each kind of update needs a name of its own.
+
+    The JSON stream keeps its own connection and did not have to change. We renamed its
+    events anyway, because it carried four unrelated payloads under one name and clients
+    had to sniff dictionary keys to tell them apart. There are no third-party clients
+    yet, so this is the last cheap moment to fix that.
+
+    Client-side subscribers, which must agree with these:
+      PLAYER_HAND   `bridge-game.js`, playerEventSource
+      TABLE         `bridge-game.js`, handEventSource; `read-only_hand.html`
+      BOT_CHECKBOX  `base.html`, via sse-swap
+      CHAT          `chat-partial.html`, via sse-swap
+      PARTNERSHIPS  no subscriber today
+      LOBBY         no subscriber today (see the TODO in `views/lobby.py`)
+      BOT_*         no subscriber today; the reference client will be the first
+    """
+
+    # Browser channels.
+    PLAYER_HAND = "player-hand"
+    TABLE = "table"
+    BOT_CHECKBOX = "bot-checkbox"
+    CHAT = "chat"
+    PARTNERSHIPS = "partnerships"
+    LOBBY = "lobby"
+
+    # The JSON stream at /events/player/json/{player_pk}/, one name per payload.
+    BOT_SETTING = "bot-setting"
+    BOT_NEW_CALL = "new-call"
+    BOT_NEW_PLAY = "new-play"
+    BOT_CONTRACT = "contract"
+
+
 @dataclass
 class PlayerHandEvent:
     """Events sent to individual players about their hand state.
