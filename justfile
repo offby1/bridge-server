@@ -12,6 +12,10 @@ export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oaut
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
+
+# Put this project's tools ahead of any global ones.  ruff, mypy, pytest, py-spy and
+# ipython are all installed in ~/.local/bin too, at versions that need not match ours.
+export PATH := justfile_directory() / ".venv" / "bin" + ":" + env("PATH")
 export PYTHONUNBUFFERED := "t"
 
 # Settings to use for tests (overrides the default dev_settings)
