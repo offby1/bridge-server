@@ -11,7 +11,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
 from app.channelmanager import MyChannelManager
-from app.models import Hand, Player
+from app.models import Hand, Message, Player
 from app.sse_channels import SSEChannels
 
 
@@ -80,6 +80,49 @@ def test_a_hand_that_is_not_a_primary_key_is_ignored(usual_setup: Hand) -> None:
     channels = _channels(user=player.user, query="hand=abc")
 
     assert not any(c.startswith("table:html:") for c in channels)
+
+
+@pytest.mark.django_db
+def test_the_chat_parameter_adds_the_channel_messages_are_actually_sent_to(
+    usual_setup: Hand,
+) -> None:
+    """A chat channel is `players:<pk>_<pk>`, with no prefix.
+
+    The old endpoint's URL was /events/chat/player-to-player/<channel>/, and it passed
+    <channel> through untouched, so the path prefix was never part of the channel name.
+    We once prefixed it here, subscribed to a channel nothing publishes to, and got
+    silence on the chat log.
+    """
+    player = Player.objects.first()
+    assert player is not None
+    assert player.partner is not None
+    chat_channel = Message.channel_name_from_players(player, player.partner)
+
+    channels = _channels(user=player.user, query=f"chat={chat_channel}")
+
+    assert chat_channel in channels
+    assert not any(c.startswith("chat:") for c in channels)
+
+
+@pytest.mark.django_db
+def test_a_chat_channel_naming_other_players_is_dropped(usual_setup: Hand) -> None:
+    """Reading someone else's chat is exactly what `can_read_channel` exists to stop."""
+    player = Player.objects.first()
+    assert player is not None
+    others = list(Player.objects.exclude(pk=player.pk)[:2])
+    assert len(others) == 2
+    someone_elses = Message.channel_name_from_players(others[0], others[1])
+
+    assert someone_elses not in _channels(user=player.user, query=f"chat={someone_elses}")
+
+
+@pytest.mark.django_db
+def test_a_chat_channel_that_is_not_a_channel_name_is_ignored(usual_setup: Hand) -> None:
+    """Junk must not reach `can_read_channel`'s catch-all, which returns True."""
+    player = Player.objects.first()
+    assert player is not None
+
+    assert _channels(user=player.user, query="chat=nonsense") == _channels(user=player.user)
 
 
 @pytest.mark.django_db

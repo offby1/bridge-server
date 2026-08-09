@@ -52,14 +52,11 @@ class SSEChannels:
         """
         return f"table:html:{hand_pk}"
 
-    @staticmethod
-    def chat_player_to_player(channel_name: str) -> str:
-        """Encrypted peer-to-peer chat channel.
-
-        Sent by: Chat view
-        Received by: chat-partial.html
-        """
-        return f"chat:player-to-player:{channel_name}"
+    # There is deliberately no chat helper here. A chat channel is named
+    # `players:<pk>_<pk>`, built by Message.channel_name_from_player_pks, and that is
+    # the only place that should know the format. This class briefly had a
+    # `chat_player_to_player` that prefixed `chat:player-to-player:` -- the URL path of
+    # the old per-channel endpoint, not the channel name -- which nothing published to.
 
 
 # Backward compatibility: expose as module-level functions

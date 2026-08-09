@@ -48,8 +48,15 @@ class MyChannelManager(DefaultChannelManager):
                 channels.add(SSEChannels.table_html(PK_from_str(raw_hand_pk)))
             except (TypeError, ValueError):
                 logger.warning("Ignoring unparseable hand %r in %s", raw_hand_pk, request.path)
+        # A chat channel *is* `players:<pk>_<pk>` -- see Message.channel_name_from_players
+        # -- and is not prefixed, whatever the URL of the old per-channel endpoint
+        # suggested.  Insist it parses as one; otherwise `can_read_channel` reaches its
+        # final "visible to everyone" branch and waves the name through.
         if chat_channel := request.GET.get("chat"):
-            channels.add(SSEChannels.chat_player_to_player(chat_channel))
+            if models.Message.player_pks_from_channel_name(chat_channel) is None:
+                logger.warning("Ignoring unparseable chat %r in %s", chat_channel, request.path)
+            else:
+                channels.add(chat_channel)
 
         # `lobby`, `all-tables` and `partnerships` are deliberately absent: nothing in
         # the browser subscribes to them today. Add them here when something does.
