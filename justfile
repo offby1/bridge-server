@@ -182,16 +182,6 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
-[group('stress')]
-[script('bash')]
-tiny:
-    set -euxo pipefail
-
-    just drop
-    DJANGO_SETTINGS_MODULE=project.prod_settings just dev -d
-    just stress --tiny --tempo=0
-    docker compose logs django bot --follow
-
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
@@ -318,27 +308,6 @@ alias dc := dcu
 
 dcu:
     @echo Use "just dev" now ; false
-
-alias perf := perf-local
-
-[group('development')]
-[group('perf')]
-[script('bash')]
-perf-local: drop docker-prerequisites
-    set -euo pipefail
-
-    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export GIT_VERSION="$(cat project/VERSION)"
-
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-
-    just whop
-    docker compose up --build --detach
-    just stress --min-players=100 --tempo=0.5
-    docker compose logs django --follow
 
 ensure-git-repo-clean:
     [[ -z "$(git status --porcelain)" ]]
