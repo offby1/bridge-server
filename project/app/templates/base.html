@@ -234,6 +234,28 @@
      htmx.createEventSource = function () {
          return window.bridgeEventSource;
      };
+
+     // Hand the socket back when we leave.  The server won't notice on its own for
+     // another 55-70s -- django-eventstream only discovers a departed client when a
+     // keep-alive write fails, and it writes every 20s -- and until then the browser
+     // counts this connection against its six-per-origin limit.  Navigate a handful of
+     // times in a minute without this and the browser silently queues everything.
+     //
+     // pagehide rather than beforeunload: it fires on mobile Safari, and on the
+     // back/forward cache path where beforeunload doesn't.
+     window.addEventListener('pagehide', function () {
+         window.bridgeEventSource.close();
+     });
+
+     // A page restored from the back/forward cache has the connection we just closed,
+     // and its listeners are bound to that dead object, so reopening here would burn a
+     // socket delivering nothing to nobody.  Reload instead: the state is stale anyway
+     // after however long we were away.
+     window.addEventListener('pageshow', function (event) {
+         if (event.persisted) {
+             window.location.reload();
+         }
+     });
         </script>
     {% endif %}
     <script src="{% static 'app/sse.js' %}"></script>
