@@ -4,14 +4,16 @@
  */
 
 /**
- * Initialize player-specific event stream (bidding box, hand updates)
- * @param {string} playerEventUrl - SSE endpoint for player-specific events
+ * Listen for this player's own updates (bidding box, hand updates).
+ *
+ * Takes the page's shared EventSource rather than opening one: browsers allow only six
+ * connections per origin, so every stream rides window.bridgeEventSource, created in
+ * base.html.  See README.branch.md.
+ *
+ * @param {EventSource} playerEventSource - the page's shared connection
  * @param {number} playerId - Player ID for redirects
  */
-export function initPlayerEventStream(playerEventUrl, playerId) {
-    const playerEventSource = new ReconnectingEventSource(playerEventUrl);
-    console.log(`Listening for player events on ${playerEventUrl}`);
-
+export function initPlayerEventStream(playerEventSource, playerId) {
     let autoScrollTimer;
 
     // Event names come from SSEEventTypes in app/sse_events.py; they must agree.
@@ -45,13 +47,13 @@ export function initPlayerEventStream(playerEventUrl, playerId) {
 }
 
 /**
- * Initialize table-wide event stream (auction, tricks, game state)
- * @param {string} tableEventUrl - SSE endpoint for table-level events
+ * Listen for table-wide updates (auction, tricks, game state).
+ *
+ * Takes the page's shared EventSource; see initPlayerEventStream.
+ *
+ * @param {EventSource} handEventSource - the page's shared connection
  */
-export function initTableEventStream(tableEventUrl) {
-    const handEventSource = new ReconnectingEventSource(tableEventUrl);
-    console.log(`Listening for hand events on ${tableEventUrl}`);
-
+export function initTableEventStream(handEventSource) {
     handEventSource.addEventListener('stream-reset', function (e) {
         const data = JSON.parse(e.data);
         console.log("handEventSource got stream-reset: " + Object.keys(data));

@@ -1,46 +1,44 @@
 {% load player_extras %}
 {% partialdef chat-html-partial %}
-<div id="chat-html-partial" style="border: 1px solid;" class="container">
-    <div>
-        <input autofocus
-               id="input"
-               type="text"
-               name="message"
-               hx-post="{{ chat_post_endpoint }}"
-               hx-swap="none"
-               hx-trigger="keyup[key=='Enter']"
-               {% if chat_disabled %}disabled{% endif %} />
-        <button class="btn btn-primary"
-                hx-include="#input"
-                hx-post="{{ chat_post_endpoint }}"
-                hx-swap="none"
-                {% if chat_disabled %}disabled{% endif %}>
-            {% if chat_disabled %}
-                {{ chat_disabled }}
-            {% else %}
-                {% if chat_target == user.player %}
-                    Mumble to yourself
+    <div id="chat-html-partial" style="border: 1px solid;" class="container">
+        <div>
+            <input autofocus
+                   id="input"
+                   type="text"
+                   name="message"
+                   hx-post="{{ chat_post_endpoint }}"
+                   hx-swap="none"
+                   hx-trigger="keyup[key=='Enter']"
+                   {% if chat_disabled %}disabled{% endif %} />
+            <button class="btn btn-primary"
+                    hx-include="#input"
+                    hx-post="{{ chat_post_endpoint }}"
+                    hx-swap="none"
+                    {% if chat_disabled %}disabled{% endif %}>
+                {% if chat_disabled %}
+                    {{ chat_disabled }}
                 {% else %}
-                    Speak to {{ chat_target.name }}
+                    {% if chat_target == user.player %}
+                        Mumble to yourself
+                    {% else %}
+                        Speak to {{ chat_target.name }}
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-        </button>
-    </div>
-    <div>
-        Chat Log 'twixt {{ user.player|styled_link:user }} and {{ chat_target|styled_link:user }}
-        <div id="chat-log"
-             hx-ext="sse"
-             hx-swap="beforeend scroll:bottom"
-             sse-connect="/events/chat/player-to-player/{{ chat_channel_name }}/"
-             sse-swap="chat"
-             style="border: 1px solid;
-                    overflow: auto;
-                    height: 200px">
-            {% for message in chat_messages %}{{ message }}{% endfor %}
+            </button>
+        </div>
+        <div>
+            Chat Log 'twixt {{ user.player|styled_link:user }} and {{ chat_target|styled_link:user }}
+            {# No sse-connect: this rides the shared connection on <body>, which subscribes #}
+            {# to our chat channel because the page passes ?chat= in sse_channels_query.   #}
+            <div id="chat-log"
+                 hx-swap="beforeend scroll:bottom"
+                 sse-swap="chat"
+                 style="border: 1px solid;
+                        overflow: auto;
+                        height: 200px">{% for message in chat_messages %}{{ message }}{% endfor %}</div>
+        </div>
+        <div class="bg-warning-subtle text-warning-emphasis">
+            <small>Chats are *not* encrypted! This site's administrators can see everything!!</small>
         </div>
     </div>
-    <div class="bg-warning-subtle text-warning-emphasis">
-        <small>Chats are *not* encrypted! This site's administrators can see everything!!</small>
-    </div>
-</div>
 {% endpartialdef chat-html-partial %}

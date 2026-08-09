@@ -2,6 +2,7 @@ import logging
 
 from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore [import-untyped]
 
+from app.models.types import PK_from_str
 from app.models.utils import UserMitPlaya
 from app.sse_channels import SSEChannels
 
@@ -11,6 +12,50 @@ logger = logging.getLogger(__name__)
 
 
 class MyChannelManager(DefaultChannelManager):
+    def get_channels_for_request(self, request, view_kwargs):
+        """Compute the channel set for the consolidated browser endpoint.
+
+        The per-channel endpoints name their channel in the URLconf, via `channels` or
+        `format-channels`; those still work, and we defer to the default behaviour for
+        them. A request with no such kwarg is asking for everything this viewer needs on
+        one connection, which is what `/events/all/` is for. See README.branch.md.
+
+        We filter the result through `can_read_channel` ourselves, rather than leaving
+        it to `get_events()`. A single unreadable channel makes `get_events()` raise
+        `EventPermissionError` for the whole request, so an optimistic channel set would
+        cost a viewer every update rather than just the one they can't have.
+        """
+        if {"channel", "channels", "format-channels"} & view_kwargs.keys():
+            return super().get_channels_for_request(request, view_kwargs)
+
+        player = getattr(request.user, "player", None)
+        if player is None:
+            return set()
+
+        channels = {
+            SSEChannels.player_html_hand(player.pk),
+            SSEChannels.player_bot_checkbox(player.pk),
+        }
+
+        # The hand being viewed isn't necessarily the viewer's current one, and the chat
+        # partner isn't derivable from the viewer either, so pages pass both in.
+        #
+        # Insist the hand parses as a primary key.  One that doesn't would build a
+        # channel name that none of the patterns below recognise, and
+        # can_read_channel's final "visible to everyone" branch would wave it through.
+        if (raw_hand_pk := request.GET.get("hand")) is not None:
+            try:
+                channels.add(SSEChannels.table_html(PK_from_str(raw_hand_pk)))
+            except (TypeError, ValueError):
+                logger.warning("Ignoring unparseable hand %r in %s", raw_hand_pk, request.path)
+        if chat_channel := request.GET.get("chat"):
+            channels.add(SSEChannels.chat_player_to_player(chat_channel))
+
+        # `lobby`, `all-tables` and `partnerships` are deliberately absent: nothing in
+        # the browser subscribes to them today. Add them here when something does.
+
+        return {c for c in channels if self.can_read_channel(request.user, c)}
+
     def can_read_channel(self, user: UserMitPlaya, channel: str) -> bool:
         # logger.warning(f"{user=} {channel=}")
         if user is None:

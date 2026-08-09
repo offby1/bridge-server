@@ -40,6 +40,13 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
+    # The consolidated browser stream. It names no channels: MyChannelManager works out
+    # what this viewer needs, from the session plus the ?hand= and ?chat= parameters.
+    # One connection instead of four, because browsers allow only six per origin.
+    path(
+        "events/all/",
+        include(django_eventstream.urls),
+    ),
     path(
         "events/lobby/",
         include(django_eventstream.urls),
