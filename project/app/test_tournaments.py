@@ -23,7 +23,7 @@ from app.models.tournament import (
     OpenForSignup,
     PlayerNeedsPartnerError,
     Running,
-    check_for_expirations,
+    advance_expired_tournaments,
 )
 from bridge.contract import Call
 
@@ -150,7 +150,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         hand.add_call(call=Call.deserialize("Pass"))
 
     with time_machine.travel(DayAfter, tick=False):
-        check_for_expirations(sender="Some unit test")
+        advance_expired_tournaments()
         with pytest.raises(HandError):
             hand.add_call(call=Call.deserialize("Pass"))
 

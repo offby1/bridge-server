@@ -351,9 +351,10 @@ _deploy hostname profile context settings_module *options:
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
     docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
-    # Swap in the new django container (and bot); --no-deps avoids restarting postgres/redis/caddy
+    # Swap in the new django container (and bot, and clock); --no-deps avoids restarting
+    # postgres/redis/caddy
     just dump
-    docker compose up --detach --no-deps --force-recreate django bot {{ options }}
+    docker compose up --detach --no-deps --force-recreate django bot clock {{ options }}
 
     # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
     # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh

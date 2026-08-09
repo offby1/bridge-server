@@ -13,7 +13,7 @@ import time_machine
 from django.contrib.auth.models import AnonymousUser
 
 from app.models import Hand, Player, Tournament
-from app.models.tournament import check_for_expirations
+from app.models.tournament import advance_expired_tournaments
 from app.views.hand import _error_response_or_viewfunc, _everything_read_only_view
 
 
@@ -39,7 +39,7 @@ def completed_tournament_with_abandoned_hand(nearly_completed_tournament: Tourna
     # Fast forward past the deadline and check for expirations
     # This will mark incomplete hands as abandoned and mark the tournament as complete
     with time_machine.travel(deadline + datetime.timedelta(hours=1), tick=False):
-        check_for_expirations(__name__)
+        advance_expired_tournaments()
 
     # Reload the tournament and hand
     nearly_completed_tournament.refresh_from_db()

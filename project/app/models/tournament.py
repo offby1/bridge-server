@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING, Literal
 
 from django.contrib import admin
 from django.core.cache import cache
-from django.core.signals import request_finished
-from django.db import models, transaction
-from django.dispatch import receiver
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 from django_eventstream import send_event  # type: ignore[import-untyped]
 
@@ -18,7 +16,6 @@ import app.models.common
 import app.utils.movements
 import app.utils.scoring
 from app.models.signups import TournamentSignup
-from app.models.throttle import throttle
 from app.models.types import PK
 from app.models.utils import assert_type
 from app.sse_events import SSEEventTypes, create_table_event
@@ -81,35 +78,85 @@ def _do_signup_expired_stuff(tour: "Tournament") -> None:
             tour.save()
 
 
-# TODO -- replace this with a scheduled solution -- see the "django-q2" branch
-# Now that I think about it, this could also be a middleware
-@receiver(request_finished)
-@throttle(seconds=60)
-def check_for_expirations(sender, **kwargs) -> None:
-    t: Tournament
+# How long we're willing to sleep when no deadline is pending.  The ceiling is what
+# covers a tournament created after we worked out when to wake up.
+WAKE_AT_LEAST_EVERY = datetime.timedelta(seconds=30)
 
+
+def advance_expired_tournaments() -> datetime.datetime:
+    """Apply every tournament deadline that has passed; return when to look again.
+
+    The `tournament_clock` management command calls this in a loop.  It used to run at
+    the end of every HTTP request, throttled to once a minute, which meant deadlines
+    were honoured only as often as somebody happened to send a request -- in production
+    that was Prometheus scraping /metrics, which is a strange thing for the rules of the
+    game to depend on.
+
+    Running this twice, or in two processes at once, is safe: each transition is claimed
+    in the database rather than checked in Python.
+    """
+    for tour in Tournament.objects.incompletes().filter(signup_deadline__isnull=False):
+        if tour.play_completion_deadline_has_passed():
+            _finish_play(tour)
+        elif tour.signup_deadline_has_passed():
+            _start_play(tour)
+
+    return _next_deadline_after(timezone.now())
+
+
+def _finish_play(tour: Tournament) -> None:
+    """Abandon whatever is still in progress, and tell the tables about it."""
     with transaction.atomic():
-        incompletes = Tournament.objects.incompletes().filter(signup_deadline__isnull=False)
+        # The claim and the mutual exclusion are the same statement: this UPDATE holds
+        # the row until we commit, so a second clock blocks here, then matches zero rows
+        # and leaves.  No advisory lock required.
+        deadline = tour.play_completion_deadline
+        if not Tournament.objects.filter(pk=tour.pk, completed_at__isnull=True).update(
+            completed_at=deadline
+        ):
+            logger.debug("%s: another clock completed this one first", tour)
+            return
 
-        for t in incompletes:
-            if t.play_completion_deadline_has_passed():
-                t.completed_at = t.play_completion_deadline
-                deadline_str = t.play_completion_deadline.isoformat()
-                t.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
-                t.save()
+        deadline_str = deadline.isoformat()
+        tour.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
 
-                for h in t.hands():
-                    send_event(
-                        channel=h.event_table_html_channel,
-                        event_type=SSEEventTypes.TABLE,
-                        data=create_table_event(
-                            play_completion_deadline=t.play_completion_deadline.isoformat()
-                        ),
-                    )
-                continue
+        for hand in tour.hands():
+            send_event(
+                channel=hand.event_table_html_channel,
+                event_type=SSEEventTypes.TABLE,
+                data=create_table_event(play_completion_deadline=deadline_str),
+            )
 
-            if t.signup_deadline_has_passed():
-                _do_signup_expired_stuff(t)
+
+def _start_play(tour: Tournament) -> None:
+    """Turn a closed signup list into hands."""
+    # There's no column to claim here: play_completion_deadline can't be computed until
+    # the movement exists, which needs the hands.  So we let the database refuse the
+    # duplicate -- Hand is unique on (board, table_display_number) -- and because
+    # _do_signup_expired_stuff is one transaction, the loser's synthetic players roll
+    # back along with its hands.  The loser wastes work; it doesn't corrupt anything.
+    try:
+        _do_signup_expired_stuff(tour)
+    except IntegrityError:
+        logger.info("%s: another clock created these hands first", tour)
+
+
+def _next_deadline_after(now: datetime.datetime) -> datetime.datetime:
+    """The soonest deadline we still owe, or a ceiling if there isn't one."""
+    incompletes = Tournament.objects.incompletes()
+
+    candidates = [
+        incompletes.filter(signup_deadline__gt=now).aggregate(
+            soonest=models.Min("signup_deadline")
+        )["soonest"],
+        incompletes.filter(play_completion_deadline__gt=now)
+        .exclude(play_completion_deadline=WAY_DISTANT_PLAY_COMPLETION_DEADLINE)
+        .aggregate(soonest=models.Min("play_completion_deadline"))["soonest"],
+    ]
+
+    return min(
+        [d for d in candidates if d is not None] + [now + WAKE_AT_LEAST_EVERY],
+    )
 
 
 class TournamentStatus:
@@ -366,10 +413,10 @@ class Tournament(models.Model):
                     f"t#{self.display_number}: Cannot create a movement until the signup deadline ({self.signup_deadline}) has passed"
                 )
                 # Pad an odd number of pairs with a synthetic partnership so the
-                # movement never needs a phantom.  _do_signup_expired_stuff does
-                # this too, but it runs in a (throttled) request_finished signal,
-                # so the first page view after the deadline passes can reach here
-                # first -- and a phantom would otherwise trip the assertion below.
+                # movement never needs a phantom.  _do_signup_expired_stuff does this
+                # too, but the clock may not have got to this tournament yet, so a page
+                # view can reach here first -- and a phantom would otherwise trip the
+                # assertion below.
                 TournamentSignup.objects.create_synths_for(self)
                 pairs = list(self.signed_up_pairs())
                 logger.debug(f"signed_up_pairs => {pairs=}")

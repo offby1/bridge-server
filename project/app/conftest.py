@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.core.management import call_command
 
 from .models import Hand, Play, Player, Tournament, TournamentSignup
-from .models.tournament import check_for_expirations
+from .models.tournament import advance_expired_tournaments
 from .testutils import play_out_round
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ def two_boards_one_is_complete(
 ) -> Hand:
     h1 = Hand.objects.get(pk=1)
     Play.objects.create(hand=h1, serialized="♠A")
-    check_for_expirations(__name__)
+    advance_expired_tournaments()
 
     return h1
 

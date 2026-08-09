@@ -2,7 +2,7 @@ import datetime
 
 from app.models.player import Player
 from app.models.signups import TooManySignups, TournamentSignup
-from app.models.tournament import Tournament, check_for_expirations
+from app.models.tournament import Tournament, advance_expired_tournaments
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -114,4 +114,4 @@ class Command(BaseCommand):
             # - complete the tournament if all the hands have been played
             # - add some boards to the tournament
             # - seat everyone at newly-created tables, creating (and signing up) some synths if necessary
-            check_for_expirations(sender="big_bot_stress")
+            advance_expired_tournaments()
