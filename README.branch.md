@@ -1,20 +1,40 @@
 # Branch goal: one SSE connection per browser, not six
 
-**Status: nothing below has been built yet.** The only code this branch has landed so
-far is `app/middleware/sse_stream_log.py` (diagnostics), `app/test_stream_reset.py`
-(characterization tests), and a narrowing of the bot-checkbox subscription in
-`base.html`. Everything else is intent.
+**Status: the consolidation has landed and works.** A page holds one connection, plus
+`django_browser_reload`'s in development. We watched the open count stay at two while
+clicking around, where it used to reach six and wedge the browser.
+
+Landed:
+
+- `app/middleware/sse_stream_log.py` logs every stream's open and close, with a reason,
+  a duration and a running count. This is how we measured all of the above.
+- Every kind of update has its own event name (`app/sse_events.py`, `SSEEventTypes`),
+  on the JSON stream as well as the browser's.
+- `/events/all/` carries every browser channel, with `MyChannelManager` deciding which
+  ones for the requesting viewer.
+- The client closes its connection on `pagehide`, so a socket comes back immediately
+  rather than 55 to 70 seconds later.
+- `can_read_channel` denies channel names it doesn't recognise.
+- `app/test_stream_reset.py` records that `stream-reset` cannot fire here.
+
+Still intent: deleting the superseded per-channel endpoints, doing anything at all when
+a client reconnects, and the reference client with its contract tests.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be
 read either way, it's a bug in the document.
 
-## What this branch will do
+**Also on this branch, and unrelated to SSE:** `app/management/commands/tournament_clock.py`
+replaced a `request_finished` signal that honoured tournament deadlines. It's here
+because we did it here, and it could be cherry-picked out on its own; see
+`advance_expired_tournaments` for why the signal had to go.
 
-This branch will collapse the browser's per-channel `/events/...` endpoints into one,
-whose channel set the server computes per request. It will leave the programmatic JSON
-endpoint as it is, and it will give both kinds of client a recovery story for events
-they miss.
+## What this branch does
+
+This branch collapses the browser's per-channel `/events/...` endpoints into one, whose
+channel set the server computes per request. It leaves the programmatic JSON endpoint as
+it is, and it will give both kinds of client a recovery story for events they miss —
+that last part is the piece still outstanding.
 
 ## Why
 
@@ -30,22 +50,34 @@ Production terminates TLS at Caddy and so gets HTTP/2, which multiplexes and mos
 hides this. Development serves plain HTTP/1.1 and does not. One connection would keep
 us clear either way, and it is tidier regardless of transport.
 
-## The plan
+## How it works
 
-**One browser endpoint.** We will add an endpoint whose URL hardcodes no channels, and
-teach `MyChannelManager.get_channels_for_request()` to return the union of the shared
-channels (`lobby`, `all-tables`), the viewing player's private channels (bot-checkbox,
-private hand HTML, chat), and the table channel for whichever hand the page is showing.
+**One browser endpoint.** `/events/all/` hardcodes no channels;
+`MyChannelManager.get_channels_for_request()` returns the viewing player's own channels
+(bot-checkbox, private hand HTML) plus the table and chat channels the page asks for
+through `?hand=` and `?chat=`. `<body>` in `base.html` owns the connection, and htmx's
+SSE extension attaches every descendant `sse-swap` element to it, so the navbar
+checkbox, the chat log and the hand all share one socket. `base.html` opens it before
+htmx can, keeping the reference in `window.bridgeEventSource` so `bridge-game.js` can
+listen on the same object rather than constructing more.
 
-This needs no new machinery. `django_eventstream` already asks the channel manager for
+This needed no new machinery. `django_eventstream` already asks the channel manager for
 a channel set when a URL doesn't hardcode one (`eventrequest.py:60-66`), and
-`app/channelmanager.py` already exists. Mixing scopes on one socket will weaken nothing,
-because `can_read_channel` vets every channel individually today and will continue to.
+`app/channelmanager.py` already existed.
 
-**We will not touch `/events/player/json/<player_id>/`.** It is the interface a third
+The manager filters its own result through `can_read_channel` rather than leaving that
+to `get_events()`, which refuses the *entire* request if any single channel is
+unreadable — on a shared connection that would cost a viewer every update rather than
+the one they may not have.
+
+**We did not touch `/events/player/json/<player_id>/`.** It is the interface a third
 party would write a client against, it carries JSON rather than HTML fragments, and a
 programmatic client does not compete for a browser's six sockets. Consolidating it would
 serve nobody.
+
+**`lobby`, `all-tables` and `partnerships` are deliberately absent** from the
+consolidated set: nothing in the browser subscribes to them. They remain readable, so
+adding a subscriber later is a one-line change.
 
 ### Why one browser endpoint rather than two
 
@@ -60,21 +92,23 @@ happens, some channels will become readable without a player, and a second publi
 endpoint will start earning its socket. That is a change to `can_read_channel` first;
 the split follows from it rather than preceding it.
 
-### Three things will need attention
+### What the three anticipated problems turned out to be
 
-- **Event types.** Every `send_event` call passes `"message"` today, which works only
-  because each channel has its own connection. Once several kinds of update share a
-  socket, each will need a distinct event type, so that htmx's `sse-swap` and our JS
-  listeners can tell them apart and target the right element. We expect this to be the
-  bulk of the work.
-- **The table channel is page-dependent.** A viewer can be looking at a hand that isn't
-  their current one, so the new endpoint will need the hand as a parameter that
-  `get_channels_for_request` reads from `view_kwargs`.
-- **The channel set is bound at connect time.** Nothing can add a channel to a live
-  connection, today or after this branch. To pick up a channel it lacks, a client must
-  close and reopen its `EventSource`. A page navigation does that for free; anything
-  that changes a player's situation without a navigation will have to re-dial
-  deliberately.
+- **Event types.** Every `send_event` used to pass `"message"`, which worked only
+  because each channel had its own connection. Each kind of update now has its own
+  name, collected in `SSEEventTypes`. We predicted this would be the bulk of the work
+  and were wrong: about ten call sites, most already funnelling through
+  `send_timestamped_event`, and five client subscription points. The care was all on
+  the client side, and `app/test_sse_event_types.py` guards that the two agree, since
+  no type checker sees across that boundary.
+- **The table channel is page-dependent**, as expected, so pages pass it in. What we
+  didn't anticipate: a query parameter that doesn't parse becomes a channel name, and
+  `can_read_channel` used to allow anything it didn't recognise. That produced two bugs
+  in a day — `?hand=abc`, and a chat name carrying a URL prefix that no publisher uses
+  — and is why that function now denies by default.
+- **The channel set is bound at connect time**, still true. Nothing can add a channel to
+  a live connection; a client must close and reopen its `EventSource`. A page navigation
+  does that for free, and now closes the old one on the way out.
 
 ## Recovery: re-sync from truth, not replay
 
@@ -109,13 +143,20 @@ Because persistence stays off, `stream-reset` will continue never to fire.
 storage-free behaviour and will fail the day anyone enables storage, and the others show
 what the mechanism would do if we did.
 
-**The catch.** A reconnect carries no notification that anything was missed, so reacting
-to reconnects is all we will have, and today streams re-dial about once a minute.
-Reloading the page every minute during an auction would be worse than the staleness.
-Two things would make it affordable, and they compose: consolidation cuts four
-connections to one and so cuts reconnects proportionally, and re-fetching the hand
-fragment over htmx costs no scroll position and no focus, which matters when the thing
-being interrupted is a bidding box.
+**The catch, and where it now stands.** A reconnect carries no notification that
+anything was missed, so reacting to reconnects is all we have. That used to be
+unaffordable: streams re-dialled about once a minute, and reloading the page that often
+during an auction would be worse than the staleness.
+
+Consolidation changed the arithmetic. A page holds one connection instead of four, and
+closing it on `pagehide` means the re-dials we were counting were mostly abandoned pages
+being reaped, not live ones flapping. A live tab now holds its connection for as long as
+it's open — we watched one last five minutes.
+
+So the remaining work is small and no longer costly: on reconnect, re-fetch the hand
+fragment over htmx rather than reloading, since that costs no scroll position and no
+focus, which matters when the thing being interrupted is a bidding box. Nothing does
+this yet. `bridge-game.js` still only logs `stream-reset`, which cannot fire anyway.
 
 ## A reference client that is also the contract tests
 
@@ -134,9 +175,10 @@ authenticate, fetch a serialized hand, iterate parsed events from the JSON strea
 a call, play a card. Nothing clever. It will be documentation that happens to execute,
 so it should read as an example first and be factored for testability second.
 
-**The tests we will write**, driven against `live_server`, which already works here
-(`app/test_ui_playwright.py` uses it). They divide sharply by cost, so we should write
-them in this order and decide after the first group whether the second is worth it.
+**The tests we will write.** They divide sharply by cost, so we should write them in
+this order and decide after the first group whether the second is worth it. The cheap
+group can use `live_server`, which already works here (`app/test_ui_playwright.py` uses
+it); the streaming group cannot, for reasons below.
 
 *Cheap: ordinary HTTP, no streaming.* These need only `requests`, and they behave like
 every other test in the suite.
