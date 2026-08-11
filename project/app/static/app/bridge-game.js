@@ -38,9 +38,12 @@ export function initPlayerEventStream(playerEventSource, playerId) {
         }
     });
 
+    // stream-reset means "you missed events and I can't tell you which".  It cannot
+    // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
+    // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
+    // reloads on reconnect.  See README.branch.md and app/test_stream_reset.py.
     playerEventSource.addEventListener('stream-reset', function (e) {
-        const data = JSON.parse(e.data);
-        console.log("playerEventSource got stream-reset: " + Object.keys(data));
+        console.log("playerEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });
 
     return playerEventSource;
@@ -54,9 +57,12 @@ export function initPlayerEventStream(playerEventSource, playerId) {
  * @param {EventSource} handEventSource - the page's shared connection
  */
 export function initTableEventStream(handEventSource) {
+    // stream-reset means "you missed events and I can't tell you which".  It cannot
+    // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
+    // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
+    // reloads on reconnect.  See README.branch.md and app/test_stream_reset.py.
     handEventSource.addEventListener('stream-reset', function (e) {
-        const data = JSON.parse(e.data);
-        console.log("handEventSource got stream-reset: " + Object.keys(data));
+        console.log("handEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });
 
     // Event names come from SSEEventTypes in app/sse_events.py; they must agree.

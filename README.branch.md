@@ -23,8 +23,9 @@ Verified in a browser: a page holds one connection, chat delivers over it, and a
 page's auction and play histories update as the bot plays. That last one was the
 complaint this work started from.
 
-Still intent: doing anything at all when a client reconnects, and the reference client
-with its contract tests.
+- A reconnect reloads the page, so a client that was away catches up.
+
+Still intent: the reference client with its contract tests.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be
@@ -159,10 +160,19 @@ closing it on `pagehide` means the re-dials we were counting were mostly abandon
 being reaped, not live ones flapping. A live tab now holds its connection for as long as
 it's open — we watched one last five minutes.
 
-So the remaining work is small and no longer costly: on reconnect, re-fetch the hand
-fragment over htmx rather than reloading, since that costs no scroll position and no
-focus, which matters when the thing being interrupted is a bidding box. Nothing does
-this yet. `bridge-game.js` still only logs `stream-reset`, which cannot fire anyway.
+So `base.html` now reloads the page when the connection reopens, having been open
+before. We considered re-fetching the hand fragment over htmx instead, to keep scroll
+position and focus, but a reload is what this codebase already does when an incremental
+update won't serve, and it needs no per-page knowledge of which fragments to re-read.
+If interrupting a bidding box turns out to annoy, the fragment approach is the upgrade.
+
+Two guards come with it. The first `open` is the initial connection, not a reconnect, so
+it does nothing. And a page younger than ten seconds doesn't reload, which both avoids
+pointless work and bounds us to one reload per ten seconds if the server is flapping,
+because each reload restarts that clock.
+
+`stream-reset` remains log-only in `bridge-game.js`, and the handlers now say why: it
+cannot fire without event storage, and reconnect handling is the real recovery.
 
 ## A reference client that is also the contract tests
 

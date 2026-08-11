@@ -235,6 +235,34 @@
          return window.bridgeEventSource;
      };
 
+     // Catch up after a reconnect.  The server stores no events, so a Last-Event-ID
+     // buys us nothing and whatever happened while we were away is simply gone; the
+     // only honest recovery is to re-read the page.  That is what this codebase
+     // already does when an incremental update won't serve -- see the phase
+     // transitions in bridge-game.js -- and one connection per page instead of four
+     // makes reconnects rare enough to afford it.
+     (function () {
+         // A page this young can't have missed much, and reloading it wouldn't help.
+         // This also bounds us to one reload per interval if the server is flapping,
+         // since each reload starts the clock again.
+         const TOO_YOUNG_TO_BOTHER_MS = 10000;
+         const loadedAt = Date.now();
+         let everConnected = false;
+
+         window.bridgeEventSource.addEventListener('open', function () {
+             if (!everConnected) {
+                 everConnected = true;
+                 return;
+             }
+             if (Date.now() - loadedAt < TOO_YOUNG_TO_BOTHER_MS) {
+                 console.log('SSE reconnected; page is too fresh to be worth reloading');
+                 return;
+             }
+             console.log('SSE reconnected; reloading to pick up whatever we missed');
+             window.location.reload();
+         });
+     })();
+
      // Hand the socket back when we leave.  The server won't notice on its own for
      // another 55-70s -- django-eventstream only discovers a departed client when a
      // keep-alive write fails, and it writes every 20s -- and until then the browser
