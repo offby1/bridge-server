@@ -35,6 +35,18 @@ chat log and the hand all share the same socket without knowing about each other
 than the bare `EventSource` htmx would construct, and `bridge-game.js` needs a reference
 so it can listen on the same socket instead of opening more.
 
+A page where nothing can change should spend no connection at all, by overriding the
+`sse_connection` block to nothing. `read-only_hand.html` does that for a hand that is
+complete or abandoned, since nothing will ever be sent about one. This matters more than
+it sounds: opening a dozen finished hands in a dozen tabs to compare them used to
+exhaust the six-connection budget and leave most of the tabs spinning. The same template
+serves spectators of a hand still being played, which does need the connection, so the
+opt-out tests the hand rather than the template.
+
+The attribute on `<body>` is the single source of truth. The script in `base.html`
+creates nothing if it's absent, so a page that opts out doesn't open a stream to the URL
+`null` -- and anything else that wants the connection must cope with its absence.
+
 Pages say which channels they need by overriding the `sse_channels_query` block, which
 lands in the URL as `?hand=` or `?chat=`. Keep that block on one line: its content is
 interpolated into an attribute, so a formatter that spreads it across lines injects

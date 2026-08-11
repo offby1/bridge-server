@@ -44,6 +44,28 @@ def test_the_hand_page_asks_for_its_table(logged_in_client: Client, usual_setup:
     assert _sse_connect_url(response.content.decode()) == f"/events/all/?hand={hand.pk}"
 
 
+def test_a_finished_hand_opens_no_connection(logged_in_client: Client, usual_setup: Hand) -> None:
+    """Nothing will ever be sent about a hand that's over, so don't spend a socket on it.
+
+    Reviewing a dozen finished hands in a dozen tabs used to exhaust the browser's six
+    connections and leave most of the tabs spinning.
+    """
+    hand = usual_setup
+    hand.abandoned_because = "so that this hand is over"
+    hand.save()
+
+    response = logged_in_client.get(reverse("app:hand-dispatch", kwargs={"pk": hand.pk}))
+    assert response.status_code == 200
+
+    body = response.content.decode()
+    assert SSE_CONNECT.search(body) is None, "A finished hand should not open a connection"
+    # base.html's script keys off the attribute's presence, so it skips creating the
+    # connection; its own handlers sit inside that guard and never run. But this page's
+    # 'table' listener is emitted separately, and would reference an object that doesn't
+    # exist.
+    assert "addEventListener('table'" not in body
+
+
 def test_the_connection_url_contains_no_whitespace(
     logged_in_client: Client, usual_setup: Hand
 ) -> None:

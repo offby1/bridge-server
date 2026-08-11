@@ -26,7 +26,12 @@
     {# element to the nearest ancestor that owns a connection, so hanging it on <body> #}
     {# lets the navbar checkbox, the chat log and the hand share a single socket.      #}
     {# Pages add the channels they need by overriding sse_channels_query.              #}
-    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' {% if user.is_authenticated %}hx-ext="sse" sse-connect="/events/all/?{% block sse_channels_query %}{% endblock sse_channels_query %}"{% endif %}>
+    {#                                                                                 #}
+    {# A page where nothing can change should override sse_connection to nothing, and  #}
+    {# spend no connection at all: browsers allow only six per origin, so a tab open on #}
+    {# a finished hand is a tab you can't open on a live one.  read-only_hand.html does #}
+    {# this.  See docs/README.sse.md.                                                  #}
+    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' {% block sse_connection %}{% if user.is_authenticated %}hx-ext="sse" sse-connect="/events/all/?{% block sse_channels_query %}{% endblock sse_channels_query %}"{% endif %}{% endblock sse_connection %}>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
                 <div id="hello-user"
@@ -228,22 +233,26 @@
      //
      // This runs while the document is still parsing, and module scripts are deferred,
      // so window.bridgeEventSource exists by the time any of them look for it.
-     window.bridgeEventSource = new ReconnectingEventSource(
-         document.body.getAttribute('sse-connect')
-     );
-     htmx.createEventSource = function () {
-         return window.bridgeEventSource;
-     };
+     // The attribute is the single source of truth about whether this page wants a
+     // connection at all.  Pages where nothing can change -- a finished hand, say --
+     // override the sse_connection block to nothing, and must not end up opening a
+     // stream to the URL "null".
+     const sseUrl = document.body.getAttribute('sse-connect');
+     if (sseUrl) {
+         window.bridgeEventSource = new ReconnectingEventSource(sseUrl);
+         htmx.createEventSource = function () {
+             return window.bridgeEventSource;
+         };
 
-     // Catch up after a reconnect.  The server stores no events, so a Last-Event-ID
-     // buys us nothing and whatever happened while we were away is simply gone; the
-     // only honest recovery is to re-read the page.  That is what this codebase
-     // already does when an incremental update won't serve -- see the phase
-     // transitions in bridge-game.js -- and one connection per page instead of four
-     // makes reconnects rare enough to afford it.
-     (function () {
+         // Catch up after a reconnect.  The server stores no events, so a Last-Event-ID
+         // buys us nothing and whatever happened while we were away is simply gone; the
+         // only honest recovery is to re-read the page.  That is what this codebase
+         // already does when an incremental update won't serve -- see the phase
+         // transitions in bridge-game.js -- and one connection per page instead of four
+         // makes reconnects rare enough to afford it.
+         //
          // A page this young can't have missed much, and reloading it wouldn't help.
-         // This also bounds us to one reload per interval if the server is flapping,
+         // That also bounds us to one reload per interval if the server is flapping,
          // since each reload starts the clock again.
          const TOO_YOUNG_TO_BOTHER_MS = 10000;
          const loadedAt = Date.now();
@@ -261,19 +270,19 @@
              console.log('SSE reconnected; reloading to pick up whatever we missed');
              window.location.reload();
          });
-     })();
 
-     // Hand the socket back when we leave.  The server won't notice on its own for
-     // another 55-70s -- django-eventstream only discovers a departed client when a
-     // keep-alive write fails, and it writes every 20s -- and until then the browser
-     // counts this connection against its six-per-origin limit.  Navigate a handful of
-     // times in a minute without this and the browser silently queues everything.
-     //
-     // pagehide rather than beforeunload: it fires on mobile Safari, and on the
-     // back/forward cache path where beforeunload doesn't.
-     window.addEventListener('pagehide', function () {
-         window.bridgeEventSource.close();
-     });
+         // Hand the socket back when we leave.  The server won't notice on its own for
+         // another 55-70s -- django-eventstream only discovers a departed client when a
+         // keep-alive write fails, and it writes every 20s -- and until then the browser
+         // counts this connection against its six-per-origin limit.  Navigate a handful
+         // of times in a minute without this and the browser silently queues everything.
+         //
+         // pagehide rather than beforeunload: it fires on mobile Safari, and on the
+         // back/forward cache path where beforeunload doesn't.
+         window.addEventListener('pagehide', function () {
+             window.bridgeEventSource.close();
+         });
+     }
 
      // A page restored from the back/forward cache has the connection we just closed,
      // and its listeners are bound to that dead object, so reopening here would burn a
