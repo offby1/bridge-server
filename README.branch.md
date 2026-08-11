@@ -22,9 +22,18 @@ Landed:
 
 Verified in a browser: a page holds one connection, chat delivers over it, and a hand
 page's auction and play histories update as the bot plays. That last one was the
-complaint this work started from. The reload-on-reconnect is the exception -- no test
-covers it and nobody has watched it happen, which would mean killing the django
-container with a hand page open.
+complaint this work started from.
+
+Reload-on-reconnect is verified too, by deleting the django container mid-hand with two
+windows open and running `just dev`. The logs show the designed sequence on both: the
+stream reopens, closes 0.3s later as the page unloads, and a fresh `GET /hand/19/`
+follows. No test covers it, though.
+
+Note for anyone repeating that experiment: `just dev` recreates containers in stages, so
+you get more than one reconnect, and `django_browser_reload` reloads on reconnect as
+well. Three page loads is not a loop. In production, where browser-reload isn't
+installed, ours is the only mechanism -- which is the case that matters, because a
+production restart is exactly when a client silently misses events.
 
 Not built yet: the reference client and its contract tests.
 
