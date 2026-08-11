@@ -35,7 +35,12 @@ well. Three page loads is not a loop. In production, where browser-reload isn't
 installed, ours is the only mechanism -- which is the case that matters, because a
 production restart is exactly when a client silently misses events.
 
-Not built yet: the reference client and its contract tests.
+- `app/reference_client.py` is a worked example of a client, and
+  `app/test_reference_client.py` drives it against a `live_server`, so the example
+  can't rot quietly.
+
+Not built yet: the two streaming tests, which need a daphne fixture rather than
+`live_server`.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be
