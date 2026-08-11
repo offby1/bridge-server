@@ -79,6 +79,16 @@ services:
     depends_on:
       - django
 
+  # Signups close and play completes at wall-clock times; this is what notices.
+  # Tournaments do not progress past their deadlines while it is down.
+  clock:
+    <<: *django
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "tournament_clock"]
+    ports: []
+    labels: {}
+    depends_on:
+      - django
+
 
   django-collected-static:
     <<: *django

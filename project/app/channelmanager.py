@@ -2,6 +2,7 @@ import logging
 
 from django_eventstream.channelmanager import DefaultChannelManager  # type: ignore [import-untyped]
 
+from app.models.types import PK_from_str
 from app.models.utils import UserMitPlaya
 from app.sse_channels import SSEChannels
 
@@ -11,6 +12,68 @@ logger = logging.getLogger(__name__)
 
 
 class MyChannelManager(DefaultChannelManager):
+    def get_channels_for_request(self, request, view_kwargs):
+        """Decide what `/events/all/` carries for the viewer who asked.
+
+        A browser gets one connection for the whole page, because they allow only six
+        per origin and we spent a while wedged against that limit. `docs/README.sse.md`
+        has the story; the short version is that a page used to open one connection per
+        channel, and a few ordinary navigations exhausted the browser's budget.
+
+        `/events/player/json/<player_id>/` names its channel in the URLconf, via
+        `format-channels`, and we defer to django-eventstream for it. A request with no
+        such kwarg is the consolidated endpoint asking us to work the set out.
+
+        We filter the result through `can_read_channel` ourselves rather than leaving it
+        to `get_events()`, which raises `EventPermissionError` for the *whole* request if
+        any single channel is unreadable. On a shared connection that would cost a viewer
+        every update rather than the one they may not have.
+
+        One endpoint rather than a public one and a private one: `can_read_channel`
+        refuses anyone without a player, so anonymous visitors read nothing at all, and
+        every client that reads anything is authenticated. Splitting would give each of
+        them two sockets where one does. When logged-out spectators become a thing, that
+        changes -- and it changes in `can_read_channel` first; the split follows from it
+        rather than preceding it.
+        """
+        if {"channel", "channels", "format-channels"} & view_kwargs.keys():
+            return super().get_channels_for_request(request, view_kwargs)
+
+        player = getattr(request.user, "player", None)
+        if player is None:
+            return set()
+
+        channels = {
+            SSEChannels.player_html_hand(player.pk),
+            SSEChannels.player_bot_checkbox(player.pk),
+        }
+
+        # The hand being viewed isn't necessarily the viewer's current one, and the chat
+        # partner isn't derivable from the viewer either, so pages pass both in.
+        #
+        # Both are validated here rather than left to `can_read_channel`, which would
+        # now deny them anyway: a parameter we can see is junk is better dropped than
+        # turned into a channel name and refused, and the warning names the parameter
+        # instead of the mangled channel it produced.
+        if (raw_hand_pk := request.GET.get("hand")) is not None:
+            try:
+                channels.add(SSEChannels.table_html(PK_from_str(raw_hand_pk)))
+            except (TypeError, ValueError):
+                logger.warning("Ignoring unparseable hand %r in %s", raw_hand_pk, request.path)
+        # A chat channel *is* `players:<pk>_<pk>` -- see Message.channel_name_from_players
+        # -- and is not prefixed, whatever the URL of the old per-channel endpoint
+        # suggested.
+        if chat_channel := request.GET.get("chat"):
+            if models.Message.player_pks_from_channel_name(chat_channel) is None:
+                logger.warning("Ignoring unparseable chat %r in %s", chat_channel, request.path)
+            else:
+                channels.add(chat_channel)
+
+        # `lobby`, `all-tables` and `partnerships` are deliberately absent: nothing in
+        # the browser subscribes to them today. Add them here when something does.
+
+        return {c for c in channels if self.can_read_channel(request.user, c)}
+
     def can_read_channel(self, user: UserMitPlaya, channel: str) -> bool:
         # logger.warning(f"{user=} {channel=}")
         if user is None:
@@ -58,9 +121,16 @@ class MyChannelManager(DefaultChannelManager):
 
             return player.hand_at_which_we_played_board(hand.board) is not None
 
-        if channel == SSEChannels.PARTNERSHIPS:
+        # Global channels: no per-viewer content, so any logged-in player may read them.
+        # Nothing publishes to `all-tables` today; it keeps its endpoint and its place
+        # here so that connecting to it stays a no-op rather than an error.
+        if channel in {SSEChannels.LOBBY, SSEChannels.PARTNERSHIPS, SSEChannels.ALL_TABLES}:
             return True
 
-        # everything else is visible to everyone, although I don't think there *are* any other messages.
-        logger.warning("OK, so wtf is channel %s?", channel)
-        return True
+        # Deny by default.  This used to allow anything it didn't recognise, on the
+        # grounds that there weren't any other messages.  That held while every channel
+        # came from the URLconf, and stopped holding when /events/all/ began building
+        # channel names from query parameters: a malformed name reached here, matched no
+        # pattern above, and was allowed.  Twice.
+        logger.warning("Denying unrecognised channel %r for %s", channel, player.name)
+        return False

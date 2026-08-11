@@ -28,7 +28,7 @@ import bridge.card
 import bridge.seat
 import bridge.table
 from app.sse_channels import SSEChannels
-from app.sse_events import PartnershipEvent
+from app.sse_events import PartnershipEvent, SSEEventTypes
 
 from .board import Board
 from .common import attribute_names
@@ -366,7 +366,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
             send_event(
                 channel=self.bot_checkbox_channel,
-                event_type="message",
+                event_type=SSEEventTypes.BOT_CHECKBOX,
                 data=html,
                 json_encode=False,
             )
@@ -374,7 +374,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
             # Send JSON for bots/API clients
             send_event(
                 channel=self.event_JSON_hand_channel,
-                event_type="message",
+                event_type=SSEEventTypes.BOT_SETTING,
                 data={"allow_bot_to_play_for_me": self.allow_bot_to_play_for_me},
             )
 
@@ -391,7 +391,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     )
                     send_event(
                         channel=dummy.bot_checkbox_channel,
-                        event_type="message",
+                        event_type=SSEEventTypes.BOT_CHECKBOX,
                         data=dummy_html,
                         json_encode=False,
                     )
@@ -466,7 +466,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
         send_event(
             channel=SSEChannels.PARTNERSHIPS,
-            event_type="message",
+            event_type=SSEEventTypes.PARTNERSHIPS,
             data=event_data.to_dict(),
         )
 

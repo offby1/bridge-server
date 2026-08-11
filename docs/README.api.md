@@ -100,17 +100,15 @@ Currently the only content-type I accept is `application/x-www-form-urlencoded`,
 
 Do a GET to `/serialized/hand/`{hand_primary_key}`/`
 
-An example transcript is in this directory: `example-xscript.json`.
+Ask for `Accept: application/json` and you get JSON; otherwise you get an HTML page.
 
 ## Receiving information from the server
 
-The server uses [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) to asynchronously send information to its clients.
+The server uses [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) to tell you things as they happen.
 
-do a "long poll" or whatever you call it to (assuming your `player_pk` is indeed 1) `/events/player/system:player:1/`
+Do a long-lived GET to `/events/player/json/`{player_pk}`/`.  You will get something like this:
 
-You'll get something like this:
-
-    at 2025-03-06T11:54:28-08:00 ❌130  ❯ curl --cookie cook --cookie-jar cook   https://django.server.orb.local/events/player/system:player:1/
+    curl --cookie cook --cookie-jar cook http://localhost:9000/events/player/json/1/
     :
 
     event: stream-open
@@ -119,34 +117,52 @@ You'll get something like this:
     event: keep-alive
     data:
 
-You're guaranteed to get one event every (I think it is) 30 seconds, typically a "keep-alive".
+You get a `keep-alive` every 20 seconds or so, and something useful when a player acts:
 
-many minutes pass, until someone does something interesting:
+    event: new-call
+    id: player%3Ajson%3A1:606
+    data: {"hand_pk": 23, "new-call": {"serialized": "1C", "explanation": ""}, "tempo_seconds": 1.0, "time": 1741290957.4}
 
-    event: keep-alive
-    data:
+    event: new-play
+    data: {"new-play": {"hand_pk": 23, "serialized": "H2"}, "tempo_seconds": 1.0, "time": 1741290961.1}
 
-    event: keep-alive
-    data:
+The event name tells you what you are looking at, so subscribe by name -- with
+`EventSource.addEventListener("new-call", ...)` or whatever your library calls it --
+rather than reading everything and guessing from the keys.  The names are:
 
-    event: keep-alive
-    data:
+| event | meaning |
+| --- | --- |
+| `new-call` | somebody bid, passed, doubled or redoubled |
+| `new-play` | somebody played a card |
+| `contract` | the auction settled, so play is about to start |
+| `bot-setting` | your "computer plays for me" setting changed |
+| `stream-open`, `keep-alive` | housekeeping, which you can ignore |
 
-    event: message
-    id: system%3Aplayer%3A1:606
-    data: {"new-hand": 23, "time": 1741290957.4350302, "tempo_seconds": 1.0}
+### There is no history
 
-    event: keep-alive
-    data:
+If your connection drops, whatever happened while you were away is gone.  The server
+keeps no record of past events, so reconnecting will not replay them, and nothing will
+tell you that you missed anything.
 
-That last is the opening lead; the "dummy" is the actual cards (which if you "resolve" the unicode escape sequences is `♣4♣7♦4♦5♦J♥4♥6♥8♥Q♠2♠3♠6♠Q`)
+So whenever you reconnect, fetch the transcript again -- see "Getting the transcript"
+above -- instead of assuming your picture of the hand is still correct.
 
 ## Make calls and plays
 
 ### calls
 
-do a POST to `/call/`{hand_primary_key}`/`, with headers `Content-Type: application/x-www-form-urlencoded` and body like `call=Pass` or `call=1%E2%99%A3` (that's url-encoced; it means `call=1♣`)
+do a POST to `/call/`, with headers `Content-Type: application/x-www-form-urlencoded` and a body like `call=Pass` or `call=1%E2%99%A3` (that's url-encoded; it means `call=1♣`).
+
+There is no hand in that URL.  The server applies your call to whichever hand you are currently seated at.
 
 ### plays
 
-do a POST to `/play/`{hand_primary_key}`/`, with headers `Content-Type: application/x-www-form-urlencoded`, and a body like `card=%E2%99%A52` (that's URL-encoded; it means `card=♥2`)
+do a POST to `/play/`, with headers `Content-Type: application/x-www-form-urlencoded`, and a body like `card=%E2%99%A52` (that's URL-encoded; it means `card=♥2`).  Again, no hand in the URL.
+
+## A worked example
+
+`project/app/reference_client.py` does everything above in about a hundred lines, using
+only `requests` and `sseclient`.  Copy it and start editing.
+
+It is not just decoration: `project/app/test_reference_client.py` runs it against a real
+server, so if the API changes and this document does not, the tests fail.

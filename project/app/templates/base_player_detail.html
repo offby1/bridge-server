@@ -3,6 +3,7 @@
 {% block title %}
     {{ player }}
 {% endblock title %}
+{% block sse_channels_query %}chat={{ chat_channel_name }}{% endblock sse_channels_query %}
 {% block content %}
     <ul id="player-deets">
         {# "user.player" is whoever is logged in. "player" is the player whose details we're examining. #}

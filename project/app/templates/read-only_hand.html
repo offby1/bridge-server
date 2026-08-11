@@ -3,6 +3,14 @@
 {% block title %}
     {{ hand }}
 {% endblock title %}
+{% block sse_channels_query %}hand={{ hand.pk }}{% endblock sse_channels_query %}
+{# A finished hand will never send anything, so don't spend one of the browser's six #}
+{# connections watching it.  This page is also used for spectating a hand that is     #}
+{# still being played, which does need the connection -- hence the test rather than a #}
+{# blanket opt-out.  See docs/README.sse.md.                                          #}
+{% block sse_connection %}
+    {% if not hand.is_complete and not hand.is_abandoned %}{{ block.super }}{% endif %}
+{% endblock sse_connection %}
 {% block content %}
     <div {% if hand.is_abandoned %}style="text-decoration-line: line-through;"{% endif %}>
         <h2>
@@ -17,63 +25,57 @@
         </div>
     {% endif %}
     {% ifexists request.user.player %}
-    {% if request.user.player.current_hand %}Current hand: {{ request.user.player.current_hand.as_link }}{% endif %}
-{% endifexists %}
-<div style="display: flex; overflow: auto;">{% include "four-hands.html" with class="hand mediumfont" %}</div>
-<div style="display: flex;">
-    <div style="flex-grow: 1">{% include "auction.html" %}</div>
-</div>
-<div>
-    {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
-    <table class="table caption-top">
-        <caption>Play</caption>
-        <thead>
-            <tr>
-                <th>Trick</th>
-                <th>Lead</th>
-                <th>2nd</th>
-                <th>3rd</th>
-                <th>4th</th>
-                <th>N/S</th>
-                <th>E/W</th>
-            </tr>
-        </thead>
-        <tbody class="table-group-divider">
-            {% for t in annotated_tricks %}
+        {% if request.user.player.current_hand %}Current hand: {{ request.user.player.current_hand.as_link }}{% endif %}
+    {% endifexists %}
+    <div style="display: flex; overflow: auto;">{% include "four-hands.html" with class="hand mediumfont" %}</div>
+    <div style="display: flex;">
+        <div style="flex-grow: 1">{% include "auction.html" %}</div>
+    </div>
+    <div>
+        {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
+        <table class="table caption-top">
+            <caption>Play</caption>
+            <thead>
                 <tr>
-                    <th>{{ t.number }} {{ t.seat }}</th>
-                    {% for p in t.plays %}
-                        <td>
-                            <div {% if p.wins_the_trick %}style="background-color: lightgreen;"{% endif %}>
-                                <span {% ifexists p.card.color %}style="color: {{ p.card.color }}"{% endifexists %}>{{ p.card }}</span>
-                            </div>
-                        </td>
-                    {% endfor %}
-                    <td>
-                        {% if t.ns %}✔{% endif %}
-                    </td>
-                    <td>
-                        {% if t.ew %}✔{% endif %}
-                    </td>
+                    <th>Trick</th>
+                    <th>Lead</th>
+                    <th>2nd</th>
+                    <th>3rd</th>
+                    <th>4th</th>
+                    <th>N/S</th>
+                    <th>E/W</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for t in annotated_tricks %}
+                    <tr>
+                        <th>{{ t.number }} {{ t.seat }}</th>
+                        {% for p in t.plays %}
+                            <td>
+                                <div {% if p.wins_the_trick %}style="background-color: lightgreen;"{% endif %}>
+                                    <span {% ifexists p.card.color %}style="color: {{ p.card.color }}"{% endifexists %}>{{ p.card }}</span>
+                                </div>
+                            </td>
+                        {% endfor %}
+                        <td>{% if t.ns %}✔{% endif %}</td>
+                        <td>{% if t.ew %}✔{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock content %}
 {% block scripts %}
-    <script>
- const tableEventUrl = '/events/table/html/{{ hand.pk }}/';
- var handEventSource = new ReconnectingEventSource(tableEventUrl);
- console.log(`Listening for hand events on ${tableEventUrl}`);
-
- handEventSource.addEventListener('message', function (e) {
+    {# Rides the page's single connection, opened in base.html -- which a finished hand #}
+    {# doesn't have, hence the second half of this condition. #}
+    {% if user.is_authenticated and not hand.is_complete and not hand.is_abandoned %}
+        <script>
+ window.bridgeEventSource.addEventListener('table', function (e) {
      const data = JSON.parse(e.data);
      console.log("Hand event listener saw " + Object.keys(data));
      window.location.reload();
 
  }, false);
-
-
-    </script>
+        </script>
+    {% endif %}
 {% endblock scripts %}

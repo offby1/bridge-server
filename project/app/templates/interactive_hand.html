@@ -4,6 +4,7 @@
 {% block title %}
     {{ hand }}
 {% endblock title %}
+{% block sse_channels_query %}hand={{ hand.pk }}{% endblock sse_channels_query %}
 {% block content %}
     {# from https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_overflow/CSS_carousels#carousel_with_single_pages #}
     <h3 style="text-align:center">{{ terse_description }}</h3>
@@ -47,14 +48,11 @@
     <script type="module">
         import { initPlayerEventStream, initTableEventStream, initErrorToast, initCarouselButtons, initConfirmClick } from "{% static 'app/bridge-game.js' %}";
 
+        {# Both ride the page's single connection, opened in base.html. #}
         {% if user.is_authenticated %}
-        initPlayerEventStream(
-            '/events/player/html/hand/{{ user.player.pk }}/',
-            {{ user.player.pk }}
-        );
+        initPlayerEventStream(window.bridgeEventSource, {{ user.player.pk }});
+        initTableEventStream(window.bridgeEventSource);
         {% endif %}
-
-        initTableEventStream('/events/table/html/{{ hand.pk }}/');
         initErrorToast();
         initConfirmClick();
         initCarouselButtons();

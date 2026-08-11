@@ -100,6 +100,9 @@ build-backend = "hatchling.build"
 [tool.djlint]
 use_gitignore=true
 ignore="H016,H020,H021,H023,H030,H031"
+# django-fastdev's tag.  Without this djLint treats {% endifexists %} as an orphan and
+# mis-indents everything after it.
+custom_blocks="ifexists"
 
 [tool.mypy]
 exclude = "/migrations/"

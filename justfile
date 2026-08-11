@@ -12,6 +12,10 @@ export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oaut
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
+
+# Put this project's tools ahead of any global ones.  ruff, mypy, pytest, py-spy and
+# ipython are all installed in ~/.local/bin too, at versions that need not match ours.
+export PATH := justfile_directory() / ".venv" / "bin" + ":" + env("PATH")
 export PYTHONUNBUFFERED := "t"
 
 # Settings to use for tests (overrides the default dev_settings)
@@ -178,16 +182,6 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
-[group('stress')]
-[script('bash')]
-tiny:
-    set -euxo pipefail
-
-    just drop
-    DJANGO_SETTINGS_MODULE=project.prod_settings just dev -d
-    just stress --tiny --tempo=0
-    docker compose logs django bot --follow
-
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
@@ -315,27 +309,6 @@ alias dc := dcu
 dcu:
     @echo Use "just dev" now ; false
 
-alias perf := perf-local
-
-[group('development')]
-[group('perf')]
-[script('bash')]
-perf-local: drop docker-prerequisites
-    set -euo pipefail
-
-    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SETTINGS_MODULE=project.prod_settings
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
-    export GIT_VERSION="$(cat project/VERSION)"
-
-    tput rmam                   # disables line wrapping
-    trap "tput smam" EXIT       # re-enables line wrapping when this little bash script exits
-
-    just whop
-    docker compose up --build --detach
-    just stress --min-players=100 --tempo=0.5
-    docker compose logs django --follow
-
 ensure-git-repo-clean:
     [[ -z "$(git status --porcelain)" ]]
 
@@ -378,9 +351,10 @@ _deploy hostname profile context settings_module *options:
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
     docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
-    # Swap in the new django container (and bot); --no-deps avoids restarting postgres/redis/caddy
+    # Swap in the new django container (and bot, and clock); --no-deps avoids restarting
+    # postgres/redis/caddy
     just dump
-    docker compose up --detach --no-deps --force-recreate django bot {{ options }}
+    docker compose up --detach --no-deps --force-recreate django bot clock {{ options }}
 
     # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
     # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh

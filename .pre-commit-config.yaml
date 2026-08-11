@@ -29,7 +29,7 @@ repos:
       exclude: '/migrations/'
 
 - repo: https://github.com/djlint/djLint
-  rev: v1.36.4
+  rev: v1.44.2
   hooks:
     - id: djlint-reformat-django
 

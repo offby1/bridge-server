@@ -22,7 +22,16 @@
               href="{% url 'app:tournaments-rss' %}" />
     </head>
     {% tz_detect %}
-    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    {# One SSE connection for the whole page.  htmx's extension attaches each sse-swap #}
+    {# element to the nearest ancestor that owns a connection, so hanging it on <body> #}
+    {# lets the navbar checkbox, the chat log and the hand share a single socket.      #}
+    {# Pages add the channels they need by overriding sse_channels_query.              #}
+    {#                                                                                 #}
+    {# A page where nothing can change should override sse_connection to nothing, and  #}
+    {# spend no connection at all: browsers allow only six per origin, so a tab open on #}
+    {# a finished hand is a tab you can't open on a live one.  read-only_hand.html does #}
+    {# this.  See docs/README.sse.md.                                                  #}
+    <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' {% block sse_connection %}{% if user.is_authenticated %}hx-ext="sse" sse-connect="/events/all/?{% block sse_channels_query %}{% endblock sse_channels_query %}"{% endif %}{% endblock sse_connection %}>
         <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
                 <div id="hello-user"
@@ -36,9 +45,8 @@
                             {% endif %}
                         </span>
                         <div class="d-flex flex-column flex-md-row align-items-center gap-2 border rounded px-2 px-md-3 py-2">
-                            <div hx-ext="sse"
-                                 sse-connect="/events/player/bot-checkbox/{{ user.player.pk }}/"
-                                 sse-swap="message"
+                            {# No sse-connect here: this rides the shared connection on <body>. #}
+                            <div sse-swap="bot-checkbox"
                                  hx-target="#bot-plays-for-me-div"
                                  hx-swap="outerHTML">{% include "bot-checkbox.html" with error_message="" %}</div>
                             {% if user.player and not user.player.synthetic and user.player.current_hand %}
@@ -115,66 +123,66 @@
             </div>
         </nav>
         {% ifexists debug %}
-        <h2>It's debugging time!!</h2>
-        <div style="display: flex;justify-content: space-around;">
-            <div>
-                <tt>{{ request.resolver_match.view_name }}</tt>
+            <h2>It's debugging time!!</h2>
+            <div style="display: flex;justify-content: space-around;">
+                <div>
+                    <tt>{{ request.resolver_match.view_name }}</tt>
+                </div>
+                <div>{{ PLATFORM }}</div>
             </div>
-            <div>{{ PLATFORM }}</div>
+        {% endifexists %}
+        <div class="row">
+            <div class="col"></div>
+            {% block upper-right-column %}
+            {% endblock upper-right-column %}
         </div>
-    {% endifexists %}
-    <div class="row">
-        <div class="col"></div>
-        {% block upper-right-column %}
-        {% endblock upper-right-column %}
-    </div>
-    <div class="row"></div>
-    {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
-                     role="alert">
-                    {{ message }}
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="alert"
-                            aria-label="Close"></button>
-                </div>
-            {% endfor %}
+        <div class="row"></div>
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
+                         role="alert">
+                        {{ message }}
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div id="content" class="container">
+            {% block content %}
+            {% endblock content %}
         </div>
-    {% endif %}
-    <div id="content" class="container">
-        {% block content %}
-        {% endblock content %}
-    </div>
-    <!-- Hint Modal -->
-    <div class="modal fade"
-         id="hint-modal"
-         tabindex="-1"
-         aria-labelledby="hint-modal-label"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="hint-modal-label">Hint</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="hint-modal-body">
-                    <!-- Hint content will be loaded here -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- Hint Modal -->
+        <div class="modal fade"
+             id="hint-modal"
+             tabindex="-1"
+             aria-labelledby="hint-modal-label"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="hint-modal-label">Hint</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="hint-modal-body">
+                        <!-- Hint content will be loaded here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</body>
-<!-- see https://docs.sentry.io/platforms/javascript/ -->
-<script src="{% static 'app/browser.sentry-cdn.com/10.36.0/bundle.tracing.replay.feedback.min.js' %}"></script>
-<script>
+    </body>
+    <!-- see https://docs.sentry.io/platforms/javascript/ -->
+    <script src="{% static 'app/browser.sentry-cdn.com/10.36.0/bundle.tracing.replay.feedback.min.js' %}"></script>
+    <script>
      window.sentryOnLoad = function () {
          Sentry.init({
              dsn: "https://de80d9ce8c1912a65a6ba2f9e7f6e98c@o4507936352501760.ingest.us.sentry.io/4507936354205696",
@@ -208,16 +216,89 @@
              replaysOnErrorSampleRate: 1.0,
          });
      };
-</script>
-<script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}"></script>
-{# These two files come from the django-eventstream *python* package. #}
-<script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
-<script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
-<script src="{% static 'app/htmx.org@2.0.4.min.js' %}"></script>
-<script src="{% static 'app/sse.js' %}"></script>
-{% block scripts %}
-{% endblock scripts %}
-<script>
+    </script>
+    <script src="{% static 'app/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}"></script>
+    {# These two files come from the django-eventstream *python* package. #}
+    <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
+    <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+    <script src="{% static 'app/htmx.org@2.0.4.min.js' %}"></script>
+    {% if user.is_authenticated %}
+        <script>
+     // Open the page's single SSE connection ourselves, before htmx's extension gets
+     // the chance, and hand htmx the same object.  Two reasons: we want
+     // ReconnectingEventSource rather than the bare EventSource htmx would construct,
+     // and bridge-game.js needs a reference so it can listen on the same socket
+     // instead of opening a second one.  The URL lives on <body>, so it is written
+     // in exactly one place.
+     //
+     // This runs while the document is still parsing, and module scripts are deferred,
+     // so window.bridgeEventSource exists by the time any of them look for it.
+     // The attribute is the single source of truth about whether this page wants a
+     // connection at all.  Pages where nothing can change -- a finished hand, say --
+     // override the sse_connection block to nothing, and must not end up opening a
+     // stream to the URL "null".
+     const sseUrl = document.body.getAttribute('sse-connect');
+     if (sseUrl) {
+         window.bridgeEventSource = new ReconnectingEventSource(sseUrl);
+         htmx.createEventSource = function () {
+             return window.bridgeEventSource;
+         };
+
+         // Catch up after a reconnect.  The server stores no events, so a Last-Event-ID
+         // buys us nothing and whatever happened while we were away is simply gone; the
+         // only honest recovery is to re-read the page.  That is what this codebase
+         // already does when an incremental update won't serve -- see the phase
+         // transitions in bridge-game.js -- and one connection per page instead of four
+         // makes reconnects rare enough to afford it.
+         //
+         // A page this young can't have missed much, and reloading it wouldn't help.
+         // That also bounds us to one reload per interval if the server is flapping,
+         // since each reload starts the clock again.
+         const TOO_YOUNG_TO_BOTHER_MS = 10000;
+         const loadedAt = Date.now();
+         let everConnected = false;
+
+         window.bridgeEventSource.addEventListener('open', function () {
+             if (!everConnected) {
+                 everConnected = true;
+                 return;
+             }
+             if (Date.now() - loadedAt < TOO_YOUNG_TO_BOTHER_MS) {
+                 console.log('SSE reconnected; page is too fresh to be worth reloading');
+                 return;
+             }
+             console.log('SSE reconnected; reloading to pick up whatever we missed');
+             window.location.reload();
+         });
+
+         // Hand the socket back when we leave.  The server won't notice on its own for
+         // another 55-70s -- django-eventstream only discovers a departed client when a
+         // keep-alive write fails, and it writes every 20s -- and until then the browser
+         // counts this connection against its six-per-origin limit.  Navigate a handful
+         // of times in a minute without this and the browser silently queues everything.
+         //
+         // pagehide rather than beforeunload: it fires on mobile Safari, and on the
+         // back/forward cache path where beforeunload doesn't.
+         window.addEventListener('pagehide', function () {
+             window.bridgeEventSource.close();
+         });
+     }
+
+     // A page restored from the back/forward cache has the connection we just closed,
+     // and its listeners are bound to that dead object, so reopening here would burn a
+     // socket delivering nothing to nobody.  Reload instead: the state is stale anyway
+     // after however long we were away.
+     window.addEventListener('pageshow', function (event) {
+         if (event.persisted) {
+             window.location.reload();
+         }
+     });
+        </script>
+    {% endif %}
+    <script src="{% static 'app/sse.js' %}"></script>
+    {% block scripts %}
+    {% endblock scripts %}
+    <script>
     // Dynamically set body padding to match the navbar's actual height
     (function() {
         var navbar = document.querySelector('.navbar');
@@ -228,5 +309,5 @@
         updatePadding();
         new ResizeObserver(updatePadding).observe(navbar);
     })();
-</script>
+    </script>
 </html>

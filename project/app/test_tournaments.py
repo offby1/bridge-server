@@ -23,7 +23,7 @@ from app.models.tournament import (
     OpenForSignup,
     PlayerNeedsPartnerError,
     Running,
-    check_for_expirations,
+    advance_expired_tournaments,
 )
 from bridge.contract import Call
 
@@ -150,7 +150,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         hand.add_call(call=Call.deserialize("Pass"))
 
     with time_machine.travel(DayAfter, tick=False):
-        check_for_expirations(sender="Some unit test")
+        advance_expired_tournaments()
         with pytest.raises(HandError):
             hand.add_call(call=Call.deserialize("Pass"))
 
@@ -300,8 +300,8 @@ def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated) ->
     get_movement() built a phantom pair and tripped `assert num_phantoms == 0`.
 
     This reproduces that first-page-view-after-the-deadline state by backdating
-    the deadline without calling _do_signup_expired_stuff (which is what creates
-    the padding synths via request_finished)."""
+    the deadline without calling _do_signup_expired_stuff, which is what creates
+    the padding synths once the clock gets to this tournament."""
     open_tournament, _ = Tournament.objects.get_or_create_tournament_open_for_signups()
 
     s1 = Player.objects.create_synthetic()

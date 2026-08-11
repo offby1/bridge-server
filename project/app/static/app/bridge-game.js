@@ -4,17 +4,20 @@
  */
 
 /**
- * Initialize player-specific event stream (bidding box, hand updates)
- * @param {string} playerEventUrl - SSE endpoint for player-specific events
+ * Listen for this player's own updates (bidding box, hand updates).
+ *
+ * Takes the page's shared EventSource rather than opening one: browsers allow only six
+ * connections per origin, so every stream rides window.bridgeEventSource, created in
+ * base.html.  See docs/README.sse.md.
+ *
+ * @param {EventSource} playerEventSource - the page's shared connection
  * @param {number} playerId - Player ID for redirects
  */
-export function initPlayerEventStream(playerEventUrl, playerId) {
-    const playerEventSource = new ReconnectingEventSource(playerEventUrl);
-    console.log(`Listening for player events on ${playerEventUrl}`);
-
+export function initPlayerEventStream(playerEventSource, playerId) {
     let autoScrollTimer;
 
-    playerEventSource.addEventListener('message', function (e) {
+    // Event names come from SSEEventTypes in app/sse_events.py; they must agree.
+    playerEventSource.addEventListener('player-hand', function (e) {
         const data = JSON.parse(e.data);
         console.log("Player event listener saw " + Object.keys(data));
 
@@ -35,28 +38,35 @@ export function initPlayerEventStream(playerEventUrl, playerId) {
         }
     });
 
+    // stream-reset means "you missed events and I can't tell you which".  It cannot
+    // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
+    // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
+    // reloads on reconnect.  See docs/README.sse.md.
     playerEventSource.addEventListener('stream-reset', function (e) {
-        const data = JSON.parse(e.data);
-        console.log("playerEventSource got stream-reset: " + Object.keys(data));
+        console.log("playerEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });
 
     return playerEventSource;
 }
 
 /**
- * Initialize table-wide event stream (auction, tricks, game state)
- * @param {string} tableEventUrl - SSE endpoint for table-level events
+ * Listen for table-wide updates (auction, tricks, game state).
+ *
+ * Takes the page's shared EventSource; see initPlayerEventStream.
+ *
+ * @param {EventSource} handEventSource - the page's shared connection
  */
-export function initTableEventStream(tableEventUrl) {
-    const handEventSource = new ReconnectingEventSource(tableEventUrl);
-    console.log(`Listening for hand events on ${tableEventUrl}`);
-
+export function initTableEventStream(handEventSource) {
+    // stream-reset means "you missed events and I can't tell you which".  It cannot
+    // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
+    // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
+    // reloads on reconnect.  See docs/README.sse.md.
     handEventSource.addEventListener('stream-reset', function (e) {
-        const data = JSON.parse(e.data);
-        console.log("handEventSource got stream-reset: " + Object.keys(data));
+        console.log("handEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });
 
-    handEventSource.addEventListener('message', function (e) {
+    // Event names come from SSEEventTypes in app/sse_events.py; they must agree.
+    handEventSource.addEventListener('table', function (e) {
         const data = JSON.parse(e.data);
         console.log("Hand event listener saw " + Object.keys(data));
 
@@ -109,12 +119,33 @@ function updateBiddingBox(html, playerId) {
  * @param {number} autoScrollTimer - Timer for auto-scroll behavior
  * @returns {number} New timer ID
  */
+// When we last repainted each direction, by the server's clock.
+//
+// current_hand_html is a whole snapshot of one direction's cards, so applying an old
+// event overwrites a newer picture with an older one -- briefly showing a player cards
+// they have already played.  It self-corrects on the next event, which is why this
+// looks like a flicker rather than a stuck display.
+//
+// Events can arrive out of order because two processes publish them: django when a
+// human acts, the bot when it does, and Redis pub/sub promises nothing about ordering
+// between publishers.  send_timestamped_event stamps every one (see hand.py), which is
+// what makes them sortable; until now nothing read that stamp.
+const lastPaintedAt = {};
+
 function updateCurrentHand(data, autoScrollTimer) {
-    const { current_hand_html, current_hand_direction, tempo_seconds } = data;
+    const { current_hand_html, current_hand_direction, tempo_seconds, time } = data;
     const container = document.getElementById(current_hand_direction);
 
     if (container === null) {
         return autoScrollTimer;
+    }
+
+    if (time !== undefined) {
+        if (lastPaintedAt[current_hand_direction] > time) {
+            console.log(`Ignoring a stale ${current_hand_direction} hand from ${time}`);
+            return autoScrollTimer;
+        }
+        lastPaintedAt[current_hand_direction] = time;
     }
 
     container.outerHTML = current_hand_html;

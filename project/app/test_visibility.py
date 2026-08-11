@@ -17,7 +17,7 @@ import pytest
 import time_machine
 
 from app.models import Board, Hand, Player, Tournament
-from app.models.tournament import check_for_expirations
+from app.models.tournament import advance_expired_tournaments
 from bridge.card import Suit
 from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
@@ -124,7 +124,7 @@ def tournament_starting_now(fresh_tournament: Hand) -> Iterable[Hand]:
     the_tournament.save()
 
     with time_machine.travel(Today, tick=False):
-        check_for_expirations(__name__)
+        advance_expired_tournaments()
 
         hand: Hand | None = Hand.objects.first()
         assert hand is not None

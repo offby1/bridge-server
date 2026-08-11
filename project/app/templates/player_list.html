@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 {% extends "base.html" %}
+{# Nothing on this page changes by itself, so it spends no SSE connection; the #}
+{# browser only gets six.  The navbar's bot-checkbox therefore won't update live #}
+{# here, which is a fair trade for a page you're reading rather than playing at. #}
+{# See docs/README.sse.md. #}
+{% block sse_connection %}
+{% endblock sse_connection %}
 {% load fastdev %}
 {% load player_extras %}
 {% load render_table from django_tables2 %}
@@ -23,12 +29,12 @@
         {% endif %}
         {% render_table table %}
         {% ifexists create_synth_partner_button %}
-        <form action="{% url 'app:player-create-synthetic-partner' %}"
-              method="post">
-            {% csrf_token %}
-            {{ create_synth_partner_button }}
-            <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
-        </form>
-    {% endifexists %}
-{% endblock player_list %}
+            <form action="{% url 'app:player-create-synthetic-partner' %}"
+                  method="post">
+                {% csrf_token %}
+                {{ create_synth_partner_button }}
+                <input type="hidden" name="next" value="{{ create_synth_partner_next }}" />
+            </form>
+        {% endifexists %}
+    {% endblock player_list %}
 {% endblock content %}

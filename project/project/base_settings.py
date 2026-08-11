@@ -134,11 +134,30 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+
+# This is the pub/sub transport, which is how an event sent by one process (the bot,
+# say) reaches a client connected to another (django).  It is *not* event storage.
 EVENTSTREAM_REDIS = {
     "host": REDIS_HOST,
     "port": 6379,
     "db": 0,
 }
+
+# There is deliberately no EVENTSTREAM_STORAGE_CLASS.  We keep no event history, so a
+# reconnecting client cannot replay what it missed, and django-eventstream's
+# `stream-reset` can never fire.  Clients recover by re-reading current state instead:
+# browsers reload (see base.html), and API clients re-fetch /serialized/hand/.
+#
+# Worth stating because the history reads the other way.  Persistence was on until
+# 86677f9b (2025-06-30) removed this setting while adding EVENTSTREAM_REDIS above --
+# the two control different subsystems, and that looks like an accident.  Three weeks
+# earlier, 94bce2af had deliberately restored persistence, because "we won't find half
+# of our tables just sitting there, because one of the bots missed an event."
+#
+# That reason expired: no bot reads SSE any more.  cheating_bot polls the database for
+# every bot player.  So a missed event costs a stale page, not a stalled hand, and we
+# leave storage off on purpose.  app/test_stream_reset.py pins this, and will fail the
+# day somebody turns it on.
 
 EVENTSTREAM_CHANNELMANAGER_CLASS = "app.channelmanager.MyChannelManager"
 
@@ -162,6 +181,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "app.middleware.simple_access_log.RequestLoggingMiddleware",
+    "app.middleware.sse_stream_log.SSEStreamLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",

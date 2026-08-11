@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from app.models import Player
+from app.sse_events import SSEEventTypes
 from django.contrib.auth.models import User
 
 
@@ -22,13 +23,13 @@ def test_bot_toggle_broadcasts_sse_event():
         # Check HTML event
         html_call = mock_send_event.call_args_list[0]
         assert html_call.kwargs["channel"] == f"player:bot-checkbox:{player.pk}"
-        assert html_call.kwargs["event_type"] == "message"
+        assert html_call.kwargs["event_type"] == SSEEventTypes.BOT_CHECKBOX
         assert "bot-plays-for-me-div" in html_call.kwargs["data"]  # HTML content
 
         # Check JSON event
         json_call = mock_send_event.call_args_list[1]
         assert json_call.kwargs["channel"] == f"player:json:{player.pk}"
-        assert json_call.kwargs["event_type"] == "message"
+        assert json_call.kwargs["event_type"] == SSEEventTypes.BOT_SETTING
         assert json_call.kwargs["data"] == {"allow_bot_to_play_for_me": True}
 
 

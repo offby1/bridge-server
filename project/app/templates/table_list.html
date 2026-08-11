@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{# Nothing on this page changes by itself, so it spends no SSE connection; the #}
+{# browser only gets six.  The navbar's bot-checkbox therefore won't update live #}
+{# here, which is a fair trade for a page you're reading rather than playing at. #}
+{# See docs/README.sse.md. #}
+{% block sse_connection %}
+{% endblock sse_connection %}
 {% block title %}
     {{ page_title }}
 {% endblock title %}
