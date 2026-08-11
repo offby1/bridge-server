@@ -78,7 +78,7 @@ SHUTDOWN_TIMEOUT_SECONDS = 5
 READ_TIMEOUT_SECONDS = 10
 
 # Used to find out when the server has started forwarding events; see
-# _wait_until_the_server_forwards_events.
+# _stream_that_is_definitely_forwarding.
 PROBE_EVENT = "test-probe"
 PROBE_INTERVAL_SECONDS = 0.5
 PROBE_GIVE_UP_SECONDS = 20
