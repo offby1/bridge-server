@@ -129,12 +129,23 @@ def test_a_chat_channel_that_is_not_a_channel_name_is_ignored(usual_setup: Hand)
 
 
 @pytest.mark.django_db
-def test_the_old_per_channel_endpoints_still_work(usual_setup: Hand) -> None:
-    """They name their channel in the URLconf, and we defer to django-eventstream."""
+def test_an_endpoint_that_names_its_channel_still_gets_it(usual_setup: Hand) -> None:
+    """`/events/player/json/<player_id>/` names its channel in the URLconf.
+
+    It is the last endpoint that does, now that the browser's per-channel endpoints are
+    gone, and it is the reason `get_channels_for_request` still defers to
+    django-eventstream rather than always computing the set itself.
+    """
     player = Player.objects.first()
     assert player is not None
+    view_kwargs = {
+        "format-channels": ["player:json:{player_id}"],
+        "player_id": str(player.pk),
+    }
 
-    assert _channels(user=player.user, view_kwargs={"channels": ["lobby"]}) == {"lobby"}
+    assert _channels(user=player.user, view_kwargs=view_kwargs) == {
+        SSEChannels.player_json(player.pk)
+    }
 
 
 @pytest.mark.django_db

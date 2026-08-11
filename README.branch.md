@@ -16,9 +16,15 @@ Landed:
   rather than 55 to 70 seconds later.
 - `can_read_channel` denies channel names it doesn't recognise.
 - `app/test_stream_reset.py` records that `stream-reset` cannot fire here.
+- The superseded per-channel endpoints are gone. `/events/all/` and
+  `/events/player/json/<player_id>/` are the only two left.
 
-Still intent: deleting the superseded per-channel endpoints, doing anything at all when
-a client reconnects, and the reference client with its contract tests.
+Verified in a browser: a page holds one connection, chat delivers over it, and a hand
+page's auction and play histories update as the bot plays. That last one was the
+complaint this work started from.
+
+Still intent: doing anything at all when a client reconnects, and the reference client
+with its contract tests.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be

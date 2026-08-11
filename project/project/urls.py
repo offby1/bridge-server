@@ -47,41 +47,13 @@ urlpatterns = [
         "events/all/",
         include(django_eventstream.urls),
     ),
-    path(
-        "events/lobby/",
-        include(django_eventstream.urls),
-        kwargs={"channels": ["lobby"]},
-    ),
-    path(
-        "events/chat/player-to-player/<channel>/",
-        include(django_eventstream.urls),
-    ),
-    path(
-        "events/player/html/hand/<player_id>/",
-        include(django_eventstream.urls),
-        {"format-channels": ["player:html:hand:{player_id}"]},
-    ),
+    # The programmatic interface, for clients someone else writes.  It carries JSON
+    # rather than HTML fragments, and one connection per client is not a problem for a
+    # client that isn't a browser, so it stays a channel of its own.
     path(
         "events/player/json/<player_id>/",
         include(django_eventstream.urls),
         {"format-channels": ["player:json:{player_id}"]},
-    ),
-    path(
-        "events/player/bot-checkbox/<player_id>/",
-        include(django_eventstream.urls),
-        {"format-channels": ["player:bot-checkbox:{player_id}"]},
-    ),
-    # This gets events for one specific table.
-    path(
-        "events/table/html/<hand_id>/",
-        include(django_eventstream.urls),
-        {"format-channels": ["table:html:{hand_id}"]},
-    ),
-    # This gets all events for all tables.
-    path(
-        "events/all-tables/",
-        include(django_eventstream.urls),
-        kwargs={"channels": ["all-tables"]},
     ),
     path("tz_detect/", include("tz_detect.urls")),
 ]
