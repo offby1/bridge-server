@@ -119,12 +119,33 @@ function updateBiddingBox(html, playerId) {
  * @param {number} autoScrollTimer - Timer for auto-scroll behavior
  * @returns {number} New timer ID
  */
+// When we last repainted each direction, by the server's clock.
+//
+// current_hand_html is a whole snapshot of one direction's cards, so applying an old
+// event overwrites a newer picture with an older one -- briefly showing a player cards
+// they have already played.  It self-corrects on the next event, which is why this
+// looks like a flicker rather than a stuck display.
+//
+// Events can arrive out of order because two processes publish them: django when a
+// human acts, the bot when it does, and Redis pub/sub promises nothing about ordering
+// between publishers.  send_timestamped_event stamps every one (see hand.py), which is
+// what makes them sortable; until now nothing read that stamp.
+const lastPaintedAt = {};
+
 function updateCurrentHand(data, autoScrollTimer) {
-    const { current_hand_html, current_hand_direction, tempo_seconds } = data;
+    const { current_hand_html, current_hand_direction, tempo_seconds, time } = data;
     const container = document.getElementById(current_hand_direction);
 
     if (container === null) {
         return autoScrollTimer;
+    }
+
+    if (time !== undefined) {
+        if (lastPaintedAt[current_hand_direction] > time) {
+            console.log(`Ignoring a stale ${current_hand_direction} hand from ${time}`);
+            return autoScrollTimer;
+        }
+        lastPaintedAt[current_hand_direction] = time;
     }
 
     container.outerHTML = current_hand_html;
