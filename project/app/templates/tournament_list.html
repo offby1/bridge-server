@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{# Nothing on this page changes by itself, so it spends no SSE connection; the #}
+{# browser only gets six.  The navbar's bot-checkbox therefore won't update live #}
+{# here, which is a fair trade for a page you're reading rather than playing at. #}
+{# See docs/README.sse.md. #}
+{% block sse_connection %}
+{% endblock sse_connection %}
 {% load base_extras %}
 {% load fastdev %}
 {% load static %}
@@ -7,58 +13,58 @@
 {% endblock title %}
 {% block content %}
     {% ifexists button %}
-    <form action="{% url 'app:new-tournament' %}" method="post">
-        {% csrf_token %}
-        {{ button }}
-    </form>
-{% endifexists %}
-{% block tournament_list %}
-    <table class="table caption-top">
-        <caption>Tournaments
-            {% if description %}{{ description }}{% endif %}
-        </caption>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Tempo</th>
-                <th>Signup Deadline</th>
-                <th>Play Completion Deadline</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tournament in tournament_list %}
-                <tr {% if tournament.status_str == "OpenForSignup" %}class="throb-div"{% endif %}>
-                    <th>{{ tournament.display_number }}</th>
-                    <td>
-                        <a href="{% url 'app:tournament' pk=tournament.pk %}">{{ tournament }}</a>
-                    </td>
-                    <td>{{ tournament.status_str }}</td>
-                    <td>{{ tournament.tempo_seconds }}</td>
-                    <td style="{{ tournament.signup_deadline_style }}">
-                        {% if tournament.signup_deadline %}
-                            <time datetime="{{ tournament.signup_deadline.isoformat }}"
-                                  class="isoformat">{{ tournament.signup_deadline.isoformat }}</time>
-                            <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
-                        {% else %}
-                            None
-                        {% endif %}
-                    </td>
-                    <td style="{{ tournament.play_completion_deadline_style }}">
-                        {% if tournament.play_completion_deadline %}
-                            <time datetime="{{ tournament.play_completion_deadline.isoformat }}"
-                                  class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</time>
-                            <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
-                        {% else %}
-                            None
-                        {% endif %}
-                    </td>
+        <form action="{% url 'app:new-tournament' %}" method="post">
+            {% csrf_token %}
+            {{ button }}
+        </form>
+    {% endifexists %}
+    {% block tournament_list %}
+        <table class="table caption-top">
+            <caption>Tournaments
+                {% if description %}{{ description }}{% endif %}
+            </caption>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Tempo</th>
+                    <th>Signup Deadline</th>
+                    <th>Play Completion Deadline</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endblock tournament_list %}
+            </thead>
+            <tbody>
+                {% for tournament in tournament_list %}
+                    <tr {% if tournament.status_str == "OpenForSignup" %}class="throb-div"{% endif %}>
+                        <th>{{ tournament.display_number }}</th>
+                        <td>
+                            <a href="{% url 'app:tournament' pk=tournament.pk %}">{{ tournament }}</a>
+                        </td>
+                        <td>{{ tournament.status_str }}</td>
+                        <td>{{ tournament.tempo_seconds }}</td>
+                        <td style="{{ tournament.signup_deadline_style }}">
+                            {% if tournament.signup_deadline %}
+                                <time datetime="{{ tournament.signup_deadline.isoformat }}"
+                                      class="isoformat">{{ tournament.signup_deadline.isoformat }}</time>
+                                <span class="humanize-me">{{ tournament.signup_deadline|humanized_timestamp }}</span>
+                            {% else %}
+                                None
+                            {% endif %}
+                        </td>
+                        <td style="{{ tournament.play_completion_deadline_style }}">
+                            {% if tournament.play_completion_deadline %}
+                                <time datetime="{{ tournament.play_completion_deadline.isoformat }}"
+                                      class="isoformat">{{ tournament.play_completion_deadline.isoformat }}</time>
+                                <span class="humanize-me">{{ tournament.play_completion_deadline|humanized_timestamp }}</span>
+                            {% else %}
+                                None
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endblock tournament_list %}
 {% endblock content %}
 {% block scripts %}
     <script src="{% static 'app/humanize-duration.js' %}"></script>

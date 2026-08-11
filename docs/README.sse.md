@@ -35,13 +35,25 @@ chat log and the hand all share the same socket without knowing about each other
 than the bare `EventSource` htmx would construct, and `bridge-game.js` needs a reference
 so it can listen on the same socket instead of opening more.
 
-A page where nothing can change should spend no connection at all, by overriding the
-`sse_connection` block to nothing. `read-only_hand.html` does that for a hand that is
-complete or abandoned, since nothing will ever be sent about one. This matters more than
-it sounds: opening a dozen finished hands in a dozen tabs to compare them used to
-exhaust the six-connection budget and leave most of the tabs spinning. The same template
-serves spectators of a hand still being played, which does need the connection, so the
-opt-out tests the hand rather than the template.
+A page where nothing can change spends no connection at all, by overriding the
+`sse_connection` block to nothing. Only three pages keep it: the interactive hand, the
+read-only hand while it is still being played, and the player detail page, which has
+chat. Everything else opts out, and `app/test_sse_opt_out.py` enforces the split in both
+directions -- it fails if a page with a subscriber opts out, and if a page without one
+doesn't.
+
+This matters more than it sounds. Opening a dozen finished hands in a dozen tabs to
+compare them used to exhaust the six-connection budget and leave most of the tabs
+spinning.
+
+One consequence worth knowing: the navbar's bot-checkbox carries an `sse-swap`, so on an
+opted-out page it no longer updates by itself. It is correct when the page loads, and
+these are pages you are reading rather than playing at, so that seemed a fair trade for
+a connection.
+
+`read-only_hand.html` is the interesting case, because the same template serves a
+finished hand and a spectator watching a live one. Its opt-out therefore tests the hand,
+not the template.
 
 The attribute on `<body>` is the single source of truth. The script in `base.html`
 creates nothing if it's absent, so a page that opts out doesn't open a stream to the URL
