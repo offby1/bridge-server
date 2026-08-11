@@ -39,8 +39,14 @@ production restart is exactly when a client silently misses events.
   `app/test_reference_client.py` drives it against a `live_server`, so the example
   can't rot quietly.
 
-Not built yet: the two streaming tests, which need a daphne fixture rather than
-`live_server`.
+Attempted and parked: the two streaming tests, in `app/test_streaming.py`. They are
+skipped, and the module explains why at length. In short: the daphne fixture works, but
+an event published by the test process never reaches a client connected to a
+freshly-started server, and the suspicion points upstream, at how django-eventstream
+starts and holds its Redis subscriber. Events crossing processes is demonstrated daily
+by the bot and the browser, so what these tests would add is protection against
+regressions, not knowledge -- which is why they were worth an afternoon and not a
+second one.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be

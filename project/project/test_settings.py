@@ -16,7 +16,11 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "HOST": os.environ.get("PGHOST", "localhost"),
-        "NAME": "bridge",
+        # From the environment so that a subprocess can be pointed at the *test*
+        # database.  The daphne fixture in app/test_streaming.py does exactly that;
+        # without it, a server we spawn during a test would cheerfully read and write
+        # the development database.
+        "NAME": os.environ.get("PGDATABASE", "bridge"),
         "PASSWORD": os.environ.get("PGPASS", "postgres"),
         "USER": os.environ.get("PGUSER", "postgres"),
         # Disable persistent connections for tests

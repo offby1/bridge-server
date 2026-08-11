@@ -117,15 +117,23 @@ class BridgeClient:
         if not response.ok:
             raise BridgeClientError(f"Server refused {payload}", response)
 
-    def events(self, player_pk: int | None = None) -> Iterator[tuple[str, str]]:
-        """Yield `(event_type, raw_json)` as the server sends them. Blocks forever.
+    def events(
+        self, player_pk: int | None = None, *, read_timeout: float | None = None
+    ) -> Iterator[tuple[str, str]]:
+        """Yield `(event_type, raw_json)` as the server sends them.
 
         Event types are the ones in `app/sse_events.py`: "new-call", "new-play",
         "contract", "bot-setting". You'll also see "stream-open" and "keep-alive",
         which carry nothing and which you can ignore.
 
-        This never returns on its own. Break out of the loop when you've had enough,
-        and remember the warning about history in this module's docstring.
+        Without `read_timeout` this blocks forever, which is usually what a bot wants:
+        break out of the loop when you've had enough. Pass one if you'd rather give up
+        after a quiet spell -- a test waiting for a particular event wants that, so it
+        fails instead of hanging. Note the server sends a keep-alive every 20 seconds,
+        so a timeout longer than that will never fire on a healthy connection.
+
+        Remember the warning about history in this module's docstring: whatever you
+        missed while disconnected is gone, so re-read `hand()` after any interruption.
         """
         if player_pk is None:
             player_pk = self.player_pk
@@ -133,7 +141,9 @@ class BridgeClient:
             raise ValueError("Log in first, or say whose events you want")
 
         messages = sseclient.SSEClient(
-            self._url(f"/events/player/json/{player_pk}/"), session=self.session
+            self._url(f"/events/player/json/{player_pk}/"),
+            session=self.session,
+            timeout=read_timeout,
         )
         for message in messages:
             yield message.event, message.data
