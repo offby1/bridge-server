@@ -9,7 +9,7 @@ These tests drive `get_events()` directly rather than consuming an SSE endpoint.
 endpoint's response never ends, so reading it from a test means racing a generator that
 is designed to run forever; `get_events()` is the same code path without the streaming.
 
-See README.branch.md.
+See docs/README.sse.md.
 """
 
 import pytest

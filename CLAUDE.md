@@ -106,35 +106,43 @@ Set via `DJANGO_SETTINGS_MODULE` environment variable. The `justfile` exports th
 
 **Critical Pattern**: All game state updates flow through django-eventstream → Redis → SSE to clients.
 
+There are exactly two SSE endpoints, and adding a third is almost certainly a mistake.
+See `docs/README.sse.md` for why, and for the whole design.
+
+- **`/events/all/`** — everything a browser needs, on one connection.
+- **`/events/player/json/<player_pk>/`** — the programmatic interface for clients
+  somebody else writes. See `docs/README.api.md`.
+
 #### Channel Manager (`app/channelmanager.py`)
-Custom `MyChannelManager` controls SSE channel access:
 
-- **`lobby`** - Broadcast to all logged-in users
-- **`player:html:hand:{player_pk}`** - Private HTML hand updates for web UI
-- **`player:json:{player_pk}`** - Private JSON transcripts for bots
-- **`table:html:{hand_pk}`** - Table-wide updates (auction, tricks)
-- **`chat:player-to-player:{channel}`** - Encrypted P2P messages
+`MyChannelManager` does two jobs. `get_channels_for_request()` decides which channels
+`/events/all/` carries for the viewer asking, and `can_read_channel()` decides who may
+read a given channel. The latter **denies anything it doesn't recognise**, so a new
+channel needs a rule there or it will silently deliver nothing.
 
-#### How to Send Events
+Channel names live in `app/sse_channels.py`, except the chat one, which is
+`players:<pk>_<pk>` and belongs to `Message.channel_name_from_player_pks`.
+
+#### How to send events
+
+Every kind of update has its own event name, collected in `SSEEventTypes`
+(`app/sse_events.py`). Don't send `"message"`: the browser's channels share one
+connection, so the name is how a listener knows what it just received.
+
 ```python
+from app.sse_channels import SSEChannels
+from app.sse_events import SSEEventTypes, create_table_event
 from django_eventstream import send_event
 
-# Send to a player's private channel
 send_event(
-    f"player:html:hand:{player.pk}",
-    "message",
-    {"bidding_box_html": rendered_html}
-)
-
-# Send to everyone at a table
-send_event(
-    f"table:html:{hand.pk}",
-    "message",
-    {"trick_counts_string": "NS: 3, EW: 2"}
+    channel=SSEChannels.table_html(hand.pk),
+    event_type=SSEEventTypes.TABLE,
+    data=create_table_event(trick_counts_string='{"N/S": 3, "E/W": 2}'),
 )
 ```
 
-Clients subscribe via GET `/events/<channel>/` and receive SSE streams.
+The event name is a contract between Python and JavaScript that no type checker sees.
+`app/test_sse_event_types.py` checks that the browser subscribes to the names we send.
 
 ### Game Logic Organization
 
@@ -372,12 +380,19 @@ Set by `justfile` or Docker Compose:
 
 ### Adding a New SSE Event Type
 
-1. Define channel name in `app/channelmanager.py:can_read_channel()`
-2. Send events using `send_event(channel, "message", data_dict)`
-3. Subscribe in JavaScript: `new EventSource('/events/{channel}/')`
-4. Add event listener: `eventSource.addEventListener('message', handler)`
+1. Add the channel name to `app/sse_channels.py`, and a rule for it in
+   `can_read_channel()`. Without the rule it is denied, and you will get silence.
+2. Add the event name to `SSEEventTypes` in `app/sse_events.py`.
+3. If a browser needs it, include the channel in `get_channels_for_request()` so it
+   rides the existing connection. **Do not add an endpoint or open a second
+   `EventSource`**: browsers allow only six connections per origin, and this project
+   spent a while wedged against that limit. See `docs/README.sse.md`.
+4. Subscribe by name: `sse-swap="your-event"` on any element inside `<body>`, or
+   `window.bridgeEventSource.addEventListener('your-event', handler)` in JavaScript.
+5. Add the pair to `SUBSCRIBERS` in `app/test_sse_event_types.py`, so a later rename
+   can't quietly disconnect the two halves.
 
-See `app/templates/interactive_hand.html` for JavaScript SSE examples.
+See `app/static/app/bridge-game.js` and `app/templates/base.html` for examples.
 
 ### Adding a Bot Command
 

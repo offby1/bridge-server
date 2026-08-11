@@ -3,7 +3,7 @@
 The browser used to open one connection per channel, which exhausted Chrome's six
 connections per origin after a few navigations. Now one connection carries everything,
 and `MyChannelManager.get_channels_for_request` decides what "everything" means for the
-viewer making the request. See README.branch.md.
+viewer making the request. See docs/README.sse.md.
 """
 
 import inspect

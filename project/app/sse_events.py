@@ -15,7 +15,7 @@ class SSEEventTypes:
 
     Every event used to travel as `"message"`. On the browser's channels that worked
     only because each channel had its own connection, so the channel implied the
-    meaning. They now share one connection (see README.branch.md), where it no longer
+    meaning. They now share one connection (see docs/README.sse.md), where it no longer
     holds: htmx's `sse-swap` and our JS listeners subscribe by event name, so each kind
     of update needs a name of its own.
 

@@ -8,7 +8,7 @@
  *
  * Takes the page's shared EventSource rather than opening one: browsers allow only six
  * connections per origin, so every stream rides window.bridgeEventSource, created in
- * base.html.  See README.branch.md.
+ * base.html.  See docs/README.sse.md.
  *
  * @param {EventSource} playerEventSource - the page's shared connection
  * @param {number} playerId - Player ID for redirects
@@ -41,7 +41,7 @@ export function initPlayerEventStream(playerEventSource, playerId) {
     // stream-reset means "you missed events and I can't tell you which".  It cannot
     // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
     // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
-    // reloads on reconnect.  See README.branch.md and app/test_stream_reset.py.
+    // reloads on reconnect.  See docs/README.sse.md.
     playerEventSource.addEventListener('stream-reset', function (e) {
         console.log("playerEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });
@@ -60,7 +60,7 @@ export function initTableEventStream(handEventSource) {
     // stream-reset means "you missed events and I can't tell you which".  It cannot
     // currently fire: it needs EVENTSTREAM_STORAGE_CLASS, which is unset, so the server
     // stores nothing to notice a gap in.  Recovery lives in base.html instead, which
-    // reloads on reconnect.  See README.branch.md and app/test_stream_reset.py.
+    // reloads on reconnect.  See docs/README.sse.md.
     handEventSource.addEventListener('stream-reset', function (e) {
         console.log("handEventSource got stream-reset: " + Object.keys(JSON.parse(e.data)));
     });

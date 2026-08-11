@@ -6,7 +6,7 @@ bot -- actually works. An example nobody runs rots; this one fails the build.
 
 Only the HTTP half is covered here. Reading events as they arrive needs a real ASGI
 server, because `live_server` is WSGI and django-eventstream yields async iterables;
-see README.branch.md.
+see docs/README.sse.md.
 """
 
 import pytest

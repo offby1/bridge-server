@@ -13,17 +13,28 @@ logger = logging.getLogger(__name__)
 
 class MyChannelManager(DefaultChannelManager):
     def get_channels_for_request(self, request, view_kwargs):
-        """Compute the channel set for the consolidated browser endpoint.
+        """Decide what `/events/all/` carries for the viewer who asked.
 
-        The per-channel endpoints name their channel in the URLconf, via `channels` or
-        `format-channels`; those still work, and we defer to the default behaviour for
-        them. A request with no such kwarg is asking for everything this viewer needs on
-        one connection, which is what `/events/all/` is for. See README.branch.md.
+        A browser gets one connection for the whole page, because they allow only six
+        per origin and we spent a while wedged against that limit. `docs/README.sse.md`
+        has the story; the short version is that a page used to open one connection per
+        channel, and a few ordinary navigations exhausted the browser's budget.
 
-        We filter the result through `can_read_channel` ourselves, rather than leaving
-        it to `get_events()`. A single unreadable channel makes `get_events()` raise
-        `EventPermissionError` for the whole request, so an optimistic channel set would
-        cost a viewer every update rather than just the one they can't have.
+        `/events/player/json/<player_id>/` names its channel in the URLconf, via
+        `format-channels`, and we defer to django-eventstream for it. A request with no
+        such kwarg is the consolidated endpoint asking us to work the set out.
+
+        We filter the result through `can_read_channel` ourselves rather than leaving it
+        to `get_events()`, which raises `EventPermissionError` for the *whole* request if
+        any single channel is unreadable. On a shared connection that would cost a viewer
+        every update rather than the one they may not have.
+
+        One endpoint rather than a public one and a private one: `can_read_channel`
+        refuses anyone without a player, so anonymous visitors read nothing at all, and
+        every client that reads anything is authenticated. Splitting would give each of
+        them two sockets where one does. When logged-out spectators become a thing, that
+        changes -- and it changes in `can_read_channel` first; the split follows from it
+        rather than preceding it.
         """
         if {"channel", "channels", "format-channels"} & view_kwargs.keys():
             return super().get_channels_for_request(request, view_kwargs)
