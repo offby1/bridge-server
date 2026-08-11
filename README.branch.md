@@ -18,14 +18,15 @@ Landed:
 - `app/test_stream_reset.py` records that `stream-reset` cannot fire here.
 - The superseded per-channel endpoints are gone. `/events/all/` and
   `/events/player/json/<player_id>/` are the only two left.
+- A reconnect reloads the page, so a client that was away catches up.
 
 Verified in a browser: a page holds one connection, chat delivers over it, and a hand
 page's auction and play histories update as the bot plays. That last one was the
-complaint this work started from.
+complaint this work started from. The reload-on-reconnect is the exception -- no test
+covers it and nobody has watched it happen, which would mean killing the django
+container with a hand page open.
 
-- A reconnect reloads the page, so a client that was away catches up.
-
-Still intent: the reference client with its contract tests.
+Not built yet: the reference client and its contract tests.
 
 Throughout this document, "today" and "currently" describe the repository as it stands;
 "we will" and "this branch will" describe work not yet done. Where a sentence could be
