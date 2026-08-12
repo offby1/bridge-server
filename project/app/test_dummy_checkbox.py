@@ -94,6 +94,8 @@ def test_declarer_toggle_updates_dummy_checkbox(usual_setup: Hand) -> None:
         original_value = declarer.allow_bot_to_play_for_me
         declarer.allow_bot_to_play_for_me = not original_value
         declarer.save()
+        # Emulate the notifier: the app_player UPDATE fires this broadcast.
+        app.broadcast.broadcast_player_change(player=declarer, changed=["allow_bot_to_play_for_me"])
 
         # Should broadcast to both declarer and dummy
         channels_updated = {call.kwargs.get("channel") for call in mock_send_event.call_args_list}

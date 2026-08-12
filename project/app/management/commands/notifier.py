@@ -116,6 +116,12 @@ class Command(BaseCommand):
                 await sync_to_async(self._broadcast_hand, thread_sensitive=True)(
                     HAND_BROADCASTERS[key], hand_id, payload.get("changed")
                 )
+        elif key == ("app_player", "UPDATE"):
+            pk = payload.get("pk")
+            if pk is not None:
+                await sync_to_async(self._broadcast_player, thread_sensitive=True)(
+                    pk, payload.get("changed")
+                )
         else:
             logger.debug("notifier: observed (no broadcaster) %s", payload)
 
@@ -130,3 +136,15 @@ class Command(BaseCommand):
             logger.info("notifier: hand %s no longer exists; skipping", hand_id)
             return
         getattr(app.broadcast, fn_name)(hand=hand, changed=changed)
+
+    def _broadcast_player(self, player_pk: str, changed: list | None = None) -> None:
+        import app.broadcast
+        from app.models import Player
+
+        close_old_connections()
+        try:
+            player = Player.objects.get(pk=player_pk)
+        except Player.DoesNotExist:
+            logger.info("notifier: player %s no longer exists; skipping", player_pk)
+            return
+        app.broadcast.broadcast_player_change(player=player, changed=changed)

@@ -81,14 +81,19 @@ Each phase is one commit; `just ft` stays green after each.
   (only when the tournament is complete, so ordinary splitsville abandonment
   stays silent as before). `do_end_of_hand_stuff` and `Tournament._finish_play`
   no longer send. The notifier now forwards `changed` to hand broadcasters.
-- **Phase 4 (not yet): `Player` bot-toggle** -> `broadcast_player_change(player, changed)`.
+- **Phase 4 (done): `Player` bot-toggle** -> `broadcast_player_change(player, changed)`.
+  The player's own bot-checkbox HTML, the JSON bot-setting, and (for a declarer)
+  the dummy's checkbox. `Player._broadcast_changes` is gone; `Player.save` no
+  longer broadcasts. Driven by the app_player UPDATE trigger (0104), which
+  already fires only on allow_bot / current_hand changes.
 - **Phase 5 (not yet): `Message` INSERT** -> `broadcast_after_message(message)`
   (adds an `app_message` trigger); chat and lobby.
 - **Phase 6 (not yet): `Player.partner` change** -> partnerships event.
 
 ## Status
 
-As of this commit, Phases 0 through 3 have landed: the plumbing exists and is
-tested, and the `Call`, `Play`, and `Hand`-completion/abandonment broadcasts are
-now trigger-driven (their inline sends are gone). Phases 4 onward are intent, not
-current behaviour.
+As of this commit, Phases 0 through 4 have landed: the plumbing exists and is
+tested, and the `Call`, `Play`, `Hand`-completion/abandonment, and `Player`
+bot-toggle broadcasts are now trigger-driven (their inline sends are gone).
+Phases 5 and 6 (the chat/lobby and partnership `Message`/`Player.partner`
+broadcasts) are intent, not current behaviour.

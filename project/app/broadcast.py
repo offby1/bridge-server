@@ -21,6 +21,7 @@ from types import SimpleNamespace
 from django.template.loader import render_to_string
 
 import app.models.hand
+import app.models.player
 from app.models.hand import send_timestamped_event
 from app.sse_events import (
     SSEEventTypes,
@@ -183,4 +184,50 @@ def broadcast_after_hand_change(
                 channel=hand.event_table_html_channel,
                 event_type=SSEEventTypes.TABLE,
                 data=create_table_event(play_completion_deadline=deadline.isoformat()),
+            )
+
+
+def broadcast_player_change(
+    *, player: app.models.player.Player, changed: list[str] | None = None
+) -> None:
+    """Reproduce the SSE fan-out for a player's bot-toggle / seating change.
+
+    Formerly inline in Player._broadcast_changes; driven now by the app_player
+    UPDATE trigger, which fires only when allow_bot_to_play_for_me or
+    current_hand_id actually changes.
+    """
+    changed = changed or []
+    if "allow_bot_to_play_for_me" not in changed and "current_hand_id" not in changed:
+        return
+
+    html = render_to_string(
+        "bot-checkbox.html", {"user": SimpleNamespace(player=player), "error_message": None}
+    )
+    app.models.player.send_event(
+        channel=player.bot_checkbox_channel,
+        event_type=SSEEventTypes.BOT_CHECKBOX,
+        data=html,
+        json_encode=False,
+    )
+    # The bot/API clients learn the setting on their JSON stream.
+    app.models.player.send_event(
+        channel=player.event_JSON_hand_channel,
+        event_type=SSEEventTypes.BOT_SETTING,
+        data={"allow_bot_to_play_for_me": player.allow_bot_to_play_for_me},
+    )
+
+    # The declarer controls the dummy's hand too, so a declarer's toggle also
+    # updates the dummy's (disabled) checkbox.
+    if player.current_hand and player.current_hand.model_declarer == player:
+        dummy = player.current_hand.model_dummy
+        if dummy:
+            dummy_html = render_to_string(
+                "bot-checkbox.html",
+                {"user": SimpleNamespace(player=dummy), "error_message": None},
+            )
+            app.models.player.send_event(
+                channel=dummy.bot_checkbox_channel,
+                event_type=SSEEventTypes.BOT_CHECKBOX,
+                data=dummy_html,
+                json_encode=False,
             )
