@@ -300,3 +300,29 @@ def get_player_summary_by_name_or_pk(name_or_pk: str) -> dict[str, Any] | None:
         "current_hand_pk": current_hand.pk if current_hand is not None else None,
         "name": player.name,
     }
+
+
+def get_chat_disabled_explanation(
+    *, sender: app.models.Player, recipient: app.models.Player
+) -> str | None:
+    """Explain why `sender` may not chat with `recipient`, or None if they may.
+
+    Both players must have verified via Google OAuth. A player may always talk to
+    themselves (if OAuth-verified), but neither party may be seated at a hand.
+    """
+    if not sender.is_oauth_verified:
+        return "You must sign in with Google to use chat"
+    if not recipient.is_oauth_verified:
+        return f"{recipient.name} hasn't signed in with Google, so you can't chat with them"
+
+    # You can always mumble to yourself ... if you're OAuthed.  (Otherwise you'd use my bridge server as your own
+    # private cloud storage.)
+    if sender == recipient:
+        return None
+
+    if recipient.current_hand_and_direction() is not None:
+        return f"{recipient.name} is already seated"
+    if sender.current_hand_and_direction() is not None:
+        return f"You, {sender.name}, are already seated"
+
+    return None

@@ -169,25 +169,6 @@ def _partnership_context(
     return context
 
 
-def _chat_disabled_explanation(*, sender, recipient) -> str | None:
-    if not sender.is_oauth_verified:
-        return "You must sign in with Google to use chat"
-    if not recipient.is_oauth_verified:
-        return f"{recipient.name} hasn't signed in with Google, so you can't chat with them"
-
-    # You can always mumble to yourself ... if you're OAuthed.  (Otherwise you'd use my bridge server as your own
-    # private cloud storage.)
-    if sender == recipient:
-        return None
-
-    if recipient.current_hand_and_direction() is not None:
-        return f"{recipient.name} is already seated"
-    if sender.current_hand_and_direction() is not None:
-        return f"You, {sender.name}, are already seated"
-
-    return None
-
-
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
@@ -211,7 +192,9 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 
     common_context = {
         "chat_channel_name": Message.channel_name_from_players(who_clicked, subject),
-        "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
+        "chat_disabled": app.readers.get_chat_disabled_explanation(
+            sender=who_clicked, recipient=subject
+        ),
         "chat_messages": (
             [
                 m.as_html()
@@ -267,9 +250,10 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 @logged_in_as_player_required(redirect=False)
 def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
+    assert sender is not None
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
-    if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
+    if explanation := app.readers.get_chat_disabled_explanation(sender=sender, recipient=recipient):
         return Forbid(explanation)
 
     # Creating the message is enough; the app_message trigger drives the SSE
