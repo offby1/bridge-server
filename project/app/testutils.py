@@ -134,6 +134,7 @@ def play_out_hand(h: app.models.Hand) -> None:
         h.add_play_from_model_player(
             player=h.player_who_controls_seat(ns, right_this_second=True), card=play.card
         )
+        app.broadcast.broadcast_after_play(hand=h)
 
     if h.is_complete:
         logger.info("%s played %s to completion", [p.name for p in h.players()], h)

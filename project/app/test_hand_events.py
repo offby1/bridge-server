@@ -5,6 +5,7 @@ import itertools
 
 import pytest
 
+import app.broadcast
 import app.models
 import app.views
 import bridge.card
@@ -106,6 +107,7 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(
             player=player,
             card=bridge.card.Card.deserialize(card_string),
         )
+        app.broadcast.broadcast_after_play(hand=h)
 
     # So that our events contain, not HTML, but simple dicts.  That way we don't have to parse 'em.
     monkeypatch.setattr(app.views.hand, "render_to_string", lambda template_name, context: context)
@@ -178,6 +180,7 @@ def test_dummys_hand_isnt_always_highlighted(
             player=h.player_who_controls_seat(ns, right_this_second=True),
             card=bridge.card.Card.deserialize(card),
         )
+        app.broadcast.broadcast_after_play(hand=h)
 
     active_seats_seen = set()
     for e in itertools.chain.from_iterable(

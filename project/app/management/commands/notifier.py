@@ -35,6 +35,7 @@ RECONNECT_DELAY = 2.0
 # still-inline sends.
 HAND_BROADCASTERS: dict[tuple[str, str], str] = {
     ("app_call", "INSERT"): "broadcast_after_call",
+    ("app_play", "INSERT"): "broadcast_after_play",
 }
 
 

@@ -552,8 +552,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 f"It's not {player.name}'s turn to play, but rather {whose_turn}'s (at {self.next_seat_to_play})"
             )
 
-        seat_that_just_played = self.next_seat_to_play
-
         try:
             rv = self.play_set.create(hand=self, serialized=card.serialize())
         except Error as e:
@@ -572,30 +570,12 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             card,
         )
 
-        self.send_JSON_to_players(
-            event_type=SSEEventTypes.BOT_NEW_PLAY,
-            data={
-                "new-play": {
-                    "hand_pk": self.pk,
-                    "serialized": card.serialize(),
-                },
-                "tempo_seconds": self.board.tournament.tempo_seconds,
-            },
-        )
-
-        send_timestamped_event(
-            channel=self.event_table_html_channel,
-            event_type=SSEEventTypes.TABLE,
-            data=create_table_event(
-                trick_counts_string=self.trick_counts_string(),
-                trick_html=self._get_current_trick_html(),
-            ),
-        )
-
+        # The SSE fan-out for this play now lives in
+        # app.broadcast.broadcast_after_play, driven by the app_play INSERT
+        # trigger. What stays here is the state change a broadcast can't do for
+        # us: completing the hand.
         if (final_score := self.get_xscript().final_score()) is not None:
             self.do_end_of_hand_stuff(final_score_text=str(final_score))
-        else:
-            self.send_HTML_update_to_appropriate_channels(last_seat=seat_that_just_played)
 
         return rv
 

@@ -71,7 +71,10 @@ Each phase is one commit; `just ft` stays green after each.
   inline SSE fan-out is gone; only the passed-out state change stays. `testutils`
   helpers call the broadcaster after each `add_call` to emulate the notifier, so
   tests that observe those events still see them.
-- **Phase 2 (not yet): `Play` INSERT** -> `broadcast_after_play(hand)`.
+- **Phase 2 (done): `Play` INSERT** -> `broadcast_after_play(hand)`.
+  `add_play_from_model_player`'s inline sends (the JSON new-play, the trick
+  table, and the per-seat hand updates) are gone; only the hand-completion state
+  change stays. The just-played seat comes from `hand.annotated_plays[-1]`.
 - **Phase 3 (not yet): `Hand` complete/abandoned** -> `broadcast_after_hand_change(hand)`
   (branches on `changed`).
 - **Phase 4 (not yet): `Player` bot-toggle** -> `broadcast_player_change(player, changed)`.
@@ -81,6 +84,6 @@ Each phase is one commit; `just ft` stays green after each.
 
 ## Status
 
-As of this commit, Phases 0 and 1 have landed: the plumbing exists and is
-tested, and the `Call` broadcast is now trigger-driven (its inline sends are
-gone). Phases 2 onward are intent, not current behaviour.
+As of this commit, Phases 0 through 2 have landed: the plumbing exists and is
+tested, and the `Call` and `Play` broadcasts are now trigger-driven (their
+inline sends are gone). Phases 3 onward are intent, not current behaviour.

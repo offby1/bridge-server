@@ -104,3 +104,38 @@ def broadcast_after_call(*, hand: app.models.hand.Hand) -> None:
             event_type=SSEEventTypes.TABLE,
             data=data,
         )
+
+
+def broadcast_after_play(*, hand: app.models.hand.Hand) -> None:
+    """Reproduce the SSE fan-out for a card having been played on `hand`.
+
+    Formerly inline in `Hand.add_play_from_model_player`; driven now by the
+    app_play INSERT trigger. The just-played card is the most recent row in
+    `hand.play_set`, played by the last seat in `hand.annotated_plays`.
+    """
+    last_play = hand.play_set.order_by("id").last()
+    assert last_play is not None
+
+    hand.send_JSON_to_players(
+        event_type=SSEEventTypes.BOT_NEW_PLAY,
+        data={
+            "new-play": {"hand_pk": hand.pk, "serialized": last_play.serialized},
+            "tempo_seconds": hand.board.tournament.tempo_seconds,
+        },
+    )
+
+    send_timestamped_event(
+        channel=hand.event_table_html_channel,
+        event_type=SSEEventTypes.TABLE,
+        data=create_table_event(
+            trick_counts_string=hand.trick_counts_string(),
+            trick_html=hand._get_current_trick_html(),
+        ),
+    )
+
+    # When the hand is over, do_end_of_hand_stuff handles the finish and there is
+    # no per-seat update to send. Otherwise refresh the seat that just played and
+    # the seat now on turn.
+    if hand.get_xscript().final_score() is None:
+        last_seat = hand.annotated_plays[-1].seat
+        hand.send_HTML_update_to_appropriate_channels(last_seat=last_seat)
