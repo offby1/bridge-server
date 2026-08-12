@@ -1,11 +1,15 @@
 # A/B validating the Caddy rate-limit fix on a beta box
 
-Goal: prove the rate-limit branch actually fixes the 2026-07-15 blackout, by an
-A/B where the **only** variable is the branch:
+**The rate limits are on `main` and deployed** (`caddy/Caddyfile`). This document is the
+procedure we used to validate them, kept so we can repeat it whenever the thresholds
+change. Everywhere it says "this branch", read: the code with the rate limits in it, i.e.
+`main` today.
 
-1. Install **main** (the vulnerable version) on a beta box → **reproduce the blackout**.
-2. Switch the beta box to **this branch** (the fix).
-3. Run the **identical** stress client → observe **no blackout**.
+The shape of the A/B, in which the **only** variable is which code is deployed:
+
+1. Install the **pre-rate-limit** code on a beta box and **reproduce the blackout**.
+2. Switch the beta box to the code with the limits.
+3. Run the **identical** stress client and observe **no blackout**.
 
 See `crawler-repro.md` for the mechanism and `sse-connections.md` for the
 red-herring that SSE was not involved.
@@ -50,15 +54,14 @@ IP). A distributed flood is a separate concern (a global cap / WAF), not this.
   Install a stress client there — either this repo's tester (`python3`, stdlib)
   or `vegeta`.
 
-### 1. Reproduce the blackout on `main`
+### 1. Reproduce the blackout on the pre-fix code
 
 ```bash
-git checkout main && just beta
+git checkout <a revision before the rate-limit work> && just beta
 ```
 
-⚠️ **main's `_deploy` does not start Caddy** — that fix is on this branch (the
-`[merge to main]` commit). So bring Caddy up by hand for the main run, or the
-flood has no front door:
+⚠️ **`_deploy` did not start Caddy before the rate-limit work.** So on such a
+revision, bring Caddy up by hand, or the flood has no front door:
 
 ```bash
 CADDY_HOSTNAME=beta.bridge.offby1.info DOCKER_CONTEXT=hetz-bridge-beta \
@@ -80,10 +83,10 @@ confirmed** when: `backends` climbs toward the 200 cap, `err`/`0=` (timeouts)
 rise, the `canary` stops responding, and the site is unreachable in a browser.
 Record the `--rate` that did it.
 
-### 2. Switch to the fix and re-run identically
+### 2. Switch to the code with the limits and re-run identically
 
 ```bash
-git checkout <this-branch> && just beta   # now starts Caddy itself, with the rate limit
+git checkout main && just beta   # `_deploy` starts Caddy itself, with the rate limits
 ```
 
 Run the **exact same command** (same `--rate`, `--duration`):
@@ -96,7 +99,7 @@ python3 project/app/manually_test_rate_limiting.py \
 
 ### 3. Success criteria
 
-| Signal | main (broken) | this branch (fixed) |
+| Signal | pre-fix (broken) | with the limits (fixed) |
 |---|---|---|
 | `429/s` | ~0 | carries most of the load |
 | `ok/s` (accepted) | climbs then collapses | plateaus at ~5/s |
@@ -104,9 +107,14 @@ python3 project/app/manually_test_rate_limiting.py \
 | `sum(pg_stat_database_numbackends)` | → ~200 (cap) | flat near baseline |
 | canary / browser during flood | unresponsive | fast |
 
-The fix is validated when the same flood that blacked out `main` comes back
-almost entirely `429` on this branch, Daphne's backends stay flat, and a normal
+The fix is validated when the same flood that blacked out the pre-fix code comes back
+almost entirely `429` with the limits in place, Daphne's backends stay flat, and a normal
 request stays fast — i.e. the load is shed at the edge and never reaches Daphne.
+
+Note that the success criteria above were written for the per-IP zone alone. `Caddyfile`
+now has three zones (per-IP 5/s, list views 20/s aggregate, whole site 45/s aggregate), so
+a single-source flood at the list views is capped by whichever is tightest — the per-IP
+one. See `crawler-repro.md` for why three.
 
 ## Notes / gotchas
 

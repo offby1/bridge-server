@@ -63,7 +63,7 @@ Read-out:
   backends sat at 3–8 all morning *while* those SSE connections were being made,
   and only spiked with the crawler.
 
-`PlayerListView` (`project/app/views/player.py:508`) is a django-tables2
+`PlayerListView` (`project/app/views/player.py`) is a django-tables2
 `SingleTableMixin` + django-filter `FilterView`: every sortable column, filter,
 and page number is a distinct crawlable URL — a combinatorial crawler trap.
 
@@ -198,11 +198,15 @@ starves because the flood ate the pool.
 
 ## Fixes worth testing against it
 
-(From the original diagnosis — use the script to measure before/after.)
+(From the original diagnosis — use the script to measure before/after. The first
+one has since been done, in its tiered form; the rest have not.)
 
-- Rate-limit / block abusive IPs at Caddy (quickest stopgap).
+- ~~Rate-limit / block abusive IPs at Caddy (quickest stopgap).~~ **Done** — see
+  "The fix: tiered rate limits" above.
 - `robots.txt` + `nofollow` on sort/filter/pagination links; consider requiring
-  login for the list views.
+  login for the list views. (We do serve `robots.txt` and set `X-Robots-Tag: none`
+  on every response, which is about *polite* crawlers; neither slows down a
+  crawler that ignores them, which is the case that took us down.)
 - **Bound request concurrency** so a pile-up can't run the process — and the
   Postgres connection count — to the edge (the latent 200-cap failure mode
   above). Unauthenticated list views are free ammunition for a crawler.
@@ -211,23 +215,24 @@ starves because the flood ate the pool.
 
 ## Testing the Caddy rate limit
 
-> To *prove the fix works* (reproduce the blackout on `main`, then show it gone
-> on this branch), follow the A/B procedure in
-> [`rate-limit-ab-validation.md`](rate-limit-ab-validation.md). The quick check
+> The limits are on `main` and deployed. The A/B that proved they work — reproduce
+> the blackout on the pre-fix code, then show it gone with the limits in place — is
+> written up in [`rate-limit-ab-validation.md`](rate-limit-ab-validation.md); repeat
+> it if you change the thresholds. The quick check
 > below just confirms the limiter is wired up and shedding load.
 
-The per-IP rate limit lives at Caddy (`caddy/Caddyfile`, plugin built in via
-`caddy/Dockerfile`), so you can only test it against a stack that actually runs
-Caddy. **`just runme`, `just dev`, and `just dcu` do not** — Caddy is gated to
+The rate limits live at Caddy (`caddy/Caddyfile`, plugin built in via
+`caddy/Dockerfile`), so you can only test them against a stack that actually runs
+Caddy. **`just runme` and `just dev` do not** — Caddy is gated to
 the `prod`/`beta` compose profiles, and the `dev` profile omits it (justfile:
 "prod and beta get caddy + monitoring; dev doesn't"). The convenient option is
 **`just mini`**, which deploys the `beta,monitoring` profile (Caddy *and*
 Grafana/Prometheus) to the mac-mini context — and has no main-branch/clean-tree
-guard, so it deploys this branch as-is. To verify:
+guard, so it deploys whatever branch you're on as-is. To verify:
 
-1. Deploy this branch to the mini: `just mini`. (As of the `[merge to main]`
-   `_deploy` fix, this starts Caddy itself; older revisions relied on Caddy
-   already running and silently didn't start it on a fresh host.) Make sure
+1. Deploy to the mini: `just mini`. (`_deploy` starts Caddy itself; revisions
+   before the rate-limit work relied on Caddy already running and silently didn't
+   start it on a fresh host.) Make sure
    ports 80 and 443 are free on the mini first — e.g. turn off any
    `tailscale funnel`/`serve` bound to 443, or Caddy's port bind will fail.
 

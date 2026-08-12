@@ -4,7 +4,9 @@ This guide walks you through enabling Google OAuth authentication for the Bridge
 
 ## Prerequisites
 
-All code changes are already implemented. You just need to configure Google OAuth credentials and set up the Django Sites framework.
+All the code is in place; see [`README.google-oauth.md`](README.google-oauth.md) for what
+it consists of. All you need to do is get credentials from Google and put them where the
+app looks for them.
 
 ## Step 1: Install Dependencies
 
@@ -51,54 +53,29 @@ Replace `YOUR_CLIENT_ID_HERE` and `YOUR_CLIENT_SECRET_HERE` with the actual valu
 
 **Security Note**: These files contain sensitive credentials. They are stored locally and not committed to git. The `.gitignore` should already exclude them.
 
-## Step 3: Configure Django Sites Framework
-
-The `django.contrib.sites` framework needs to know your domain name.
-
-Start the Django shell:
-```bash
-just shell
-```
-
-Then run these commands in the shell:
-```python
-from django.contrib.sites.models import Site
-
-# Get the current site (created by migrations with id=1)
-site = Site.objects.get_current()
-
-# Configure for your environment
-# Development:
-site.domain = "localhost:9000"
-site.name = "Bridge Server (Development)"
-
-# OR for Production:
-# site.domain = "bridge.offby1.info"
-# site.name = "Bridge Server"
-
-# OR for Beta:
-# site.domain = "beta.bridge.offby1.info"
-# site.name = "Bridge Server (Beta)"
-
-# Save the changes
-site.save()
-
-# Verify
-print(f"Site configured: {site.domain} ({site.name})")
-exit()
-```
-
-## Step 4: Run Migrations
-
-Ensure all database tables are created:
+## Step 3: Run migrations and the OAuth setup command
 
 ```bash
-just migrate
+just setup-oauth
 ```
 
-You should see that the `sites`, `account`, and `socialaccount` migrations have been applied.
+This migrates (so the `sites`, `account` and `socialaccount` tables exist) and then runs
+the `setup_oauth` management command, which does two things you would otherwise do by hand:
 
-## Step 5: Start the Server
+- points `django.contrib.sites` at the right domain, chosen from
+  `DEPLOYMENT_ENVIRONMENT` / `COMPOSE_PROFILES` / `HOSTNAME` — `localhost:9000` for local
+  development, your `.ts.net` name if you're on Tailscale, `bridge.offby1.info` for
+  production, `beta.bridge.offby1.info` for beta
+- creates or updates the `SocialApp` row holding the client id and secret, and links it to
+  that site
+
+If the credential files from Step 2 are missing, it says so and skips the `SocialApp`; the
+rest of the site works fine, just without a Google button.
+
+Every deploy runs this for you, as the one-shot `django-oauth-setup` compose service, so
+you only need it by hand when setting up locally or after changing credentials.
+
+## Step 4: Start the Server
 
 ```bash
 just runme
@@ -106,7 +83,7 @@ just runme
 
 The server will start on `http://localhost:9000`
 
-## Step 6: Test the OAuth Flow
+## Step 5: Test the OAuth Flow
 
 ### Test Traditional Authentication (Verify Backward Compatibility)
 
@@ -141,8 +118,10 @@ The server will start on `http://localhost:9000`
 ### Verify Email Privacy
 
 1. While logged in with a Google account, visit your player page
-2. ✅ Your chosen username should be visible, but NOT your email address
-3. Your email is stored in the database but not displayed publicly
+2. ✅ Your chosen username should be visible, and there should be no email address anywhere
+
+We don't merely hide the address: we never ask Google for it. The requested scope is
+`profile` only, so there is no email address in the database at all.
 
 ## Troubleshooting
 
@@ -154,26 +133,27 @@ The server will start on `http://localhost:9000`
 ### "Site matching query does not exist"
 
 - **Problem**: Django complains about missing Site object
-- **Solution**: Run the Django shell commands from Step 3 to configure the site
+- **Solution**: `just setup-oauth` (Step 3)
 
-### Google OAuth button doesn't appear
+### Google OAuth button fails when clicked
 
-- **Problem**: The "Sign in with Google" button is missing
-- **Possible causes**:
-  1. OAuth credentials not configured (check the files exist)
-  2. Browser cache - try hard refresh (Cmd+Shift+R)
-  3. Check console for JavaScript errors
+The button is rendered unconditionally by `signup.html` and `registration/login.html`, so
+its presence tells you nothing about whether OAuth is configured. If clicking it errors:
+
+  1. The credential files may be missing — check `just setup-oauth`'s output, which says so
+     explicitly
+  2. There may be no `SocialApp` row, for the same reason
+  3. The Site domain may not match the host you're browsing (see the next entry)
 
 ### OAuth flow starts but fails with 500 error
 
 - **Problem**: After clicking "Sign in with Google", the flow starts but fails
-- **Solution**: Check server logs for details:
-  ```bash
-  just logs
-  ```
+- **Solution**: Check server logs for details. Running natively, they're on your terminal;
+  in Docker, `docker compose logs django --tail=100`, or `just dump` to write them to a
+  timestamped file.
 - Common issues:
   - OAuth credentials not loaded (check the credential files)
-  - Site not configured (run Step 3 commands)
+  - Site not configured (run `just setup-oauth`)
 
 ### Username already taken
 
@@ -182,35 +162,20 @@ The server will start on `http://localhost:9000`
 
 ## Production Deployment
 
-For production deployment:
+See [`DEPLOY.google-oauth.md`](DEPLOY.google-oauth.md). The short version: the credentials
+stay on your laptop, `just prod` reads them and passes them to the remote host as Docker
+secrets, and the `django-oauth-setup` service configures the `SocialApp` and the Site
+domain there. You don't copy anything to the server, and you don't touch the Django shell.
 
-1. **Set OAuth credentials as environment variables** (recommended) or create credential files on the production server:
-   ```bash
-   export GOOGLE_OAUTH_CLIENT_ID_FILE="/path/to/google_oauth_client_id"
-   export GOOGLE_OAUTH_CLIENT_SECRET_FILE="/path/to/google_oauth_client_secret"
-   ```
-
-2. **Update Google Cloud Console** with production redirect URI:
-   - Add `https://bridge.offby1.info/accounts/google/login/callback/`
-
-3. **Configure the Site for production**:
-   ```python
-   site.domain = "bridge.offby1.info"
-   site.name = "Bridge Server"
-   site.save()
-   ```
-
-4. **Deploy**:
-   ```bash
-   just prod
-   ```
+Make sure Google Cloud Console has the production redirect URI:
+`https://bridge.offby1.info/accounts/google/login/callback/`.
 
 ## Security Notes
 
 - OAuth credentials are sensitive - never commit them to git
 - The `GOOGLE_OAUTH_CLIENT_SECRET` should be treated like a password
 - The implementation uses HTTPS in production (enforced by existing settings)
-- Email addresses from Google are stored but not displayed publicly
+- We never request the user's email address from Google, so there is none to expose
 - Users choose custom usernames to maintain privacy
 
 ## Additional Resources

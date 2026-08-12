@@ -1,12 +1,16 @@
 # Driving SSE off PostgreSQL LISTEN/NOTIFY
 
+**Status: this is how `main` works today.** All six phases below have landed; the
+"Status" section at the end says exactly what is and isn't trigger-driven. The
+present tense in "The problem" describes what things looked like *before* this work.
+
 ## The problem
 
 Every game update reaches the browser (and the bot JSON stream) through a
-`send_event(...)` call. Today those calls are scattered across the code: about
-ten of them, spread over `models/hand.py`, `models/player.py`,
-`models/tournament.py`, `views/lobby.py`, and `views/player.py`. Each is
-something a code path has to *remember* to do. Add a new way to change a hand
+`send_event(...)` call. Before this work those calls were scattered across the code:
+about ten of them, spread over `models/hand.py`, `models/player.py`,
+`models/tournament.py`, `views/lobby.py`, and `views/player.py`. Each was
+something a code path had to *remember* to do. Add a new way to change a hand
 and forget the broadcast, and the change is invisible until someone reloads.
 
 `docs/README.sse.md` describes the transport (one browser connection, one named
@@ -32,18 +36,22 @@ A broadcast should follow from the row changing, not from a caller remembering.
    full ORM and template access, so they render the same HTML and send the same
    named events the inline call sites used to -- only now nobody had to remember.
 
-The inline `send_event` calls are removed as each broadcaster takes over its
+The inline `send_event` calls were removed as each broadcaster took over its
 change, so nothing double-sends.
 
-## Why this branch is a fresh redo
+The `notifier` runs as its own container in the Docker stack, and `just runme` starts that
+container too, so live updates flow even when Django itself is running natively. `just
+notifier` runs it against the working tree instead, for iterating on broadcast code.
+
+## Why this was a fresh redo
 
 This work was first prototyped on `original-listen-notify-sse`, then adapted onto
 the RAPID-refactor branch (now `reference/listen-notify-and-rapid-rewrite`).
 Meanwhile `main` reworked the SSE *transport* (named events, one connection).
-Rather than merge two SSE reworks, we redo the LISTEN/NOTIFY piece cleanly on top
-of main's current design -- broadcasters emit main's named events from the start.
-The RAPID refactor is deliberately left on the reference branch; it is a separate
-line of work and is **not** part of this branch.
+Rather than merge two SSE reworks, we redid the LISTEN/NOTIFY piece cleanly on top
+of main's design -- broadcasters emit main's named events from the start.
+The RAPID refactor stayed on the reference branch and landed separately; see
+`docs/README.rapid-readers.md`.
 
 ## Testing note
 
@@ -55,12 +63,11 @@ transaction rolls back, an ordinary test never fires a trigger. So:
 - Every broadcaster is otherwise tested **directly**, by calling its
   `app.broadcast` function -- no committed write, no live listener needed.
 
-Tests that used to assert an inline `send_event` fired are updated, as each phase
-lands, to call the broadcaster instead.
+Tests that used to assert an inline `send_event` fired now call the broadcaster instead.
 
 ## Phases
 
-Each phase is one commit; `just ft` stays green after each.
+Each phase was one commit; `just ft` stayed green after each.
 
 - **Phase 0 (done): plumbing.** Trigger migrations (`0103`, `0104`) for
   Call/Play/Hand/Player, the `notifier` command, the `app/broadcast.py`

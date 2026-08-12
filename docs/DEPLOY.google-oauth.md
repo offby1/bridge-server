@@ -27,20 +27,13 @@ The deployment follows the same pattern as your existing Django secrets:
 
 **Important:** Credentials never need to be manually copied to the production host. They're transmitted securely during deployment.
 
-## Step 1: Configure Environment Variables
+## Step 1: Nothing, usually
 
-On your **local machine** (where you run `just prod`), set these environment variables to point to your local credential files:
-
-```bash
-# Add to your shell profile (~/.zshrc, ~/.bashrc, or ~/.profile)
-export GOOGLE_OAUTH_CLIENT_ID_FILE="$HOME/Library/Application Support/info.offby1.bridge/google_oauth_client_id"
-export GOOGLE_OAUTH_CLIENT_SECRET_FILE="$HOME/Library/Application Support/info.offby1.bridge/google_oauth_client_secret"
-```
-
-Reload your shell:
-```bash
-source ~/.zshrc  # or source ~/.bashrc
-```
+The justfile already exports `GOOGLE_OAUTH_CLIENT_ID_FILE` and
+`GOOGLE_OAUTH_CLIENT_SECRET_FILE`, pointing at
+`{{ config_directory() }}/info.offby1.bridge/`. So as long as your credential files are in
+the standard place (see the Prerequisites above), there is nothing to set up in your shell
+profile. Setting those variables yourself still works, and overrides the default.
 
 ## Step 2: Deploy
 
@@ -54,15 +47,17 @@ The `prod` recipe will:
 1. Read the credential files from **your local machine**
 2. Export them as environment variables
 3. Docker Compose sends them to the production host and injects them as secrets into the Django container
-4. Django reads them at `/run/secrets/google_oauth_client_id` and `/run/secrets/google_oauth_client_secret`
+4. Django reads them at `/run/secrets/google_oauth_client_id` and `/run/secrets/google_oauth_client_secret`, because the compose file sets `GOOGLE_OAUTH_CLIENT_ID_FILE` and `GOOGLE_OAUTH_CLIENT_SECRET_FILE` to those paths
+5. The one-shot `django-oauth-setup` service runs `setup_oauth`, which writes the `SocialApp` row and sets the Site domain, before the new `django` container starts
 
 ## Step 3: Verify Deployment
 
 After deployment, check that OAuth is working:
 
 1. Visit `https://bridge.offby1.info/accounts/login/`
-2. You should see the "Sign in with Google" button
-3. Click it and verify you can complete the OAuth flow
+2. Click the "Sign in with Google" button and verify you can complete the OAuth flow.
+   (The button is there whether or not OAuth is configured, so only completing the flow
+   proves anything.)
 
 Check Django logs for any OAuth-related errors:
 ```bash
@@ -72,9 +67,10 @@ docker compose logs django | grep -i oauth
 
 ## Troubleshooting
 
-### "Sign in with Google" button not visible
+### "Sign in with Google" doesn't work
 
-Check if credentials are loaded in the container:
+The button itself is unconditional, so seeing it tells you nothing. Check whether the
+credentials actually reached the container:
 ```bash
 docker context use hetz-bridge
 docker compose exec django sh -c 'ls -la /run/secrets/google_oauth_*'
@@ -98,20 +94,19 @@ Note: Must use `https://` (not `http://`) and must match exactly (no trailing sl
 
 ### Site domain not configured
 
-If OAuth redirects to the wrong domain, update the Django Sites framework:
+`setup_oauth` sets this on every deploy, from `DEPLOYMENT_ENVIRONMENT` and
+`COMPOSE_PROFILES`. If OAuth redirects to the wrong domain, look at what that command
+printed:
 
 ```bash
 docker context use hetz-bridge
-docker compose exec django uv run python manage.py shell
+docker compose logs django-oauth-setup
 ```
 
-In the shell:
-```python
-from django.contrib.sites.models import Site
-site = Site.objects.get_current()
-site.domain = "bridge.offby1.info"
-site.name = "Bridge Server"
-site.save()
+To re-run it against the deployed stack:
+
+```bash
+docker compose run --rm django-oauth-setup
 ```
 
 ## Security Notes
@@ -135,17 +130,23 @@ https://beta.bridge.offby1.info/accounts/google/login/callback/
 
 ## Optional: Disabling OAuth
 
-If you want to temporarily disable OAuth:
+Unsetting the environment variables won't do it, because the justfile exports them itself.
+To disable OAuth, move the credential files aside:
 
-1. **On your local machine**, unset the environment variables:
-   ```bash
-   unset GOOGLE_OAUTH_CLIENT_ID_FILE
-   unset GOOGLE_OAUTH_CLIENT_SECRET_FILE
-   ```
-2. Redeploy with `just prod`
+```bash
+mv "$GOOGLE_OAUTH_CLIENT_ID_FILE" "$GOOGLE_OAUTH_CLIENT_ID_FILE.disabled"
+mv "$GOOGLE_OAUTH_CLIENT_SECRET_FILE" "$GOOGLE_OAUTH_CLIENT_SECRET_FILE.disabled"
+```
 
-Or:
+then redeploy with `just prod`. `_deploy` tolerates the files being missing (it exports an
+empty string), `base_settings.py` leaves both values `None`, and `setup_oauth` warns and
+skips creating the `SocialApp`.
 
-1. Remove the redirect URIs from Google Cloud Console (OAuth will fail gracefully)
+Note that this leaves the "Sign in with Google" button *visible*: `signup.html` and
+`registration/login.html` link to `{% url 'google_login' %}` unconditionally. With no
+`SocialApp` in the database, clicking it fails. Hiding the button too would mean gating
+those two templates on whether a Google `SocialApp` exists; nobody has needed that yet.
 
-The Django app is designed to work without OAuth credentials - the "Sign in with Google" button simply won't appear if credentials aren't configured.
+Or, to break it from the other end: remove the redirect URIs from Google Cloud Console.
+
+Username-and-password login is unaffected either way.

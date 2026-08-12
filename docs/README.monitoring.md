@@ -6,11 +6,17 @@ I have added sentry, prometheus, and grafana; they work fine. However, I don't r
 
 ## How I'm doing it
 
-I've got prometheus and grafana containers in the usual docker stack, so those services are always running.  I don't expose either to the public Internet; instead, both servers listen only on localhost (plus my hetzner server is behind a firewall that only lets through ports 80 and 443, both of which go to "caddy", my SSL reverse-proxy).  Therefore, in order to see the grafana UI, I can either
+Prometheus and grafana run in the docker stack behind the `monitoring` compose profile, so
+`just prod`, `just beta` and `just mini` start them, and plain `just dev` does not — use
+`just dev-monitoring` to get them on the laptop.  I don't expose either to the public Internet; instead, both servers listen only on localhost (plus my hetzner server is behind a firewall that only lets through ports 80 and 443, both of which go to "caddy", my SSL reverse-proxy).  Therefore, in order to see the grafana UI, I
 
-- tell tailscale to "serve" it by running `tailscale serve --bg --tcp 3000 3000`
-- running the tailscale client on my laptop
-- pointing a laptop browser at <http://hetz:3000>
+- run `just tailscale-serve` once per host, which sshes in and tells tailscale to serve
+  ports 3000 (grafana) and 9090 (prometheus) on the tailnet.  It defaults to
+  `root@hetz-bridge`; pass a different host for beta, e.g. `just tailscale-serve
+  root@hetz-bridge-beta`.  `tailscale serve` persists on the host and is idempotent, so
+  this is genuinely one-time-per-host.
+- run the tailscale client on my laptop
+- point a laptop browser at <http://hetz:3000>
 
 I could probably also expose it via ssh port forwarding, but haven't yet bothered.
 

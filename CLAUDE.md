@@ -39,18 +39,23 @@ All commands use [Just](https://just.systems/) command runner. See `justfile` fo
 ### Development
 ```bash
 just runme              # Start Django dev server on localhost:9000 (native, no Docker)
-just dev                # Start full Docker Compose stack (Django + Postgres + Redis + Bots)
+just dev                # Start the local Docker Compose stack (Django + Postgres + Redis + bot + clock + notifier)
+just dev-monitoring     # Same as `just dev`, plus Grafana/Prometheus/pyroscope locally
+just notifier           # Run the change-notifier natively instead of in Docker
 just shell              # Django shell with pre-populated queries
 just sp                 # Quick shell_plus (no dependencies)
 ```
 
+`just dcu` is gone; it now prints "Use `just dev` now" and fails.
+
 ### Testing
 ```bash
 just ft                 # Fast tests (parallel, 8 workers via pytest-xdist) - PREFERRED for development
-just test               # Full test suite with coverage report (HTML in htmlcov/) - slower
+just test               # Full test suite under coverage - slower
+just cover              # `just test`, then build htmlcov/index.html and open it
 just t                  # Tests with exitfirst and failed-first
 just k <pattern>        # Run specific test by name (e.g., just k hand_events)
-just mypy               # Type checking with dmypy daemon
+just mypy               # Type checking with dmypy daemon (also runs `ty`, whose result is ignored)
 
 # UI Tests (Playwright)
 just ui-test-headless   # Run UI tests headless (PREFERRED - won't interfere with laptop use)
@@ -60,9 +65,9 @@ just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 
 **Important Testing Notes**:
 - **Always use `just ft` for quick test verification during development** - it's much faster than `just test`
-- **Check coverage after every important code change** - Run `just test` to generate coverage reports, then check `htmlcov/index.html` to ensure new code is tested
+- **Check coverage after every important code change** - Run `just cover`, which runs the suite under coverage and then writes and opens `htmlcov/index.html`. (`just test` collects the coverage data but does not build the HTML report.)
 - **Always use `just` commands, not `uv run` directly** - The justfile sets up required environment variables that `uv run` lacks. Direct `uv run` commands will often fail.
-- Use `just test` when you need coverage reports or are doing final verification before committing
+- Use `just test` when you are doing final verification before committing
 - Always use `just ui-test-headless` for UI tests unless specifically debugging browser behavior visually. Headless mode allows laptop use during test runs without interference.
 - Use `just k <pattern>` to run individual tests. NEVER use `pytest` directly or `uv run pytest`. The `just k` command is the standard way to run individual tests in this project.
 
@@ -71,14 +76,22 @@ just ui-test-mobile     # Run UI tests with mobile viewport (headed)
 just migrate            # Run migrations
 just makemigrations     # Create new migrations
 just dumpdata           # Export DB to fixture JSON
-just load <fixture>     # Import fixture (drops DB first)
+just load <fixture>     # Import fixture (drops DB first); alias for `just fixture`
+just drop               # Drop the local Postgres and Redis volumes
+just backup             # pg_dump the database, with secrets redacted
 just graph              # Generate ER diagram (opens in browser)
 ```
 
+The fixtures that exist live in `project/app/fixtures/`: `usual_setup`,
+`fresh_tournament`, `nearly_completed_tournament`,
+`completed-tournament-20-players`, `two_boards_one_of_which_is_played_almost_to_completion`,
+`two_by_two_all_tied`, and `jd-souther-is-ready-to-play-a-heart`.
+
 ### Deployment
 ```bash
-just prod               # Deploy to production (requires hetz-bridge Docker context)
-just beta               # Deploy to beta.bridge.offby1.info
+just prod               # Deploy to production (requires hetz-bridge Docker context, main branch, clean tree)
+just beta               # Deploy to beta.bridge.offby1.info (hetz-bridge-beta context)
+just mini               # Deploy to the mac mini over Tailscale
 ```
 
 ## Architecture
@@ -86,25 +99,43 @@ just beta               # Deploy to beta.bridge.offby1.info
 ### Technology Stack
 
 - **Framework**: Django 6.0 with Daphne ASGI server (async support)
-- **Database**: PostgreSQL 17 (max_connections=200 for SSE clients)
-- **Cache/PubSub**: Redis (django-eventstream backend)
+- **Database**: PostgreSQL 17 (max_connections=200), which is also the change-notification
+  bus, via LISTEN/NOTIFY
+- **Cache/PubSub**: Redis (django-eventstream's pub/sub transport, and the Django cache)
 - **Real-time**: Server-Sent Events (SSE) via django-eventstream
-- **Package Manager**: UV (not pip/poetry)
-- **Python**: 3.12-3.13 required
+- **Reverse proxy**: Caddy, in production and beta only — TLS plus rate limiting
+- **Package Manager**: uv (not pip/poetry)
+- **Python**: 3.12 or newer
 
 ### Settings Structure
 
-Three-tier configuration pattern:
+Four settings modules, all in the `project` package (on disk: `project/project/`):
 
 1. **`project/base_settings.py`** - Common settings
 2. **`project/dev_settings.py`** - Development (DEBUG=True, browser reload)
-3. **`project/prod_settings.py`** - Production (Sentry, hardened security)
+3. **`project/prod_settings.py`** - Production and staging (Sentry, hardened security). It
+   picks `DEPLOYMENT_ENVIRONMENT` itself: `"production"` when `COMPOSE_PROFILES` contains
+   `prod`, otherwise `"staging"`.
+4. **`project/test_settings.py`** - What the test suite runs under (`DEPLOYMENT_ENVIRONMENT = "test"`)
 
-Set via `DJANGO_SETTINGS_MODULE` environment variable. The `justfile` exports this automatically.
+Set via `DJANGO_SETTINGS_MODULE` environment variable. The `justfile` exports this
+automatically, defaulting to `project.dev_settings` and overriding it to
+`project.test_settings` for every test recipe.
 
 ### Real-Time Event Architecture
 
-**Critical Pattern**: All game state updates flow through django-eventstream → Redis → SSE to clients.
+**Critical Pattern**: a game state change reaches a client this way: something writes a
+row; a Postgres trigger emits a NOTIFY on commit; the `notifier` process turns that into
+a `send_event()` call; django-eventstream publishes it over Redis; whichever web process
+holds the client's SSE connection writes it down the socket.
+
+Two documents cover the two halves, and both are current:
+
+- `docs/README.listen-notify.md` — **who fires the broadcast.** Triggers plus the
+  `notifier` management command plus `app/broadcast.py`. Almost nothing calls `send_event`
+  inline any more, and new code should not start: add a broadcaster instead.
+- `docs/README.sse.md` — **how it reaches the browser.** One connection per page, one
+  named event per kind of update.
 
 There are exactly two SSE endpoints, and adding a third is almost certainly a mistake.
 See `docs/README.sse.md` for why, and for the whole design.
@@ -129,12 +160,16 @@ Every kind of update has its own event name, collected in `SSEEventTypes`
 (`app/sse_events.py`). Don't send `"message"`: the browser's channels share one
 connection, so the name is how a listener knows what it just received.
 
+Broadcasts live in `app/broadcast.py`, and the `notifier` calls them when a trigger fires;
+they use the shared `send_timestamped_event` helper in `app/models/hand.py` rather than
+calling `send_event` themselves. A broadcaster looks like this:
+
 ```python
+from app.models.hand import send_timestamped_event
 from app.sse_channels import SSEChannels
 from app.sse_events import SSEEventTypes, create_table_event
-from django_eventstream import send_event
 
-send_event(
+send_timestamped_event(
     channel=SSEChannels.table_html(hand.pk),
     event_type=SSEEventTypes.TABLE,
     data=create_table_event(trick_counts_string='{"N/S": 3, "E/W": 2}'),
@@ -148,18 +183,27 @@ The event name is a contract between Python and JavaScript that no type checker 
 
 #### Core Models (`app/models/`)
 
-**`hand.py`** (~2000 lines) - Most complex model
-- Tracks auction state (calls made, contract determination)
-- Tracks play state (cards played, tricks won, completion)
-- Contains card distribution for all four players
-- Uses JSONField for calls/plays history (append-only)
-- Key methods: `call()`, `play()`, `distribute_cards()`, `determine_contract()`
+**`hand.py`** (~1000 lines) - Most complex model. Holds `Hand` plus the `Call` and
+`Play` models.
+- Four foreign keys, `North`/`East`/`South`/`West`, name who sits where; the cards
+  themselves come from the `Board` the hand is played from
+- Auction and play history are rows: one `Call` row per call, one `Play` row per card,
+  both append-only. There is no JSONField.
+- `Hand.get_xscript()` builds (and caches) a `bridge.xscript.HandTranscript` from those
+  rows; nearly every derived question — whose turn, what the contract is, who won which
+  trick — is answered from the transcript rather than stored
+- Key write methods: `add_call()`, `add_play_from_model_player()`,
+  `do_end_of_hand_stuff()`. `is_complete` is a redundant field, recomputed by
+  `_update_redundant_fields()`.
+- Read-only query logic that used to live here is now in `app/readers.py` — see
+  `docs/README.rapid-readers.md`
 
-**`player.py`** (~500 lines)
-- Links User to Player (one-to-one)
-- Tracks current hand assignment
-- Partnership management (north/south vs east/west)
-- Bot flag (`is_synthetic`, `allow_bot_to_play_for_me`)
+**`player.py`** (~630 lines)
+- Links User to Player (one-to-one), and tracks the player's current hand
+- Partnership management (`partner_with`, `break_partnership`)
+- Bot flags: `synthetic` (this player *is* a bot) and `allow_bot_to_play_for_me` (a human
+  who has handed control over). `effective_allow_bot_to_play_for_me` also covers dummy,
+  whose cards declarer plays.
 
 **`tournament.py`**
 - Movement-based duplicate bridge mechanics
@@ -180,11 +224,24 @@ The project imports a separate `bridge` library (from GitLab) for:
 
 **Important**: The `bridge` library handles game rules; Django models handle game state persistence and player management.
 
+#### Readers (`app/readers.py`)
+
+Query logic — anything that computes something for a caller to look at, with no side
+effects — lives in `app/readers.py` as plain functions taking model instances. **The
+dependency points one way: readers import from models, models never import from readers.**
+Views, the bot API, management commands, `app/broadcast.py` and tests all call readers
+directly, as `import app.readers` then `app.readers.get_whatever(...)`.
+
+A read that a *template* used to make should become a value the view computes and passes
+in the context, not a delegating method left on the model — otherwise the template still
+triggers queries at render time. `docs/README.rapid-readers.md` has the full story and the
+traps.
+
 ### View Patterns
 
-#### Hand Visibility Rules (`app/views/hand.py`)
+#### Hand Visibility Rules (`app/readers.py`)
 
-The `display_skeleton()` function implements Bridge visibility rules:
+`app.readers.get_display_skeleton()` implements Bridge visibility rules:
 
 - **Your cards**: Always visible
 - **Partner's cards**: Visible only after dummy is exposed (contract determined + opening lead made)
@@ -216,17 +273,18 @@ curl -b cookies.txt http://localhost:9000/serialized/hand/123/
 # 3. Subscribe to events (long-lived SSE connection)
 curl -b cookies.txt http://localhost:9000/events/player/json/1/
 
-# 4. Make a call
+# 4. Make a call.  No hand pk in the URL: the server applies the call to whichever
+#    hand you are currently seated at.
 curl -b cookies.txt -X POST \
   -H "X-CSRFToken: <from-cookie>" \
   -d "call=1%E2%99%A3" \
-  http://localhost:9000/call/123/
+  http://localhost:9000/call/
 
-# 5. Play a card
+# 5. Play a card.  Likewise no hand pk.
 curl -b cookies.txt -X POST \
   -H "X-CSRFToken: <from-cookie>" \
   -d "card=%E2%99%A52" \
-  http://localhost:9000/play/123/
+  http://localhost:9000/play/
 ```
 
 **CSRF Protection**: POST requests require either:
@@ -237,14 +295,26 @@ See `docs/README.api.md` for complete API documentation.
 
 ### Middleware Stack
 
-Custom middleware in `app/middleware/`:
+Our own middleware, all in `app/middleware/`:
 
-- **RequestIDMiddleware** - Adds `X-Request-Id` for tracing (propagated to PostgreSQL logs)
+- **SwallowAnnoyingExceptionMiddleware** - Turns `asyncio.CancelledError` (a client that
+  hung up mid-response) into a warning instead of a 30-line traceback
+- **NoIndexMiddleware** - Adds `X-Robots-Tag`
+- **AddRequestIdToSQLConnectionMiddleware** - Sets Postgres `application_name` to the
+  request id, so a query in the database log can be traced back to its request
 - **AddVersionHeaderMiddleware** - Includes git commit in `X-Bridge-Version` header
-- **PrometheusBeforeMiddleware/AfterMiddleware** - Request metrics
-- **SwallowAnnoyingExceptionMiddleware** - Suppresses known harmless errors (e.g., SSE client disconnects)
+- **RequestLoggingMiddleware** (`simple_access_log.py`) - One line per request. Its `ms=`
+  figure starts at its own place in the chain, so it excludes everything listed above it.
+- **SSEStreamLoggingMiddleware** - Logs each SSE stream's open and close, with a reason, a
+  duration, and how many are open. Start here when something isn't updating.
+- **BetterTimezoneMiddleware** - A wrapper around `tz_detect`
 
-All middleware is registered in order in `base_settings.py`.
+Third-party middleware also in the stack: CORS, HTTP compression,
+`django_prometheus`'s before/after pair, `log_request_id` (which supplies the
+`X-Request-Id` response header), WhiteNoise, debug toolbar, and allauth's
+`AccountMiddleware`.
+
+All middleware is registered in order in `base_settings.py`; the order matters.
 
 ## Development Workflow
 
@@ -260,8 +330,12 @@ just ensure-skeleton-key     # Creates API skeleton key
 
 # Setup database
 just migrate
-just fixture app            # Optional: Load sample tournament/players
+just fixture usual_setup    # Optional: load a sample tournament and players
 ```
+
+(`just ensure-django-secret` and `just ensure-skeleton-key` are marked private, so they
+don't appear in `just --list`, but you can still run them by name. Every recipe that needs
+them depends on them anyway, so `just runme` alone is usually enough.)
 
 ### Running Locally
 
@@ -270,16 +344,25 @@ just fixture app            # Optional: Load sample tournament/players
 just runme                  # Starts on localhost:9000
 ```
 This automatically:
+- Runs the fast test suite first (`just runme` depends on `just ft`)
 - Generates secrets if missing
 - Runs migrations
 - Creates superuser if needed
+- Starts PostgreSQL and Redis in Docker, plus the `notifier` container — so live updates
+  flow even though Django itself is running natively
 - Starts dev server with auto-reload
 
 **Docker Compose Stack**:
 ```bash
-just dcu
+just dev
 ```
-Includes: Django, PostgreSQL, Redis, bot player, Prometheus, Grafana, Pyroscope profiler.
+Brings up Django, PostgreSQL, Redis, the bot, the tournament clock, and the notifier. It
+conflicts with `just runme`, since both listen on port 9000.
+
+Monitoring (Grafana, Prometheus, postgres-exporter, pyroscope) is gated behind the
+`monitoring` compose profile, which `just dev` does *not* enable; use `just
+dev-monitoring` for that. `just prod` and `just beta` enable it, along with the Caddy
+reverse proxy.
 
 ### Testing Patterns
 
@@ -293,7 +376,12 @@ just k "test_hand and auction"   # Pattern matching
 
 **Parallel testing**: `just ft` uses 8 workers via pytest-xdist. Disable with `-n 0` for debugging.
 
-**Coverage**: `just test` generates HTML report in `htmlcov/`. Open `htmlcov/index.html` in browser.
+**Coverage**: `just cover` runs the suite and then writes and opens `htmlcov/index.html`.
+`just test` records the coverage data but stops short of the HTML.
+
+Note that coverage says nothing about templates: `just test` warns that the Django
+template coverage plugin disabled itself, because template debugging is off in the test
+settings.
 
 ### Code Quality Checks
 
@@ -318,20 +406,24 @@ just migrate
 
 **Resetting database**:
 ```bash
-just drop           # Docker only
-just migrate        # Recreate schema
-just fixture app    # Reload sample data
+just drop                    # Docker only; refuses to run against a remote context
+just migrate                 # Recreate schema
+just fixture usual_setup     # Reload sample data (this also drops and migrates)
 ```
 
 ### Performance Testing
 
 ```bash
-just stress --tiny --tempo=1.0     # Small stress test, normal speed
-just stress --tempo=0              # Maximum speed (no delays)
-just perf-local                    # 100 players, production settings locally
+just stress --tiny --tempo-seconds=1.0   # Small stress test
+just stress --tempo-seconds=0            # Maximum speed (no delays)
 ```
 
-Bots will automatically join games and play hands. Monitor with `just logs`.
+`just stress` runs `big_bot_stress` inside the `django` container, so it needs the Docker
+stack up (`just dev`). Bots automatically join games and play hands. Capture the logs with
+`just dump` (django) or `just dump-bot` (the bot), each of which writes a timestamped file.
+
+For load-testing rather than gameplay, `project/app/manually_test_rate_limiting.py` floods
+the list views; see `docs/perf/crawler-repro.md`.
 
 ## Important Configuration
 
@@ -339,16 +431,27 @@ Bots will automatically join games and play hands. Monitor with `just logs`.
 
 Set by `justfile` or Docker Compose:
 
-- **`DJANGO_SETTINGS_MODULE`** - Which settings file (dev_settings/prod_settings)
+- **`DJANGO_SETTINGS_MODULE`** - Which settings module (dev_settings / prod_settings / test_settings)
 - **`DJANGO_SECRET_FILE`** - Path to SECRET_KEY file
 - **`DJANGO_SKELETON_KEY_FILE`** - Path to API skeleton key
+- **`GOOGLE_OAUTH_CLIENT_ID_FILE`**, **`GOOGLE_OAUTH_CLIENT_SECRET_FILE`** - Paths to the
+  OAuth credentials. Absent, the app runs fine without Google sign-in.
 - **`PGHOST`**, **`PGUSER`**, **`PGPASS`** - PostgreSQL connection
 - **`REDIS_HOST`** - Redis server (default: localhost)
-- **`DEPLOYMENT_ENVIRONMENT`** - "development", "staging", or "production"
+- **`COMPOSE_PROFILES`** - Which compose profiles are active; `prod_settings` reads it to
+  decide whether `DEPLOYMENT_ENVIRONMENT` is "production" or "staging"
+- **`DOCKER_CONTEXT`** - Which Docker host to deploy to; defaults to `orbstack` on macOS
+- **`PYINSTRUMENT`** - Set to `t` to enable the pyinstrument profiler; see `docs/perf/README.perf.md`
+
+`DEPLOYMENT_ENVIRONMENT` is a *setting*, not an environment variable the justfile sets: the
+settings modules compute it, and it takes the values "development", "staging",
+"production", and "test".
 
 ### PostgreSQL Configuration
 
-**Connection limit**: Set to 200 in `docker-compose.yaml` to support many SSE clients.
+**Connection limit**: Set to 200 in `docker-compose.yaml`. Note that an idle SSE stream
+holds *no* Postgres connection (`CONN_MAX_AGE` is unset, so Django's default of 0 applies);
+what consumes the 200 is concurrent request-bursts. See `docs/perf/sse-connections.md`.
 
 **Query logging**: Queries >100ms are logged (configured in docker-compose.yaml).
 
@@ -392,6 +495,10 @@ Set by `justfile` or Docker Compose:
 5. Add the pair to `SUBSCRIBERS` in `app/test_sse_event_types.py`, so a later rename
    can't quietly disconnect the two halves.
 
+6. If a model change should cause the event, add a broadcaster in `app/broadcast.py` and
+   a trigger for it, rather than a `send_event` call in the write path. See
+   `docs/README.listen-notify.md`.
+
 See `app/static/app/bridge-game.js` and `app/templates/base.html` for examples.
 
 ### Adding a Bot Command
@@ -399,10 +506,17 @@ See `app/static/app/bridge-game.js` and `app/templates/base.html` for examples.
 1. Create new management command in `app/management/commands/`
 2. Inherit from `BaseCommand`
 3. Implement `handle()` method
-4. Use API endpoints (`/three-way-login/`, `/serialized/hand/`, `/call/`, `/play/`)
-5. Subscribe to SSE for asynchronous updates
+4. Either work through the ORM directly, or use the API endpoints
+   (`/three-way-login/`, `/serialized/hand/<pk>/`, `/call/`, `/play/`)
 
-See `app/management/commands/cheating_bot.py` for reference implementation.
+`app/management/commands/cheating_bot.py` is the bot that ships with the server. It is
+*not* an example of an API client: it runs inside the Docker stack, reads the database
+directly, and polls in a loop rather than subscribing to SSE. Nothing on the server side
+reads SSE any more.
+
+For a client written the way a third party would write one, see
+`project/app/reference_client.py` — about a hundred lines of `requests` plus `sseclient`,
+exercised against a live server by `project/app/test_reference_client.py`.
 
 ## Deployment
 
@@ -411,6 +525,8 @@ See `app/management/commands/cheating_bot.py` for reference implementation.
 **Prerequisites**:
 - Hetzner VPS setup (see `docs/README.ubuntu-hetz.setup.md`)
 - Docker context configured: `docker context create hetz-bridge --docker "host=ssh://ubuntu@<ip>"`
+- The working tree must be clean and you must be on `main`; `just prod` checks both and
+  refuses otherwise. (`just beta` and `just mini` do not check.)
 
 **Deploy**:
 ```bash
@@ -418,10 +534,16 @@ just prod               # Deploys to hetz-bridge context
 ```
 
 This:
-- Builds Docker image
-- Deploys to remote host via SSH Docker context
-- Enables Caddy reverse proxy with automatic Let's Encrypt TLS
-- Sets `DEPLOYMENT_ENVIRONMENT=production`
+- Builds the `bridge-django` Docker image once, then reuses it for every service
+- Deploys to the remote host via SSH Docker context
+- Runs `collectstatic`, `migrate` and `setup_oauth` as one-shot services and waits for
+  them, before swapping in the new `django`, `bot`, `clock` and `notifier` containers
+- Enables Caddy, which does TLS with automatic Let's Encrypt certificates, and applies the
+  rate limits in `caddy/Caddyfile`
+- Enables the monitoring profile (Grafana, Prometheus, postgres-exporter, pyroscope)
+- Sets `COMPOSE_PROFILES=prod,monitoring`, from which `prod_settings` derives
+  `DEPLOYMENT_ENVIRONMENT = "production"`
+- Tails the django logs at the end; Ctrl-C there does not stop anything
 
 **Check status**:
 ```bash
@@ -432,24 +554,35 @@ docker compose logs django --tail=100
 
 ### Environment Detection
 
-The app auto-detects environment:
-- **"development"**: `DEBUG=True`, no Docker
-- **"staging"**: Docker locally (via `just dcu`)
-- **"production"**: Docker with `COMPOSE_PROFILES=prod` (via `just prod`)
+Which settings module you load decides this, not runtime sniffing:
+- **"development"**: `dev_settings`, `DEBUG=True` — what `just runme` and `just dev` use
+- **"staging"**: `prod_settings` without `prod` in `COMPOSE_PROFILES` — what `just beta`
+  and `just mini` use
+- **"production"**: `prod_settings` with `COMPOSE_PROFILES` containing `prod` — `just prod`
+- **"test"**: `test_settings`, which every test recipe forces
 
 ## Troubleshooting
 
 ### Auto-reload not working
 
-Django 6.0 has compatibility issues with django-watchfiles. It's disabled in dev_settings. Use Django's built-in reloader (slightly slower but reliable).
+Django 6.0 has compatibility issues with django-watchfiles. It's commented out of
+`dev_settings`. Use Django's built-in reloader (slightly slower but reliable).
 
 **Note**: Static files (CSS/JS) don't trigger server reload - just refresh browser.
 
 ### SSE connection issues
 
+`docs/README.sse.md` has a whole section on this; start with the stream-open/close lines
+`app/middleware/sse_stream_log.py` writes. A page should show exactly one `/events/all/...`
+stream open, plus `/__reload__/events/` in development.
+
 Check Redis is running: `redis-cli ping` should return `PONG`.
 
-Check PostgreSQL connection limit: `SELECT count(*) FROM pg_stat_activity;` should be <200.
+### Nothing updates without a page reload
+
+Most likely the `notifier` isn't running: it, not the web process, sends nearly every
+event. `docker compose logs notifier --tail=50`. `just runme` starts it in Docker and
+prints a warning if it can't; `just notifier` runs it natively against the working tree.
 
 ### Bot not responding
 
@@ -461,8 +594,7 @@ Verify authentication: `just curl-login` should return player_pk.
 
 Ensure PostgreSQL is running:
 ```bash
-# Native: just pg-start
-# Docker: just dcu includes PostgreSQL
+just pg-start       # Starts the Postgres container; `just dev` and `just runme` do this too
 ```
 
 Check credentials match environment variables in `justfile`.

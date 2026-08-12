@@ -8,7 +8,11 @@ suspected; it records (a) what an SSE connection actually is, so the confusion
 doesn't recur, and (b) some genuine connection-count hygiene worth doing
 independently of the outage.
 
-Companion to `crawler-repro.md`. Written during the 2026-07-15 investigation.
+Companion to `crawler-repro.md`. Written during the 2026-07-15 investigation, so the
+measurements below describe the SSE arrangement *as it was then*: one endpoint per channel,
+four connections for a hand page. That has since been consolidated to one connection per
+page — see "What we did about it" at the end, and `docs/README.sse.md` for the design that
+replaced it.
 
 ## What we mean by an "SSE connection" (precise)
 
@@ -115,25 +119,35 @@ Pruning *faster* is not the lever — idle SSE streams don't pin DB connections
 (`CONN_MAX_AGE=0`), and browsers/Daphne already close them on
 navigate/disconnect. The win is **opening fewer**.
 
-## TODO
+## What we did about it
 
-- [ ] **Stop subscribing `bot-checkbox` sitewide.** Move the `sse-connect` out of
-      `base.html:40` into the hand templates, gated on
-      `user.player.current_hand` — the checkbox only matters mid-hand. This is
-      the single biggest reduction (removes most of the 82).
-- [ ] **Consolidate per-player channels onto one connection.** django-eventstream
-      already accepts a *list* of channels per route (see the
-      `{"format-channels": [...]}` kwargs in `urls.py`). `player:html:hand:{pk}`
-      and `player:bot-checkbox:{pk}` are both keyed by player and can share a
-      single EventSource. Fold `table:html:{hand}` and chat into a combined
-      route too where feasible — collapsing 4 connections → 1–2 per active page
-      (~2–4× fewer sockets / coroutines / Redis subscriptions).
-- [ ] **(Optional) Reduce reload-driven churn.** The `window.location.reload()`
-      on phase transitions in `bridge-game.js` reopens every stream. Consider an
-      in-place DOM update instead, if it's cheap.
-- [ ] **Leave reconnect churn alone.** It's mostly mobile-network reality and
-      each reconnect is a ~5ms setup; fewer channels per page already reduces the
-      number of streams to re-establish.
+The consolidation this section originally listed as a TODO has landed. `docs/README.sse.md`
+describes the result; in terms of the items as they were written:
 
-Note: none of this addresses the actual outage — that's crawler rate-limiting
-(see `crawler-repro.md`). This is capacity hygiene that buys headroom under load.
+- **Consolidate per-player channels onto one connection — done, and further than
+  proposed.** There is now exactly one browser endpoint, `/events/all/`, which names no
+  channels at all: `MyChannelManager.get_channels_for_request` works out the set from the
+  session plus `?hand=` and `?chat=`. So a hand page opens one connection, not four.
+- **Stop subscribing `bot-checkbox` sitewide — done differently.** The checkbox still
+  carries its `sse-swap`, but the *connection* is what got gated: a page where nothing can
+  change overrides the `sse_connection` block to nothing and spends no connection at all.
+  Only three pages keep one — the interactive hand, a read-only hand still being played,
+  and the player detail page, which has chat. `app/test_sse_opt_out.py` enforces the split
+  in both directions. The trade-off: on an opted-out page the navbar checkbox is correct at
+  page load and then stops updating by itself.
+- **Reduce reload-driven churn — not done, and deliberately.** `base.html` now reloads the
+  page when the connection *reopens*, which is more reloading, not less. It is affordable
+  precisely because of the consolidation: a live tab holds one connection for as long as it
+  is open, instead of four re-dialling about once a minute. Two guards keep it in check (the
+  first `open` doesn't count, and a page younger than ten seconds doesn't reload). If
+  interrupting somebody's bidding box turns out to annoy, re-fetching the hand fragment over
+  htmx is the upgrade.
+- **Leave reconnect churn alone — still the right call.** The client does now hand the
+  socket back on `pagehide` rather than leaving the server to notice a minute later.
+
+Note: none of this addressed the outage — that was crawler rate-limiting
+(see `crawler-repro.md`). This was capacity hygiene that buys headroom under load.
+
+The numbers earlier in this document are the *pre-consolidation* measurements, kept because
+they are what motivated the change. In particular the four-row channel table describes the
+four endpoints a hand page used to open; there is one now.

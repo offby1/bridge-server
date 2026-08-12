@@ -1,183 +1,72 @@
-# Front-End Refactoring Summary
+# Front-End Refactoring Summary (historical)
 
-This document summarizes the three major refactorings applied to improve code clarity and maintainability.
+**Read this as history, not as a description of the code today.** In late 2025 we did
+three front-end refactorings, summarised below. Each of the three has since been extended
+or partly superseded, and the current design is documented elsewhere:
 
-## Changes Implemented
+- [`docs/README.sse.md`](docs/README.sse.md) — the browser's SSE connection as it stands
+  today, and why there is exactly one of it per page
+- [`docs/README.listen-notify.md`](docs/README.listen-notify.md) — who fires a broadcast
+  now (a Postgres trigger and the `notifier`, not the write path)
 
-### 1. ✅ Extracted Inline JavaScript to External Module
+Where this document and those two disagree, they are right.
 
-**File Created:** `project/app/static/app/bridge-game.js` (158 lines)
+## What the three refactorings did
 
-**Before:** 115 lines of complex SSE event handling embedded in `interactive_hand.html`
+### 1. Extracted inline JavaScript to an external module
 
-**After:** 12 lines of clean module imports in the template
+`project/app/static/app/bridge-game.js` replaced about 115 lines of SSE event handling
+embedded in `interactive_hand.html` with a module the template imports in a dozen lines.
+The functions got names, JSDoc, and single responsibilities.
 
-**Benefits:**
-- Named functions with clear responsibilities
-- JSDoc comments explaining parameters and behavior
-- Easier to test in isolation
-- Better separation of concerns (Django templates vs. JavaScript logic)
+The file has roughly doubled since — it has grown reconnect handling, `pagehide`
+teardown, and the `stream-reset` handlers — and it no longer opens its own `EventSource`.
+`base.html` opens the one connection and parks it in `window.bridgeEventSource`;
+`bridge-game.js` listens on that.
 
-**Key Functions:**
-- `initPlayerEventStream()` - Manages player-specific SSE (bidding box, hand updates)
-- `initTableEventStream()` - Manages table-wide SSE (auction, tricks, game state)
-- `initErrorToast()` - HTMX error handling
-- Helper functions for DOM updates with HTMX reprocessing
+### 2. SSE event contracts (dataclasses)
 
-### 2. ✅ SSE Event Contracts (Dataclasses)
+`project/app/sse_events.py` defines the shape of each event as a dataclass, with
+`create_player_hand_event()` / `create_table_event()` helpers that drop `None` fields so
+payloads stay small. IDE autocomplete and type hints replaced a bare dict whose keys you
+had to guess.
 
-**File Created:** `project/app/sse_events.py` (103 lines)
+Since then the module also grew `SSEEventTypes`, the registry of `event:` names, which
+matters more than the payload shapes: the browser subscribes *by name*, so a rename that
+touches only one side goes quiet with no error. `app/test_sse_event_types.py` pins the two
+halves together.
 
-**What It Does:**
-- Defines standardized event structures using Python dataclasses
-- Documents which SSE channel each event type uses
-- Provides type hints for all event fields
-- Auto-filters out None values to keep payloads small
+### 3. SSE channel-name registry
 
-**Event Types Defined:**
-- `PlayerHandEvent` - Player-specific HTML updates (bidding box, cards)
-- `TableEvent` - Table-wide updates (auction, tricks, contract, scores)
-- `BotCheckboxEvent` - Bot toggle state
-- `BotAPIEvent` - JSON events for bot API clients
-- `LobbyEvent` - Lobby chat messages
-- `PartnershipEvent` - Partnership join/split notifications
+`project/app/sse_channels.py` centralised channel-name generation:
+`SSEChannels.LOBBY`, `.PARTNERSHIPS`, `.ALL_TABLES`, and the parameterised
+`player_html_hand()`, `player_json()`, `player_bot_checkbox()` and `table_html()`.
 
-**Helper Functions:**
-- `create_player_hand_event(**kwargs)` - Returns dict with only non-None fields
-- `create_table_event(**kwargs)` - Returns dict with only non-None fields
+One correction worth recording, because this document originally listed it as a feature:
+the class briefly had a `chat_player_to_player()` that prefixed `chat:player-to-player:`.
+That was the URL path of the old per-channel endpoint, not a channel name, and nothing
+ever published to it. A chat channel is `players:<pk>_<pk>`, built by
+`Message.channel_name_from_player_pks`, and that is the only place that should know the
+format.
 
-**Usage Example:**
-```python
-# Before:
-send_event(channel, "message", {
-    "bidding_box_html": html,
-    "hand_pk": self.pk,
-})
+## What has changed since
 
-# After:
-send_event(channel, "message", create_player_hand_event(
-    bidding_box_html=html,
-    hand_pk=self.pk,
-))
-```
+- **`"message"` is gone as an event name.** These refactorings still sent everything as
+  `"message"`, which worked only because each channel had a connection of its own. The
+  channels now share one connection, so every kind of update needs a name of its own.
+- **The `send_event` call sites have moved.** This document's "future work" suggested
+  migrating the remaining ones to use the event contracts. What happened instead is
+  bigger: nine of the ten scattered call sites became broadcasters in
+  `project/app/broadcast.py`, called by the `notifier` when a Postgres trigger fires. The
+  code samples below, which show a model calling `send_event` directly, are no longer how
+  a broadcast is written.
+- **Read-only query logic left the models** into `project/app/readers.py`; see
+  [`docs/README.rapid-readers.md`](docs/README.rapid-readers.md).
 
-**Benefits:**
-- IDE autocomplete prevents typos
-- Docstrings document channel names and usage
-- Type hints catch errors early
-- Easy to find all usages of an event type
+## Migration notes (as written at the time)
 
-### 3. ✅ SSE Channel Name Registry
+**No breaking changes**: the refactoring only added abstraction layers.
 
-**File Created:** `project/app/sse_channels.py` (73 lines)
-
-**What It Does:**
-- Centralizes all SSE channel name generation
-- Provides static methods for parameterized channels
-- Documents where each channel is sent and received
-- Eliminates magic strings scattered throughout code
-
-**Channels Defined:**
-- `SSEChannels.LOBBY` - Global lobby chat
-- `SSEChannels.PARTNERSHIPS` - Partnership changes
-- `SSEChannels.ALL_TABLES` - Global table updates
-- `SSEChannels.player_html_hand(player_pk)` - Player HTML updates
-- `SSEChannels.player_json(player_pk)` - Player JSON (for bots)
-- `SSEChannels.player_bot_checkbox(player_pk)` - Bot checkbox state
-- `SSEChannels.table_html(hand_pk)` - Table-wide HTML updates
-- `SSEChannels.chat_player_to_player(channel)` - P2P encrypted chat
-
-**Usage Example:**
-```python
-# Before:
-channel = f"player:html:hand:{self.pk}"
-
-# After:
-channel = SSEChannels.player_html_hand(self.pk)
-```
-
-**Benefits:**
-- Single source of truth for channel names
-- Docstrings explain usage patterns
-- Easy to find all references
-- Prevents channel name typos
-
-## Files Modified
-
-### Templates
-- `project/app/templates/interactive_hand.html` - Replaced 115 lines of inline JS with 12-line module import
-
-### Models
-- `project/app/models/player.py` - Updated to use SSEChannels and event contracts
-- `project/app/models/hand.py` - Updated to use SSEChannels and event contracts
-- `project/app/models/tournament.py` - Updated to use event contracts
-
-### Infrastructure
-- `project/app/channelmanager.py` - Updated to use SSEChannels constants
-
-## Testing
-
-All 121 tests pass, including:
-- `test_sends_message_on_auction_completed` - Verifies event structure
-- `test_auction_settled_messages` - Checks event counts and fields
-- `test_includes_dummy_in_new_play_event_for_opening_lead` - Complex event flow
-
-## Code Quality Improvements
-
-**Readability:**
-- Template complexity reduced from 115→12 lines (90% reduction)
-- Magic strings replaced with documented constants
-- Event structures now self-documenting via dataclasses
-
-**Maintainability:**
-- Centralized channel definitions make refactoring safer
-- Type hints catch errors during development
-- JSDoc comments explain JavaScript function behavior
-
-**Testability:**
-- JavaScript functions can now be unit tested independently
-- Event contracts make it clear what data structure tests should expect
-- Channel registry makes mocking easier
-
-## Migration Notes
-
-**No Breaking Changes:** All existing code continues to work. The refactoring only adds new abstraction layers.
-
-**Gradual Adoption:** The event contract and channel registry functions can be adopted incrementally. Not all `send_event` calls were migrated yet - only the most frequently used ones in `hand.py`, `player.py`, and `tournament.py`.
-
-**Future Work:**
-- Consider migrating remaining `send_event` calls to use event contracts
-- Add TypeScript types that match the Python event dataclasses
-- Extract more inline JavaScript from other templates using the same pattern
-
-## Performance Impact
-
-**None.** These are purely structural changes:
-- JavaScript module uses ES6 imports (already optimized by browsers)
-- Event contracts compile to identical dicts at runtime
-- Channel registry functions are simple string formatters
-
-## Developer Experience
-
-**Before:**
-```python
-# What fields can I send? ¯\_(ツ)_/¯
-send_event(channel=f"player:html:hand:{pk}", event_type="message", data={"foo": "bar"})
-```
-
-**After:**
-```python
-# IDE shows all available fields with type hints
-send_event(
-    channel=SSEChannels.player_html_hand(pk),
-    event_type="message",
-    data=create_player_hand_event(
-        bidding_box_html=html,  # ← Autocomplete suggests this
-        hand_pk=self.pk,
-    )
-)
-```
-
-## Conclusion
-
-These three refactorings significantly improve code clarity without changing behavior. The codebase is now easier to understand, maintain, and extend.
+**Performance impact**: none. The JavaScript module uses ES6 imports, the event contracts
+compile to identical dicts at runtime, and the channel registry functions are string
+formatters.

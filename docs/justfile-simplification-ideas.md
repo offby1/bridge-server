@@ -1,19 +1,22 @@
 # Justfile Simplification Ideas
 
-Opportunities to simplify the justfile using newer `just` features (as of v1.49.0).
+**None of these have been done yet.** They are opportunities to simplify the justfile using
+newer `just` features; the installed `just` is v1.58.0, so every feature named below is
+available. Recipe line numbers move constantly -- grep for the recipe name rather than
+trusting them.
 
 ## 1. `[working-directory: "project"]` to eliminate `cd project &&`
 
 Biggest win. These recipes all do `cd project && ...` and can use the attribute instead:
 
-- `pytest-test` (line 25)
-- `manage` (line 125)
-- `collectstatic` (line 132)
-- `sp` (line 153)
-- `graph` (line 250)
-- `test` script (line 259)
-- `cover` script (line 299)
-- `_notests` script (line 211)
+- `pytest-test`
+- `manage`
+- `collectstatic`
+- `sp`
+- `graph`
+- `test` (script)
+- `cover` (script)
+- `_notests` (script)
 
 Before:
 ```just
@@ -70,7 +73,7 @@ pytest-test *args:
     uv run pytest {{ args }}
 ```
 
-## 4. `read()` to simplify `_deploy` and `perf-local`
+## 4. `read()` to simplify `_deploy` and `_notests`
 
 Added in v1.39.0. Reads file contents at just-expression time, replacing bash `$(cat ...)` subshells.
 
@@ -88,7 +91,9 @@ export DJANGO_SKELETON_KEY="{{ read(DJANGO_SKELETON_KEY_FILE) }}"
 export GIT_VERSION="{{ read("project/VERSION") }}"
 ```
 
-Same applies to `perf-local`.
+`_notests` reads the same four files the same way, so it gets the same treatment. The
+Google OAuth pair there is optional, though (`cat ... || echo ""`), and `read()` on a
+missing file is an error -- so those two would need a guard, or to stay as they are.
 
 ## 5. `[default]` attribute
 
@@ -134,6 +139,6 @@ orb:
 | `[working-directory: "project"]` | Low | High -- removes `cd project &&` from ~8 recipes |
 | `[confirm]` on `clean`/`drop`/`nuke` | Low | Medium -- safety net for destructive ops |
 | `[env()]` on `pytest-test` | Low | Small -- but cleaner |
-| `read()` in `_deploy`/`perf-local` | Low | Medium -- eliminates bash `cat` subshells |
+| `read()` in `_deploy`/`_notests` | Low | Medium -- eliminates bash `cat` subshells |
 | `[default]` | Trivial | Trivial -- cosmetic |
 | `require()` for tools | Low | Small -- better error messages |

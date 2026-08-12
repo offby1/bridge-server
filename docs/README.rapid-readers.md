@@ -1,24 +1,28 @@
-# The `rapid-rewrite` branch: moving reads into `app/readers.py`
+# Reads live in `app/readers.py`
+
+**Status: this work is finished and merged to `main`.** It was done on a branch called
+`rapid-rewrite`; the merge commit is `7ec9b374`. What follows describes the arrangement as
+it stands today, plus the reasoning and the traps, so that new reads land in the right
+place.
 
 ## The general idea
 
-The models are fat. `app/models/hand.py` alone is around 2000 lines, and a good
-share of that is query logic -- code that computes something for a caller to look
-at and has no side effects. Mixed in with the write paths, it is hard to find,
-hard to test on its own, and it tempts templates into calling model methods that
-run queries at render time.
+The models were fat. `app/models/hand.py` was around 2000 lines, and a good
+share of that was query logic -- code that computes something for a caller to look
+at and has no side effects. Mixed in with the write paths, it was hard to find,
+hard to test on its own, and it tempted templates into calling model methods that
+run queries at render time. (`hand.py` is now about 1000 lines.)
 
-Following [Django RAPID](https://www.django-rapid-architecture.org/), this branch
-collects that query logic into one module, `project/app/readers.py`, as plain
+Following [Django RAPID](https://www.django-rapid-architecture.org/), that query
+logic now lives in one module, `project/app/readers.py`, as plain
 functions that take model instances and return data.
 
 The one rule that matters: **dependencies point one way. Readers import from
-models; models never import from readers.** Views, the bot API, management
-commands and tests all call readers directly.
+models; models never import from readers.** Views, the bot API, `app/broadcast.py`,
+management commands and tests all call readers directly.
 
-This branch moves reads only. We are not extracting writers, services, or any
-other RAPID layer here; those are separate work and are **not** part of this
-branch.
+This moved reads only. Writers, services, and the other RAPID layers were **not**
+extracted; those remain separate work, not yet done.
 
 ## Where the design came from
 
@@ -29,7 +33,7 @@ written against an older `main`:
 git show reference/listen-notify-and-rapid-rewrite:project/app/readers.py
 ```
 
-We take names and structure from it and adapt the bodies to current `main`. We do
+We took names and structure from it and adapted the bodies. We did
 not merge that branch; it also contains a LISTEN/NOTIFY rework that `main` has
 since redone independently (see `docs/README.listen-notify.md`).
 
@@ -59,13 +63,9 @@ Two things that bit us, recorded so they don't bite again:
   parameters can surface a genuine `None` that mypy had been letting through. Fix
   it at the call site rather than widening the reader's types.
 
-## Status
+## What landed
 
-Everything in this section describes the branch **as it stands today**.
-
-### Landed
-
-Eleven green commits, oldest first (`just mypy` and `just ft` pass at each one):
+Eleven green commits, oldest first (`just mypy` and `just ft` passed at each one):
 
 | Commit | Reader(s) | Moved from |
 |---|---|---|
@@ -81,12 +81,11 @@ Eleven green commits, oldest first (`just mypy` and `just ft` pass at each one):
 | `508cbda1` | `get_trick_counts_string` | `Hand.trick_counts_string` |
 | `9d1d28f9` | `get_auction_display_with_explanations` | `Hand.auction_display_with_explanations` |
 
-(Hashes refer to this branch's history; a rebase will change them, the subject
-lines will not.)
+(Hashes refer to the branch's history as merged; the subject lines are the reliable
+handle.)
 
-Every reader in the blueprint has now landed, so the extraction this branch set
-out to do is finished. The last three each needed more than a move, and what they
-needed is worth remembering:
+Every reader in the blueprint landed, so the extraction is finished. The last three each
+needed more than a move, and what they needed is worth remembering:
 
 - **`get_hand_status_string`**. The one caller was a django-tables2 column
   accessor, `tables.A("status_string")`. An accessor names an attribute on the
@@ -130,11 +129,11 @@ along with its URL route.
 client -- which is the payoff of the extraction. It covers what the view tests
 never reached rather than re-testing everything: `get_hint_for_player` and
 `get_xscript_updates` had no coverage at all before it, because `hint_view` and
-`hand_xscript_updates_view` have no tests and did not before this branch either.
+`hand_xscript_updates_view` still have no tests and did not before this work either.
 `test_table_view.py` also calls `get_display_skeleton` directly.
 
-`just test` reports **96% coverage of `readers.py`** as of this commit, up from
-75% before those tests. What remains uncovered:
+`just cover` reported **96% coverage of `readers.py`** when this work landed, up from
+75% before those tests. What remained uncovered:
 
 - The arithmetic in `get_board_archive_hands` for a numeric score; every hand it
   sees under test scores `"-"`.
@@ -156,12 +155,12 @@ Three traps we hit writing those tests, worth knowing before you write more:
   template coverage plugin disabled itself, because template debugging is off in
   the test settings.
 
-Writing those tests turned up a real bug, which we then fixed on this branch:
+Writing those tests turned up a real bug, which we then fixed:
 during play, `get_hint_for_player` told *anyone* at the table what the player on
 turn should play. It asked whether anybody controlled the seat on turn, and
 `player_who_controls_seat` raises rather than returning None, so the check could
 never fail. A defender could ask for a hint and be told declarer's card.
-`hint_view` behaved the same way before the extraction, so the bug predates this
-branch; the reader now checks that the controller of that seat is the player who
+`hint_view` behaved the same way before the extraction, so the bug predated this
+work; the reader now checks that the controller of that seat is the player who
 asked. Declarer still gets hints for dummy's seat, since declarer plays dummy's
 cards.

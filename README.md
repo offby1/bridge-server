@@ -12,8 +12,10 @@ Server-Sent Events (SSE).
   dummy appear only when the rules allow).
 - **Bots welcome** — synthetic players authenticate over a REST API and play
   alongside (or against) humans. See [`docs/README.api.md`](docs/README.api.md).
-- **Real-time updates** — game state flows through django-eventstream → Redis →
-  SSE, so every client stays in sync without polling.
+- **Real-time updates** — a write to the database fires a Postgres trigger, a
+  listener process turns that into an event, and django-eventstream publishes it
+  over Redis to every connected client. Nobody polls, and no code path has to
+  remember to broadcast.
 - **Duplicate tournaments** — movement-based duplicate mechanics with
   matchpoint scoring.
 - **Google sign-in** — optional OAuth login via django-allauth.
@@ -21,12 +23,14 @@ Server-Sent Events (SSE).
 ## Technology Stack
 
 - **Framework**: Django 6.0 on the Daphne ASGI server (async)
-- **Database**: PostgreSQL 17
-- **Cache / PubSub**: Redis (django-eventstream backend)
+- **Database**: PostgreSQL 17, which doubles as the change-notification bus
+  (LISTEN/NOTIFY)
+- **Cache / PubSub**: Redis (django-eventstream's pub/sub transport)
 - **Real-time**: Server-Sent Events via django-eventstream
+- **Reverse proxy**: Caddy, in production only (TLS and rate limiting)
 - **Package manager**: [uv](https://docs.astral.sh/uv/)
 - **Task runner**: [Just](https://just.systems/)
-- **Python**: 3.12–3.13
+- **Python**: 3.12 or newer
 
 Game rules (card validation, legal bids, contract parsing, seat management) come
 from a separate `bridge` library; the Django app handles persistence, players,
@@ -52,16 +56,19 @@ just migrate
 just runme
 ```
 
-`just runme` starts just the web server natively (no Docker); it generates
-missing secrets, runs migrations, creates a superuser if needed, and enables
-auto-reload.
+`just runme` runs the web server natively (no Docker); it runs the fast tests
+first, generates missing secrets, runs migrations, creates a superuser if needed,
+and enables auto-reload. It still needs Docker for PostgreSQL, Redis, and the
+change-notifier, which it starts for you.
 
-To bring up the full stack (Django + PostgreSQL + Redis + bots + monitoring) via
-Docker Compose:
+To bring up the whole stack (Django, PostgreSQL, Redis, the bot, the tournament
+clock and the notifier) via Docker Compose:
 
 ```bash
-just dcu
+just dev
 ```
+
+`just dev-monitoring` adds Grafana and Prometheus locally.
 
 Run `just --list` to see all available commands.
 
@@ -69,7 +76,8 @@ Run `just --list` to see all available commands.
 
 ```bash
 just ft                 # Fast parallel tests — preferred during development
-just test               # Full suite with coverage report (htmlcov/index.html)
+just test               # Full suite, under coverage
+just cover              # `just test`, then write and open htmlcov/index.html
 just k <pattern>        # Run a specific test by name
 just mypy               # Type checking
 just ui-test-headless   # Playwright UI tests (headless)
@@ -82,13 +90,22 @@ just ui-test-headless   # Playwright UI tests (headless)
 - [`README.developer.md`](README.developer.md) — prerequisites per OS and how to
   run locally vs. deploy
 - [`docs/README.api.md`](docs/README.api.md) — REST API for bots
-- [`docs/README.auth.md`](docs/README.auth.md) /
-  [`docs/README.google-oauth.md`](docs/README.google-oauth.md) — authentication
+- [`docs/README.sse.md`](docs/README.sse.md) — how updates reach the browser: one
+  connection per page, one named event per kind of update
+- [`docs/README.listen-notify.md`](docs/README.listen-notify.md) — how a database
+  write turns into an event, without anyone remembering to broadcast
+- [`docs/README.rapid-readers.md`](docs/README.rapid-readers.md) — why query logic
+  lives in `app/readers.py`
+- [`docs/README.google-oauth.md`](docs/README.google-oauth.md) /
+  [`docs/SETUP.google-oauth.md`](docs/SETUP.google-oauth.md) /
+  [`docs/DEPLOY.google-oauth.md`](docs/DEPLOY.google-oauth.md) — Google sign-in
 - [`docs/README.hosting.md`](docs/README.hosting.md) /
   [`docs/README.ubuntu-hetz.setup.md`](docs/README.ubuntu-hetz.setup.md) —
   hosting and deployment
 - [`docs/README.monitoring.md`](docs/README.monitoring.md) — Prometheus, Grafana,
   Sentry, profiling
+- [`docs/perf/`](docs/perf/) — the two 2026 outages, what actually caused them,
+  and the rate limits that now shed that load at the edge
 - [`docs/README.related.md`](docs/README.related.md) — other online Bridge
   services
 
