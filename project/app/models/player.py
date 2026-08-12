@@ -519,13 +519,6 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
         return None
 
-    def direction_at_hand(self, h: Hand) -> str:
-        for direction_name in h.direction_names:
-            if getattr(h, direction_name) == self:
-                return direction_name
-
-        assert False, f"some idiot called me for {h} when {self.name} never played it"
-
     def current_direction(self, current_hand: Hand | None = None) -> str | None:
         """A whole, capitalized, word like 'East'"""
         if current_hand is None:
@@ -551,9 +544,6 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
         current_hand, direction_name = ch
         return current_hand.board.cards_for_direction_string(direction_name)
-
-    def has_played_hand(self, hand: Hand) -> bool:
-        return hand in self.hands_played.all()
 
     def cache_get(self, *, board: Board) -> Hand | None:
         cache = getattr(self, "hands_by_board_cache", {})

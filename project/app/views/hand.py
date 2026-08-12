@@ -112,7 +112,7 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
 
     disabled = True
 
-    if not as_viewed_by.has_played_hand(hand):
+    if not app.readers.player_has_played_hand(player=as_viewed_by, hand=hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
@@ -645,7 +645,9 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                 | app.models.Board.PlayerVisibility.own_hand
             ):
                 xscript = hand.get_xscript().as_viewed_by(
-                    bridge.seat.Seat(player.direction_at_hand(hand)[0])
+                    bridge.seat.Seat(
+                        app.readers.get_player_direction_at_hand(player=player, hand=hand)[0]
+                    )
                 )
             case app.models.Board.PlayerVisibility.everything:
                 xscript = hand.get_xscript()

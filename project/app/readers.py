@@ -326,3 +326,17 @@ def get_chat_disabled_explanation(
         return f"You, {sender.name}, are already seated"
 
     return None
+
+
+def get_player_direction_at_hand(*, player: app.models.Player, hand: app.models.Hand) -> str:
+    """Return the capitalized seat name (e.g. 'East') `player` occupies at `hand`."""
+    for direction_name in hand.direction_names:
+        if getattr(hand, direction_name) == player:
+            return direction_name
+
+    assert False, f"some idiot called me for {hand} when {player.name} never played it"
+
+
+def player_has_played_hand(*, player: app.models.Player, hand: app.models.Hand) -> bool:
+    """Whether `player` was one of the four seats at `hand`."""
+    return hand in player.hands_played.all()
