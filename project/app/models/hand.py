@@ -774,27 +774,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             ),
         )
 
-    def auction_display_with_explanations(self) -> list[list[dict[str, str] | None]]:
-        """Return the auction in 2D table form (like fancy_HTML_display) with explanations from DB."""
-        html_rows = self.auction.fancy_HTML_display()
-        db_calls = list(self.calls.all())
-
-        result: list[list[dict[str, str] | None]] = []
-        call_index = 0
-        for row in html_rows:
-            result_row: list[dict[str, str] | None] = []
-            for cell in row:
-                if cell is None:
-                    result_row.append(None)
-                else:
-                    explanation = (
-                        db_calls[call_index].explanation if call_index < len(db_calls) else ""
-                    )
-                    result_row.append({"html": str(cell), "explanation": explanation})
-                    call_index += 1
-            result.append(result_row)
-        return result
-
     @property
     def last_annotated_call(self) -> tuple[Seat, Call]:
         seat = self.call_set.order_by("-id").first()

@@ -82,7 +82,11 @@ def _seat_div_context(
 
 
 def _auction_context_for_hand(hand: app.models.Hand) -> dict[str, Any]:
+    # Every path that renders auction.html goes through here, including the two
+    # templates that {% include %} it, so this is the one place that has to supply
+    # the auction rows.
     return {
+        "auction_rows": app.readers.get_auction_display_with_explanations(hand),
         "hand": hand,
         "players_starting_with_west": _players_west_first_context_for_hand(hand),
     }

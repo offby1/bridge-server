@@ -348,6 +348,33 @@ def get_xscript_updates(*, hand: app.models.Hand, num_calls: int, num_plays: int
     return hand.get_xscript().whats_new(num_calls=num_calls, num_plays=num_plays)
 
 
+def get_auction_display_with_explanations(
+    hand: app.models.Hand,
+) -> list[list[dict[str, str] | None]]:
+    """The auction as a 2D table of cells, each with its HTML and its explanation.
+
+    The shape follows the bridge library's `fancy_HTML_display`: one list per row,
+    one cell per seat, None where that seat did not call. The explanations come
+    from our own Call rows, in the order the calls were made.
+    """
+    html_rows = hand.auction.fancy_HTML_display()
+    db_calls = list(hand.calls.all())
+
+    result: list[list[dict[str, str] | None]] = []
+    call_index = 0
+    for row in html_rows:
+        result_row: list[dict[str, str] | None] = []
+        for cell in row:
+            if cell is None:
+                result_row.append(None)
+            else:
+                explanation = db_calls[call_index].explanation if call_index < len(db_calls) else ""
+                result_row.append({"html": str(cell), "explanation": explanation})
+                call_index += 1
+        result.append(result_row)
+    return result
+
+
 def get_trick_counts_string(hand: app.models.Hand) -> str:
     """JSON string of the tricks each side has won, e.g. `{"N/S": 3, "E/W": 2}`."""
     cc = collections.Counter([p.seat.value for p in hand.annotated_plays if p.winner])
