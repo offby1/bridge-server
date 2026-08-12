@@ -258,4 +258,15 @@ def tournament_void_signup_deadline_view(request: AuthedHttpRequest, pk: str) ->
         logger.debug(
             "%s", f"#{t.display_number} just set signup deadline to 'now': {t.signup_deadline=}"
         )
+
+    # Starting the tournament seated the viewer, so send them straight to their
+    # hand -- hand-dispatch picks the interactive vs read-only view for them.
+    # Fall back to the tournament page if they somehow aren't seated.
+    viewer = request.user.player
+    if viewer is not None:
+        viewer.refresh_from_db()
+        if viewer.current_hand is not None:
+            return HttpResponseRedirect(
+                reverse("app:hand-dispatch", kwargs={"pk": viewer.current_hand.pk})
+            )
     return HttpResponseRedirect(reverse("app:tournament", kwargs={"pk": pk}))
