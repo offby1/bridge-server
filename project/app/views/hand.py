@@ -24,6 +24,7 @@ from django_filters import FilterSet
 from django_filters.views import FilterView
 
 import app.models
+import app.readers
 import bridge.seat
 import bridge.xscript
 from app.models.common import attribute_names
@@ -41,7 +42,8 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Iterable
 
-    from app.models.hand import AllFourSuitHoldings, Hand
+    from app.models.hand import Hand
+    from app.readers import AllFourSuitHoldings
     from bridge.xscript import HandTranscript
 
 
@@ -64,7 +66,7 @@ def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetim
 def _seat_div_context(
     *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
 ) -> dict[str, Any]:
-    ds = hand.display_skeleton(as_dealt=False)
+    ds = app.readers.get_display_skeleton(hand=hand, as_dealt=False)
     our_all_four_suit_holding = ds.holdings_by_seat[seat]
 
     card_html_by_direction = app.views.hand._get_card_html(
@@ -381,7 +383,7 @@ def _four_hands_context_for_hand(
     xscript: bridge.xscript.HandTranscript | None = None,
     as_dealt: bool = False,
 ) -> dict[str, Any]:
-    skel = hand.display_skeleton(as_dealt=as_dealt)
+    skel = app.readers.get_display_skeleton(hand=hand, as_dealt=as_dealt)
 
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
