@@ -82,15 +82,8 @@ def test_hint_suggests_a_card_once_the_auction_has_settled(usual_setup: Hand) ->
     assert "I'd play" in app.readers.get_hint_for_player(player_on_lead)
 
 
-def test_hint_during_play_answers_for_whoever_is_on_turn(usual_setup: Hand) -> None:
-    """During play, everyone at the table gets the same hint, not just the seat on turn.
-
-    The reader asks whether anybody controls the seat on turn; it does not ask
-    whether that somebody is the player who wanted the hint. `hint_view` behaved
-    this way before the extraction too, so this test pins the behaviour rather
-    than endorsing it -- during the auction, by contrast, a player off turn is
-    told it is not their turn.
-    """
+def test_hint_during_play_tells_an_opponent_nothing(usual_setup: Hand) -> None:
+    """Asking for a hint must not reveal the card the player on turn should play."""
     hand = set_auction_to(
         bridge.contract.Bid(level=1, denomination=bridge.card.Suit.SPADES), usual_setup
     )
@@ -100,9 +93,35 @@ def test_hint_during_play_answers_for_whoever_is_on_turn(usual_setup: Hand) -> N
     player_on_lead = hand.player_who_controls_seat(seat_on_lead, right_this_second=True)
     bystander = _a_player_at(hand, other_than=player_on_lead)
 
-    assert app.readers.get_hint_for_player(bystander) == app.readers.get_hint_for_player(
-        player_on_lead
+    hint = app.readers.get_hint_for_player(bystander)
+
+    assert hint == f"It's not {bystander}'s turn to call or play"
+
+
+def test_hint_for_dummys_turn_goes_to_declarer_and_not_to_dummy(usual_setup: Hand) -> None:
+    """Declarer plays dummy's cards, so declarer is the one entitled to the hint."""
+    hand = set_auction_to(
+        bridge.contract.Bid(level=1, denomination=bridge.card.Suit.SPADES), usual_setup
     )
+
+    # The opening lead comes from declarer's left, and dummy plays next.
+    seat_on_lead = hand.next_seat_to_play
+    assert seat_on_lead is not None
+    hand.add_play_from_model_player(
+        player=hand.player_who_controls_seat(seat_on_lead, right_this_second=True),
+        card=hand.get_xscript().slightly_less_dumb_play().card,
+    )
+
+    assert hand.dummy is not None
+    assert hand.next_seat_to_play == hand.dummy.seat
+
+    declarer = hand.model_declarer
+    dummy = hand.model_dummy
+    assert declarer is not None
+    assert dummy is not None
+
+    assert "I'd play" in app.readers.get_hint_for_player(declarer)
+    assert app.readers.get_hint_for_player(dummy) == f"It's not {dummy}'s turn to call or play"
 
 
 # get_xscript_updates

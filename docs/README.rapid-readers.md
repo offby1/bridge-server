@@ -156,8 +156,12 @@ Three traps we hit writing those tests, worth knowing before you write more:
   template coverage plugin disabled itself, because template debugging is off in
   the test settings.
 
-One behaviour the tests pin rather than endorse: during play,
-`get_hint_for_player` answers for whoever is on turn no matter who asked, because
-it checks whether *anybody* controls that seat and not whether the asker does.
-`hint_view` behaved the same way before the extraction. During the auction, by
-contrast, a player off turn is told it is not their turn.
+Writing those tests turned up a real bug, which we then fixed on this branch:
+during play, `get_hint_for_player` told *anyone* at the table what the player on
+turn should play. It asked whether anybody controlled the seat on turn, and
+`player_who_controls_seat` raises rather than returning None, so the check could
+never fail. A defender could ask for a hint and be told declarer's card.
+`hint_view` behaved the same way before the extraction, so the bug predates this
+branch; the reader now checks that the controller of that seat is the player who
+asked. Declarer still gets hints for dummy's seat, since declarer plays dummy's
+cards.

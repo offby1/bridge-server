@@ -271,10 +271,13 @@ def get_hint_for_player(player: app.models.Player) -> str:
         )
         return f"If I were you, I'd call {call}"
 
+    # Only whoever controls the seat on turn may be told what to play. Note that
+    # after the opening lead that includes declarer, who plays dummy's cards as
+    # well as their own -- hence naming the seat rather than saying "you".
     if (seat := hand.next_seat_to_play) is not None:
-        if hand.player_who_controls_seat(seat, right_this_second=True):
+        if hand.player_who_controls_seat(seat, right_this_second=True) == player:
             card = xscript.slightly_less_dumb_play().card
-            return f"If I were {hand.next_seat_to_play}, I'd play {card}"
+            return f"If I were {seat}, I'd play {card}"
 
     return f"It's not {player}'s turn to call or play"
 
