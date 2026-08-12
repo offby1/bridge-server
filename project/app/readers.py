@@ -13,6 +13,7 @@ from __future__ import annotations
 import collections
 import contextlib
 import dataclasses
+import json
 from collections.abc import Iterable
 from typing import Any
 
@@ -345,6 +346,14 @@ def player_has_played_hand(*, player: app.models.Player, hand: app.models.Hand) 
 def get_xscript_updates(*, hand: app.models.Hand, num_calls: int, num_plays: int) -> Any:
     """Return the calls and plays added to `hand` since the caller's known counts."""
     return hand.get_xscript().whats_new(num_calls=num_calls, num_plays=num_plays)
+
+
+def get_trick_counts_string(hand: app.models.Hand) -> str:
+    """JSON string of the tricks each side has won, e.g. `{"N/S": 3, "E/W": 2}`."""
+    cc = collections.Counter([p.seat.value for p in hand.annotated_plays if p.winner])
+    ns = cc["S"] + cc["N"]
+    ew = cc["E"] + cc["W"]
+    return json.dumps({"N/S": ns, "E/W": ew})
 
 
 def get_hand_status_string(hand: app.models.Hand) -> str:

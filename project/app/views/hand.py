@@ -599,6 +599,7 @@ def _interactive_view(request: AuthedHttpRequest, hand: app.models.Hand) -> Http
         | {
             "active_seat": hand.active_seat_name,
             "terse_description": _terse_description(hand),
+            "trick_counts_string": app.readers.get_trick_counts_string(hand),
         }
         | _auction_context_for_hand(hand)
     )

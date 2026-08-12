@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import collections
 import dataclasses
 import datetime
-import json
 import logging
 import time
 from collections.abc import Generator, Iterable
@@ -825,12 +823,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 flattened.append(TrickTuple(seat=p.seat, card=p.card, winner=p.wins_the_trick))
 
         return flattened
-
-    def trick_counts_string(self) -> str:
-        cc = collections.Counter([p.seat.value for p in self.annotated_plays if p.winner])
-        ns = cc["S"] + cc["N"]
-        ew = cc["E"] + cc["W"]
-        return json.dumps({"N/S": ns, "E/W": ew})
 
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
