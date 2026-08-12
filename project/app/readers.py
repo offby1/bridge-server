@@ -252,3 +252,26 @@ def get_board_archive_hands(
         key=lambda s: numberify_score(s.score_for_this_viewer),
         reverse=True,
     )
+
+
+def get_hint_for_player(player: app.models.Player) -> str:
+    """Suggest the call or play `player` (or the seat they control) should make."""
+    hand = player.current_hand
+    if hand is None:
+        return f"{player} has no current hand"
+
+    xscript = hand.get_xscript()
+
+    if player == hand.player_who_may_call:
+        call = xscript.auction.make_standard_american_call(
+            pbn=xscript.endplay_deal.to_pbn(),
+            vuln=xscript.endplay_vulnerability(),
+        )
+        return f"If I were you, I'd call {call}"
+
+    if (seat := hand.next_seat_to_play) is not None:
+        if hand.player_who_controls_seat(seat, right_this_second=True):
+            card = xscript.slightly_less_dumb_play().card
+            return f"If I were {hand.next_seat_to_play}, I'd play {card}"
+
+    return f"It's not {player}'s turn to call or play"
