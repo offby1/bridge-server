@@ -203,6 +203,18 @@ _notests *options: version-file django-superuser migrate create-cache ensure-ske
     fi
     set -x  # Re-enable command echo
 
+    # Run the change-notifier in Docker (like postgres and redis), so there's a
+    # single notifier servicing this database. --build keeps the image in sync
+    # with the working tree (runme already runs the tests, so the cached rebuild
+    # is negligible); the advisory lock makes a redundant start harmless. The
+    # container needs the same secret env that _deploy sets up.
+    export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
+    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
+    export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
+    export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
+    export GIT_VERSION="$(cat project/VERSION)"
+    docker compose up --detach --build notifier || echo "WARNING: couldn't start the docker notifier; live updates may not flow"
+
     cd project
     uv run python manage.py runserver {{ DEV_SERVER_PORT }} {{ options }}
 
@@ -212,6 +224,15 @@ _notests *options: version-file django-superuser migrate create-cache ensure-ske
 runme *options: ft (_notests options)
 
 alias runserver := runme
+
+# Run the notifier natively against the working tree -- for iterating on
+# broadcast code with live reload. Stops the Docker notifier first so this one
+# wins the advisory lock; the next `just runme`/`just dev` brings the Docker one back.
+[group('development')]
+[script('bash')]
+notifier: all-but-django-prep ensure-skeleton-key version-file migrate
+    docker compose stop notifier || true
+    cd project && uv run python manage.py notifier
 
 [parallel]
 curl *options: django-superuser migrate create-cache ensure-skeleton-key
@@ -351,10 +372,10 @@ _deploy hostname profile context settings_module *options:
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
     docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
-    # Swap in the new django container (and bot, and clock); --no-deps avoids restarting
-    # postgres/redis/caddy
+    # Swap in the new django container (and bot, clock, and notifier); --no-deps avoids
+    # restarting postgres/redis/caddy
     just dump
-    docker compose up --detach --no-deps --force-recreate django bot clock {{ options }}
+    docker compose up --detach --no-deps --force-recreate django bot clock notifier {{ options }}
 
     # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
     # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh

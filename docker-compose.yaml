@@ -89,6 +89,20 @@ services:
     depends_on:
       - django
 
+  # Turns database change notifications into SSE broadcasts (see
+  # docs/README.listen-notify.md). Its advisory lock makes it a singleton, so a
+  # redundant start is harmless.
+  notifier:
+    <<: *django
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "notifier"]
+    ports: []
+    labels: {}
+    # The notifier needs the database (to LISTEN) and Redis (to publish SSE), but
+    # not the web server -- so it can run alongside a native `just runme` django.
+    depends_on:
+      - postgres
+      - redis
+
 
   django-collected-static:
     <<: *django
