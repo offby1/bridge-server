@@ -9,7 +9,6 @@ from django.contrib import admin
 from django.core.cache import cache
 from django.db import IntegrityError, models, transaction
 from django.utils import timezone
-from django_eventstream import send_event  # type: ignore[import-untyped]
 
 import app.models
 import app.models.common
@@ -18,7 +17,6 @@ import app.utils.scoring
 from app.models.signups import TournamentSignup
 from app.models.types import PK
 from app.models.utils import assert_type
-from app.sse_events import SSEEventTypes, create_table_event
 from bridge.xscript import BrokenDownScore
 
 if TYPE_CHECKING:
@@ -118,6 +116,9 @@ def _finish_play(tour: Tournament) -> None:
             return
 
         deadline_str = deadline.isoformat()
+        # Each hand's play-completion-deadline TABLE event now comes from
+        # app.broadcast.broadcast_after_hand_change, driven by the abandoned_because
+        # UPDATE these abandonments produce (see docs/README.listen-notify.md).
         tour.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
 
         # A finished tournament's signups are dead weight; drop them here too, the
@@ -125,13 +126,6 @@ def _finish_play(tour: Tournament) -> None:
         # Otherwise a player is left signed up for a completed tournament
         # (TournamentSignup.player is OneToOne), which blocks their next signup.
         TournamentSignup.objects.filter(tournament=tour).delete()
-
-        for hand in tour.hands():
-            send_event(
-                channel=hand.event_table_html_channel,
-                event_type=SSEEventTypes.TABLE,
-                data=create_table_event(play_completion_deadline=deadline_str),
-            )
 
 
 def _start_play(tour: Tournament) -> None:

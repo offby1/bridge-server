@@ -89,6 +89,10 @@ def test_sends_final_score(monkeypatch, sent_events_by_channel) -> None:
     libCard = bridge.card.Card.deserialize("♠A")
 
     h1.add_play_from_model_player(player=player, card=libCard)
+    # This play completes the hand; emulate the notifier's post-play and
+    # hand-completion broadcasts.
+    app.broadcast.broadcast_after_play(hand=h1)
+    app.broadcast.broadcast_after_hand_change(hand=h1, changed=["is_complete"])
 
     assert any("final_score" in e["data"] for e in sent_events_by_channel["table:html:1"])
 

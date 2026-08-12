@@ -137,6 +137,8 @@ def play_out_hand(h: app.models.Hand) -> None:
         app.broadcast.broadcast_after_play(hand=h)
 
     if h.is_complete:
+        # Emulate the notifier's hand-completion broadcast (final score).
+        app.broadcast.broadcast_after_hand_change(hand=h, changed=["is_complete"])
         logger.info("%s played %s to completion", [p.name for p in h.players()], h)
         return
 

@@ -75,8 +75,12 @@ Each phase is one commit; `just ft` stays green after each.
   `add_play_from_model_player`'s inline sends (the JSON new-play, the trick
   table, and the per-seat hand updates) are gone; only the hand-completion state
   change stays. The just-played seat comes from `hand.annotated_plays[-1]`.
-- **Phase 3 (not yet): `Hand` complete/abandoned** -> `broadcast_after_hand_change(hand)`
-  (branches on `changed`).
+- **Phase 3 (done): `Hand` complete/abandoned** -> `broadcast_after_hand_change(hand, changed)`.
+  Branches on `changed`: `is_complete` sends the final score (reconstructing the
+  text from hand state), `abandoned_because` sends the play-completion deadline
+  (only when the tournament is complete, so ordinary splitsville abandonment
+  stays silent as before). `do_end_of_hand_stuff` and `Tournament._finish_play`
+  no longer send. The notifier now forwards `changed` to hand broadcasters.
 - **Phase 4 (not yet): `Player` bot-toggle** -> `broadcast_player_change(player, changed)`.
 - **Phase 5 (not yet): `Message` INSERT** -> `broadcast_after_message(message)`
   (adds an `app_message` trigger); chat and lobby.
@@ -84,6 +88,7 @@ Each phase is one commit; `just ft` stays green after each.
 
 ## Status
 
-As of this commit, Phases 0 through 2 have landed: the plumbing exists and is
-tested, and the `Call` and `Play` broadcasts are now trigger-driven (their
-inline sends are gone). Phases 3 onward are intent, not current behaviour.
+As of this commit, Phases 0 through 3 have landed: the plumbing exists and is
+tested, and the `Call`, `Play`, and `Hand`-completion/abandonment broadcasts are
+now trigger-driven (their inline sends are gone). Phases 4 onward are intent, not
+current behaviour.

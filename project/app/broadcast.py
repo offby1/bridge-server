@@ -27,10 +27,11 @@ from app.sse_events import (
     create_player_hand_event,
     create_table_event,
 )
+from bridge.auction import Auction
 from bridge.contract import Contract as libContract
 
 
-def broadcast_after_call(*, hand: app.models.hand.Hand) -> None:
+def broadcast_after_call(*, hand: app.models.hand.Hand, changed: list[str] | None = None) -> None:
     """Reproduce the SSE fan-out for a call having been added to `hand`.
 
     Formerly inline in `Hand.add_call`; driven now by the `app_call` INSERT
@@ -106,7 +107,7 @@ def broadcast_after_call(*, hand: app.models.hand.Hand) -> None:
         )
 
 
-def broadcast_after_play(*, hand: app.models.hand.Hand) -> None:
+def broadcast_after_play(*, hand: app.models.hand.Hand, changed: list[str] | None = None) -> None:
     """Reproduce the SSE fan-out for a card having been played on `hand`.
 
     Formerly inline in `Hand.add_play_from_model_player`; driven now by the
@@ -139,3 +140,47 @@ def broadcast_after_play(*, hand: app.models.hand.Hand) -> None:
     if hand.get_xscript().final_score() is None:
         last_seat = hand.annotated_plays[-1].seat
         hand.send_HTML_update_to_appropriate_channels(last_seat=last_seat)
+
+
+def broadcast_after_hand_change(
+    *, hand: app.models.hand.Hand, changed: list[str] | None = None
+) -> None:
+    """Reproduce the SSE events for a Hand row's completion or abandonment.
+
+    Driven by the app_hand UPDATE trigger. `changed` is the list of columns whose
+    values actually changed, so an ordinary last_action_time save broadcasts
+    nothing. Formerly inline in Hand.do_end_of_hand_stuff (the final score) and
+    Tournament._finish_play (the play-completion deadline).
+    """
+    changed = changed or []
+
+    if "is_complete" in changed and hand.is_complete:
+        # The auction's caller passed "Passed Out"; a played-out hand passed the
+        # score. Reconstruct that here from hand state.
+        if hand.auction.status is Auction.PassedOut:
+            final_score_text = "Passed Out"
+        else:
+            final_score_text = str(hand.get_xscript().final_score())
+        send_timestamped_event(
+            channel=hand.event_table_html_channel,
+            event_type=SSEEventTypes.TABLE,
+            data=create_table_event(final_score={"text": final_score_text}),
+            when=hand.last_action_time.timestamp(),
+        )
+
+    # A hand is abandoned either because a tournament's play-completion deadline
+    # passed (the tournament is now complete) or because a player walked away
+    # mid-hand (the tournament is still running). Only the first case sent a
+    # deadline event, so gate on completed_at to tell them apart.
+    if (
+        "abandoned_because" in changed
+        and hand.is_abandoned
+        and hand.board.tournament.completed_at is not None
+    ):
+        deadline = hand.board.tournament.play_completion_deadline
+        if deadline is not None:
+            app.models.hand.send_event(
+                channel=hand.event_table_html_channel,
+                event_type=SSEEventTypes.TABLE,
+                data=create_table_event(play_completion_deadline=deadline.isoformat()),
+            )

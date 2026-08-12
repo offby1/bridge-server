@@ -36,6 +36,7 @@ RECONNECT_DELAY = 2.0
 HAND_BROADCASTERS: dict[tuple[str, str], str] = {
     ("app_call", "INSERT"): "broadcast_after_call",
     ("app_play", "INSERT"): "broadcast_after_play",
+    ("app_hand", "UPDATE"): "broadcast_after_hand_change",
 }
 
 
@@ -113,12 +114,12 @@ class Command(BaseCommand):
             hand_id = payload.get("hand_id")
             if hand_id is not None:
                 await sync_to_async(self._broadcast_hand, thread_sensitive=True)(
-                    HAND_BROADCASTERS[key], hand_id
+                    HAND_BROADCASTERS[key], hand_id, payload.get("changed")
                 )
         else:
             logger.debug("notifier: observed (no broadcaster) %s", payload)
 
-    def _broadcast_hand(self, fn_name: str, hand_id: str) -> None:
+    def _broadcast_hand(self, fn_name: str, hand_id: str, changed: list | None = None) -> None:
         import app.broadcast
         from app.models import Hand
 
@@ -128,4 +129,4 @@ class Command(BaseCommand):
         except Hand.DoesNotExist:
             logger.info("notifier: hand %s no longer exists; skipping", hand_id)
             return
-        getattr(app.broadcast, fn_name)(hand=hand)
+        getattr(app.broadcast, fn_name)(hand=hand, changed=changed)

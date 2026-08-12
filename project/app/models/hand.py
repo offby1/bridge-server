@@ -25,7 +25,7 @@ from django_extensions.db.models import TimeStampedModel  # type: ignore [import
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
 
 from app.sse_channels import SSEChannels
-from app.sse_events import SSEEventTypes, create_player_hand_event, create_table_event
+from app.sse_events import SSEEventTypes, create_player_hand_event
 from bridge.auction import Auction, AuctionException
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
@@ -530,7 +530,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         # trigger. What stays here is the state change a broadcast can't do for
         # us: settling a passed-out auction.
         if not self.declarer and self.get_xscript().final_score() is not None:
-            self.do_end_of_hand_stuff(final_score_text="Passed Out")
+            self.do_end_of_hand_stuff()
 
     def add_play_from_model_player(self, *, player: Player, card: libCard) -> Play:
         assert_type(player, Player)
@@ -574,8 +574,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         # app.broadcast.broadcast_after_play, driven by the app_play INSERT
         # trigger. What stays here is the state change a broadcast can't do for
         # us: completing the hand.
-        if (final_score := self.get_xscript().final_score()) is not None:
-            self.do_end_of_hand_stuff(final_score_text=str(final_score))
+        if self.get_xscript().final_score() is not None:
+            self.do_end_of_hand_stuff()
 
         return rv
 
@@ -637,19 +637,13 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                     player=r,
                 )
 
-    def do_end_of_hand_stuff(self, *, final_score_text: str) -> None:
+    def do_end_of_hand_stuff(self) -> None:
+        # The final-score TABLE event now comes from
+        # app.broadcast.broadcast_after_hand_change, driven by the app_hand
+        # is_complete UPDATE. This method keeps only the end-of-hand state changes.
         with transaction.atomic():
             assert self.is_complete
             assert self.table_display_number is not None
-
-            send_timestamped_event(
-                channel=self.event_table_html_channel,
-                event_type=SSEEventTypes.TABLE,
-                data=create_table_event(
-                    final_score={"text": final_score_text},
-                ),
-                when=self.last_action_time.timestamp(),
-            )
 
             self._clear_bot_flags()
 
