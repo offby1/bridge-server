@@ -124,31 +124,40 @@ along with its URL route.
   `get_chat_disabled_explanation` -- so we may revisit them; we are leaving them
   alone for now.
 
-### Testing, and what is not covered
+### Testing
 
-There is no `test_readers.py` today, and we deliberately did not write one: the
-extraction is meant to preserve behaviour, and the existing view and model tests
-are what demonstrate that. `test_table_view.py` is the one place that calls a
-reader (`get_display_skeleton`) directly.
+`app/test_readers.py` calls the readers straight, with no request and no test
+client -- which is the payoff of the extraction. It covers what the view tests
+never reached rather than re-testing everything: `get_hint_for_player` and
+`get_xscript_updates` had no coverage at all before it, because `hint_view` and
+`hand_xscript_updates_view` have no tests and did not before this branch either.
+`test_table_view.py` also calls `get_display_skeleton` directly.
 
-`just test` reports **75% coverage of `readers.py`** as of this commit. The gaps
-are worth naming, because two readers are not exercised at all:
+`just test` reports **96% coverage of `readers.py`** as of this commit, up from
+75% before those tests. What remains uncovered:
 
-- **`get_hint_for_player`** and **`get_xscript_updates`** have no coverage. Their
-  views, `hint_view` and `hand_xscript_updates_view`, have no tests either -- and
-  did not before this branch, when the same logic sat inline in them. So this is a
-  pre-existing gap that the extraction neither caused nor closed.
-- `get_annotated_tricks` runs, but only ever on hands with no completed trick, so
-  its per-trick loop body is uncovered.
-- `get_hand_status_string` is only ever reached for one of its three outcomes.
-- `get_hand_summary` runs, but several of its branches (the not-yet-played-the-board
-  refusal, and the scoring arithmetic once a final score exists) do not.
+- `AllFourSuitHoldings.from_suit`, which nothing in the project calls. It came
+  over from the blueprint and looks like dead code.
+- The arithmetic in `get_board_archive_hands` for a numeric score; every hand it
+  sees under test scores `"-"`.
+- A few branches needing a state we could not readily build, notably a settled
+  auction whose final score is 0, and the hint asked about a seat that nobody
+  controls right this second.
 
-Direct unit tests would close all of that cheaply, and are the obvious next piece
-of work. We have not written them. The point of the extraction is that they are
-now easy: each reader is a function over model instances, with no request and no
-side effects.
+Three traps we hit writing those tests, worth knowing before you write more:
 
-Note also that `just test` prints a warning that the Django template coverage
-plugin disabled itself because template debugging is off in the test settings, so
-template lines count toward no coverage figure at all.
+- `play_out_hand` picks the first legal call, which is Pass, so on its own it
+  passes the auction out and leaves a hand that is complete with **no tricks**.
+  Settle a contract with `set_auction_to` first if you want tricks.
+- The `usual_setup` fixture deals each player one whole suit, so every trick is
+  four different suits and nobody ever follows suit. Anything about following
+  suit needs a normally-dealt hand, which `create_a_tournament` gives you.
+- Coverage says nothing about templates: `just test` warns that the Django
+  template coverage plugin disabled itself, because template debugging is off in
+  the test settings.
+
+One behaviour the tests pin rather than endorse: during play,
+`get_hint_for_player` answers for whoever is on turn no matter who asked, because
+it checks whether *anybody* controls that seat and not whether the asker does.
+`hint_view` behaved the same way before the extraction. During the auction, by
+contrast, a player off turn is told it is not their turn.
