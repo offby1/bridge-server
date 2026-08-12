@@ -13,7 +13,7 @@ from __future__ import annotations
 import collections
 import dataclasses
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from app.models.utils import assert_type
 from bridge.card import Card as libCard
@@ -119,3 +119,45 @@ def get_display_skeleton(*, hand: app.models.Hand, as_dealt: bool = False) -> Di
             textual_summary=f"{len(cards)} cards",
         )
     return DisplaySkeleton(holdings_by_seat=rv)
+
+
+def get_annotated_tricks(hand: app.models.Hand) -> list[dict[str, Any]]:
+    """Return each completed trick of `hand`, annotated for display.
+
+    Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5): a card
+    after the first is shown as a bare rank unless it changed suit, the winning
+    seat is identified, and the trick is flagged for the NS / EW side.
+    """
+    xscript = hand.get_xscript()
+
+    annotated = []
+    for t_index, t in enumerate(xscript.tricks):
+        plays = []
+        winning_seat = "?"
+
+        for p_index, p in enumerate(t.plays):
+            if p_index == 0:
+                led_suit = p.card.suit
+                leading_seat = p.seat
+
+            if p.wins_the_trick:
+                winning_seat = p.seat.value
+
+            plays.append(
+                {
+                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
+                    "wins_the_trick": p.wins_the_trick,
+                },
+            )
+
+        annotated.append(
+            {
+                "seat": leading_seat.name[0],
+                "number": t_index + 1,
+                "plays": plays,
+                "ns": winning_seat in "NS",
+                "ew": winning_seat in "EW",
+            }
+        )
+
+    return annotated

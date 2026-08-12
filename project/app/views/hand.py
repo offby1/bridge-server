@@ -44,7 +44,6 @@ if TYPE_CHECKING:
 
     from app.models.hand import Hand
     from app.readers import AllFourSuitHoldings
-    from bridge.xscript import HandTranscript
 
 
 logger = logging.getLogger(__name__)
@@ -346,36 +345,6 @@ def auction_history_HTML_for_table(
     return render_to_string("auction.html", context)
 
 
-def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
-    # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
-    for t_index, t in enumerate(xscript.tricks):
-        plays = []
-        winning_seat = "?"
-
-        for p_index, p in enumerate(t.plays):
-            if p_index == 0:
-                led_suit = p.card.suit
-                leading_seat = p.seat
-
-            if p.wins_the_trick:
-                winning_seat = p.seat.value
-
-            plays.append(
-                {
-                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
-                    "wins_the_trick": p.wins_the_trick,
-                },
-            )
-
-        yield {
-            "seat": leading_seat.name[0],
-            "number": t_index + 1,
-            "plays": plays,
-            "ns": winning_seat in "NS",
-            "ew": winning_seat in "EW",
-        }
-
-
 def _four_hands_context_for_hand(
     *,
     as_viewed_by: app.models.Player | None = None,
@@ -423,7 +392,7 @@ def _four_hands_context_for_hand(
     xscript = hand.get_xscript()
 
     always = _auction_context_for_hand(hand) | {
-        "annotated_tricks": list(_annotate_tricks(xscript)),
+        "annotated_tricks": app.readers.get_annotated_tricks(hand),
         "card_display": cards_by_direction_display,
         "dummy_player": (
             hand.get_xscript().auction.dummy if hand.get_xscript().auction.found_contract else None
