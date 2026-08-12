@@ -92,12 +92,25 @@ Each phase is one commit; `just ft` stays green after each.
   the recipient tells the broadcaster which. `Message.create_*_event_args` became
   `create_*_message` (create the row, don't build/send the event); the two chat
   views and `_send_partnership_messages` just create the row now.
-- **Phase 6 (not yet): `Player.partner` change** -> partnerships event.
+- **Phase 6 (deliberately left inline): the `PARTNERSHIPS` event.** This is the
+  one broadcast we do *not* drive from a trigger, because it doesn't fit the
+  re-derive-from-committed-state model:
+  - A SPLIT event needs the *old* partner's pk. After `break_partnership`
+    commits, `self.partner` is `None`, and the payload carries only changed
+    column *names*, never values -- so the old pk isn't recoverable.
+  - A partnership change updates *both* players' `partner_id`, so a
+    `partner_id`-driven trigger would fire the single event twice, needing dedup.
+  - Nothing subscribes to `PARTNERSHIPS` today, so forcing it into the trigger
+    model would add complexity (old values in the payload + dedup) for no payoff.
+
+  It stays inline in `Player._send_partnership_messages`, with a comment there. If
+  a subscriber is ever added and this needs to be trigger-driven, the trigger
+  function would have to start carrying selected old column values.
 
 ## Status
 
-As of this commit, Phases 0 through 5 have landed: the plumbing exists and is
-tested, and the `Call`, `Play`, `Hand`-completion/abandonment, `Player`
-bot-toggle, and chat/lobby `Message` broadcasts are now trigger-driven (their
-inline sends are gone). Only Phase 6 (the `PARTNERSHIPS` event on a
-`Player.partner` change) remains intent, not current behaviour.
+This work is complete. Nine of the ten original scattered `send_event` sites are
+now trigger-driven, in `app/broadcast.py`, called by the `notifier`. The tenth,
+the `PARTNERSHIPS` event, deliberately stays inline (Phase 6 above). The only
+other `send_event` in the models is inside `send_timestamped_event`, the shared
+helper the broadcasters use -- not a "remember to broadcast" call site.

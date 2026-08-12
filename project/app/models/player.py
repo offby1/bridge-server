@@ -409,7 +409,15 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                 message=f"Partnered with {self.partner.name}",
             )
 
-        # We always send two arrays, even though one is empty for consistent client-side handling
+        # This one broadcast stays inline, unlike the rest (see
+        # docs/README.listen-notify.md). It doesn't fit the trigger model: a SPLIT
+        # needs the *old* partner's pk, which the commit-time payload deliberately
+        # doesn't carry, and a partnership change updates both players' rows, so a
+        # partner_id-driven trigger would fire it twice. Nothing subscribes to
+        # PARTNERSHIPS today, so there's no payoff to forcing it either.
+        #
+        # We always send two arrays, even though one is empty, for consistent
+        # client-side handling.
         if action == SPLIT:
             event_data = PartnershipEvent(split=[old_partner_pk, self.pk], joined=[])
         else:
