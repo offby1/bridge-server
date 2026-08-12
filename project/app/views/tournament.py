@@ -150,7 +150,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
             context["missing_matchpoint_explanation"] = msg
 
     if viewer is not None and viewer.partner is not None and not viewer.currently_seated:
-        viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer)
+        viewer_signup = app.models.TournamentSignup.objects.filter(player=viewer, tournament=t)
         logger.debug("%s is currently signed up for %s", viewer.name, viewer_signup)
 
         if not viewer_signup.exists():
@@ -221,8 +221,22 @@ def tournament_list_view(request: AuthedHttpRequest) -> TemplateResponse:
 @require_http_methods(["POST"])
 @logged_in_as_player_required()
 def new_tournament_view(request: AuthedHttpRequest) -> HttpResponse:
-    app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
-    return HttpResponseRedirect(reverse("app:tournament-list") + "?open_for_signups=True")
+    tournament, _ = app.models.Tournament.objects.get_or_create_tournament_open_for_signups()
+
+    # Sign the creator (and their partner) up, so "I made it, I'm in it" holds
+    # without a separate click. Skip quietly if they can't be enrolled -- no
+    # partner, already seated, etc.
+    creator = request.user.player
+    if creator is not None:
+        try:
+            tournament.sign_up_player_and_partner(creator)
+        except app.models.tournament.TournamentSignupError as e:
+            logger.debug("Not auto-enrolling %s in %s: %s", creator, tournament, e)
+
+    # Land on the tournament's own page, where the "Sign Me Up" / "Skip the
+    # Deadline" buttons are, rather than the list -- otherwise it's easy to miss
+    # during the signup window and the clock fills the tournament with bots.
+    return HttpResponseRedirect(reverse("app:tournament", kwargs={"pk": tournament.pk}))
 
 
 @require_http_methods(["POST"])

@@ -478,13 +478,18 @@ class Tournament(models.Model):
                 f"At least one of {(player.name, player.partner.name)} is currently seated"
             )
 
-        num_created = 0
         for p in (player, player.partner):
-            _, created = app.models.TournamentSignup.objects.get_or_create(
+            su, created = app.models.TournamentSignup.objects.get_or_create(
                 defaults=dict(tournament=self), player=p
             )
-            if created:
-                num_created += 1
+            # A player has at most one signup (TournamentSignup.player is
+            # OneToOne). If they had a leftover one -- e.g. for a tournament that
+            # has since finished (completed tournaments finished via the deadline
+            # path keep their signup rows) -- re-point it here rather than leaving
+            # them stuck enrolled nowhere useful.
+            if not created and su.tournament_id != self.pk:
+                su.tournament = self
+                su.save()
 
     def signed_up_pairs(self) -> Generator[app.utils.movements.Pair]:
         seen: set[PK] = set()
