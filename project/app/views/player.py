@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import datetime
 import json
 import logging
@@ -318,26 +317,11 @@ def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
 
 
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
-    p = Player.objects.filter(user__username=name_or_pk).first()
+    payload = app.readers.get_player_summary_by_name_or_pk(name_or_pk)
 
-    if p is None:
-        with contextlib.suppress(ValueError):
-            p = Player.objects.filter(pk=name_or_pk).first()
-
-        if p is None:
-            logger.debug(f"Nuttin' from pk={name_or_pk=}")
-            return HttpResponseNotFound()
-
-    current_hand = p.current_hand
-
-    payload = {
-        "pk": p.pk,
-        "current_table_number": current_hand.table_display_number
-        if current_hand is not None
-        else None,
-        "current_hand_pk": current_hand.pk if current_hand is not None else None,
-        "name": p.name,
-    }
+    if payload is None:
+        logger.debug(f"Nuttin' from pk={name_or_pk=}")
+        return HttpResponseNotFound()
 
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 

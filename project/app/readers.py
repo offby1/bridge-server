@@ -11,6 +11,7 @@ Dependencies point one way: readers import from models, never the reverse.
 from __future__ import annotations
 
 import collections
+import contextlib
 import dataclasses
 from collections.abc import Iterable
 from typing import Any
@@ -275,3 +276,27 @@ def get_hint_for_player(player: app.models.Player) -> str:
             return f"If I were {hand.next_seat_to_play}, I'd play {card}"
 
     return f"It's not {player}'s turn to call or play"
+
+
+def get_player_summary_by_name_or_pk(name_or_pk: str) -> dict[str, Any] | None:
+    """Look up a player by username (preferred) or primary key.
+
+    Returns a small JSON-friendly summary, or None if no such player exists.
+    """
+    player = app.models.Player.objects.filter(user__username=name_or_pk).first()
+    if player is None:
+        with contextlib.suppress(ValueError):
+            player = app.models.Player.objects.filter(pk=name_or_pk).first()
+
+    if player is None:
+        return None
+
+    current_hand = player.current_hand
+    return {
+        "pk": player.pk,
+        "current_table_number": (
+            current_hand.table_display_number if current_hand is not None else None
+        ),
+        "current_hand_pk": current_hand.pk if current_hand is not None else None,
+        "name": player.name,
+    }
