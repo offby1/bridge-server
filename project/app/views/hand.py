@@ -423,14 +423,6 @@ def _four_hands_context_for_hand(
     return always
 
 
-@logged_in_as_player_required()
-def auction_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
-    context = _auction_context_for_hand(hand)
-
-    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
-
-
 def bidding_box_buttons(
     *,
     auction: bridge.auction.Auction,
