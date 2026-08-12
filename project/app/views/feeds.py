@@ -6,6 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 
 import app.models
+import app.readers
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ class CompletedTournamentsFeed(Feed):
         context = super().get_context_data(**kwargs)
         hand: app.models.Hand = kwargs["item"]
 
-        summary, score = hand.summary_as_viewed_by(as_viewed_by=None)
+        summary, score = app.readers.get_hand_summary(hand=hand, as_viewed_by=None)
         context["score_line"] = summary if score in ("-", None) else f"{summary} ({score})"
         context["hand_url"] = self._abs("app:hand-dispatch", pk=hand.pk)
         context["seats"] = [

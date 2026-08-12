@@ -1,5 +1,6 @@
 import pytest
 
+import app.readers
 from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
@@ -13,7 +14,7 @@ def test_table_display_skeleton(usual_setup: Hand) -> None:
     h: Hand = usual_setup
     set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
 
-    ds = h.display_skeleton()
+    ds = app.readers.get_display_skeleton(hand=h)
     for dir_ in Seat:
         assert ds[dir_].textual_summary == "13 cards"
 

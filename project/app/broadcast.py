@@ -23,6 +23,7 @@ from django.template.loader import render_to_string
 import app.models.hand
 import app.models.message
 import app.models.player
+import app.readers
 from app.models.hand import send_timestamped_event
 from app.sse_channels import SSEChannels
 from app.sse_events import (
@@ -132,7 +133,7 @@ def broadcast_after_play(*, hand: app.models.hand.Hand, changed: list[str] | Non
         channel=hand.event_table_html_channel,
         event_type=SSEEventTypes.TABLE,
         data=create_table_event(
-            trick_counts_string=hand.trick_counts_string(),
+            trick_counts_string=app.readers.get_trick_counts_string(hand),
             trick_html=hand._get_current_trick_html(),
         ),
     )

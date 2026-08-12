@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import datetime
 import json
 import logging
@@ -30,7 +29,8 @@ from django.views.decorators.http import require_http_methods
 from django_filters import FilterSet
 from django_filters.views import FilterView
 
-from app.models import Hand, Message, PartnerException, Player
+import app.readers
+from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
@@ -169,25 +169,6 @@ def _partnership_context(
     return context
 
 
-def _chat_disabled_explanation(*, sender, recipient) -> str | None:
-    if not sender.is_oauth_verified:
-        return "You must sign in with Google to use chat"
-    if not recipient.is_oauth_verified:
-        return f"{recipient.name} hasn't signed in with Google, so you can't chat with them"
-
-    # You can always mumble to yourself ... if you're OAuthed.  (Otherwise you'd use my bridge server as your own
-    # private cloud storage.)
-    if sender == recipient:
-        return None
-
-    if recipient.current_hand_and_direction() is not None:
-        return f"{recipient.name} is already seated"
-    if sender.current_hand_and_direction() is not None:
-        return f"You, {sender.name}, are already seated"
-
-    return None
-
-
 @require_http_methods(["GET", "POST"])
 @logged_in_as_player_required()
 def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> HttpResponse:
@@ -211,7 +192,9 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 
     common_context = {
         "chat_channel_name": Message.channel_name_from_players(who_clicked, subject),
-        "chat_disabled": _chat_disabled_explanation(sender=who_clicked, recipient=subject),
+        "chat_disabled": app.readers.get_chat_disabled_explanation(
+            sender=who_clicked, recipient=subject
+        ),
         "chat_messages": (
             [
                 m.as_html()
@@ -267,9 +250,10 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
 @logged_in_as_player_required(redirect=False)
 def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpResponse:
     sender = request.user.player
+    assert sender is not None
     recipient: Player = get_object_or_404(Player, pk=recipient_pk)
 
-    if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
+    if explanation := app.readers.get_chat_disabled_explanation(sender=sender, recipient=recipient):
         return Forbid(explanation)
 
     # Creating the message is enough; the app_message trigger drives the SSE
@@ -313,51 +297,15 @@ def bot_checkbox_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 @logged_in_as_player_required(redirect=False)
 def hint_view(request: AuthedHttpRequest, player_pk: PK) -> HttpResponse:
     p: Player = get_object_or_404(Player, pk=player_pk)
-    h: Hand | None = p.current_hand
-
-    if h is None:
-        return HttpResponse(status=200, content=escape(f"{p} has no current hand"))
-
-    xscript = h.get_xscript()
-
-    if p == h.player_who_may_call:
-        call = xscript.auction.make_standard_american_call(
-            pbn=xscript.endplay_deal.to_pbn(),
-            vuln=xscript.endplay_vulnerability(),
-        )
-        return HttpResponse(status=200, content=escape(f"If I were you, I'd call {call}"))
-
-    if (s := h.next_seat_to_play) is not None:
-        if h.player_who_controls_seat(s, right_this_second=True):
-            card = xscript.slightly_less_dumb_play().card
-            return HttpResponse(
-                status=200, content=escape(f"If I were {h.next_seat_to_play}, I'd play {card}")
-            )
-
-    return HttpResponse(status=200, content=escape(f"It's not {p}'s turn to call or play"))
+    return HttpResponse(status=200, content=escape(app.readers.get_hint_for_player(p)))
 
 
 def by_name_or_pk_view(_request: HttpRequest, name_or_pk: str) -> HttpResponse:
-    p = Player.objects.filter(user__username=name_or_pk).first()
+    payload = app.readers.get_player_summary_by_name_or_pk(name_or_pk)
 
-    if p is None:
-        with contextlib.suppress(ValueError):
-            p = Player.objects.filter(pk=name_or_pk).first()
-
-        if p is None:
-            logger.debug(f"Nuttin' from pk={name_or_pk=}")
-            return HttpResponseNotFound()
-
-    current_hand = p.current_hand
-
-    payload = {
-        "pk": p.pk,
-        "current_table_number": current_hand.table_display_number
-        if current_hand is not None
-        else None,
-        "current_hand_pk": current_hand.pk if current_hand is not None else None,
-        "name": p.name,
-    }
+    if payload is None:
+        logger.debug(f"Nuttin' from pk={name_or_pk=}")
+        return HttpResponseNotFound()
 
     return HttpResponse(json.dumps(payload), headers={"Content-Type": "text/json"})
 

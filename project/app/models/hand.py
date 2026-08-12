@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import collections
 import dataclasses
 import datetime
-import json
 import logging
 import time
 from collections.abc import Generator, Iterable
@@ -28,7 +26,6 @@ from app.sse_channels import SSEChannels
 from app.sse_events import SSEEventTypes, create_player_hand_event
 from bridge.auction import Auction, AuctionException
 from bridge.card import Card as libCard
-from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
 from bridge.seat import Seat
@@ -80,65 +77,6 @@ class TrickTuple:
 
 
 TrickTuples = list[TrickTuple]
-
-
-@dataclasses.dataclass
-class SuitHolding:
-    """Given the state of the play, can one of these cards be played?  "Yes" if the xscript says we're the current
-    player, and if all the cards_by_suit are "legal_cards" according to the xscript.
-
-    Note that either all our cards are legal_cards, or none are.
-
-    """
-
-    legal_now: bool
-
-    cards_of_one_suit: list[libCard]
-
-
-@dataclasses.dataclass
-class AllFourSuitHoldings:
-    spades: SuitHolding
-    hearts: SuitHolding
-    diamonds: SuitHolding
-    clubs: SuitHolding
-
-    """The textual summary is redundant, in that it summarizes what's present in the four SuitHoldings.  It's for when
-    the view is displaying an opponent's hand -- obviously the player doesn't get to see the cards; instead they see a
-    message like "12 cards".
-
-    """
-
-    textual_summary: str
-
-    @property
-    def this_hands_turn_to_play(self) -> bool:
-        for suit_name in ("spades", "hearts", "clubs", "diamonds"):
-            holding = getattr(self, suit_name)
-
-            if holding.legal_now:
-                return True
-        return False
-
-    def from_suit(self, s: libSuit) -> SuitHolding:
-        return getattr(self, s.name().lower())
-
-    def items(self) -> Iterable[tuple[libSuit, SuitHolding]]:
-        for suitname, suit_value in libSuit.__members__.items():
-            holding = getattr(self, suitname.lower())
-            yield (suit_value, holding)
-
-
-@dataclasses.dataclass
-class DisplaySkeleton:
-    holdings_by_seat: dict[Seat, AllFourSuitHoldings]
-
-    def items(self) -> Iterable[tuple[Seat, AllFourSuitHoldings]]:
-        return self.holdings_by_seat.items()
-
-    def __getitem__(self, seat: Seat) -> AllFourSuitHoldings:
-        assert_type(seat, Seat)
-        return self.holdings_by_seat[seat]
 
 
 def summarize(thing):
@@ -385,13 +323,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     @admin.display
     def is_abandoned(self) -> bool:
         return self.abandoned_because is not None
-
-    def status_string(self) -> str:
-        if self.is_complete:
-            return "✔"
-        if self.is_abandoned:
-            return "✘"
-        return "…"
 
     def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
         send_timestamped_event(
@@ -810,44 +741,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         ccbs = self.current_cards_by_seat()
         return libHand(cards=list(ccbs[player.seat]))
 
-    def display_skeleton(self, *, as_dealt: bool = False) -> DisplaySkeleton:
-        """A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view."""
-        xscript = self.get_xscript()
-        whose_turn_is_it = None
-
-        if xscript.auction.found_contract:
-            whose_turn_is_it = xscript.next_seat_to_play()
-
-        rv = {}
-        # xscript.legal_cards tells us which cards are legal for the current player.
-        for seat, cards in self.current_cards_by_seat(as_dealt=as_dealt).items():
-            assert_type(seat, Seat)
-
-            cards_by_suit = collections.defaultdict(list)
-            for c in cards:
-                cards_by_suit[c.suit].append(c)
-
-            kwargs = {}
-
-            for suit in libSuit:
-                legal_now = False
-                if seat == whose_turn_is_it:
-                    legal_now = any(
-                        c in xscript.legal_cards(some_cards=list(cards))
-                        for c in cards_by_suit[suit]
-                    )
-
-                kwargs[suit.name().lower()] = SuitHolding(
-                    cards_of_one_suit=cards_by_suit[suit],
-                    legal_now=legal_now,
-                )
-
-            rv[seat] = AllFourSuitHoldings(
-                **kwargs,
-                textual_summary=f"{len(cards)} cards",
-            )
-        return DisplaySkeleton(holdings_by_seat=rv)
-
     def serialized_calls(self):
         return [c.serialized for c in self.call_set.order_by("id")]
 
@@ -881,27 +774,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             ),
         )
 
-    def auction_display_with_explanations(self) -> list[list[dict[str, str] | None]]:
-        """Return the auction in 2D table form (like fancy_HTML_display) with explanations from DB."""
-        html_rows = self.auction.fancy_HTML_display()
-        db_calls = list(self.calls.all())
-
-        result: list[list[dict[str, str] | None]] = []
-        call_index = 0
-        for row in html_rows:
-            result_row: list[dict[str, str] | None] = []
-            for cell in row:
-                if cell is None:
-                    result_row.append(None)
-                else:
-                    explanation = (
-                        db_calls[call_index].explanation if call_index < len(db_calls) else ""
-                    )
-                    result_row.append({"html": str(cell), "explanation": explanation})
-                    call_index += 1
-            result.append(result_row)
-        return result
-
     @property
     def last_annotated_call(self) -> tuple[Seat, Call]:
         seat = self.call_set.order_by("-id").first()
@@ -930,12 +802,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 flattened.append(TrickTuple(seat=p.seat, card=p.card, winner=p.wins_the_trick))
 
         return flattened
-
-    def trick_counts_string(self) -> str:
-        cc = collections.Counter([p.seat.value for p in self.annotated_plays if p.winner])
-        ns = cc["S"] + cc["N"]
-        ew = cc["E"] + cc["W"]
-        return json.dumps({"N/S": ns, "E/W": ew})
 
     # This is meant for use by get_xscript; anyone else who wants to examine our plays should call that.
     @property
@@ -973,57 +839,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     # The summary is phrased in terms of the player, if they have seen (at least some of) the board already; otherwise
     # we (arbitrarily) summarize in terms of North.
-    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
-        if as_viewed_by is None:
-            if not self.tournament.is_complete:
-                return "Remind me -- who are you, again?", "-"
-
-        if as_viewed_by is not None:
-            if self.board.what_can_they_see(
-                player=as_viewed_by
-            ) != self.board.PlayerVisibility.everything and as_viewed_by.pk not in {
-                p.pk for p in self.players_by_direction_letter.values()
-            }:
-                return (
-                    f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
-                    "-",
-                )
-
-        auction_status = self.get_xscript().auction.status
-
-        if auction_status is self.auction.Incomplete:
-            return "Auction incomplete", "-"
-
-        if auction_status is self.auction.PassedOut:
-            return "Passed Out", 0
-
-        total_score: int | str = "-"
-
-        my_seat_letter = "N"
-
-        if as_viewed_by is not None:
-            if (direction := self.direction_letters_by_player.get(as_viewed_by)) is not None:
-                my_seat_letter = direction
-
-        fs = self.get_xscript().final_score()
-
-        if fs is None:
-            trick_summary = (
-                "Tournament expired" if self.tournament.is_complete else "still being played"
-            )
-        elif fs == 0:
-            total_score = 0
-            trick_summary = "Passed Out"
-        else:
-            trick_summary = fs.trick_summary
-
-            if my_seat_letter in "NS":
-                total_score = fs.north_south_points or -fs.east_west_points
-            else:
-                total_score = fs.east_west_points or -fs.north_south_points
-
-        return (f"{auction_status}: {trick_summary}", total_score)
-
     def save(self, *_args, **kwargs) -> None:
         super().save(**kwargs)
         if self.abandoned_because is None:

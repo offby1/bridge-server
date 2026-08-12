@@ -24,6 +24,7 @@ from django_filters import FilterSet
 from django_filters.views import FilterView
 
 import app.models
+import app.readers
 import bridge.seat
 import bridge.xscript
 from app.models.common import attribute_names
@@ -41,8 +42,8 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Iterable
 
-    from app.models.hand import AllFourSuitHoldings, Hand
-    from bridge.xscript import HandTranscript
+    from app.models.hand import Hand
+    from app.readers import AllFourSuitHoldings
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetim
 def _seat_div_context(
     *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
 ) -> dict[str, Any]:
-    ds = hand.display_skeleton(as_dealt=False)
+    ds = app.readers.get_display_skeleton(hand=hand, as_dealt=False)
     our_all_four_suit_holding = ds.holdings_by_seat[seat]
 
     card_html_by_direction = app.views.hand._get_card_html(
@@ -81,7 +82,11 @@ def _seat_div_context(
 
 
 def _auction_context_for_hand(hand: app.models.Hand) -> dict[str, Any]:
+    # Every path that renders auction.html goes through here, including the two
+    # templates that {% include %} it, so this is the one place that has to supply
+    # the auction rows.
     return {
+        "auction_rows": app.readers.get_auction_display_with_explanations(hand),
         "hand": hand,
         "players_starting_with_west": _players_west_first_context_for_hand(hand),
     }
@@ -111,7 +116,7 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
 
     disabled = True
 
-    if not as_viewed_by.has_played_hand(hand):
+    if not app.readers.player_has_played_hand(player=as_viewed_by, hand=hand):
         buttons = "No bidding box 'cuz you are not at this table"
     else:
         allowed_caller = hand.auction.allowed_caller()
@@ -344,36 +349,6 @@ def auction_history_HTML_for_table(
     return render_to_string("auction.html", context)
 
 
-def _annotate_tricks(xscript: HandTranscript) -> Iterable[dict[str, Any]]:
-    # Based on "Bridge Writing Style Guide by Richard Pavlicek.pdf" (page 5)
-    for t_index, t in enumerate(xscript.tricks):
-        plays = []
-        winning_seat = "?"
-
-        for p_index, p in enumerate(t.plays):
-            if p_index == 0:
-                led_suit = p.card.suit
-                leading_seat = p.seat
-
-            if p.wins_the_trick:
-                winning_seat = p.seat.value
-
-            plays.append(
-                {
-                    "card": p.card if p_index == 0 or p.card.suit != led_suit else p.card.rank,
-                    "wins_the_trick": p.wins_the_trick,
-                },
-            )
-
-        yield {
-            "seat": leading_seat.name[0],
-            "number": t_index + 1,
-            "plays": plays,
-            "ns": winning_seat in "NS",
-            "ew": winning_seat in "EW",
-        }
-
-
 def _four_hands_context_for_hand(
     *,
     as_viewed_by: app.models.Player | None = None,
@@ -381,7 +356,7 @@ def _four_hands_context_for_hand(
     xscript: bridge.xscript.HandTranscript | None = None,
     as_dealt: bool = False,
 ) -> dict[str, Any]:
-    skel = hand.display_skeleton(as_dealt=as_dealt)
+    skel = app.readers.get_display_skeleton(hand=hand, as_dealt=as_dealt)
 
     cards_by_direction_display = {}
     libSeat: bridge.seat.Seat
@@ -421,7 +396,7 @@ def _four_hands_context_for_hand(
     xscript = hand.get_xscript()
 
     always = _auction_context_for_hand(hand) | {
-        "annotated_tricks": list(_annotate_tricks(xscript)),
+        "annotated_tricks": app.readers.get_annotated_tricks(hand),
         "card_display": cards_by_direction_display,
         "dummy_player": (
             hand.get_xscript().auction.dummy if hand.get_xscript().auction.found_contract else None
@@ -446,14 +421,6 @@ def _four_hands_context_for_hand(
         return always | _three_by_three_trick_display_context_for_hand(hand, xscript=xscript)
 
     return always
-
-
-@logged_in_as_player_required()
-def auction_partial_view(request: AuthedHttpRequest, hand_pk: PK) -> HttpResponse:
-    hand: app.models.Hand = get_object_or_404(app.models.Hand, pk=hand_pk)
-    context = _auction_context_for_hand(hand)
-
-    return TemplateResponse(request, "auction-partial.html#auction-partial", context=context)
 
 
 def bidding_box_buttons(
@@ -628,6 +595,7 @@ def _interactive_view(request: AuthedHttpRequest, hand: app.models.Hand) -> Http
         | {
             "active_seat": hand.active_seat_name,
             "terse_description": _terse_description(hand),
+            "trick_counts_string": app.readers.get_trick_counts_string(hand),
         }
         | _auction_context_for_hand(hand)
     )
@@ -674,7 +642,9 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
                 | app.models.Board.PlayerVisibility.own_hand
             ):
                 xscript = hand.get_xscript().as_viewed_by(
-                    bridge.seat.Seat(player.direction_at_hand(hand)[0])
+                    bridge.seat.Seat(
+                        app.readers.get_player_direction_at_hand(player=player, hand=hand)[0]
+                    )
                 )
             case app.models.Board.PlayerVisibility.everything:
                 xscript = hand.get_xscript()
@@ -709,7 +679,7 @@ class HandTable(tables.Table):
     board = tables.Column()
     players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
-    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
+    status = tables.Column(orderable=False, empty_values=())
     table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     tournament_number = tables.Column(
         accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
@@ -725,9 +695,14 @@ class HandTable(tables.Table):
     def render_players(self, value) -> SafeString:
         return SafeString(", ".join([p.as_link() for p in value]))
 
+    # A column cannot reach a reader through an accessor, so this renders the status
+    # itself, the way render_result does.
+    def render_status(self, record) -> str:
+        return app.readers.get_hand_status_string(record)
+
     def render_result(self, record) -> SafeString:
-        summary_for_this_viewer, _ = record.summary_as_viewed_by(
-            as_viewed_by=getattr(self.request.user, "player", None),
+        summary_for_this_viewer, _ = app.readers.get_hand_summary(
+            hand=record, as_viewed_by=getattr(self.request.user, "player", None)
         )
         return format_html(
             """<a href="{}">Hand {}: {}</a>""",
@@ -788,7 +763,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
     if player not in hand.players_by_direction_letter.values():
         return Forbid("You're not at that table")
 
-    whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
+    whats_new = app.readers.get_xscript_updates(hand=hand, num_calls=calls, num_plays=plays)
     return HttpResponse(json.dumps(whats_new), headers={"Content-Type": "text/json"})
 
 

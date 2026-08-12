@@ -9,7 +9,6 @@ from .views.feeds import CompletedTournamentsFeed
 from .views.hand import (
     HandListView,
     HandsByTableAndBoardGroupView,
-    auction_partial_view,
     hand_dispatch_view,
     hand_serialized_view,
     hand_xscript_updates_view,
@@ -43,7 +42,6 @@ urlpatterns = [
         name="hand-xscript-updates",
     ),
     path("serialized/hand/<int:pk>/", hand_serialized_view, name="serialized-hand-detail"),
-    path("hand/<hand_pk>/auction/", auction_partial_view, name="auction-partial"),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),
     path("play/", table.details.play_post_view, name="play-post"),
