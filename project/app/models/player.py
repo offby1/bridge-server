@@ -402,11 +402,11 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def _send_partnership_messages(self, *, action, old_partner_pk=None):
         if action == JOIN:
-            send_event(
-                *Message.create_lobby_event_args(
-                    from_player=self,
-                    message=f"Partnered with {self.partner.name}",
-                ),
+            # Creating the lobby message is enough; the app_message trigger drives
+            # its broadcast (see docs/README.listen-notify.md).
+            Message.create_lobby_message(
+                from_player=self,
+                message=f"Partnered with {self.partner.name}",
             )
 
         # We always send two arrays, even though one is empty for consistent client-side handling

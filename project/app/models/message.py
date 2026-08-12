@@ -8,8 +8,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.html import format_html
 
-from app.sse_events import SSEEventTypes
-
 from .types import PK, PK_from_str
 
 logger = logging.getLogger(__name__)
@@ -99,52 +97,31 @@ class Message(models.Model):
             return None
 
     @classmethod
-    def create_player_event_args(
-        cls,
-        *,
-        from_player,
-        message,
-        recipient,
-    ):
-        return cls._create_event_args(
-            channel_name=cls.channel_name_from_players(from_player, recipient),
-            event_type=SSEEventTypes.CHAT,
-            from_player=from_player,
-            message=message,
-            recipient_obj=recipient,
-        )
+    def create_player_message(cls, *, from_player, message, recipient) -> "Message":
+        return cls._create(from_player=from_player, message=message, recipient_obj=recipient)
 
     @classmethod
-    def create_lobby_event_args(cls, *, from_player, message):
+    def create_lobby_message(cls, *, from_player, message) -> "Message":
         global _THE_LOBBY
         if _THE_LOBBY is None:
             _THE_LOBBY, created = Lobby.objects.get_or_create()
 
-        return cls._create_event_args(
-            channel_name="lobby",
-            event_type=SSEEventTypes.LOBBY,
-            from_player=from_player,
-            message=message,  # it's like a jungle, sometimes.  It makes me wonder how I keep from going under.
-            recipient_obj=_THE_LOBBY,
-        )
+        return cls._create(from_player=from_player, message=message, recipient_obj=_THE_LOBBY)
 
     @classmethod
-    def _create_event_args(cls, *, channel_name, event_type, from_player, message, recipient_obj):
+    def _create(cls, *, from_player, message, recipient_obj) -> "Message":
+        # Creating the row is enough: the app_message INSERT trigger drives the SSE
+        # broadcast via app.broadcast.broadcast_after_message, which derives the
+        # channel and event type (CHAT vs LOBBY) from the recipient.
         if len(message) > 100:
             logger.warning(f"Truncating annoyingly-long ({len(message)} characters) message")
             message = message[0:100]
 
-        obj = cls.objects.create(
+        return cls.objects.create(
             from_player=from_player,
             message=message,
             recipient_obj=recipient_obj,
         )
-
-        return [
-            channel_name,
-            event_type,
-            obj.as_html(),
-        ]
 
     class Meta:
         indexes = [

@@ -86,14 +86,18 @@ Each phase is one commit; `just ft` stays green after each.
   the dummy's checkbox. `Player._broadcast_changes` is gone; `Player.save` no
   longer broadcasts. Driven by the app_player UPDATE trigger (0104), which
   already fires only on allow_bot / current_hand changes.
-- **Phase 5 (not yet): `Message` INSERT** -> `broadcast_after_message(message)`
-  (adds an `app_message` trigger); chat and lobby.
+- **Phase 5 (done): `Message` INSERT** -> `broadcast_after_message(message)`
+  (adds the `app_message` trigger, migration 0105). Covers private chat (CHAT)
+  and lobby announcements (LOBBY), including the partnership-JOIN lobby message;
+  the recipient tells the broadcaster which. `Message.create_*_event_args` became
+  `create_*_message` (create the row, don't build/send the event); the two chat
+  views and `_send_partnership_messages` just create the row now.
 - **Phase 6 (not yet): `Player.partner` change** -> partnerships event.
 
 ## Status
 
-As of this commit, Phases 0 through 4 have landed: the plumbing exists and is
-tested, and the `Call`, `Play`, `Hand`-completion/abandonment, and `Player`
-bot-toggle broadcasts are now trigger-driven (their inline sends are gone).
-Phases 5 and 6 (the chat/lobby and partnership `Message`/`Player.partner`
-broadcasts) are intent, not current behaviour.
+As of this commit, Phases 0 through 5 have landed: the plumbing exists and is
+tested, and the `Call`, `Play`, `Hand`-completion/abandonment, `Player`
+bot-toggle, and chat/lobby `Message` broadcasts are now trigger-driven (their
+inline sends are gone). Only Phase 6 (the `PARTNERSHIPS` event on a
+`Player.partner` change) remains intent, not current behaviour.

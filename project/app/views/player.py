@@ -27,7 +27,6 @@ from django.utils import timezone
 from django.utils.html import escape, format_html
 from django.utils.safestring import SafeString, mark_safe
 from django.views.decorators.http import require_http_methods
-from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_filters import FilterSet
 from django_filters.views import FilterView
 
@@ -273,21 +272,17 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
     if explanation := _chat_disabled_explanation(sender=sender, recipient=recipient):
         return Forbid(explanation)
 
-    channel_name, message_type, message_content = Message.create_player_event_args(
+    # Creating the message is enough; the app_message trigger drives the SSE
+    # broadcast (see docs/README.listen-notify.md). We still render the HTML here
+    # for the sender's own response.
+    message = Message.create_player_message(
         from_player=sender,
         message=request.POST["message"],
         recipient=recipient,
     )
 
-    send_event(
-        channel_name,
-        message_type,
-        message_content,
-        json_encode=False,
-    )
-
     return HttpResponse(
-        message_content,
+        message.as_html(),
     )
 
 

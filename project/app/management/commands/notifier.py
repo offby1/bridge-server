@@ -122,6 +122,10 @@ class Command(BaseCommand):
                 await sync_to_async(self._broadcast_player, thread_sensitive=True)(
                     pk, payload.get("changed")
                 )
+        elif key == ("app_message", "INSERT"):
+            pk = payload.get("pk")
+            if pk is not None:
+                await sync_to_async(self._broadcast_message, thread_sensitive=True)(pk)
         else:
             logger.debug("notifier: observed (no broadcaster) %s", payload)
 
@@ -148,3 +152,15 @@ class Command(BaseCommand):
             logger.info("notifier: player %s no longer exists; skipping", player_pk)
             return
         app.broadcast.broadcast_player_change(player=player, changed=changed)
+
+    def _broadcast_message(self, message_pk: str) -> None:
+        import app.broadcast
+        from app.models import Message
+
+        close_old_connections()
+        try:
+            message = Message.objects.get(pk=message_pk)
+        except Message.DoesNotExist:
+            logger.info("notifier: message %s no longer exists; skipping", message_pk)
+            return
+        app.broadcast.broadcast_after_message(message=message)

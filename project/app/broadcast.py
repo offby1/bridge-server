@@ -21,8 +21,10 @@ from types import SimpleNamespace
 from django.template.loader import render_to_string
 
 import app.models.hand
+import app.models.message
 import app.models.player
 from app.models.hand import send_timestamped_event
+from app.sse_channels import SSEChannels
 from app.sse_events import (
     SSEEventTypes,
     create_player_hand_event,
@@ -231,3 +233,28 @@ def broadcast_player_change(
                 data=dummy_html,
                 json_encode=False,
             )
+
+
+def broadcast_after_message(*, message: app.models.message.Message) -> None:
+    """Reproduce the SSE broadcast for a chat or lobby message.
+
+    Formerly inline in views.lobby.send_lobby_message, views.player.send_player_message,
+    and Player._send_partnership_messages; driven now by the app_message INSERT trigger.
+    The recipient tells us whether this is a lobby announcement or a private chat.
+    """
+    recipient = message.recipient_obj
+    if isinstance(recipient, app.models.message.Lobby):
+        app.models.hand.send_event(
+            channel=SSEChannels.LOBBY,
+            event_type=SSEEventTypes.LOBBY,
+            data=message.as_html(),
+        )
+    else:
+        app.models.hand.send_event(
+            channel=app.models.message.Message.channel_name_from_players(
+                message.from_player, recipient
+            ),
+            event_type=SSEEventTypes.CHAT,
+            data=message.as_html(),
+            json_encode=False,
+        )
