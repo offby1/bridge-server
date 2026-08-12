@@ -682,7 +682,7 @@ class HandTable(tables.Table):
     board = tables.Column()
     players = tables.Column(orderable=False)
     result = tables.Column(orderable=False, empty_values=())
-    status = tables.Column(accessor=tables.A("status_string"), orderable=False)
+    status = tables.Column(orderable=False, empty_values=())
     table = tables.Column(accessor=tables.A("table_display_number"), verbose_name="Table")
     tournament_number = tables.Column(
         accessor=tables.A("board__tournament__display_number"), verbose_name="Tournament"
@@ -697,6 +697,11 @@ class HandTable(tables.Table):
 
     def render_players(self, value) -> SafeString:
         return SafeString(", ".join([p.as_link() for p in value]))
+
+    # A column cannot reach a reader through an accessor, so this renders the status
+    # itself, the way render_result does.
+    def render_status(self, record) -> str:
+        return app.readers.get_hand_status_string(record)
 
     def render_result(self, record) -> SafeString:
         summary_for_this_viewer, _ = app.readers.get_hand_summary(

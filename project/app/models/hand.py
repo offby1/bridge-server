@@ -326,13 +326,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def is_abandoned(self) -> bool:
         return self.abandoned_because is not None
 
-    def status_string(self) -> str:
-        if self.is_complete:
-            return "✔"
-        if self.is_abandoned:
-            return "✘"
-        return "…"
-
     def send_HTML_to_player(self, *, player: Player, data: dict[str, Any]) -> None:
         send_timestamped_event(
             channel=player.event_HTML_hand_channel,

@@ -345,3 +345,12 @@ def player_has_played_hand(*, player: app.models.Player, hand: app.models.Hand) 
 def get_xscript_updates(*, hand: app.models.Hand, num_calls: int, num_plays: int) -> Any:
     """Return the calls and plays added to `hand` since the caller's known counts."""
     return hand.get_xscript().whats_new(num_calls=num_calls, num_plays=num_plays)
+
+
+def get_hand_status_string(hand: app.models.Hand) -> str:
+    """A one-glyph status for `hand`: complete, abandoned, or still being played."""
+    if hand.is_complete:
+        return "✔"
+    if hand.is_abandoned:
+        return "✘"
+    return "…"
