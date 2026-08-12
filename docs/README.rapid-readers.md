@@ -136,13 +136,13 @@ never reached rather than re-testing everything: `get_hint_for_player` and
 `just test` reports **96% coverage of `readers.py`** as of this commit, up from
 75% before those tests. What remains uncovered:
 
-- `AllFourSuitHoldings.from_suit`, which nothing in the project calls. It came
-  over from the blueprint and looks like dead code.
 - The arithmetic in `get_board_archive_hands` for a numeric score; every hand it
   sees under test scores `"-"`.
 - A few branches needing a state we could not readily build, notably a settled
-  auction whose final score is 0, and the hint asked about a seat that nobody
-  controls right this second.
+  auction whose final score is 0.
+
+(`AllFourSuitHoldings.from_suit` was uncovered too. It came over from the
+blueprint, nothing called it, and we deleted it rather than test it.)
 
 Three traps we hit writing those tests, worth knowing before you write more:
 

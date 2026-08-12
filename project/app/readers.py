@@ -63,9 +63,6 @@ class AllFourSuitHoldings:
                 return True
         return False
 
-    def from_suit(self, s: libSuit) -> SuitHolding:
-        return getattr(self, s.name().lower())
-
     def items(self) -> Iterable[tuple[libSuit, SuitHolding]]:
         for suitname, suit_value in libSuit.__members__.items():
             holding = getattr(self, suitname.lower())
