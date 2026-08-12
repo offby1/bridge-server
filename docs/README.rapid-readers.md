@@ -65,7 +65,7 @@ Everything in this section describes the branch **as it stands today**.
 
 ### Landed
 
-Eight green commits, oldest first:
+Eleven green commits, oldest first (`just mypy` and `just ft` pass at each one):
 
 | Commit | Reader(s) | Moved from |
 |---|---|---|
@@ -77,31 +77,41 @@ Eight green commits, oldest first:
 | `cf23435e` | `get_chat_disabled_explanation` | `_chat_disabled_explanation`, `views/player.py` |
 | `7f1456a0` | `get_player_direction_at_hand`, `player_has_played_hand` | `Player.direction_at_hand`, `Player.has_played_hand` |
 | `654cf064` | `get_xscript_updates` | inline in `hand_xscript_updates_view` |
+| `836f5494` | `get_hand_status_string` | `Hand.status_string` |
+| `508cbda1` | `get_trick_counts_string` | `Hand.trick_counts_string` |
+| `9d1d28f9` | `get_auction_display_with_explanations` | `Hand.auction_display_with_explanations` |
 
 (Hashes refer to this branch's history; a rebase will change them, the subject
 lines will not.)
 
-### Not yet moved
+Every reader in the blueprint has now landed, so the extraction this branch set
+out to do is finished. The last three each needed more than a move, and what they
+needed is worth remembering:
 
-The blueprint has three readers that still live on `Hand` today. Each needs more
-than a move, which is why they are last:
+- **`get_hand_status_string`**. The one caller was a django-tables2 column
+  accessor, `tables.A("status_string")`. An accessor names an attribute on the
+  record, so it cannot call a reader. The column now declares `empty_values=()`
+  and renders itself in `render_status`, which is what the neighbouring `result`
+  column already did. django-tables2 calls the render method when the accessor
+  fails to resolve, as long as nothing counts as an empty value.
+- **`get_trick_counts_string`**. `broadcast.py` calls the reader directly.
+  `interactive_hand.html` used to call the model method, so `_interactive_view`
+  computes the value and passes `trick_counts_string` in the context.
+- **`get_auction_display_with_explanations`**. `auction.html` used to call the
+  model method. Every path that renders that template builds its context through
+  `_auction_context_for_hand` -- the two direct renders, plus the two templates
+  that `{% include %}` it and hand their own context down -- so that funnel is the
+  single place that supplies `auction_rows`.
 
-- **`get_hand_status_string`**, from `Hand.status_string`. The caller is a
-  django-tables2 column accessor, `tables.A("status_string")` in `views/hand.py`.
-  An accessor cannot call a reader, so this one will need a `render_status`
-  method on the table class instead of an accessor.
-- **`get_trick_counts_string`**, from `Hand.trick_counts_string`. Two callers:
-  `interactive_hand.html` renders `{{ hand.trick_counts_string }}`, and
-  `broadcast.py` calls the method when it sends the `table` SSE event. The
-  template call is the one that has to become a context variable; the broadcaster
-  can call the reader directly.
-- **`get_auction_display_with_explanations`**, from
-  `Hand.auction_display_with_explanations`. `auction.html` calls it as
-  `{{ hand.auction_display_with_explanations }}`, and that template is included
-  from `read-only_hand.html` and `carousel_style_auction.html` as well as being
-  rendered directly by `_auction_context_for_hand` in `views/hand.py`. Every one
-  of those render paths has to supply the context variable, so this is the
-  fiddliest of the three.
+One thing that makes the template moves safer than they look: `django-fastdev`
+raises `FastDevVariableDoesNotExist` on a context variable that isn't there, so a
+misspelled or missing variable fails loudly instead of rendering an empty string.
+Any test that renders the template at all will catch it.
+
+Extracting the auction reader also turned up `auction_partial_view`, which had
+been raising `TemplateDoesNotExist` since October 2024 because its template was
+folded into `table_detail.html`. Nothing referenced the view, so we deleted it
+along with its URL route.
 
 ### Deliberately staying put
 
@@ -114,11 +124,31 @@ than a move, which is why they are last:
   `get_chat_disabled_explanation` -- so we may revisit them; we are leaving them
   alone for now.
 
-### Testing
+### Testing, and what is not covered
 
-There is no `test_readers.py` today, and we have not written one. The readers are
-covered indirectly, through the view and model tests that already existed --
-`test_table_view.py` is the one place that calls a reader (`get_display_skeleton`)
-directly. Direct unit tests for the readers are worth adding, and are not yet
-built; the point of the extraction is that they are now easy to write, since each
-reader is a function over model instances with no request and no side effects.
+There is no `test_readers.py` today, and we deliberately did not write one: the
+extraction is meant to preserve behaviour, and the existing view and model tests
+are what demonstrate that. `test_table_view.py` is the one place that calls a
+reader (`get_display_skeleton`) directly.
+
+`just test` reports **75% coverage of `readers.py`** as of this commit. The gaps
+are worth naming, because two readers are not exercised at all:
+
+- **`get_hint_for_player`** and **`get_xscript_updates`** have no coverage. Their
+  views, `hint_view` and `hand_xscript_updates_view`, have no tests either -- and
+  did not before this branch, when the same logic sat inline in them. So this is a
+  pre-existing gap that the extraction neither caused nor closed.
+- `get_annotated_tricks` runs, but only ever on hands with no completed trick, so
+  its per-trick loop body is uncovered.
+- `get_hand_status_string` is only ever reached for one of its three outcomes.
+- `get_hand_summary` runs, but several of its branches (the not-yet-played-the-board
+  refusal, and the scoring arithmetic once a final score exists) do not.
+
+Direct unit tests would close all of that cheaply, and are the obvious next piece
+of work. We have not written them. The point of the extraction is that they are
+now easy: each reader is a function over model instances, with no request and no
+side effects.
+
+Note also that `just test` prints a warning that the Django template coverage
+plugin disabled itself because template debugging is off in the test settings, so
+template lines count toward no coverage figure at all.
