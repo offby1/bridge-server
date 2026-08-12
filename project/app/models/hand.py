@@ -31,7 +31,6 @@ from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.contract import Call as libCall
-from bridge.contract import Contract as libContract
 from bridge.seat import Seat
 from bridge.table import Hand as libHand
 from bridge.table import Player as libPlayer
@@ -526,77 +525,11 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.last_action_time,
         )
 
-        if dummy_player := self.model_dummy:
-            # Notify dummy player's checkbox to update (becomes disabled)
-            from types import SimpleNamespace
-
-            from django.template.loader import render_to_string
-
-            html = render_to_string(
-                "bot-checkbox.html",
-                {"user": SimpleNamespace(player=dummy_player), "error_message": None},
-            )
-            send_event(
-                channel=dummy_player.bot_checkbox_channel,
-                event_type=SSEEventTypes.BOT_CHECKBOX,
-                data=html,
-                json_encode=False,
-            )
-
-        now = time.time()
-
-        for p in self.players():
-            send_timestamped_event(
-                channel=p.event_HTML_hand_channel,
-                event_type=SSEEventTypes.PLAYER_HAND,
-                data=create_player_hand_event(
-                    bidding_box_html=self._get_current_bidding_box_html_for_player(p),
-                    hand_pk=self.pk,
-                    show_hint_button=p.is_my_turn_to_interact(),
-                ),
-                when=now,
-            )
-
-        self.send_JSON_to_players(
-            event_type=SSEEventTypes.BOT_NEW_CALL,
-            data={
-                "hand_pk": self.pk,
-                "new-call": {"serialized": call.serialize(), "explanation": call.explanation},
-                "tempo_seconds": self.board.tournament.tempo_seconds,
-            },
-        )
-
-        from app.views.hand import auction_history_HTML_for_table
-
-        send_timestamped_event(
-            channel=self.event_table_html_channel,
-            event_type=SSEEventTypes.TABLE,
-            data=create_table_event(auction_history_html=auction_history_HTML_for_table(hand=self)),
-            when=now,
-        )
-
-        if self.declarer:  # the auction just settled
-            contract = self.auction.status
-            assert isinstance(contract, libContract)
-            assert contract.declarer is not None
-
-            data = {
-                "contract_text": str(contract),
-                "contract": {
-                    "opening_leader": contract.declarer.seat.lho().value,
-                },
-            }
-
-            self.send_JSON_to_players(event_type=SSEEventTypes.BOT_CONTRACT, data=data)
-
-            # The interactive hand page needs this to know that it's time to reload, in order to show the "play" slides.
-            send_timestamped_event(
-                channel=self.event_table_html_channel,
-                event_type=SSEEventTypes.TABLE,
-                data=data,  # Send the full data dict including both contract_text and contract
-            )
-
-        elif self.get_xscript().final_score() is not None:
+        # The SSE fan-out for this call now lives in
+        # app.broadcast.broadcast_after_call, driven by the app_call INSERT
+        # trigger. What stays here is the state change a broadcast can't do for
+        # us: settling a passed-out auction.
+        if not self.declarer and self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff(final_score_text="Passed Out")
 
     def add_play_from_model_player(self, *, player: Player, card: libCard) -> Play:

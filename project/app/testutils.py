@@ -5,6 +5,7 @@ from typing import Literal
 import pytest
 from django.utils import timezone
 
+import app.broadcast
 import app.models
 import bridge.contract
 import bridge.table
@@ -95,18 +96,24 @@ def set_auction_to(bid: bridge.contract.Bid, hand: app.models.Hand) -> app.model
     assert caller is not None
 
     hand.add_call(call=bid)
+    # Emulate the notifier: a committed call fires the broadcast the notifier
+    # would fire in production (see docs/README.listen-notify.md).
+    app.broadcast.broadcast_after_call(hand=hand)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 1
     caller = next_caller(caller)
 
     hand.add_call(call=bridge.contract.Pass)
+    app.broadcast.broadcast_after_call(hand=hand)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 2
     caller = next_caller(caller)
 
     hand.add_call(call=bridge.contract.Pass)
+    app.broadcast.broadcast_after_call(hand=hand)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 3
     caller = next_caller(caller)
 
     hand.add_call(call=bridge.contract.Pass)
+    app.broadcast.broadcast_after_call(hand=hand)
     assert len(hand.auction.player_calls) == hand.call_set.count() == 4
     assert hand.auction.found_contract
 
@@ -120,6 +127,7 @@ def play_out_hand(h: app.models.Hand) -> None:
     while h.player_who_may_call is not None:
         call = h.get_xscript().auction.legal_calls()[0]
         h.add_call(call=call)
+        app.broadcast.broadcast_after_call(hand=h)
 
     while (ns := h.next_seat_to_play) is not None:
         play = h.get_xscript().slightly_less_dumb_play()

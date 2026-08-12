@@ -33,7 +33,9 @@ RECONNECT_DELAY = 2.0
 # send is removed from the models. Phase 0 ships this empty: the notifier
 # observes and logs but broadcasts nothing, so it is safe to run alongside the
 # still-inline sends.
-HAND_BROADCASTERS: dict[tuple[str, str], str] = {}
+HAND_BROADCASTERS: dict[tuple[str, str], str] = {
+    ("app_call", "INSERT"): "broadcast_after_call",
+}
 
 
 def _conninfo() -> str:

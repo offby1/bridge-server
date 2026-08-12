@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from unittest.mock import patch
 
 import psycopg
 import pytest
@@ -24,7 +25,7 @@ from app.management.commands.notifier import CHANNEL, Command, _conninfo
 
 
 @pytest.mark.django_db(transaction=True)
-def test_committed_call_fires_notify(usual_setup) -> None:
+def test_call_write_notifies_and_notifier_broadcasts(usual_setup) -> None:
     hand = usual_setup
 
     # A dedicated LISTEN connection, like the real notifier's.
@@ -49,7 +50,16 @@ def test_committed_call_fires_notify(usual_setup) -> None:
         assert payload["op"] == "INSERT"
         assert str(payload["hand_id"]) == str(hand.pk)
 
-        # Phase 0's dispatch only observes; it must handle the notify without raising.
-        asyncio.run(Command()._dispatch(call_notify))
+        # NOTIFY -> dispatch -> broadcaster -> send_event: the notifier rebuilds
+        # and sends the fan-out. It flows through app.models.hand.send_event
+        # (directly or via send_timestamped_event), so patch there to observe it.
+        with patch("app.models.hand.send_event") as mock_send_event:
+            asyncio.run(Command()._dispatch(call_notify))
+
+        assert mock_send_event.called, "the notifier should have broadcast after dispatch"
+        sent = [c.kwargs.get("data", {}) for c in mock_send_event.call_args_list]
+        assert any(isinstance(d, dict) and "new-call" in d for d in sent), (
+            "the rebuilt broadcast should include the new-call event"
+        )
     finally:
         listen_conn.close()

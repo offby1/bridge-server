@@ -67,8 +67,10 @@ Each phase is one commit; `just ft` stays green after each.
   skeleton, and the end-to-end plumbing test. No inline sends removed yet, so
   the notifier observes and broadcasts nothing -- safe to run alongside the
   existing inline sends.
-- **Phase 1 (not yet): `Call` INSERT** -> `broadcast_after_call(hand)`; remove
-  `add_call`'s inline sends; update affected tests.
+- **Phase 1 (done): `Call` INSERT** -> `broadcast_after_call(hand)`. `add_call`'s
+  inline SSE fan-out is gone; only the passed-out state change stays. `testutils`
+  helpers call the broadcaster after each `add_call` to emulate the notifier, so
+  tests that observe those events still see them.
 - **Phase 2 (not yet): `Play` INSERT** -> `broadcast_after_play(hand)`.
 - **Phase 3 (not yet): `Hand` complete/abandoned** -> `broadcast_after_hand_change(hand)`
   (branches on `changed`).
@@ -79,6 +81,6 @@ Each phase is one commit; `just ft` stays green after each.
 
 ## Status
 
-As of this commit, only Phase 0 has landed: the plumbing exists and is tested,
-but no broadcast has moved off its inline call site yet. The remaining phases
-are intent, not current behaviour.
+As of this commit, Phases 0 and 1 have landed: the plumbing exists and is
+tested, and the `Call` broadcast is now trigger-driven (its inline sends are
+gone). Phases 2 onward are intent, not current behaviour.
