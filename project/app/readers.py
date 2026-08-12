@@ -13,15 +13,14 @@ from __future__ import annotations
 import collections
 import dataclasses
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+import app.models
+import app.models.hand
 from app.models.utils import assert_type
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
 from bridge.seat import Seat
-
-if TYPE_CHECKING:
-    import app.models
 
 
 @dataclasses.dataclass
@@ -161,3 +160,95 @@ def get_annotated_tricks(hand: app.models.Hand) -> list[dict[str, Any]]:
         )
 
     return annotated
+
+
+# The summary is phrased in terms of the player if they have seen (at least some
+# of) the board already; otherwise we (arbitrarily) summarize in terms of North.
+def get_hand_summary(
+    *, hand: app.models.Hand, as_viewed_by: app.models.Player | None
+) -> tuple[str, str | int]:
+    """Return a (description, score) summary of `hand` from a viewer's perspective."""
+    if as_viewed_by is None:
+        if not hand.tournament.is_complete:
+            return "Remind me -- who are you, again?", "-"
+
+    if as_viewed_by is not None:
+        if hand.board.what_can_they_see(
+            player=as_viewed_by
+        ) != hand.board.PlayerVisibility.everything and as_viewed_by.pk not in {
+            p.pk for p in hand.players_by_direction_letter.values()
+        }:
+            return (
+                f"Sorry, {as_viewed_by}, but you have not completely played board {hand.board.short_string()}, so later d00d",
+                "-",
+            )
+
+    auction_status = hand.get_xscript().auction.status
+
+    if auction_status is hand.auction.Incomplete:
+        return "Auction incomplete", "-"
+
+    if auction_status is hand.auction.PassedOut:
+        return "Passed Out", 0
+
+    total_score: int | str = "-"
+
+    my_seat_letter = "N"
+
+    if as_viewed_by is not None:
+        if (direction := hand.direction_letters_by_player.get(as_viewed_by)) is not None:
+            my_seat_letter = direction
+
+    fs = hand.get_xscript().final_score()
+
+    if fs is None:
+        trick_summary = (
+            "Tournament expired" if hand.tournament.is_complete else "still being played"
+        )
+    elif fs == 0:
+        total_score = 0
+        trick_summary = "Passed Out"
+    else:
+        trick_summary = fs.trick_summary
+
+        if my_seat_letter in "NS":
+            total_score = fs.north_south_points or -fs.east_west_points
+        else:
+            total_score = fs.east_west_points or -fs.north_south_points
+
+    return (f"{auction_status}: {trick_summary}", total_score)
+
+
+def get_board_archive_hands(
+    *, board: app.models.Board, as_viewed_by: app.models.Player | None
+) -> list[app.models.Hand]:
+    """Every hand played on `board`, annotated for `as_viewed_by` and ranked by score.
+
+    Each hand is decorated with `dis_my_hand`, `summary_for_this_viewer` and
+    `score_for_this_viewer`, then sorted by score descending (non-numeric last).
+    """
+    annotated_hands: list[app.models.Hand] = []
+
+    h: app.models.Hand
+    for h in app.models.hand.enrich(board.hand_set.all()):
+        h.dis_my_hand = False
+        if as_viewed_by is not None and as_viewed_by.pk in h.player_pks():
+            h.dis_my_hand = True
+            as_viewed_by.cache_set(board=board, hand=h)
+
+        h.summary_for_this_viewer, h.score_for_this_viewer = get_hand_summary(
+            hand=h, as_viewed_by=as_viewed_by
+        )
+
+        annotated_hands.append(h)
+
+    def numberify_score(s: int | str) -> float:
+        if isinstance(s, str):
+            return float("-inf")
+        return s
+
+    return sorted(
+        annotated_hands,
+        key=lambda s: numberify_score(s.score_for_this_viewer),
+        reverse=True,
+    )

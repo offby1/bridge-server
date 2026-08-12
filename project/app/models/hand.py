@@ -875,57 +875,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     # The summary is phrased in terms of the player, if they have seen (at least some of) the board already; otherwise
     # we (arbitrarily) summarize in terms of North.
-    def summary_as_viewed_by(self, *, as_viewed_by: Player | None) -> tuple[str, str | int]:
-        if as_viewed_by is None:
-            if not self.tournament.is_complete:
-                return "Remind me -- who are you, again?", "-"
-
-        if as_viewed_by is not None:
-            if self.board.what_can_they_see(
-                player=as_viewed_by
-            ) != self.board.PlayerVisibility.everything and as_viewed_by.pk not in {
-                p.pk for p in self.players_by_direction_letter.values()
-            }:
-                return (
-                    f"Sorry, {as_viewed_by}, but you have not completely played board {self.board.short_string()}, so later d00d",
-                    "-",
-                )
-
-        auction_status = self.get_xscript().auction.status
-
-        if auction_status is self.auction.Incomplete:
-            return "Auction incomplete", "-"
-
-        if auction_status is self.auction.PassedOut:
-            return "Passed Out", 0
-
-        total_score: int | str = "-"
-
-        my_seat_letter = "N"
-
-        if as_viewed_by is not None:
-            if (direction := self.direction_letters_by_player.get(as_viewed_by)) is not None:
-                my_seat_letter = direction
-
-        fs = self.get_xscript().final_score()
-
-        if fs is None:
-            trick_summary = (
-                "Tournament expired" if self.tournament.is_complete else "still being played"
-            )
-        elif fs == 0:
-            total_score = 0
-            trick_summary = "Passed Out"
-        else:
-            trick_summary = fs.trick_summary
-
-            if my_seat_letter in "NS":
-                total_score = fs.north_south_points or -fs.east_west_points
-            else:
-                total_score = fs.east_west_points or -fs.north_south_points
-
-        return (f"{auction_status}: {trick_summary}", total_score)
-
     def save(self, *_args, **kwargs) -> None:
         super().save(**kwargs)
         if self.abandoned_because is None:

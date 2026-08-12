@@ -697,8 +697,8 @@ class HandTable(tables.Table):
         return SafeString(", ".join([p.as_link() for p in value]))
 
     def render_result(self, record) -> SafeString:
-        summary_for_this_viewer, _ = record.summary_as_viewed_by(
-            as_viewed_by=getattr(self.request.user, "player", None),
+        summary_for_this_viewer, _ = app.readers.get_hand_summary(
+            hand=record, as_viewed_by=getattr(self.request.user, "player", None)
         )
         return format_html(
             """<a href="{}">Hand {}: {}</a>""",
