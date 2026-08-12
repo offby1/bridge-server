@@ -120,6 +120,12 @@ def _finish_play(tour: Tournament) -> None:
         deadline_str = deadline.isoformat()
         tour.abandon_all_hands(reason=f"play completion deadline ({deadline_str}) has passed")
 
+        # A finished tournament's signups are dead weight; drop them here too, the
+        # way Tournament.save does on the normal (all-hands-played) completion path.
+        # Otherwise a player is left signed up for a completed tournament
+        # (TournamentSignup.player is OneToOne), which blocks their next signup.
+        TournamentSignup.objects.filter(tournament=tour).delete()
+
         for hand in tour.hands():
             send_event(
                 channel=hand.event_table_html_channel,
