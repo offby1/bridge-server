@@ -761,7 +761,7 @@ def hand_xscript_updates_view(request, pk: PK, calls: int, plays: PK) -> HttpRes
     if player not in hand.players_by_direction_letter.values():
         return Forbid("You're not at that table")
 
-    whats_new = hand.get_xscript().whats_new(num_calls=calls, num_plays=plays)
+    whats_new = app.readers.get_xscript_updates(hand=hand, num_calls=calls, num_plays=plays)
     return HttpResponse(json.dumps(whats_new), headers={"Content-Type": "text/json"})
 
 

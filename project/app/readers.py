@@ -340,3 +340,8 @@ def get_player_direction_at_hand(*, player: app.models.Player, hand: app.models.
 def player_has_played_hand(*, player: app.models.Player, hand: app.models.Hand) -> bool:
     """Whether `player` was one of the four seats at `hand`."""
     return hand in player.hands_played.all()
+
+
+def get_xscript_updates(*, hand: app.models.Hand, num_calls: int, num_plays: int) -> Any:
+    """Return the calls and plays added to `hand` since the caller's known counts."""
+    return hand.get_xscript().whats_new(num_calls=num_calls, num_plays=num_plays)
