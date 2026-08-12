@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
+import app.broadcast
 import bridge.card
 import bridge.contract
 from app.models import Hand
@@ -19,18 +20,23 @@ def test_dummy_checkbox_updates_when_contract_determined(usual_setup: Hand) -> N
     hand.call_set.all().delete()
 
     with patch("app.models.hand.send_event") as mock_send_event:
-        # Auction: North opens 1C, everyone passes
+        # Auction: North opens 1C, everyone passes. Each committed call fires the
+        # broadcast the notifier fires in production (docs/README.listen-notify.md).
         hand.add_call(
             call=bridge.contract.Bid(level=1, denomination=bridge.card.Suit.CLUBS)
         )  # North
+        app.broadcast.broadcast_after_call(hand=hand)
         hand.add_call(call=bridge.contract.Pass)  # East
+        app.broadcast.broadcast_after_call(hand=hand)
         hand.add_call(call=bridge.contract.Pass)  # South
+        app.broadcast.broadcast_after_call(hand=hand)
 
         # Before this pass, contract is not determined
         assert not hand.auction.found_contract
 
         # This pass determines the contract (3 passes in a row after a bid)
         hand.add_call(call=bridge.contract.Pass)  # West
+        app.broadcast.broadcast_after_call(hand=hand)
 
         # Now contract should be determined
         assert hand.auction.found_contract
@@ -88,6 +94,8 @@ def test_declarer_toggle_updates_dummy_checkbox(usual_setup: Hand) -> None:
         original_value = declarer.allow_bot_to_play_for_me
         declarer.allow_bot_to_play_for_me = not original_value
         declarer.save()
+        # Emulate the notifier: the app_player UPDATE fires this broadcast.
+        app.broadcast.broadcast_player_change(player=declarer, changed=["allow_bot_to_play_for_me"])
 
         # Should broadcast to both declarer and dummy
         channels_updated = {call.kwargs.get("channel") for call in mock_send_event.call_args_list}

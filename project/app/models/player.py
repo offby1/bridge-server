@@ -339,62 +339,13 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
             self.save()
 
     def save(self, *args, **kwargs) -> None:
-        # Capture dirty fields before saving
-        dirty_fields = self.get_dirty_fields() if self.pk else {}
-
+        # The bot-checkbox / bot-setting SSE fan-out for an allow_bot or
+        # current_hand change now lives in app.broadcast.broadcast_player_change,
+        # driven by the app_player UPDATE trigger.
         self._check_synthetic()
         if self.current_hand is None:
             self.random_state = None
         super().save(*args, **kwargs)
-
-        # Broadcast changes after successful save
-        if dirty_fields:
-            self._broadcast_changes(dirty_fields)
-
-    def _broadcast_changes(self, dirty_fields: dict) -> None:
-        """Send SSE updates for changed fields."""
-        from django.template.loader import render_to_string
-
-        # Bot toggle changed OR current_hand changed (which affects dummy status)
-        if "allow_bot_to_play_for_me" in dirty_fields or "current_hand_id" in dirty_fields:
-            # Render HTML for web clients on dedicated bot checkbox channel
-            from types import SimpleNamespace
-
-            html = render_to_string(
-                "bot-checkbox.html", {"user": SimpleNamespace(player=self), "error_message": None}
-            )
-
-            send_event(
-                channel=self.bot_checkbox_channel,
-                event_type=SSEEventTypes.BOT_CHECKBOX,
-                data=html,
-                json_encode=False,
-            )
-
-            # Send JSON for bots/API clients
-            send_event(
-                channel=self.event_JSON_hand_channel,
-                event_type=SSEEventTypes.BOT_SETTING,
-                data={"allow_bot_to_play_for_me": self.allow_bot_to_play_for_me},
-            )
-
-            # If this player is declarer, also update dummy's checkbox
-            # (since declarer controls both their own hand and dummy's hand)
-            if self.current_hand and self.current_hand.model_declarer == self:
-                dummy = self.current_hand.model_dummy
-                if dummy:
-                    from types import SimpleNamespace
-
-                    dummy_html = render_to_string(
-                        "bot-checkbox.html",
-                        {"user": SimpleNamespace(player=dummy), "error_message": None},
-                    )
-                    send_event(
-                        channel=dummy.bot_checkbox_channel,
-                        event_type=SSEEventTypes.BOT_CHECKBOX,
-                        data=dummy_html,
-                        json_encode=False,
-                    )
 
     def _check_synthetic(self) -> None:
         if not self.pk:
@@ -451,14 +402,22 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def _send_partnership_messages(self, *, action, old_partner_pk=None):
         if action == JOIN:
-            send_event(
-                *Message.create_lobby_event_args(
-                    from_player=self,
-                    message=f"Partnered with {self.partner.name}",
-                ),
+            # Creating the lobby message is enough; the app_message trigger drives
+            # its broadcast (see docs/README.listen-notify.md).
+            Message.create_lobby_message(
+                from_player=self,
+                message=f"Partnered with {self.partner.name}",
             )
 
-        # We always send two arrays, even though one is empty for consistent client-side handling
+        # This one broadcast stays inline, unlike the rest (see
+        # docs/README.listen-notify.md). It doesn't fit the trigger model: a SPLIT
+        # needs the *old* partner's pk, which the commit-time payload deliberately
+        # doesn't carry, and a partnership change updates both players' rows, so a
+        # partner_id-driven trigger would fire it twice. Nothing subscribes to
+        # PARTNERSHIPS today, so there's no payoff to forcing it either.
+        #
+        # We always send two arrays, even though one is empty, for consistent
+        # client-side handling.
         if action == SPLIT:
             event_data = PartnershipEvent(split=[old_partner_pk, self.pk], joined=[])
         else:
