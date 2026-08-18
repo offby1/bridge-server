@@ -131,7 +131,17 @@ services:
         condition: service_started
 
   postgres:
-    image: postgres:17
+    # Pinned by digest (PostgreSQL 17.11), deliberately, not just for repeatability.
+    # `just prod` runs `docker compose pull` and then `docker compose up postgres redis`.
+    # With a floating `postgres:17` tag, a new upstream point release moves the tag, so
+    # that `up` recreates the container -- restarting the database in the middle of an
+    # app deploy that never asked for it. The previous deploy's django/bot/clock/notifier
+    # are still querying at that moment, and Postgres kills their connections with
+    # SQLSTATE 57P01 ("terminating connection due to administrator command"), which
+    # reaches Sentry looking like a crash. A digest can't move, so a routine deploy
+    # leaves the database alone. Upgrade Postgres by bumping this digest on purpose,
+    # knowing it will restart the database.
+    image: postgres:17@sha256:e38411452a464af89e5adadb8d223bf53b898d47d6ef918b2d58c08707350449
     environment:
       # only for initializing the db
       POSTGRES_DB: bridge
