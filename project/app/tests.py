@@ -1,4 +1,3 @@
-import base64
 import importlib
 import json
 import logging
@@ -198,14 +197,8 @@ def test_player_channnel_encoding():
 
 def quickly_auth_test_client(c: Client, player: Player) -> None:
     # We could also have just done `c.login(username=user, password=".")` but that uses deliberately-slow
-    # password-hashing.
-    c.get(
-        "/three-way-login/",
-        headers={
-            "Authorization": "Basic "
-            + base64.b64encode(f"{player.pk}:{settings.API_SKELETON_KEY}".encode()).decode()
-        },  # type: ignore [arg-type]
-    )
+    # password-hashing; force_login skips it.
+    c.force_login(player.user)
 
 
 def test_sending_lobby_messages(usual_setup: Hand) -> None:

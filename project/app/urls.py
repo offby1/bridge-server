@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import home_view, lobby, player, robots_dot_txt, signup_view, table, three_way_login
+from .views import home_view, lobby, login, player, robots_dot_txt, signup_view, table
 from .views.board import (
     BoardListView,
     board_archive_view,
@@ -44,6 +44,7 @@ urlpatterns = [
     path("serialized/hand/<int:pk>/", hand_serialized_view, name="serialized-hand-detail"),
     path("hand/<hand_pk>/open-access-toggle/", open_access_toggle_view, name="open-access-toggle"),
     path("lobby/", lobby.lobby, name="lobby"),
+    path("login/", login.login_view, name="login"),
     path("play/", table.details.play_post_view, name="play-post"),
     path("table/", table.details.sekrit_test_forms_view, name="sekrit-test-forms"),
     path("player/", player.player_detail_view, name="player"),
@@ -71,7 +72,6 @@ urlpatterns = [
         name="send_player_message",
     ),
     path("signup/", signup_view, name="signup"),
-    path("three-way-login/", three_way_login.three_way_login_view, name="three-way-login"),
     path("tournaments.rss/", CompletedTournamentsFeed(), name="tournaments-rss"),
     path("tournament/", tournament_list_view, name="tournament-list"),
     path("tournament/<int:pk>/", tournament_view, name="tournament"),

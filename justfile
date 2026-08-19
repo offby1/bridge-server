@@ -6,7 +6,6 @@ import 'postgres.just'
 
 DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
-export DJANGO_SKELETON_KEY_FILE := DJANGO_SECRET_DIRECTORY / "django_skeleton_key"
 export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
 export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
@@ -36,6 +35,7 @@ default:
 django-secret-directory:
     mkdir -vp "{{ DJANGO_SECRET_DIRECTORY }}"
 
+[parallel]
 [private]
 [script('bash')]
 ensure-django-secret: django-secret-directory
@@ -44,17 +44,6 @@ ensure-django-secret: django-secret-directory
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
-    fi
-
-[parallel]
-[private]
-[script('bash')]
-ensure-skeleton-key: uv-install-no-dev ensure-django-secret
-    set -euo pipefail
-    touch "{{ DJANGO_SKELETON_KEY_FILE }}"
-    if [ ! -f "{{ DJANGO_SKELETON_KEY_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SKELETON_KEY_FILE }}") -lt 50 ]
-    then
-    cd project && uv run python manage.py generate_secret_key > "{{ DJANGO_SKELETON_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -125,7 +114,7 @@ all-but-django-prep: pre-commit uv-install pg-start redis
 [group('django')]
 [parallel]
 [private]
-manage *options: all-but-django-prep ensure-skeleton-key version-file
+manage *options: all-but-django-prep ensure-django-secret version-file
     cd project && uv run python manage.py {{ options }}
 
 [group('django')]
@@ -143,7 +132,7 @@ alias load := fixture
 alias loaddata := fixture
 
 [group('django')]
-dumpdata: all-but-django-prep ensure-skeleton-key version-file
+dumpdata: all-but-django-prep ensure-django-secret version-file
     just --no-deps manage dumpdata app auth | jq | ./redact-secrets.sh > {{ datetime_utc("%FT%T%z") }}.json
     @echo Now move that file to project/app/fixtures
 
@@ -186,7 +175,7 @@ setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
 [script('bash')]
-_notests *options: version-file django-superuser migrate create-cache ensure-skeleton-key
+_notests *options: version-file django-superuser migrate create-cache ensure-django-secret
     set -euxo pipefail
 
     # Pre-flight check: fail cleanly if port is already in use
@@ -209,7 +198,6 @@ _notests *options: version-file django-superuser migrate create-cache ensure-ske
     # is negligible); the advisory lock makes a redundant start harmless. The
     # container needs the same secret env that _deploy sets up.
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GIT_VERSION="$(cat project/VERSION)"
@@ -230,12 +218,12 @@ alias runserver := runme
 # wins the advisory lock; the next `just runme`/`just dev` brings the Docker one back.
 [group('development')]
 [script('bash')]
-notifier: all-but-django-prep ensure-skeleton-key version-file migrate
+notifier: all-but-django-prep ensure-django-secret version-file migrate
     docker compose stop notifier || true
     cd project && uv run python manage.py notifier
 
 [parallel]
-curl *options: django-superuser migrate create-cache ensure-skeleton-key
+curl *options: django-superuser migrate create-cache ensure-django-secret
     curl -v --cookie cook --cookie-jar cook "{{ options }}"
 
 [script('bash')]
@@ -243,7 +231,7 @@ curl-login:
     set -euxo pipefail
     b64_blob=$(echo -n bob:. | base64)
     header="Authorization: Basic ${b64_blob}"
-    curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:{{ DEV_SERVER_PORT }}/three-way-login/
+    curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:{{ DEV_SERVER_PORT }}/login/
 
 create-cache: (manage "createcachetable")
 
@@ -323,7 +311,7 @@ clean:
 
 [parallel]
 [private]
-docker-prerequisites: version-file orb uv-install-no-dev ensure-skeleton-key start
+docker-prerequisites: version-file orb uv-install-no-dev ensure-django-secret start
 
 alias dc := dcu
 
@@ -350,7 +338,6 @@ _deploy hostname profile context settings_module *options:
     export DOCKER_CONTEXT={{ context }}   # roughly equivalent to hostname, except for "default"
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE={{ settings_module }}
-    export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
     # Google OAuth credentials (optional - gracefully handles if files don't exist)

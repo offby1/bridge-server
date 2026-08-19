@@ -35,7 +35,6 @@ services:
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
       DJANGO_SECRET_FILE: /run/secrets/django_secret
-      DJANGO_SKELETON_KEY_FILE: /run/secrets/django_skeleton_key
       GOOGLE_OAUTH_CLIENT_ID_FILE: /run/secrets/google_oauth_client_id
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
@@ -50,7 +49,6 @@ services:
       - "127.0.0.1:9000:9000"
     secrets:
       - django_secret
-      - django_skeleton_key
       - google_oauth_client_id
       - google_oauth_client_secret
     init: true                  # https://docs.docker.com/reference/compose-file/services/#init
@@ -247,8 +245,6 @@ services:
 secrets:
   django_secret:
     environment: "DJANGO_SECRET_KEY"
-  django_skeleton_key:
-    environment: "DJANGO_SKELETON_KEY"
   google_oauth_client_id:
     environment: "GOOGLE_OAUTH_CLIENT_ID"
   google_oauth_client_secret:

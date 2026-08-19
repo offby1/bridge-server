@@ -1,12 +1,11 @@
 import base64
 import binascii
 import logging
+from typing import cast
 
-from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from app.models import Player
 from app.models.utils import UserMitPlaya
 from app.views import Forbid
 
@@ -24,9 +23,9 @@ def json_response(user: UserMitPlaya, comment: str) -> JsonResponse:
     return JsonResponse(data)
 
 
-# Accepts ordinary usernames *and* primary keys for django.contrib.auth.models.user;
-# Accepts the relevant user's password *and* the "skeleton key"
-def three_way_login_view(request: HttpRequest) -> HttpResponse:
+# The API clients' way in: HTTP Basic auth with a username and that user's password, in
+# exchange for a session cookie.  (Humans log in through allauth, at /accounts/login/.)
+def login_view(request: HttpRequest) -> HttpResponse:
     user = getattr(request, "user", None)
 
     if user and user.is_authenticated:
@@ -61,31 +60,18 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         return Forbid(msg)
 
     try:
-        username_or_pk, password = decoded.split(":", maxsplit=1)
+        username, password = decoded.split(":", maxsplit=1)
     except ValueError as e:
         msg = f"{e}, sorry"
         logger.info(msg)
         return Forbid(msg)
 
-    if username_or_pk.isdigit():  # TODO -- this won't work if we shift to, say, UUIDs as keys
-        if (player := Player.objects.filter(pk=username_or_pk).first()) is not None:
-            user = player.user
-            if password.rstrip() == settings.API_SKELETON_KEY:
-                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-                msg = f"Oh look, {user.username} used the skeleton key"
-                logger.debug("%s", msg)
-                return json_response(user, msg)
-
-            msg = f"Player {username_or_pk} tried the skeleton key but it didn't match"
-            logger.info(msg)
-            return Forbid(msg)
-
-    elif (user := authenticate(username=username_or_pk, password=password)) is None:
-        msg = f"{username_or_pk=} with that password just doesn't cut it, sorry"
+    if (user := authenticate(username=username, password=password)) is None:
+        msg = f"{username=} with that password just doesn't cut it, sorry"
         logger.info(msg)
         return Forbid(msg, content_type="application/json")
 
-    msg = f"{user=} used a regular password. Splendid."
+    msg = f"{user=} used the right password. Splendid."
     logger.info(msg)
     try:
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
@@ -94,6 +80,5 @@ def three_way_login_view(request: HttpRequest) -> HttpResponse:
         logger.warning(msg)
         return Forbid(msg)
 
-    assert user is not None
     logger.debug(f"Just logged in {user.username}")
-    return json_response(user, msg)
+    return json_response(cast(UserMitPlaya, user), msg)

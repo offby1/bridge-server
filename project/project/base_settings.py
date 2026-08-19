@@ -57,13 +57,6 @@ SECRET_KEY = from_env_var_file(
     "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_secret_key",
 )
 
-API_SKELETON_KEY = from_env_var_file(
-    "DJANGO_SKELETON_KEY_FILE",
-    "/Users/not-workme/Library/Application Support/info.offby1.bridge/django_skeleton_key",
-)
-if API_SKELETON_KEY is not None:
-    API_SKELETON_KEY = API_SKELETON_KEY.rstrip()
-
 try:
     GOOGLE_OAUTH_CLIENT_ID = from_env_var_file(
         "GOOGLE_OAUTH_CLIENT_ID_FILE",

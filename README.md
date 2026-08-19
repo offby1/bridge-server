@@ -47,9 +47,8 @@ prerequisite instructions (Ubuntu, Debian, macOS) are in
 # Install dependencies (creates a project-local .venv automatically)
 just uv-install
 
-# Generate the secrets the app needs
+# Generate the secret the app needs
 just ensure-django-secret    # Django SECRET_KEY
-just ensure-skeleton-key     # API skeleton key
 
 # Set up the database, then run the dev server on http://localhost:9000
 just migrate

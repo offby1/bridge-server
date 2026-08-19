@@ -80,18 +80,16 @@ Added in v1.39.0. Reads file contents at just-expression time, replacing bash `$
 Before (in `_deploy`):
 ```bash
 export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
-export DJANGO_SKELETON_KEY=$(cat "${DJANGO_SKELETON_KEY_FILE}")
 export GIT_VERSION="$(cat project/VERSION)"
 ```
 
 After:
 ```bash
 export DJANGO_SECRET_KEY="{{ read(DJANGO_SECRET_FILE) }}"
-export DJANGO_SKELETON_KEY="{{ read(DJANGO_SKELETON_KEY_FILE) }}"
 export GIT_VERSION="{{ read("project/VERSION") }}"
 ```
 
-`_notests` reads the same four files the same way, so it gets the same treatment. The
+`_notests` reads the same files the same way, so it gets the same treatment. The
 Google OAuth pair there is optional, though (`cat ... || echo ""`), and `read()` on a
 missing file is an error -- so those two would need a guard, or to stay as they are.
 
