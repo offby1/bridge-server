@@ -4,6 +4,7 @@ Pytest configuration for the Bridge project.
 
 import os
 import subprocess
+from typing import Any
 
 import pytest
 
@@ -81,7 +82,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest.fixture(scope="session")
-def browser_context_args(browser_context_args):
+def browser_context_args(browser_context_args: dict[str, Any]):
     """
     Configure browser context for all Playwright tests.
     """
@@ -93,7 +94,7 @@ def browser_context_args(browser_context_args):
 
 
 @pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args):
+def browser_type_launch_args(browser_type_launch_args: dict[str, Any]):
     """
     Configure browser launch arguments.
     """

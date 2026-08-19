@@ -22,10 +22,11 @@ import pytest
 
 import bridge.contract
 from app.management.commands.notifier import CHANNEL, Command, _conninfo
+from app.models import Hand
 
 
 @pytest.mark.django_db(transaction=True)
-def test_call_write_notifies_and_notifier_broadcasts(usual_setup) -> None:
+def test_call_write_notifies_and_notifier_broadcasts(usual_setup: Hand) -> None:
     hand = usual_setup
 
     # A dedicated LISTEN connection, like the real notifier's.

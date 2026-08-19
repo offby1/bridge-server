@@ -35,7 +35,7 @@ from .testutils import create_a_tournament, play_out_hand, play_out_round
 
 
 @pytest.fixture
-def small_tournament_during_play(db) -> Tournament:
+def small_tournament_during_play(db: None) -> Tournament:
     return create_a_tournament(stage="playing", boards_per_round_per_table=2)
 
 

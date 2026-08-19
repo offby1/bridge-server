@@ -116,7 +116,7 @@ def dump_seats() -> list[list[str]]:
     return tabulate_me
 
 
-def test_pairs_and_boards_move(db, everybodys_password) -> None:
+def test_pairs_and_boards_move(db: None, everybodys_password: str) -> None:
     # build up the simplest possible tournament that has more than one round.
     for name in ["n1", "s1", "n2", "s2", "e1", "w1", "e2", "w2"]:
         Player.objects.create(

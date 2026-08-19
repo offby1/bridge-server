@@ -7,7 +7,11 @@ Run with: pytest -m playwright --headed
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from playwright.sync_api import Page, expect
+from pytest_django.live_server_helper import LiveServer
+
+from app.models import Hand, Player
 
 pytestmark = pytest.mark.playwright
 
@@ -16,7 +20,7 @@ User = get_user_model()
 
 
 @pytest.fixture
-def authenticated_user(db):
+def authenticated_user(db: None) -> tuple[AbstractUser, Player]:
     """Create a test user with player."""
     from app.models import Player
 
@@ -26,7 +30,9 @@ def authenticated_user(db):
 
 
 @pytest.fixture
-def completed_hand(db, authenticated_user):
+def completed_hand(
+    db: None, authenticated_user: tuple[AbstractUser, Player]
+) -> tuple[Hand, list[tuple[AbstractUser, Player]]]:
     """Create a completed hand with all four hands visible."""
     from datetime import datetime, timedelta, timezone
 
@@ -80,7 +86,11 @@ def completed_hand(db, authenticated_user):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_four_hands_mobile_layout_stacks_vertically(page: Page, live_server, completed_hand):
+def test_four_hands_mobile_layout_stacks_vertically(
+    page: Page,
+    live_server: LiveServer,
+    completed_hand: tuple[Hand, list[tuple[AbstractUser, Player]]],
+):
     """
     Test that on mobile, the four-hands view stacks East/West vertically
     instead of side-by-side (eliminating horizontal scroll).
@@ -118,7 +128,11 @@ def test_four_hands_mobile_layout_stacks_vertically(page: Page, live_server, com
 
 
 @pytest.mark.django_db(transaction=True)
-def test_four_hands_mobile_shows_compass_labels(page: Page, live_server, completed_hand):
+def test_four_hands_mobile_shows_compass_labels(
+    page: Page,
+    live_server: LiveServer,
+    completed_hand: tuple[Hand, list[tuple[AbstractUser, Player]]],
+):
     """
     Test that prominent compass direction labels are visible on mobile,
     making it blindingly obvious which hand is which.
@@ -163,7 +177,11 @@ def test_four_hands_mobile_shows_compass_labels(page: Page, live_server, complet
 
 
 @pytest.mark.django_db(transaction=True)
-def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_hand):
+def test_four_hands_desktop_layout_unchanged(
+    page: Page,
+    live_server: LiveServer,
+    completed_hand: tuple[Hand, list[tuple[AbstractUser, Player]]],
+):
     """
     Test that on desktop, the four-hands view still uses the traditional
     bridge layout (East and West side-by-side).
@@ -197,7 +215,7 @@ def test_four_hands_desktop_layout_unchanged(page: Page, live_server, completed_
 
 
 @pytest.mark.django_db(transaction=True)
-def test_login_page_loads(page: Page, live_server):
+def test_login_page_loads(page: Page, live_server: LiveServer):
     """Simple smoke test: login page loads."""
     page.goto(f"{live_server.url}/accounts/login/")
 
@@ -218,7 +236,11 @@ def test_login_page_loads(page: Page, live_server):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.slow
-def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_hand):
+def test_mobile_cards_fit_without_wrapping(
+    page: Page,
+    live_server: LiveServer,
+    completed_hand: tuple[Hand, list[tuple[AbstractUser, Player]]],
+):
     """
     Test that on mobile, all 13 cards in a suit fit on one row without wrapping.
     This preserves the Bridge convention of showing all cards in a suit together.
@@ -265,7 +287,7 @@ def test_mobile_cards_fit_without_wrapping(page: Page, live_server, completed_ha
 
 
 @pytest.mark.django_db(transaction=True)
-def test_tournament_results_highlight_viewer_row(page: Page, live_server, db):
+def test_tournament_results_highlight_viewer_row(page: Page, live_server: LiveServer, db: None):
     """
     Test that the viewer's row in tournament results is highlighted with viewer-row class.
     """

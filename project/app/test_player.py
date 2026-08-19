@@ -9,7 +9,7 @@ from app.models import Hand, Player, Tournament, TournamentSignup
 from app.models.playaz import WireCharacterProvider
 
 
-def test_synthetic_username_falls_back_to_double_barreled_when_pool_exhausted(db) -> None:
+def test_synthetic_username_falls_back_to_double_barreled_when_pool_exhausted(db: None) -> None:
     # Occupy every single-name slot (prefixed, the way create_synthetic stores
     # them) so the small ~74-name pool is completely full.
     for name in WireCharacterProvider.first_names:
@@ -25,7 +25,7 @@ def test_synthetic_username_falls_back_to_double_barreled_when_pool_exhausted(db
     assert not auth.models.User.objects.filter(username=username).exists()
 
 
-def test_create_synths_for_reuses_idle_synthetic_players(db) -> None:
+def test_create_synths_for_reuses_idle_synthetic_players(db: None) -> None:
     t = Tournament.objects.create()
 
     # One signed-up pair == odd, so padding with one more pair is needed.
@@ -50,7 +50,7 @@ def test_create_synths_for_reuses_idle_synthetic_players(db) -> None:
     assert idle1.partner == idle2
 
 
-def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
+def test_player_messages_are_private(usual_setup: Hand, everybodys_password: str) -> None:
     module_name, class_name = settings.EVENTSTREAM_CHANNELMANAGER_CLASS.rsplit(".", maxsplit=1)
     cm = getattr(importlib.import_module(module_name), class_name)()
 
@@ -77,7 +77,7 @@ def test_player_messages_are_private(usual_setup, everybodys_password) -> None:
     assert not cm.can_read_channel(j_random_user, the_hand.event_table_html_channel)
 
 
-def test_player_timestamp_updates(db, everybodys_password) -> None:
+def test_player_timestamp_updates(db: None, everybodys_password: str) -> None:
     Today = datetime.datetime.fromisoformat("2020-02-20T20:20:20Z")
 
     with time_machine.travel(Today, tick=False):
@@ -90,7 +90,7 @@ def test_player_timestamp_updates(db, everybodys_password) -> None:
     assert new_guy.last_action == (Today, "joined")
 
 
-def test_synth_signup(db) -> None:
+def test_synth_signup(db: None) -> None:
     t = Tournament.objects.create()
     bob = Player.objects.create(
         user=auth.models.User.objects.create(username="bob"),
@@ -111,7 +111,7 @@ def test_synth_signup(db) -> None:
         assert mvmt.num_rounds == 2
 
 
-def test_bot_is_disabled_at_start_of_hand(usual_setup) -> None:
+def test_bot_is_disabled_at_start_of_hand(usual_setup: Hand) -> None:
     assert Hand.objects.count() == 1
     the_hand = Hand.objects.first()
     assert the_hand is not None

@@ -14,7 +14,7 @@ from bridge.contract import Call as libCall
 
 
 @pytest.mark.django_db()
-def test_bot_toggle_not_overwritten_by_call(usual_setup):
+def test_bot_toggle_not_overwritten_by_call(usual_setup: Hand):
     """Test that toggling bot off isn't overwritten when bot makes a call."""
     # Get a hand that's in auction phase - use prepop() to cache players on hand
     # This simulates how the bot loads hands in production
@@ -79,7 +79,7 @@ def test_bot_toggle_not_overwritten_by_call(usual_setup):
 
 
 @pytest.mark.django_db()
-def test_bot_toggle_not_overwritten_by_play(usual_setup):
+def test_bot_toggle_not_overwritten_by_play(usual_setup: Hand):
     """Test that toggling bot off isn't overwritten when bot plays a card."""
     # Get a hand and progress it to the play phase - use prepop() to cache players
     # This simulates how the bot loads hands in production

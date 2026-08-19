@@ -1,4 +1,5 @@
 import pytest
+from pytest_django import Settings
 
 import app.readers
 from bridge.card import Card, Suit
@@ -94,7 +95,7 @@ def test_hand_visibility_two(two_boards_one_is_complete: Hand) -> None:
     )
 
 
-def test_hand_controlability(usual_setup: Hand, settings) -> None:
+def test_hand_controlability(usual_setup: Hand, settings: Settings) -> None:
     h = usual_setup
 
     def expect_controlability(expectation_array):

@@ -2,12 +2,13 @@ import re
 
 from django.contrib import auth
 from django.template.response import TemplateResponse
+from django.test import RequestFactory
 
 import app.views.board
 from app.models import Board, Player, Tournament
 
 
-def test_board_list_view(db, rf, everybodys_password) -> None:
+def test_board_list_view(db: None, rf: RequestFactory, everybodys_password: str) -> None:
     Tournament.objects.create()
 
     some_user, _ = auth.models.User.objects.get_or_create(

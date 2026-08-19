@@ -10,6 +10,7 @@ see docs/README.sse.md.
 """
 
 import pytest
+from pytest_django.live_server_helper import LiveServer
 
 from app.models import Hand, Player
 from app.reference_client import BridgeClient, BridgeClientError
@@ -19,7 +20,9 @@ PASSWORD = "sekrit"
 
 
 @pytest.fixture
-def declarer_client(usual_setup: Hand, live_server) -> tuple[BridgeClient, Player, Hand]:
+def declarer_client(
+    usual_setup: Hand, live_server: LiveServer
+) -> tuple[BridgeClient, Player, Hand]:
     """A logged-in client for whoever the auction is waiting on."""
     hand = usual_setup
     player = hand.player_who_may_call
@@ -35,7 +38,7 @@ def declarer_client(usual_setup: Hand, live_server) -> tuple[BridgeClient, Playe
 
 
 @pytest.mark.django_db
-def test_logging_in_tells_us_who_we_are(usual_setup: Hand, live_server) -> None:
+def test_logging_in_tells_us_who_we_are(usual_setup: Hand, live_server: LiveServer) -> None:
     player = Player.objects.first()
     assert player is not None
     player.user.set_password(PASSWORD)
@@ -50,7 +53,7 @@ def test_logging_in_tells_us_who_we_are(usual_setup: Hand, live_server) -> None:
 
 @pytest.mark.django_db
 def test_a_wrong_password_raises_rather_than_looking_like_success(
-    usual_setup: Hand, live_server
+    usual_setup: Hand, live_server: LiveServer
 ) -> None:
     player = Player.objects.first()
     assert player is not None

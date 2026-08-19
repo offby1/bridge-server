@@ -1,14 +1,17 @@
 import datetime
 import logging
+from typing import cast
 
 import pytest
 import time_machine
 from django.contrib import auth
 from django.http.response import HttpResponseForbidden
+from django.test import RequestFactory
 from django.utils.timezone import now
 
 import app.models.board
 import app.views.hand
+import app.views.misc
 import app.views.table.details
 from app.models import (
     Board,
@@ -32,7 +35,7 @@ from .testutils import play_out_hand, play_out_round
 logger = logging.getLogger(__name__)
 
 
-def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup) -> None:
+def test_initial_setup_has_no_more_than_one_incomplete_tournament(usual_setup: Hand) -> None:
     assert Tournament.objects.incompletes().count() < 2
 
 
@@ -48,7 +51,7 @@ def _tally_ho() -> dict[bool, int]:
 
 
 def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_or_anything(
-    two_boards_one_of_which_is_played_almost_to_completion,
+    two_boards_one_of_which_is_played_almost_to_completion: None,
 ) -> None:
     tally_before = _tally_ho()
     assert tally_before == {False: 1}
@@ -69,7 +72,7 @@ def test_completing_one_tournament_does_not_cause_a_new_one_to_magically_appear_
 
 
 def test_completing_one_tournament_ejects_players(
-    two_boards_one_of_which_is_played_almost_to_completion,
+    two_boards_one_of_which_is_played_almost_to_completion: None,
 ) -> None:
     tournament = Tournament.objects.incompletes().first()
     assert tournament is not None
@@ -82,16 +85,20 @@ def test_completing_one_tournament_ejects_players(
     assert not Player.objects.currently_seated().exists()
 
 
-def test_hand_from_completed_tournament_can_serialize(just_completed, rf) -> None:
+def test_hand_from_completed_tournament_can_serialize(
+    just_completed: Tournament, rf: RequestFactory
+) -> None:
     request = rf.get("/wat")
     request.user = Player.objects.get_by_name("Adam West").user
-    response = app.views.hand.hand_serialized_view(request, pk=1)
+    response = app.views.hand.hand_serialized_view(
+        cast(app.views.misc.AuthedHttpRequest, request), pk=1
+    )
     print(f"{response=}")
 
 
 def test_completing_one_tournament_deletes_related_signups(
-    two_boards_one_of_which_is_played_almost_to_completion,
-    everybodys_password,
+    two_boards_one_of_which_is_played_almost_to_completion: None,
+    everybodys_password: str,
 ) -> None:
     Board.objects.filter(pk=2).delete()  # speeds the test up
 
@@ -127,7 +134,7 @@ def test_completing_one_tournament_deletes_related_signups(
         assert not TournamentSignup.objects.filter(player=Ricky).exists()
 
 
-def test_play_completion_deadline(usual_setup) -> None:
+def test_play_completion_deadline(usual_setup: Hand) -> None:
     # All players are initially seated
 
     assert Player.objects.currently_seated().count() == Player.objects.count()
@@ -164,7 +171,7 @@ def test_play_completion_deadline(usual_setup) -> None:
         assert "has passed" in hand.abandoned_because
 
 
-def test_deadline_via_view(usual_setup, rf) -> None:
+def test_deadline_via_view(usual_setup: Hand, rf: RequestFactory) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     Today = datetime.datetime.fromisoformat("2012-01-10T00:00:00Z")
     Tomorrow = Today + datetime.timedelta(seconds=3600 * 24)
@@ -187,7 +194,7 @@ def test_deadline_via_view(usual_setup, rf) -> None:
         assert b"has passed" in response.content
 
 
-def test_signups(nobody_seated_nobody_signed_up) -> None:
+def test_signups(nobody_seated_nobody_signed_up: None) -> None:
     north = Player.objects.get_by_name("Jeremy Northam")
     south = Player.objects.get_by_name("J.D. Souther")
     assert north.partner == south
@@ -238,7 +245,7 @@ def test_signups(nobody_seated_nobody_signed_up) -> None:
         ).exists(), f"Hey, {east.name} went splitsville, but is still signed up"
 
 
-def test_odd_pair_gets_matched_with_synths(nobody_seated) -> None:
+def test_odd_pair_gets_matched_with_synths(nobody_seated: None) -> None:
     existing_player_pks = set([p.pk for p in Player.objects.all()])
     assert existing_player_pks == {1, 2, 3, 4}
 
@@ -294,7 +301,7 @@ def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     assert tour.rounds_played() == (1, 0)
 
 
-def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated) -> None:
+def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated: None) -> None:
     """A tournament whose signup deadline passes with an odd number of pairs --
     but *before* the synth-padding has run -- used to 500 the tournament page:
     get_movement() built a phantom pair and tripped `assert num_phantoms == 0`.

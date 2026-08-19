@@ -12,7 +12,7 @@ from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from django.test import Client
+from django.test import Client, RequestFactory
 from django.urls import reverse
 
 from bridge.card import Suit as libSuit
@@ -33,19 +33,19 @@ from .views import hand, player
 logger = logging.getLogger(__name__)
 
 
-def test_we_gots_a_home_page(db):
+def test_we_gots_a_home_page(db: None):
     c = Client()
     response = c.get("/", follow=True)
     assert b"Welcome" in response.content
 
 
 @pytest.fixture
-def j_northam(db, everybodys_password):
+def j_northam(db: None, everybodys_password: str):
     u = auth.models.User.objects.create(username="Jeremy Northam", password=everybodys_password)
     return Player.objects.create(user=u)
 
 
-def test_synthetic_immutability(db) -> None:
+def test_synthetic_immutability(db: None) -> None:
     andy = auth.models.User.objects.create(username="Andy Android")
     android = Player.objects.create(allow_bot_to_play_for_me=True, synthetic=True, user=andy)
     android.synthetic = False
@@ -80,7 +80,7 @@ def test_splitsville_doesnt_affect_opponents(usual_setup: Hand):
     assert east.partner == west
 
 
-def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
+def test_splitsville_non_seated_partnership(j_northam: Player, everybodys_password: str):
     Alice = Player.objects.create(
         user=auth.models.User.objects.create(username="Alice", password=everybodys_password),
     )
@@ -91,7 +91,7 @@ def test_splitsville_non_seated_partnership(j_northam, everybodys_password):
     assert j_northam.partner is None
 
 
-def test_player_names_are_links_to_detail_page(usual_setup):
+def test_player_names_are_links_to_detail_page(usual_setup: Hand):
     p = Player.objects.get_by_name("Jeremy Northam")
 
     link = p.as_link()
@@ -119,7 +119,7 @@ def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) ->
         assert c.serialize() in response.content.decode()
 
 
-def test_legal_cards(usual_setup: Hand, rf) -> None:
+def test_legal_cards(usual_setup: Hand, rf: RequestFactory) -> None:
     h = usual_setup
     set_auction_to(libBid(level=1, denomination=libSuit.CLUBS), h)
 
@@ -231,7 +231,7 @@ def test_sending_lobby_messages(usual_setup: Hand) -> None:
     assert response.status_code == 200
 
 
-def test_sending_player_messages(usual_setup: Hand, rf, everybodys_password):
+def test_sending_player_messages(usual_setup: Hand, rf: RequestFactory, everybodys_password: str):
     h = usual_setup
     north = h.modPlayer_by_seat(libSeat.NORTH)
 
@@ -314,7 +314,9 @@ def test_only_recipient_can_read_messages(usual_setup: Hand):
     assert not cm.can_read_channel(Carol.user, channel)
 
 
-def test_splitsville_side_effects(usual_setup: Hand, rf, monkeypatch) -> None:
+def test_splitsville_side_effects(
+    usual_setup: Hand, rf: RequestFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
     h = usual_setup
     north = h.modPlayer_by_seat(libSeat.NORTH)
     assert north.partner is not None
@@ -372,7 +374,9 @@ def test_splitsville_prevents_others_at_table_from_playing(usual_setup: Hand) ->
     assert h.player_who_may_play is None
 
 
-def test__three_by_three_trick_display_context_for_table(usual_setup: Hand, rf) -> None:
+def test__three_by_three_trick_display_context_for_table(
+    usual_setup: Hand, rf: RequestFactory
+) -> None:
     h = usual_setup
 
     # Nobody done played nothin'
