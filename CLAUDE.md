@@ -262,6 +262,13 @@ Templates receive:
 
 Bots authenticate once via HTTP Basic Auth, then use session cookies for subsequent requests.
 
+**Nobody else's code calls this API today.** As of this commit, Eric knows of no
+third-party clients: the only callers are `project/app/reference_client.py` and the tests.
+So until this note says otherwise, change the public interface freely — rename endpoints,
+change response shapes, drop parameters — without a deprecation period, a redirect from the
+old URL, or a compatibility shim. Just update `docs/README.api.md` to match. When somebody
+else does write a client, delete this paragraph, because the calculation changes.
+
 **Authentication Flow**:
 ```bash
 # 1. Login and get session cookie
