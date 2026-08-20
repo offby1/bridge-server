@@ -286,19 +286,37 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     p.abandon_my_hand(reason=reason)
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
+        """Get up from our current hand, marking it abandoned unless it is already finished.
+
+        Finishing a hand does not set `self.current_hand` back to None: it goes on
+        pointing at the hand we just finished until we are dealt into another one, at
+        which point `Hand.save` points it at that new hand instead.  A pair who have
+        played all the boards at their table, while another table is still going, sit in
+        that state until the round ends.  Stamping `abandoned_because` on a hand in that
+        state would contradict the score we display for it, so if the hand is complete we
+        leave it alone and only stop pointing at it.
+        """
         with transaction.atomic():
-            if (h := self.current_hand) is not None:
+            if (h := self.current_hand) is None:
+                return
+
+            if h.is_complete:
+                logger.debug(
+                    "%s",
+                    f"{self} ({id(self)}) is getting up from hand {h} ({h=}), which is complete, so it is not abandoned",
+                )
+            else:
                 h.abandoned_because = reason or f"{self.name} left"
                 h._clear_bot_flags()
                 h.save()
-
-                self.current_hand = None
-                self.save()
 
                 logger.debug(
                     "%s",
                     f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
                 )
+
+            self.current_hand = None
+            self.save()
 
     @property
     def event_HTML_hand_channel(self):

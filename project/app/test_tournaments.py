@@ -30,7 +30,7 @@ from app.models.tournament import (
 )
 from bridge.contract import Call
 
-from .testutils import play_out_hand, play_out_round
+from .testutils import create_a_tournament, play_out_hand, play_out_round
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +169,52 @@ def test_play_completion_deadline(usual_setup: Hand) -> None:
         assert hand.is_abandoned
         assert "deadline" in hand.abandoned_because
         assert "has passed" in hand.abandoned_because
+
+
+def test_a_completed_hand_survives_the_play_completion_deadline(db: None) -> None:
+    """A hand that was played to the end keeps its score when the deadline passes.
+
+    Finishing a hand does not set `Player.current_hand` back to None; it goes on pointing
+    at the finished hand until that player is dealt into another one.  So a pair who have
+    played all the boards at their table, while another table is still going, are left
+    pointing at a completed hand.  When the deadline then arrives, abandoning that hand
+    would contradict the score we show for it.
+    """
+    the_tournament = create_a_tournament(stage="playing", boards_per_round_per_table=2)
+
+    # Table 1 plays both of its boards; table 2 never finishes even one, so the round
+    # doesn't end and nobody moves on.
+    while (
+        h := the_tournament.hands().filter(table_display_number=1, is_complete=False).first()
+    ) is not None:
+        play_out_hand(h)
+
+    completed_hand = the_tournament.hands().filter(table_display_number=1).last()
+    assert completed_hand is not None
+    assert completed_hand.is_complete
+    parked = list(Player.objects.filter(current_hand=completed_hand))
+    assert len(parked) == 4, "Table 1's pairs should still be sitting at their finished hand"
+
+    deadline = now() + datetime.timedelta(hours=1)
+    the_tournament.play_completion_deadline = deadline
+    the_tournament.save()
+
+    with time_machine.travel(deadline + datetime.timedelta(hours=1), tick=False):
+        advance_expired_tournaments()
+
+    completed_hand.refresh_from_db()
+    assert completed_hand.is_complete
+    assert not completed_hand.is_abandoned
+    assert completed_hand.abandoned_because is None
+
+    # The players did still get up from the table.
+    assert not Player.objects.filter(current_hand=completed_hand).exists()
+
+    # The hand that really was still in progress is the one that gets abandoned.
+    unfinished = the_tournament.hands().filter(table_display_number=2).first()
+    assert unfinished is not None
+    assert unfinished.is_abandoned
+    assert "has passed" in unfinished.abandoned_because
 
 
 def test_deadline_via_view(usual_setup: Hand, rf: RequestFactory) -> None:
