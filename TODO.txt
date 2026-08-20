@@ -117,19 +117,18 @@ STILL TODO:
 
 * Finish rethinking permissions.  See `docs/view-and-control.org`.
 
-  The card-visibility half has landed: `app/visibility.py` is now the one bit of code
-  that answers "can this user see this bit of this hand", and its module docstring is
-  the authoritative statement of the rules.  It absorbed `Board.what_can_they_see`,
-  `Board.can_see_cards_at`, `Board.relationship_to`, `views.hand._display_and_control`
-  and `readers.get_player_direction_at_hand`.
+  Most of it has landed: `app/visibility.py` is now the one bit of code that answers
+  "can this user see this bit of this hand", and its module docstring is the
+  authoritative statement of the rules.  It absorbed `Board.what_can_they_see`,
+  `Board.can_see_cards_at`, `Board.relationship_to`, `views.hand._display_and_control`,
+  `readers.get_player_direction_at_hand` and `views.hand._error_response_or_viewfunc`.
 
-  What's left, all listed in `docs/view-and-control.org`:
-  - `views.hand._error_response_or_viewfunc` still decides on its own whether to serve
-    a hand page at all.
+  What's left, both listed in `docs/view-and-control.org`:
   - `views.board.board_archive_view` carries a TODO saying its check is too strict, and
-    bypasses `app/visibility.py`.
+    is now the last card-visibility check that bypasses `app/visibility.py`.
   - `views.hand._bidding_box_context_for_hand` decides on its own whether to enable the
-    bidding box.
+    bidding box.  Folding it in as `may_control_seat` stands today would disable the
+    bidding box outright, since no seat is on turn to *play* during the auction.
 
   Older note, from June 2025, kept because I don't know whether it still applies: "I
   actually did this in 'main' but it triggers some sorta race condition, leading to an

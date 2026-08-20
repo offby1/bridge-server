@@ -6,6 +6,16 @@ API serves. Before this module existed, each of those wrote the rules out for it
 and the SSE push path did not check at all -- it relied on addressing the message to
 the right player and rendering whatever it was handed.
 
+There are two questions here, at two altitudes, and it helps to keep them apart:
+
+- `hand_access` is the coarse one, asked once per request: may this viewer load this
+  hand's page at all, and do they get the interactive page or the read-only review?
+- `may_see_cards` is the fine one, asked once per seat while rendering: does *this*
+  seat show its cards to *this* viewer?
+
+The coarse one is not a substitute for the fine one. A read-only page served to a
+viewer entitled to nothing is not a leak; it is four columns of "13 cards".
+
 Like `app.readers`, this module has no side effects and the dependency points one
 way: it imports from models, and models never import from it.
 
@@ -44,10 +54,14 @@ views add.
 `app.views.hand._bidding_box_context_for_hand` decides for itself whether to enable
 the bidding box. That is a third question again -- who may *call* -- and the answer
 differs during the auction, when there is no seat on turn to play.
+
+`app.views.board.board_archive_view` still decides for itself who may load a board's
+archive page. Its own TODO says the check is too strict.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import enum
 import functools
 from typing import TYPE_CHECKING
@@ -173,19 +187,91 @@ def may_control_seat(*, hand: Hand, seat: Seat, viewer: Player | None) -> bool:
     return viewer.controls_seat(seat=seat, right_this_second=True)
 
 
-def board_relationship(*, board: Board, viewer: Player) -> tuple[str, Hand | None]:
-    """How has `viewer` met `board`, and at which hand?
+class BoardRelationship(enum.Enum):
+    """How a viewer has met a board. `board_relationship` works this out."""
 
-    One of "NeverSeenIt" (with None), "CurrentlyPlayingIt", or "AlreadyPlayedIt".
-    `app.views.hand` uses this to pick a view function, which is a coarser question
-    than `may_see_cards`: it decides whether to serve the page at all.
-    """
+    never_seen_it = enum.auto()
+    currently_playing_it = enum.auto()
+    already_played_it = enum.auto()
+
+
+def board_relationship(*, board: Board, viewer: Player) -> tuple[BoardRelationship, Hand | None]:
+    """How has `viewer` met `board`, and at which hand? The hand is None for a stranger."""
     from app.models import Hand
 
-    qs = Hand.objects.filter(Hand.has_player(viewer), board=board)
+    hand = Hand.objects.filter(Hand.has_player(viewer), board=board).first()
 
-    hand = qs.first()
     if hand is None:
-        return ("NeverSeenIt", None)
+        return (BoardRelationship.never_seen_it, None)
 
-    return ("AlreadyPlayedIt", hand) if hand.is_complete else ("CurrentlyPlayingIt", hand)
+    if hand.is_complete:
+        return (BoardRelationship.already_played_it, hand)
+
+    return (BoardRelationship.currently_playing_it, hand)
+
+
+class HandViewMode(enum.Enum):
+    """Which of a hand's two pages a viewer gets, or neither."""
+
+    forbidden = enum.auto()
+    read_only = enum.auto()
+    interactive = enum.auto()
+
+
+@dataclasses.dataclass(frozen=True)
+class HandAccess:
+    mode: HandViewMode
+    explanation: str = ""
+    """Why the viewer was turned away. Empty unless `mode` is `forbidden`."""
+
+
+def hand_access(*, hand: Hand, viewer: Player | None) -> HandAccess:
+    """May `viewer` load `hand`'s page at all, and which of the two pages do they get?
+
+    This is the coarse question, decided once per request before anything renders:
+    serve the interactive page, serve the read-only review, or refuse. `may_see_cards`
+    then decides, seat by seat, what the page that got served actually shows -- so a
+    read-only page for a viewer who may see nothing is not a leak, it is four columns
+    of "13 cards".
+
+    A `viewer` of None covers both the anonymous visitor and a logged-in user with no
+    Player, such as the admin account; neither may play, so neither is treated
+    differently here.
+    """
+    board = hand.board
+
+    if not board.will_be_played_again():
+        # Every table has finished this board, or the whole tournament is over, so
+        # nobody can gain by looking. Even anonymous visitors get the review page.
+        return HandAccess(HandViewMode.read_only)
+
+    if viewer is None:
+        return HandAccess(
+            HandViewMode.forbidden,
+            "Anonymous users can view only those boards that have been fully played",
+        )
+
+    relationship, viewers_own_hand = board_relationship(board=board, viewer=viewer)
+
+    if relationship is BoardRelationship.never_seen_it:
+        return HandAccess(
+            HandViewMode.forbidden,
+            f"You, {viewer}, have never seen board (#{board.display_number}), so you cannot see the hand.",
+        )
+
+    if relationship is BoardRelationship.currently_playing_it:
+        if hand != viewers_own_hand:
+            # Same board, another table: showing it would hand them every card they
+            # are about to play against.
+            return HandAccess(
+                HandViewMode.forbidden,
+                f"You, {viewer}, are playing board #{board.display_number} at another table right now,"
+                " so you cannot see this hand.",
+            )
+        # An abandoned hand has nothing left to play, so there is nothing to be
+        # interactive about.
+        if hand.is_abandoned:
+            return HandAccess(HandViewMode.read_only)
+        return HandAccess(HandViewMode.interactive)
+
+    return HandAccess(HandViewMode.read_only)

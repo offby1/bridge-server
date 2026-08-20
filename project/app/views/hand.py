@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import django_tables2 as tables
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.db.models.query import QuerySet
 from django.http import (
     HttpRequest,
     HttpResponse,
-    HttpResponseForbidden,
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -468,52 +466,27 @@ def bidding_box_buttons(
 
 
 def hand_dispatch_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
-    """
-    Returns either a 403 response (with explanatory text), or else the function in this module to call to get the response.
+    """Serve one of a hand's two pages, or a 403 saying why not.
+
+    `app.visibility.hand_access` makes the decision; this only turns it into a
+    response.
     """
     hand: app.models.Hand = app.models.Hand.objects.get_or_404(pk=pk)
 
-    wat = _error_response_or_viewfunc(hand, request.user)
-    if isinstance(wat, HttpResponseForbidden):
-        return Custom403(request, wat.text)  # type: ignore[attr-defined]
+    access = app.visibility.hand_access(hand=hand, viewer=_player_of(request))
 
-    if hand.is_abandoned:
-        return _everything_read_only_view(request, hand)
+    if access.mode is app.visibility.HandViewMode.forbidden:
+        return Custom403(request, access.explanation)
 
-    return wat(request, hand)
+    if access.mode is app.visibility.HandViewMode.interactive:
+        return _interactive_view(request, hand)
+
+    return _everything_read_only_view(request, hand)
 
 
-def _error_response_or_viewfunc(
-    hand: app.models.Hand,
-    user: AbstractBaseUser | AnonymousUser,
-) -> HttpResponseForbidden | Callable[..., HttpResponse]:
-    board = hand.board
-
-    if not board.will_be_played_again():
-        return _everything_read_only_view
-
-    player = getattr(user, "player", None)
-
-    if user.is_anonymous or player is None:
-        msg = f"Anonymous users like {user} can view only those boards that have been fully played"
-        return HttpResponseForbidden(msg)
-
-    match brt := app.visibility.board_relationship(board=board, viewer=player):
-        case ("NeverSeenIt", None):
-            msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
-            return HttpResponseForbidden(msg)
-        case ("CurrentlyPlayingIt", at_hand):
-            return (
-                _interactive_view
-                if hand == at_hand
-                else HttpResponseForbidden(
-                    f"You, {player}, are currently playing this hand, so you cannot see everybody's cards!"
-                )
-            )
-        case ("AlreadyPlayedIt", at_hand):
-            return _everything_read_only_view
-
-    assert False, f"wtf is {brt}"
+def _player_of(request: HttpRequest) -> app.models.Player | None:
+    """The Player behind this request, or None for anonymous and for the admin account."""
+    return getattr(request.user, "player", None)
 
 
 def _everything_read_only_view(request: AuthedHttpRequest, hand: app.models.Hand) -> HttpResponse:
@@ -596,10 +569,11 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
 
     hand = app.models.Hand.objects.get_or_404(pk=pk)
 
-    resp = _error_response_or_viewfunc(hand, request.user)
-
-    if isinstance(resp, HttpResponseForbidden):
-        return Custom403(request, resp.text)  # type: ignore[attr-defined]
+    # The same gate as the HTML pages: whoever may not load the page may not have the
+    # transcript either. Which of the two pages they'd have got doesn't matter here.
+    access = app.visibility.hand_access(hand=hand, viewer=_player_of(request))
+    if access.mode is app.visibility.HandViewMode.forbidden:
+        return Custom403(request, access.explanation)
 
     if not request.user.is_authenticated:
         xscript = hand.get_xscript()
