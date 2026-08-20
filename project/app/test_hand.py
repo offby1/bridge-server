@@ -16,7 +16,7 @@ from bridge.seat import Seat as libSeat
 from bridge.table import Player as libPlayer
 
 from .models import AuctionError, Board, Hand, Player, board, hand
-from .testutils import set_auction_to
+from .testutils import create_a_tournament, play_out_hand, set_auction_to
 from .views.hand import (
     _bidding_box_context_for_hand,
     _bidding_box_HTML_for_hand_for_player,
@@ -448,6 +448,41 @@ def test_hint_button_hidden_in_rendered_page_when_not_your_turn(usual_setup: Han
     content = _render_hand_page_for(off_turn, h)
     assert 'id="hint-button"' in content  # button is in the DOM...
     assert "visibility: hidden" in content, "hint button must be hidden when it's not your turn"
+
+
+def test_saving_a_finished_hand_leaves_its_players_where_they_are(db: None) -> None:
+    """Saving a hand must not seat anybody at it.
+
+    `Hand.save` used to point all four players' `current_hand` at the hand being saved, so
+    saving a hand they had finished -- from the admin site, or from the
+    `update_redundant_fields` management command -- pulled them off the hand they were
+    playing at the time.
+    """
+    the_tournament = create_a_tournament(stage="playing", boards_per_round_per_table=2)
+
+    finished = the_tournament.hands().filter(table_display_number=1).first()
+    assert finished is not None
+    play_out_hand(finished)
+
+    live = the_tournament.hands().filter(table_display_number=1).last()
+    assert live is not None
+    assert live.pk != finished.pk
+    assert Player.objects.filter(current_hand=live).count() == 4
+
+    # The sort of thing somebody does on the admin site.
+    finished.open_access = not finished.open_access
+    finished.save()
+
+    assert Player.objects.filter(current_hand=live).count() == 4
+    assert not Player.objects.filter(current_hand=finished).exists()
+
+
+def test_creating_a_hand_still_seats_its_players(db: None) -> None:
+    the_tournament = create_a_tournament(stage="playing", boards_per_round_per_table=2)
+
+    for hand_ in the_tournament.hands():
+        seated = Player.objects.filter(current_hand=hand_)
+        assert set(seated) == set(hand_.players())
 
 
 def test_is_abandoned_splitsville(usual_setup: Hand, everybodys_password: str) -> None:
