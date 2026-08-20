@@ -15,6 +15,7 @@ from django.views.decorators.http import require_http_methods
 
 import app.models
 import app.models.tournament
+import app.rendering
 from app.utils.movements import Movement, _group_letter
 from app.views import Forbid
 from app.views.misc import AuthedHttpRequest
@@ -129,8 +130,8 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
 
                         l_o_d.append(
                             {
-                                "pair1": player1.as_link(),  # HTML link for display
-                                "pair2": player2.as_link(),  # HTML link for display
+                                "pair1": app.rendering.player_link(player1),
+                                "pair2": app.rendering.player_link(player2),
                                 "pair1_name": player1.name,  # Plain name for comparison
                                 "pair2_name": player2.name,  # Plain name for comparison
                                 "matchpoints": score[0],

@@ -16,9 +16,7 @@ from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models.query import QuerySet
-from django.urls import reverse
 from django.utils.functional import cached_property
-from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from faker import Faker
@@ -571,20 +569,6 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
     @cached_property
     def name(self):
         return self.user.username
-
-    def display_name(self) -> str:
-        return f"{self.pk}:{self.as_link()}"
-
-    def as_link(self, style=""):
-        name = self.name
-        if self.synthetic:
-            name = format_html("<i>{}</i>", self.name)
-        style_attribute = "" if not style else f'style="{style}"'
-        return format_html(
-            f'<a {style_attribute} href="{{}}">{{}}</a>',
-            reverse("app:player", kwargs={"pk": self.pk}),
-            name,
-        )
 
     def create_synthetic_partner(self) -> Player:
         with transaction.atomic():

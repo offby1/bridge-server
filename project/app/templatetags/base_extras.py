@@ -7,7 +7,11 @@ from django.conf import settings
 from django.utils.html import format_html
 from django.utils.timezone import now
 
+import app.rendering
+
 register = template.Library()
+
+register.filter("hand_link", app.rendering.hand_link)
 
 
 def gitlab_link(value: Any) -> str:

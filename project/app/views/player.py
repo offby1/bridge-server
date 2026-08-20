@@ -30,6 +30,7 @@ from django_filters import FilterSet
 from django_filters.views import FilterView
 
 import app.readers
+import app.rendering
 from app.models import Message, PartnerException, Player
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
@@ -86,14 +87,16 @@ def _describe_partnership(*, subject: Player, as_viewed_by: Player) -> str:
 
         return f"{subject.name} has no partner 😢"
 
-    possessive_noun = format_html("{}'s", subject.as_link())
+    possessive_noun = format_html("{}'s", app.rendering.player_link(subject))
     if subject == as_viewed_by:
         possessive_noun = SafeString("Your")
 
     if subject.partner == as_viewed_by:
         text = format_html("{} partner is, gosh, you!", possessive_noun)
     else:
-        text = format_html("{} partner is {}", possessive_noun, subject.partner.as_link())
+        text = format_html(
+            "{} partner is {}", possessive_noun, app.rendering.player_link(subject.partner)
+        )
 
     return format_html("{}", text)
 
@@ -197,7 +200,7 @@ def player_detail_view(request: AuthedHttpRequest, pk: PK | None = None) -> Http
         ),
         "chat_messages": (
             [
-                m.as_html()
+                app.rendering.message_html(m)
                 for m in Message.objects.get_for_player_pair(who_clicked, subject)
                 .order_by("timestamp")
                 .all()[0:100]
@@ -266,7 +269,7 @@ def send_player_message(request: AuthedHttpRequest, recipient_pk: PK) -> HttpRes
     )
 
     return HttpResponse(
-        message.as_html(),
+        app.rendering.message_html(message),
     )
 
 

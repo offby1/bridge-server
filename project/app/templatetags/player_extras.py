@@ -2,9 +2,13 @@ from django import template
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 
+import app.rendering
 from app.models import Player
 
 register = template.Library()
+
+register.filter("player_link", app.rendering.player_link)
+register.filter("player_display_name", app.rendering.player_display_name)
 
 
 def sedate_link(value, arg):
@@ -29,7 +33,7 @@ def styled_link(value: Player, arg: User, style_attrs=None):
 
     return format_html(
         "{}{}",
-        subject.as_link(style=";".join(style_attrs)),
+        app.rendering.player_link(subject, style=";".join(style_attrs)),
         comment,
     )
 

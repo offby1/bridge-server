@@ -1,6 +1,7 @@
 {% load fastdev %}
 {% load static %}
 {% load base_extras %}
+{% load player_extras %}
 {% load tz_detect %}
 <!DOCTYPE html>
 <html lang="en">
@@ -39,7 +40,7 @@
                     {% if user.is_authenticated %}
                         <span>Hello,
                             {% if user.player %}
-                                {{ user.player.as_link }}
+                                {{ user.player|player_link }}
                             {% else %}
                                 {{ user }}
                             {% endif %}

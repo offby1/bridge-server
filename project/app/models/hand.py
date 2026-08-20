@@ -14,10 +14,8 @@ from django.db import Error, models, transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import Http404
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
@@ -269,14 +267,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         x = self.get_xscript()
         self.is_complete = (x.auction.status is Auction.PassedOut) or x.num_plays == 52
         self.save(update_fields=["is_complete"])
-
-    # This is only used in templates
-    def as_link(self):
-        return format_html(
-            "<a href='{}'>{}</a>",
-            reverse("app:hand-dispatch", kwargs={"pk": self.pk}),
-            str(self),
-        )
 
     @cached_property
     def tournament(self) -> Tournament:

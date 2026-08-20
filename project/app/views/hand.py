@@ -23,6 +23,7 @@ from django_filters.views import FilterView
 
 import app.models
 import app.readers
+import app.rendering
 import app.visibility
 import bridge.seat
 import bridge.xscript
@@ -637,7 +638,7 @@ class HandTable(tables.Table):
         )
 
     def render_players(self, value) -> SafeString:
-        return SafeString(", ".join([p.as_link() for p in value]))
+        return SafeString(", ".join([app.rendering.player_link(p) for p in value]))
 
     # A column cannot reach a reader through an accessor, so this renders the status
     # itself, the way render_result does.
