@@ -25,11 +25,11 @@ from django_filters.views import FilterView
 
 import app.models
 import app.readers
+import app.visibility
 import bridge.seat
 import bridge.xscript
 from app.models.common import attribute_names
 from app.models.types import PK
-from app.models.utils import assert_type
 from app.views import Forbid, NotFound
 from app.views.misc import (
     AuthedHttpRequest,
@@ -63,16 +63,26 @@ def _localize(stamp: datetime.datetime, zone_name: str | None = None) -> datetim
 
 
 def _seat_div_context(
-    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+    *,
+    hand: app.models.Hand,
+    seat: bridge.seat.Seat,
+    viewer: app.models.Player | None,
+    viewer_may_control_this_seat: bool,
 ) -> dict[str, Any]:
     ds = app.readers.get_display_skeleton(hand=hand, as_dealt=False)
     our_all_four_suit_holding = ds.holdings_by_seat[seat]
 
-    card_html_by_direction = app.views.hand._get_card_html(
-        all_four=our_all_four_suit_holding,
-        hand=hand,
-        viewer_may_control_this_seat=viewer_may_control_this_seat,
-    )
+    # The skeleton holds every seat's cards, so this is the check that keeps one
+    # seat's cards out of another viewer's page. The callers that push this HTML over
+    # SSE address it to a single player, but addressing is not a permission check.
+    if app.visibility.may_see_cards(hand=hand, seat=seat, viewer=viewer):
+        card_html_by_direction = app.views.hand._get_card_html(
+            all_four=our_all_four_suit_holding,
+            hand=hand,
+            viewer_may_control_this_seat=viewer_may_control_this_seat,
+        )
+    else:
+        card_html_by_direction = _hidden_card_html(our_all_four_suit_holding)
 
     return {
         "active_seat": hand.active_seat_name,
@@ -140,58 +150,11 @@ def _bidding_box_context_for_hand(*, hand: Hand, as_viewed_by: app.models.Player
     }
 
 
-def _display_and_control(
-    *,
-    hand: app.models.Hand,
-    seat: bridge.seat.Seat,
-    as_viewed_by: app.models.Player | None,
-    as_dealt: bool,
-) -> dict[str, bool]:
-    assert_type(hand, app.models.Hand)
-    assert_type(seat, bridge.seat.Seat)
-    if as_viewed_by is not None:
-        assert_type(as_viewed_by, app.models.Player)
-    assert_type(as_dealt, bool)
-
-    board: app.models.Board = hand.board
-    seat_is_dummy = hand.dummy and seat == hand.dummy.seat
-
-    wat = board.what_can_they_see(player=as_viewed_by)
-    display_cards = (
-        as_dealt  # hand is over and we're reviewing it; i.e., the hand is complete
-        or hand.open_access
-        or wat == board.PlayerVisibility.everything
-    )
-
-    current_direction = None
-    if as_viewed_by is not None:
-        current_direction = as_viewed_by.current_direction(current_hand=hand)
-    if current_direction is not None:
-        if current_direction == seat.name:
-            display_cards |= wat >= board.PlayerVisibility.own_hand
-        if seat_is_dummy:
-            display_cards |= wat >= board.PlayerVisibility.dummys_hand
-
-    if as_viewed_by is None or not as_viewed_by.currently_seated:
-        return {
-            "display_cards": bool(display_cards),
-            "viewer_may_control_this_seat": False,
-        }
-
-    if not display_cards or hand.player_who_may_play is None:
-        return {
-            "display_cards": display_cards,
-            "viewer_may_control_this_seat": False,
-        }
-
-    if hand.open_access and not hand.is_complete:
-        return {"display_cards": True, "viewer_may_control_this_seat": True}
-
+def _hidden_card_html(all_four: AllFourSuitHoldings) -> dict[str, list[SafeString]]:
+    """What we show in place of cards the viewer may not see: "13 cards", per suit."""
     return {
-        "display_cards": True,
-        "viewer_may_control_this_seat": as_viewed_by.controls_seat(
-            seat=seat, right_this_second=True
-        ),
+        suit.name(): [SafeString(all_four.textual_summary)]
+        for suit, _holding in sorted(all_four.items(), reverse=True)
     }
 
 
@@ -319,20 +282,33 @@ def _three_by_three_HTML_for_trick(hand: app.models.Hand) -> str:
 
 
 def _hand_context_for_player(
-    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+    *,
+    hand: app.models.Hand,
+    seat: bridge.seat.Seat,
+    viewer: app.models.Player | None,
+    viewer_may_control_this_seat: bool,
 ) -> dict[str, Any]:
     context = _seat_div_context(
-        hand=hand, seat=seat, viewer_may_control_this_seat=viewer_may_control_this_seat
+        hand=hand,
+        seat=seat,
+        viewer=viewer,
+        viewer_may_control_this_seat=viewer_may_control_this_seat,
     )
     return context | {"class": "hand bigfont"}
 
 
 def _hand_HTML_for_seat(
-    *, hand: app.models.Hand, seat: bridge.seat.Seat, viewer_may_control_this_seat: bool
+    *,
+    hand: app.models.Hand,
+    seat: bridge.seat.Seat,
+    viewer: app.models.Player | None,
+    viewer_may_control_this_seat: bool,
 ) -> str:
+    """One seat's cards, as `viewer` may see them. The SSE push path renders this."""
     context = _hand_context_for_player(
         hand=hand,
         seat=seat,
+        viewer=viewer,
         viewer_may_control_this_seat=viewer_may_control_this_seat,
     )
 
@@ -365,23 +341,18 @@ def _four_hands_context_for_hand(
     for libSeat, suitholdings in skel.items():
         this_seats_player = hand.modPlayer_by_seat(libSeat)
 
-        visibility_and_control = _display_and_control(
-            hand=hand,
-            seat=libSeat,
-            as_viewed_by=as_viewed_by,
-            as_dealt=as_dealt,
-        )
-        if visibility_and_control["display_cards"]:
+        if app.visibility.may_see_cards(
+            hand=hand, seat=libSeat, viewer=as_viewed_by, as_dealt=as_dealt
+        ):
             card_html_by_suit = _get_card_html(
                 all_four=suitholdings,
                 hand=hand,
-                viewer_may_control_this_seat=visibility_and_control["viewer_may_control_this_seat"],
+                viewer_may_control_this_seat=app.visibility.may_control_seat(
+                    hand=hand, seat=libSeat, viewer=as_viewed_by
+                ),
             )
         else:
-            card_html_by_suit = {
-                suit.name(): [SafeString(suitholdings.textual_summary)]
-                for suit, holding in sorted(suitholdings.items(), reverse=True)
-            }
+            card_html_by_suit = _hidden_card_html(suitholdings)
 
         cards_by_direction_display[libSeat.name] = {
             "cards": card_html_by_suit,
@@ -527,7 +498,7 @@ def _error_response_or_viewfunc(
         msg = f"Anonymous users like {user} can view only those boards that have been fully played"
         return HttpResponseForbidden(msg)
 
-    match brt := board.relationship_to(player):
+    match brt := app.visibility.board_relationship(board=board, viewer=player):
         case ("NeverSeenIt", None):
             msg = f"You, {player}, have never seen board (#{board.display_number}), so you cannot see the hand."
             return HttpResponseForbidden(msg)
@@ -636,17 +607,16 @@ def hand_serialized_view(request: AuthedHttpRequest, pk: PK) -> HttpResponse:
         player = request.user.player
         assert player is not None
 
-        match hand.board.what_can_they_see(player=player):
-            case (
-                app.models.Board.PlayerVisibility.dummys_hand
-                | app.models.Board.PlayerVisibility.own_hand
-            ):
-                xscript = hand.get_xscript().as_viewed_by(
-                    bridge.seat.Seat(
-                        app.readers.get_player_direction_at_hand(player=player, hand=hand)[0]
-                    )
-                )
-            case app.models.Board.PlayerVisibility.everything:
+        match app.visibility.card_visibility_level(board=hand.board, viewer=player):
+            case app.visibility.CardVisibility.dummys_hand | app.visibility.CardVisibility.own_hand:
+                # Those two levels mean the player sat at *some* hand for this board.
+                # If it wasn't this one, they get nothing; the dispatcher above
+                # already turns that case away, but this does not depend on it.
+                seat = app.visibility.seat_of_viewer_at_hand(hand=hand, viewer=player)
+                if seat is None:
+                    return Forbid("You didn't play this hand")
+                xscript = hand.get_xscript().as_viewed_by(seat)
+            case app.visibility.CardVisibility.everything:
                 xscript = hand.get_xscript()
             case _:
                 return Forbid(

@@ -5,6 +5,7 @@ import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseForbidden
 
+import app.visibility
 from app.models import Hand, Player, Tournament
 from app.testutils import create_a_tournament, play_out_hand
 from app.views.hand import (
@@ -68,7 +69,7 @@ def test_alt(setup: Tournament) -> None:
             if u.is_anonymous:
                 expect(HttpResponseForbidden)
             else:
-                match brt := h.board.relationship_to(u.player):
+                match brt := app.visibility.board_relationship(board=h.board, viewer=u.player):
                     case ("AlreadyPlayedIt", _):
                         expect(_everything_read_only_view)
                     case ("CurrentlyPlayingIt", at_hand):

@@ -13,10 +13,12 @@ import pytest
 from allauth.socialaccount.models import SocialAccount  # type: ignore[import-untyped]
 
 import app.readers
+import app.visibility
 import bridge.card
 import bridge.contract
 from app.models import Hand, Player
 from app.testutils import create_a_tournament, play_out_hand, set_auction_to
+from bridge.seat import Seat
 
 
 def _play_it_out(hand: Hand) -> Hand:
@@ -325,11 +327,17 @@ def test_chat_is_disabled_when_the_sender_is_seated(usual_setup: Hand) -> None:
     assert explanation == f"You, {sender.name}, are already seated"
 
 
-# get_player_direction_at_hand
+# app.visibility.seat_of_viewer_at_hand
 
 
-def test_direction_at_hand_of_a_player_who_was_never_there(usual_setup: Hand) -> None:
+def test_seat_of_a_player_who_was_never_there(usual_setup: Hand) -> None:
     stranger = Player.objects.create_synthetic()
 
-    with pytest.raises(AssertionError, match="never played it"):
-        app.readers.get_player_direction_at_hand(player=stranger, hand=usual_setup)
+    assert app.visibility.seat_of_viewer_at_hand(hand=usual_setup, viewer=stranger) is None
+    assert app.visibility.seat_of_viewer_at_hand(hand=usual_setup, viewer=None) is None
+
+
+def test_seat_of_a_player_who_is_there(usual_setup: Hand) -> None:
+    north = usual_setup.players_by_direction_letter["N"]
+
+    assert app.visibility.seat_of_viewer_at_hand(hand=usual_setup, viewer=north) is Seat.NORTH

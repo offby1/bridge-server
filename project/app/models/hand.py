@@ -520,12 +520,15 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _three_by_three_HTML_for_trick(self)
 
-    def _get_current_seat_html(self, *, seat: Seat, viewer_may_control_this_seat: bool) -> str:
+    def _get_current_seat_html(
+        self, *, seat: Seat, viewer: Player, viewer_may_control_this_seat: bool
+    ) -> str:
         from app.views.hand import _hand_HTML_for_seat
 
         return _hand_HTML_for_seat(
             hand=self,
             seat=seat,
+            viewer=viewer,
             viewer_may_control_this_seat=viewer_may_control_this_seat,
         )
 
@@ -549,6 +552,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             controlling_player = self.player_who_controls_seat(seat, right_this_second=False)
             recipients: Iterable[Player]
+            # Dummy's cards are public to the table once the opening lead is down.
+            # We do not check the lead here: `app.visibility.may_see_cards`, which
+            # the rendering does check, holds dummy back until then, so a recipient
+            # who is too early simply gets the "13 cards" summary.
             if self.dummy is not None and seat == self.dummy.seat:
                 recipients = self.players()
             else:
@@ -560,6 +567,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                         current_hand_direction=seat.name,
                         current_hand_html=self._get_current_seat_html(
                             seat=seat,
+                            viewer=r,
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
                         tempo_seconds=self.tournament.tempo_seconds,

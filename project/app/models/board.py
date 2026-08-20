@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import enum
-import functools
 import hashlib
 import logging
 import random
@@ -24,7 +22,7 @@ from .common import SEAT_CHOICES
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
-    from app.models import Player, Tournament
+    from app.models import Tournament
 
 logger = logging.getLogger(__name__)
 
@@ -102,16 +100,6 @@ class BoardManager(models.Manager):
 
 
 class Board(models.Model):
-    @functools.total_ordering
-    class PlayerVisibility(enum.Enum):
-        nothing = enum.auto()
-        own_hand = enum.auto()
-        dummys_hand = enum.auto()
-        everything = enum.auto()
-
-        def __lt__(self, other) -> bool:
-            return self.value < other.value
-
     if TYPE_CHECKING:
         from app.models import Hand
 
@@ -154,19 +142,6 @@ class Board(models.Model):
         mvmt = self.tournament.get_movement()
         return num_completed_hands < len(mvmt.table_settings_by_zb_table_number)
 
-    # TODO -- probably could be combined with what_can_they_see and similar methods
-    def relationship_to(self, player: Player) -> tuple[str, Hand | None]:
-        from app.models import Hand
-
-        qs = Hand.objects.filter(Hand.has_player(player), board=self)
-
-        if qs.exists():
-            h = qs.first()
-            assert h is not None
-            return ("AlreadyPlayedIt", h) if h.is_complete else ("CurrentlyPlayingIt", h)
-
-        return ("NeverSeenIt", None)
-
     def save(self, *args, **kwargs):
         assert isinstance(self.north_cards, str), f"Those bastards!! {self.north_cards=}"
         assert (
@@ -204,87 +179,11 @@ class Board(models.Model):
         card_string = self.hand_strings_by_direction_letter[seat.value]
         return [Card.deserialize("".join(c)) for c in more_itertools.chunked(card_string, 2)]
 
-    # Who can see which cards (and when)?
-
-    # a "None" player means the anonymous user.
-    # cases to check:
-    # (no need to check, just a reminder): if the tournament is still in signup mode, there *are* no boards
-    # - if the tournament is complete, everyone can see everything.
-    # - otherwise the tournament is running, and ...
-    #   - if player is None, they can see nothing, since otherwise a player could get a new browser window, peek at the hand they're currently playing, and cheat up the yin-yang
-    #   - if it's a Player, and they are not signed up for this tournament: they can see nothing, since again it'd be too easy to cheat (just sign up a new username)
-    #   - if it's a Player, and they are in this tournament:
-    #     - if they have not yet played this board, nope
-    #     - if they have been seated at a hand with this board:
-    #       - if it's their own cards, of course they can see them
-    #       - if the opening lead has been played, they can also see the dummy
-    #       - if the hand is complete (either passed out, or all 13 tricks played), they can also see their opponent's cards (i.e., everything)
-
-    def can_see_cards_at(self, *, player: Player | None, direction_letter: str) -> bool:
-        # logger.error(f"{self.what_can_they_see(player=player)=}")
-        match self.what_can_they_see(player=player):
-            case self.PlayerVisibility.everything:
-                return True
-            case self.PlayerVisibility.nothing:
-                return False
-            case self.PlayerVisibility.own_hand:
-                assert player is not None
-                hand = player.hand_at_which_we_played_board(self)
-                assert hand is not None
-
-                # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter]=} ? ...")
-                return player == hand.players_by_direction_letter[direction_letter]
-            case self.PlayerVisibility.dummys_hand:
-                assert player is not None
-                hand = player.hand_at_which_we_played_board(self)
-                assert hand is not None
-
-                # logger.debug(f"{player.name=} == {hand.players_by_direction_letter[direction_letter].name=} ? ...")
-                if player == hand.players_by_direction_letter[direction_letter]:
-                    return True
-
-                # lt = hand.players_by_direction_letter[direction_letter].libraryThing()
-                # logger.debug(f"{lt=} ...")
-                # dummy = hand.dummy
-                # logger.debug(f"{dummy=}...")
-
-                return (
-                    hand.get_xscript().num_plays > 0
-                    and hand.players_by_direction_letter[direction_letter].libraryThing()
-                    == hand.dummy
-                )
-            case _:
-                assert False, f"Dunno what case {self.what_can_they_see(player)=} is"
-
-    def what_can_they_see(self, *, player: Player | None) -> PlayerVisibility:
-        if self.tournament.is_complete:
-            # logger.error(f"{self.tournament.is_complete=} => {self.PlayerVisibility.everything=}")
-            return self.PlayerVisibility.everything
-
-        if player is None:
-            # logger.error(f"{player=} is None => {self.PlayerVisibility.nothing=}")
-            return self.PlayerVisibility.nothing
-
-        if self.tournament.signup_deadline_has_passed() and player not in self.tournament.players():
-            return self.PlayerVisibility.everything
-
-        hand = player.hand_at_which_we_played_board(self)
-        if hand is None:
-            # logger.error(f"{hand=} is None => {self.PlayerVisibility.nothing=}")
-            return self.PlayerVisibility.nothing
-
-        rv = self.PlayerVisibility.own_hand
-        # logger.error(f"{hand=} is not None, so at least {self.PlayerVisibility.own_hand=}")
-
-        if hand.get_xscript().num_plays > 0:
-            # logger.error(f"{hand.get_xscript().num_plays=} > 0, so at least {self.PlayerVisibility.dummys_hand=}")
-            rv = self.PlayerVisibility.dummys_hand
-
-        if hand.is_complete:
-            # logger.error(f"{hand.is_complete=}, so {self.PlayerVisibility.everything=}")
-            rv = self.PlayerVisibility.everything
-
-        return rv
+    # Who may see which of these cards, and when, is decided in app/visibility.py --
+    # not here, and not in the views. `can_see_cards_at`, `what_can_they_see` and
+    # `relationship_to` used to live at this spot; they are now
+    # `app.visibility.may_see_cards`, `card_visibility_level` and
+    # `board_relationship`.
 
     def short_string(self) -> str:
         return f"Tournament#{self.tournament.display_number}, board #{self.display_number}"
