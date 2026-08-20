@@ -246,7 +246,9 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def controls_seat(self, *, seat: bridge.seat.Seat, right_this_second: bool) -> bool:
         # Take declarer & dummy into account.  This isn't all that complex, but I keep getting it wrong, so it needs to
-        # be in one place, and tested.
+        # be in one place, and tested.  Whether the viewer may *look* at a seat is a
+        # different question, answered in app/visibility.py; that module's
+        # `may_control_seat` wraps this method with the conditions the views add.
 
         hand = self.current_hand
         if hand is None:
