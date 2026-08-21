@@ -13,7 +13,7 @@ from app.models import Board, Call, Hand, Play, Player, Tournament
 from .testutils import set_auction_to
 
 
-def test_xscript_works_despite_caching_being_hard_yo(usual_setup) -> None:
+def test_xscript_works_despite_caching_being_hard_yo(usual_setup: Hand) -> None:
     h1 = Hand.objects.first()
     assert h1 is not None
 
@@ -86,7 +86,7 @@ def _no_voids(t: Tournament):
     )
 
 
-def test_ppv_anon(usual_setup):
+def test_ppv_anon(usual_setup: Hand):
     c = Client()
 
     # Anonymous user
@@ -97,16 +97,17 @@ def test_ppv_anon(usual_setup):
 
 
 @pytest.fixture
-def one_club_hand(db):
+def one_club_hand(db: None):
     call_command("loaddata", "usual_setup")
 
     hand = Hand.objects.first()
+    assert hand is not None
     set_auction_to(bridge.contract.Bid(level=1, denomination=bridge.card.Suit.CLUBS), hand)
 
     return hand
 
 
-def test_ppv_not_seated(usual_setup):
+def test_ppv_not_seated(usual_setup: Hand):
     c = Client()
 
     player, _ = Player.objects.get_or_create_synthetic()
@@ -116,13 +117,17 @@ def test_ppv_not_seated(usual_setup):
     assert "not currently seated" in response.text
 
 
-def test_ppv_seated_but_not_my_turn(one_club_hand):
+def test_ppv_seated_but_not_my_turn(one_club_hand: Hand):
     c = Client()
 
-    not_their_turn_player = Player.objects.exclude(pk=one_club_hand.player_who_may_play.pk).first()
-    assert not_their_turn_player != one_club_hand.player_who_may_play
+    whose_turn = one_club_hand.player_who_may_play
+    assert whose_turn is not None
 
-    assert one_club_hand.player_who_may_play.name == "Clint Eastwood"
+    not_their_turn_player = Player.objects.exclude(pk=whose_turn.pk).first()
+    assert not_their_turn_player is not None
+    assert not_their_turn_player != whose_turn
+
+    assert whose_turn.name == "Clint Eastwood"
     east_cards_string = getattr(one_club_hand.board, "east_cards")
 
     c.force_login(not_their_turn_player.user)
@@ -131,10 +136,12 @@ def test_ppv_seated_but_not_my_turn(one_club_hand):
     assert "turn to play" in response.text
 
 
-def test_ppv_invalid_card(one_club_hand):
+def test_ppv_invalid_card(one_club_hand: Hand):
     c = Client()
 
-    c.force_login(one_club_hand.player_who_may_play.user)
+    whose_turn = one_club_hand.player_who_may_play
+    assert whose_turn is not None
+    c.force_login(whose_turn.user)
     response = c.post(
         reverse("app:play-post"), data={"card": "not really a serialized card at all"}
     )
@@ -142,10 +149,12 @@ def test_ppv_invalid_card(one_club_hand):
     assert "Cannot deserialize" in response.text
 
 
-def test_ppv_my_turn_but_not_my_card(one_club_hand):
+def test_ppv_my_turn_but_not_my_card(one_club_hand: Hand):
     c = Client()
 
-    c.force_login(one_club_hand.player_who_may_play.user)
+    whose_turn = one_club_hand.player_who_may_play
+    assert whose_turn is not None
+    c.force_login(whose_turn.user)
 
     # My turn, but not my card
     north_cards_string = getattr(one_club_hand.board, "north_cards")
@@ -158,10 +167,12 @@ def test_ppv_my_turn_but_not_my_card(one_club_hand):
     assert "don't hold" in response.text
 
 
-def test_ppv_not_following_suit(db):
+def test_ppv_not_following_suit(db: None):
     c = Client()
     call_command("loaddata", "usual_setup")
-    hand = _no_voids(Tournament.objects.first())
+    tournament = Tournament.objects.first()
+    assert tournament is not None
+    hand = _no_voids(tournament)
     set_auction_to(bridge.contract.Bid(level=1, denomination=bridge.card.Suit.CLUBS), hand)
 
     # One that works
@@ -181,8 +192,8 @@ def test_ppv_not_following_suit(db):
     assert "cannot play" in response.text
 
 
-def test_ppv_cannot_play_before_auction_settles(usual_setup):
-    hand = Hand.objects.first()
+def test_ppv_cannot_play_before_auction_settles(usual_setup: Hand):
+    hand = usual_setup
     c = Client()
     for p in hand.players():
         c.force_login(p.user)
@@ -191,7 +202,7 @@ def test_ppv_cannot_play_before_auction_settles(usual_setup):
         assert "Nobody may play now" in response.text
 
 
-def test_cpv_anonymous(usual_setup):
+def test_cpv_anonymous(usual_setup: Hand):
     c = Client()
 
     # Anonymous user
@@ -201,7 +212,7 @@ def test_cpv_anonymous(usual_setup):
     assert "/accounts/login/?next=/call/" in response.url
 
 
-def test_cpv_not_a_player(usual_setup):
+def test_cpv_not_a_player(usual_setup: Hand):
     c = Client()
 
     u = User.objects.create_user("voyeur")
@@ -214,7 +225,7 @@ def test_cpv_not_a_player(usual_setup):
 
 
 # TODO -- almost identical to test_ppv_not_seated above
-def test_cpv_not_seated(usual_setup):
+def test_cpv_not_seated(usual_setup: Hand):
     c = Client()
 
     player, _ = Player.objects.get_or_create_synthetic()
@@ -224,12 +235,15 @@ def test_cpv_not_seated(usual_setup):
     assert "not currently seated" in response.text
 
 
-def test_cpv_seated_but_not_my_turn(usual_setup):
+def test_cpv_seated_but_not_my_turn(usual_setup: Hand):
     c = Client()
 
-    assert usual_setup.player_who_may_call.name == "Jeremy Northam"
+    whose_turn = usual_setup.player_who_may_call
+    assert whose_turn is not None
+    assert whose_turn.name == "Jeremy Northam"
 
-    not_their_turn_caller = Player.objects.exclude(pk=usual_setup.player_who_may_call.pk).first()
+    not_their_turn_caller = Player.objects.exclude(pk=whose_turn.pk).first()
+    assert not_their_turn_caller is not None
 
     c.force_login(not_their_turn_caller.user)
 

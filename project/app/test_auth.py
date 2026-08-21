@@ -4,6 +4,9 @@ import django.contrib.auth.hashers
 import pytest
 from django.test import Client
 from django.urls import reverse
+from pytest_django import Settings
+
+from app.models import Hand
 
 KABLOOEY_MESSAGE = "Oh no! Someone called some function they weren't s'posed to!!"
 
@@ -15,52 +18,52 @@ def kablooey(*args, **kwargs) -> None:
 # The pbkdf2 hash is (by design) incredibly slow, so I don't want to call it any more often than necessary.  And of
 # course I've accidentally done exactly that, so I have some tests to ensure I'm no longer doing that.
 @pytest.fixture
-def no_pbkdf2(monkeypatch) -> None:
+def no_pbkdf2(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(django.contrib.auth.hashers, "pbkdf2", kablooey)
 
 
 # check if there's *already* a valid session, and if so, just return an empty 200
-def test_already_logged_in(usual_setup, monkeypatch) -> None:
+def test_already_logged_in(usual_setup: Hand, monkeypatch: pytest.MonkeyPatch) -> None:
     c = Client()
     assert c.login(username="Jeremy Northam", password=".") is True
 
     with monkeypatch.context() as m:
         m.setattr(django.contrib.auth.hashers, "pbkdf2", kablooey)
         response = c.get(
-            reverse("app:three-way-login"),
+            reverse("app:login"),
         )
 
     assert response.status_code == 200
 
 
-def test_no_credentials_at_all(db) -> None:
+def test_no_credentials_at_all(db: None) -> None:
     c = Client()
 
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
     )
 
     assert response.status_code == 403
 
 
-def test_wrong_password(usual_setup) -> None:
+def test_wrong_password(usual_setup: Hand) -> None:
     c = Client(
         headers={"Authorization": "Basic " + base64.b64encode(b"Jeremy Northam:whoopsie").decode()},  # type: ignore [arg-type]
     )
 
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
     )
 
     assert response.status_code == 403
 
 
-def test_that_im_monkeypatching_the_right_thing(usual_setup, no_pbkdf2) -> None:
+def test_that_im_monkeypatching_the_right_thing(usual_setup: Hand, no_pbkdf2: None) -> None:
     # It's easy to get this wrong.
     c = Client()
     with pytest.raises(Exception) as e:
         c.get(
-            reverse("app:three-way-login"),
+            reverse("app:login"),
             headers={
                 "Authorization": "Basic " + base64.b64encode(b"Jeremy Northam:whoopsie").decode()
             },  # type: ignore [arg-type]
@@ -68,13 +71,13 @@ def test_that_im_monkeypatching_the_right_thing(usual_setup, no_pbkdf2) -> None:
     assert str(e.value) == KABLOOEY_MESSAGE
 
 
-def test_username_and_password(usual_setup) -> None:
+def test_username_and_password(usual_setup: Hand) -> None:
     total_bogosity = base64.b64encode(b"dingle:berry").decode()
 
     c = Client()
 
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
         headers={"Authorization": total_bogosity},  # type: ignore [arg-type]
     )
 
@@ -84,7 +87,7 @@ def test_username_and_password(usual_setup) -> None:
     c = Client()
 
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
         headers={"Authorization": "Basic " + base64.b64encode(b"Jeremy Northam:.").decode()},  # type: ignore [arg-type]
     )
 
@@ -92,27 +95,14 @@ def test_username_and_password(usual_setup) -> None:
     assert "sessionid" in response.cookies
 
 
-def test_user_primary_key_and_skeleton_key(usual_setup, settings, no_pbkdf2) -> None:
-    c = Client()
-
-    response = c.get(
-        reverse("app:three-way-login"),
-        headers={
-            "Authorization": "Basic "
-            + base64.b64encode(f"1:{settings.API_SKELETON_KEY}".encode()).decode()
-        },  # type: ignore [arg-type]
-    )
-
-    assert response.status_code == 200
-    assert "sessionid" in response.cookies
-
-
-def test_basic_auth_deals_with_improperly_encoded_stuff(usual_setup, settings) -> None:
+def test_basic_auth_deals_with_improperly_encoded_stuff(
+    usual_setup: Hand, settings: Settings
+) -> None:
     headers = {"Authorization": "Basic " + "Garbage! I am not base64-encoded."}
 
     c = Client(headers=headers)
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
     )
     assert response.status_code == 403
 
@@ -121,6 +111,6 @@ def test_basic_auth_deals_with_improperly_encoded_stuff(usual_setup, settings) -
 
     c = Client(headers=headers)
     response = c.get(
-        reverse("app:three-way-login"),
+        reverse("app:login"),
     )
     assert response.status_code == 403

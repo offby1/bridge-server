@@ -14,7 +14,7 @@ With it, you can:
 
 Before you do anything else, you need to create a username and password.  That can only be done manually; use a normal web browser to go to `/signup/` and do the usual pick-a-username-and-password-and-reenter-the-password dance.
 
-Now to authenticate your web client, have it make a GET (not a POST) to `/three-way-login/`, including a header like
+Now to authenticate your web client, have it make a GET (not a POST) to `/login/`, including a header like
 
     Authorization: Basic blahblahblah
 
@@ -27,8 +27,8 @@ For example, if your usename and password are `bob` and `sekrit`, here's a pytho
 
 and here's that encoding in use:
 
-    ❯ curl -H "Authorization: Basic Ym9iOnNla3JpdA==" http://localhost:9000/three-way-login/
-    {"player-name": "bob", "player_pk": 1, "comment": "user=<User pk=1> used a regular password. Splendid."}%
+    ❯ curl -H "Authorization: Basic Ym9iOnNla3JpdA==" http://localhost:9000/login/
+    {"player-name": "bob", "player_pk": 1, "comment": "user=<User pk=1> used the right password. Splendid."}%
 
 Sometimes the response will include "table" and "hand" information:
 
@@ -38,7 +38,7 @@ You'll need to save the various *`_pk` values to use in subsequent requests.
 
 Here's an example using `curl` from the command line (notice how "curl" does all that base64 mumbo-jumbo for us):
 
-    ❯ curl --cookie cook --cookie-jar cook -u 'bob:sekrit' -v http://localhost:9000/three-way-login/
+    ❯ curl --cookie cook --cookie-jar cook -u 'bob:sekrit' -v http://localhost:9000/login/
     * Host localhost:9000 was resolved.
     * IPv6: ::1
     * IPv4: 127.0.0.1
@@ -47,7 +47,7 @@ Here's an example using `curl` from the command line (notice how "curl" does all
     *   Trying 127.0.0.1:9000...
     * Connected to localhost (127.0.0.1) port 9000
     * Server auth using Basic with user 'bob'
-    > GET /three-way-login/ HTTP/1.1
+    > GET /login/ HTTP/1.1
     > Host: localhost:9000
     > Authorization: Basic Ym9iOnNla3JpdA==
     > User-Agent: curl/8.7.1
@@ -72,7 +72,7 @@ Here's an example using `curl` from the command line (notice how "curl" does all
     < Server: daphne
     <
     * Connection #0 to host localhost left intact
-    {"player-name": "bob", "player_pk": 1, "comment": "user=<User pk=1> used a regular password. Splendid."}%
+    {"player-name": "bob", "player_pk": 1, "comment": "user=<User pk=1> used the right password. Splendid."}%
 
 You'll notice two cookies in that response -- `csrftoken` and `sessiond`.  You'll need to store both of those; on subsequent requests, you need to resubmit them both:
 

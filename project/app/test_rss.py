@@ -6,6 +6,7 @@
 
 from xml.etree import ElementTree
 
+from django.test import Client
 from django.urls import reverse
 
 from app.models import Hand
@@ -13,7 +14,7 @@ from app.models import Hand
 from .testutils import create_a_tournament
 
 
-def test_tournaments_rss_feed(db, client) -> None:
+def test_tournaments_rss_feed(db: None, client: Client) -> None:
     complete = create_a_tournament(stage="complete")
     incomplete = create_a_tournament(stage="playing")
 

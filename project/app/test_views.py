@@ -1,18 +1,20 @@
 import base64
 import json
 from html.parser import HTMLParser
+from typing import cast
 
 import pytest
-from django.conf import settings
 from django.core.cache import cache
+from django.test import RequestFactory
 from django.test.client import Client
 from django.urls import reverse
 
-from app.models import Player, Tournament
+from app.models import Hand, Player, Tournament
 from app.views import player, tournament
+from app.views.misc import AuthedHttpRequest
 
 
-def test_player_by_name_or_pk_view(usual_setup, rf) -> None:
+def test_player_by_name_or_pk_view(usual_setup: Hand, rf: RequestFactory) -> None:
     request = rf.get(path="this field don't matter one bit")
 
     response = player.by_name_or_pk_view(request, name_or_pk="1")
@@ -25,7 +27,7 @@ def test_player_by_name_or_pk_view(usual_setup, rf) -> None:
     assert response.status_code == 404
 
 
-def test_compatibility_with_three_way_login(usual_setup, rf) -> None:
+def test_compatibility_with_login(usual_setup: Hand, rf: RequestFactory) -> None:
     jeremys_player_id = "1"
     request = rf.get(path="/")
     # Note: this is the *player* ID, not the django *user* ID.
@@ -36,11 +38,8 @@ def test_compatibility_with_three_way_login(usual_setup, rf) -> None:
     c = Client()
 
     response = c.get(
-        reverse("app:three-way-login"),
-        headers={
-            "Authorization": "Basic "
-            + base64.b64encode(f"{jeremys_player_id}:{settings.API_SKELETON_KEY}".encode()).decode()
-        },  # type: ignore [arg-type]
+        reverse("app:login"),
+        headers={"Authorization": "Basic " + base64.b64encode(b"Jeremy Northam:.").decode()},  # type: ignore [arg-type]
     )
 
     assert response.status_code == 200
@@ -52,17 +51,21 @@ def test_compatibility_with_three_way_login(usual_setup, rf) -> None:
     assert json.loads(response.content)["name"] == "Jeremy Northam"
 
 
-def test_tournament_view_after_splitsville(usual_setup, rf):
+def test_tournament_view_after_splitsville(usual_setup: Hand, rf: RequestFactory):
     some_player = Player.objects.first()
+    assert some_player is not None
     some_player.break_partnership()
     cache.clear()
 
+    t = Tournament.objects.first()
+    assert t is not None
+
     request = rf.get("/woteva")
-    request.user = some_player
-    tournament.tournament_view(request, Tournament.objects.first().pk)
+    request.user = some_player.user
+    tournament.tournament_view(cast(AuthedHttpRequest, request), t.pk)
 
 
-def test_bot_checkbox_toggle(usual_setup, rf) -> None:
+def test_bot_checkbox_toggle(usual_setup: Hand, rf: RequestFactory) -> None:
     some_player: Player | None = Player.objects.first()
     assert some_player is not None
     assert not some_player.synthetic
@@ -122,13 +125,13 @@ def test_bot_checkbox_toggle(usual_setup, rf) -> None:
         ("/admin"),
     ],
 )
-def test_adds_x_robots_tag_header(url, db):
+def test_adds_x_robots_tag_header(url: str, db: None):
     c = Client()
     response = c.get(url)
     assert response.headers["X-Robots-Tag"] == "none"
 
 
-def test_serves_robots_dot_txt(db):
+def test_serves_robots_dot_txt(db: None):
     c = Client()
     response = c.get("/robots.txt")
     assert response.status_code == 200

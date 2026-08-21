@@ -108,16 +108,13 @@ def test_cards_by_player(usual_setup: Hand) -> None:
         assert len(h.current_cards_by_seat()[seat]) == 13
 
 
-def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer, rf) -> str:
+def _bidding_box_as_seen_by(h: Hand, as_seen_by: Player | libPlayer) -> str:
     from app.models.utils import assert_type
 
     if isinstance(as_seen_by, libPlayer):
         as_seen_by = Player.objects.get_by_name(as_seen_by.name)
     assert_type(as_seen_by, Player)
     assert isinstance(as_seen_by, Player)
-
-    request = rf.get("/woteva/", data={"hand_pk": h.pk})
-    request.user = as_seen_by.user
 
     return _bidding_box_HTML_for_hand_for_player(h, as_seen_by)
 
@@ -145,7 +142,7 @@ def _partition_button_values(bb_html: str) -> tuple[list[str], list[str]]:
     return disabled_buttons, active_buttons
 
 
-def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
+def test_bidding_box_html_completed_auction(usual_setup: Hand) -> None:
     h = usual_setup
 
     # First case: completed auction, contract is one diamond, not doubled.
@@ -156,7 +153,7 @@ def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
 
     # The auction is settled, so no bidding box.
     assert h.player_who_may_play is not None
-    bb_str = _bidding_box_as_seen_by(h, h.player_who_may_play, rf)
+    bb_str = _bidding_box_as_seen_by(h, h.player_who_may_play)
 
     # TODO -- actually parse the HTML; look for a div whose id is #bidding-box, and assert that *either*
     # - there is no such div; or else
@@ -164,7 +161,7 @@ def test_bidding_box_html_completed_auction(usual_setup: Hand, rf) -> None:
     assert "btn-primary" not in bb_str
 
 
-def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
+def test_bidding_box_html_one_call(usual_setup: Hand) -> None:
     h = usual_setup
 
     # Second case: auction in progress, only call is one diamond.
@@ -187,16 +184,12 @@ def test_bidding_box_html_one_call(usual_setup: Hand, rf) -> None:
         assert allowed_caller.name == "Clint Eastwood"
 
     east = Player.objects.get_by_name("Clint Eastwood")
-    request = rf.get("/woteva/")
-    request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
-        "bidding_box_buttons"
-    ]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=east, hand=h)["bidding_box_buttons"]
     disabled, _active = _partition_button_values(bbc_html)
     assert set(disabled) == {"1♣", "1♦", "Redouble"}
 
 
-def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
+def test_bidding_box_html_two_calls(usual_setup: Hand) -> None:
     h = usual_setup
     # Third case: as above but with one more "Pass".
 
@@ -217,11 +210,7 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
     assert allowed_caller.name == "J.D. Souther"
 
     south = Player.objects.get_by_name("J.D. Souther")
-    request = rf.get("/woteva/", data={"hand_pk": h.pk})
-    request.user = south.user
-    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
-        "bidding_box_buttons"
-    ]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=south, hand=h)["bidding_box_buttons"]
     # you cannot double your own partner.
     disabled, _active = _partition_button_values(bbc_html)
 
@@ -232,10 +221,7 @@ def test_bidding_box_html_two_calls(usual_setup: Hand, rf) -> None:
         "Redouble",
     }
     east = Player.objects.get_by_name("Clint Eastwood")
-    request.user = east.user
-    bbc_html = _bidding_box_context_for_hand(as_viewed_by=request.user.player, hand=h)[
-        "bidding_box_buttons"
-    ]
+    bbc_html = _bidding_box_context_for_hand(as_viewed_by=east, hand=h)["bidding_box_buttons"]
 
     disabled, _active = _partition_button_values(bbc_html)
     assert len(disabled) == 38, f"{east} shouldn't be allowed to call at all"
@@ -289,7 +275,9 @@ def test_next_seat_to_play(usual_setup: Hand) -> None:
     assert h.next_seat_to_play.name == "East"
 
 
-def test_sends_message_on_auction_completed(usual_setup: Hand, monkeypatch) -> None:
+def test_sends_message_on_auction_completed(
+    usual_setup: Hand, monkeypatch: pytest.MonkeyPatch
+) -> None:
     h = usual_setup
 
     sent_events_by_channel: dict[str, list[Any]] = collections.defaultdict(list)
@@ -462,7 +450,7 @@ def test_hint_button_hidden_in_rendered_page_when_not_your_turn(usual_setup: Han
     assert "visibility: hidden" in content, "hint button must be hidden when it's not your turn"
 
 
-def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
+def test_is_abandoned_splitsville(usual_setup: Hand, everybodys_password: str) -> None:
     assert Hand.objects.count() > 0
 
     for h in Hand.objects.all():
@@ -493,7 +481,7 @@ def test_is_abandoned_splitsville(usual_setup, everybodys_password) -> None:
     assert north.name in message or south.name in message
 
 
-def test_is_abandoned_defection(usual_setup, everybodys_password) -> None:
+def test_is_abandoned_defection(usual_setup: Hand, everybodys_password: str) -> None:
     h = Hand.objects.first()
     assert h is not None
 

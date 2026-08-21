@@ -2,26 +2,29 @@ from __future__ import annotations
 
 import collections
 import itertools
+from typing import Any
 
 import pytest
+from pytest_django import Settings
 
 import app.broadcast
 import app.models
 import app.views
 import bridge.card
 import bridge.contract
+from app.models import Hand, Tournament
 
 from . import testutils
 
 
 @pytest.fixture(autouse=True)
-def capture_events_in_database(settings):
+def capture_events_in_database(settings: Settings):
     del settings.EVENTSTREAM_REDIS
     settings.EVENTSTREAM_STORAGE_CLASS = "django_eventstream.storage.DjangoModelStorage"
 
 
 @pytest.fixture()
-def sent_events_by_channel(monkeypatch):
+def sent_events_by_channel(monkeypatch: pytest.MonkeyPatch):
     rv = collections.defaultdict(list)
 
     def send_event(*args, **kwargs) -> None:
@@ -32,7 +35,9 @@ def sent_events_by_channel(monkeypatch):
     return rv
 
 
-def test_auction_settled_messages(usual_setup, sent_events_by_channel) -> None:
+def test_auction_settled_messages(
+    usual_setup: Hand, sent_events_by_channel: dict[str, list[dict[str, Any]]]
+) -> None:
     h = usual_setup
 
     testutils.set_auction_to(
@@ -71,7 +76,7 @@ def test_auction_settled_messages(usual_setup, sent_events_by_channel) -> None:
     assert 2 * 4 <= sum(["bidding_box_html" in e["data"] for e in player_HTML_events]) <= 4 * 4
 
 
-def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
+def test_player_can_always_see_played_hands(two_boards_one_is_complete: Hand) -> None:
     p1 = app.models.Player.objects.get(pk=1)
     hand_count_before = p1.hands_played.count()
     assert hand_count_before > 0
@@ -80,7 +85,9 @@ def test_player_can_always_see_played_hands(two_boards_one_is_complete) -> None:
 
 
 @pytest.mark.usefixtures("two_boards_one_of_which_is_played_almost_to_completion")
-def test_sends_final_score(monkeypatch, sent_events_by_channel) -> None:
+def test_sends_final_score(
+    monkeypatch: pytest.MonkeyPatch, sent_events_by_channel: dict[str, list[dict[str, Any]]]
+) -> None:
     from .models import Hand
 
     h1: Hand = Hand.objects.get(pk=1)
@@ -98,7 +105,9 @@ def test_sends_final_score(monkeypatch, sent_events_by_channel) -> None:
 
 
 def test_includes_dummy_in_new_play_event_for_opening_lead(
-    usual_setup, sent_events_by_channel, monkeypatch
+    usual_setup: Hand,
+    sent_events_by_channel: dict[str, list[dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     h: app.models.Hand = usual_setup
 
@@ -164,7 +173,9 @@ def test_includes_dummy_in_new_play_event_for_opening_lead(
 
 
 def test_dummys_hand_isnt_always_highlighted(
-    usual_setup, monkeypatch, sent_events_by_channel
+    usual_setup: Hand,
+    monkeypatch: pytest.MonkeyPatch,
+    sent_events_by_channel: dict[str, list[dict[str, Any]]],
 ) -> None:
     h = usual_setup
 
@@ -173,6 +184,7 @@ def test_dummys_hand_isnt_always_highlighted(
         h,
     )
 
+    assert h.dummy is not None
     assert h.dummy.seat.name == "South"
 
     # So that our events contain, not HTML, but simple dicts.  That way we don't have to parse 'em.
@@ -180,6 +192,7 @@ def test_dummys_hand_isnt_always_highlighted(
 
     for card in ("d2", "h2", "s2", "c2"):
         ns = h.next_seat_to_play
+        assert ns is not None
         h.add_play_from_model_player(
             player=h.player_who_controls_seat(ns, right_this_second=True),
             card=bridge.card.Card.deserialize(card),
@@ -198,14 +211,16 @@ def test_dummys_hand_isnt_always_highlighted(
     assert len(active_seats_seen) > 1
 
 
-def test_end_of_tournament(nearly_completed_tournament) -> None:
+def test_end_of_tournament(nearly_completed_tournament: Tournament) -> None:
     def abandoned_hands():
         return nearly_completed_tournament.hands().filter(abandoned_because__isnull=False)
 
     assert not nearly_completed_tournament.is_complete
     assert abandoned_hands().count() == 0
 
-    hand: app.models.Hand = nearly_completed_tournament.hands().filter(is_complete=False).first()
+    hand: app.models.Hand | None = (
+        nearly_completed_tournament.hands().filter(is_complete=False).first()
+    )
     assert hand is not None
     hand.add_play_from_model_player(player=hand.West, card=bridge.card.Card.deserialize("SA"))
 

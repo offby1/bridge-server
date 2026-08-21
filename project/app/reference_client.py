@@ -66,7 +66,7 @@ class BridgeClient:
         The reply names your player, and -- if you're seated -- the hand you're at.
         """
         response = self.session.get(
-            self._url("/three-way-login/"),
+            self._url("/login/"),
             auth=(username, password),
             timeout=self.timeout,
         )

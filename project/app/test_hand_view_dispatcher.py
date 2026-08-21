@@ -17,7 +17,7 @@ logger = logging.getLogger()
 
 
 @pytest.fixture
-def setup(db) -> Tournament:
+def setup(db: None) -> Tournament:
     t = create_a_tournament(stage="playing", boards_per_round_per_table=1)
 
     # play board 1 fully

@@ -5,6 +5,7 @@ import pytest
 from django.core.cache import cache
 from django.core.management import call_command
 from django.utils import timezone
+from pytest_django import Settings
 
 from .models import Hand, Play, Player, Tournament, TournamentSignup
 from .models.tournament import advance_expired_tournaments
@@ -14,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True, scope="function")
-def no_ssl_redirect(settings) -> None:
+def no_ssl_redirect(settings: Settings) -> None:
     settings.SECURE_SSL_REDIRECT = False
 
 
 @pytest.fixture(autouse=True, scope="function")
-def clear_django_cache(settings):
+def clear_django_cache(settings: Settings):
     settings.CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -31,7 +32,7 @@ def clear_django_cache(settings):
 
 # Without this, a couple tests fail *unless* you happen to have run "collectstatic" first.
 @pytest.fixture(autouse=True)
-def shaddap_complaints_about_missing_staticfiles_manifest_entries(settings):
+def shaddap_complaints_about_missing_staticfiles_manifest_entries(settings: Settings):
     # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#django.contrib.staticfiles.storage.ManifestStaticFilesStorage.manifest_strict
     settings.STORAGES["staticfiles"]["BACKEND"] = (
         "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -39,7 +40,7 @@ def shaddap_complaints_about_missing_staticfiles_manifest_entries(settings):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def everybodys_password():
+def everybodys_password() -> str:
     return (
         # In [1]: from django.contrib.auth.hashers import make_password
         # In [2]: make_password(".")
@@ -50,7 +51,7 @@ def everybodys_password():
 
 # Just to prevent tests from displaying the actual secret key if they fail
 @pytest.fixture(autouse=True)
-def innocuous_secret_key(settings):
+def innocuous_secret_key(settings: Settings):
     settings.SECRET_KEY = "gabba gabba hey"
 
 
@@ -73,7 +74,7 @@ def nobody_seated_nobody_signed_up(db: None) -> None:
 
 
 @pytest.fixture
-def nobody_seated(nobody_seated_nobody_signed_up) -> None:
+def nobody_seated(nobody_seated_nobody_signed_up: None) -> None:
     """One tournament, open for signups, with everybody signed up to it.
 
     Reopen the tournament `nobody_seated_nobody_signed_up` loaded, rather than calling
@@ -122,7 +123,7 @@ def two_boards_one_is_complete(
 
 
 @pytest.fixture
-def just_completed(two_boards_one_of_which_is_played_almost_to_completion) -> Tournament:
+def just_completed(two_boards_one_of_which_is_played_almost_to_completion: None) -> Tournament:
     before: Tournament | None = Tournament.objects.incompletes().first()
     assert before is not None
 

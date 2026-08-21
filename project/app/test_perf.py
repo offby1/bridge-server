@@ -1,7 +1,11 @@
+from typing import cast
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.template.response import TemplateResponse
+from django.test import RequestFactory
+from pytest_django import DjangoAssertNumQueries
 
 import bridge.card
 import bridge.contract
@@ -9,11 +13,12 @@ import bridge.contract
 from .models import Board, Hand, Player, Tournament
 from .views.board import board_archive_view
 from .views.hand import HandListView, _interactive_view, hand_serialized_view
+from .views.misc import AuthedHttpRequest
 from .views.tournament import tournament_view
 
 
 def test__interactive_view_doesnt_do_a_shitton_of_queries(
-    usual_setup: Hand, rf, django_assert_max_num_queries
+    usual_setup: Hand, rf: RequestFactory, django_assert_max_num_queries: DjangoAssertNumQueries
 ) -> None:
     h = usual_setup
 
@@ -44,11 +49,13 @@ def test__interactive_view_doesnt_do_a_shitton_of_queries(
     request.user = p.user
 
     with django_assert_max_num_queries(35):
-        _interactive_view(request, h)
+        _interactive_view(cast(AuthedHttpRequest, request), h)
 
 
 def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
-    nearly_completed_tournament, rf, django_assert_max_num_queries
+    nearly_completed_tournament: Tournament,
+    rf: RequestFactory,
+    django_assert_max_num_queries: DjangoAssertNumQueries,
 ) -> None:
     request = rf.get("/woteva/")
     p = Player.objects.first()
@@ -56,20 +63,29 @@ def test_tournament_detail_view_doesnt_do_a_shitton_of_queries(
     request.user = p.user
 
     with django_assert_max_num_queries(13):
-        tournament_view(request, "1")
+        tournament_view(cast(AuthedHttpRequest, request), "1")
 
 
-def test_again_but_bigger(db: None, rf, django_assert_max_num_queries) -> None:
+def test_again_but_bigger(
+    db: None, rf: RequestFactory, django_assert_max_num_queries: DjangoAssertNumQueries
+) -> None:
     call_command("loaddata", "completed-tournament-20-players")
 
     request = rf.get("/woteva/")
-    request.user = None
+    # Nobody is logged in.  The view reads the user only as
+    # `getattr(request.user, "player", None)`, so this is the same measurement the
+    # bare `None` this used to say produced.
+    request.user = AnonymousUser()
 
     with django_assert_max_num_queries(171):
-        tournament_view(request, "1")
+        tournament_view(cast(AuthedHttpRequest, request), "1")
 
 
-def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_queries) -> None:
+def test_hand_list_view(
+    nearly_completed_tournament: Tournament,
+    rf: RequestFactory,
+    django_assert_max_num_queries: DjangoAssertNumQueries,
+) -> None:
     request = rf.get("/woteva/")
     request.user = AnonymousUser()
 
@@ -87,7 +103,11 @@ def test_hand_list_view(nearly_completed_tournament, rf, django_assert_max_num_q
     ],
 )
 def test_board_archive_view(
-    nearly_completed_tournament, rf, django_assert_max_num_queries, username, expected_num_queries
+    nearly_completed_tournament: Tournament,
+    rf: RequestFactory,
+    django_assert_max_num_queries: DjangoAssertNumQueries,
+    username: str | None,
+    expected_num_queries: int,
 ) -> None:
     request = rf.get("/woteva/")
 
@@ -103,7 +123,9 @@ def test_board_archive_view(
 
 
 def test_hand_serialzed_view(
-    nearly_completed_tournament, rf, django_assert_max_num_queries
+    nearly_completed_tournament: Tournament,
+    rf: RequestFactory,
+    django_assert_max_num_queries: DjangoAssertNumQueries,
 ) -> None:
     request = rf.get("/woteva/", headers={"accept": "application/json"})
     player = Player.objects.first()
@@ -119,7 +141,7 @@ def test_hand_serialzed_view(
 
     # Damn, 19 queries? wtf are they?
     with django_assert_max_num_queries(19):
-        response = hand_serialized_view(request, pk=hand.pk)
+        response = hand_serialized_view(cast(AuthedHttpRequest, request), pk=hand.pk)
 
     assert response.headers["Content-Type"].startswith("application/json")
     assert response.status_code == 200

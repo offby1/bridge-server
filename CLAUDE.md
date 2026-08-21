@@ -258,14 +258,21 @@ Templates receive:
 - `active_seat` - Whose turn it is (gets `.active` CSS class)
 - `viewers_seat` - Which player is viewing (determines perspective)
 
-### API for Bots (`/three-way-login/` endpoint)
+### API for Bots (`/login/` endpoint)
 
 Bots authenticate once via HTTP Basic Auth, then use session cookies for subsequent requests.
+
+**Nobody else's code calls this API today.** As of this commit, Eric knows of no
+third-party clients: the only callers are `project/app/reference_client.py` and the tests.
+So until this note says otherwise, change the public interface freely — rename endpoints,
+change response shapes, drop parameters — without a deprecation period, a redirect from the
+old URL, or a compatibility shim. Just update `docs/README.api.md` to match. When somebody
+else does write a client, delete this paragraph, because the calculation changes.
 
 **Authentication Flow**:
 ```bash
 # 1. Login and get session cookie
-curl -c cookies.txt -u 'username:password' http://localhost:9000/three-way-login/
+curl -c cookies.txt -u 'username:password' http://localhost:9000/login/
 
 # 2. Get hand transcript
 curl -b cookies.txt http://localhost:9000/serialized/hand/123/
@@ -324,18 +331,17 @@ All middleware is registered in order in `base_settings.py`; the order matters.
 # Install dependencies (creates .venv automatically)
 just uv-install
 
-# Generate Django secrets
+# Generate the Django secret
 just ensure-django-secret    # Creates Django SECRET_KEY
-just ensure-skeleton-key     # Creates API skeleton key
 
 # Setup database
 just migrate
 just fixture usual_setup    # Optional: load a sample tournament and players
 ```
 
-(`just ensure-django-secret` and `just ensure-skeleton-key` are marked private, so they
-don't appear in `just --list`, but you can still run them by name. Every recipe that needs
-them depends on them anyway, so `just runme` alone is usually enough.)
+(`just ensure-django-secret` is marked private, so it doesn't appear in `just --list`, but
+you can still run it by name. Every recipe that needs it depends on it anyway, so `just
+runme` alone is usually enough.)
 
 ### Running Locally
 
@@ -433,7 +439,6 @@ Set by `justfile` or Docker Compose:
 
 - **`DJANGO_SETTINGS_MODULE`** - Which settings module (dev_settings / prod_settings / test_settings)
 - **`DJANGO_SECRET_FILE`** - Path to SECRET_KEY file
-- **`DJANGO_SKELETON_KEY_FILE`** - Path to API skeleton key
 - **`GOOGLE_OAUTH_CLIENT_ID_FILE`**, **`GOOGLE_OAUTH_CLIENT_SECRET_FILE`** - Paths to the
   OAuth credentials. Absent, the app runs fine without Google sign-in.
 - **`PGHOST`**, **`PGUSER`**, **`PGPASS`** - PostgreSQL connection
@@ -507,7 +512,7 @@ See `app/static/app/bridge-game.js` and `app/templates/base.html` for examples.
 2. Inherit from `BaseCommand`
 3. Implement `handle()` method
 4. Either work through the ORM directly, or use the API endpoints
-   (`/three-way-login/`, `/serialized/hand/<pk>/`, `/call/`, `/play/`)
+   (`/login/`, `/serialized/hand/<pk>/`, `/call/`, `/play/`)
 
 `app/management/commands/cheating_bot.py` is the bot that ships with the server. It is
 *not* an example of an API client: it runs inside the Docker stack, reads the database
