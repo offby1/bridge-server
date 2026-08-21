@@ -4,20 +4,72 @@
 :END:
 I've done this like six times, and I guess it's slowly getting better, but it's still not clean.
 
-I need *one* bit of code that answers the question: can this Django user see this bit of this hand?  ~Board.can_see_cards_at~ is clearly an attempt to do that.
+I needed *one* bit of code that answers the question: can this Django user see this bit of this hand?
 
-~_error_response_or_viewfunc~ and ~Board.relationship_to~ are sorta groping their way there.
+** What has landed
 
-I've considered using [[https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization][django's built-in permissions]] to control access to hands, rather than doing it "by hand" (haw haw) as I'm currently doing; but it occurs to me that that stuff likely only controls access to model instances, whereas I need to control access to the individual seats (North, East, South, West) of a single board instance.
+~app/visibility.py~ is now that one bit of code, and its module docstring is the
+authoritative statement of the rules.  It holds:
 
-One example: in prod, if you're not logged in, <https://bridge.offby1.info/hand/55/> yells at you: ~Anonymous users like AnonymousUser can view only those boards that have been fully played~.  However, the associated tournament is complete, so it should let me see it.
+- ~card_visibility_level(board=, viewer=)~ -- how far a viewer's entitlement reaches,
+  as the ~CardVisibility~ enum.  This used to be ~Board.what_can_they_see~, and the
+  enum used to be ~Board.PlayerVisibility~.
+- ~may_see_cards(hand=, seat=, viewer=, as_dealt=)~ -- the per-seat answer.  This
+  replaces both ~Board.can_see_cards_at~ and ~views.hand._display_and_control~, which
+  used to compute it two different ways.
+- ~may_control_seat(hand=, seat=, viewer=)~ -- the other half of the old
+  ~_display_and_control~.  It wraps ~Player.controls_seat~, which stays on the model
+  because it answers a different question: whose turn is it, counting declarer
+  playing dummy's cards.
+- ~seat_of_viewer_at_hand(hand=, viewer=)~ -- returns None rather than raising, which
+  ~Player.current_direction~ does.
+- ~board_relationship(board=, viewer=)~ -- was ~Board.relationship_to~, and its string
+  tags are now the ~BoardRelationship~ enum.  It feeds ~hand_access~.
+- ~hand_access(hand=, viewer=)~ -- was ~views.hand._error_response_or_viewfunc~.
+  Returns a ~HandAccess~: a ~HandViewMode~ of ~interactive~, ~read_only~ or
+  ~forbidden~, plus the text to put in the 403 body.  ~hand_dispatch_view~ is now four
+  lines that turn that into a response, and ~hand_serialized_view~ applies the same
+  gate to the JSON transcript.
 
-I've already got this logic right somewhere else, but apparently whatever tries to render that page isn't using it.
+There are two questions, at two altitudes, and the module docstring says so:
+~hand_access~ decides once per request whether to serve a page and which one;
+~may_see_cards~ decides per seat what that page shows.  A read-only page served to a
+viewer entitled to nothing is not a leak, it is four columns of "13 cards".
 
-Also there are a lot of functions and methods that seem redundant:
+Every path that renders cards now asks ~may_see_cards~: the interactive page, the
+read-only page, the per-seat HTML pushed over SSE, and the JSON transcript.  The SSE
+push path did not ask anything before; it addressed each message to one player and
+rendered whatever it was handed.
 
-- ~views.hand._display_and_control~
-- ~views.hand._error_response_or_viewfunc~
-- ~models.board.Board.relationship_to~
-- ~models.board.Board.can_see_cards_at~
-- ~models.board.Board.what_can_they_see~
+~test_visibility.py~ and ~test_table_view.py~ check the card rules from two
+directions -- one board across viewers, and one hand across every viewer-and-seat
+pair.  ~test_hand_view_dispatcher.py~ covers ~hand_access~.
+
+** Fixed, contrary to what this document used to say
+
+This document claimed that in prod, not logged in,
+<https://bridge.offby1.info/hand/55/> yells ~Anonymous users like AnonymousUser can
+view only those boards that have been fully played~ even though the tournament is
+complete.  That is fixed, and has been for a while:
+~test_completed_tournament_anonymous_access.py~ is a regression test for exactly that
+scenario, abandoned hand and all, and it passes.  ~Board.will_be_played_again~ returns
+False as soon as the tournament is complete, which sends the viewer to the read-only
+page.
+
+If it ever recurs, the likely culprit is the window where a tournament's play
+completion deadline has passed but ~completed_at~ is still null, because the ~clock~
+service hasn't run ~advance_expired_tournaments~ yet.  During that window
+~Tournament.is_complete~ is False, so the tournament looks live to every rule here.
+I have not confirmed that this is what happened.
+
+** Still open
+
+- ~views.hand._bidding_box_context_for_hand~ still decides for itself whether to
+  enable the bidding box.  That is a third question -- who may *call* -- and it
+  differs during the auction, when no seat is on turn to play.  Folding it into
+  ~may_control_seat~ as that function stands today would disable the bidding box
+  outright.
+- ~board_archive_view~ carries its own TODO saying its check is too strict, and it is
+  now the last card-visibility check that bypasses ~app/visibility.py~.
+
+I considered using [[https://docs.djangoproject.com/en/5.1/topics/auth/default/#topic-authorization][django's built-in permissions]] to control access to hands, rather than doing it "by hand" (haw haw); but that stuff likely only controls access to model instances, whereas I need to control access to the individual seats (North, East, South, West) of a single board instance.

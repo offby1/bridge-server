@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load fastdev %}
+{% load base_extras fastdev %}
 {% block title %}
     {{ hand }}
 {% endblock title %}
@@ -25,14 +25,14 @@
         </div>
     {% endif %}
     {% ifexists request.user.player %}
-        {% if request.user.player.current_hand %}Current hand: {{ request.user.player.current_hand.as_link }}{% endif %}
+        {% if request.user.player.current_hand %}Current hand: {{ request.user.player.current_hand|hand_link }}{% endif %}
     {% endifexists %}
     <div style="display: flex; overflow: auto;">{% include "four-hands.html" with class="hand mediumfont" %}</div>
     <div style="display: flex;">
         <div style="flex-grow: 1">{% include "auction.html" %}</div>
     </div>
     <div>
-        {# TODO -- omit this if _display_and_control wouldn't let us see the cards #}
+        {# TODO -- omit this if app.visibility.may_see_cards wouldn't let us see the cards #}
         <table class="table caption-top">
             <caption>Play</caption>
             <thead>

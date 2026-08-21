@@ -14,10 +14,8 @@ from django.db import Error, models, transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import Http404
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from django_prometheus.models import ExportModelOperationsMixin  # type: ignore [import-untyped]
@@ -261,7 +259,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def _clear_bot_flags(self) -> None:
         p: Player
         for p in (getattr(self, direction) for direction in attribute_names):
-            # TODO -- do we need to send an SSE message to tell browsers to update the corresponding toggle element?
             if not p.synthetic:
                 p.allow_bot_to_play_for_me = False
                 p.save(update_fields=["allow_bot_to_play_for_me"])
@@ -270,13 +267,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         x = self.get_xscript()
         self.is_complete = (x.auction.status is Auction.PassedOut) or x.num_plays == 52
         self.save(update_fields=["is_complete"])
-
-    def as_link(self):
-        return format_html(
-            "<a href='{}'>{}</a>",
-            reverse("app:hand-dispatch", kwargs={"pk": self.pk}),
-            str(self),
-        )
 
     @cached_property
     def tournament(self) -> Tournament:
@@ -302,7 +292,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             deadline = tour.play_completion_deadline
             assert deadline is not None
 
-            tour.completed_at = tour.play_completion_deadline
+            tour.completed_at = deadline
             tour.save()
 
             msg = f"Tournament #{tour.display_number}'s play completion deadline ({deadline.isoformat()}) has passed!"
@@ -456,10 +446,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
             self.last_action_time,
         )
 
-        # The SSE fan-out for this call now lives in
-        # app.broadcast.broadcast_after_call, driven by the app_call INSERT
-        # trigger. What stays here is the state change a broadcast can't do for
-        # us: settling a passed-out auction.
         if not self.declarer and self.get_xscript().final_score() is not None:
             self.do_end_of_hand_stuff()
 
@@ -520,12 +506,15 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         return _three_by_three_HTML_for_trick(self)
 
-    def _get_current_seat_html(self, *, seat: Seat, viewer_may_control_this_seat: bool) -> str:
+    def _get_current_seat_html(
+        self, *, seat: Seat, viewer: Player, viewer_may_control_this_seat: bool
+    ) -> str:
         from app.views.hand import _hand_HTML_for_seat
 
         return _hand_HTML_for_seat(
             hand=self,
             seat=seat,
+            viewer=viewer,
             viewer_may_control_this_seat=viewer_may_control_this_seat,
         )
 
@@ -549,6 +538,10 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             controlling_player = self.player_who_controls_seat(seat, right_this_second=False)
             recipients: Iterable[Player]
+            # Dummy's cards are public to the table once the opening lead is down.
+            # We do not check the lead here: `app.visibility.may_see_cards`, which
+            # the rendering does check, holds dummy back until then, so a recipient
+            # who is too early simply gets the "13 cards" summary.
             if self.dummy is not None and seat == self.dummy.seat:
                 recipients = self.players()
             else:
@@ -560,6 +553,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                         current_hand_direction=seat.name,
                         current_hand_html=self._get_current_seat_html(
                             seat=seat,
+                            viewer=r,
                             viewer_may_control_this_seat=r == controlling_player,
                         ),
                         tempo_seconds=self.tournament.tempo_seconds,
@@ -569,9 +563,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 )
 
     def do_end_of_hand_stuff(self) -> None:
-        # The final-score TABLE event now comes from
-        # app.broadcast.broadcast_after_hand_change, driven by the app_hand
-        # is_complete UPDATE. This method keeps only the end-of-hand state changes.
         with transaction.atomic():
             assert self.is_complete
             assert self.table_display_number is not None
@@ -708,10 +699,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
         # threw away everything but the pk.
         return [getattr(self, f"{direction}_id") for direction in self.direction_names]
 
-    @property
-    def player_names_string(self) -> str:
-        return ", ".join([p.name for p in self.players_by_direction_letter.values()])
-
     @cached_property
     def players_by_direction_letter(self) -> dict[str, Player]:
         return {
@@ -749,10 +736,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def calls(self):
-        """All the calls in this hand, in chronological order.
-
-        `call_set` probably does the same thing; I'm just not yet certain of the default ordering.
-        """
+        """All the calls in this hand, in chronological order."""
         return self.call_set.order_by("id")
 
     @property
@@ -776,9 +760,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def last_annotated_call(self) -> tuple[Seat, Call]:
-        seat = self.call_set.order_by("-id").first()
-        assert seat is not None
-        return (next(self._seat_cycle_starting_with_dealer), seat)
+        call = self.call_set.order_by("-id").first()
+        assert call is not None
+        return (next(self._seat_cycle_starting_with_dealer), call)
 
     @property
     def tricks(self) -> Iterator[TrickTuples]:
@@ -786,6 +770,8 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
     @property
     def current_trick(self) -> TrickTuples | None:
+        # TODO -- this seems wasteful.  We're enumerating all the plays, starting at the first; then throwing away all
+        # but the last.
         tricks = list(self.tricks)
         if not tricks:
             return None
@@ -826,19 +812,23 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         matchpoints = 0
 
-        for oh in self.board.hand_set.exclude(pk=self.pk):
-            other_player = oh.players_by_direction_letter[
+        for other_hand in self.board.hand_set.exclude(pk=self.pk):
+            other_player = other_hand.players_by_direction_letter[
                 self.direction_letters_by_player[one_player]
             ]
-            if our_score > oh._score_by_player(player=other_player):
+            # Two matchpoints for each inferior score, one for each equal score, zero for each superior score: American
+            # Contract Bridge League, "Laws of Duplicate Bridge", 2017 Revised Authorized Edition, North American
+            # Edition (American Contract Bridge League, 2017), ISBN 978-1-944201-10-4, Law 78A ("Methods of Scoring and
+            # Conditions of Contest: Matchpoint Scoring"), p. 90.  A copy (downloaded from
+            # http://web2.acbl.org/documentlibrary/play/Laws-of-Duplicate-Bridge.pdf) lives in
+            # docs/Laws-of-Duplicate-Bridge.pdf.
+            if our_score > other_hand._score_by_player(player=other_player):
                 matchpoints += 2
-            elif our_score == oh._score_by_player(player=other_player):
+            elif our_score == other_hand._score_by_player(player=other_player):
                 matchpoints += 1
 
         return matchpoints
 
-    # The summary is phrased in terms of the player, if they have seen (at least some of) the board already; otherwise
-    # we (arbitrarily) summarize in terms of North.
     def save(self, *_args, **kwargs) -> None:
         super().save(**kwargs)
         if self.abandoned_because is None:
@@ -900,8 +890,6 @@ class Call(ExportModelOperationsMixin("call"), TimeStampedModel):  # type: ignor
     )  # it's the default, but it can't hurt to be explicit.
 
     hand = models.ForeignKey(Hand, on_delete=models.CASCADE)
-    # Now, the "what":
-    # pass, bid, double, redouble
 
     serialized = models.CharField(  # type: ignore
         max_length=10,
@@ -974,9 +962,9 @@ class Play(ExportModelOperationsMixin("play"), TimeStampedModel):  # type: ignor
 
     @cached_property
     def seat(self) -> Seat:
-        for tt in self.hand.annotated_plays:
-            if self.serialized == tt.card.serialize():
-                return tt.seat
+        for trick_tuple in self.hand.annotated_plays:
+            if self.serialized == trick_tuple.card.serialize():
+                return trick_tuple.seat
 
         msg = f"Internal error, cannot find {self.serialized} in {[p.card for p in self.hand.annotated_plays]}"
         raise Exception(msg)

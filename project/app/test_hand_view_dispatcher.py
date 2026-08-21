@@ -1,17 +1,12 @@
 import logging
-import types
 
 import pytest
 from django.contrib.auth.models import AnonymousUser
-from django.http import HttpResponseForbidden
 
+import app.visibility
 from app.models import Hand, Player, Tournament
 from app.testutils import create_a_tournament, play_out_hand
-from app.views.hand import (
-    _error_response_or_viewfunc,
-    _everything_read_only_view,
-    _interactive_view,
-)
+from app.visibility import BoardRelationship, HandViewMode
 
 logger = logging.getLogger()
 
@@ -44,36 +39,71 @@ def test_alt(setup: Tournament) -> None:
 
     all_users = [p.user for p in Player.objects.all()] + [AnonymousUser]
 
-    # Board 1 has been fully played, so everybody can see everything.
+    def expect(expected: HandViewMode, *, hand: Hand, user) -> None:
+        __tracebackhide__ = True
+        viewer = getattr(user, "player", None)
+        actual = app.visibility.hand_access(hand=hand, viewer=viewer).mode
+        if actual is not expected:
+            pytest.fail(f"{user}: expected {expected} but got {actual}")
+
+    # Board 1 has been fully played, so everybody -- anonymous included -- gets the
+    # review page.
     for h in Hand.objects.filter(board__display_number=1):
         for u in all_users:
-            assert _error_response_or_viewfunc(h, u) == _everything_read_only_view, f"{u.username}"
+            expect(HandViewMode.read_only, hand=h, user=u)
 
     for h in Hand.objects.filter(board__display_number=2):
         # Board 2 has been only partially played.
         for u in all_users:
-
-            def expect(expected):
-                __tracebackhide__ = True
-                actual = _error_response_or_viewfunc(h, u)
-
-                # TODO -- discriminate on the basis of "callability" -- if it's callable, call it.
-                if isinstance(expected, types.FunctionType):
-                    if actual != expected:
-                        pytest.fail(f"expected {expected=} but got {actual=}")
-                else:
-                    if actual is not expected and type(actual) is not expected:
-                        pytest.fail(f"expected {expected=} but got {type(actual)=}")
-
             if u.is_anonymous:
-                expect(HttpResponseForbidden)
-            else:
-                match brt := h.board.relationship_to(u.player):
-                    case ("AlreadyPlayedIt", _):
-                        expect(_everything_read_only_view)
-                    case ("CurrentlyPlayingIt", at_hand):
-                        expect(_interactive_view if h == at_hand else HttpResponseForbidden)
-                    case ("NeverSeenIt", None):
-                        expect(HttpResponseForbidden)
-                    case _:
-                        pytest.fail(f"No idea what {brt=} is")
+                expect(HandViewMode.forbidden, hand=h, user=u)
+                continue
+
+            relationship, at_hand = app.visibility.board_relationship(
+                board=h.board, viewer=u.player
+            )
+            match relationship:
+                case BoardRelationship.already_played_it:
+                    expect(HandViewMode.read_only, hand=h, user=u)
+                case BoardRelationship.currently_playing_it:
+                    expect(
+                        HandViewMode.interactive if h == at_hand else HandViewMode.forbidden,
+                        hand=h,
+                        user=u,
+                    )
+                case BoardRelationship.never_seen_it:
+                    expect(HandViewMode.forbidden, hand=h, user=u)
+
+
+def test_a_refusal_explains_itself(setup: Tournament) -> None:
+    """Every `forbidden` carries text for the 403 body; nothing else does."""
+    hand = Hand.objects.filter(board__display_number=2, is_complete=False).first()
+    assert hand is not None
+
+    stranger = Player.objects.create_synthetic()
+
+    refused = app.visibility.hand_access(hand=hand, viewer=stranger)
+    assert refused.mode is HandViewMode.forbidden
+    assert "never seen board" in refused.explanation
+
+    anonymous = app.visibility.hand_access(hand=hand, viewer=None)
+    assert anonymous.mode is HandViewMode.forbidden
+    assert "Anonymous" in anonymous.explanation
+
+    allowed = app.visibility.hand_access(hand=hand, viewer=hand.North)
+    assert allowed.mode is not HandViewMode.forbidden
+    assert allowed.explanation == ""
+
+
+def test_an_abandoned_hand_is_read_only_for_the_players_who_left_it(setup: Tournament) -> None:
+    """There is nothing left to play, so the interactive page has nothing to offer."""
+    hand = Hand.objects.filter(board__display_number=2, is_complete=False).first()
+    assert hand is not None
+    north = hand.North
+
+    assert app.visibility.hand_access(hand=hand, viewer=north).mode is HandViewMode.interactive
+
+    hand.abandoned_because = "somebody wandered off"
+    hand.save()
+
+    assert app.visibility.hand_access(hand=hand, viewer=north).mode is HandViewMode.read_only

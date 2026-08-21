@@ -1,13 +1,17 @@
-"""
-# can Player P view hand H or H.board?
+"""Can player P see the cards at a given seat?
 
-- if player P *can never* play hand H, they can see everything about both.  (test_running_tournament_irrelevant_players)
+`app/visibility.py` states the rules; this file checks them. The tests here name the
+rule they cover:
+
+- if player P *can never* play hand H, they can see everything.  (test_running_tournament_irrelevant_players)
   This means: hand H is part of tournament T, and T's signup deadline has passed; *and* P never signed up for T.
 - if the tournament T to which H.board belongs is completed, everyone can see everything. (test_completed_tournament)
-- if player P has already played hand H *and* H is *completed*, they can see everything about both. (test_player_has_played_board)
+- if player P has already played hand H *and* H is *completed*, they can see everything. (test_player_has_played_board)
 - if player P is *currently* playing hand H, they can see only their own cards, and the dummy. (test_player_has_played_board, test_one_card_played)
   Also, maybe: the auction history, and the play history.  In real tournaments, the auction history vanishes once it has settled, and the only play history that is visible is the current trick.
-- if player P has already completed a hand H with board B, and wants to look at *incomplete* hand I that *also* includes board B, they can see everything. (test_weirdo_special_case)
+
+`test_table_view.py` covers the same rules from the other end -- one hand, every
+viewer against every seat -- plus who may control a seat.
 """
 
 import datetime
@@ -16,6 +20,7 @@ from typing import Iterable
 import pytest
 import time_machine
 
+import app.visibility
 from app.models import Board, Hand, Player, Tournament
 from app.models.tournament import advance_expired_tournaments
 from bridge.card import Suit
@@ -23,6 +28,11 @@ from bridge.contract import Bid
 from bridge.seat import Seat as libSeat
 
 from .testutils import find_incomplete_hand, play_out_hand, play_out_round, set_auction_to
+
+
+def can_see(*, hand: Hand, viewer: Player | None, direction_letter: str) -> bool:
+    """`may_see_cards`, but taking the direction letter these tests iterate over."""
+    return app.visibility.may_see_cards(hand=hand, seat=libSeat(direction_letter), viewer=viewer)
 
 
 @pytest.fixture
@@ -45,9 +55,13 @@ def test_completed_tournament(completed_tournament: Hand) -> None:
     # ok now try various flavors of player
     for player in [None, some_tournament_player, non_tournament_player]:
         for board in h.tournament.board_set.all():
+            hand_at_that_board = board.hand_set.first()
+            if hand_at_that_board is None:
+                continue  # nobody ever played this board, so there's nothing to see
             for direction in libSeat:
-                assert board.can_see_cards_at(
-                    player=player,
+                assert can_see(
+                    hand=hand_at_that_board,
+                    viewer=player,
                     direction_letter=direction.value,
                 ), f"Uh, {player} can't see {board} at {direction}?!"
 
@@ -62,13 +76,9 @@ def test_running_tournament_irrelevant_players(nearly_completed_tournament: Tour
     non_tournament_player = Player.objects.create_synthetic()
 
     for player in [None, non_tournament_player]:
-        board: Board = hand.board
         for direction in libSeat:
-            can_see = board.can_see_cards_at(
-                player=player,
-                direction_letter=direction.value,
-            )
-            assert can_see == (player is not None)
+            visible = can_see(hand=hand, viewer=player, direction_letter=direction.value)
+            assert visible == (player is not None)
 
 
 def test_running_tournament_relevant_player_not_yet_played_board(
@@ -79,13 +89,20 @@ def test_running_tournament_relevant_player_not_yet_played_board(
 
     for player in Player.objects.all():
         for board in Board.objects.all():
-            hand = player.hand_at_which_we_played_board(board)
-            if hand is None:
-                for direction in libSeat:
-                    assert not board.can_see_cards_at(
-                        player=player,
-                        direction_letter=direction.value,
-                    ), f"Whoa -- {player} can see {board} at {direction}?!"
+            if player.hand_at_which_we_played_board(board) is not None:
+                continue
+
+            # The player never sat at this board, so pick any hand of it to ask about.
+            somebody_elses_hand = board.hand_set.first()
+            if somebody_elses_hand is None:
+                continue
+
+            for direction in libSeat:
+                assert not can_see(
+                    hand=somebody_elses_hand,
+                    viewer=player,
+                    direction_letter=direction.value,
+                ), f"Whoa -- {player} can see {board} at {direction}?!"
 
 
 def test_player_has_played_board(
@@ -101,14 +118,16 @@ def test_player_has_played_board(
 
             for d_letter, p in hand.players_by_direction_letter.items():
                 if p == player:
-                    assert board.can_see_cards_at(
-                        player=p,
+                    assert can_see(
+                        hand=hand,
+                        viewer=p,
                         direction_letter=d_letter,
                     ), f"Hey now -- {player} can't see their own cards ({board} at {d_letter})?!"
 
                 if hand.is_complete:
-                    assert board.can_see_cards_at(
-                        player=p,
+                    assert can_see(
+                        hand=hand,
+                        viewer=p,
                         direction_letter=d_letter,
                     ), f"Hey now -- {player} can't see cards at *completed* {board} at {d_letter}?!"
 
@@ -143,6 +162,31 @@ def test_zero_cards_played(tournament_starting_now: Hand) -> None:
             [0, 0, 0, 1],  # w  v
         ],
         hand=tournament_starting_now,
+    )
+
+
+def test_auction_settled_but_no_opening_lead(tournament_starting_now: Hand) -> None:
+    """`hand.dummy` is set as soon as the auction settles, a trick before it should be.
+
+    Between the settled auction and the opening lead, dummy's cards are still theirs
+    alone.
+    """
+    h: Hand = tournament_starting_now
+    set_auction_to(Bid(level=1, denomination=Suit.CLUBS), h)
+
+    assert h.dummy is not None, "the contract should be settled by now"
+    assert h.get_xscript().num_plays == 0, "nobody should have led yet"
+
+    expect_visibility(
+        [
+            # Same as before the auction: everyone sees their own hand and no more.
+            # n, e, s, w <-- viewers
+            [1, 0, 0, 0],  # n seat
+            [0, 1, 0, 0],  # e  |
+            [0, 0, 1, 0],  # s  | (dummy, but not yet exposed)
+            [0, 0, 0, 1],  # w  v
+        ],
+        hand=h,
     )
 
 
@@ -191,7 +235,7 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
     for viewer_letter, viewer in hand.players_by_direction_letter.items():
         viewer_index = "NESW".index(viewer_letter)
         for target_index, target_letter in enumerate("NESW"):
-            actual = hand.board.can_see_cards_at(player=viewer, direction_letter=target_letter)
+            actual = can_see(hand=hand, viewer=viewer, direction_letter=target_letter)
             expected = expectation_array[target_index][viewer_index]
             print(f"{viewer} {target_letter} {actual=} {expected=}")
             if actual != expected:

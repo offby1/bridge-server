@@ -16,9 +16,7 @@ from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models.query import QuerySet
-from django.urls import reverse
 from django.utils.functional import cached_property
-from django.utils.html import format_html
 from django_eventstream import send_event  # type: ignore [import-untyped]
 from django_extensions.db.models import TimeStampedModel  # type: ignore [import-untyped]
 from faker import Faker
@@ -246,7 +244,9 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def controls_seat(self, *, seat: bridge.seat.Seat, right_this_second: bool) -> bool:
         # Take declarer & dummy into account.  This isn't all that complex, but I keep getting it wrong, so it needs to
-        # be in one place, and tested.
+        # be in one place, and tested.  Whether the viewer may *look* at a seat is a
+        # different question, answered in app/visibility.py; that module's
+        # `may_control_seat` wraps this method with the conditions the views add.
 
         hand = self.current_hand
         if hand is None:
@@ -286,19 +286,37 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     p.abandon_my_hand(reason=reason)
 
     def abandon_my_hand(self, reason: str | None = None) -> None:
+        """Get up from our current hand, marking it abandoned unless it is already finished.
+
+        Finishing a hand does not set `self.current_hand` back to None: it goes on
+        pointing at the hand we just finished until we are dealt into another one, at
+        which point `Hand.save` points it at that new hand instead.  A pair who have
+        played all the boards at their table, while another table is still going, sit in
+        that state until the round ends.  Stamping `abandoned_because` on a hand in that
+        state would contradict the score we display for it, so if the hand is complete we
+        leave it alone and only stop pointing at it.
+        """
         with transaction.atomic():
-            if (h := self.current_hand) is not None:
+            if (h := self.current_hand) is None:
+                return
+
+            if h.is_complete:
+                logger.debug(
+                    "%s",
+                    f"{self} ({id(self)}) is getting up from hand {h} ({h=}), which is complete, so it is not abandoned",
+                )
+            else:
                 h.abandoned_because = reason or f"{self.name} left"
                 h._clear_bot_flags()
                 h.save()
-
-                self.current_hand = None
-                self.save()
 
                 logger.debug(
                     "%s",
                     f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
                 )
+
+            self.current_hand = None
+            self.save()
 
     @property
     def event_HTML_hand_channel(self):
@@ -569,20 +587,6 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
     @cached_property
     def name(self):
         return self.user.username
-
-    def display_name(self) -> str:
-        return f"{self.pk}:{self.as_link()}"
-
-    def as_link(self, style=""):
-        name = self.name
-        if self.synthetic:
-            name = format_html("<i>{}</i>", self.name)
-        style_attribute = "" if not style else f'style="{style}"'
-        return format_html(
-            f'<a {style_attribute} href="{{}}">{{}}</a>',
-            reverse("app:player", kwargs={"pk": self.pk}),
-            name,
-        )
 
     def create_synthetic_partner(self) -> Player:
         with transaction.atomic():

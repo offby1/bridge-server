@@ -2,13 +2,14 @@ import pytest
 from pytest_django import Settings
 
 import app.readers
+import app.visibility
 from bridge.card import Card, Suit
 from bridge.contract import Bid, Pass
 from bridge.seat import Seat
 
 from .models import Hand
 from .testutils import set_auction_to
-from .views.hand import _display_and_control
+from .views.hand import _hand_HTML_for_seat
 
 
 def test_table_display_skeleton(usual_setup: Hand) -> None:
@@ -30,17 +31,16 @@ def expect_visibility(expectation_array, hand: Hand) -> None:
 
     for seat in hand.players_by_direction_letter:
         for viewer in hand.players_by_direction_letter:
-            actual = _display_and_control(
+            actual = app.visibility.may_see_cards(
                 hand=hand,
                 seat=Seat(seat),
-                as_viewed_by=hand.players_by_direction_letter[viewer],
-                as_dealt=False,
+                viewer=hand.players_by_direction_letter[viewer],
             )
             seat_index = "NESW".index(seat)
             viewer_index = "NESW".index(viewer)
-            if actual["display_cards"] != expectation_array[seat_index][viewer_index]:
+            if actual != expectation_array[seat_index][viewer_index]:
                 pytest.fail(
-                    f"{hand.players_by_direction_letter[viewer]} {'can' if actual['display_cards'] else 'can not'} see {Seat(seat)} "
+                    f"{hand.players_by_direction_letter[viewer]} {'can' if actual else 'can not'} see {Seat(seat)} "
                 )
 
 
@@ -102,21 +102,17 @@ def test_hand_controlability(usual_setup: Hand, settings: Settings) -> None:
         __tracebackhide__ = True
         for seat in h.players_by_direction_letter:
             for viewer in h.players_by_direction_letter:
-                actual = _display_and_control(
+                actual = app.visibility.may_control_seat(
                     hand=h,
                     seat=Seat(seat),
-                    as_viewed_by=h.players_by_direction_letter[viewer],
-                    as_dealt=False,
+                    viewer=h.players_by_direction_letter[viewer],
                 )
                 seat_index = "NESW".index(seat)
                 viewer_index = "NESW".index(viewer)
 
-                if (
-                    actual["viewer_may_control_this_seat"]
-                    != expectation_array[seat_index][viewer_index]
-                ):
+                if actual != expectation_array[seat_index][viewer_index]:
                     pytest.fail(
-                        f"{h.players_by_direction_letter[viewer]} {'can' if actual['viewer_may_control_this_seat'] else 'can not'} control {seat=} "
+                        f"{h.players_by_direction_letter[viewer]} {'can' if actual else 'can not'} control {seat=} "
                     )
 
     # Nobody can control any cards, since the auction isn't settled
@@ -160,6 +156,29 @@ def test_hand_controlability(usual_setup: Hand, settings: Settings) -> None:
             [0, 0, 0, 0],  # w
         ]
     )
+
+
+def test_pushed_seat_html_hides_cards_from_everyone_but_their_owner(usual_setup: Hand) -> None:
+    """`_hand_HTML_for_seat` is what we push over SSE, one seat at a time.
+
+    It used to render whatever seat it was asked for, whoever the recipient was, and
+    relied on the caller addressing the message to the right player. Now it asks
+    `app.visibility.may_see_cards` itself.
+    """
+    h = usual_setup
+    north = h.players_by_direction_letter["N"]
+    east = h.players_by_direction_letter["E"]
+    one_of_norths_cards = str(h.board.cards_for_direction_letter("N")[0])
+
+    for viewer, expected_to_see in ((north, True), (east, False)):
+        html = _hand_HTML_for_seat(
+            hand=h,
+            seat=Seat.NORTH,
+            viewer=viewer,
+            viewer_may_control_this_seat=False,
+        )
+        assert (one_of_norths_cards in html) == expected_to_see, f"{viewer} saw the wrong thing"
+        assert ("13 cards" in html) != expected_to_see
 
 
 def test_rejects_calls_after_auction_is_settled(usual_setup: Hand) -> None:

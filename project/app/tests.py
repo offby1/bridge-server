@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from django.test import Client, RequestFactory
 from django.urls import reverse
 
+import app.rendering
 from bridge.card import Suit as libSuit
 from bridge.contract import Bid as libBid
 from bridge.seat import Seat as libSeat
@@ -94,8 +95,19 @@ def test_splitsville_non_seated_partnership(j_northam: Player, everybodys_passwo
 def test_player_names_are_links_to_detail_page(usual_setup: Hand):
     p = Player.objects.get_by_name("Jeremy Northam")
 
-    link = p.as_link()
+    link = app.rendering.player_link(p)
     assert re.search(r'href="/player/.*>.*Jeremy Northam.*</a>', link)
+
+
+def test_a_chat_row_names_its_sender_and_escapes_the_text(usual_setup: Hand) -> None:
+    sender = Player.objects.get_by_name("Jeremy Northam")
+    message = Message.create_lobby_message(from_player=sender, message="hey <b>you</b>")
+
+    html = app.rendering.message_html(message)
+
+    assert "chat-message-row" in html
+    assert "Jeremy Northam" in html
+    assert "hey &lt;b&gt;you&lt;/b&gt;" in html
 
 
 def test_only_bob_can_see_bobs_cards_for_all_values_of_bob(usual_setup: Hand) -> None:

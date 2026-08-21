@@ -115,9 +115,26 @@ STILL TODO:
 
 * everything-read-only view should update automatically via SSE, just as the interactive views do.
 
-* *STILL* rethink permissions.  See `docs/view-and-control.org`.
+* Finish rethinking permissions.  See `docs/view-and-control.org`.
 
-  I actually did this in "main" but it triggers some sorta race condition, leading to an assertion failure, in main 😭
+  Most of it has landed: `app/visibility.py` is now the one bit of code that answers
+  "can this user see this bit of this hand", and its module docstring is the
+  authoritative statement of the rules.  It absorbed `Board.what_can_they_see`,
+  `Board.can_see_cards_at`, `Board.relationship_to`, `views.hand._display_and_control`,
+  `readers.get_player_direction_at_hand` and `views.hand._error_response_or_viewfunc`.
+
+  What's left, both listed in `docs/view-and-control.org`:
+  - `views.board.board_archive_view` carries a TODO saying its check is too strict, and
+    is now the last card-visibility check that bypasses `app/visibility.py`.
+  - `views.hand._bidding_box_context_for_hand` decides on its own whether to enable the
+    bidding box.  Folding it in as `may_control_seat` stands today would disable the
+    bidding box outright, since no seat is on turn to *play* during the auction.
+
+  Older note, from June 2025, kept because I don't know whether it still applies: "I
+  actually did this in 'main' but it triggers some sorta race condition, leading to an
+  assertion failure, in main 😭".  The consolidation above ran clean through `just test`;
+  if that race was the `current_direction` / `player_who_controls_seat` assertion, note
+  that `app.visibility.seat_of_viewer_at_hand` returns None where those raise.
 
 * We send an SSE event containing the hand-div on every play, but about half of that div -- all the "toast" stuff -- never varies.  We'd save perhaps 1K per event if we only sent the four suit divs.
 

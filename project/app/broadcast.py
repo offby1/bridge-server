@@ -24,6 +24,7 @@ import app.models.hand
 import app.models.message
 import app.models.player
 import app.readers
+import app.rendering
 from app.models.hand import send_timestamped_event
 from app.sse_channels import SSEChannels
 from app.sse_events import (
@@ -248,7 +249,7 @@ def broadcast_after_message(*, message: app.models.message.Message) -> None:
         app.models.hand.send_event(
             channel=SSEChannels.LOBBY,
             event_type=SSEEventTypes.LOBBY,
-            data=message.as_html(),
+            data=app.rendering.message_html(message),
         )
     else:
         app.models.hand.send_event(
@@ -256,6 +257,6 @@ def broadcast_after_message(*, message: app.models.message.Message) -> None:
                 message.from_player, recipient
             ),
             event_type=SSEEventTypes.CHAT,
-            data=message.as_html(),
+            data=app.rendering.message_html(message),
             json_encode=False,
         )

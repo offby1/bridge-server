@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load player_extras %}
+{% load base_extras player_extras %}
 {% block title %}
     {{ player }}
 {% endblock title %}
@@ -13,7 +13,7 @@
         </li>
         <li>
             {% if player.current_hand %}
-                {{ player.current_hand.as_link }}
+                {{ player.current_hand|hand_link }}
             {% else %}
                 {% if user.player == player %}
                     You

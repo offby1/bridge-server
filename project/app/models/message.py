@@ -6,7 +6,6 @@ from django.contrib import admin
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.html import format_html
 
 from .types import PK, PK_from_str
 
@@ -59,20 +58,6 @@ class Message(models.Model):
     def __str__(self):
         return (
             f"At {self.timestamp}, {self.from_player} says {self.message} to {self.recipient_obj}"
-        )
-
-    def as_html(self):
-        return format_html(
-            """
-      <div class="chat-message-row">
-        <div style="display: inline; font-family: monospace;" class="chat-message-timestamp">{}</div>
-        <div style="display: inline;" class="chat-message-sender-name">{}</div>
-        <div style="display: inline;" class="chat-message-text">{}</div>
-      </div>
-        """,
-            self.timestamp.isoformat(),
-            self.from_player.name,
-            self.message,
         )
 
     @staticmethod

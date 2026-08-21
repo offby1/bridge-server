@@ -22,7 +22,9 @@ from app.views.misc import make_tournament_filter_dropdown_list_items
 
 def board_archive_view(request: HttpRequest, pk: PK) -> HttpResponse:
     board: app.models.Board = get_object_or_404(app.models.Board, pk=pk)
-    # TODO -- this is too strict; re-use, (or duplicate) logic from app.views.hand._error_response_or_viewfunc
+    # TODO -- this is too strict, and it is the last card-visibility check that doesn't
+    # go through app/visibility.py.  `card_visibility_level` already gets the case this
+    # gets wrong right: an anonymous visitor may see a completed tournament.
     if not request.user.is_authenticated and not board.tournament.is_complete:
         return HttpResponseRedirect(settings.LOGIN_URL + f"?next={request.path}")
 

@@ -19,6 +19,7 @@ from typing import Any
 
 import app.models
 import app.models.hand
+import app.visibility
 from app.models.utils import assert_type
 from bridge.card import Card as libCard
 from bridge.card import Suit as libSuit
@@ -82,7 +83,11 @@ class DisplaySkeleton:
 
 
 def get_display_skeleton(*, hand: app.models.Hand, as_dealt: bool = False) -> DisplaySkeleton:
-    """A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view."""
+    """A simplified representation of the hand, with all the attributes "filled in" -- about halfway between the model and the view.
+
+    This holds *every* seat's cards and knows nothing about who is looking, so a
+    caller that renders it must ask `app.visibility.may_see_cards` per seat first.
+    """
     xscript = hand.get_xscript()
     whose_turn_is_it = None
 
@@ -172,9 +177,9 @@ def get_hand_summary(
             return "Remind me -- who are you, again?", "-"
 
     if as_viewed_by is not None:
-        if hand.board.what_can_they_see(
-            player=as_viewed_by
-        ) != hand.board.PlayerVisibility.everything and as_viewed_by.pk not in {
+        if app.visibility.card_visibility_level(
+            board=hand.board, viewer=as_viewed_by
+        ) is not app.visibility.CardVisibility.everything and as_viewed_by.pk not in {
             p.pk for p in hand.players_by_direction_letter.values()
         }:
             return (
@@ -327,15 +332,6 @@ def get_chat_disabled_explanation(
         return f"You, {sender.name}, are already seated"
 
     return None
-
-
-def get_player_direction_at_hand(*, player: app.models.Player, hand: app.models.Hand) -> str:
-    """Return the capitalized seat name (e.g. 'East') `player` occupies at `hand`."""
-    for direction_name in hand.direction_names:
-        if getattr(hand, direction_name) == player:
-            return direction_name
-
-    assert False, f"some idiot called me for {hand} when {player.name} never played it"
 
 
 def player_has_played_hand(*, player: app.models.Player, hand: app.models.Hand) -> bool:

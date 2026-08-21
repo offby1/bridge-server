@@ -12,9 +12,10 @@ import pytest
 import time_machine
 from django.contrib.auth.models import AnonymousUser
 
+import app.visibility
 from app.models import Hand, Player, Tournament
 from app.models.tournament import advance_expired_tournaments
-from app.views.hand import _error_response_or_viewfunc, _everything_read_only_view
+from app.visibility import HandViewMode
 
 
 @pytest.fixture
@@ -62,8 +63,9 @@ def test_anonymous_user_can_view_hand_from_completed_tournament(
     viewable by everyone, including anonymous users. This is the expected behavior
     for completed tournaments where results are public.
 
-    BUG: Currently fails because anonymous users get HttpResponseForbidden even
-    when the tournament is complete.
+    This used to fail: anonymous users were refused even when the tournament was
+    complete. It has passed since whichever change fixed that, and it is here to keep
+    it fixed.
     """
     hand = completed_tournament_with_abandoned_hand
     anonymous_user = AnonymousUser()
@@ -73,11 +75,11 @@ def test_anonymous_user_can_view_hand_from_completed_tournament(
     assert hand.is_abandoned, "Hand must be abandoned for this test"
 
     # Anonymous users should be able to view hands from completed tournaments
-    result = _error_response_or_viewfunc(hand, anonymous_user)
+    access = app.visibility.hand_access(hand=hand, viewer=getattr(anonymous_user, "player", None))
 
-    assert result == _everything_read_only_view, (
+    assert access.mode is HandViewMode.read_only, (
         f"Anonymous users should be able to view hands from completed tournaments, "
-        f"but got {result} instead of _everything_read_only_view"
+        f"but got {access} instead of the read-only page"
     )
 
 
@@ -95,7 +97,6 @@ def test_authenticated_non_participant_can_view_hand_from_completed_tournament(
 
     # Create a player who wasn't part of this tournament
     non_participant = Player.objects.create_synthetic()
-    user = non_participant.user
 
     # Verify prerequisites
     assert hand.tournament.is_complete, "Tournament must be complete for this test"
@@ -105,9 +106,9 @@ def test_authenticated_non_participant_can_view_hand_from_completed_tournament(
     )
 
     # Non-participants should be able to view hands from completed tournaments
-    result = _error_response_or_viewfunc(hand, user)
+    access = app.visibility.hand_access(hand=hand, viewer=non_participant)
 
-    assert result == _everything_read_only_view, (
+    assert access.mode is HandViewMode.read_only, (
         f"Non-participants should be able to view hands from completed tournaments, "
-        f"but got {result} instead of _everything_read_only_view"
+        f"but got {access} instead of the read-only page"
     )
