@@ -194,6 +194,9 @@ class HandManager(models.Manager):
         rv.last_action_time = rv.created
         rv.save()
 
+        # This is the only place anything seats a player.  Two places unseat one:
+        # Player.abandon_my_hand, and Tournament.maybe_complete when the last hand of the
+        # tournament is played.
         for direction in attribute_names:
             p = kwargs[direction]
             p.current_hand = rv
@@ -828,14 +831,6 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
                 matchpoints += 1
 
         return matchpoints
-
-    def save(self, *_args, **kwargs) -> None:
-        super().save(**kwargs)
-        if self.abandoned_because is None:
-            for attribute_name in attribute_names:
-                p: Player = getattr(self, attribute_name)
-                p.current_hand = self  # type: ignore [assignment]
-                p.save(update_fields=["current_hand"])
 
     def __str__(self) -> str:
         return f"{self.board} at table #{self.table_display_number}"

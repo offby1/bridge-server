@@ -289,12 +289,12 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
         """Get up from our current hand, marking it abandoned unless it is already finished.
 
         Finishing a hand does not set `self.current_hand` back to None: it goes on
-        pointing at the hand we just finished until we are dealt into another one, at
-        which point `Hand.save` points it at that new hand instead.  A pair who have
-        played all the boards at their table, while another table is still going, sit in
-        that state until the round ends.  Stamping `abandoned_because` on a hand in that
-        state would contradict the score we display for it, so if the hand is complete we
-        leave it alone and only stop pointing at it.
+        pointing at the hand we just finished until `HandManager.create` seats us at
+        another one.  A pair who have played all the boards at their table, while another
+        table is still going, sit in that state until the round ends.  Stamping
+        `abandoned_because` on a hand in that state would contradict the score we display
+        for it, so if the hand is complete we leave it alone and only stop pointing at
+        it.
         """
         with transaction.atomic():
             if (h := self.current_hand) is None:
