@@ -171,6 +171,55 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
+# Caddy's interesting log lines: rate-limit rejections and anything at warn or
+# above. Caddy writes JSON to stderr and Docker captures it, so there is no log file
+# to collect and nothing to ship anywhere -- this recipe just filters and reformats
+# what `docker compose logs caddy` already has. Its `ts` field is epoch seconds,
+# which this turns into UTC.
+#
+# The rate limiter logs a rejection at *info* level, and the line carries no HTTP
+# status, so neither a level filter nor a search for "429" finds it. It looks like:
+#
+#   {"level":"info","ts":1787333972.2284505,"logger":"http.handlers.rate_limit",
+#    "msg":"rate limit exceeded","zone":"list_views","wait":0.047427378,
+#    "remote_ip":"200.195.79.237"}
+#
+# Hence the match on the logger name. Note `remote_ip` sits at the top level here,
+# whereas an access-log entry nests it under `.request`.
+#
+# Takes `docker compose logs` options, so: `just caddy-log --since 1h`,
+# `just caddy-log --follow`, `just caddy-log --tail 500`.
+#
+# For the raw lines, including the info-level ones this drops, run
+# `docker compose logs caddy` directly.
+[group('docker')]
+[script('bash')]
+caddy-log *options:
+    set -euo pipefail
+
+    # --no-log-prefix: without it every line arrives as "caddy-1  | {...}" and jq
+    # can't parse it. --raw-input plus `fromjson?` skips the handful of non-JSON
+    # lines Caddy emits before its logger is configured, instead of dying on them.
+    docker compose logs caddy --no-log-prefix {{ options }} |
+        jq --raw-input --raw-output --unbuffered '
+            fromjson?
+            | select(.logger == "http.handlers.rate_limit"
+                     or .level == "warn" or .level == "error"
+                     or .status == 429 or (.status // 0) >= 500)
+            | [ (.ts | floor | todate)
+              , .level
+              , (.logger // "-")
+              , (.remote_ip // .request.remote_ip // "-")
+              , (if .zone then "zone=\(.zone)" else empty end)
+              , (if .wait then "wait=\(.wait * 1000 | round)ms" else empty end)
+              , (if .status then "status=\(.status)" else empty end)
+              , (if .request then "\(.request.method) \(.request.host)\(.request.uri)" else empty end)
+              , "\"\(.msg)\""
+              , (if .error then "error=\"\(.error)\"" else empty end)
+              ]
+            | join(" ")
+        '
+
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
