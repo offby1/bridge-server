@@ -351,8 +351,12 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
             self.save()
 
         if advance_round:
+            tournament = h.board.tournament
+            # Write down the rest of this table's round before moving on, so that the
+            # pair left sitting there get credit for the boards they were denied.
+            tournament.record_boards_this_table_will_not_play(hand=h)
             # The round may have been waiting on nothing but this hand.
-            h.board.tournament.maybe_advance_round()
+            tournament.maybe_advance_round()
 
     @property
     def event_HTML_hand_channel(self):

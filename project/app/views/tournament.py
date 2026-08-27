@@ -134,13 +134,17 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                                 "pair2": app.rendering.player_link(player2),
                                 "pair1_name": player1.name,  # Plain name for comparison
                                 "pair2_name": player2.name,  # Plain name for comparison
-                                "matchpoints": score[0],
+                                "matchpoints": round(score[0], 1),
                                 "percentage": string_score,
+                                "_sort_key": -1.0 if math.isnan(numeric_score) else numeric_score,
                             }
                         )
 
-                    # Sort by matchpoints descending (highest first)
-                    l_o_d.sort(key=lambda x: cast(float, x["matchpoints"]), reverse=True)
+                    # Sort by percentage, not by matchpoints: a pair who missed a board
+                    # through no fault of their own play for a smaller total, so their
+                    # matchpoints aren't comparable with everyone else's.  A pair with no
+                    # percentage at all (nothing to compare against) sorts last.
+                    l_o_d.sort(key=lambda x: cast(float, x["_sort_key"]), reverse=True)
 
                     context["matchpoint_score_table"] = MatchpointScoreTable(
                         l_o_d, request=request, viewer=viewer

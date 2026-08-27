@@ -20,9 +20,36 @@ class Hand:
         )
 
 
+# The three artificial scores of Law 12: average minus for a contestant directly at
+# fault, average for one only partly at fault, average plus for one in no way at fault.
+# The law states them as bounds -- "at most 40%", "at least 60%" -- and we award exactly
+# the bound.
+AT_FAULT = 0.4
+PARTLY_AT_FAULT = 0.5
+NOT_AT_FAULT = 0.6
+
+
+@dataclasses.dataclass
+class AdjustedHand:
+    """A board a pair was due to play, from which no result can be obtained.
+
+    Each side gets a fraction of the matchpoints available on that board rather than a
+    raw score to be compared with the field.  That is what makes the award knowable
+    straight away: 60% of a board is 60% whether or not the rest of the tournament has
+    finished.
+    """
+
+    ns_id: ID
+    ew_id: ID
+    board_id: ID
+    ns_fraction: float = PARTLY_AT_FAULT
+    ew_fraction: float = PARTLY_AT_FAULT
+
+
 @dataclasses.dataclass
 class Scorer:
     hands: collections.abc.Collection[Hand]
+    adjustments: collections.abc.Collection[AdjustedHand] = ()
 
     @staticmethod
     def from_one_raw_score_dict(subject_id: ID, raw_scores_by_id: dict[ID, int]) -> int:
@@ -58,24 +85,49 @@ class Scorer:
 
         return ns_matchpoints_by_id | ew_matchpoints_by_id
 
-    def matchpoints_by_pairs(self) -> dict[ID, tuple[int, float]]:
-        by_board = collections.defaultdict(list)
+    def matchpoints_by_pairs(self) -> dict[ID, tuple[float, float]]:
+        """Each pair's matchpoints, and what percentage of their own maximum that is.
 
+        A pair's percentage is measured against the matchpoints available on the boards
+        *they* were down to play, not against the tournament's grand total.  With the
+        grand total, a pair who missed a board through no fault of their own paid for it
+        twice: no matchpoints from the board, and a divisor that counted it anyway.
+
+        The matchpoints available on a board are 2 * (results - 1), counting only the
+        tables that actually produced a result: those are the tables a result gets
+        compared against.  An adjusted score is a fraction of that same maximum.
+        """
+        played_by_board: dict[ID, list[Hand]] = collections.defaultdict(list)
         for h in self.hands:
-            by_board[h.board_id].append(h)
+            played_by_board[h.board_id].append(h)
 
-        total_available = 2 * sum(len(hands) - 1 for hands in by_board.values())
+        adjusted_by_board: dict[ID, list[AdjustedHand]] = collections.defaultdict(list)
+        for a in self.adjustments:
+            adjusted_by_board[a.board_id].append(a)
 
-        mps_by_pair = {}
+        earned: dict[ID, float] = collections.defaultdict(float)
+        possible: dict[ID, float] = collections.defaultdict(float)
 
-        for b, hands in by_board.items():
+        for board_id in set(played_by_board) | set(adjusted_by_board):
+            hands = played_by_board[board_id]
+            available = float(2 * (len(hands) - 1)) if hands else 0.0
+
             for pair, mps in self.from_one_board(hands=hands).items():
-                if pair not in mps_by_pair:
-                    mps_by_pair[pair] = [0, 0.0]
+                earned[pair] += mps
+                possible[pair] += available
 
-                mps_by_pair[pair][0] += mps
-                mps_by_pair[pair][1] += (
-                    float("nan") if total_available == 0 else 100 * mps / total_available
-                )
+            for adjustment in adjusted_by_board[board_id]:
+                for pair, fraction in (
+                    (adjustment.ns_id, adjustment.ns_fraction),
+                    (adjustment.ew_id, adjustment.ew_fraction),
+                ):
+                    earned[pair] += fraction * available
+                    possible[pair] += available
 
-        return {k: (int(v[0]), float(v[1])) for k, v in mps_by_pair.items()}
+        return {
+            pair: (
+                mps,
+                float("nan") if possible[pair] == 0 else 100 * mps / possible[pair],
+            )
+            for pair, mps in earned.items()
+        }

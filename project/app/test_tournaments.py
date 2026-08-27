@@ -1,5 +1,6 @@
 import datetime
 import logging
+import math
 from typing import cast
 
 import pytest
@@ -501,6 +502,70 @@ def test_a_tournament_finishes_even_if_everybody_quits(db: None) -> None:
     assert tour.is_complete
     assert not tour.hands().filter(is_complete=False, abandoned_because__isnull=True).exists()
     assert not Player.objects.currently_seated().exists()
+
+
+def test_a_pair_who_quit_are_scored_at_average_minus(db: None) -> None:
+    """Law 12: the pair at fault get 40%, the pair they stranded get 60%.
+
+    Three tables, so that a board a pair miss still has two results to matchpoint
+    against; one board per round, so every table plays the same board each round.  The
+    pair at the first table walk out before playing anything, and the rest is played to
+    the end.
+
+    Those boards used to be dropped from the scoring outright, which left the deserters
+    out of the standings altogether and gave the pair they stranded nothing at all for a
+    board they were perfectly willing to play.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=1)
+    assert len(tour.get_movement().table_settings_by_zb_table_number) == 3
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    quitters = {deserted.North, deserted.South}
+    stranded = {deserted.East, deserted.West}
+
+    deserted.North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    scores = tour.matchpoints_by_pair()
+
+    quitters_score = next(score for pair, score in scores.items() if set(pair) == quitters)
+    assert round(quitters_score[1]) == 40, (
+        "a pair who played nothing and are at fault throughout score average minus"
+    )
+
+    # The pair they walked out on played their other rounds for real, so their total is a
+    # blend; what we can say is that they are in the standings, with a score, rather than
+    # being silently docked a board.
+    stranded_score = next(score for pair, score in scores.items() if set(pair) == stranded)
+    assert not math.isnan(stranded_score[1])
+
+    # Everybody who was in the tournament is in the results.
+    assert len(scores) == 6
+    assert not any(math.isnan(pct) for _, pct in scores.values())
+
+
+def test_the_boards_a_deserted_table_never_reaches_are_recorded(db: None) -> None:
+    """Walking out mid-round costs the whole round, and we write down each board.
+
+    Otherwise the pair left sitting there would be compensated for the boards they were
+    denied in later rounds, but get nothing for the rest of the round they were actually
+    in the middle of.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=3)
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    deserted.North.break_partnership()
+
+    round_zero_at_that_table = tour.hands().filter(table_display_number=1, board__group="A")
+    assert round_zero_at_that_table.count() == 3, (
+        "all three of the round's boards are accounted for"
+    )
+    assert all(h.is_abandoned for h in round_zero_at_that_table)
 
 
 def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated: None) -> None:

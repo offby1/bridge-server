@@ -281,30 +281,70 @@ class Tournament(models.Model):
 
     def matchpoints_by_pair(
         self,
-    ) -> dict[tuple[app.models.player.Player, app.models.player.Player], tuple[int, float]]:
+    ) -> dict[tuple[app.models.player.Player, app.models.player.Player], tuple[float, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
         def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
             if fs == 0:
                 return {"ns_raw_score": 0, "ew_raw_score": 0}
             return {"ns_raw_score": fs.north_south_points, "ew_raw_score": fs.east_west_points}
 
-        hands = (
+        def enriched(qs: models.QuerySet) -> models.QuerySet:
+            return (
+                qs.select_related(*app.models.common.attribute_names)
+                .select_related("board")
+                .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
+            )
+
+        hands = [
             app.utils.scoring.Hand(
                 ns_id=(h.North, h.South),
                 ew_id=(h.East, h.West),
                 board_id=h.board.pk,
                 **consistent_score(h.get_xscript().final_score()),
             )
-            for h in self.hands()
-            .filter(abandoned_because__isnull=True)
-            .select_related(*app.models.common.attribute_names)
-            .select_related("board")
-            .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
-        )
+            for h in enriched(self.hands().filter(abandoned_because__isnull=True, is_complete=True))
+        ]
 
-        scorer = app.utils.scoring.Scorer(hands=list(hands))
+        withdrawn = app.models.TournamentWithdrawal.objects.pks_withdrawn_from(self)
+        adjustments = [
+            self._adjusted_score_for(h, withdrawn=withdrawn)
+            for h in enriched(self.hands().filter(abandoned_because__isnull=False))
+        ]
+
+        scorer = app.utils.scoring.Scorer(hands=hands, adjustments=adjustments)
         # Return Player objects, not HTML strings
         return scorer.matchpoints_by_pairs()
+
+    def _adjusted_score_for(
+        self, hand: Hand, *, withdrawn: set[int]
+    ) -> app.utils.scoring.AdjustedHand:
+        """Apportion Law 12's artificial score for a board that yielded no result.
+
+        A pair who walked out are directly at fault and get average minus; whoever they
+        were down to play are in no way at fault and get average plus.  When neither pair
+        withdrew -- the play-completion deadline ran out on a table that was still going,
+        say -- we hold both partly at fault and give each of them average.
+        """
+        ns_walked_out = any(p.pk in withdrawn for p in (hand.North, hand.South))
+        ew_walked_out = any(p.pk in withdrawn for p in (hand.East, hand.West))
+
+        if not (ns_walked_out or ew_walked_out):
+            ns_fraction = ew_fraction = app.utils.scoring.PARTLY_AT_FAULT
+        else:
+            ns_fraction = (
+                app.utils.scoring.AT_FAULT if ns_walked_out else app.utils.scoring.NOT_AT_FAULT
+            )
+            ew_fraction = (
+                app.utils.scoring.AT_FAULT if ew_walked_out else app.utils.scoring.NOT_AT_FAULT
+            )
+
+        return app.utils.scoring.AdjustedHand(
+            ns_id=(hand.North, hand.South),
+            ew_id=(hand.East, hand.West),
+            board_id=hand.board.pk,
+            ns_fraction=ns_fraction,
+            ew_fraction=ew_fraction,
+        )
 
     def players(self) -> models.QuerySet:
         hands = self.hands()
@@ -392,6 +432,39 @@ class Tournament(models.Model):
                 return False
 
         return True
+
+    def record_boards_this_table_will_not_play(self, *, hand: Hand) -> None:
+        """Write down the boards a table won't reach, now that one of its hands is dead.
+
+        Only the boards of the round it was in the middle of: later rounds get theirs
+        when we deal them.  Without this, the pair who were left sitting there would get
+        an adjusted score for the boards they were denied in later rounds but nothing at
+        all for the rest of this one.
+
+        Does nothing unless somebody at the table has withdrawn -- `_create_hand_with`
+        would otherwise seat people at these boards, which is right when a hand was
+        abandoned for some other reason.
+        """
+        import app.models
+
+        withdrawn = app.models.TournamentWithdrawal.objects.pks_withdrawn_from(self)
+        if not any(getattr(hand, d).pk in withdrawn for d in app.models.common.attribute_names):
+            return
+
+        assert hand.table_display_number is not None
+        zb_round_number = app.utils.movements._zb_round_number(hand.board.group)
+
+        with transaction.atomic():
+            for _ in range(self.get_movement().boards_per_round_per_table):
+                if (
+                    app.models.Hand.objects.create_next_hand_at_table(
+                        self,
+                        zb_table_number=hand.table_display_number - 1,
+                        zb_round_number=zb_round_number,
+                    )
+                    is None
+                ):
+                    return
 
     def maybe_advance_round(self) -> bool:
         """If the latest round is over, start the next one (or finish the tournament).
