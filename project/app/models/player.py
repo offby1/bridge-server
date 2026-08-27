@@ -285,7 +285,7 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                 if p is not None and p.currently_seated:
                     p.abandon_my_hand(reason=reason)
 
-    def abandon_my_hand(self, reason: str | None = None) -> None:
+    def abandon_my_hand(self, reason: str | None = None, advance_round: bool = True) -> None:
         """Get up from our current hand, marking it abandoned unless it is already finished.
 
         Finishing a hand does not set `self.current_hand` back to None: it goes on
@@ -295,6 +295,13 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
         `abandoned_because` on a hand in that state would contradict the score we display
         for it, so if the hand is complete we leave it alone and only stop pointing at
         it.
+
+        Abandoning a hand gets all four players up, not just us: the other three can't
+        play it either, and leaving them pointed at it would make `HandManager.create`
+        refuse to seat them in the next round.
+
+        Pass `advance_round=False` when abandoning as part of ending the tournament, so
+        that we don't start a round that nobody is going to play.
         """
         with transaction.atomic():
             if (h := self.current_hand) is None:
@@ -305,18 +312,26 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     "%s",
                     f"{self} ({id(self)}) is getting up from hand {h} ({h=}), which is complete, so it is not abandoned",
                 )
-            else:
-                h.abandoned_because = reason or f"{self.name} left"
-                h._clear_bot_flags()
-                h.save()
+                self.current_hand = None
+                self.save()
+                return
 
-                logger.debug(
-                    "%s",
-                    f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
-                )
+            h.abandoned_because = reason or f"{self.name} left"
+            h._clear_bot_flags()
+            h.save()
 
+            logger.debug(
+                "%s",
+                f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
+            )
+
+            Player.objects.filter(current_hand=h).update(current_hand=None, random_state=None)
             self.current_hand = None
             self.save()
+
+        if advance_round:
+            # The round may have been waiting on nothing but this hand.
+            h.board.tournament.maybe_advance_round()
 
     @property
     def event_HTML_hand_channel(self):

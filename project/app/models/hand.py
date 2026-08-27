@@ -572,15 +572,7 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
             self._clear_bot_flags()
 
-            if (num_complete_rounds := self.tournament.the_round_just_ended()) is not None:
-                mvmt = self.tournament.get_movement()
-
-                if num_complete_rounds < mvmt.num_rounds:
-                    self.tournament.create_hands_for_round(zb_round_number=num_complete_rounds)
-                else:
-                    self.tournament.maybe_complete()
-
-            else:
+            if not self.tournament.maybe_advance_round():
                 board_group = getattr(self.board, "group", "?")
                 new_hand = Hand.objects.create_next_hand_at_table(
                     tournament=self.tournament,
