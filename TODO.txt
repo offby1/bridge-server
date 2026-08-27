@@ -15,6 +15,34 @@ IN PROGRESS:
 
   I guess I'd have to complete the tournament, and every time the "broken" pair comes up to play, the hand is skipped, but marked with "placeholder" scores -- we won't know the actual scores until the rest of the tournament finishes.
 
+  Landed so far, on the `splitsville-stalls-the-tournament` branch:
+
+  - The tournament no longer hoses *itself*.  It used to: `the_round_just_ended`
+    counted completed hands against the number the movement calls for, an abandoned
+    hand was not among them, so no later round was ever dealt -- at any table -- and
+    every pair sat idle until the play-completion deadline expired.  A round is now
+    over when every table is done with it, where a table is done once it has settled
+    all its boards for the round, or as soon as one of its hands is abandoned.
+  - Abandoning a hand now gets all four players up, not just the pair who left.
+  - A pair who quit are not dealt back in.  `TournamentWithdrawal` records that they
+    left; the hands the movement still schedules for them (and for whoever they were
+    due to meet) are written down abandoned, with nobody seated.
+
+  Still to do:
+
+  - The adjusted scores themselves.  Those abandoned hands are simply left out of
+    `Tournament.matchpoints_by_pair` today, so a pair who miss a board score zero on
+    it rather than the 40/50/60% Law 12 calls for.
+  - `app/utils/scoring.py` divides each pair's matchpoints by a tournament-wide
+    total, so a pair who miss a board are punished twice over: no matchpoints for it,
+    and a denominator that still counts it.  Scoring each board as a fraction of the
+    matchpoints available *on that board* fixes that, and makes an adjusted score
+    just an override of that fraction -- which also means we do NOT need the
+    "placeholder until the tournament finishes" business guessed at above.  60% of a
+    board is 60% the moment the pair walk out.
+  - Nothing warns a player that Splitsville costs them the rest of the tournament.
+    The button should say so before they click it.
+
 
 STILL TODO:
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.

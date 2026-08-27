@@ -136,7 +136,7 @@ class HandManager(models.Manager):
         South = Player.objects.get(pk=s_k)
         West = Player.objects.get(pk=w_k)
 
-        new_hand = self.create(
+        seating = dict(
             board=board,
             North=North,
             East=East,
@@ -145,7 +145,16 @@ class HandManager(models.Manager):
             table_display_number=pnb.table_number,
         )
 
-        return new_hand
+        import app.models
+
+        withdrawn = app.models.TournamentWithdrawal.objects.pks_withdrawn_from(board.tournament)
+        if absentees := [p for p in (North, East, South, West) if p.pk in withdrawn]:
+            return self.create_unplayable(
+                reason=f"{', '.join(sorted(p.name for p in absentees))} left the tournament",
+                **seating,
+            )
+
+        return self.create(**seating)
 
     def create_next_hand_at_table(
         self, tournament: Tournament, zb_table_number: int, zb_round_number: int
@@ -171,6 +180,25 @@ class HandManager(models.Manager):
                     return self._create_hand_with(pnb=pnb, board=candidate_board)
 
             return None
+
+    def create_unplayable(self, *, reason: str, **kwargs) -> Hand:
+        """Write down a hand that nobody is going to play, and seat nobody at it.
+
+        The movement is fixed when play starts, so it goes on scheduling a pair for
+        later rounds after they have walked out.  Rather than deal them back in, we
+        record the hand abandoned from birth.  That tells the tournament this table is
+        done with the round, and it leaves something for an adjusted score to attach to
+        when we get to Law 12 (TODO.txt, the Splitsville item).
+
+        Nobody is seated: the pair who left are gone, and the opponents they were due to
+        meet should stay free for the next round.
+        """
+        rv: Hand = super().create(abandoned_because=reason[:200], **kwargs)
+        rv.last_action_time = rv.created
+        rv.save()
+
+        logger.info("Nobody will play %s: %s", rv, reason)
+        return rv
 
     def create(self, *args, **kwargs) -> Hand:
         board = kwargs.get("board")

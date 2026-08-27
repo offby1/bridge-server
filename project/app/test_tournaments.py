@@ -20,6 +20,7 @@ from app.models import (
     Player,
     Tournament,
     TournamentSignup,
+    TournamentWithdrawal,
 )
 from app.models.tournament import (
     NotOpenForSignupError,
@@ -435,6 +436,71 @@ def test_splitsville_after_the_other_table_has_finished_the_round(db: None) -> N
     tour.refresh_from_db()
 
     assert tour.hands().filter(board__group="B").count() == num_tables
+
+
+def test_a_pair_who_quit_are_not_dealt_back_in_next_round(db: None) -> None:
+    """Walking out lasts the rest of the tournament, not just the current board.
+
+    The movement is fixed when play starts, so it still schedules the pair who left for
+    every later round.  We record their withdrawal and write those hands down abandoned
+    instead of seating anybody at them -- both the deserters and whoever they were due
+    to meet stay out of it.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+
+    deserted, still_playing = list(tour.hands())
+    quitter = deserted.North
+    quitters = {quitter, quitter.partner}
+
+    quitter.break_partnership()
+
+    assert set(
+        TournamentWithdrawal.objects.filter(tournament=tour).values_list("player__pk", flat=True)
+    ) == {p.pk for p in quitters}
+
+    play_out_hand(still_playing)
+    tour.refresh_from_db()
+
+    round_one = list(tour.hands().filter(board__group="B"))
+    assert len(round_one) == 2
+
+    dealt_to_a_quitter = [h for h in round_one if quitters & {h.North, h.East, h.South, h.West}]
+    assert len(dealt_to_a_quitter) == 1, "the movement should still schedule them exactly once"
+
+    unplayable = dealt_to_a_quitter[0]
+    assert unplayable.is_abandoned
+    assert quitter.name in unplayable.abandoned_because
+
+    # Nobody is sitting at it -- not the pair who left, nor the pair they'd have met.
+    assert not Player.objects.filter(current_hand=unplayable).exists()
+    for p in quitters:
+        p.refresh_from_db()
+        assert p.current_hand is None
+        assert not p.currently_seated
+
+    # The other table's round-1 hand is a real one, with four players at it.
+    playable = [h for h in round_one if h != unplayable][0]
+    assert not playable.is_abandoned
+    assert Player.objects.filter(current_hand=playable).count() == 4
+
+
+def test_a_tournament_finishes_even_if_everybody_quits(db: None) -> None:
+    """Both pairs at both tables walking out should end the tournament, not hang it.
+
+    Nothing is left to play, so no hand will ever complete and nobody will abandon one
+    either.  Each round we deal is born settled, so `maybe_advance_round` has to keep
+    going by itself rather than wait to be called again.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+
+    for hand in list(tour.hands()):
+        hand.North.break_partnership()
+        hand.East.break_partnership()
+
+    tour.refresh_from_db()
+    assert tour.is_complete
+    assert not tour.hands().filter(is_complete=False, abandoned_because__isnull=True).exists()
+    assert not Player.objects.currently_seated().exists()
 
 
 def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated: None) -> None:

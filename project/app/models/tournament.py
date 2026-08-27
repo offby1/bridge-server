@@ -398,17 +398,25 @@ class Tournament(models.Model):
 
         Returns whether the round was over, so that a caller who has just settled one
         hand can tell whether the table it was at should deal itself another board.
+
+        We keep going while each round we deal is itself already over.  A round is born
+        settled when every table in it was due to be played by somebody who has since
+        withdrawn, and nothing else would come along to notice: no hand of it will ever
+        be played, and nobody will abandon one either.
         """
+        advanced = False
+
         with transaction.atomic():
-            if (num_completed_rounds := self.the_round_just_ended()) is None:
-                return False
+            while (num_completed_rounds := self.the_round_just_ended()) is not None:
+                advanced = True
 
-            if num_completed_rounds < self.get_movement().num_rounds:
+                if num_completed_rounds >= self.get_movement().num_rounds:
+                    self.maybe_complete()
+                    break
+
                 self.create_hands_for_round(zb_round_number=num_completed_rounds)
-            else:
-                self.maybe_complete()
 
-            return True
+        return advanced
 
     def rounds_played(self) -> tuple[int, int]:
         """

@@ -281,9 +281,30 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def unseat_partnership(self, reason: str | None = None) -> None:
         with transaction.atomic():
+            self._withdraw_partnership_from_tournament()
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
                     p.abandon_my_hand(reason=reason)
+
+    def _withdraw_partnership_from_tournament(self) -> None:
+        """Note that we and our partner are done with the tournament we're playing in.
+
+        Call this *before* abandoning the hand.  Abandoning can end the round, and the
+        code that deals the next one reads these records to know whom not to seat; if we
+        wrote them afterwards we'd already have been dealt back in.  It is also our last
+        chance to see which tournament we were in, since abandoning clears
+        `current_hand`.
+        """
+        import app.models
+
+        pair = [p for p in (self, getattr(self, "partner", None)) if p is not None]
+
+        for p in pair:
+            if (h := p.current_hand) is not None:
+                app.models.TournamentWithdrawal.objects.withdraw(
+                    tournament=h.board.tournament, players=pair
+                )
+                return
 
     def abandon_my_hand(self, reason: str | None = None, advance_round: bool = True) -> None:
         """Get up from our current hand, marking it abandoned unless it is already finished.
@@ -521,6 +542,8 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     ),
                 )
                 evictees.delete()
+
+            self._withdraw_partnership_from_tournament()
 
             self.partner.partner = None
             self.partner.abandon_my_hand()
