@@ -45,12 +45,13 @@ IN PROGRESS:
     `Tournament._adjusted_score_for`.
   - The tournament results table sorts by percentage rather than by matchpoints, which
     are no longer comparable between pairs who played different numbers of boards.
+  - The Splitsville button warns you first, naming the tournament and what it will cost
+    ("40% on every board you don't play").  A milder warning covers a pair who are
+    signed up but not yet playing.  Any button with a `data-confirm` attribute now asks
+    before it acts; the listener is in `base.html`.
 
   Still to do:
 
-  - Nothing warns a player that Splitsville costs them the rest of the tournament.
-    The button should say so before they click it.  This is worth more than any of the
-    machinery above, since it stops most of these before they happen.
   - The 40/50/60 split is the crudest reading of Law 12: we hold a pair at fault for
     every board they miss, including the ones in rounds they'd never have reached
     anyway.  A director would think harder.

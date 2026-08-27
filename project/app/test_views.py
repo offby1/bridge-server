@@ -9,7 +9,7 @@ from django.test import RequestFactory
 from django.test.client import Client
 from django.urls import reverse
 
-from app.models import Hand, Player, Tournament
+from app.models import Hand, Player, Tournament, TournamentSignup
 from app.views import player, tournament
 from app.views.misc import AuthedHttpRequest
 
@@ -63,6 +63,58 @@ def test_tournament_view_after_splitsville(usual_setup: Hand, rf: RequestFactory
     request = rf.get("/woteva")
     request.user = some_player.user
     tournament.tournament_view(cast(AuthedHttpRequest, request), t.pk)
+
+
+def test_splitsville_warns_a_player_who_is_mid_tournament(usual_setup: Hand) -> None:
+    """The button says "Splitsville!!"; the warning says what that costs.
+
+    A pair who walk out mid-tournament forfeit every board they had left, at 40% each,
+    so the page has to say so before they click rather than let them find out from the
+    standings afterwards.
+    """
+    seated = Player.objects.get_by_name("Jeremy Northam")
+    assert seated.currently_seated
+    tour = seated.current_hand.tournament
+    assert not tour.is_complete
+
+    c = Client()
+    c.force_login(seated.user)
+    content = c.get(reverse("app:player", args=[seated.pk])).content.decode()
+
+    assert "data-confirm=" in content
+    assert f"quits tournament #{tour.display_number}" in content
+    assert "40%" in content
+
+
+def test_splitsville_mentions_a_signup_they_would_lose(nobody_seated: None) -> None:
+    """Not yet playing, but signed up: breaking up drops the pair from the tournament."""
+    signed_up = Player.objects.get_by_name("Jeremy Northam")
+    assert not signed_up.currently_seated
+    tour = TournamentSignup.objects.get(player=signed_up).tournament
+
+    c = Client()
+    c.force_login(signed_up.user)
+    content = c.get(reverse("app:player", args=[signed_up.pk])).content.decode()
+
+    assert f"signed up for tournament #{tour.display_number}" in content
+    assert "40%" not in content, "nothing is forfeited yet; don't talk about scores"
+
+
+def test_splitsville_does_not_nag_when_it_costs_nothing(
+    nobody_seated_nobody_signed_up: None,
+) -> None:
+    """No tournament to forfeit, no signup to lose: just let them click the button."""
+    unseated = Player.objects.get_by_name("Jeremy Northam")
+    assert not unseated.currently_seated
+    assert unseated.partner is not None
+    assert not TournamentSignup.objects.filter(player=unseated).exists()
+
+    c = Client()
+    c.force_login(unseated.user)
+    content = c.get(reverse("app:player", args=[unseated.pk])).content.decode()
+
+    assert "Splitsville" in content, "the button should still be there"
+    assert "data-confirm=" not in content
 
 
 def test_bot_checkbox_toggle(usual_setup: Hand, rf: RequestFactory) -> None:
