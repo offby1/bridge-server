@@ -347,6 +347,53 @@ def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     assert tour.rounds_played() == (1, 0)
 
 
+@pytest.mark.xfail(
+    reason="Tournament.rounds_played counts only complete hands, so an abandoned one never lets the count reach the round boundary, and no later round is ever created.  See TODO.txt, the Splitsville item.",
+    strict=True,
+)
+def test_splitsville_at_one_table_does_not_stall_the_other_tables(db: None) -> None:
+    """One pair walking out should cost that pair their boards, not freeze the event.
+
+    Call a hand *settled* when nobody can act on it any more -- either it was played
+    to the end (`is_complete`) or it was given up on (`is_abandoned`).  A round is over
+    once every hand in it is settled.  Django has no such field today; the tournament
+    asks only about `is_complete`, which is the whole bug.
+
+    Two tables, one board per round.  The pair at the first table splits up, which
+    abandons their hand (Player.break_partnership calls abandon_my_hand).  The second
+    table then plays its round-0 board to completion.  Both round-0 hands are now
+    settled, so round 1 is due.
+
+    Today it never arrives: Tournament.rounds_played counts only `is_complete` hands,
+    the abandoned one isn't among them, so `the_round_just_ended` returns None and
+    Hand.do_end_of_hand_stuff creates nothing.  Both tables sit idle until the
+    play-completion deadline expires.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+
+    movement = tour.get_movement()
+    num_tables = len(movement.table_settings_by_zb_table_number)
+    assert num_tables == 2
+    assert movement.num_rounds == 2
+
+    round_zero_hands = list(tour.hands())
+    assert len(round_zero_hands) == num_tables
+
+    deserted, still_playing = round_zero_hands
+
+    deserted.North.break_partnership()
+    deserted.refresh_from_db()
+    assert deserted.is_abandoned
+    assert not deserted.is_complete
+
+    play_out_hand(still_playing)
+    tour.refresh_from_db()
+
+    # Both round-0 hands are settled, so round 1 should exist: one fresh hand per
+    # table, on top of the two hands from round 0.
+    assert tour.hands().count() == 2 * num_tables
+
+
 def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated: None) -> None:
     """A tournament whose signup deadline passes with an odd number of pairs --
     but *before* the synth-padding has run -- used to 500 the tournament page:
