@@ -55,6 +55,18 @@ def annotate_grid_with_hand_links(
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
 
 
+# The ACBL publishes the laws as one PDF and nothing finer, so the best we can do is
+# ask the reader's PDF viewer to open it at the right page.  Page 41 is printed page 17,
+# where Law 12C2(a) -- the artificial adjusted score, in the very words below -- begins.
+# Chrome and Firefox honour `#page=`; a viewer that doesn't will simply open page one,
+# which is a worse answer rather than a broken one.
+#
+# This file is byte-for-byte the copy in `docs/Laws-of-Duplicate-Bridge.pdf`, so if the
+# page ever looks wrong, check that ACBL hasn't quietly replaced it with a new edition:
+# `shasum -a 256` the two and see.
+LAW_12C2A_URL = "https://web2.acbl.org/documentlibrary/play/Laws-of-Duplicate-Bridge.pdf#page=41"
+
+
 def _adjusted_score_explanation(t: app.models.Tournament) -> str:
     """Why some of these scores weren't earned at the table, or "" if they all were.
 
@@ -66,12 +78,14 @@ def _adjusted_score_explanation(t: app.models.Tournament) -> str:
     if not unplayable:
         return ""
 
-    boards = "board" if unplayable == 1 else "boards"
-    return (
-        f"{unplayable} {boards} in this tournament yielded no result, so nobody could be"
-        " compared with anybody on them.  Law 12 awards an artificial score instead:"
+    return format_html(
+        "{} {} in this tournament yielded no result, so nobody could be compared with"
+        ' anybody on them.  <a href="{}">Law 12</a> awards an artificial score instead:'
         " 40% to a pair responsible for the board being lost, 60% to a pair who were not,"
-        " and 50% each when neither was.  Those awards are part of the totals above."
+        " and 50% each when neither was.  Those awards are part of the totals above.",
+        unplayable,
+        "board" if unplayable == 1 else "boards",
+        LAW_12C2A_URL,
     )
 
 

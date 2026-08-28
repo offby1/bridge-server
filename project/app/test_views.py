@@ -82,7 +82,8 @@ def test_standings_explain_artificial_scores_when_there_are_any(db: None) -> Non
     content = c.get(reverse("app:tournament", args=[tour.pk])).content.decode()
 
     assert "yielded no result" in content
-    assert "Law 12" in content
+    assert ">Law 12</a>" in content, "the reader should be able to go and read it"
+    assert "Laws-of-Duplicate-Bridge.pdf#page=41" in content
 
 
 def test_standings_say_nothing_about_law_12_when_everything_was_played(db: None) -> None:
