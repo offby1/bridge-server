@@ -1,3 +1,4 @@
+import collections
 import datetime
 import logging
 import math
@@ -410,8 +411,13 @@ def test_splitsville_at_one_table_does_not_stall_the_other_tables(
 
     tour.refresh_from_db()
 
-    # Round 0 is settled, so round 1 exists: one fresh hand per table.
-    assert tour.hands().filter(board__group="B").count() == num_tables
+    # Round 0 is settled, so round 1 has been dealt at every table.  Count tables rather
+    # than hands: a table with nobody at it gets all of its boards written down at once,
+    # while a live one gets them one at a time as it finishes them.
+    round_one_tables = set(
+        tour.hands().filter(board__group="B").values_list("table_display_number", flat=True)
+    )
+    assert len(round_one_tables) == num_tables
 
 
 def test_splitsville_after_the_other_table_has_finished_the_round(db: None) -> None:
@@ -588,6 +594,46 @@ def test_a_two_table_tournament_still_scores_when_one_table_quits(db: None) -> N
     # finish above the pairs who simply played on.
     best = max(pct for _, pct in scores.values())
     assert best > 50
+
+
+def test_every_pair_is_scored_on_the_same_number_of_boards(db: None) -> None:
+    """A pair walking out mustn't leave the rest of the field scored on different boards.
+
+    Every table's round is dealt one board at a time, each finished board dealing the
+    next.  A table with nobody left at it finishes nothing, so the rest of its round used
+    to go unrecorded: the pairs due to meet it on the round's *first* board got their
+    adjusted score, and the pairs due to meet it on the second got nothing at all.
+
+    Pairs then ended up scored on four, five or six boards, which makes their matchpoint
+    totals incomparable -- 9.4 from five boards beat 10.0 from six -- and the standings
+    read as though the arithmetic were broken.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=2)
+    movement = tour.get_movement()
+    boards_each = movement.num_rounds * movement.boards_per_round_per_table
+
+    tour.hands().filter(table_display_number=1).get().North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    boards_by_pair: dict[tuple[Player, Player], set[int]] = collections.defaultdict(set)
+    for h in tour.hands().select_related("board"):
+        boards_by_pair[(h.North, h.South)].add(h.board.pk)
+        boards_by_pair[(h.East, h.West)].add(h.board.pk)
+
+    assert len(boards_by_pair) == 6
+    for pair, boards in boards_by_pair.items():
+        names = ", ".join(p.name for p in pair)
+        assert len(boards) == boards_each, f"{names} was scored on {len(boards)} boards"
+
+    # With every pair on the same boards, and every board worth the same, the two columns
+    # the tournament page shows can no longer disagree about who did better.
+    scores = sorted(tour.matchpoints_by_pair().values())
+    assert scores == sorted(scores, key=lambda mps_and_pct: mps_and_pct[1])
 
 
 def test_the_boards_a_deserted_table_never_reaches_are_recorded(db: None) -> None:

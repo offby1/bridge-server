@@ -535,6 +535,14 @@ class Tournament(models.Model):
             assert new_hand is not None
             rv.append(new_hand)
 
+            # We deal one board per table here and let each table deal itself the next
+            # as it finishes one.  A table with nobody at it never finishes anything, so
+            # the rest of its round would go unrecorded -- and then the pairs who were
+            # down to meet it on those boards would get no adjusted score for them,
+            # while getting one for the round's first board.  Write them all down now.
+            if new_hand.is_abandoned:
+                self.record_boards_this_table_will_not_play(hand=new_hand)
+
         return rv
 
     def _cache_key(self) -> str:

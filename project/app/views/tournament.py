@@ -55,6 +55,26 @@ def annotate_grid_with_hand_links(
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
 
 
+def _adjusted_score_explanation(t: app.models.Tournament) -> str:
+    """Why some of these scores weren't earned at the table, or "" if they all were.
+
+    Worth saying out loud: a pair who barely played can appear in the standings, and a
+    pair who played everything can find a board they never got the chance to play sitting
+    in their total.  Neither looks like an honest score until you know Law 12 is at work.
+    """
+    unplayable = t.hands().filter(abandoned_because__isnull=False).count()
+    if not unplayable:
+        return ""
+
+    boards = "board" if unplayable == 1 else "boards"
+    return (
+        f"{unplayable} {boards} in this tournament yielded no result, so nobody could be"
+        " compared with anybody on them.  Law 12 awards an artificial score instead:"
+        " 40% to a pair responsible for the board being lost, 60% to a pair who were not,"
+        " and 50% each when neither was.  Those awards are part of the totals below."
+    )
+
+
 class MatchpointScoreTable(tables.Table):
     _current_viewer: app.models.Player | None = None
 
@@ -145,6 +165,8 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                     # matchpoints aren't comparable with everyone else's.  A pair with no
                     # percentage at all (nothing to compare against) sorts last.
                     l_o_d.sort(key=lambda x: cast(float, x["_sort_key"]), reverse=True)
+
+                    context["adjusted_score_explanation"] = _adjusted_score_explanation(t)
 
                     context["matchpoint_score_table"] = MatchpointScoreTable(
                         l_o_d, request=request, viewer=viewer

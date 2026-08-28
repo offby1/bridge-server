@@ -1,4 +1,7 @@
 {% load render_table from django_tables2 %}
 {% partialdef matchpoint-table-partial %}
-{% render_table matchpoint_score_table %}
+    {% render_table matchpoint_score_table %}
+    {% if adjusted_score_explanation %}
+        <p class="text-body-secondary small mb-0">{{ adjusted_score_explanation }}</p>
+    {% endif %}
 {% endpartialdef matchpoint-table-partial %}

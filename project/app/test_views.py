@@ -13,6 +13,8 @@ from app.models import Hand, Player, Tournament, TournamentSignup
 from app.views import player, tournament
 from app.views.misc import AuthedHttpRequest
 
+from .testutils import create_a_tournament, play_out_hand
+
 
 def test_player_by_name_or_pk_view(usual_setup: Hand, rf: RequestFactory) -> None:
     request = rf.get(path="this field don't matter one bit")
@@ -63,6 +65,35 @@ def test_tournament_view_after_splitsville(usual_setup: Hand, rf: RequestFactory
     request = rf.get("/woteva")
     request.user = some_player.user
     tournament.tournament_view(cast(AuthedHttpRequest, request), t.pk)
+
+
+def test_standings_explain_artificial_scores_when_there_are_any(db: None) -> None:
+    """A pair who barely played, sitting in the standings, needs a word of explanation."""
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=1)
+    tour.hands().filter(table_display_number=1).get().North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    c = Client()
+    content = c.get(reverse("app:tournament", args=[tour.pk])).content.decode()
+
+    assert "yielded no result" in content
+    assert "Law 12" in content
+
+
+def test_standings_say_nothing_about_law_12_when_everything_was_played(db: None) -> None:
+    """Nobody walked out, so there is nothing to explain and we keep quiet."""
+    tour = create_a_tournament(stage="complete", num_pairs=6, boards_per_round_per_table=1)
+
+    c = Client()
+    content = c.get(reverse("app:tournament", args=[tour.pk])).content.decode()
+
+    assert "Percentage" in content, "the standings should be on the page at all"
+    assert "Law 12" not in content
 
 
 def test_player_list_renders_for_someone_looking_for_a_partner(usual_setup: Hand) -> None:
