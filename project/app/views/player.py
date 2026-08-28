@@ -95,6 +95,10 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
     return {
         "button_content": "Partner 'em Up, Boss",
         "button_submit_value": JOIN,
+        # Nothing to warn about, but the key has to be here: FASTDEV_STRICT_IF makes
+        # `{% if action_button.confirm %}` an error rather than a silent False when the
+        # key is missing, so every button context needs the same shape.
+        "confirm": "",
         "form_action": player_detail_endpoint(player_pk=subject_pk),
         "input_hidden_value": reverse("app:tournament-list") + "?open_for_signups=True",
     }

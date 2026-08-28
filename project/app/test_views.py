@@ -65,6 +65,24 @@ def test_tournament_view_after_splitsville(usual_setup: Hand, rf: RequestFactory
     tournament.tournament_view(cast(AuthedHttpRequest, request), t.pk)
 
 
+def test_player_list_renders_for_someone_looking_for_a_partner(usual_setup: Hand) -> None:
+    """The partner-hunting list is the page you land on right after Splitsville.
+
+    Its button comes from a different context than the player detail page's, and
+    FASTDEV_STRICT_IF turns a `{% if %}` on a missing key into an error rather than a
+    silent False -- so a key added to one context and not the other 500s the page.
+    """
+    lonely = Player.objects.get_by_name("Jeremy Northam")
+    lonely.break_partnership()
+
+    c = Client()
+    c.force_login(lonely.user)
+    response = c.get(reverse("app:players"), {"has_partner": "False", "exclude_me": "True"})
+
+    assert response.status_code == 200
+    assert 'value="partnerup"' in response.content.decode()
+
+
 def test_splitsville_warns_a_player_who_is_mid_tournament(usual_setup: Hand) -> None:
     """The button says "Splitsville!!"; the warning says what that costs.
 
