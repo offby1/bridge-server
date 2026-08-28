@@ -71,7 +71,7 @@ def _adjusted_score_explanation(t: app.models.Tournament) -> str:
         f"{unplayable} {boards} in this tournament yielded no result, so nobody could be"
         " compared with anybody on them.  Law 12 awards an artificial score instead:"
         " 40% to a pair responsible for the board being lost, 60% to a pair who were not,"
-        " and 50% each when neither was.  Those awards are part of the totals below."
+        " and 50% each when neither was.  Those awards are part of the totals above."
     )
 
 
