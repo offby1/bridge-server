@@ -549,6 +549,47 @@ def test_a_pair_who_quit_are_scored_at_average_minus(db: None) -> None:
     assert not any(math.isnan(pct) for _, pct in scores.values())
 
 
+def test_a_two_table_tournament_still_scores_when_one_table_quits(db: None) -> None:
+    """Four pairs, one walks out at once: everybody should still get a real score.
+
+    Two tables means each board has exactly two results, so losing a table leaves every
+    board with one -- and a lone result has nothing to be matchpointed against.  Scoring
+    that as "0 matchpoints out of 0 available" gave the whole field zero, which is what
+    a real tournament here actually did.
+
+    A lone result is now worth average.  So the pair who left get 40%, the pair they
+    stranded better than that, and the table that played on gets 50%: no information
+    either way, which is the honest answer when nobody could be compared with anybody.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+    assert len(tour.get_movement().table_settings_by_zb_table_number) == 2
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    quitters = {deserted.North, deserted.South}
+
+    deserted.North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    scores = tour.matchpoints_by_pair()
+
+    assert len(scores) == 4
+    assert not any(math.isnan(pct) for _, pct in scores.values()), "no pair should score '?'"
+    assert any(pct > 0 for _, pct in scores.values()), "the whole field scoring zero is the bug"
+
+    quitters_score = next(score for pair, score in scores.items() if set(pair) == quitters)
+    assert round(quitters_score[1]) == 40
+
+    # Whoever the quitters were down to play got average plus on those boards, so they
+    # finish above the pairs who simply played on.
+    best = max(pct for _, pct in scores.values())
+    assert best > 50
+
+
 def test_the_boards_a_deserted_table_never_reaches_are_recorded(db: None) -> None:
     """Walking out mid-round costs the whole round, and we write down each board.
 

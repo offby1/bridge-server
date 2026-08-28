@@ -24,8 +24,9 @@ class Hand:
 # fault, average for one only partly at fault, average plus for one in no way at fault.
 # The law states them as bounds -- "at most 40%", "at least 60%" -- and we award exactly
 # the bound.
+AVERAGE = 0.5
 AT_FAULT = 0.4
-PARTLY_AT_FAULT = 0.5
+PARTLY_AT_FAULT = AVERAGE
 NOT_AT_FAULT = 0.6
 
 
@@ -85,17 +86,48 @@ class Scorer:
 
         return ns_matchpoints_by_id | ew_matchpoints_by_id
 
+    def _fractions_from_one_board(
+        self,
+        *,
+        played: collections.abc.Collection[Hand],
+        adjusted: collections.abc.Collection[AdjustedHand],
+    ) -> collections.abc.Iterator[tuple[ID, float]]:
+        """How each pair did on one board, as a fraction of what was going on it.
+
+        Three cases, and the middle one is the point of this method.  Two or more
+        results get matchpointed against each other as usual.  A lone result has nothing
+        to be compared with, so it earns average: however well they actually played, the
+        board says nothing about it, and pretending otherwise would be inventing
+        information.  No results at all leaves only the adjusted scores.
+        """
+        if len(played) > 1:
+            available = 2 * (len(played) - 1)
+            for pair, mps in self.from_one_board(hands=played).items():
+                yield pair, mps / available
+        elif len(played) == 1:
+            lonely = next(iter(played))
+            yield lonely.ns_id, AVERAGE
+            yield lonely.ew_id, AVERAGE
+
+        for adjustment in adjusted:
+            yield adjustment.ns_id, adjustment.ns_fraction
+            yield adjustment.ew_id, adjustment.ew_fraction
+
     def matchpoints_by_pairs(self) -> dict[ID, tuple[float, float]]:
-        """Each pair's matchpoints, and what percentage of their own maximum that is.
+        """Each pair's matchpoints, and what percentage of their own boards that is.
 
-        A pair's percentage is measured against the matchpoints available on the boards
-        *they* were down to play, not against the tournament's grand total.  With the
-        grand total, a pair who missed a board through no fault of their own paid for it
-        twice: no matchpoints from the board, and a divisor that counted it anyway.
+        Scoring works in fractions of a board and averages them, so that every board a
+        pair were down to play counts the same whether four tables played it or one.
+        Totting up raw matchpoints and dividing by a grand total does not do that: it
+        weights each board by how big its field happened to be, and it collapses
+        entirely in a two-table event where one table walks out, since every board is
+        then left with a single result and nothing to compare it against.  Everybody
+        scored 0 out of 0.
 
-        The matchpoints available on a board are 2 * (results - 1), counting only the
-        tables that actually produced a result: those are the tables a result gets
-        compared against.  An adjusted score is a fraction of that same maximum.
+        The matchpoints we report alongside are the fraction times what the board was
+        worth -- 2 * (pairs who were down to play it - 1).  For a tournament where
+        everyone played everything, which is the ordinary case, that is exactly the
+        matchpoint count you'd get by hand.
         """
         played_by_board: dict[ID, list[Hand]] = collections.defaultdict(list)
         for h in self.hands:
@@ -106,28 +138,19 @@ class Scorer:
             adjusted_by_board[a.board_id].append(a)
 
         earned: dict[ID, float] = collections.defaultdict(float)
-        possible: dict[ID, float] = collections.defaultdict(float)
+        fractions: dict[ID, list[float]] = collections.defaultdict(list)
 
         for board_id in set(played_by_board) | set(adjusted_by_board):
-            hands = played_by_board[board_id]
-            available = float(2 * (len(hands) - 1)) if hands else 0.0
+            played = played_by_board[board_id]
+            adjusted = adjusted_by_board[board_id]
 
-            for pair, mps in self.from_one_board(hands=hands).items():
-                earned[pair] += mps
-                possible[pair] += available
+            top = float(2 * (len(played) + len(adjusted) - 1))
 
-            for adjustment in adjusted_by_board[board_id]:
-                for pair, fraction in (
-                    (adjustment.ns_id, adjustment.ns_fraction),
-                    (adjustment.ew_id, adjustment.ew_fraction),
-                ):
-                    earned[pair] += fraction * available
-                    possible[pair] += available
+            for pair, fraction in self._fractions_from_one_board(played=played, adjusted=adjusted):
+                fractions[pair].append(fraction)
+                earned[pair] += fraction * top
 
         return {
-            pair: (
-                mps,
-                float("nan") if possible[pair] == 0 else 100 * mps / possible[pair],
-            )
-            for pair, mps in earned.items()
+            pair: (earned[pair], 100 * sum(theirs) / len(theirs))
+            for pair, theirs in fractions.items()
         }

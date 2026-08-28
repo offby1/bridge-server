@@ -34,10 +34,14 @@ IN PROGRESS:
     left; the hands the movement still schedules for them (and for whoever they were
     due to meet) are written down abandoned, with nobody seated.  So are the rest of
     the boards at the table they walked out of mid-round.
-  - Each pair's percentage is now measured against the matchpoints available on the
-    boards *they* were down to play, rather than against a tournament-wide total.
-    Before, a pair who missed a board paid for it twice: no matchpoints from the
-    board, and a divisor that counted it anyway.
+  - Scoring works in fractions of a board, averaged, so every board a pair were down
+    to play counts the same however big its field turned out to be.  Totting up raw
+    matchpoints over a tournament-wide total made a pair who missed a board pay for it
+    twice, and collapsed altogether in a two-table event where one table walked out:
+    every board was then left with a single result, worth 0 matchpoints out of 0, so
+    the whole field scored zero.
+  - A lone result on a board earns average.  There is nothing to matchpoint it
+    against, and "beat nobody, so zero" would be inventing information.
   - The adjusted scores themselves.  A board that yielded no result awards each side a
     fraction of the matchpoints available on it: 40% to a pair who walked out, 60% to
     the pair they stranded, 50% each when neither is to blame (the play-completion
