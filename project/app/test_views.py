@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.test import RequestFactory
 from django.test.client import Client
 from django.urls import reverse
+from django.utils.html import format_html
 
 from app.models import Hand, Player, Tournament, TournamentSignup
 from app.views import player, tournament
@@ -65,6 +66,43 @@ def test_tournament_view_after_splitsville(usual_setup: Hand, rf: RequestFactory
     request = rf.get("/woteva")
     request.user = some_player.user
     tournament.tournament_view(cast(AuthedHttpRequest, request), t.pk)
+
+
+def _standings_row(*, pk1: int, name1: str, pk2: int, name2: str, pct: int) -> dict:
+    return {
+        "pair1": format_html('<a href="/player/{}/">{}</a>', pk1, name1),
+        "pair2": format_html('<a href="/player/{}/">{}</a>', pk2, name2),
+        "pair1_name": name1,
+        "pair2_name": name2,
+        "matchpoints": pct / 10,
+        "percentage": f"{pct}%",
+        "percentage_value": float(pct),
+    }
+
+
+def _sorted_names(rows: list[dict], order_by: str) -> list[str]:
+    table = tournament.MatchpointScoreTable(rows, order_by=order_by)
+    return [row.record["pair1_name"] for row in table.rows]
+
+
+def test_standings_sort_by_what_the_columns_mean() -> None:
+    """Every column shows either markup or a formatted string, so none can sort on itself.
+
+    Percentages sorted as text put "100%" ahead of "42%" and "9%" last.  The name columns
+    sorted on the player link, which orders by primary key as text -- "/player/11/" falls
+    between "/player/1/" and "/player/3/" -- so the names came out in no order at all.
+    """
+    rows = [
+        _standings_row(pk1=1, name1="Zoe", pk2=2, name2="Yolanda", pct=42),
+        _standings_row(pk1=11, name1="Abe", pk2=12, name2="Bob", pct=100),
+        _standings_row(pk1=3, name1="Mabel", pk2=4, name2="Nate", pct=9),
+    ]
+
+    assert _sorted_names(rows, "percentage") == ["Mabel", "Zoe", "Abe"]
+    assert _sorted_names(rows, "-percentage") == ["Abe", "Zoe", "Mabel"]
+    assert _sorted_names(rows, "pair1") == ["Abe", "Mabel", "Zoe"]
+    assert _sorted_names(rows, "pair2") == ["Abe", "Mabel", "Zoe"]
+    assert _sorted_names(rows, "matchpoints") == ["Mabel", "Zoe", "Abe"]
 
 
 def test_standings_explain_artificial_scores_when_there_are_any(db: None) -> None:

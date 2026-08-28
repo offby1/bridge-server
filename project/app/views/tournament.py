@@ -95,10 +95,15 @@ class MatchpointScoreTable(tables.Table):
     # The rows are pairs, so the two name columns are the halves of one -- "Pair1" and
     # "Pair2", which django-tables2 would otherwise derive from these attribute names,
     # read as though each row held two partnerships.
-    pair1 = tables.Column(verbose_name="Player 1")
-    pair2 = tables.Column(verbose_name="Player 2")
+    #
+    # Every column here sorts on something other than what it displays, because what
+    # they display is either markup or a formatted string.  Sorting on the cell itself
+    # ordered the names by the player link's primary key as text ("/player/11/" between
+    # "/player/1/" and "/player/3/"), and would put "100%" ahead of "42%".
+    pair1 = tables.Column(verbose_name="Player 1", order_by=("pair1_name", "pair2_name"))
+    pair2 = tables.Column(verbose_name="Player 2", order_by=("pair2_name", "pair1_name"))
     matchpoints = tables.Column()
-    percentage = tables.Column()
+    percentage = tables.Column(order_by="percentage_value")
 
     class Meta:
         row_attrs = {
@@ -173,7 +178,9 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                                 "pair2_name": player2.name,  # Plain name for comparison
                                 "matchpoints": round(score[0], 1),
                                 "percentage": string_score,
-                                "_sort_key": -1.0 if math.isnan(numeric_score) else numeric_score,
+                                "percentage_value": -1.0
+                                if math.isnan(numeric_score)
+                                else numeric_score,
                             }
                         )
 
@@ -181,7 +188,7 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                     # through no fault of their own play for a smaller total, so their
                     # matchpoints aren't comparable with everyone else's.  A pair with no
                     # percentage at all (nothing to compare against) sorts last.
-                    l_o_d.sort(key=lambda x: cast(float, x["_sort_key"]), reverse=True)
+                    l_o_d.sort(key=lambda x: cast(float, x["percentage_value"]), reverse=True)
 
                     context["adjusted_score_explanation"] = _adjusted_score_explanation(t)
 
