@@ -92,8 +92,11 @@ def _adjusted_score_explanation(t: app.models.Tournament) -> str:
 class MatchpointScoreTable(tables.Table):
     _current_viewer: app.models.Player | None = None
 
-    pair1 = tables.Column()
-    pair2 = tables.Column()
+    # The rows are pairs, so the two name columns are the halves of one -- "Pair1" and
+    # "Pair2", which django-tables2 would otherwise derive from these attribute names,
+    # read as though each row held two partnerships.
+    pair1 = tables.Column(verbose_name="Player 1")
+    pair2 = tables.Column(verbose_name="Player 2")
     matchpoints = tables.Column()
     percentage = tables.Column()
 
