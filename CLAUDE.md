@@ -85,7 +85,15 @@ just graph              # Generate ER diagram (opens in browser)
 The fixtures that exist live in `project/app/fixtures/`: `usual_setup`,
 `fresh_tournament`, `nearly_completed_tournament`,
 `completed-tournament-20-players`, `two_boards_one_of_which_is_played_almost_to_completion`,
-`two_by_two_all_tied`, and `jd-souther-is-ready-to-play-a-heart`.
+`two_by_two_all_tied`, `jd-souther-is-ready-to-play-a-heart`, and
+`three_tables_one_pair_split_mid_round`.
+
+That last one is a tournament caught partway through: three tables, two boards a round,
+every table done with its first board, and one pair gone Splitsville while all three
+were partway through their second.  Everyone in it is a human with password `.`, and
+nobody has the bot flag set, so it stays put until you act on it.  The management
+command `create_splitsville_scenario` is what built it; run that against an empty
+database and `just dumpdata` to rebuild it.
 
 ### Deployment
 ```bash
