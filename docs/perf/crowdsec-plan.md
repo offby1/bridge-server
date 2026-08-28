@@ -1,0 +1,280 @@
+# Plan: add CrowdSec to the edge
+
+**Status as of this commit: nothing is built.** This whole document is intent. No
+CrowdSec container, no bouncer plugin, no access logs. `caddy/Caddyfile` and
+`docker-compose-caddy.yaml` are untouched by this branch. When a phase lands,
+move it into the "Landed" section at the bottom and say what it actually does.
+
+Companion to [`crawler-repro.md`](crawler-repro.md), which records the two
+outages this is meant to help with and the tiered rate limits we already deploy.
+
+## What we want, and why
+
+Two separate things, which happen to share one piece of software:
+
+1. **Report offenders.** Somebody who collects a pile of `429`s from our rate
+   limits is a repeat offender. We want to ban them outright for a few hours
+   rather than shed each of their requests forever, and we want to tell the
+   CrowdSec network about them.
+2. **Consume the community blocklist.** Get the list of IPs other CrowdSec
+   users have already reported, and refuse them at the edge before they cost us
+   anything.
+
+### How this relates to the rate limits we already have
+
+The limits in `caddy/Caddyfile` stay exactly as they are. CrowdSec adds to
+them; it replaces nothing. Being concrete about the two outages in
+`crawler-repro.md`:
+
+- **2026-07-15, single-IP crawler.** CrowdSec is a clear improvement. The
+  `per_ip` zone sheds that crawler's requests one at a time, forever, and it
+  keeps re-attacking. CrowdSec bans the source for hours after the first burst.
+- **2026-08-04, distributed flood** (24,391 IPs, 2 to 4 requests each). A
+  per-IP CrowdSec scenario is exactly as useless here as the `per_ip` zone was,
+  and for the same reason: no single IP does anything worth noticing. The only
+  part of CrowdSec that could help is the community blocklist, and only to the
+  extent those IPs happen to be on it. The `list_views` and `whole_site`
+  aggregate zones remain the thing that actually saves us.
+
+So: do not loosen any zone because CrowdSec is now running.
+
+## Decisions already made
+
+Eric decided these on 2026-08-28; they are settled, not open questions.
+
+- **Plugin bouncer, not the firewall bouncer.** The firewall bouncer drops
+  packets before the TLS handshake and covers every port, which is genuinely
+  cheaper, but it is host configuration on the Hetzner box that lives outside
+  `just prod` and that we would have to remember to maintain. The plugin ships
+  inside the image we already build, so a deploy carries it. We accept paying
+  the TLS handshake for a banned IP.
+- **Docker log datasource, not a shared log file.** CrowdSec reads the Caddy
+  container's stdout through the Docker socket it already mounts. No shared
+  volume, no log rotation to get wrong.
+- **Start in simulation mode.** Alerts get recorded, remediation does not
+  happen. We read a week of what it *would* have banned before we let it ban
+  anything. See "Phase 3".
+- **No AppSec.** CrowdSec's AppSec component is a request-inspecting web
+  application firewall: it looks at bodies, headers and paths for attack
+  patterns, as a separate service the bouncer forwards requests to. That is a
+  different problem from IP blocking, with its own false-positive budget. Out of
+  scope. Do not build it because the plugin happens to support it.
+
+## The constraint that shapes the design
+
+**Only unmodified scenarios from the CrowdSec hub produce signals the network
+accepts.** CrowdSec compares a content hash; custom scenarios you write, and
+hub scenarios you edit even slightly, are ignored by the consensus engine. Worse
+for us: free access to the full Community Blocklist is contingent on regularly
+contributing signals. An engine that contributes nothing gets a "Lite" list
+capped at 3,000 IPs instead.
+
+This splits goal 1 from goal 2 in a way that was not obvious:
+
+- Our "lots of `429`s" scenario is necessarily custom, because `429` means
+  whatever the person doing the rate limiting decided it means. It will ban
+  locally and contribute nothing.
+- **Therefore we must also run the standard hub HTTP scenarios**, unmodified, or
+  we do not earn the blocklist we came for. That is not a nice-to-have bullet at
+  the end of the plan; it is the part that makes goal 2 work.
+
+Both of those claims come from CrowdSec's own docs and we should re-read them
+before Phase 4, because this is exactly the kind of policy that changes:
+<https://docs.crowdsec.net/docs/central_api/community_blocklist/>.
+
+## The pieces
+
+### A new `crowdsec` container
+
+- Image `crowdsecurity/crowdsec`, in the `prod` and `beta` compose profiles
+  only, matching `caddy`. Dev and test are unaffected; `just runme` and `just
+  dev` do not run Caddy, so there is nothing for CrowdSec to watch.
+- Mounts `/var/run/docker.sock` read-only, for the log datasource.
+- A named volume for `/var/lib/crowdsec/data`, so bans and the downloaded
+  blocklist survive a restart. Without it every deploy forgets everyone.
+- **Configuration must be baked into an image, not bind-mounted from `./crowdsec/`.**
+  This is the same trap `caddy/Dockerfile` and `docker-compose-caddy.yaml`
+  already have comments about: a bind mount resolves on the Docker *daemon's*
+  filesystem, so a repo-relative path does not exist when we deploy over a
+  remote context (`hetz-bridge`, `mini`). So: a thin `crowdsec/Dockerfile` that
+  copies in `acquis.yaml`, `simulation.yaml`, and our custom scenario, and
+  installs the hub collections at build time.
+
+### The bouncer plugin in Caddy
+
+One more `--with` line in `caddy/Dockerfile`:
+
+```
+--with github.com/hslatman/caddy-crowdsec-bouncer/http
+```
+
+Only the `http` module. The repo also publishes `appsec` and `layer4` modules;
+we want neither. Building `layer4` would drag in `caddy-l4` for no reason.
+
+In `caddy/Caddyfile`, a global app block alongside the existing `order`:
+
+```
+{
+    order crowdsec before rate_limit
+    order rate_limit before reverse_proxy
+
+    crowdsec {
+        api_url {$CROWDSEC_API_URL}
+        api_key {$CROWDSEC_API_KEY}
+        ticker_interval 60s
+    }
+}
+```
+
+and a `crowdsec` directive in the site's handler chain — probably a new
+`(crowdsec)` snippet imported by a second `caddy.import` label on `django`,
+rather than stuffing it into `(ratelimit)`, since the two do different jobs and
+the existing snippet's comment block is already about rate limiting alone.
+
+**Why `crowdsec` runs before `rate_limit`.** A banned IP should be refused
+before it touches any rate-limit bucket. If the order were reversed, a banned
+flood would still eat the shared `list_views` and `whole_site` budgets on its way
+to being rejected, which is precisely the harm those zones exist to prevent.
+
+Streaming mode (the default) is what we want: the plugin pulls the decision list
+every `ticker_interval` and answers from memory, so a request costs no round
+trip. Leave `disable_streaming` alone. Leave `enable_hard_fails` alone too — we
+do not want Caddy refusing to start, and thus the whole site down, because
+CrowdSec is briefly unreachable.
+
+### One secret: the bouncer's API key
+
+Caddy authenticates to CrowdSec's local API with a key. Register it with a value
+we choose rather than one CrowdSec generates:
+
+```
+cscli bouncers add caddy --key <value>
+```
+
+Choosing the value ourselves removes a start-order dependency — otherwise Caddy
+needs a key that does not exist until CrowdSec has run once. It fits the
+existing `*_FILE` secret pattern (`DJANGO_SECRET_FILE`,
+`GOOGLE_OAUTH_CLIENT_ID_FILE`) and the `just ensure-django-secret` shape. It
+must not be committed.
+
+### Access logs, which we do not currently have
+
+`caddy/Caddyfile`'s `(ratelimit)` snippet has no `log` directive, and Caddy
+writes no per-site access log unless asked. So today there is nothing for
+CrowdSec to parse, whichever datasource we pick — choosing the Docker datasource
+changes *where the log goes* (container stdout instead of a file), not whether it
+exists.
+
+So we add a `log` to the site. Caddy's default encoder is JSON when output is
+not a terminal, which is what the `crowdsecurity/caddy` parser expects.
+
+Two notes on volume, since we are turning on logging we have never had:
+
+- Access log lines are written when a request *finishes*. Our SSE streams are
+  long-lived, so each one logs once, at close, not continuously.
+- A `429` flood will be by far the loudest thing in this log. That is the point,
+  but it means the log's size tracks attacks, not traffic.
+
+## Open questions to settle before writing the scenario
+
+### 1. A `429` does not say which zone rejected the request — and that is dangerous
+
+This is the biggest unresolved problem in the plan, and it deserves to block
+Phase 4.
+
+We have three rate-limit zones. Two of them are *aggregate*: `list_views` and
+`whole_site` shed requests based on total traffic from everybody. During exactly
+the kind of distributed flood those zones exist for, **innocent users get `429`
+too** — that is the design, since the alternative is the site falling over.
+
+A scenario that bans on repeated `429`s therefore risks banning real users
+precisely when the site is under attack. It would be a way to convert an
+availability problem into a "we banned our own players" problem.
+
+Candidate fixes, none verified:
+
+- **Make the scenario slow and forgiving enough that an aggregate shed cannot
+  reach it.** A real user who gets a `429` reloads a couple of times and gives
+  up; a crawler generates hundreds. A high capacity over a long window may
+  separate them on volume alone. Cheapest option, and simulation mode will tell
+  us whether the separation is real in our traffic.
+- **Make per-IP rejections distinguishable from aggregate ones** — split the
+  `per_ip` zone into its own `rate_limit` handler that responds differently (a
+  distinct status code or a marker header), and key the scenario only on that.
+  Cleaner in principle, but I have not confirmed `caddy-ratelimit` supports a
+  per-zone or per-handler response override; if it does not, `handle_errors`
+  might, or it might not be possible at all. **Check this before designing
+  around it.**
+
+Do not skip this by writing an aggressive scenario and hoping. The whole reason
+for simulation mode is that we cannot currently predict the answer.
+
+### 2. Ban duration
+
+Untested. Our legitimate peak is 3.5 requests/second in the busiest minute of
+two weeks, roughly 1000x below capacity, so there is enormous headroom and a
+long ban costs us little in the normal case. The risk is not throughput, it is a
+shared address: a school, an office, or carrier NAT means one ban can take out
+everybody behind it. Start short (an hour or two) and lengthen it once we have
+evidence.
+
+## Phases
+
+Each phase should be its own commit, and each is independently useful.
+
+**Phase 1 — logs only.** Add the `log` directive to the Caddy site. Nothing
+else. Deploy to beta with `just mini` or `just beta` and confirm we can see
+access-log JSON, including `429`s, in `docker compose logs caddy`. This is
+worth having on its own merits; we have been running with no access log.
+
+**Phase 2 — the CrowdSec container, parsing but not enforcing.** Add
+`crowdsec/Dockerfile` and the compose service. Install the
+`crowdsecurity/caddy` collection and the standard HTTP scenario set. Point the
+Docker datasource at the Caddy container. No bouncer yet, so nothing can be
+blocked. Verify with `cscli metrics` that lines are being parsed and are not
+landing in the unparsed bucket. A parser that silently fails to match our log
+format is the most likely thing to go wrong here, and this phase exists to catch
+it while the blast is zero.
+
+**Phase 3 — the custom `429` scenario, in simulation.** Write it, and enable
+simulation for it before it ever runs live: alerts are recorded, remediation is
+not applied. Note the known wrinkle that simulation for a custom scenario is
+keyed on the *file* name rather than the scenario name — worth verifying against
+current CrowdSec behaviour, because getting it wrong means the thing enforces
+when you believed it was only watching. Let it sit for a week. Then read
+`cscli alerts list` and answer, honestly: did it flag anybody we recognise?
+Tune, or throw the scenario away.
+
+**Phase 4 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
+block and the snippet import, and the API key secret. Take the custom scenario
+out of simulation only if Phase 3 justified it. Enrol with the central API
+(`cscli console enroll`) so we both contribute hub-scenario signals and receive
+the community blocklist. Confirm the blocklist actually arrived:
+`cscli decisions list` should show a large number of entries with origin
+`CAPI` or `lists`, not just our own.
+
+**Phase 5 — monitoring, nearly free.** CrowdSec exports Prometheus metrics on
+port 6060 and publishes Grafana dashboards, and we already run both behind the
+`monitoring` profile. Scrape it and add a dashboard. Also consider
+`enable_caddy_metrics` on the bouncer, which reports blocked-request counts
+through Caddy's own `/metrics`.
+
+## How to test any of this
+
+The same constraint as the rate limits, for the same reason: this lives at Caddy,
+and **`just runme` and `just dev` do not run Caddy.** Use `just mini`, which
+deploys the `beta,monitoring` profile with no main-branch or clean-tree guard, so
+it will deploy this branch as-is. `crawler-repro.md`'s "Testing the Caddy rate
+limit" section has the gotchas that will bite here too — in particular the
+`.ts.net` certificate problem, where a failed TLS handshake makes every request
+return status 0 and you see no `429`s at all, which looks like a broken limiter
+but is a non-result.
+
+`project/app/manually_test_rate_limiting.py` is the natural way to generate the
+`429`s that should trigger the scenario. Note the caveat that it floods from one
+IP, so it exercises the per-IP path and tells us nothing about the aggregate-zone
+false-positive question in open question 1.
+
+## Landed
+
+Nothing yet.
