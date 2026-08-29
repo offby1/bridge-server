@@ -171,8 +171,11 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
-# Caddy's interesting log lines: rate-limit rejections and anything at warn or
-# above. Caddy writes JSON to stderr and Docker captures it, so there is no log file
+# Caddy's interesting log lines: rate-limit rejections, anything at warn or
+# above, and any access-log entry with a 429 or 5xx status. (That last kind only
+# started appearing once we turned the access log on -- see Phase 1 in
+# docs/perf/crowdsec-plan.md. The jq below always handled it.)
+# Caddy writes JSON to stderr and Docker captures it, so there is no log file
 # to collect and nothing to ship anywhere -- this recipe just filters and reformats
 # what `docker compose logs caddy` already has. Its `ts` field is epoch seconds,
 # which this turns into UTC.

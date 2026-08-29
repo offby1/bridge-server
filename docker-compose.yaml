@@ -60,6 +60,21 @@ services:
       caddy.reverse_proxy: "{{upstreams 9000}}"
       caddy.import: ratelimit   # per-IP rate limit; snippet defined in caddy/Caddyfile
 
+      # Turn on the access log. Caddy writes none unless asked, so until this
+      # landed the only thing in `docker compose logs caddy` was Caddy's own
+      # runtime log -- which is why the `.status` and `.request.*` filters in
+      # `just caddy-log` had nothing to match. JSON to stderr (the default
+      # output), which Docker captures; there is no log file to collect.
+      #
+      # `format json` is explicit rather than relying on the default, because
+      # Caddy picks its encoder from whether the writer is a terminal, and the
+      # format is a contract with whatever parses these lines.
+      #
+      # Phase 1 of docs/perf/crowdsec-plan.md: CrowdSec's hub scenarios parse
+      # Caddy access logs, and running them unmodified is what earns us the
+      # community blocklist.
+      caddy.log.format: json
+
     restart: unless-stopped
     develop:
       # Create a `watch` configuration to update the app

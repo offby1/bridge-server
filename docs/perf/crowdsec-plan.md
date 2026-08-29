@@ -1,9 +1,10 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: nothing is built.** This whole document is intent. No
-CrowdSec container, no bouncer plugin, no access logs. `caddy/Caddyfile` and
-`docker-compose-caddy.yaml` are untouched by this branch. When a phase lands,
-move it into the "Landed" section at the bottom and say what it actually does.
+**Status as of this commit: Phase 1 has landed; every other phase is still
+intent.** The Caddy access log is on — see "Landed" at the bottom for what that
+actually does. There is still no CrowdSec container, no bouncer plugin and no
+scenario, so nothing is being reported or blocked yet. When a phase lands, move
+it into the "Landed" section and say what it actually does.
 
 Companion to [`crawler-repro.md`](crawler-repro.md), which records the two
 outages this is meant to help with and the tiered rate limits we already deploy.
@@ -157,23 +158,22 @@ existing `*_FILE` secret pattern (`DJANGO_SECRET_FILE`,
 `GOOGLE_OAUTH_CLIENT_ID_FILE`) and the `just ensure-django-secret` shape. It
 must not be committed.
 
-### Access logs, which we do not currently have
+### Access logs (already on, as of Phase 1)
 
-`caddy/Caddyfile`'s `(ratelimit)` snippet has no `log` directive, and Caddy
-writes no per-site access log unless asked. So today there is no access log for
-CrowdSec to parse, whichever datasource we pick — choosing the Docker datasource
-changes *where the log goes* (container stdout instead of a file), not whether it
-exists.
+Caddy writes no per-site access log unless asked, and until Phase 1 we never
+asked — so there was nothing for CrowdSec's hub scenarios to read, whichever
+datasource we picked. Choosing the Docker datasource changes *where the log goes*
+(container stderr instead of a file), not whether it exists.
 
-This is about *access* logs only. Caddy's own runtime log is already on stderr,
-and the rate-limit handler's `"rate limit exceeded"` line is in it today, which is
-why the `429` scenario needs no Caddyfile change. See "Design: how the scenario
-knows whom to blame".
+That gap is now closed: `caddy.log.format: json` on the `django` service turns on
+a JSON access logger. Details in "Landed".
 
-So we add a `log` to the site. Caddy's default encoder is JSON when output is
-not a terminal, which is what the `crowdsecurity/caddy` parser expects.
+Note this only ever concerned *access* logs. Caddy's own runtime log has always
+been on stderr, and the rate-limit handler's `"rate limit exceeded"` line lives
+there, which is why the `429` scenario needs no logging change at all. See
+"Design: how the scenario knows whom to blame".
 
-Two notes on volume, since we are turning on logging we have never had:
+Two notes on volume, now that logging we never had is on:
 
 - Access log lines are written when a request *finishes*. Our SSE streams are
   long-lived, so each one logs once, at close, not continuously.
@@ -282,11 +282,9 @@ Each phase should be its own commit, and each is independently useful. Note that
 the two goals read two different logs, so Phase 1 is a prerequisite for the hub
 scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 
-**Phase 1 — access logs.** Add the `log` directive to the Caddy site. Nothing
-else. Deploy to beta with `just mini` or `just beta` and confirm we can see
-access-log JSON in `docker compose logs caddy`. Worth having on its own merits;
-we have been running with no access log at all. This feeds the hub scenarios,
-which is how we earn the blocklist.
+**Phase 1 — access logs. Done; see "Landed".** Still wants a deploy to beta or
+the mini to confirm the log appears on a real host, which had not happened when
+this was written.
 
 **Phase 2 — the CrowdSec container, parsing but not enforcing.** Add
 `crowdsec/Dockerfile` and the compose service. Install the
@@ -336,9 +334,52 @@ but is a non-result.
 `project/app/manually_test_rate_limiting.py` is the natural way to generate the
 `429`s that should trigger the scenario, and the fact that it floods from a single
 IP — a caveat for other purposes — is exactly right here: the `per_ip` zone is the
-only one the scenario watches. Watch for `zone: per_ip` lines in
-`docker compose logs caddy` and then for a matching entry in `cscli alerts list`.
+only one the scenario watches. Watch for `zone=per_ip` in `just caddy-log`, and
+then for a matching entry in `cscli alerts list`.
+
+`just caddy-log` is the right lens for all of this: it already understands both
+kinds of line we care about, the rate limiter's `"rate limit exceeded"` and (since
+Phase 1) access entries with a `429` or 5xx status. Use
+`docker compose logs caddy` when you need the lines it filters out.
 
 ## Landed
 
-Nothing yet.
+### Phase 1: the Caddy access log
+
+One label on the `django` service in `docker-compose.yaml`:
+
+```yaml
+caddy.log.format: json
+```
+
+That is the whole change. It goes in a label rather than in `caddy/Caddyfile`
+because that file's own header explains it holds only what "the labels can't
+express cleanly", and a two-line `log` block is expressible cleanly.
+
+What it produces, checked with `caddy adapt` against a site block of the shape
+caddy-docker-proxy generates:
+
+- An access logger with `encoder.format: json`, writing to stderr (the default
+  writer), which Docker captures. There is no log file and nothing to ship.
+- Caddy's `default` logger gains an `exclude` for `http.log.access.log0`, so
+  access entries and runtime entries stay separate streams while both land on
+  stderr. Access entries carry `logger: "http.log.access.log0"`.
+
+`format json` is explicit rather than left to default because Caddy picks its
+encoder from whether the writer is a terminal. The default would in fact be JSON
+under Docker, but the format is a contract with whatever parses the lines, so it
+should be stated rather than inferred.
+
+**`just caddy-log` needed no change, and gets more useful.** Its jq already
+filters on `.status == 429`, `(.status // 0) >= 500`, and `.request.*` — fields
+that exist only in access entries, so those clauses have been dormant since they
+were written. They now match. The recipe deliberately shows only 429s and 5xx
+from the access log rather than every request, which is the right default.
+
+**Not yet verified on a real host.** The claims above come from `caddy adapt` on
+an equivalent Caddyfile plus `docker compose config` showing the label renders.
+Neither exercises caddy-docker-proxy's label-to-Caddyfile conversion, so the
+remaining risk is that the label produces something other than the `log { format
+json }` that was validated. Confirming means a deploy — `just mini` or `just
+beta` — and then `just caddy-log`, or `docker compose logs caddy` for the
+unfiltered lines.
