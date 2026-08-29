@@ -18,7 +18,7 @@ from .player import (
     Player,
     PlayerException,
 )
-from .signups import TournamentSignup
+from .signups import TournamentSignup, TournamentWithdrawal
 from .tournament import Tournament
 
 __all__ = [
@@ -38,6 +38,7 @@ __all__ = [
     "TableHasNoHand",
     "Tournament",
     "TournamentSignup",
+    "TournamentWithdrawal",
     "SEAT_CHOICES",
 ]
 

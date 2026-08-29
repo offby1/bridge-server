@@ -300,6 +300,17 @@
     {% block scripts %}
     {% endblock scripts %}
     <script>
+    // Anything carrying data-confirm asks before it acts.  For steps you can't take
+    // back -- Splitsville while a tournament is running, say -- where the cost isn't
+    // obvious from the button's label.
+    document.addEventListener('click', function(e) {
+        var asker = e.target.closest('[data-confirm]');
+        if (asker && !window.confirm(asker.dataset.confirm)) {
+            e.preventDefault();
+        }
+    });
+    </script>
+    <script>
     // Dynamically set body padding to match the navbar's actual height
     (function() {
         var navbar = document.querySelector('.navbar');

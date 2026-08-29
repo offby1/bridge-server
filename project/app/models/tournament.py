@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import datetime
 import logging
 import operator
@@ -280,30 +281,70 @@ class Tournament(models.Model):
 
     def matchpoints_by_pair(
         self,
-    ) -> dict[tuple[app.models.player.Player, app.models.player.Player], tuple[int, float]]:
+    ) -> dict[tuple[app.models.player.Player, app.models.player.Player], tuple[float, float]]:
         # Convert the final score, which might be zero, into a dict of kwargs
         def consistent_score(fs: BrokenDownScore | Literal[0]) -> dict[str, int]:
             if fs == 0:
                 return {"ns_raw_score": 0, "ew_raw_score": 0}
             return {"ns_raw_score": fs.north_south_points, "ew_raw_score": fs.east_west_points}
 
-        hands = (
+        def enriched(qs: models.QuerySet) -> models.QuerySet:
+            return (
+                qs.select_related(*app.models.common.attribute_names)
+                .select_related("board")
+                .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
+            )
+
+        hands = [
             app.utils.scoring.Hand(
                 ns_id=(h.North, h.South),
                 ew_id=(h.East, h.West),
                 board_id=h.board.pk,
                 **consistent_score(h.get_xscript().final_score()),
             )
-            for h in self.hands()
-            .filter(abandoned_because__isnull=True)
-            .select_related(*app.models.common.attribute_names)
-            .select_related("board")
-            .select_related(*[f"{d}__user" for d in app.models.common.attribute_names])
-        )
+            for h in enriched(self.hands().filter(abandoned_because__isnull=True, is_complete=True))
+        ]
 
-        scorer = app.utils.scoring.Scorer(hands=list(hands))
+        withdrawn = app.models.TournamentWithdrawal.objects.pks_withdrawn_from(self)
+        adjustments = [
+            self._adjusted_score_for(h, withdrawn=withdrawn)
+            for h in enriched(self.hands().filter(abandoned_because__isnull=False))
+        ]
+
+        scorer = app.utils.scoring.Scorer(hands=hands, adjustments=adjustments)
         # Return Player objects, not HTML strings
         return scorer.matchpoints_by_pairs()
+
+    def _adjusted_score_for(
+        self, hand: Hand, *, withdrawn: set[int]
+    ) -> app.utils.scoring.AdjustedHand:
+        """Apportion Law 12's artificial score for a board that yielded no result.
+
+        A pair who walked out are directly at fault and get average minus; whoever they
+        were down to play are in no way at fault and get average plus.  When neither pair
+        withdrew -- the play-completion deadline ran out on a table that was still going,
+        say -- we hold both partly at fault and give each of them average.
+        """
+        ns_walked_out = any(p.pk in withdrawn for p in (hand.North, hand.South))
+        ew_walked_out = any(p.pk in withdrawn for p in (hand.East, hand.West))
+
+        if not (ns_walked_out or ew_walked_out):
+            ns_fraction = ew_fraction = app.utils.scoring.PARTLY_AT_FAULT
+        else:
+            ns_fraction = (
+                app.utils.scoring.AT_FAULT if ns_walked_out else app.utils.scoring.NOT_AT_FAULT
+            )
+            ew_fraction = (
+                app.utils.scoring.AT_FAULT if ew_walked_out else app.utils.scoring.NOT_AT_FAULT
+            )
+
+        return app.utils.scoring.AdjustedHand(
+            ns_id=(hand.North, hand.South),
+            ew_id=(hand.East, hand.West),
+            board_id=hand.board.pk,
+            ns_fraction=ns_fraction,
+            ew_fraction=ew_fraction,
+        )
 
     def players(self) -> models.QuerySet:
         hands = self.hands()
@@ -347,14 +388,118 @@ class Tournament(models.Model):
             assert b.group is not None, f"Hey! {b=} ain't got no group"
 
     def the_round_just_ended(self) -> int | None:
-        num_completed_rounds, num_hands_this_round = self.rounds_played()
-        if num_completed_rounds > 0 and num_hands_this_round == 0:
-            return num_completed_rounds
-        return None
+        """How many rounds are behind us, if the latest one is over; otherwise None.
+
+        A hand is *settled* when nobody can act on it any more: either it was played to
+        the end (`is_complete`) or somebody gave up on it (`abandoned_because`).  A table
+        is done with a round once it has settled every board in that round's group -- or
+        as soon as one of its hands is abandoned, since an abandoned table deals itself
+        no further boards.  The round is over when every table is done with it.
+
+        Counting settled hands against the total the movement calls for does not work,
+        precisely because an abandoned table stops short: the count never reaches the
+        total.  That is what used to freeze every table in the tournament when a single
+        pair walked out (TODO.txt, the Splitsville item).
+        """
+        hands = list(self.hands().select_related("board"))
+        if not hands:
+            return None
+
+        zb_round_number = max(app.utils.movements._zb_round_number(h.board.group) for h in hands)
+
+        if not self._round_is_over(zb_round_number=zb_round_number, hands=hands):
+            return None
+
+        return zb_round_number + 1
+
+    def _round_is_over(self, *, zb_round_number: int, hands: list[Hand]) -> bool:
+        mvmt = self.get_movement()
+        group = app.utils.movements._group_letter(zb_round_number)
+
+        hands_by_table: dict[int | None, list[Hand]] = collections.defaultdict(list)
+        for h in hands:
+            if h.board.group == group:
+                hands_by_table[h.table_display_number].append(h)
+
+        # A table with no hand in this group hasn't started the round yet.
+        if len(hands_by_table) < len(mvmt.table_settings_by_zb_table_number):
+            return False
+
+        for table_hands in hands_by_table.values():
+            if any(h.is_abandoned for h in table_hands):
+                continue
+            if sum(1 for h in table_hands if h.is_complete) < mvmt.boards_per_round_per_table:
+                return False
+
+        return True
+
+    def record_boards_this_table_will_not_play(self, *, hand: Hand) -> None:
+        """Write down the boards a table won't reach, now that one of its hands is dead.
+
+        Only the boards of the round it was in the middle of: later rounds get theirs
+        when we deal them.  Without this, the pair who were left sitting there would get
+        an adjusted score for the boards they were denied in later rounds but nothing at
+        all for the rest of this one.
+
+        Does nothing unless somebody at the table has withdrawn -- `_create_hand_with`
+        would otherwise seat people at these boards, which is right when a hand was
+        abandoned for some other reason.
+        """
+        import app.models
+
+        withdrawn = app.models.TournamentWithdrawal.objects.pks_withdrawn_from(self)
+        if not any(getattr(hand, d).pk in withdrawn for d in app.models.common.attribute_names):
+            return
+
+        assert hand.table_display_number is not None
+        zb_round_number = app.utils.movements._zb_round_number(hand.board.group)
+
+        with transaction.atomic():
+            for _ in range(self.get_movement().boards_per_round_per_table):
+                if (
+                    app.models.Hand.objects.create_next_hand_at_table(
+                        self,
+                        zb_table_number=hand.table_display_number - 1,
+                        zb_round_number=zb_round_number,
+                    )
+                    is None
+                ):
+                    return
+
+    def maybe_advance_round(self) -> bool:
+        """If the latest round is over, start the next one (or finish the tournament).
+
+        Returns whether the round was over, so that a caller who has just settled one
+        hand can tell whether the table it was at should deal itself another board.
+
+        We keep going while each round we deal is itself already over.  A round is born
+        settled when every table in it was due to be played by somebody who has since
+        withdrawn, and nothing else would come along to notice: no hand of it will ever
+        be played, and nobody will abandon one either.
+        """
+        advanced = False
+
+        with transaction.atomic():
+            while (num_completed_rounds := self.the_round_just_ended()) is not None:
+                advanced = True
+
+                if num_completed_rounds >= self.get_movement().num_rounds:
+                    self.maybe_complete()
+                    break
+
+                self.create_hands_for_round(zb_round_number=num_completed_rounds)
+
+        return advanced
 
     def rounds_played(self) -> tuple[int, int]:
         """
         Returns a tuple: the number of *completed* rounds, and the number of :model:`app.hand` s played in the current round.
+
+        Only completed hands count, so this understates progress in a tournament where
+        somebody abandoned a hand: those hands are never coming back, but this arithmetic
+        goes on waiting for them.  `the_round_just_ended` is the one that decides whether
+        play moves on, and it does not use this.  Today nothing outside the tests calls
+        this; don't reach for it to answer "is the round over".
         """
         num_completed_hands = self.hands().filter(is_complete=True).count()
         mvmt = self.get_movement()
@@ -389,6 +534,14 @@ class Tournament(models.Model):
             )
             assert new_hand is not None
             rv.append(new_hand)
+
+            # We deal one board per table here and let each table deal itself the next
+            # as it finishes one.  A table with nobody at it never finishes anything, so
+            # the rest of its round would go unrecorded -- and then the pairs who were
+            # down to meet it on those boards would get no adjusted score for them,
+            # while getting one for the round's first board.  Write them all down now.
+            if new_hand.is_abandoned:
+                self.record_boards_this_table_will_not_play(hand=new_hand)
 
         return rv
 
@@ -539,7 +692,9 @@ class Tournament(models.Model):
             player: app.models.Player
 
             for player in self.players():
-                player.abandon_my_hand(reason=reason)
+                # We are tearing the tournament down, so there is no next round to
+                # start; advancing here would deal boards nobody will ever play.
+                player.abandon_my_hand(reason=reason, advance_round=False)
                 player.save()
 
     def maybe_complete(self) -> None:
@@ -556,16 +711,22 @@ class Tournament(models.Model):
                 logger.info("Pff, no need to complete '%s' since it's already complete.", self)
                 return
 
-            all_hands_are_complete = (
-                self.hands().exists() and not self.hands().filter(is_complete=False).exists()
+            # Every hand is settled -- see `the_round_just_ended` -- when none is still
+            # awaiting a call or a play.  An abandoned hand counts, so that a pair
+            # walking out doesn't leave the tournament unfinishable.
+            all_hands_are_settled = (
+                self.hands().exists()
+                and not self.hands()
+                .filter(is_complete=False, abandoned_because__isnull=True)
+                .exists()
             )
 
             logger.debug(
-                "%s", f"{all_hands_are_complete=}; {self.play_completion_deadline_has_passed()=}"
+                "%s", f"{all_hands_are_settled=}; {self.play_completion_deadline_has_passed()=}"
             )
-            if all_hands_are_complete or self.play_completion_deadline_has_passed():
+            if all_hands_are_settled or self.play_completion_deadline_has_passed():
                 self.completed_at = (
-                    timezone.now() if all_hands_are_complete else self.play_completion_deadline
+                    timezone.now() if all_hands_are_settled else self.play_completion_deadline
                 )
                 if self.play_completion_deadline_has_passed():
                     self.abandon_all_hands(

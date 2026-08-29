@@ -1,9 +1,19 @@
+from collections.abc import Iterator
 from typing import Any
 
 from django.http import HttpRequest
 
+class BoundRow:
+    record: Any
+    def get_cell(self, name: str) -> Any: ...
+
+class BoundRows:
+    def __iter__(self) -> Iterator[BoundRow]: ...
+    def __len__(self) -> int: ...
+
 class Table:
     request: HttpRequest
+    rows: BoundRows
     class Meta: ...
 
     def __init__(self, data: Any = ..., **kwargs: Any) -> None: ...

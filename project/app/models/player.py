@@ -281,11 +281,32 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
 
     def unseat_partnership(self, reason: str | None = None) -> None:
         with transaction.atomic():
+            self._withdraw_partnership_from_tournament()
             for p in (self, getattr(self, "partner")):
                 if p is not None and p.currently_seated:
                     p.abandon_my_hand(reason=reason)
 
-    def abandon_my_hand(self, reason: str | None = None) -> None:
+    def _withdraw_partnership_from_tournament(self) -> None:
+        """Note that we and our partner are done with the tournament we're playing in.
+
+        Call this *before* abandoning the hand.  Abandoning can end the round, and the
+        code that deals the next one reads these records to know whom not to seat; if we
+        wrote them afterwards we'd already have been dealt back in.  It is also our last
+        chance to see which tournament we were in, since abandoning clears
+        `current_hand`.
+        """
+        import app.models
+
+        pair = [p for p in (self, getattr(self, "partner", None)) if p is not None]
+
+        for p in pair:
+            if (h := p.current_hand) is not None:
+                app.models.TournamentWithdrawal.objects.withdraw(
+                    tournament=h.board.tournament, players=pair
+                )
+                return
+
+    def abandon_my_hand(self, reason: str | None = None, advance_round: bool = True) -> None:
         """Get up from our current hand, marking it abandoned unless it is already finished.
 
         Finishing a hand does not set `self.current_hand` back to None: it goes on
@@ -295,6 +316,13 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
         `abandoned_because` on a hand in that state would contradict the score we display
         for it, so if the hand is complete we leave it alone and only stop pointing at
         it.
+
+        Abandoning a hand gets all four players up, not just us: the other three can't
+        play it either, and leaving them pointed at it would make `HandManager.create`
+        refuse to seat them in the next round.
+
+        Pass `advance_round=False` when abandoning as part of ending the tournament, so
+        that we don't start a round that nobody is going to play.
         """
         with transaction.atomic():
             if (h := self.current_hand) is None:
@@ -305,18 +333,30 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     "%s",
                     f"{self} ({id(self)}) is getting up from hand {h} ({h=}), which is complete, so it is not abandoned",
                 )
-            else:
-                h.abandoned_because = reason or f"{self.name} left"
-                h._clear_bot_flags()
-                h.save()
+                self.current_hand = None
+                self.save()
+                return
 
-                logger.debug(
-                    "%s",
-                    f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
-                )
+            h.abandoned_because = reason or f"{self.name} left"
+            h._clear_bot_flags()
+            h.save()
 
+            logger.debug(
+                "%s",
+                f"{self} ({id(self)}) abandoned hand {h} ({h=}) because {h.abandoned_because}",
+            )
+
+            Player.objects.filter(current_hand=h).update(current_hand=None, random_state=None)
             self.current_hand = None
             self.save()
+
+        if advance_round:
+            tournament = h.board.tournament
+            # Write down the rest of this table's round before moving on, so that the
+            # pair left sitting there get credit for the boards they were denied.
+            tournament.record_boards_this_table_will_not_play(hand=h)
+            # The round may have been waiting on nothing but this hand.
+            tournament.maybe_advance_round()
 
     @property
     def event_HTML_hand_channel(self):
@@ -506,6 +546,8 @@ class Player(DirtyFieldsMixin, TimeStampedModel):
                     ),
                 )
                 evictees.delete()
+
+            self._withdraw_partnership_from_tournament()
 
             self.partner.partner = None
             self.partner.abandon_my_hand()

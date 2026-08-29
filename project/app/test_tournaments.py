@@ -1,5 +1,7 @@
+import collections
 import datetime
 import logging
+import math
 from typing import cast
 
 import pytest
@@ -20,6 +22,7 @@ from app.models import (
     Player,
     Tournament,
     TournamentSignup,
+    TournamentWithdrawal,
 )
 from app.models.tournament import (
     NotOpenForSignupError,
@@ -345,6 +348,311 @@ def test_end_of_round_stuff_happens(usual_setup: Hand) -> None:
     hand = some_incomplete_hand()
     play_out_hand(hand)
     assert tour.rounds_played() == (1, 0)
+
+
+def _unsettled_hands_in_group(tour: Tournament, group: str) -> list[Hand]:
+    """Hands in that round's board group that somebody could still act on."""
+    return [
+        h
+        for h in tour.hands().select_related("board")
+        if h.board.group == group and not h.is_complete and not h.is_abandoned
+    ]
+
+
+@pytest.mark.parametrize("boards_per_round_per_table", [1, 2])
+def test_splitsville_at_one_table_does_not_stall_the_other_tables(
+    db: None, boards_per_round_per_table: int
+) -> None:
+    """One pair walking out should cost that pair their boards, not freeze the event.
+
+    Call a hand *settled* when nobody can act on it any more -- either it was played
+    to the end (`is_complete`) or it was given up on (`is_abandoned`).  A round is over
+    once every table has settled all of its boards for that round, where an abandoned
+    table counts as done because it deals itself no more boards.
+
+    Two tables.  The pair at the first table splits up, which abandons their hand
+    (Player.break_partnership calls abandon_my_hand).  The second table then plays out
+    its whole round.  Round 0 is now settled, so round 1 -- board group B -- is due.
+
+    It used not to arrive.  `the_round_just_ended` counted completed hands against the
+    number the movement calls for; the abandoned one wasn't among them, so the count
+    never got there and Hand.do_end_of_hand_stuff created nothing.  Both tables sat
+    idle until the play-completion deadline expired.
+
+    Both board counts matter: with more than one board per round the deserted table
+    stops short of its quota, which is exactly what a count against the movement's
+    total cannot express.
+    """
+    tour = create_a_tournament(
+        stage="playing",
+        num_pairs=4,
+        boards_per_round_per_table=boards_per_round_per_table,
+    )
+
+    movement = tour.get_movement()
+    num_tables = len(movement.table_settings_by_zb_table_number)
+    assert num_tables == 2
+    assert movement.num_rounds == 2
+
+    round_zero_hands = list(tour.hands())
+    assert len(round_zero_hands) == num_tables
+
+    deserted, _still_playing = round_zero_hands
+
+    deserted.North.break_partnership()
+    deserted.refresh_from_db()
+    assert deserted.is_abandoned
+    assert not deserted.is_complete
+
+    # The other table plays its whole round.  Finishing one board deals it the next,
+    # so re-ask rather than iterating over a list we captured up front.
+    while remaining := _unsettled_hands_in_group(tour, "A"):
+        play_out_hand(remaining[0])
+
+    tour.refresh_from_db()
+
+    # Round 0 is settled, so round 1 has been dealt at every table.  Count tables rather
+    # than hands: a table with nobody at it gets all of its boards written down at once,
+    # while a live one gets them one at a time as it finishes them.
+    round_one_tables = set(
+        tour.hands().filter(board__group="B").values_list("table_display_number", flat=True)
+    )
+    assert len(round_one_tables) == num_tables
+
+
+def test_splitsville_after_the_other_table_has_finished_the_round(db: None) -> None:
+    """The same stall, with the two events in the other order.
+
+    Here the second table finishes round 0 first and the split comes afterwards, so the
+    hand that settles last is the abandoned one.  Playing a hand is not the only thing
+    that can end a round, so Player.abandon_my_hand has to look too -- nothing else is
+    going to.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+    num_tables = len(tour.get_movement().table_settings_by_zb_table_number)
+
+    deserted, still_playing = list(tour.hands())
+
+    play_out_hand(still_playing)
+    tour.refresh_from_db()
+    assert not tour.hands().filter(board__group="B").exists(), (
+        "round 1 shouldn't start while the first table is still playing"
+    )
+
+    deserted.North.break_partnership()
+    tour.refresh_from_db()
+
+    assert tour.hands().filter(board__group="B").count() == num_tables
+
+
+def test_a_pair_who_quit_are_not_dealt_back_in_next_round(db: None) -> None:
+    """Walking out lasts the rest of the tournament, not just the current board.
+
+    The movement is fixed when play starts, so it still schedules the pair who left for
+    every later round.  We record their withdrawal and write those hands down abandoned
+    instead of seating anybody at them -- both the deserters and whoever they were due
+    to meet stay out of it.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+
+    deserted, still_playing = list(tour.hands())
+    quitter = deserted.North
+    quitters = {quitter, quitter.partner}
+
+    quitter.break_partnership()
+
+    assert set(
+        TournamentWithdrawal.objects.filter(tournament=tour).values_list("player__pk", flat=True)
+    ) == {p.pk for p in quitters}
+
+    play_out_hand(still_playing)
+    tour.refresh_from_db()
+
+    round_one = list(tour.hands().filter(board__group="B"))
+    assert len(round_one) == 2
+
+    dealt_to_a_quitter = [h for h in round_one if quitters & {h.North, h.East, h.South, h.West}]
+    assert len(dealt_to_a_quitter) == 1, "the movement should still schedule them exactly once"
+
+    unplayable = dealt_to_a_quitter[0]
+    assert unplayable.is_abandoned
+    assert quitter.name in unplayable.abandoned_because
+
+    # Nobody is sitting at it -- not the pair who left, nor the pair they'd have met.
+    assert not Player.objects.filter(current_hand=unplayable).exists()
+    for p in quitters:
+        p.refresh_from_db()
+        assert p.current_hand is None
+        assert not p.currently_seated
+
+    # The other table's round-1 hand is a real one, with four players at it.
+    playable = [h for h in round_one if h != unplayable][0]
+    assert not playable.is_abandoned
+    assert Player.objects.filter(current_hand=playable).count() == 4
+
+
+def test_a_tournament_finishes_even_if_everybody_quits(db: None) -> None:
+    """Both pairs at both tables walking out should end the tournament, not hang it.
+
+    Nothing is left to play, so no hand will ever complete and nobody will abandon one
+    either.  Each round we deal is born settled, so `maybe_advance_round` has to keep
+    going by itself rather than wait to be called again.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+
+    for hand in list(tour.hands()):
+        hand.North.break_partnership()
+        hand.East.break_partnership()
+
+    tour.refresh_from_db()
+    assert tour.is_complete
+    assert not tour.hands().filter(is_complete=False, abandoned_because__isnull=True).exists()
+    assert not Player.objects.currently_seated().exists()
+
+
+def test_a_pair_who_quit_are_scored_at_average_minus(db: None) -> None:
+    """Law 12: the pair at fault get 40%, the pair they stranded get 60%.
+
+    Three tables, so that a board a pair miss still has two results to matchpoint
+    against; one board per round, so every table plays the same board each round.  The
+    pair at the first table walk out before playing anything, and the rest is played to
+    the end.
+
+    Those boards used to be dropped from the scoring outright, which left the deserters
+    out of the standings altogether and gave the pair they stranded nothing at all for a
+    board they were perfectly willing to play.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=1)
+    assert len(tour.get_movement().table_settings_by_zb_table_number) == 3
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    quitters = {deserted.North, deserted.South}
+    stranded = {deserted.East, deserted.West}
+
+    deserted.North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    scores = tour.matchpoints_by_pair()
+
+    quitters_score = next(score for pair, score in scores.items() if set(pair) == quitters)
+    assert round(quitters_score[1]) == 40, (
+        "a pair who played nothing and are at fault throughout score average minus"
+    )
+
+    # The pair they walked out on played their other rounds for real, so their total is a
+    # blend; what we can say is that they are in the standings, with a score, rather than
+    # being silently docked a board.
+    stranded_score = next(score for pair, score in scores.items() if set(pair) == stranded)
+    assert not math.isnan(stranded_score[1])
+
+    # Everybody who was in the tournament is in the results.
+    assert len(scores) == 6
+    assert not any(math.isnan(pct) for _, pct in scores.values())
+
+
+def test_a_two_table_tournament_still_scores_when_one_table_quits(db: None) -> None:
+    """Four pairs, one walks out at once: everybody should still get a real score.
+
+    Two tables means each board has exactly two results, so losing a table leaves every
+    board with one -- and a lone result has nothing to be matchpointed against.  Scoring
+    that as "0 matchpoints out of 0 available" gave the whole field zero, which is what
+    a real tournament here actually did.
+
+    A lone result is now worth average.  So the pair who left get 40%, the pair they
+    stranded better than that, and the table that played on gets 50%: no information
+    either way, which is the honest answer when nobody could be compared with anybody.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=4, boards_per_round_per_table=1)
+    assert len(tour.get_movement().table_settings_by_zb_table_number) == 2
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    quitters = {deserted.North, deserted.South}
+
+    deserted.North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    scores = tour.matchpoints_by_pair()
+
+    assert len(scores) == 4
+    assert not any(math.isnan(pct) for _, pct in scores.values()), "no pair should score '?'"
+    assert any(pct > 0 for _, pct in scores.values()), "the whole field scoring zero is the bug"
+
+    quitters_score = next(score for pair, score in scores.items() if set(pair) == quitters)
+    assert round(quitters_score[1]) == 40
+
+    # Whoever the quitters were down to play got average plus on those boards, so they
+    # finish above the pairs who simply played on.
+    best = max(pct for _, pct in scores.values())
+    assert best > 50
+
+
+def test_every_pair_is_scored_on_the_same_number_of_boards(db: None) -> None:
+    """A pair walking out mustn't leave the rest of the field scored on different boards.
+
+    Every table's round is dealt one board at a time, each finished board dealing the
+    next.  A table with nobody left at it finishes nothing, so the rest of its round used
+    to go unrecorded: the pairs due to meet it on the round's *first* board got their
+    adjusted score, and the pairs due to meet it on the second got nothing at all.
+
+    Pairs then ended up scored on four, five or six boards, which makes their matchpoint
+    totals incomparable -- 9.4 from five boards beat 10.0 from six -- and the standings
+    read as though the arithmetic were broken.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=2)
+    movement = tour.get_movement()
+    boards_each = movement.num_rounds * movement.boards_per_round_per_table
+
+    tour.hands().filter(table_display_number=1).get().North.break_partnership()
+
+    while not tour.is_complete:
+        remaining = [h for h in tour.hands() if not h.is_complete and not h.is_abandoned]
+        assert remaining, f"{tour} has nothing left to play but isn't complete"
+        play_out_hand(remaining[0])
+        tour.refresh_from_db()
+
+    boards_by_pair: dict[tuple[Player, Player], set[int]] = collections.defaultdict(set)
+    for h in tour.hands().select_related("board"):
+        boards_by_pair[(h.North, h.South)].add(h.board.pk)
+        boards_by_pair[(h.East, h.West)].add(h.board.pk)
+
+    assert len(boards_by_pair) == 6
+    for pair, boards in boards_by_pair.items():
+        names = ", ".join(p.name for p in pair)
+        assert len(boards) == boards_each, f"{names} was scored on {len(boards)} boards"
+
+    # With every pair on the same boards, and every board worth the same, the two columns
+    # the tournament page shows can no longer disagree about who did better.
+    scores = sorted(tour.matchpoints_by_pair().values())
+    assert scores == sorted(scores, key=lambda mps_and_pct: mps_and_pct[1])
+
+
+def test_the_boards_a_deserted_table_never_reaches_are_recorded(db: None) -> None:
+    """Walking out mid-round costs the whole round, and we write down each board.
+
+    Otherwise the pair left sitting there would be compensated for the boards they were
+    denied in later rounds, but get nothing for the rest of the round they were actually
+    in the middle of.
+    """
+    tour = create_a_tournament(stage="playing", num_pairs=6, boards_per_round_per_table=3)
+
+    deserted = tour.hands().filter(table_display_number=1).get()
+    deserted.North.break_partnership()
+
+    round_zero_at_that_table = tour.hands().filter(table_display_number=1, board__group="A")
+    assert round_zero_at_that_table.count() == 3, (
+        "all three of the round's boards are accounted for"
+    )
+    assert all(h.is_abandoned for h in round_zero_at_that_table)
 
 
 def test_get_movement_with_odd_pairs_before_synths_are_created(nobody_seated: None) -> None:

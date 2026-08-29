@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING
 from django.contrib import admin
 from django.db import models
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 from app.utils.movements import MAX_ROUNDS
 
 logger = logging.getLogger(__name__)
@@ -79,4 +82,55 @@ class TournamentSignup(models.Model):
 
 @admin.register(TournamentSignup)
 class TournamentSignupAdmin(admin.ModelAdmin):
+    list_display = ["tournament", "player"]
+
+
+class TournamentWithdrawalManager(models.Manager):
+    if TYPE_CHECKING:
+        from app.models import Player, Tournament
+
+    def withdraw(self, *, tournament: Tournament, players: Iterable[Player]) -> None:
+        for p in players:
+            self.get_or_create(tournament=tournament, player=p)
+            logger.debug("%s has withdrawn from tournament #%s", p.name, tournament.display_number)
+
+    def pks_withdrawn_from(self, tournament: Tournament) -> set[int]:
+        return set(self.filter(tournament=tournament).values_list("player_id", flat=True))
+
+
+class TournamentWithdrawal(models.Model):
+    """A player who left a tournament partway through, and isn't coming back.
+
+    The movement is fixed when play starts, so it goes on scheduling a pair for every
+    later round whether or not they are still around.  This is how we remember not to
+    deal them back in -- and, later, whose fault the missing results are, for the
+    adjusted scores Law 12 calls for (TODO.txt, the Splitsville item).
+
+    A signup says "I intend to play"; a withdrawal says "I stopped".  They aren't
+    opposites: `Player.break_partnership` deletes the signup as well, and a player who
+    withdrew from one tournament is free to sign up for the next.
+    """
+
+    objects = TournamentWithdrawalManager()
+
+    if TYPE_CHECKING:
+        from app.models import Player, Tournament
+
+    tournament = models.ForeignKey["Tournament"]("Tournament", on_delete=models.CASCADE)
+    player = models.ForeignKey["Player"]("Player", on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(  # type: ignore[call-arg]
+                name="%(app_label)s_%(class)s_one_per_player_per_tournament",
+                fields=["tournament", "player"],
+            ),
+        ]
+
+    def __repr__(self) -> str:
+        return f"<TournamentWithdrawal pk={self.pk}: {self.player.name} out of #{self.tournament.display_number}>"
+
+
+@admin.register(TournamentWithdrawal)
+class TournamentWithdrawalAdmin(admin.ModelAdmin):
     list_display = ["tournament", "player"]

@@ -55,13 +55,55 @@ def annotate_grid_with_hand_links(
     return {"rows": annotated_rows, "headers": tabulate_me["headers"]}
 
 
+# The ACBL publishes the laws as one PDF and nothing finer, so the best we can do is
+# ask the reader's PDF viewer to open it at the right page.  Page 41 is printed page 17,
+# where Law 12C2(a) -- the artificial adjusted score, in the very words below -- begins.
+# Chrome and Firefox honour `#page=`; a viewer that doesn't will simply open page one,
+# which is a worse answer rather than a broken one.
+#
+# This file is byte-for-byte the copy in `docs/Laws-of-Duplicate-Bridge.pdf`, so if the
+# page ever looks wrong, check that ACBL hasn't quietly replaced it with a new edition:
+# `shasum -a 256` the two and see.
+LAW_12C2A_URL = "https://web2.acbl.org/documentlibrary/play/Laws-of-Duplicate-Bridge.pdf#page=41"
+
+
+def _adjusted_score_explanation(t: app.models.Tournament) -> str:
+    """Why some of these scores weren't earned at the table, or "" if they all were.
+
+    Worth saying out loud: a pair who barely played can appear in the standings, and a
+    pair who played everything can find a board they never got the chance to play sitting
+    in their total.  Neither looks like an honest score until you know Law 12 is at work.
+    """
+    unplayable = t.hands().filter(abandoned_because__isnull=False).count()
+    if not unplayable:
+        return ""
+
+    return format_html(
+        "{} {} in this tournament yielded no result, so nobody could be compared with"
+        ' anybody on them.  <a href="{}">Law 12</a> awards an artificial score instead:'
+        " 40% to a pair responsible for the board being lost, 60% to a pair who were not,"
+        " and 50% each when neither was.  Those awards are part of the totals above.",
+        unplayable,
+        "board" if unplayable == 1 else "boards",
+        LAW_12C2A_URL,
+    )
+
+
 class MatchpointScoreTable(tables.Table):
     _current_viewer: app.models.Player | None = None
 
-    pair1 = tables.Column()
-    pair2 = tables.Column()
+    # The rows are pairs, so the two name columns are the halves of one -- "Pair1" and
+    # "Pair2", which django-tables2 would otherwise derive from these attribute names,
+    # read as though each row held two partnerships.
+    #
+    # Every column here sorts on something other than what it displays, because what
+    # they display is either markup or a formatted string.  Sorting on the cell itself
+    # ordered the names by the player link's primary key as text ("/player/11/" between
+    # "/player/1/" and "/player/3/"), and would put "100%" ahead of "42%".
+    pair1 = tables.Column(verbose_name="Player 1", order_by=("pair1_name", "pair2_name"))
+    pair2 = tables.Column(verbose_name="Player 2", order_by=("pair2_name", "pair1_name"))
     matchpoints = tables.Column()
-    percentage = tables.Column()
+    percentage = tables.Column(order_by="percentage_value")
 
     class Meta:
         row_attrs = {
@@ -134,13 +176,21 @@ def tournament_view(request: AuthedHttpRequest, pk: str) -> TemplateResponse:
                                 "pair2": app.rendering.player_link(player2),
                                 "pair1_name": player1.name,  # Plain name for comparison
                                 "pair2_name": player2.name,  # Plain name for comparison
-                                "matchpoints": score[0],
+                                "matchpoints": round(score[0], 1),
                                 "percentage": string_score,
+                                "percentage_value": -1.0
+                                if math.isnan(numeric_score)
+                                else numeric_score,
                             }
                         )
 
-                    # Sort by matchpoints descending (highest first)
-                    l_o_d.sort(key=lambda x: cast(float, x["matchpoints"]), reverse=True)
+                    # Sort by percentage, not by matchpoints: a pair who missed a board
+                    # through no fault of their own play for a smaller total, so their
+                    # matchpoints aren't comparable with everyone else's.  A pair with no
+                    # percentage at all (nothing to compare against) sorts last.
+                    l_o_d.sort(key=lambda x: cast(float, x["percentage_value"]), reverse=True)
+
+                    context["adjusted_score_explanation"] = _adjusted_score_explanation(t)
 
                     context["matchpoint_score_table"] = MatchpointScoreTable(
                         l_o_d, request=request, viewer=viewer

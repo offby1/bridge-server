@@ -1,16 +1,4 @@
 IN PROGRESS:
-
-STILL TODO:
-* Looking at the `app:hand-dispatch` page, I see lots of errors like this:
-
-  2026-03-04T12:58:39+0000 WARNING pid=40807 thread=django-main-thread request_id=a3872e1bc81841099fe741b264478bea runserver.py(191) log_action HTTP GET /events/table/html/237/ 400 [0.06, 127.0.0.1:57177]
-
-  That suggests that the browser is trying to do the reconnectingeventsource thing, which is dumb, since this particular hand is finished.
-
-  Granted, it's faintly possible that the server might want to update stuff in the page's header, like "is the bot playing for me", or "should the hint button be visible", but geez
-
-* Katie's declarer. She just won the trick, but it hasn't scrolled her hand into view.
-* After the bot makes the opening lead, both Katie and I have had to reload the page in order to see it.
 * Doing "Splitsville" properly abandons the *hand*, but it should probably hose the entire tournament, or something.
   <docs/Laws-of-Duplicate-Bridge.pdf>, Law 12, says
 
@@ -27,6 +15,55 @@ STILL TODO:
 
   I guess I'd have to complete the tournament, and every time the "broken" pair comes up to play, the hand is skipped, but marked with "placeholder" scores -- we won't know the actual scores until the rest of the tournament finishes.
 
+  That guess was right about completing the tournament and skipping the hand, and wrong
+  about the placeholders: we didn't need them.  A placeholder is only unavoidable if the
+  award is a raw score that has to be matchpointed against the field.  Expressed instead
+  as a fraction of the matchpoints available on that one board, 60% is 60% the moment the
+  pair walk out, no matter what the rest of the tournament does afterwards.
+
+  Landed so far, on the `splitsville-stalls-the-tournament` branch:
+
+  - The tournament no longer hoses *itself*.  It used to: `the_round_just_ended`
+    counted completed hands against the number the movement calls for, an abandoned
+    hand was not among them, so no later round was ever dealt -- at any table -- and
+    every pair sat idle until the play-completion deadline expired.  A round is now
+    over when every table is done with it, where a table is done once it has settled
+    all its boards for the round, or as soon as one of its hands is abandoned.
+  - Abandoning a hand now gets all four players up, not just the pair who left.
+  - A pair who quit are not dealt back in.  `TournamentWithdrawal` records that they
+    left; the hands the movement still schedules for them (and for whoever they were
+    due to meet) are written down abandoned, with nobody seated.  So are the rest of
+    the boards at the table they walked out of mid-round.
+  - Scoring works in fractions of a board, averaged, so every board a pair were down
+    to play counts the same however big its field turned out to be.  Totting up raw
+    matchpoints over a tournament-wide total made a pair who missed a board pay for it
+    twice, and collapsed altogether in a two-table event where one table walked out:
+    every board was then left with a single result, worth 0 matchpoints out of 0, so
+    the whole field scored zero.
+  - A lone result on a board earns average.  There is nothing to matchpoint it
+    against, and "beat nobody, so zero" would be inventing information.
+  - The adjusted scores themselves.  A board that yielded no result awards each side a
+    fraction of the matchpoints available on it: 40% to a pair who walked out, 60% to
+    the pair they stranded, 50% each when neither is to blame (the play-completion
+    deadline ran out on a table that was still going).  See
+    `Tournament._adjusted_score_for`.
+  - The tournament results table sorts by percentage rather than by matchpoints, which
+    are no longer comparable between pairs who played different numbers of boards.
+  - The Splitsville button warns you first, naming the tournament and what it will cost
+    ("40% on every board you don't play").  A milder warning covers a pair who are
+    signed up but not yet playing.  Any button with a `data-confirm` attribute now asks
+    before it acts; the listener is in `base.html`.
+
+  Still to do:
+
+  - The 40/50/60 split is the crudest reading of Law 12: we hold a pair at fault for
+    every board they miss, including the ones in rounds they'd never have reached
+    anyway.  A director would think harder.
+  - A pair whose opponents vanish get 60% rather than a real result.  A more thorough
+    answer is for the movement to re-pair them, which is a much bigger job.
+
+
+STILL TODO:
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
@@ -1444,6 +1481,17 @@ DONE:
   - only clue: browser's developer tools show the POST data as
     `me=1&them=2&action=partnerup&action=partnerup` -- why is the "action" duplicated?
 
+NOT DONE (problem doesn't seem to be happening any more):
+* After the bot makes the opening lead, both Katie and I have had to reload the page in order to see it.
+* Katie's declarer. She just won the trick, but it hasn't scrolled her hand into view.
+* Looking at the `app:hand-dispatch` page, I see lots of errors like this:
+
+  2026-03-04T12:58:39+0000 WARNING pid=40807 thread=django-main-thread request_id=a3872e1bc81841099fe741b264478bea runserver.py(191) log_action HTTP GET /events/table/html/237/ 400 [0.06, 127.0.0.1:57177]
+
+  That suggests that the browser is trying to do the reconnectingeventsource thing, which is dumb, since this particular hand is finished.
+
+  Granted, it's faintly possible that the server might want to update stuff in the page's header, like "is the bot playing for me", or "should the hint button be visible", but geez
+
 NOT DONE:
 * Fix title for pages like http://127.0.0.1:9000/hand/138/ -- we did something like this way back in
 

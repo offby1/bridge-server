@@ -31,7 +31,7 @@ from django_filters.views import FilterView
 
 import app.readers
 import app.rendering
-from app.models import Message, PartnerException, Player
+from app.models import Message, PartnerException, Player, TournamentSignup
 from app.models.player import JOIN, SPLIT
 from app.models.types import PK
 from app.templatetags.player_extras import sedate_link
@@ -54,10 +54,38 @@ def partnership_status_channel_name(*, viewer, subject) -> str:
     return f"partnership-status:{viewer.pk=}:{subject.pk=}"
 
 
-def _splitsville_context(*, request: AuthedHttpRequest, player_pk: PK) -> dict[str, Any]:
+def _splitsville_warning(viewer: Player) -> str:
+    """What breaking up is about to cost, in a sentence; empty if it costs nothing.
+
+    Splitting up mid-tournament is not just leaving the table you're at: the movement
+    had you down for every later round too, and you don't get those boards back.  Say
+    so before they click, rather than explaining it afterwards in the standings.
+    """
+    if (hand := viewer.current_hand) is not None and not hand.tournament.is_complete:
+        return (
+            f"This quits tournament #{hand.tournament.display_number} for both of you,"
+            " not just this board. You'll be scored 40% on every board you don't play,"
+            " and the pairs who were due to play you will get 60%."
+            " You can't rejoin this tournament. Go ahead?"
+        )
+
+    if (signup := TournamentSignup.objects.filter(player=viewer).first()) is not None:
+        return (
+            f"You and your partner are signed up for tournament"
+            f" #{signup.tournament.display_number}; breaking up drops you both from it."
+            " Go ahead?"
+        )
+
+    return ""
+
+
+def _splitsville_context(
+    *, request: AuthedHttpRequest, player_pk: PK, viewer: Player
+) -> dict[str, Any]:
     return {
         "button_content": "Splitsville!!",
         "button_submit_value": SPLIT,
+        "confirm": _splitsville_warning(viewer),
         "form_action": player_detail_endpoint(player_pk=player_pk),
         "input_hidden_value": request.get_full_path(),
     }
@@ -67,6 +95,10 @@ def _partnerup_context(*, request: AuthedHttpRequest, subject_pk: PK) -> dict[st
     return {
         "button_content": "Partner 'em Up, Boss",
         "button_submit_value": JOIN,
+        # Nothing to warn about, but the key has to be here: FASTDEV_STRICT_IF makes
+        # `{% if action_button.confirm %}` an error rather than a silent False when the
+        # key is missing, so every button context needs the same shape.
+        "confirm": "",
         "form_action": player_detail_endpoint(player_pk=subject_pk),
         "input_hidden_value": reverse("app:tournament-list") + "?open_for_signups=True",
     }
@@ -131,12 +163,12 @@ def _get_partner_action_from_context(
 
     if as_viewed_by == subject:
         if subject.partner is not None:
-            return _splitsville_context(request=request, player_pk=subject.pk)
+            return _splitsville_context(request=request, player_pk=subject.pk, viewer=as_viewed_by)
 
         return None
 
     if subject.partner == as_viewed_by:
-        return _splitsville_context(request=request, player_pk=subject.pk)
+        return _splitsville_context(request=request, player_pk=subject.pk, viewer=as_viewed_by)
 
     if {subject.partner, as_viewed_by.partner} == {None}:
         return _partnerup_context(request=request, subject_pk=subject.pk)
@@ -148,7 +180,7 @@ def _get_partner_action_from_context(
         False
     } and not subject.currently_seated:
         if subject.partner == as_viewed_by:
-            return _splitsville_context(request=request, player_pk=subject.pk)
+            return _splitsville_context(request=request, player_pk=subject.pk, viewer=as_viewed_by)
 
     return None
 
