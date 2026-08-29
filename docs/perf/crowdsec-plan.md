@@ -160,10 +160,15 @@ must not be committed.
 ### Access logs, which we do not currently have
 
 `caddy/Caddyfile`'s `(ratelimit)` snippet has no `log` directive, and Caddy
-writes no per-site access log unless asked. So today there is nothing for
+writes no per-site access log unless asked. So today there is no access log for
 CrowdSec to parse, whichever datasource we pick — choosing the Docker datasource
 changes *where the log goes* (container stdout instead of a file), not whether it
 exists.
+
+This is about *access* logs only. Caddy's own runtime log is already on stderr,
+and the rate-limit handler's `"rate limit exceeded"` line is in it today, which is
+why the `429` scenario needs no Caddyfile change. See "Design: how the scenario
+knows whom to blame".
 
 So we add a `log` to the site. Caddy's default encoder is JSON when output is
 not a terminal, which is what the `crowdsecurity/caddy` parser expects.
@@ -175,41 +180,94 @@ Two notes on volume, since we are turning on logging we have never had:
 - A `429` flood will be by far the loudest thing in this log. That is the point,
   but it means the log's size tracks attacks, not traffic.
 
-## Open questions to settle before writing the scenario
+## Design: how the scenario knows whom to blame
 
-### 1. A `429` does not say which zone rejected the request — and that is dangerous
+### The hazard
 
-This is the biggest unresolved problem in the plan, and it deserves to block
-Phase 4.
+We have three rate-limit zones, and two of them — `list_views` and `whole_site`
+— are *aggregate*: they shed requests based on total traffic from everybody.
+During exactly the kind of distributed flood those zones exist for, **innocent
+users get `429` too**. That is the design; the alternative is the site falling
+over.
 
-We have three rate-limit zones. Two of them are *aggregate*: `list_views` and
-`whole_site` shed requests based on total traffic from everybody. During exactly
-the kind of distributed flood those zones exist for, **innocent users get `429`
-too** — that is the design, since the alternative is the site falling over.
+So a scenario that bans on "repeated `429`s" would risk banning real players
+precisely when the site is under attack — converting an availability problem
+into a "we banned our own users" problem. The scenario must be able to tell
+*which zone* rejected a request, and act only on `per_ip`.
 
-A scenario that bans on repeated `429`s therefore risks banning real users
-precisely when the site is under attack. It would be a way to convert an
-availability problem into a "we banned our own players" problem.
+### Resolved: the zone is available three ways (checked against source, 2026-08-29)
 
-Candidate fixes, none verified:
+I checked `caddy-ratelimit` at `master`. There is **no** per-zone or per-handler
+response override in the zone config — the syntax is only `match`, `key`,
+`window`, `events`, `ipv4_prefix`, `ipv6_prefix`, and the handler
+unconditionally returns `caddyhttp.Error(http.StatusTooManyRequests, nil)` with
+a nil message. So the idea of giving `per_ip` its own distinct status code is
+not directly supported.
 
-- **Make the scenario slow and forgiving enough that an aggregate shed cannot
-  reach it.** A real user who gets a `429` reloads a couple of times and gives
-  up; a crawler generates hundreds. A high capacity over a long window may
-  separate them on volume alone. Cheapest option, and simulation mode will tell
-  us whether the separation is real in our traffic.
-- **Make per-IP rejections distinguishable from aggregate ones** — split the
-  `per_ip` zone into its own `rate_limit` handler that responds differently (a
-  distinct status code or a marker header), and key the scenario only on that.
-  Cleaner in principle, but I have not confirmed `caddy-ratelimit` supports a
-  per-zone or per-handler response override; if it does not, `handle_errors`
-  might, or it might not be possible at all. **Check this before designing
-  around it.**
+But the zone name is exposed three other ways, and the second one is what we
+should use:
 
-Do not skip this by writing an aggressive scenario and hoping. The whole reason
-for simulation mode is that we cannot currently predict the answer.
+1. **A placeholder, `{http.rate_limit.exceeded.name}`**, set just before the
+   error is returned and documented in the handler's doc comment. It holds the
+   name of the zone whose limit was exceeded, and it is readable from
+   `handle_errors` routes. This *does* give us a per-zone response override —
+   not through zone config, but by branching in an error route on the
+   placeholder, and emitting a different status or a marker header per zone.
+   Workable, but it means writing an error route we would otherwise not need.
 
-### 2. Ban duration
+2. **A dedicated structured log line, which already contains everything we
+   want.** On every rejection the handler logs, at `Info` level:
+
+   - `msg`: `"rate limit exceeded"`
+   - `logger`: `"http.handlers.rate_limit"` (the module ID)
+   - `zone`: the zone name
+   - `remote_ip`: the client
+   - `wait`: how long until the limit clears
+   - `key`: only when the `log_key` option is set
+
+3. **A Caddy event**, `rate_limit_exceeded`, carrying `zone`, `remote_ip` and
+   `wait`, which Caddy's `events` global option can bind a handler to. Complete
+   for the record; far more machinery than we need.
+
+### Consequence: parse the rate-limit log line, not the access log
+
+Option 2 is strictly better than anything in the previous draft of this plan,
+and it simplifies the work:
+
+- **The zone is explicit**, so the scenario keys on `zone == "per_ip"` and
+  ignores `list_views` and `whole_site` entirely. The false-positive hazard
+  above disappears *by construction* rather than by hoping a threshold
+  separates crawlers from reloading humans.
+- **No Caddyfile change at all** for this half. This line is the handler's own
+  runtime log, not a per-site access log, so it goes to Caddy's stderr whether
+  or not we add a `log` directive, and `Info` is Caddy's default level. The
+  Docker datasource picks it up as-is.
+- **A custom parser costs us nothing.** CrowdSec's signal-validity rule is about
+  *scenarios*: a custom or edited scenario is ignored by the consensus engine,
+  but a custom parser has no effect on validity. Our `429` scenario is custom
+  regardless, so parsing a non-standard log line loses us nothing we had.
+- `log_key` stays off. For `per_ip` the key is `{remote_host}`, which duplicates
+  `remote_ip`; for the aggregate zones it is the constant `static`. It would tell
+  us nothing.
+
+The `crowdsecurity/caddy` hub collection is still needed — but for the *other*
+goal. It parses access logs, and the hub scenarios that run on top of it are what
+earn the community blocklist. The two halves read two different logs, which is
+why Phase 1 and Phase 3 are independent.
+
+### The one caveat: `remote_ip` is the TCP peer, not `X-Forwarded-For`
+
+The handler derives it with `net.SplitHostPort(r.RemoteAddr)`. It does not
+consult any forwarded-for header. In our topology that is exactly right — Caddy
+terminates TLS at the edge and is the first hop, the same assumption
+`caddy/Caddyfile` already documents for `key {remote_host}`.
+
+**But it means that if we ever put anything in front of Caddy** — a CDN, a load
+balancer, Cloudflare — `remote_ip` silently becomes that proxy's address, and the
+scenario would ban the proxy, taking out all traffic. If that day comes, this
+scenario has to be revisited before the proxy goes live.
+
+## Open question: ban duration
 
 Untested. Our legitimate peak is 3.5 requests/second in the busiest minute of
 two weeks, roughly 1000x below capacity, so there is enormous headroom and a
@@ -220,12 +278,15 @@ evidence.
 
 ## Phases
 
-Each phase should be its own commit, and each is independently useful.
+Each phase should be its own commit, and each is independently useful. Note that
+the two goals read two different logs, so Phase 1 is a prerequisite for the hub
+scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 
-**Phase 1 — logs only.** Add the `log` directive to the Caddy site. Nothing
+**Phase 1 — access logs.** Add the `log` directive to the Caddy site. Nothing
 else. Deploy to beta with `just mini` or `just beta` and confirm we can see
-access-log JSON, including `429`s, in `docker compose logs caddy`. This is
-worth having on its own merits; we have been running with no access log.
+access-log JSON in `docker compose logs caddy`. Worth having on its own merits;
+we have been running with no access log at all. This feeds the hub scenarios,
+which is how we earn the blocklist.
 
 **Phase 2 — the CrowdSec container, parsing but not enforcing.** Add
 `crowdsec/Dockerfile` and the compose service. Install the
@@ -234,9 +295,11 @@ Docker datasource at the Caddy container. No bouncer yet, so nothing can be
 blocked. Verify with `cscli metrics` that lines are being parsed and are not
 landing in the unparsed bucket. A parser that silently fails to match our log
 format is the most likely thing to go wrong here, and this phase exists to catch
-it while the blast is zero.
+it while nothing can be harmed.
 
-**Phase 3 — the custom `429` scenario, in simulation.** Write it, and enable
+**Phase 3 — the custom `429` scenario, in simulation.** Write a parser for the
+`"rate limit exceeded"` line described above, extracting `zone` and `remote_ip`,
+and a scenario that buckets on `remote_ip` filtered to `zone == "per_ip"`. Enable
 simulation for it before it ever runs live: alerts are recorded, remediation is
 not applied. Note the known wrinkle that simulation for a custom scenario is
 keyed on the *file* name rather than the scenario name — worth verifying against
@@ -271,9 +334,10 @@ return status 0 and you see no `429`s at all, which looks like a broken limiter
 but is a non-result.
 
 `project/app/manually_test_rate_limiting.py` is the natural way to generate the
-`429`s that should trigger the scenario. Note the caveat that it floods from one
-IP, so it exercises the per-IP path and tells us nothing about the aggregate-zone
-false-positive question in open question 1.
+`429`s that should trigger the scenario, and the fact that it floods from a single
+IP — a caveat for other purposes — is exactly right here: the `per_ip` zone is the
+only one the scenario watches. Watch for `zone: per_ip` lines in
+`docker compose logs caddy` and then for a matching entry in `cscli alerts list`.
 
 ## Landed
 
