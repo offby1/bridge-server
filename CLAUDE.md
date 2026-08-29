@@ -547,6 +547,9 @@ just prod               # Deploys to hetz-bridge context
 ```
 
 This:
+- Prunes the target host's untagged images and trims its build cache to 10G *first*, so
+  the build has room. This happens on every deploy, `just dev` included, and never
+  removes an image a container references
 - Builds the `bridge-django` Docker image once, then reuses it for every service
 - Deploys to the remote host via SSH Docker context
 - Runs `collectstatic`, `migrate` and `setup_oauth` as one-shot services and waits for

@@ -393,6 +393,16 @@ _deploy hostname profile context settings_module *options:
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
 
+    # Reclaim what the previous deploy left behind, before we need the room. Every
+    # deploy replaces the `bridge-django` (and caddy/grafana/prometheus) tags, and the
+    # images they used to point at stay on disk as untagged `<none>` layers forever.
+    # On 2026-08-29 that had filled hetz-bridge's 75G disk: 324 images of which 9 were
+    # in use, plus 21G of build cache, and `uv sync` died with ENOSPC mid-build.
+    # `image prune` without `-a` removes only untagged images, so anything a container
+    # references -- including the stack that is still serving traffic right now -- stays.
+    docker image prune --force
+    docker builder prune --force --max-used-space=10GB
+
     # Ensure the stuff that we depend on is up to date
     docker compose pull --ignore-buildable
 
