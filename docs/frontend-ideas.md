@@ -11,3 +11,4 @@
   > daisyUI adds class names to Tailwind CSS for all common UI components.
   > Class names like `btn`, `card`, `toggle` and many more.
 - <https://unpoly.com/> looks a lot like HTMX, albeit fancier.
+- <https://citry.dev/> successor to "django-components"; aims to have all the UIs stuff in a single python file
