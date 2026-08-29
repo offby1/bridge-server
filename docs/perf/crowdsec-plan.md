@@ -323,13 +323,34 @@ through Caddy's own `/metrics`.
 ## How to test any of this
 
 The same constraint as the rate limits, for the same reason: this lives at Caddy,
-and **`just runme` and `just dev` do not run Caddy.** Use `just mini`, which
-deploys the `beta,monitoring` profile with no main-branch or clean-tree guard, so
-it will deploy this branch as-is. `crawler-repro.md`'s "Testing the Caddy rate
-limit" section has the gotchas that will bite here too — in particular the
-`.ts.net` certificate problem, where a failed TLS handshake makes every request
-return status 0 and you see no `429`s at all, which looks like a broken limiter
-but is a non-result.
+and **`just runme` and `just dev` do not run Caddy.** `just mini` deploys the
+`beta,monitoring` profile with no main-branch or clean-tree guard, so it will
+deploy this branch as-is.
+
+**But a plain `just mini` does not exercise Caddy at all, and this is easy to
+mistake for a working test.** Measured on 2026-08-29, two separate things stop
+traffic reaching it, and you must fix both:
+
+1. **`tailscale serve` owns port 443 on the tailnet interface.** Caddy binds
+   `0.0.0.0:443`, but a request to the `.ts.net` name arrives on the Tailscale
+   IP, where `tailscale serve` answers first and proxies straight to Daphne. The
+   tell is in the response headers: `server: daphne` means you reached Django
+   directly, where Caddy would have said `server: Caddy`. Everything looks
+   healthy — correct status codes, valid TLS, current `x-bridge-version` — while
+   the edge you meant to test is bypassed entirely.
+2. **Caddy cannot get a certificate for a `.ts.net` name.** Reaching it directly
+   from inside the container fails the handshake server-side with
+   `tlsv1 alert internal error` (SSL alert 80), so it can serve nothing on that
+   hostname. Fix with a *temporary* `caddy.tls: internal` label, exactly as
+   `crawler-repro.md`'s step 2 describes — and do not commit it, since prod needs
+   real public certificates.
+
+`crawler-repro.md`'s "Testing the Caddy rate limit" section covers the rest,
+including the trap where a failed handshake makes every request return status 0
+and you see no `429`s, which looks like a broken limiter but is a non-result.
+
+Beta avoids both problems: real Let's Encrypt certificates, nothing intercepting
+443. For anything at the edge it is the more trustworthy target.
 
 `project/app/manually_test_rate_limiting.py` is the natural way to generate the
 `429`s that should trigger the scenario, and the fact that it floods from a single
@@ -376,10 +397,28 @@ that exist only in access entries, so those clauses have been dormant since they
 were written. They now match. The recipe deliberately shows only 429s and 5xx
 from the access log rather than every request, which is the right default.
 
-**Not yet verified on a real host.** The claims above come from `caddy adapt` on
-an equivalent Caddyfile plus `docker compose config` showing the label renders.
-Neither exercises caddy-docker-proxy's label-to-Caddyfile conversion, so the
-remaining risk is that the label produces something other than the `log { format
-json }` that was validated. Confirming means a deploy — `just mini` or `just
-beta` — and then `just caddy-log`, or `docker compose logs caddy` for the
-unfiltered lines.
+**Config verified on the mini; traffic not.** After a `just mini` deploy,
+Caddy's admin API returns exactly the shape `caddy adapt` predicted:
+
+```
+DOCKER_CONTEXT=mini COMPOSE_PROFILES=beta \
+    docker compose exec caddy wget -qO- http://127.0.0.1:2019/config/logging
+
+{"logs":{"default":{"exclude":["http.log.access.log0"]},
+         "log0":{"encoder":{"format":"json"},"include":["http.log.access.log0"]}}}
+```
+
+So caddy-docker-proxy does convert the label into the `log { format json }` that
+was validated. That was the one real risk, and it is closed. Use `127.0.0.1`
+rather than `localhost` for that query: the admin endpoint listens on IPv4
+loopback only, and `localhost` resolves to `::1` inside the container, which
+answers "connection refused" and looks like a disabled admin API.
+
+What is **not** verified is an actual access-log entry, because **no request has
+ever reached Caddy on the mini.** Two independent reasons, both pre-existing and
+neither caused by this change — see "How to test any of this".
+
+Since Caddy serves nothing on the mini, nothing there exercises the access log,
+the rate limits, or anything else at the edge. Confirming an entry appears means
+either fixing the mini as described below, or deploying this branch to beta,
+which has real certificates and nothing intercepting its port 443.
