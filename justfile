@@ -475,9 +475,14 @@ dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " 
 [group('deploy')]
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta,monitoring" "mini" "project.prod_settings")
 
+# Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
 # `tailscale serve` persists on the host and is idempotent, so this is a one-time-per-host setup.
 # Override the host for beta: `just tailscale-serve root@hetz-bridge-beta`.
-# Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
+#
+# For hetz-bridge and hetz-bridge-beta the ansible-inventory repo now does this for us, in the
+# `publish monitoring ports over tailscale serve` play; run `just tailscale-serve` there instead.
+# This recipe remains for the mac mini, which ansible does not manage because the playbook
+# requires Ubuntu, and as a way to check or repair a host by hand.
 [group('deploy')]
 tailscale-serve ssh_host="root@hetz-bridge":
     ssh {{ ssh_host }} 'tailscale serve --bg --tcp 3000 tcp://127.0.0.1:3000 \
