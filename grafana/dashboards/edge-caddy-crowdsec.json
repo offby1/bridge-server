@@ -83,7 +83,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(caddy_http_request_duration_seconds_count{code=\"429\"}[5m]))",
+          "expr": "sum(rate(caddy_http_request_duration_seconds_count{code=\"429\"}[5m])) or vector(0)",
           "legendFormat": "429 rate-limited",
           "range": true,
           "refId": "A"
@@ -196,7 +196,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(increase(cs_node_hits_ok_total{name=\"offby1/caddy-ratelimit\"}[1h]))",
+          "expr": "sum(increase(cs_node_hits_ok_total{name=\"offby1/caddy-ratelimit\"}[1h])) or vector(0)",
           "legendFormat": "rejections parsed",
           "range": true,
           "refId": "A"
