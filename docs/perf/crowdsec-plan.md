@@ -23,7 +23,7 @@ outages this is meant to help with and the tiered rate limits we already deploy.
 
 ## What we want, and why
 
-Two separate things, which happen to share one piece of software:
+We want two separate things, which happen to share one piece of software:
 
 1. **Report offenders.** Somebody who collects a pile of `429`s from our rate
    limits is a repeat offender. We want to ban them outright for a few hours
@@ -36,7 +36,7 @@ Two separate things, which happen to share one piece of software:
 ### How this relates to the rate limits we already have
 
 The limits in `caddy/Caddyfile` stay exactly as they are. CrowdSec adds to
-them; it replaces nothing. Being concrete about the two outages in
+them; it replaces nothing. To be concrete about the two outages recorded in
 `crawler-repro.md`:
 
 - **2026-07-15, single-IP crawler.** CrowdSec is a clear improvement. The
@@ -49,7 +49,7 @@ them; it replaces nothing. Being concrete about the two outages in
   extent those IPs happen to be on it. The `list_views` and `whole_site`
   aggregate zones remain the thing that actually saves us.
 
-So: do not loosen any zone because CrowdSec is now running.
+So do not loosen any zone merely because CrowdSec is now running.
 
 ## Decisions already made
 
@@ -102,12 +102,14 @@ before Phase 5, because this is exactly the kind of policy that changes:
 
 ### A new `crowdsec` container
 
-- Image `crowdsecurity/crowdsec`, in the `prod` and `beta` compose profiles
-  only, matching `caddy`. Dev and test are unaffected; `just runme` and `just
-  dev` do not run Caddy, so there is nothing for CrowdSec to watch.
-- Mounts `/var/run/docker.sock` read-only, for the log datasource.
-- A named volume for `/var/lib/crowdsec/data`, so bans and the downloaded
-  blocklist survive a restart. Without it every deploy forgets everyone.
+- It runs the `crowdsecurity/crowdsec` image, in the `prod` and `beta` compose
+  profiles only, matching `caddy`. Dev and test are unaffected, because `just
+  runme` and `just dev` do not run Caddy, so there would be nothing for CrowdSec
+  to watch.
+- It mounts `/var/run/docker.sock` read-only, for the log datasource.
+- It needs a named volume for `/var/lib/crowdsec/data`, so that bans and the
+  downloaded blocklist survive a restart. Without one, every deploy forgets
+  everyone.
 - **Configuration must be baked into an image, not bind-mounted from `./crowdsec/`.**
   This is the same trap `caddy/Dockerfile` and `docker-compose-caddy.yaml`
   already have comments about: a bind mount resolves on the Docker *daemon's*
@@ -120,16 +122,18 @@ before Phase 5, because this is exactly the kind of policy that changes:
 
 ### The bouncer plugin in Caddy
 
-One more `--with` line in `caddy/Dockerfile`:
+This needs one more `--with` line in `caddy/Dockerfile`:
 
 ```
 --with github.com/hslatman/caddy-crowdsec-bouncer/http
 ```
 
-Only the `http` module. The repo also publishes `appsec` and `layer4` modules;
-we want neither. Building `layer4` would drag in `caddy-l4` for no reason.
+We want only the `http` module. The repo also publishes `appsec` and `layer4`
+modules, and we want neither of those. Building `layer4` would drag in
+`caddy-l4` for no reason.
 
-In `caddy/Caddyfile`, a global app block alongside the existing `order`:
+It also needs a global app block in `caddy/Caddyfile`, alongside the existing
+`order` directives:
 
 ```
 {
@@ -144,7 +148,7 @@ In `caddy/Caddyfile`, a global app block alongside the existing `order`:
 }
 ```
 
-and a `crowdsec` directive in the site's handler chain — probably a new
+Finally it needs a `crowdsec` directive in the site's handler chain, probably a new
 `(crowdsec)` snippet imported by a second `caddy.import` label on `django`,
 rather than stuffing it into `(ratelimit)`, since the two do different jobs and
 the existing snippet's comment block is already about rate limiting alone.
@@ -190,7 +194,7 @@ been on stderr, and the rate-limit handler's `"rate limit exceeded"` line lives
 there, which is why the `429` scenario needs no logging change at all. See
 "Design: how the scenario knows whom to blame".
 
-Two notes on volume, now that logging we never had is on:
+Two things about volume are worth noting, now that logging we never had is on:
 
 - Access log lines are written when a request *finishes*. Our SSE streams are
   long-lived, so each one logs once, at close, not continuously.
@@ -286,7 +290,7 @@ scenario has to be revisited before the proxy goes live.
 
 ## Open question: ban duration
 
-Untested. Our legitimate peak is 3.5 requests/second in the busiest minute of
+This is untested. Our legitimate peak is 3.5 requests/second in the busiest minute of
 two weeks, roughly 1000x below capacity, so there is enormous headroom and a
 long ban costs us little in the normal case. The risk is not throughput, it is a
 shared address: a school, an office, or carrier NAT means one ban can take out
@@ -398,7 +402,7 @@ Phase 1) access entries with a `429` or 5xx status. Use
 
 ### Phase 1: the Caddy access log
 
-One label on the `django` service in `docker-compose.yaml`:
+This took one label on the `django` service in `docker-compose.yaml`:
 
 ```yaml
 caddy.log.format: json
@@ -464,7 +468,7 @@ out to do. Phase 2 has a log to read.
 
 ### Phase 2: CrowdSec, parsing and deciding nothing
 
-Three new files — `crowdsec/Dockerfile`, `crowdsec/acquis.d/caddy.yaml`, and
+This phase adds three new files — `crowdsec/Dockerfile`, `crowdsec/acquis.d/caddy.yaml`, and
 `docker-compose-crowdsec.yaml` (added to the `include:` list in
 `docker-compose.yaml`) — plus a `crowdsec` service in the `prod` and `beta`
 profiles, a `just cscli` recipe, and one line in `_deploy`.
@@ -489,15 +493,15 @@ arrive as a dependency. It turns out the image installs `crowdsecurity/linux`
 by default, which already brings it, so that is belt-and-braces — but it costs
 nothing and does not depend on a default we do not control.
 
-Two smaller things checked against beta's real logs before writing any config:
+I checked two smaller things against beta's real logs before writing any config.
 the Docker datasource follows stderr by default, which it must, since Caddy
 writes both its logs there; and Caddy's access entries do carry the
 `request.client_ip` field the parser reads, equal to `request.remote_ip` because
 we configure no trusted proxies.
 
-#### Verified on beta
+#### How I verified it on beta
 
-`just cscli metrics`, after three requests:
+Here is `just cscli metrics`, after three requests:
 
 ```
 | Source                 | Lines read | Lines parsed | Lines unparsed | Lines poured to bucket |
@@ -527,7 +531,7 @@ And the "decides nothing" half, all four checks:
 
 ### Phase 3: the per-IP rate-limit scenario, alerts only
 
-Two new files, both baked into the CrowdSec image:
+This phase adds two new files, both baked into the CrowdSec image:
 `crowdsec/parsers/s01-parse/caddy-ratelimit.yaml` and
 `crowdsec/scenarios/caddy-per-ip-ratelimit.yaml`.
 
@@ -563,9 +567,9 @@ Thresholds are `capacity: 30`, `leakspeed: 10s`, `blackhole: 5m`, and they are
 **provisional guesses**. Justifying or replacing them is the entire point of the
 observation week.
 
-#### Verified locally, end to end
+#### How I verified it locally, end to end
 
-Ran a local CrowdSec against a throwaway container named to match the
+I ran a local CrowdSec against a throwaway container named to match the
 datasource's pattern, so real lines went through the real pipeline into real
 buckets. `cscli explain` first, on three kinds of line:
 
@@ -597,7 +601,7 @@ threshold behaves as configured. `Remediation: false` is CrowdSec confirming the
 scenario cannot ban, and `cscli decisions list` stayed at "No active decisions"
 throughout.
 
-One incidental lesson, worth knowing for any future test of this shape: the
+One incidental lesson is worth knowing for any future test of this shape. The
 Docker datasource attaches to a container when it *starts*, and then reads new
 output. A probe container that prints and exits immediately is missed entirely —
 the first attempt read zero lines. It has to stay alive long enough for CrowdSec
@@ -614,7 +618,7 @@ never update it again. Solve that before enrolling, not after.
 
 ### Phase 4: Prometheus and a Grafana dashboard
 
-Neither Caddy nor CrowdSec was being scraped: `prometheus/prometheus.yml` had
+Neither Caddy nor CrowdSec was being scraped, because `prometheus/prometheus.yml` had
 exactly two jobs, `django` and `postgres`. Phase 4 adds a job for each, plus one
 dashboard, `grafana/dashboards/edge-caddy-crowdsec.json`.
 
@@ -707,9 +711,9 @@ Prometheus enabled on `0.0.0.0:6060`.
 
 #### The dashboard
 
-Six panels, chosen for reading the Phase 3 observation week rather than for
-completeness. Metric names were taken from the running instance on beta, not
-guessed:
+There are seven panels, and I chose them for reading the Phase 3 observation week
+rather than for completeness. I took the metric names from the running instance on
+beta rather than guessing them:
 
 | panel | query |
 |---|---|
@@ -721,10 +725,10 @@ guessed:
 | Alerts by scenario | `sum by (reason) (cs_alerts)` |
 | Active ban decisions by scenario | `sum by (reason) (cs_active_decisions)` |
 
-Note the panel count changed from six to seven while fixing the metric problem
-described above.
+Note that the panel count changed from six to seven while I was fixing the metric
+problem described above.
 
-Two notes for whoever edits this dashboard next. It hardcodes the Prometheus
+Two things are worth knowing for whoever edits this dashboard next. It hardcodes the Prometheus
 datasource UID `PBFA97CFB590B2093`, copied from
 `reasonable-looking-dashboard.json` because that one demonstrably works in this
 deployment; the provisioned datasource in
@@ -732,7 +736,7 @@ deployment; the provisioned datasource in
 dashboards are baked into the Grafana image rather than mounted, so a change
 needs a rebuild, which `_deploy` does with `--build`.
 
-#### Verified
+#### How I verified it
 
 `promtool check config` accepts the Prometheus file and Python parses the
 dashboard JSON. `caddy validate` accepts the new Caddyfile blocks — run against

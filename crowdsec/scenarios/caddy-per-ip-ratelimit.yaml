@@ -1,14 +1,14 @@
-# An IP that Caddy's *per-IP* rate limit keeps rejecting.
+# This scenario fires on an IP that Caddy's *per-IP* rate limit keeps rejecting.
+# It is part of the plan described at Phase 3 of docs/perf/crowdsec-plan.md.
+# It raises alerts and does nothing else, for the reason given under "No
+# remediation" below, and that is how this phase stays observation-only.
 #
-# Phase 3 of docs/perf/crowdsec-plan.md. This raises alerts and nothing else --
-# see "No remediation" below, which is how this phase stays observation-only.
-#
-# `ratelimit_zone == 'per_ip'` is the safety property, not a detail. Our other
-# two zones, `list_views` and `whole_site`, are aggregate: they shed traffic
-# based on everybody's total, so during a distributed flood they reject innocent
-# players by design. Bucketing those per source IP would mean punishing people
-# for being present during an attack. The parser records the zone precisely so
-# this line can exist.
+# The `ratelimit_zone == 'per_ip'` test is the safety property rather than a
+# detail. Our other two zones, `list_views` and `whole_site`, are aggregate:
+# they shed traffic based on everybody's total, so during a distributed flood
+# they reject innocent players by design. Bucketing those per source IP would
+# mean punishing people for being present during an attack. The parser records
+# the zone precisely so that this line can exist.
 type: leaky
 format: 2.0
 name: offby1/caddy-per-ip-ratelimit
@@ -17,21 +17,23 @@ description: "An IP repeatedly rejected by Caddy's per-IP rate limit"
 filter: "evt.Meta.log_type == 'caddy_ratelimit' && evt.Meta.ratelimit_zone == 'per_ip'"
 groupby: evt.Meta.source_ip
 
-# PROVISIONAL. Finding out whether these numbers are right is the entire point of
-# running this phase in observation mode, so do not treat them as tuned.
+# These two numbers are provisional. Finding out whether they are right is the
+# entire point of running this phase in observation mode, so please do not treat
+# them as tuned.
 #
-# The reasoning behind the first guess: the `per_ip` zone allows 50 requests per
-# 10 seconds, which real traffic never approaches -- the busiest minute in two
-# weeks averaged 3.5 requests/second across *all* clients. So collecting a
-# rejection at all is already unusual, and collecting 30 of them faster than they
-# leak away is hard to do by accident. A human who trips the limit during some
-# pathological page load gets a handful and stops; the 2026-07-15 crawler
-# generated them continuously for 90 seconds.
+# The reasoning behind the first guess runs as follows. The `per_ip` zone allows
+# 50 requests per 10 seconds, which real traffic never approaches, since the
+# busiest minute in two weeks averaged 3.5 requests/second across *all* clients.
+# Collecting a rejection at all is therefore already unusual, and collecting 30
+# of them faster than they leak away is hard to do by accident. A human who trips
+# the limit during some pathological page load gets a handful and stops, whereas
+# the 2026-07-15 crawler generated them continuously for 90 seconds.
 capacity: 30
 leakspeed: 10s
 
-# Stop re-alerting on the same address for a while after it overflows, so one
-# sustained crawl produces one alert rather than a stream of them.
+# This stops CrowdSec re-alerting on the same address for a while after it
+# overflows, so that one sustained crawl produces one alert rather than a stream
+# of them.
 blackhole: 5m
 
 labels:
@@ -39,21 +41,22 @@ labels:
   label: "Repeatedly rate-limited by Caddy"
   behavior: "http:dos"
   # The source IP here is the TCP peer, so it cannot be forged by setting a
-  # header -- hence spoofable 0. That claim depends on Caddy remaining the first
-  # hop; putting a CDN in front would invalidate it.
+  # header, which is why spoofable is 0. That claim depends on Caddy remaining
+  # the first hop, and putting a CDN in front would invalidate it.
   spoofable: 0
   confidence: 1
 
-  # NO `remediation: true`, deliberately, and this is the mechanism that makes
-  # Phase 3 observation-only.
+  # There is deliberately no `remediation: true` here, and its absence is the
+  # mechanism that makes Phase 3 observation-only.
   #
-  # Without that label an overflow produces an *alert* and no *decision*: it is
-  # recorded in `cscli alerts list`, and there is nothing for any bouncer to act
-  # on, now or later. That is a stronger guarantee than the simulation.yaml route
-  # the plan originally called for, because simulation for a custom scenario is
-  # keyed on the file name rather than the scenario name -- a known CrowdSec
-  # wrinkle -- so a small mistake there enforces while you believe you are only
-  # watching. There is no such trap here: the capability is simply absent.
+  # Without that label, an overflow produces an *alert* and no *decision*. The
+  # overflow is recorded in `cscli alerts list`, and there is nothing for any
+  # bouncer to act on, now or later. We consider that a stronger guarantee than
+  # the simulation.yaml route the plan originally called for, because simulation
+  # for a custom scenario is keyed on the file name rather than the scenario
+  # name, which is a known CrowdSec wrinkle, so a small mistake there enforces
+  # while you believe you are only watching. There is no such trap here, because
+  # the capability is simply absent.
   #
   # Phase 5 adds `remediation: true` once the numbers above have been justified
   # by a week of real alerts. (That was Phase 4 before the two were swapped on

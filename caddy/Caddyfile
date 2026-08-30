@@ -12,28 +12,36 @@
 {
     order rate_limit before reverse_proxy
 
-    # Collect per-request HTTP metrics (the caddy_http_* family). This is off by
-    # default. Without it /metrics still carries Go runtime counters and whatever
-    # plugins register themselves -- which is why the rate limiter's numbers show
-    # up either way -- but not request counts, durations or status codes.
+    # This option makes Caddy collect per-request HTTP metrics, the caddy_http_*
+    # family, which is off by default. Without it, /metrics still carries Go
+    # runtime counters but no request counts, durations or status codes. The
+    # status codes are the part we actually wanted, because they are how we count
+    # 429s.
     #
-    # This is the global option, not the `servers { metrics }` form: Caddy warns
-    # that the nested one is deprecated and goes away in the next major version.
+    # We use the global option rather than the `servers { metrics }` form,
+    # because Caddy warns that the nested one is deprecated and will be removed
+    # in the next major version.
+    #
+    # Note that this does NOT get us the rate limiter's own per-zone counters.
+    # The caddy-ratelimit plugin has only one tag, v0.1.0, which contains no
+    # metrics code at all; those counters live on its unreleased master branch,
+    # and xcaddy builds the latest tag. See docs/perf/crowdsec-plan.md, Phase 4.
     metrics
 }
 
-# Prometheus scrape target. Deliberately a separate listener on a port that
-# docker-compose-caddy.yaml does NOT publish, so it is reachable from the
-# compose network (where Prometheus lives) and from nowhere else.
+# This is the Prometheus scrape target. It is deliberately a separate listener on
+# a port that docker-compose-caddy.yaml does NOT publish, so that it is reachable
+# from the compose network, where Prometheus lives, and from nowhere else.
 #
-# The obvious alternative -- point Prometheus at Caddy's admin endpoint, which
-# also serves /metrics -- would mean binding the admin API to something other
-# than localhost. That API can rewrite Caddy's whole configuration, so exposing
-# it to every container on the network to obtain some counters is a bad trade.
-# This listener serves metrics and nothing else.
+# The obvious alternative would be to point Prometheus at Caddy's admin endpoint,
+# which also serves /metrics, but that would mean binding the admin API to
+# something other than localhost. Since that API can rewrite Caddy's whole
+# configuration, exposing it to every container on the network merely to obtain
+# some counters would be a bad trade. This listener serves metrics and nothing
+# else.
 #
-# No hostname, so no automatic HTTPS and no certificate for Caddy to fail to
-# obtain. See docs/perf/crowdsec-plan.md, Phase 4.
+# There is no hostname here, so Caddy attempts no automatic HTTPS and has no
+# certificate to fail to obtain. See docs/perf/crowdsec-plan.md, Phase 4.
 :2020 {
     metrics /metrics
 }

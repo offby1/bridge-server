@@ -171,10 +171,11 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
-# Caddy's interesting log lines: rate-limit rejections, anything at warn or
-# above, and any access-log entry with a 429 or 5xx status. (That last kind only
-# started appearing once we turned the access log on -- see Phase 1 in
-# docs/perf/crowdsec-plan.md. The jq below always handled it.)
+# This recipe shows Caddy's interesting log lines, meaning rate-limit rejections,
+# anything at warn level or above, and any access-log entry with a 429 or 5xx
+# status. That last kind only started appearing once we turned the access log on,
+# as Phase 1 of docs/perf/crowdsec-plan.md describes, though the jq below always
+# handled it.
 # Caddy writes JSON to stderr and Docker captures it, so there is no log file
 # to collect and nothing to ship anywhere -- this recipe just filters and reformats
 # what `docker compose logs caddy` already has. Its `ts` field is epoch seconds,
@@ -223,15 +224,16 @@ caddy-log *options:
             | join(" ")
         '
 
-# Run cscli inside the CrowdSec container: `just cscli metrics`, `just cscli alerts list`,
-# `just cscli decisions list`. CrowdSec only runs under the prod/beta profiles, so this needs
-# a deployed host: `DOCKER_CONTEXT=hetz-bridge-beta just cscli metrics`.
+# This recipe runs cscli inside the CrowdSec container, so that you can say things like
+# `just cscli metrics`, `just cscli alerts list`, or `just cscli decisions list`. CrowdSec only
+# runs under the prod/beta profiles, so this needs a deployed host, as in
+# `DOCKER_CONTEXT=hetz-bridge-beta just cscli metrics`.
 #
-# `just cscli metrics` is the one to start with. Under "Acquisition Metrics" it shows lines read
-# and lines parsed per source; a source reading lines but parsing none means the parser is not
-# matching, which is silent otherwise. Some unparsed lines are normal and expected -- Caddy's
-# runtime log shares this stream with its access log, and the caddy parser ignores it. See
-# crowdsec/acquis.d/caddy.yaml.
+# Start with `just cscli metrics`. Under "Acquisition Metrics" it shows lines read and lines
+# parsed per source, and a source that reads lines while parsing none means the parser has
+# stopped matching, which is otherwise silent. Some unparsed lines are normal and expected,
+# because Caddy's runtime log shares this stream with its access log and the caddy parser
+# ignores it. See crowdsec/acquis.d/caddy.yaml.
 [doc('Run cscli in the CrowdSec container: `just cscli metrics`')]
 [group('docker')]
 cscli *options:

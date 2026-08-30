@@ -2,55 +2,58 @@ volumes:
   crowdsec_data: {}
 
 services:
-  # Parses Caddy's logs and records what it concludes. It cannot block anything:
-  # blocking needs a bouncer in Caddy, which does not exist yet. Phase 2 of
+  # This service parses Caddy's logs and records what it concludes. It cannot
+  # block anything, because blocking needs a bouncer in Caddy and no bouncer
+  # exists yet. This is part of the plan described at Phase 2 of
   # docs/perf/crowdsec-plan.md.
   crowdsec:
     build: ./crowdsec
 
     environment:
-      # crowdsecurity/caddy = the caddy-logs parser plus
+      # The crowdsecurity/caddy collection contains the caddy-logs parser and
       # crowdsecurity/base-http-scenarios. Running those hub scenarios
-      # *unmodified* is what earns access to the community blocklist later on:
-      # CrowdSec compares a content hash and ignores signals from edited or
-      # homegrown scenarios. Do not "improve" them in place.
+      # *unmodified* is what earns access to the community blocklist later on,
+      # because CrowdSec compares a content hash and ignores signals from edited
+      # or homegrown scenarios. Please do not "improve" them in place.
       - COLLECTIONS=crowdsecurity/caddy
 
       # crowdsecurity/caddy does *not* depend on the parser that copies
       # labels.type into evt.Parsed.program, and caddy-logs matches nothing
-      # without it (see crowdsec/acquis.d/caddy.yaml). It normally arrives anyway
-      # as part of the linux collection the image installs by default; naming it
-      # here means we are not relying on that.
+      # without it (see crowdsec/acquis.d/caddy.yaml). That parser normally
+      # arrives anyway as part of the linux collection the image installs by
+      # default, but naming it here means we are not relying on that.
       - PARSERS=crowdsecurity/syslog-logs
 
-      # Deliberately offline for now: no registration with CrowdSec's central
-      # API, so we neither report anything nor pull any blocklist. Phase 5 turns
-      # this off and enrols properly. Keeping it on until then means this phase
-      # cannot have any effect outside this host.
+      # We are deliberately offline for now. CrowdSec does not register with the
+      # central API, so we neither report anything nor pull any blocklist. Phase
+      # 5 turns this setting off and enrols properly. Keeping it on until then
+      # means this phase cannot have any effect outside this host.
       - DISABLE_ONLINE_API=true
 
     volumes:
-      # Read-only: all this ever does is read container logs.
+      # The socket is mounted read-only, because all this service ever does is
+      # read container logs.
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
-      # The decisions and alerts database. Without this, every restart forgets
-      # every ban and every alert.
+      # This volume holds the decisions and alerts database. Without it, every
+      # restart would forget every ban and every alert.
       #
       # Note that /etc/crowdsec is deliberately *not* a volume, even though
       # upstream suggests persisting it. A named volume there would shadow the
       # acquisition config baked into the image, and worse, it would be seeded
-      # once from the image and then never updated again -- so editing
-      # crowdsec/acquis.d/caddy.yaml would appear to do nothing. The cost is that
-      # the agent regenerates its local API credentials on each start, which is
-      # harmless while the agent and the local API live in the same container.
-      # Phase 5 has to revisit this, because the central-API credentials it
-      # creates *do* need to survive a restart.
+      # once from the image and then never updated again, so that editing
+      # crowdsec/acquis.d/caddy.yaml would appear to do nothing. The cost of
+      # leaving it unpersisted is that the agent regenerates its local API
+      # credentials on each start, which is harmless while the agent and the
+      # local API live in the same container. Phase 5 has to revisit this,
+      # because the central-API credentials it creates *do* need to survive a
+      # restart.
       - crowdsec_data:/var/lib/crowdsec/data
 
     restart: unless-stopped
 
-    # Same profiles as Caddy: this reads Caddy's logs, so it is pointless without
-    # it, and dev runs no Caddy at all.
+    # This service uses the same profiles as Caddy, because it reads Caddy's logs
+    # and so is pointless without it, and because dev runs no Caddy at all.
     profiles:
       - prod
       - beta
