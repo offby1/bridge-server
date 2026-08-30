@@ -1,12 +1,12 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1 and 2 have landed and are verified running
-on beta; Phases 3, 4 and 5 are still intent.** The Caddy access log is on and
-CrowdSec is parsing it — see "Landed" at the bottom. There is still no bouncer
-plugin and no `429` scenario, and CrowdSec is not registered with the central
-API, so **nothing is being blocked and nothing is being reported to anyone.**
-When a phase lands, move it into the "Landed" section and say what it actually
-does.
+**Status as of this commit: Phases 1, 2 and 3 have landed; Phases 4 and 5 are
+still intent.** The Caddy access log is on, CrowdSec is parsing it, and the
+per-IP rate-limit scenario raises alerts — see "Landed" at the bottom. There is
+still no bouncer plugin, the scenario deliberately has no `remediation` label,
+and CrowdSec is not registered with the central API, so **nothing is being
+blocked and nothing is being reported to anyone.** When a phase lands, move it
+into the "Landed" section and say what it actually does.
 
 Companion to [`crawler-repro.md`](crawler-repro.md), which records the two
 outages this is meant to help with and the tiered rate limits we already deploy.
@@ -289,16 +289,10 @@ scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 **Phase 2 — the CrowdSec container, parsing but not enforcing. Done and verified
 on beta; see "Landed".**
 
-**Phase 3 — the custom `429` scenario, in simulation.** Write a parser for the
-`"rate limit exceeded"` line described above, extracting `zone` and `remote_ip`,
-and a scenario that buckets on `remote_ip` filtered to `zone == "per_ip"`. Enable
-simulation for it before it ever runs live: alerts are recorded, remediation is
-not applied. Note the known wrinkle that simulation for a custom scenario is
-keyed on the *file* name rather than the scenario name — worth verifying against
-current CrowdSec behaviour, because getting it wrong means the thing enforces
-when you believed it was only watching. Let it sit for a week. Then read
-`cscli alerts list` and answer, honestly: did it flag anybody we recognise?
-Tune, or throw the scenario away.
+**Phase 3 — the custom `429` scenario, observation only. Built and verified; see
+"Landed". The waiting is the part that remains.** Let it collect for a week, then
+read `cscli alerts list` and answer honestly: did it flag anybody we recognise?
+Tune the thresholds, or throw the scenario away.
 
 **Phase 4 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
 block and the snippet import, and the API key secret. Take the custom scenario
@@ -504,6 +498,84 @@ And the "decides nothing" half, all four checks:
 - `cscli capi status` — errors with "no configuration for Central API (CAPI)",
   which is `DISABLE_ONLINE_API` working. Nothing is reported upstream and no
   blocklist is pulled.
+
+### Phase 3: the per-IP rate-limit scenario, alerts only
+
+Two new files, both baked into the CrowdSec image:
+`crowdsec/parsers/s01-parse/caddy-ratelimit.yaml` and
+`crowdsec/scenarios/caddy-per-ip-ratelimit.yaml`.
+
+#### We did not use simulation mode, and that is a deliberate change of plan
+
+This plan originally said to put the scenario in simulation mode. We did
+something stronger instead: **the scenario simply omits the `remediation` label.**
+
+An overflow therefore produces an alert and *cannot* produce a decision — there
+is nothing for a bouncer to act on, now or after Phase 4 adds the bouncer. That
+is a better guarantee than simulation for two reasons. Simulation for a custom
+scenario is keyed on the *file* name rather than the scenario name, a known
+CrowdSec wrinkle, so a small mistake there enforces while you believe you are
+only watching. And simulation is configuration that a later edit can quietly
+undo, whereas a missing capability cannot be undone by accident.
+
+Phase 4 adds `remediation: true`, and that edit is the moment this scenario
+becomes able to ban anyone. Treat it accordingly.
+
+#### The parser reads every zone; the scenario acts on one
+
+The parser matches any `"rate limit exceeded"` line and records which zone
+rejected the request in `evt.Meta.ratelimit_zone`. The scenario then filters to
+`per_ip`.
+
+Splitting it that way buys something the earlier draft of this plan did not have:
+`cscli metrics` now counts rejections from `list_views` and `whole_site` too. That
+is the measurement the aggregate-zone worry needs — we can see how often those
+zones fire in practice — while keeping them structurally incapable of getting
+anybody alerted on, let alone banned.
+
+Thresholds are `capacity: 30`, `leakspeed: 10s`, `blackhole: 5m`, and they are
+**provisional guesses**. Justifying or replacing them is the entire point of the
+observation week.
+
+#### Verified locally, end to end
+
+Ran a local CrowdSec against a throwaway container named to match the
+datasource's pattern, so real lines went through the real pipeline into real
+buckets. `cscli explain` first, on three kinds of line:
+
+| line | parsed by | reaches scenario |
+|---|---|---|
+| `zone: per_ip` rejection | `offby1/caddy-ratelimit` | `offby1/caddy-per-ip-ratelimit` |
+| `zone: list_views` rejection | `offby1/caddy-ratelimit` | **nothing** |
+| real access-log entry | `crowdsecurity/caddy-logs` | `crowdsecurity/http-crawl-non_statics` |
+
+The middle row is the safety property, confirmed rather than assumed: an
+aggregate-zone rejection is parsed and counted but reaches no scenario at all.
+The third row confirms our parser does not disturb the hub path.
+
+Then 40 rejections for a test address, through the datasource:
+
+```
+| Source                        | Lines read | Lines parsed | Lines poured to bucket |
+| docker:/probe-caddy-ratelimit | 40         | 40           | 40                     |
+
+ - Reason       : offby1/caddy-per-ip-ratelimit
+ - Scope:Value  : Ip:203.0.113.77
+ - Events Count : 31
+ - Simulation   : false
+ - Remediation  : false
+```
+
+`Events Count: 31` is capacity 30 plus the one that overflowed it, so the
+threshold behaves as configured. `Remediation: false` is CrowdSec confirming the
+scenario cannot ban, and `cscli decisions list` stayed at "No active decisions"
+throughout.
+
+One incidental lesson, worth knowing for any future test of this shape: the
+Docker datasource attaches to a container when it *starts*, and then reads new
+output. A probe container that prints and exits immediately is missed entirely —
+the first attempt read zero lines. It has to stay alive long enough for CrowdSec
+to attach before it writes anything.
 
 #### Left for Phase 4
 

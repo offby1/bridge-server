@@ -14,3 +14,13 @@ FROM crowdsecurity/crowdsec:v1.7.8
 # One file per datasource under acquis.d/ is what upstream has recommended since
 # 1.5, rather than a single acquis.yaml.
 COPY acquis.d/caddy.yaml /etc/crowdsec/acquis.d/caddy.yaml
+
+# Our own parser and scenario, for the rate limiter's rejection lines. CrowdSec
+# loads any YAML it finds in these directories; unlike the hub collections named
+# in the compose file, these are local items and `cscli` reports them as such.
+#
+# The scenario raises alerts and cannot produce a decision, by omitting the
+# `remediation` label. See the file itself for why that is the guarantee we
+# wanted rather than simulation mode.
+COPY parsers/s01-parse/caddy-ratelimit.yaml /etc/crowdsec/parsers/s01-parse/caddy-ratelimit.yaml
+COPY scenarios/caddy-per-ip-ratelimit.yaml /etc/crowdsec/scenarios/caddy-per-ip-ratelimit.yaml
