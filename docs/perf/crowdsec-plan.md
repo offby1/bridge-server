@@ -1,10 +1,11 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phase 1 has landed; every other phase is still
-intent.** The Caddy access log is on — see "Landed" at the bottom for what that
-actually does. There is still no CrowdSec container, no bouncer plugin and no
-scenario, so nothing is being reported or blocked yet. When a phase lands, move
-it into the "Landed" section and say what it actually does.
+**Status as of this commit: Phase 1 has landed and is verified running on beta;
+every other phase is still intent.** The Caddy access log is on — see "Landed"
+at the bottom for what that actually does. There is still no CrowdSec container,
+no bouncer plugin and no scenario, so nothing is being reported or blocked yet.
+When a phase lands, move it into the "Landed" section and say what it actually
+does.
 
 Companion to [`crawler-repro.md`](crawler-repro.md), which records the two
 outages this is meant to help with and the tiered rate limits we already deploy.
@@ -282,9 +283,7 @@ Each phase should be its own commit, and each is independently useful. Note that
 the two goals read two different logs, so Phase 1 is a prerequisite for the hub
 scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 
-**Phase 1 — access logs. Done; see "Landed".** Still wants a deploy to beta or
-the mini to confirm the log appears on a real host, which had not happened when
-this was written.
+**Phase 1 — access logs. Done and verified on beta; see "Landed".**
 
 **Phase 2 — the CrowdSec container, parsing but not enforcing.** Add
 `crowdsec/Dockerfile` and the compose service. Install the
@@ -333,11 +332,28 @@ traffic reaching it, and you must fix both:
 
 1. **`tailscale serve` owns port 443 on the tailnet interface.** Caddy binds
    `0.0.0.0:443`, but a request to the `.ts.net` name arrives on the Tailscale
-   IP, where `tailscale serve` answers first and proxies straight to Daphne. The
-   tell is in the response headers: `server: daphne` means you reached Django
-   directly, where Caddy would have said `server: Caddy`. Everything looks
-   healthy — correct status codes, valid TLS, current `x-bridge-version` — while
-   the edge you meant to test is bypassed entirely.
+   IP, where `tailscale serve` answers first and proxies straight to Daphne.
+   Everything looks healthy — correct status codes, valid TLS, current
+   `x-bridge-version` — while the edge you meant to test is bypassed entirely.
+
+   **The reliable way to tell is Caddy's own access log**, not the response
+   headers. Ask whether the request you just made shows up:
+
+   ```
+   docker compose logs caddy --no-log-prefix --tail 4000 |
+       jq --raw-input --raw-output 'fromjson?
+           | select(.logger == "http.log.access.log0")
+           | [(.ts | floor | todate), (.status | tostring),
+              .request.method, .request.uri, (.request.remote_ip // "-")]
+           | join(" ")'
+   ```
+
+   Do **not** use the `Server:` response header for this. It is tempting and it
+   is wrong: Caddy passes an upstream's `Server` header through untouched on
+   reverse-proxied responses, so beta answers `server: daphne` *with Caddy fully
+   in the path*. Measured on beta 2026-08-30, where the same request appears in
+   Caddy's access log and still reports `server: daphne`. Caddy only says
+   `server: Caddy` on responses it generates itself, such as a `429`.
 2. **Caddy cannot get a certificate for a `.ts.net` name.** Reaching it directly
    from inside the container fails the handshake server-side with
    `tlsv1 alert internal error` (SSL alert 80), so it can serve nothing on that
@@ -414,11 +430,19 @@ rather than `localhost` for that query: the admin endpoint listens on IPv4
 loopback only, and `localhost` resolves to `::1` inside the container, which
 answers "connection refused" and looks like a disabled admin API.
 
-What is **not** verified is an actual access-log entry, because **no request has
-ever reached Caddy on the mini.** Two independent reasons, both pre-existing and
-neither caused by this change — see "How to test any of this".
+**Entries confirmed flowing, on beta.** The mini could not confirm it: no
+request has ever reached Caddy there, for two pre-existing reasons neither
+caused by this change (see "How to test any of this"). Since Caddy serves
+nothing on the mini, nothing there exercises the access log, the rate limits, or
+anything else at the edge.
 
-Since Caddy serves nothing on the mini, nothing there exercises the access log,
-the rate limits, or anything else at the edge. Confirming an entry appears means
-either fixing the mini as described below, or deploying this branch to beta,
-which has real certificates and nothing intercepting its port 443.
+Beta settled it. After deploying this branch, one request produced one entry:
+
+```
+2026-08-30T00:13:00Z 302 GET /player/1/ 97.113.55.114
+```
+
+alongside several `200 GET /.well-known/acme-challenge/...` entries from Let's
+Encrypt validating the certificate. So the access log works end to end on a host
+with real certificates and nothing intercepting 443, which is what Phase 1 set
+out to do. Phase 2 has a log to read.
