@@ -24,7 +24,7 @@ services:
       - PARSERS=crowdsecurity/syslog-logs
 
       # Deliberately offline for now: no registration with CrowdSec's central
-      # API, so we neither report anything nor pull any blocklist. Phase 4 turns
+      # API, so we neither report anything nor pull any blocklist. Phase 5 turns
       # this off and enrols properly. Keeping it on until then means this phase
       # cannot have any effect outside this host.
       - DISABLE_ONLINE_API=true
@@ -43,7 +43,7 @@ services:
       # crowdsec/acquis.d/caddy.yaml would appear to do nothing. The cost is that
       # the agent regenerates its local API credentials on each start, which is
       # harmless while the agent and the local API live in the same container.
-      # Phase 4 has to revisit this, because the central-API credentials it
+      # Phase 5 has to revisit this, because the central-API credentials it
       # creates *do* need to survive a restart.
       - crowdsec_data:/var/lib/crowdsec/data
 

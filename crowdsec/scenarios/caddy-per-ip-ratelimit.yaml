@@ -55,5 +55,6 @@ labels:
   # wrinkle -- so a small mistake there enforces while you believe you are only
   # watching. There is no such trap here: the capability is simply absent.
   #
-  # Phase 4 adds `remediation: true` once the numbers above have been justified
-  # by a week of real alerts.
+  # Phase 5 adds `remediation: true` once the numbers above have been justified
+  # by a week of real alerts. (That was Phase 4 before the two were swapped on
+  # 2026-08-30, so older commit messages call it Phase 4.)

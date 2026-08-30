@@ -1,7 +1,8 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1, 2 and 3 have landed; Phases 4 and 5 are
-still intent.** The Caddy access log is on, CrowdSec is parsing it, and the
+**Status as of this commit: Phases 1, 2 and 3 have landed; Phase 4 (monitoring)
+and Phase 5 (enforcement) are still intent.** The Caddy access log is on,
+CrowdSec is parsing it, and the
 per-IP rate-limit scenario raises alerts — see "Landed" at the bottom. There is
 still no bouncer plugin, the scenario deliberately has no `remediation` label,
 and CrowdSec is not registered with the central API, so **nothing is being
@@ -52,11 +53,14 @@ Eric decided these on 2026-08-28; they are settled, not open questions.
   inside the image we already build, so a deploy carries it. We accept paying
   the TLS handshake for a banned IP.
 - **Docker log datasource, not a shared log file.** CrowdSec reads the Caddy
-  container's stdout through the Docker socket it already mounts. No shared
-  volume, no log rotation to get wrong.
-- **Start in simulation mode.** Alerts get recorded, remediation does not
-  happen. We read a week of what it *would* have banned before we let it ban
-  anything. See "Phase 3".
+  container's logs through the Docker socket it already mounts. No shared volume,
+  no log rotation to get wrong. (Caddy writes to *stderr*, not stdout, which
+  matters only because the datasource has to follow it — it does, by default.)
+- **Start by observing, not enforcing.** Alerts get recorded, remediation does
+  not happen. We read a week of what it *would* have banned before we let it ban
+  anything. **This was implemented by omitting the scenario's `remediation`
+  label, not by simulation mode** — see "Phase 3" under "Landed" for why that is
+  the stronger guarantee.
 - **No AppSec.** CrowdSec's AppSec component is a request-inspecting web
   application firewall: it looks at bodies, headers and paths for attack
   patterns, as a separate service the bouncer forwards requests to. That is a
@@ -82,7 +86,7 @@ This splits goal 1 from goal 2 in a way that was not obvious:
   the end of the plan; it is the part that makes goal 2 work.
 
 Both of those claims come from CrowdSec's own docs and we should re-read them
-before Phase 4, because this is exactly the kind of policy that changes:
+before Phase 5, because this is exactly the kind of policy that changes:
 <https://docs.crowdsec.net/docs/central_api/community_blocklist/>.
 
 ## The pieces
@@ -100,8 +104,10 @@ before Phase 4, because this is exactly the kind of policy that changes:
   already have comments about: a bind mount resolves on the Docker *daemon's*
   filesystem, so a repo-relative path does not exist when we deploy over a
   remote context (`hetz-bridge`, `mini`). So: a thin `crowdsec/Dockerfile` that
-  copies in `acquis.yaml`, `simulation.yaml`, and our custom scenario, and
-  installs the hub collections at build time.
+  copies in the acquisition config, our parser and our scenario. (No
+  `simulation.yaml` — we did not end up needing one. Hub collections turned out
+  to be installed at *run* time from the `COLLECTIONS` environment variable
+  rather than baked in at build time.)
 
 ### The bouncer plugin in Caddy
 
@@ -284,6 +290,18 @@ Each phase should be its own commit, and each is independently useful. Note that
 the two goals read two different logs, so Phase 1 is a prerequisite for the hub
 scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 
+**Phases 4 and 5 swapped on 2026-08-30**, so monitoring now comes before
+enforcement. The reason is Phase 3: it is sitting in an observation week whose
+whole output is counters and alerts, and reading those off a Grafana dashboard
+beats reading them off `cscli metrics` by hand. Monitoring also cannot break
+anything, so there is no reason to hold it behind the one phase that can.
+
+That swap means **the numbering in this repository's git history is the old
+one.** Commits up to and including "Alert on IPs that Caddy's per-IP rate limit
+keeps rejecting" say "Phase 4" where they mean enforcement, which is Phase 5
+here. Comments in the working tree have been corrected; commit messages, being
+history, have not.
+
 **Phase 1 — access logs. Done and verified on beta; see "Landed".**
 
 **Phase 2 — the CrowdSec container, parsing but not enforcing. Done and verified
@@ -294,19 +312,20 @@ on beta; see "Landed".**
 read `cscli alerts list` and answer honestly: did it flag anybody we recognise?
 Tune the thresholds, or throw the scenario away.
 
-**Phase 4 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
-block and the snippet import, and the API key secret. Take the custom scenario
-out of simulation only if Phase 3 justified it. Enrol with the central API
-(`cscli console enroll`) so we both contribute hub-scenario signals and receive
-the community blocklist. Confirm the blocklist actually arrived:
-`cscli decisions list` should show a large number of entries with origin
-`CAPI` or `lists`, not just our own.
+**Phase 4 — monitoring.** CrowdSec exports Prometheus metrics on port 6060 and
+publishes Grafana dashboards, and we already run both behind the `monitoring`
+profile. Scrape it and add a dashboard.
 
-**Phase 5 — monitoring, nearly free.** CrowdSec exports Prometheus metrics on
-port 6060 and publishes Grafana dashboards, and we already run both behind the
-`monitoring` profile. Scrape it and add a dashboard. Also consider
+**Phase 5 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
+block and the snippet import, and the API key secret. Add `remediation: true` to
+the scenario, but only if Phase 3's observation week justified its thresholds.
+Enrol with the central API (`cscli console enroll`) so we both contribute
+hub-scenario signals and receive the community blocklist. Confirm the blocklist
+actually arrived: `cscli decisions list` should show a large number of entries
+with origin `CAPI` or `lists`, not just our own. Also consider
 `enable_caddy_metrics` on the bouncer, which reports blocked-request counts
-through Caddy's own `/metrics`.
+through Caddy's own `/metrics` — it cannot be done before the bouncer exists,
+which is why it sits here rather than in Phase 4.
 
 ## How to test any of this
 
@@ -511,14 +530,14 @@ This plan originally said to put the scenario in simulation mode. We did
 something stronger instead: **the scenario simply omits the `remediation` label.**
 
 An overflow therefore produces an alert and *cannot* produce a decision — there
-is nothing for a bouncer to act on, now or after Phase 4 adds the bouncer. That
+is nothing for a bouncer to act on, now or after Phase 5 adds the bouncer. That
 is a better guarantee than simulation for two reasons. Simulation for a custom
 scenario is keyed on the *file* name rather than the scenario name, a known
 CrowdSec wrinkle, so a small mistake there enforces while you believe you are
 only watching. And simulation is configuration that a later edit can quietly
 undo, whereas a missing capability cannot be undone by accident.
 
-Phase 4 adds `remediation: true`, and that edit is the moment this scenario
+Phase 5 adds `remediation: true`, and that edit is the moment this scenario
 becomes able to ban anyone. Treat it accordingly.
 
 #### The parser reads every zone; the scenario acts on one
@@ -577,11 +596,11 @@ output. A probe container that prints and exits immediately is missed entirely �
 the first attempt read zero lines. It has to stay alive long enough for CrowdSec
 to attach before it writes anything.
 
-#### Left for Phase 4
+#### Left for Phase 5
 
 `/etc/crowdsec` is deliberately not a volume, so the agent regenerates its local
 API credentials on each start — harmless while the agent and the local API share
-a container. Phase 4 changes that calculation, because the central-API
+a container. Phase 5 changes that calculation, because the central-API
 credentials enrolment creates *do* need to survive a restart, and the obvious fix
 of persisting `/etc/crowdsec` would shadow the baked acquisition config and then
 never update it again. Solve that before enrolling, not after.
