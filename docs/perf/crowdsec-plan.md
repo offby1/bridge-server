@@ -1,9 +1,10 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phase 1 has landed and is verified running on beta;
-every other phase is still intent.** The Caddy access log is on — see "Landed"
-at the bottom for what that actually does. There is still no CrowdSec container,
-no bouncer plugin and no scenario, so nothing is being reported or blocked yet.
+**Status as of this commit: Phases 1 and 2 have landed and are verified running
+on beta; Phases 3, 4 and 5 are still intent.** The Caddy access log is on and
+CrowdSec is parsing it — see "Landed" at the bottom. There is still no bouncer
+plugin and no `429` scenario, and CrowdSec is not registered with the central
+API, so **nothing is being blocked and nothing is being reported to anyone.**
 When a phase lands, move it into the "Landed" section and say what it actually
 does.
 
@@ -285,14 +286,8 @@ scenarios and the blocklist, but **not** for the `429` scenario in Phase 3.
 
 **Phase 1 — access logs. Done and verified on beta; see "Landed".**
 
-**Phase 2 — the CrowdSec container, parsing but not enforcing.** Add
-`crowdsec/Dockerfile` and the compose service. Install the
-`crowdsecurity/caddy` collection and the standard HTTP scenario set. Point the
-Docker datasource at the Caddy container. No bouncer yet, so nothing can be
-blocked. Verify with `cscli metrics` that lines are being parsed and are not
-landing in the unparsed bucket. A parser that silently fails to match our log
-format is the most likely thing to go wrong here, and this phase exists to catch
-it while nothing can be harmed.
+**Phase 2 — the CrowdSec container, parsing but not enforcing. Done and verified
+on beta; see "Landed".**
 
 **Phase 3 — the custom `429` scenario, in simulation.** Write a parser for the
 `"rate limit exceeded"` line described above, extracting `zone` and `remote_ip`,
@@ -446,3 +441,75 @@ alongside several `200 GET /.well-known/acme-challenge/...` entries from Let's
 Encrypt validating the certificate. So the access log works end to end on a host
 with real certificates and nothing intercepting 443, which is what Phase 1 set
 out to do. Phase 2 has a log to read.
+
+### Phase 2: CrowdSec, parsing and deciding nothing
+
+Three new files — `crowdsec/Dockerfile`, `crowdsec/acquis.d/caddy.yaml`, and
+`docker-compose-crowdsec.yaml` (added to the `include:` list in
+`docker-compose.yaml`) — plus a `crowdsec` service in the `prod` and `beta`
+profiles, a `just cscli` recipe, and one line in `_deploy`.
+
+**`_deploy` needed changing, or none of this would ever start.** It only ups
+services it names, which is why Caddy already had an explicit `up`; `crowdsec`
+now rides along in that same prod/beta branch.
+
+#### The part that decides whether any of it works
+
+`crowdsecurity/caddy-logs` opens its filter with
+`evt.Parsed.program startsWith 'caddy'`. Nothing in the Docker datasource sets
+`program` — reading the source, it only attaches the acquisition's labels to each
+line. What bridges the two is `crowdsecurity/non-syslog`, which copies
+`labels.type` into `evt.Parsed.program` and which ships as a *second YAML
+document inside `crowdsecurity/syslog-logs`*, not as a file of its own.
+
+So the string `caddy` in `labels.type` is the whole connection between our logs
+and the Caddy parser, and getting it wrong produces silence rather than an error.
+`syslog-logs` is therefore named explicitly in `PARSERS` rather than left to
+arrive as a dependency. It turns out the image installs `crowdsecurity/linux`
+by default, which already brings it, so that is belt-and-braces — but it costs
+nothing and does not depend on a default we do not control.
+
+Two smaller things checked against beta's real logs before writing any config:
+the Docker datasource follows stderr by default, which it must, since Caddy
+writes both its logs there; and Caddy's access entries do carry the
+`request.client_ip` field the parser reads, equal to `request.remote_ip` because
+we configure no trusted proxies.
+
+#### Verified on beta
+
+`just cscli metrics`, after three requests:
+
+```
+| Source                 | Lines read | Lines parsed | Lines unparsed | Lines poured to bucket |
+| docker:/server-caddy-1 | 3          | 3            | -              | 1                      |
+
+| Parsers                            | Hits | Parsed | Unparsed |
+| crowdsecurity/caddy-logs           | 3    | 3      | -        |
+| crowdsecurity/non-syslog           | 3    | 3      | -        |
+
+| Scenario                             | Current Count | Overflows | Poured |
+| crowdsecurity/http-crawl-non_statics | 1             | -         | 1      |
+```
+
+The datasource found the container by pattern, every line parsed, none unparsed,
+and a hub scenario is bucketing real requests. Note it reads from the current
+tail rather than backfilling history, so these counts only ever cover lines since
+the container started.
+
+And the "decides nothing" half, all four checks:
+
+- `cscli bouncers list` — empty. Nothing can act on a decision.
+- `cscli decisions list` — "No active decisions".
+- `cscli alerts list` — "No active alerts".
+- `cscli capi status` — errors with "no configuration for Central API (CAPI)",
+  which is `DISABLE_ONLINE_API` working. Nothing is reported upstream and no
+  blocklist is pulled.
+
+#### Left for Phase 4
+
+`/etc/crowdsec` is deliberately not a volume, so the agent regenerates its local
+API credentials on each start — harmless while the agent and the local API share
+a container. Phase 4 changes that calculation, because the central-API
+credentials enrolment creates *do* need to survive a restart, and the obvious fix
+of persisting `/etc/crowdsec` would shadow the baked acquisition config and then
+never update it again. Solve that before enrolling, not after.
