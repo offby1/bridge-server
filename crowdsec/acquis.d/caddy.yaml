@@ -1,0 +1,35 @@
+# Read the Caddy container's logs straight off the Docker socket. No shared
+# volume, no log file, nothing to rotate.
+source: docker
+
+# Matched by pattern rather than by exact name so this does not depend on the
+# Compose project name, which is the directory name and so differs if the repo is
+# ever checked out somewhere else. On the current hosts the container is
+# `server-caddy-1`.
+container_name_regexp:
+  - .*caddy.*
+
+# `type: caddy` is doing far more work than it looks.
+#
+# The `crowdsecurity/non-syslog` parser -- which ships as a second YAML document
+# inside `crowdsecurity/syslog-logs`, not as a file of its own -- copies
+# `labels.type` into `evt.Parsed.program`. And `crowdsecurity/caddy-logs` begins
+# its filter with `evt.Parsed.program startsWith 'caddy'`.
+#
+# So this one string is what connects our log lines to the Caddy parser. Change
+# it and the parser silently stops matching: no error, no warning, just a rising
+# count of unparsed lines in `just cscli metrics`.
+labels:
+  type: caddy
+
+# Nothing sets follow_stdout/follow_stderr here because both default to true, and
+# that matters: Caddy writes *both* its access log and its runtime log to stderr,
+# so a datasource following only stdout would see nothing at all. If a future
+# CrowdSec release changes that default, this goes quiet.
+#
+# Consequence worth knowing: this datasource carries Caddy's runtime lines too,
+# and `crowdsecurity/caddy-logs` ignores them, because its filter also requires
+# `evt.Unmarshaled.caddy.request != nil` and runtime lines have no `request`
+# object. They therefore show up as *unparsed*, which is expected rather than a
+# fault. That same filter is why the rate limiter's "rate limit exceeded" line is
+# left alone for the Phase 3 scenario to claim.

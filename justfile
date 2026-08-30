@@ -223,6 +223,20 @@ caddy-log *options:
             | join(" ")
         '
 
+# Run cscli inside the CrowdSec container: `just cscli metrics`, `just cscli alerts list`,
+# `just cscli decisions list`. CrowdSec only runs under the prod/beta profiles, so this needs
+# a deployed host: `DOCKER_CONTEXT=hetz-bridge-beta just cscli metrics`.
+#
+# `just cscli metrics` is the one to start with. Under "Acquisition Metrics" it shows lines read
+# and lines parsed per source; a source reading lines but parsing none means the parser is not
+# matching, which is silent otherwise. Some unparsed lines are normal and expected -- Caddy's
+# runtime log shares this stream with its access log, and the caddy parser ignores it. See
+# crowdsec/acquis.d/caddy.yaml.
+[doc('Run cscli in the CrowdSec container: `just cscli metrics`')]
+[group('docker')]
+cscli *options:
+    docker compose exec crowdsec cscli {{ options }}
+
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]
@@ -426,11 +440,12 @@ _deploy hostname profile context settings_module *options:
     just dump
     docker compose up --detach --no-deps --force-recreate django bot clock notifier {{ options }}
 
-    # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
-    # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh
-    # host never starts it (older hosts only kept it alive via restart:unless-stopped).
+    # Bring up Caddy and CrowdSec when their profile is active (prod/beta). Like the monitoring
+    # block below, `_deploy` only ups named services, so these need an explicit `up` -- without
+    # this a fresh host never starts them (older hosts only kept caddy alive via
+    # restart:unless-stopped).
     if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
-        docker compose up --detach --build --force-recreate caddy
+        docker compose up --detach --build --force-recreate caddy crowdsec
     fi
 
     # Bring up the monitoring stack when its profile is active (prod/beta).  `_deploy` only ups

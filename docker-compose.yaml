@@ -1,5 +1,6 @@
 include:
   - docker-compose-caddy.yaml
+  - docker-compose-crowdsec.yaml
 
 volumes:
   django_static_root: {}
