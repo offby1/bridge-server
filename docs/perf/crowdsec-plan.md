@@ -645,7 +645,41 @@ because Caddy warns the nested form is deprecated and will be removed in the nex
 major version. Note the rate limiter's own counters appear either way, since the
 plugin registers them itself.
 
+#### The rate limiter exports no metrics, and that was a wrong assumption
+
+The first version of this phase graphed rejections per zone from
+`caddy_rate_limit_declined_requests_total`. **Those metrics do not exist in the
+plugin we build.** Deploying to beta and reading `/metrics` is what caught it —
+`caddy_http_*` was there, `caddy_rate_limit_*` was entirely absent.
+
+The cause: `mholt/caddy-ratelimit` has exactly one tag, `v0.1.0`, which contains
+no metrics code at all. The `metrics.go` I had read is on the unreleased `master`
+branch, and `xcaddy build --with github.com/mholt/caddy-ratelimit` resolves to
+the latest *tag*. The plugin's zone-labelled *log line* is in v0.1.0 — which is
+why `just caddy-log` has always worked — but the Prometheus counters are not.
+
+**So there is no per-zone rejection graph, and getting one means a decision
+nobody has made yet:** pinning the plugin to `@master` would supply it, but that
+replaces a tagged release with an unreleased branch in the component standing
+between this site and the two outages in `crawler-repro.md`. That trade is Eric's
+to make, not something to slip in for the sake of a nicer dashboard. Until then:
+
+- Total rejections come from `caddy_http_request_duration_seconds_count{code="429"}`,
+  which does exist and is graphed.
+- Total rejections also come from `cs_node_hits_ok_total{name="offby1/caddy-ratelimit"}`,
+  since our parser sees every rejection line. Also graphed.
+- **The zone of any individual rejection comes from `just caddy-log`**, which
+  reads the log line. That remains the only per-zone source.
+
+The consequence for the observation week is worth being blunt about: the
+aggregate-zone question — are `list_views` and `whole_site` rejecting innocent
+traffic? — cannot be answered from Grafana. It has to be answered by reading
+`just caddy-log` for `zone=` values.
+
 #### The cardinality trap, which is a safety issue rather than tidiness
+
+(This applies to the metrics described above, so today it is precautionary rather
+than active — see the note in `prometheus.yml`.)
 
 `caddy-ratelimit` reports each counter **twice**: once with `key=""`, the
 aggregate for the zone, and once with `key` set to the actual bucket key. For the
@@ -679,16 +713,16 @@ guessed:
 
 | panel | query |
 |---|---|
-| Rate-limit rejections by zone | `sum by (zone) (rate(caddy_rate_limit_declined_requests_total{key=""}[5m]))` |
-| Requests reaching the limiter | `sum by (zone) (rate(caddy_rate_limit_requests_total{key=""}[5m]))` |
+| Rate-limit rejections (429s) | `sum(rate(caddy_http_request_duration_seconds_count{code="429"}[5m]))` |
+| Responses by status code | `sum by (code) (rate(caddy_http_request_duration_seconds_count{handler!="metrics"}[5m]))` |
+| Rejection lines parsed | `sum(increase(cs_node_hits_ok_total{name="offby1/caddy-ratelimit"}[1h]))` |
 | Scenario overflows per hour | `sum by (name) (increase(cs_bucket_overflowed_total[1h]))` |
 | Lines read and parsed | `cs_dockersource_hits_total`, `cs_parser_hits_ok_total`, `cs_parser_hits_ko_total` |
 | Alerts by scenario | `sum by (reason) (cs_alerts)` |
 | Active ban decisions by scenario | `sum by (reason) (cs_active_decisions)` |
 
-The rejections-by-zone panel is the one the aggregate-zone worry has been waiting
-for: `list_views` or `whole_site` appearing there means we are shedding traffic
-from everybody, innocent visitors included.
+Note the panel count changed from six to seven while fixing the metric problem
+described above.
 
 Two notes for whoever edits this dashboard next. It hardcodes the Prometheus
 datasource UID `PBFA97CFB590B2093`, copied from

@@ -51,6 +51,13 @@ scrape_configs:
   metric_relabel_configs:
     # Drop the per-key rate-limit series, keeping only the zone-level aggregate.
     #
+    # NOTE: as of 2026-08-30 this rule matches nothing, because the metrics it
+    # guards against do not exist in the plugin we build. caddy-ratelimit's only
+    # tag is v0.1.0 and it has no metrics at all; the code described below is on
+    # its unreleased master branch, and `xcaddy` builds the latest tag. The rule
+    # stays because the day anyone pins the plugin to master, it becomes
+    # essential and is easy to forget.
+    #
     # This is not tidying, it is a safety measure. caddy-ratelimit reports each
     # counter twice: once with key="" (the aggregate for the zone) and once with
     # key set to the actual bucket key. For the `per_ip` zone that key is the
