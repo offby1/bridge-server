@@ -28,3 +28,53 @@ scrape_configs:
   static_configs:
     - targets:
       - postgres-exporter:9187
+
+# Caddy and CrowdSec. Both live in the prod/beta compose profiles while
+# Prometheus lives in `monitoring`, so under `just dev-monitoring` -- which
+# enables monitoring but not prod/beta -- these two targets sit permanently DOWN.
+# That is expected, not a fault: there is no Caddy in dev to scrape.
+# See docs/perf/crowdsec-plan.md, Phase 4.
+
+- job_name: caddy
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+    - targets:
+      # Not port 2019. That is Caddy's admin API, which is bound to localhost
+      # inside the container and which can rewrite Caddy's entire config; 2020 is
+      # a listener defined in caddy/Caddyfile that serves metrics and nothing
+      # else.
+      - caddy:2020
+  metric_relabel_configs:
+    # Drop the per-key rate-limit series, keeping only the zone-level aggregate.
+    #
+    # This is not tidying, it is a safety measure. caddy-ratelimit reports each
+    # counter twice: once with key="" (the aggregate for the zone) and once with
+    # key set to the actual bucket key. For the `per_ip` zone that key is the
+    # client IP, so the series count grows with the number of distinct addresses
+    # seen -- during the sort of distributed flood recorded in
+    # crawler-repro.md, 24,391 of them. Ingesting a time series per attacking IP
+    # would turn an attack on the web app into an attack on Prometheus.
+    #
+    # Dropping whole series rather than the label itself is deliberate: a
+    # `labeldrop` would collapse many series onto one identity and produce
+    # duplicate samples. The aggregate we keep is exactly what the dashboards
+    # graph.
+    - source_labels: [key]
+      regex: .+
+      action: drop
+
+- job_name: crowdsec
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+      # CrowdSec's own config.yaml already has prometheus enabled and listening
+      # on 0.0.0.0:6060, so nothing needed configuring on its side.
+    - targets:
+      - crowdsec:6060

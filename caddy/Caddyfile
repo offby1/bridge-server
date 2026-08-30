@@ -11,6 +11,31 @@
 
 {
     order rate_limit before reverse_proxy
+
+    # Collect per-request HTTP metrics (the caddy_http_* family). This is off by
+    # default. Without it /metrics still carries Go runtime counters and whatever
+    # plugins register themselves -- which is why the rate limiter's numbers show
+    # up either way -- but not request counts, durations or status codes.
+    #
+    # This is the global option, not the `servers { metrics }` form: Caddy warns
+    # that the nested one is deprecated and goes away in the next major version.
+    metrics
+}
+
+# Prometheus scrape target. Deliberately a separate listener on a port that
+# docker-compose-caddy.yaml does NOT publish, so it is reachable from the
+# compose network (where Prometheus lives) and from nowhere else.
+#
+# The obvious alternative -- point Prometheus at Caddy's admin endpoint, which
+# also serves /metrics -- would mean binding the admin API to something other
+# than localhost. That API can rewrite Caddy's whole configuration, so exposing
+# it to every container on the network to obtain some counters is a bad trade.
+# This listener serves metrics and nothing else.
+#
+# No hostname, so no automatic HTTPS and no certificate for Caddy to fail to
+# obtain. See docs/perf/crowdsec-plan.md, Phase 4.
+:2020 {
+    metrics /metrics
 }
 
 # Three complementary limits, all shedding at the edge (HTTP 429 + Retry-After)

@@ -1,13 +1,22 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1, 2 and 3 have landed; Phase 4 (monitoring)
-and Phase 5 (enforcement) are still intent.** The Caddy access log is on,
-CrowdSec is parsing it, and the
-per-IP rate-limit scenario raises alerts — see "Landed" at the bottom. There is
-still no bouncer plugin, the scenario deliberately has no `remediation` label,
-and CrowdSec is not registered with the central API, so **nothing is being
-blocked and nothing is being reported to anyone.** When a phase lands, move it
-into the "Landed" section and say what it actually does.
+**Status as of this commit: Phases 1 to 4 have landed; Phase 5 (enforcement) is
+still intent.** The Caddy access log is on, CrowdSec is parsing it, the per-IP
+rate-limit scenario raises alerts, and Prometheus scrapes both with a Grafana
+dashboard over the top — see "Landed" at the bottom.
+
+**Nothing is being blocked, and nothing is being reported to anyone**: there is
+no bouncer, and CrowdSec is not registered with the central API.
+
+**But decisions do exist, and that is not a contradiction.** The hub scenarios
+ship with `remediation: true`, so when one of them fires it writes a real ban
+decision. There is simply nothing installed that acts on a decision. The
+practical consequence is worth stating plainly: **the moment Phase 5 installs the
+bouncer, every unexpired decision already in the database starts blocking at
+once.** Check `cscli decisions list` before that deploy, not after.
+
+When a phase lands, move it into the "Landed" section and say what it actually
+does.
 
 Companion to [`crawler-repro.md`](crawler-repro.md), which records the two
 outages this is meant to help with and the tiered rate limits we already deploy.
@@ -312,9 +321,7 @@ on beta; see "Landed".**
 read `cscli alerts list` and answer honestly: did it flag anybody we recognise?
 Tune the thresholds, or throw the scenario away.
 
-**Phase 4 — monitoring.** CrowdSec exports Prometheus metrics on port 6060 and
-publishes Grafana dashboards, and we already run both behind the `monitoring`
-profile. Scrape it and add a dashboard.
+**Phase 4 — monitoring. Done; see "Landed".**
 
 **Phase 5 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
 block and the snippet import, and the API key secret. Add `remediation: true` to
@@ -604,3 +611,111 @@ a container. Phase 5 changes that calculation, because the central-API
 credentials enrolment creates *do* need to survive a restart, and the obvious fix
 of persisting `/etc/crowdsec` would shadow the baked acquisition config and then
 never update it again. Solve that before enrolling, not after.
+
+### Phase 4: Prometheus and a Grafana dashboard
+
+Neither Caddy nor CrowdSec was being scraped: `prometheus/prometheus.yml` had
+exactly two jobs, `django` and `postgres`. Phase 4 adds a job for each, plus one
+dashboard, `grafana/dashboards/edge-caddy-crowdsec.json`.
+
+#### Getting at Caddy's metrics without exposing its admin API
+
+Caddy serves `/metrics` from its admin endpoint on port 2019 — which is bound to
+localhost inside the container, and which can rewrite Caddy's entire
+configuration. Binding *that* to the compose network so Prometheus could reach
+some counters would be a poor trade.
+
+So `caddy/Caddyfile` gains a second listener that serves metrics and nothing
+else:
+
+```
+:2020 {
+    metrics /metrics
+}
+```
+
+`docker-compose-caddy.yaml` does not publish 2020, so it is reachable from the
+compose network and nowhere else. No hostname means no automatic HTTPS, so
+there is no certificate for Caddy to fail to obtain — the trap that makes the
+mini useless for edge testing.
+
+The global `metrics` option is also now set, which turns on the `caddy_http_*`
+per-request family. It is the *global* option rather than `servers { metrics }`
+because Caddy warns the nested form is deprecated and will be removed in the next
+major version. Note the rate limiter's own counters appear either way, since the
+plugin registers them itself.
+
+#### The cardinality trap, which is a safety issue rather than tidiness
+
+`caddy-ratelimit` reports each counter **twice**: once with `key=""`, the
+aggregate for the zone, and once with `key` set to the actual bucket key. For the
+`per_ip` zone that key is the client IP.
+
+So the series count grows with the number of distinct addresses seen. In a flood
+of the shape `crawler-repro.md` records — 24,391 addresses — Prometheus would
+ingest a time series per attacking IP. That turns an attack on the web app into
+an attack on the monitoring. The `caddy` job therefore drops every series with a
+non-empty `key`:
+
+```yaml
+metric_relabel_configs:
+  - source_labels: [key]
+    regex: .+
+    action: drop
+```
+
+Dropping whole series rather than the label is deliberate: a `labeldrop` would
+collapse many series onto one identity and produce duplicate samples. What
+survives is the zone-level aggregate, which is exactly what the dashboard graphs.
+
+CrowdSec needed no configuration at all — its `config.yaml` already has
+Prometheus enabled on `0.0.0.0:6060`.
+
+#### The dashboard
+
+Six panels, chosen for reading the Phase 3 observation week rather than for
+completeness. Metric names were taken from the running instance on beta, not
+guessed:
+
+| panel | query |
+|---|---|
+| Rate-limit rejections by zone | `sum by (zone) (rate(caddy_rate_limit_declined_requests_total{key=""}[5m]))` |
+| Requests reaching the limiter | `sum by (zone) (rate(caddy_rate_limit_requests_total{key=""}[5m]))` |
+| Scenario overflows per hour | `sum by (name) (increase(cs_bucket_overflowed_total[1h]))` |
+| Lines read and parsed | `cs_dockersource_hits_total`, `cs_parser_hits_ok_total`, `cs_parser_hits_ko_total` |
+| Alerts by scenario | `sum by (reason) (cs_alerts)` |
+| Active ban decisions by scenario | `sum by (reason) (cs_active_decisions)` |
+
+The rejections-by-zone panel is the one the aggregate-zone worry has been waiting
+for: `list_views` or `whole_site` appearing there means we are shedding traffic
+from everybody, innocent visitors included.
+
+Two notes for whoever edits this dashboard next. It hardcodes the Prometheus
+datasource UID `PBFA97CFB590B2093`, copied from
+`reasonable-looking-dashboard.json` because that one demonstrably works in this
+deployment; the provisioned datasource in
+`grafana/provisioning/datasources/datasource.yml` declares no explicit `uid`. And
+dashboards are baked into the Grafana image rather than mounted, so a change
+needs a rebuild, which `_deploy` does with `--build`.
+
+#### Verified
+
+`promtool check config` accepts the Prometheus file and Python parses the
+dashboard JSON. `caddy validate` accepts the new Caddyfile blocks — run against
+the stock Caddy image on the new directives alone, since the full file needs the
+rate-limit plugin to parse.
+
+#### What this immediately turned up
+
+Within about ninety minutes of the Phase 3 deploy, beta's hub scenarios had
+caught real scanners — `crowdsecurity/http-probing`,
+`http-wordpress-scan`, `http-admin-interface-probing`,
+`http-path-traversal-probing`, `http-sensitive-files`,
+`http-cve-2021-41773` — and written ban decisions for several addresses in
+Microsoft's `AS8075`. That is what prompted the correction at the top of this
+document about decisions existing without a bouncer.
+
+Our own `offby1/caddy-per-ip-ratelimit` has not fired, and neither has any
+rate-limit zone: beta gets probed steadily but never fast enough to trip a limit.
+That is a useful early data point for the observation week, and a hint that the
+interesting numbers may only ever show up on prod.
