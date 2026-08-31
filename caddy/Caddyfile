@@ -1,16 +1,65 @@
-# Base Caddyfile merged with the docker-label config by caddy-docker-proxy
-# (via CADDY_DOCKER_CADDYFILE_PATH). It supplies two things the labels can't
-# express cleanly:
+# caddy-docker-proxy merges this base Caddyfile with the docker-label config, via
+# CADDY_DOCKER_CADDYFILE_PATH. It supplies the things the labels cannot express
+# cleanly:
 #
-#   1. the global `order` directive that tells Caddy where the third-party
-#      rate_limit handler runs in the chain, and
-#   2. a reusable (ratelimit) snippet, applied to the site with a
-#      `caddy.import: ratelimit` label on the django service.
+#   1. the global `order` directives that tell Caddy where the two third-party
+#      handlers, rate_limit and crowdsec, run in the chain;
+#   2. the global `crowdsec` app block, which configures the connection to the
+#      CrowdSec local API;
+#   3. the metrics listener on :2020; and
+#   4. two reusable snippets, (crowdsec) and (ratelimit), applied to the site by
+#      `caddy.import_0` and `caddy.import_1` labels on the django service.
 #
-# Rationale + the failure it guards against: docs/perf/crawler-repro.md.
+# For the reasoning and the failures these guard against, see
+# docs/perf/crawler-repro.md and docs/perf/crowdsec-plan.md.
 
 {
+    # The order of these two matters, and it is the whole point of stating it.
+    # A banned IP must be refused *before* it touches a rate-limit bucket:
+    # otherwise a banned flood still eats the shared `list_views` and
+    # `whole_site` budgets on its way to being rejected, which is precisely the
+    # harm those aggregate zones exist to prevent.
+    order crowdsec before rate_limit
     order rate_limit before reverse_proxy
+
+    # How Caddy reaches CrowdSec's local API in order to ask whether an address
+    # is banned.
+    #
+    # `crowdsec` is the compose service name, resolved on the compose network,
+    # and 8080 is CrowdSec's local API port. The key comes from the environment
+    # rather than being written here; docker-compose-caddy.yaml passes it in and
+    # the justfile reads it from a file outside the repo.
+    #
+    # We leave two options at their defaults, deliberately:
+    #
+    #   * Streaming mode stays on, so the plugin pulls the decision list every
+    #     `ticker_interval` and answers from memory. A request therefore costs no
+    #     round trip to CrowdSec. Setting `disable_streaming` would make every
+    #     request wait on a query.
+    #
+    #     Streaming has one known hazard in our particular combination. With
+    #     caddy-docker-proxy, a graceful reload can leave the admin API hung on
+    #     "shutting down admin server: context deadline exceeded"
+    #     (hslatman/caddy-crowdsec-bouncer#61). We mitigate it by raising
+    #     CADDY_DOCKER_EVENT_THROTTLE_INTERVAL to 5s in
+    #     docker-compose-caddy.yaml, which is what the plugin's own startup
+    #     warning asks for. If reload hangs show up anyway, the documented
+    #     workaround is `disable_streaming`, which trades a per-request query for
+    #     reliable reloads.
+    #
+    #   * `enable_hard_fails` stays off, so Caddy still starts when CrowdSec is
+    #     unreachable. Turning it on would mean a CrowdSec problem takes the
+    #     entire site down, which is a far worse failure than briefly not
+    #     enforcing bans.
+    crowdsec {
+        api_url http://crowdsec:8080
+        api_key {$CROWDSEC_API_KEY}
+        ticker_interval 60s
+
+        # Report blocked-request counts through the /metrics listener below, so
+        # the Grafana dashboard can show what the bouncer is actually stopping.
+        enable_caddy_metrics
+    }
 
     # This option makes Caddy collect per-request HTTP metrics, the caddy_http_*
     # family, which is off by default. Without it, /metrics still carries Go
@@ -44,6 +93,24 @@
 # certificate to fail to obtain. See docs/perf/crowdsec-plan.md, Phase 4.
 :2020 {
     metrics /metrics
+}
+
+# This snippet asks CrowdSec whether the client is banned, and refuses the
+# request if so. The django service applies it with a `caddy.import_0: crowdsec`
+# label.
+#
+# There is deliberately nothing to configure here. Which addresses are banned is
+# CrowdSec's business, decided by the scenarios in crowdsec/scenarios/ and by the
+# hub collections named in docker-compose-crowdsec.yaml. This is only the
+# enforcement point.
+#
+# Note what installing this did on the day it first deployed: every unexpired
+# decision already in CrowdSec's database became a live ban at once, because
+# those decisions had been accumulating since Phase 2 with nothing to act on
+# them. Check `just cscli decisions list` before a deploy that adds this, not
+# after.
+(crowdsec) {
+    crowdsec
 }
 
 # Three complementary limits, all shedding at the edge (HTTP 429 + Retry-After)

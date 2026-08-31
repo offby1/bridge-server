@@ -1,9 +1,15 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1 to 4 have landed; Phase 5 (enforcement) is
-still intent.** The Caddy access log is on, CrowdSec is parsing it, the per-IP
-rate-limit scenario raises alerts, and Prometheus scrapes both with a Grafana
-dashboard over the top — see "Landed" at the bottom.
+**Status as of this commit: Phases 1 to 4 have landed; Phase 5a (enforcement) is
+being built now and Phase 5b (enrolment) is still intent.** The Caddy access log
+is on, CrowdSec is parsing it, the per-IP rate-limit scenario raises alerts, and
+Prometheus scrapes both with a Grafana dashboard over the top — see "Landed" at
+the bottom.
+
+**Phase 3's observation was abandoned after 21 hours because it measured
+nothing**, so our own scenario's thresholds are unvalidated and it stays
+alert-only. The hub scenarios, which caught 10 scanners in that time with no
+apparent false positives, are what Phase 5a makes real.
 
 **Nothing is being blocked, and nothing is being reported to anyone**: there is
 no bouncer, and CrowdSec is not registered with the central API.
@@ -66,10 +72,13 @@ Eric decided these on 2026-08-28; they are settled, not open questions.
   no log rotation to get wrong. (Caddy writes to *stderr*, not stdout, which
   matters only because the datasource has to follow it — it does, by default.)
 - **Start by observing, not enforcing.** Alerts get recorded, remediation does
-  not happen. We read a week of what it *would* have banned before we let it ban
-  anything. **This was implemented by omitting the scenario's `remediation`
-  label, not by simulation mode** — see "Phase 3" under "Landed" for why that is
-  the stronger guarantee.
+  not happen. The intent was to read a week of what our scenario *would* have
+  banned before letting it ban anything. **This was implemented by omitting the
+  scenario's `remediation` label, not by simulation mode** — see "Phase 3" under
+  "Landed" for why that is the stronger guarantee. In the event the observation
+  measured nothing and we stopped it after 21 hours, so our scenario is still
+  alert-only for want of evidence rather than by plan; the hub scenarios are what
+  Phase 5a enforces.
 - **No AppSec.** CrowdSec's AppSec component is a request-inspecting web
   application firewall: it looks at bodies, headers and paths for attack
   patterns, as a separate service the bouncer forwards requests to. That is a
@@ -320,23 +329,46 @@ history, have not.
 **Phase 2 — the CrowdSec container, parsing but not enforcing. Done and verified
 on beta; see "Landed".**
 
-**Phase 3 — the custom `429` scenario, observation only. Built and verified; see
-"Landed". The waiting is the part that remains.** Let it collect for a week, then
-read `cscli alerts list` and answer honestly: did it flag anybody we recognise?
-Tune the thresholds, or throw the scenario away.
+**Phase 3 — the custom `429` scenario, observation only. Built, and the
+observation ended early without producing a result; see "Landed".**
 
 **Phase 4 — monitoring. Done; see "Landed".**
 
-**Phase 5 — enforce.** Add the bouncer plugin to `caddy/Dockerfile`, the global
-block and the snippet import, and the API key secret. Add `remediation: true` to
-the scenario, but only if Phase 3's observation week justified its thresholds.
-Enrol with the central API (`cscli console enroll`) so we both contribute
-hub-scenario signals and receive the community blocklist. Confirm the blocklist
-actually arrived: `cscli decisions list` should show a large number of entries
-with origin `CAPI` or `lists`, not just our own. Also consider
-`enable_caddy_metrics` on the bouncer, which reports blocked-request counts
-through Caddy's own `/metrics` — it cannot be done before the bouncer exists,
-which is why it sits here rather than in Phase 4.
+Phase 5 splits in two, because the two halves need different kinds of decision.
+
+**Phase 5a — enforce our own decisions.** Add the bouncer plugin to
+`caddy/Dockerfile`, the global block and the snippet import, and the API key.
+This makes the hub scenarios' bans real. It needs no `/etc/crowdsec`
+persistence, because the CrowdSec image registers a bouncer from a
+`BOUNCER_KEY_<name>` environment variable and stores it in the database we
+already persist. Also add `enable_caddy_metrics` on the bouncer, which reports
+blocked-request counts through Caddy's own `/metrics`; that could not be done
+before the bouncer existed, which is why it was not part of Phase 4.
+
+**Do not add `remediation: true` to our own scenario here.** Phase 3 produced no
+evidence for its thresholds (see "Landed"), and the hub scenarios are what have
+earned enforcement. Ours stays alert-only until something validates it.
+
+**Phase 5b — enrol with the central API.** This is what earns the community
+blocklist, and it has two prerequisites that Phase 5a does not:
+
+1. **`/etc/crowdsec` has to persist first.** Enrolment writes credentials to
+   `/etc/crowdsec/online_api_credentials.yaml`, and that directory is
+   deliberately not a volume. Without a fix, every deploy re-enrols and
+   accumulates junk machine registrations upstream. The fix is a narrow volume
+   for the credentials files, or an entrypoint that copies baked config into a
+   persisted directory on start — *not* a volume over the whole directory, which
+   would shadow the baked acquisition config and then never update it.
+2. **It is a decision about other people's data, not a technical step.**
+   Enrolling means sending the IP addresses of people who hit the site to a third
+   party, and enforcing a list that third party supplies against our own
+   visitors. That is the ordinary CrowdSec bargain and the reason the blocklist
+   exists, but it is outward-facing in a way nothing else here is, so it wants an
+   explicit decision rather than arriving as a side effect.
+
+When 5b happens, confirm the blocklist actually arrived: `cscli decisions list`
+should show a large number of entries with origin `CAPI` or `lists`, not just our
+own.
 
 ## How to test any of this
 
@@ -607,14 +639,61 @@ output. A probe container that prints and exits immediately is missed entirely �
 the first attempt read zero lines. It has to stay alive long enough for CrowdSec
 to attach before it writes anything.
 
-#### Left for Phase 5
+#### The observation week was abandoned after 21 hours, having measured nothing
+
+Deployed to beta on 2026-08-30, and stopped the same day. **In 21 hours our
+parser matched zero lines and the scenario fired zero times.** Not one rate-limit
+rejection occurred.
+
+That is structural rather than bad luck. The `per_ip` zone allows 50 requests in
+10 seconds, and beta's actual traffic is scanners probing *slowly* — a handful of
+requests, minutes apart. They never come close to tripping a rate limit. Our
+scenario can only fire on a genuine flood, and both floods in `crawler-repro.md`
+arrived at prod. Waiting the remaining six days would have produced more of the
+same nothing.
+
+Beta is a weak venue for the other half of the question too: "no false positives"
+means little where there are almost no real players to falsely accuse. The
+false-positive risk lives on prod.
+
+**So the thresholds `capacity: 30` and `leakspeed: 10s` remain unvalidated, and
+the scenario stays alert-only.** The options, none yet taken, are to accept the
+reasoning as-is and enable remediation, to run the same observation on prod where
+floods actually arrive, or to drop the scenario as redundant — the rate limiter
+already sheds a flood, and this scenario's remaining value is converting a repeat
+offender into a ban so they stop consuming the shared budget.
+
+#### What the hub scenarios did in the same 21 hours
+
+They caught **10 distinct addresses**, generating 41 alerts, because each scanner
+trips four or five scenarios at once: `http-probing`, `http-wordpress-scan`,
+`http-admin-interface-probing`, `http-technology-probing`,
+`http-crawl-non_statics`, `http-path-traversal-probing`, `http-sensitive-files`,
+and `http-cve-2021-41773`.
+
+Every one was a cloud or hosting range — Azure's `AS8075` predominantly, plus
+Google Cloud, Akamai and a Vietnamese ISP. Not one plausibly resembled a bridge
+player. Note that bans expire after about four hours, so the 41 alerts are a flow
+rather than a stock; `cs_active_decisions` sat at 4.
+
+That is roughly 11 scanners a day, detected accurately, with no visible false
+positives. **The hub scenarios, not ours, are what earned enforcement.**
+
+#### Left for Phase 5b
 
 `/etc/crowdsec` is deliberately not a volume, so the agent regenerates its local
 API credentials on each start — harmless while the agent and the local API share
-a container. Phase 5 changes that calculation, because the central-API
+a container. Phase 5b changes that calculation, because the central-API
 credentials enrolment creates *do* need to survive a restart, and the obvious fix
 of persisting `/etc/crowdsec` would shadow the baked acquisition config and then
 never update it again. Solve that before enrolling, not after.
+
+Confirmed on beta 2026-08-30: `/etc/crowdsec/online_api_credentials.yaml` is
+**zero bytes and dated from the upstream image build**, while
+`local_api_credentials.yaml` carries the current container's start time. That is
+the regeneration described above, visible in the filesystem. Phase 5a does not
+need this fixed, because the bouncer key comes from a `BOUNCER_KEY_<name>`
+environment variable and lands in the persisted database instead.
 
 ### Phase 4: Prometheus and a Grafana dashboard
 

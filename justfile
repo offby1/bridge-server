@@ -8,6 +8,7 @@ DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
 export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
+export CROWDSEC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "crowdsec_api_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -44,6 +45,25 @@ ensure-django-secret: django-secret-directory
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(gstat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
+    fi
+
+# Generate the key Caddy's CrowdSec bouncer uses to authenticate to CrowdSec's local API, if we
+# do not already have one. We pick the value ourselves rather than letting CrowdSec generate it,
+# which avoids a start-order problem: `cscli bouncers add` could only run after CrowdSec was up,
+# but Caddy needs the key at its own startup. Both sides now read the same value from here.
+#
+# The key lives outside the repo, alongside the Django secret, because `git clean -dxff` would
+# throw away anything kept inside it. Losing this file is not a disaster: generate a new one and
+# redeploy, and both sides pick it up together.
+[parallel]
+[private]
+[script('bash')]
+ensure-crowdsec-api-key: django-secret-directory
+    set -euo pipefail
+    touch "{{ CROWDSEC_API_KEY_FILE }}"
+    if [ $(gstat --format=%s "{{ CROWDSEC_API_KEY_FILE }}") -lt 32 ]
+    then
+    python3 -c 'import secrets; print(secrets.token_urlsafe(32))' > "{{ CROWDSEC_API_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -379,7 +399,7 @@ clean:
 
 [parallel]
 [private]
-docker-prerequisites: version-file orb uv-install-no-dev ensure-django-secret start
+docker-prerequisites: version-file orb uv-install-no-dev ensure-django-secret ensure-crowdsec-api-key start
 
 alias dc := dcu
 
@@ -406,6 +426,9 @@ _deploy hostname profile context settings_module *options:
     export DOCKER_CONTEXT={{ context }}   # roughly equivalent to hostname, except for "default"
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE={{ settings_module }}
+    # Both caddy and crowdsec read this: Caddy presents it to CrowdSec's local API, and CrowdSec
+    # registers a bouncer holding it. They must agree, which is why one file feeds both.
+    export CROWDSEC_API_KEY=$(cat "${CROWDSEC_API_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
     # Google OAuth credentials (optional - gracefully handles if files don't exist)

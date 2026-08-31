@@ -30,6 +30,16 @@ services:
       # means this phase cannot have any effect outside this host.
       - DISABLE_ONLINE_API=true
 
+      # This registers a bouncer named "caddy" with the key we supply, so that
+      # Caddy can authenticate to the local API. Registering it here rather than
+      # by running `cscli bouncers add` removes a start-order problem: otherwise
+      # Caddy would need a key that does not exist until CrowdSec has run once.
+      #
+      # The registration lands in the database on the crowdsec_data volume, which
+      # is why Phase 5a needs no /etc/crowdsec persistence. Re-supplying the same
+      # key on a later start is harmless.
+      - BOUNCER_KEY_caddy=${CROWDSEC_API_KEY:-}
+
     volumes:
       # The socket is mounted read-only, because all this service ever does is
       # read container logs.
