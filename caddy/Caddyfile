@@ -56,8 +56,14 @@
         api_key {$CROWDSEC_API_KEY}
         ticker_interval 60s
 
-        # Report blocked-request counts through the /metrics listener below, so
-        # the Grafana dashboard can show what the bouncer is actually stopping.
+        # Export the bouncer's own counters through the /metrics listener below.
+        # Measured on beta, this gives exactly two of them,
+        # crowdsec_bouncer_lapi_requests_total and
+        # crowdsec_bouncer_lapi_requests_failures_total, both labelled by mode.
+        # They are a health signal -- whether Caddy is successfully talking to
+        # the local API -- and NOT a count of blocked requests, which the plugin
+        # does not report. For blocks, count 403s in
+        # caddy_http_request_duration_seconds_count.
         enable_caddy_metrics
     }
 

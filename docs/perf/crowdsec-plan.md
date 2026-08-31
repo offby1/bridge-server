@@ -1,25 +1,36 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1 to 4 have landed; Phase 5a (enforcement) is
-being built now and Phase 5b (enrolment) is still intent.** The Caddy access log
-is on, CrowdSec is parsing it, the per-IP rate-limit scenario raises alerts, and
-Prometheus scrapes both with a Grafana dashboard over the top — see "Landed" at
-the bottom.
+**Status as of this commit: Phases 1 to 5a have landed and are verified running
+on beta; only Phase 5b (enrolment with the central API) is still intent.** The
+Caddy access log is on, CrowdSec parses it, the per-IP rate-limit scenario raises
+alerts, Prometheus scrapes both with a Grafana dashboard over the top, and **Caddy
+now refuses addresses CrowdSec has banned** — see "Landed" at the bottom.
+
+**Beta is enforcing as of 2026-08-31. Prod is not**, because nothing in this
+series has been deployed there yet.
 
 **Phase 3's observation was abandoned after 21 hours because it measured
 nothing**, so our own scenario's thresholds are unvalidated and it stays
 alert-only. The hub scenarios, which caught 10 scanners in that time with no
 apparent false positives, are what Phase 5a makes real.
 
-**Nothing is being blocked, and nothing is being reported to anyone**: there is
-no bouncer, and CrowdSec is not registered with the central API.
+**Bans are now enforced on beta; nothing is reported to anyone.** The hub
+scenarios ship with `remediation: true`, so when one fires it writes a real ban
+decision, and as of Phase 5a Caddy acts on it. CrowdSec is still not registered
+with the central API, so no signal leaves the host and no external blocklist
+arrives.
 
-**But decisions do exist, and that is not a contradiction.** The hub scenarios
-ship with `remediation: true`, so when one of them fires it writes a real ban
-decision. There is simply nothing installed that acts on a decision. The
-practical consequence is worth stating plainly: **the moment Phase 5 installs the
-bouncer, every unexpired decision already in the database starts blocking at
-once.** Check `cscli decisions list` before that deploy, not after.
+Two consequences of that arrangement, both borne out in practice:
+
+- **Decisions accumulated for a day before anything could act on them**, so the
+  Phase 5a deploy turned every unexpired one into a live ban at once. Three
+  scanner addresses were blocked the moment it landed. Check
+  `just cscli decisions list` *before* a deploy that first installs a bouncer,
+  not after.
+- **What gets banned is entirely our own judgement.** Every decision comes from a
+  scenario running here, not from anybody else's list. That is a smaller and more
+  predictable blast surface than enrolment would give, which is part of why 5b is
+  a separate decision.
 
 When a phase lands, move it into the "Landed" section and say what it actually
 does.
@@ -678,6 +689,101 @@ rather than a stock; `cs_active_decisions` sat at 4.
 
 That is roughly 11 scanners a day, detected accurately, with no visible false
 positives. **The hub scenarios, not ours, are what earned enforcement.**
+
+### Phase 5a: Caddy refuses banned addresses
+
+The CrowdSec bouncer is built into `caddy/Dockerfile`, configured by a global
+`crowdsec` block in `caddy/Caddyfile`, and applied to the site by a `(crowdsec)`
+snippet that the django service imports. **This is the first change in the series
+that can stop a request.**
+
+#### Ordering, verified rather than assumed
+
+A banned address must be refused *before* it touches a rate-limit bucket, or a
+banned flood still consumes the shared `list_views` and `whole_site` budgets on
+its way to being rejected. `order crowdsec before rate_limit` arranges that, and
+beta's running configuration confirms it:
+
+```
+srv1 [{'host': ['beta.bridge.offby1.info']}]
+subroute
+  crowdsec
+  rate_limit
+  reverse_proxy
+```
+
+#### Two labels, because label keys must be unique
+
+`caddy.import_0: crowdsec` and `caddy.import_1: ratelimit`. Two bare
+`caddy.import` lines cannot coexist in YAML, and the numeric suffix is
+caddy-docker-proxy's mechanism for keeping same-named directives apart. The
+suffix numbers do **not** decide execution order; the `order` directive does.
+
+#### The key
+
+`just ensure-crowdsec-api-key` generates it, following the pattern of
+`ensure-django-secret`, and stores it outside the repo where `git clean -dxff`
+cannot reach it. Both sides read the same value: Caddy presents it, and CrowdSec
+registers a bouncer holding it through `BOUNCER_KEY_caddy`. Choosing the value
+ourselves avoids a start-order problem, because `cscli bouncers add` could only
+run once CrowdSec was up while Caddy needs the key at its own startup. The
+registration lands in the persisted database, which is why Phase 5a needs no
+`/etc/crowdsec` fix.
+
+An empty key **fails open**: Caddy starts, the bouncer cannot authenticate, and
+requests are allowed. That is the safer direction, but it means a missing key
+looks like "CrowdSec is banning nobody" rather than like an error. The check is
+`just cscli bouncers list`, which should show a recent "Last API pull".
+
+#### How I verified it on beta
+
+`just cscli bouncers list` after deploying:
+
+```
+ Name   IP Address  Valid  Last API pull         Type              Version  Auth Type
+ caddy  172.18.0.8  ✔️      2026-08-31T00:36:25Z  caddy-cs-bouncer  v0.14.1  api-key
+```
+
+Then the functional test, which is the only one that really settles it. I banned
+my own address for ten minutes with `cscli decisions add`, watched requests turn
+from `302` to `403`, deleted the decision, and watched them turn back. Both
+transitions worked, and the ban was removed afterwards.
+
+**The block is not instantaneous, and that is worth knowing.** It took most of a
+minute to take effect. The bouncer runs in streaming mode, so it learns about new
+decisions only when it next pulls the list, and `ticker_interval` is 60s. The
+metrics confirm the mode: `crowdsec_bouncer_lapi_requests_total{mode="stream"}`.
+A CrowdSec decision therefore takes up to a minute to become a real block, which
+is fine for bans lasting hours but means you should not expect an instant
+response when testing.
+
+#### `enable_caddy_metrics` does not count blocked requests
+
+I claimed it would; it does not. On beta it exports exactly two counters,
+`crowdsec_bouncer_lapi_requests_total` and
+`crowdsec_bouncer_lapi_requests_failures_total`, both labelled by `mode`. Those
+are a health signal — is Caddy talking to the local API? — rather than a measure
+of what was blocked.
+
+Blocked requests are countable as 403s in
+`caddy_http_request_duration_seconds_count`, where the test above showed 7. One
+caveat: Django can also return 403, and both arrive with `handler="subroute"`, so
+that count is not purely the bouncer's.
+
+#### Startup ordering produces alarming, harmless log lines
+
+Caddy and CrowdSec are recreated together, so Caddy usually loses the race and
+logs:
+
+```
+auth-api: auth with api key failed ... dial tcp ...:8080: connect: connection refused
+failed to connect to LAPI, retrying in 10s
+```
+
+It retries every 10 seconds and recovers on its own. In the deploy I watched, all
+such lines shared a single timestamp and none recurred. Treat a *continuing*
+stream of them as the real problem: that means a wrong key or a CrowdSec that
+never came up.
 
 #### Left for Phase 5b
 
