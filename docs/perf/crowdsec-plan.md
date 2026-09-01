@@ -1,36 +1,35 @@
 # Plan: add CrowdSec to the edge
 
-**Status as of this commit: Phases 1 to 5a have landed and are verified running
-on beta; only Phase 5b (enrolment with the central API) is still intent.** The
-Caddy access log is on, CrowdSec parses it, the per-IP rate-limit scenario raises
-alerts, Prometheus scrapes both with a Grafana dashboard over the top, and **Caddy
-now refuses addresses CrowdSec has banned** — see "Landed" at the bottom.
+**Status as of this commit: every phase has landed.** The Caddy access log is on,
+CrowdSec parses it, the per-IP rate-limit scenario raises alerts, Prometheus
+scrapes both with a Grafana dashboard over the top, **Caddy refuses addresses
+CrowdSec has banned**, and CrowdSec **exchanges signals with the central API**.
+See "Landed" at the bottom for what each piece actually does.
 
-**Beta is enforcing as of 2026-08-31. Prod is not**, because nothing in this
-series has been deployed there yet.
+**Beta is enforcing as of 2026-08-31. Prod has none of this**, because nothing in
+this series has been deployed there.
 
 **Phase 3's observation was abandoned after 21 hours because it measured
 nothing**, so our own scenario's thresholds are unvalidated and it stays
 alert-only. The hub scenarios, which caught 10 scanners in that time with no
-apparent false positives, are what Phase 5a makes real.
+apparent false positives, are what Phase 5a made real.
 
-**Bans are now enforced on beta; nothing is reported to anyone.** The hub
-scenarios ship with `remediation: true`, so when one fires it writes a real ban
-decision, and as of Phase 5a Caddy acts on it. CrowdSec is still not registered
-with the central API, so no signal leaves the host and no external blocklist
-arrives.
-
-Two consequences of that arrangement, both borne out in practice:
+Two consequences worth keeping in view:
 
 - **Decisions accumulated for a day before anything could act on them**, so the
   Phase 5a deploy turned every unexpired one into a live ban at once. Three
   scanner addresses were blocked the moment it landed. Check
   `just cscli decisions list` *before* a deploy that first installs a bouncer,
   not after.
-- **What gets banned is entirely our own judgement.** Every decision comes from a
-  scenario running here, not from anybody else's list. That is a smaller and more
-  predictable blast surface than enrolment would give, which is part of why 5b is
-  a separate decision.
+- **Enrolment widened what can ban a visitor.** Before Phase 5b, every decision
+  came from a scenario running on this host. Now the community blocklist can also
+  block somebody, on evidence gathered elsewhere that we cannot inspect. That is
+  the bargain the blocklist exists to offer, and it is why 5b was a separate
+  decision from 5a.
+
+**Registration is a one-time manual step per host**, `just crowdsec-register`,
+for reasons Phase 5b explains. A host that has never had it run has the central
+API enabled but no credentials, and quietly exchanges nothing.
 
 When a phase lands, move it into the "Landed" section and say what it actually
 does.
@@ -345,9 +344,9 @@ observation ended early without producing a result; see "Landed".**
 
 **Phase 4 — monitoring. Done; see "Landed".**
 
-Phase 5 splits in two, because the two halves need different kinds of decision.
+Phase 5 split in two, because the two halves needed different kinds of decision. Both have now landed; see "Landed".
 
-**Phase 5a — enforce our own decisions.** Add the bouncer plugin to
+**Phase 5a — enforce our own decisions. Done and verified on beta.** Add the bouncer plugin to
 `caddy/Dockerfile`, the global block and the snippet import, and the API key.
 This makes the hub scenarios' bans real. It needs no `/etc/crowdsec`
 persistence, because the CrowdSec image registers a bouncer from a
@@ -360,8 +359,7 @@ before the bouncer existed, which is why it was not part of Phase 4.
 evidence for its thresholds (see "Landed"), and the hub scenarios are what have
 earned enforcement. Ours stays alert-only until something validates it.
 
-**Phase 5b — enrol with the central API.** This is what earns the community
-blocklist, and it has two prerequisites that Phase 5a does not:
+**Phase 5b — enrol with the central API. Done; registration is a one-time step per host.** This is what earns the community blocklist, and it had two prerequisites that Phase 5a did not:
 
 1. **`/etc/crowdsec` has to persist first.** Enrolment writes credentials to
    `/etc/crowdsec/online_api_credentials.yaml`, and that directory is
@@ -785,7 +783,106 @@ such lines shared a single timestamp and none recurred. Treat a *continuing*
 stream of them as the real problem: that means a wrong key or a CrowdSec that
 never came up.
 
-#### Left for Phase 5b
+### Phase 5b: enrolment with the central API
+
+This is the half that talks to somebody else. CrowdSec now sends hub-scenario
+signals upstream and receives the community blocklist in return.
+`DISABLE_ONLINE_API` is `false`, and three new pieces support it:
+`crowdsec/config.yaml.local`, `crowdsec/entrypoint.sh`, and a
+`just crowdsec-register` recipe.
+
+Recall the constraint from the top of this document: **only unmodified hub
+scenarios produce signals the network accepts**, so our own
+`offby1/caddy-per-ip-ratelimit` contributes nothing. The hub scenarios are what
+earn the blocklist.
+
+#### Why persistence needed three pieces rather than one
+
+The obvious move — mount a volume at `/etc/crowdsec` — is wrong, and the image's
+own startup script shows why:
+
+```sh
+if [ ! -e "/etc/crowdsec/local_api_credentials.yaml" ] && [ ! -e "/etc/crowdsec/config.yaml" ]; then
+    rsync -av --ignore-existing /staging/etc/crowdsec/* /etc/crowdsec
+fi
+```
+
+It prestages that directory **only when the directory is empty**, and with
+`--ignore-existing`. So a volume there is seeded once at first start and then
+frozen: editing our parser or scenario in the repo would appear to do nothing
+forever after.
+
+So `/etc/crowdsec` stays ephemeral and only the credentials move. `config.yaml.local`
+points them at `/etc/crowdsec/creds/`, a path that does not exist in the image
+and therefore shadows nothing, backed by its own `crowdsec_creds` volume —
+separate from `crowdsec_data` so that wiping decisions to reset the buckets does
+not also discard the registration.
+
+#### Two traps found by running it, not by reading
+
+**The startup script stops registering as soon as `credentials_path` is set.** It
+guards on `conf_get '.api.server.online_client | has("credentials_path")'`, and
+`conf_get` reads the *merged* configuration through `cscli config show-yaml`, so
+it does see `config.yaml.local`. Setting the key therefore switches automatic
+registration off permanently. That is what we want — with `/etc/crowdsec`
+ephemeral, automatic registration would mint a brand-new machine identity on
+every deploy and leave a trail of abandoned registrations upstream — but it makes
+the first registration a manual step.
+
+**A missing credentials file is fatal, not merely empty.** Pointing
+`credentials_path` at a file that does not exist makes every `cscli` invocation
+fail with `failed to load Local API: loading online client credentials: ... no
+such file or directory`, and startup never completes. An empty file is fine; note
+that the upstream image ships a zero-byte `online_api_credentials.yaml` at the
+default path for exactly this reason. Hence `entrypoint.sh`, which creates the
+empty file and nothing more.
+
+It creates the file *and nothing more* because it cannot do more. At that point
+in startup `/etc/crowdsec/config.yaml` does not exist yet — the image keeps its
+configuration in `/staging` and copies it in moments later — so `cscli` cannot
+run there at all. A first attempt that tried to register from the wrapper failed
+with `while reading yaml file: open /etc/crowdsec/config.yaml: no such file or
+directory`.
+
+#### Registering
+
+Once per host:
+
+```
+DOCKER_CONTEXT=hetz-bridge-beta just crowdsec-register
+```
+
+The recipe refuses to act when credentials already exist, because `cscli capi
+register` mints a fresh identity on every call. It writes through a temporary
+file so a failed attempt leaves the credentials empty and retryable, then
+restarts the container, since the running process read the empty file at startup.
+
+To verify:
+
+```
+just cscli capi status
+just cscli decisions list --origin lists   # entries from the community blocklist
+```
+
+Before registering, `cscli capi status` reports the situation accurately rather
+than confusingly: `the Central API (CAPI) must be configured with 'cscli capi
+register'`.
+
+#### Optional: the console
+
+`ENROLL_KEY` links the instance to an account on app.crowdsec.net for a web
+dashboard. It is not needed to send signals or receive the blocklist, and it
+needs a key only the account holder can generate, so it is plumbed through as
+`CROWDSEC_ENROLL_KEY` and left empty. The image's startup script guards on
+`[ "$ENROLL_KEY" != "" ]`, so an empty value is skipped.
+
+#### One pre-existing log line, not ours
+
+`Error: no matches found` appears during startup, just after the volume check.
+It predates this work, is emitted by the image's own startup script, and does not
+prevent CrowdSec from running — `Starting processing data` follows it.
+
+#### Left over from Phase 5a
 
 `/etc/crowdsec` is deliberately not a volume, so the agent regenerates its local
 API credentials on each start — harmless while the agent and the local API share

@@ -15,6 +15,11 @@ FROM crowdsecurity/crowdsec:v1.7.8
 # 1.5, rather than a single acquis.yaml.
 COPY acquis.d/caddy.yaml /etc/crowdsec/acquis.d/caddy.yaml
 
+# This moves the central-API credentials onto a persisted volume, so that
+# enrolment survives a deploy. The file explains why that is needed and why it
+# also means the first registration is a manual step.
+COPY config.yaml.local /etc/crowdsec/config.yaml.local
+
 # These two files are our own parser and scenario for the rate limiter's
 # rejection lines. CrowdSec loads any YAML it finds in these directories, and
 # unlike the hub collections named in the compose file, these are local items
@@ -25,3 +30,9 @@ COPY acquis.d/caddy.yaml /etc/crowdsec/acquis.d/caddy.yaml
 # guarantee than simulation mode.
 COPY parsers/s01-parse/caddy-ratelimit.yaml /etc/crowdsec/parsers/s01-parse/caddy-ratelimit.yaml
 COPY scenarios/caddy-per-ip-ratelimit.yaml /etc/crowdsec/scenarios/caddy-per-ip-ratelimit.yaml
+
+# Wrap the image's startup script so that the persisted central-API credentials
+# exist before anything reads them, and so that registration happens once. The
+# script explains why configuration alone cannot achieve this.
+COPY --chmod=0755 entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

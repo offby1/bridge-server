@@ -259,6 +259,45 @@ caddy-log *options:
 cscli *options:
     docker compose exec crowdsec cscli {{ options }}
 
+# Register this CrowdSec instance with the central API, once, and restart it so the credentials
+# take effect. Run it against a host the way a deploy does:
+# `DOCKER_CONTEXT=hetz-bridge-beta just crowdsec-register`.
+#
+# This is a one-time step per host rather than something the container does for itself, because of
+# an ordering problem explained in crowdsec/entrypoint.sh: at the point where a wrapper could act,
+# /etc/crowdsec/config.yaml does not exist yet, so cscli cannot run.
+#
+# The recipe refuses to act if credentials are already present, because `cscli capi register` mints
+# a fresh machine identity on every call, and repeating it would leave a trail of abandoned
+# registrations upstream.
+[doc('Register CrowdSec with the central API, once per host')]
+[group('docker')]
+[script('bash')]
+crowdsec-register:
+    set -euo pipefail
+
+    creds=/etc/crowdsec/creds/online_api_credentials.yaml
+
+    if docker compose exec crowdsec test -s "${creds}"
+    then
+        echo "Already registered: ${creds} is non-empty."
+        echo "To re-register deliberately, empty that file first, then run this again."
+        exit 0
+    fi
+
+    # Write via a temporary file, so that a failed registration leaves the credentials empty and
+    # the next attempt still works, rather than leaving something half-written that looks valid.
+    docker compose exec crowdsec sh -c "cscli capi register > /tmp/creds && mv /tmp/creds ${creds} && chmod 600 ${creds}"
+
+    # The running process read the (empty) credentials at startup, so it needs a restart before it
+    # will use them.
+    docker compose restart crowdsec
+
+    echo
+    echo "Registered. Verify with:"
+    echo "  just cscli capi status"
+    echo "  just cscli decisions list --origin lists   # entries from the community blocklist"
+
 setup-oauth: migrate (manage "setup_oauth")
 
 [group('development')]

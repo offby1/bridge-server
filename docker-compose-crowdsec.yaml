@@ -1,5 +1,6 @@
 volumes:
   crowdsec_data: {}
+  crowdsec_creds: {}
 
 services:
   # This service parses Caddy's logs and records what it concludes. It cannot
@@ -24,11 +25,26 @@ services:
       # default, but naming it here means we are not relying on that.
       - PARSERS=crowdsecurity/syslog-logs
 
-      # We are deliberately offline for now. CrowdSec does not register with the
-      # central API, so we neither report anything nor pull any blocklist. Phase
-      # 5 turns this setting off and enrols properly. Keeping it on until then
-      # means this phase cannot have any effect outside this host.
-      - DISABLE_ONLINE_API=true
+      # Talk to CrowdSec's central API. This is what sends our hub-scenario
+      # signals upstream and brings the community blocklist back, and it is the
+      # only part of this stack that communicates with anyone outside the host.
+      #
+      # Only signals from *unmodified hub* scenarios count. Our own
+      # offby1/caddy-per-ip-ratelimit contributes nothing, by CrowdSec's design:
+      # they compare a content hash and ignore anything homegrown or edited.
+      #
+      # Registration does not happen automatically here, which is unusual and
+      # deliberate; crowdsec/config.yaml.local explains the mechanism and the
+      # one-off manual step it implies.
+      - DISABLE_ONLINE_API=false
+
+      # Optional. Setting this links the instance to an account on
+      # app.crowdsec.net, which gives a web dashboard of what we have blocked.
+      # It is not needed to send signals or receive the blocklist, and an empty
+      # value is skipped by the image's startup script, which guards on
+      # `[ "$ENROLL_KEY" != "" ]`. Get a key from the console if you want this.
+      - ENROLL_KEY=${CROWDSEC_ENROLL_KEY:-}
+      - ENROLL_INSTANCE_NAME=${CADDY_HOSTNAME:-}
 
       # This registers a bouncer named "caddy" with the key we supply, so that
       # Caddy can authenticate to the local API. Registering it here rather than
@@ -59,6 +75,13 @@ services:
       # because the central-API credentials it creates *do* need to survive a
       # restart.
       - crowdsec_data:/var/lib/crowdsec/data
+
+      # The central-API credentials, kept apart from both the ephemeral
+      # /etc/crowdsec and the decisions database. `/etc/crowdsec/creds` does not
+      # exist in the image, so this volume shadows nothing; and keeping it
+      # separate from crowdsec_data means wiping decisions to reset the buckets
+      # does not also discard our registration. See crowdsec/config.yaml.local.
+      - crowdsec_creds:/etc/crowdsec/creds
 
     restart: unless-stopped
 
