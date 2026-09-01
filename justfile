@@ -285,9 +285,19 @@ crowdsec-register:
         exit 0
     fi
 
-    # Write via a temporary file, so that a failed registration leaves the credentials empty and
-    # the next attempt still works, rather than leaving something half-written that looks valid.
-    docker compose exec crowdsec sh -c "cscli capi register > /tmp/creds && mv /tmp/creds ${creds} && chmod 600 ${creds}"
+    # Do NOT redirect this. `cscli capi register` writes the credentials to the configured
+    # credentials_path itself, and prints only log lines on stdout. Capturing stdout into the file
+    # -- which is what the image's own startup script does, since it runs before any path is
+    # configured -- overwrites the real credentials with nothing. That mistake produced a file of
+    # zero bytes and a "missing login field" warning, and cost a wasted registration upstream.
+    docker compose exec crowdsec cscli capi register
+
+    # Fail loudly rather than restarting into a broken state.
+    if ! docker compose exec crowdsec test -s "${creds}"
+    then
+        echo "ERROR: ${creds} is still empty after registering." >&2
+        exit 1
+    fi
 
     # The running process read the (empty) credentials at startup, so it needs a restart before it
     # will use them.
@@ -296,7 +306,10 @@ crowdsec-register:
     echo
     echo "Registered. Verify with:"
     echo "  just cscli capi status"
-    echo "  just cscli decisions list --origin lists   # entries from the community blocklist"
+    echo "  just cscli decisions list --origin CAPI    # entries from the community blocklist"
+    echo
+    echo "Note the origin is CAPI, not 'lists'. 'lists' holds blocklists subscribed through the"
+    echo "console, which we do not use, so it reads 'No active decisions' and looks like failure."
 
 setup-oauth: migrate (manage "setup_oauth")
 

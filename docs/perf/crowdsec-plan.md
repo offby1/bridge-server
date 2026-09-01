@@ -861,12 +861,79 @@ To verify:
 
 ```
 just cscli capi status
-just cscli decisions list --origin lists   # entries from the community blocklist
+just cscli decisions list --origin CAPI   # entries from the community blocklist
 ```
 
 Before registering, `cscli capi status` reports the situation accurately rather
 than confusingly: `the Central API (CAPI) must be configured with 'cscli capi
 register'`.
+
+**The origin is `CAPI`, not `lists`.** I had written `lists` first; that holds
+blocklists subscribed through the console, which we do not use, so it reads "No
+active decisions" and looks exactly like a failed enrolment.
+
+#### Do not redirect `cscli capi register`, which I did, and it cost a registration
+
+In CrowdSec v1.7.8, when `credentials_path` is configured, `cscli capi register`
+**writes the file itself** and prints only log lines on standard output. My first
+version of the recipe captured stdout into the file, which overwrote perfectly
+good credentials with nothing: the file went to zero bytes and `capi status`
+started warning `missing login field`. Registering again fixed it, but the first
+registration is now an abandoned identity upstream that cannot be cleaned up from
+here.
+
+Note the image's own startup script *does* redirect, and is right to: it runs
+before any `credentials_path` exists, so register has nowhere to write and falls
+back to stdout. The behaviour depends on configuration, which is what made the
+mistake easy.
+
+The recipe now runs `cscli capi register` plainly and then fails loudly if the
+credentials are still empty, rather than restarting into a broken state.
+
+#### How I verified it on beta
+
+`cscli capi status` after registering:
+
+```
+Trying to authenticate with username c5c369c2...  on https://api.crowdsec.net/
+You can successfully interact with Central API (CAPI)
+Sharing signals is enabled
+Pulling community blocklist is enabled
+```
+
+The blocklist arrived within a minute or two — roughly 15,000 addresses:
+
+| reason | addresses |
+|---|---|
+| `http:exploit` | 11,078 |
+| `http:scan` | 1,966 |
+| `ssh:bruteforce` | 1,752 |
+| `http:bruteforce` | 168 |
+| `generic:scan` | 27 |
+| `http:crawl` | 6 |
+
+Alongside those, our own two `origin="crowdsec"` decisions from local scenarios.
+Every one of the 15,000 is enforced by the Caddy bouncer immediately, which is
+the point and also the risk.
+
+Persistence works: restarting the container leaves the credentials in place, the
+blocklist counts unchanged, and `just crowdsec-register` correctly declines to
+act.
+
+#### The blocklist blocks on evidence we cannot inspect
+
+Worth stating plainly rather than leaving implicit. A spot check of the incoming
+list found `209.85.219.70`, which sits in Google's `209.85.128.0/17`, banned as
+`generic:scan`. Whether or not that particular ban is deserved, it is the shape of
+the risk: an address on somebody else's evidence, blocked here for a week, with no
+way for us to review the case.
+
+For this site the practical cost is low, because we already set
+`X-Robots-Tag: none` on every response and do not care about search indexing. The
+calculation would be different for a site that did. Before enabling this on prod,
+consider whether any address that must always reach the site — a monitoring
+probe, a payment webhook, an uptime checker — could plausibly appear on a
+community list, and remember that `cscli allowlist` exists for those.
 
 #### Optional: the console
 
