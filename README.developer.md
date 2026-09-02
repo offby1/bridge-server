@@ -16,6 +16,59 @@
   - `curl -LsSf https://astral.sh/uv/install.sh | sh`
   - `exec $SHELL`
 
+### Ubuntu 26.04.1 LTS ("Resolute Raccoon"), inside a nested/sandboxed container
+
+Same shape as 24.04 above, plus a few wrinkles specific to running inside a
+container-within-a-container (no snap, no systemd login session, root fs is itself
+overlayfs):
+
+* git (`sudo apt install git`)
+* just — apt's version (1.45.0 here) is too old for the `[continue]` attribute this
+  justfile uses. Use the official installer instead of snap or apt:
+  - `curl -fsSL https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin`
+* docker, compose, and buildx
+  - `sudo apt install docker.io docker-compose-v2 docker-buildx`
+  - `sudo systemctl enable --now docker`
+  - `sudo usermod --append --groups docker $USER`, then start a new *login* shell to
+    pick up the group. If nothing in your setup gives you one (e.g. a long-lived
+    non-interactive session), `sudo chmod 666 /var/run/docker.sock` works as a
+    same-session stopgap.
+  - If `docker compose build` dies with `failed to mount ... overlay ...`, the
+    container's root filesystem is itself overlayfs, and BuildKit's default snapshotter
+    can't do overlay-on-overlay. Fix: give buildx a builder that uses the `native`
+    snapshotter instead —
+    `docker buildx create --name sandbox-builder --driver docker-container --buildkitd-flags '--oci-worker-snapshotter=native' --use`
+* jq (`sudo apt install jq`)
+* a C/C++ toolchain, to compile the `endplay` extension the `bridge` library depends on
+  - `sudo apt install build-essential cmake`
+  - **without this, `uv sync`/`just uv-install` fails building `endplay`**, and the
+    error is easy to misread as a Python-version problem: CMake's real complaint
+    (`CMAKE_C_COMPILER not set`, `CMAKE_MAKE_PROGRAM not set`) is buried a couple of
+    layers under a generic `setup.py build ... returned non-zero exit status 1`. It is
+    *not* a 3.14-vs-3.12 issue — `endplay` builds fine under Python 3.14 too, once the
+    compiler and cmake are actually present.
+* uv (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+* Playwright's browser binary, which `uv sync` does not install
+  - after `just uv-install`: `uv run playwright install chromium --with-deps`, or the
+    UI tests fail with "Executable doesn't exist"
+
+Two more things bit on first run, neither Ubuntu-version-specific:
+
+* **`ensure-django-secret` leaves `SECRET_KEY` empty on any non-macOS box.** It sizes
+  the secret file with `gstat` (GNU coreutils' `stat`, which is only called `gstat` on
+  macOS, via `brew install coreutils`). Elsewhere `gstat` doesn't exist, the size check
+  silently fails, and `touch` has already created an empty file — so the first test run
+  dies with `SECRET_KEY setting must not be empty`. Workaround:
+  `python3 -c 'import secrets; print(secrets.token_urlsafe(100))' > "$XDG_CONFIG_HOME/info.offby1.bridge/django_secret_key"`
+  (or `~/.config/info.offby1.bridge/...` if `XDG_CONFIG_HOME` isn't set). The real fix
+  is swapping `gstat` for something portable in the justfile.
+* **The checkout directory must be named `server`.** `docker-compose.yaml`'s `django`
+  build context is `context: ..` with `dockerfile: ./server/Dockerfile` — it assumes the
+  repo lives in a directory literally named `server`, one level below where it reaches
+  from. `git clone .../bridge-server.git` gives you `bridge-server/` by default, and
+  `docker compose build` then fails with `lstat .../server: no such file or directory`.
+  Rename the checkout to `server` before running `just dev`.
+
 ### Debian 12 ("bookworm")
 
 * `sudo apt install git jq pipx`
