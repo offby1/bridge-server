@@ -316,6 +316,43 @@ shared address: a school, an office, or carrier NAT means one ban can take out
 everybody behind it. Start short (an hour or two) and lengthen it once we have
 evidence.
 
+## Known gap: port 80 reaches neither handler
+
+Both the `crowdsec` and the `rate_limit` snippets are applied to the django site
+by `caddy.import_0` and `caddy.import_1` labels, so they run only inside that
+site block. Caddy's automatic HTTP-to-HTTPS redirect happens earlier, on the
+plain `:80` listener, and answers with a `308` before either handler sees the
+request. As of this commit, therefore, a request to port 80 is never checked
+against CrowdSec's decisions and never charged to a rate-limit bucket.
+
+I confirmed this on beta rather than inferring it. On 2026-09-01 a PHP-webshell
+scanner at `20.63.81.20` (Microsoft's `AS8075`) hit beta 356 times. CrowdSec
+banned it at 01:34:09 for `http-crawl-non_statics`, `http-probing` and
+`http-admin-interface-probing`. The address nonetheless went on receiving plain
+`308` redirects on port 80 until 01:44:26, ten minutes after the ban, while its
+HTTPS requests over the same period got the bouncer's `403`. The final tally for
+that address was 178 redirects, 89 rejections and 89 not-founds.
+
+There are two consequences, and the detection one is the more interesting.
+
+**Enforcement**: a banned address is redirected rather than refused. This costs
+us almost nothing, because the port-80 listener reaches no application code and
+no Postgres connection; it hands back a redirect and closes.
+
+**Detection**: a `308` is not a `404`, so the hub scenarios that count probing
+failures never fire on port-80 traffic. A scanner that follows the redirect
+convicts itself on the HTTPS side, which is what happened here and is what most
+scanners do. A scanner that only ever speaks HTTP to port 80 is invisible to us:
+we neither ban it nor report it upstream.
+
+We have not fixed this, and it is not clear it is worth fixing. Importing the
+snippets into the redirect listener would mean writing that listener out
+explicitly instead of letting Caddy generate it, which is a real complication of
+`caddy/Caddyfile` in exchange for refusing requests that already cost nothing.
+The reason to record it here is that a future reading of the metrics will
+otherwise mislead: our 403 counts undercount how often a banned address came
+back, and our alert counts undercount HTTP-only scanning.
+
 ## Phases
 
 Each phase should be its own commit, and each is independently useful. Note that
@@ -782,6 +819,27 @@ It retries every 10 seconds and recovers on its own. In the deploy I watched, al
 such lines shared a single timestamp and none recurred. Treat a *continuing*
 stream of them as the real problem: that means a wrong key or a CrowdSec that
 never came up.
+
+A second, differently worded line belongs to the same family:
+
+```
+auth-api: auth with api key failed return nil response, error: context deadline exceeded
+```
+
+That one is a stream poll that timed out rather than a connection that was
+refused, and it also recovers on its own. The bouncer's own counters are the way
+to judge whether either kind matters, since they put the failures in proportion.
+Measured on beta on 2026-09-02, after 23 hours of uptime,
+`crowdsec_bouncer_lapi_requests_total{mode="stream"}` stood at 1378 and
+`crowdsec_bouncer_lapi_requests_failures_total{mode="stream"}` at 2. At a 60
+second `ticker_interval` that is every poll the bouncer owed us, with two
+failures, both of them in the first half hour after the deploy.
+
+What happens during such a gap is worth stating plainly, because we chose it:
+`enable_hard_fails` is off, so a bouncer that cannot reach the local API lets
+every request through rather than refusing it. Each deploy therefore has a window
+of roughly half a minute in which we enforce nothing. We prefer that to the
+alternative, in which a CrowdSec problem takes the whole site down.
 
 ### Phase 5b: enrolment with the central API
 
