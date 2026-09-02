@@ -52,16 +52,8 @@ overlayfs):
   - after `just uv-install`: `uv run playwright install chromium --with-deps`, or the
     UI tests fail with "Executable doesn't exist"
 
-Two more things bit on first run, neither Ubuntu-version-specific:
+A lingering problem, not Ubuntu-version-specific:
 
-* **`ensure-django-secret` leaves `SECRET_KEY` empty on any non-macOS box.** It sizes
-  the secret file with `gstat` (GNU coreutils' `stat`, which is only called `gstat` on
-  macOS, via `brew install coreutils`). Elsewhere `gstat` doesn't exist, the size check
-  silently fails, and `touch` has already created an empty file — so the first test run
-  dies with `SECRET_KEY setting must not be empty`. Workaround:
-  `python3 -c 'import secrets; print(secrets.token_urlsafe(100))' > "$XDG_CONFIG_HOME/info.offby1.bridge/django_secret_key"`
-  (or `~/.config/info.offby1.bridge/...` if `XDG_CONFIG_HOME` isn't set). The real fix
-  is swapping `gstat` for something portable in the justfile.
 * **The checkout directory must be named `server`.** `docker-compose.yaml`'s `django`
   build context is `context: ..` with `dockerfile: ./server/Dockerfile` — it assumes the
   repo lives in a directory literally named `server`, one level below where it reaches
