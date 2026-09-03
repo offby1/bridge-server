@@ -619,8 +619,8 @@ This plan originally said to put the scenario in simulation mode. We did
 something stronger instead: **the scenario simply omits the `remediation` label.**
 
 An overflow therefore produces an alert and *cannot* produce a decision — there
-is nothing for a bouncer to act on, now or after Phase 5 adds the bouncer. That
-is a better guarantee than simulation for two reasons. Simulation for a custom
+is nothing for the bouncer to act on, now that it exists, until this scenario
+gains a `remediation` label. That is a better guarantee than simulation for two reasons. Simulation for a custom
 scenario is keyed on the *file* name rather than the scenario name, a known
 CrowdSec wrinkle, so a small mistake there enforces while you believe you are
 only watching. And simulation is configuration that a later edit can quietly

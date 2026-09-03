@@ -355,7 +355,7 @@
     {
       "type": "bargauge",
       "title": "Alerts raised, by scenario",
-      "description": "Cumulative since the container started. This is the readout for the Phase 3 observation week: look for offby1/caddy-per-ip-ratelimit, and check whether any listed address looks like a real player rather than a scanner.",
+      "description": "Cumulative since the container started. offby1/caddy-per-ip-ratelimit's thresholds (capacity 30, leakspeed 10s) are unvalidated against real traffic -- floods are rare enough that this needs prod, not beta, to say anything. When it does fire, check whether the address looks like a real player rather than a scanner.",
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
@@ -404,7 +404,7 @@
     {
       "type": "bargauge",
       "title": "Active ban decisions, by scenario",
-      "description": "Decisions currently in force. NOTE: while there is no bouncer, nothing acts on these -- but they are real, and the day Phase 5 installs the bouncer every unexpired decision here starts blocking immediately. Hub scenarios ship with remediation enabled; ours deliberately does not.",
+      "description": "Decisions currently in force. The Caddy bouncer (Phase 5a) enforces these, so a decision here already blocks the traffic that earned it. Hub scenarios ship with remediation enabled; our own per-IP scenario deliberately does not, so it produces alerts only, not decisions here.",
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"

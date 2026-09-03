@@ -3,10 +3,9 @@ volumes:
   crowdsec_creds: {}
 
 services:
-  # This service parses Caddy's logs and records what it concludes. It cannot
-  # block anything, because blocking needs a bouncer in Caddy and no bouncer
-  # exists yet. This is part of the plan described at Phase 2 of
-  # docs/perf/crowdsec-plan.md.
+  # This service parses Caddy's logs and records what it concludes. The Caddy
+  # bouncer (Phase 5a) enforces its decisions. This is part of the plan
+  # described at Phase 2 of docs/perf/crowdsec-plan.md.
   crowdsec:
     build: ./crowdsec
 

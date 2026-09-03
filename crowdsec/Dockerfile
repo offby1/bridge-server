@@ -1,8 +1,6 @@
-# This image runs CrowdSec, which reads Caddy's logs and decides nothing.
-#
-# As of this commit there is no bouncer, so nothing this container concludes can
-# block a request. It parses and counts, and that is all. See
-# docs/perf/crowdsec-plan.md for what the later phases add.
+# This image runs CrowdSec, which reads Caddy's logs and decides whether to
+# block a request. The Caddy bouncer (Phase 5a) enforces those decisions. See
+# docs/perf/crowdsec-plan.md for the full history of what each phase added.
 #
 # The acquisition config is baked into the image rather than bind-mounted, for
 # exactly the reason caddy/Dockerfile bakes its Caddyfile: a bind mount resolves
