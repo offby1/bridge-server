@@ -62,7 +62,8 @@ ensure-django-secret: django-secret-directory
 ensure-crowdsec-api-key: django-secret-directory
     set -euo pipefail
     touch "{{ CROWDSEC_API_KEY_FILE }}"
-    if [ $(gstat --format=%s "{{ CROWDSEC_API_KEY_FILE }}") -lt 32 ]
+    PATH=/opt/homebrew/bin:$PATH
+    if [ $(stat --format=%s "{{ CROWDSEC_API_KEY_FILE }}") -lt 32 ]
     then
     python3 -c 'import secrets; print(secrets.token_urlsafe(32))' > "{{ CROWDSEC_API_KEY_FILE }}"
     fi
