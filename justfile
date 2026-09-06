@@ -505,8 +505,18 @@ _deploy hostname profile context settings_module *options:
     # Build the shared bridge-django image ONCE. Building it via all five django-*
     # services in parallel makes them race to export the same tag (buildkit:
     # image "bridge-django:latest" already exists), so build only `django` here.
-    # The distinct caddy/grafana/prometheus images are built at `up` time (--build) below.
-    docker compose build django
+    #
+    # Also build caddy/crowdsec here, while their old containers are still up and
+    # serving traffic, rather than at `up --build` time below. caddy/Dockerfile
+    # compiles a custom Caddy binary from source via xcaddy, which is slow, and
+    # on 2026-09-06 that build ran *after* the disruptive swap step had already
+    # begun, leaving the site unreachable for the full build. Building it early
+    # means the later `up --build` finds a cached image and just swaps containers.
+    if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
+        docker compose build django caddy crowdsec
+    else
+        docker compose build django
+    fi
 
     docker compose up --detach --wait postgres redis # only needed when those services aren't already running
 
