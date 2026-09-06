@@ -24,6 +24,10 @@ RUN adduser --disabled-password bridge
 COPY --chown=bridge:bridge server/uv.lock server/pyproject.toml /bridge/
 WORKDIR /bridge
 USER bridge
+
+# Work around weird `fatal: could not read Username for 'https://github.com'` error
+RUN git config --global http.version HTTP/1.1
+
 RUN ["uv", "sync", "--no-dev"]
 
 # ---- Runtime stage: slim image, no toolchain ----

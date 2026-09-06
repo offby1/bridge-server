@@ -8,6 +8,7 @@ DJANGO_SECRET_DIRECTORY := config_directory() / "info.offby1.bridge"
 export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
 export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
+export CROWDSEC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "crowdsec_api_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -45,6 +46,26 @@ ensure-django-secret: django-secret-directory
     if [ ! -f "{{ DJANGO_SECRET_FILE }}" -o $(stat --format=%s "{{ DJANGO_SECRET_FILE }}") -lt 50 ]
     then
     python3  -c 'import secrets; print(secrets.token_urlsafe(100))' > "{{ DJANGO_SECRET_FILE }}"
+    fi
+
+# Generate the key Caddy's CrowdSec bouncer uses to authenticate to CrowdSec's local API, if we
+# do not already have one. We pick the value ourselves rather than letting CrowdSec generate it,
+# which avoids a start-order problem: `cscli bouncers add` could only run after CrowdSec was up,
+# but Caddy needs the key at its own startup. Both sides now read the same value from here.
+#
+# The key lives outside the repo, alongside the Django secret, because `git clean -dxff` would
+# throw away anything kept inside it. Losing this file is not a disaster: generate a new one and
+# redeploy, and both sides pick it up together.
+[parallel]
+[private]
+[script('bash')]
+ensure-crowdsec-api-key: django-secret-directory
+    set -euo pipefail
+    touch "{{ CROWDSEC_API_KEY_FILE }}"
+    PATH=/opt/homebrew/bin:$PATH
+    if [ $(stat --format=%s "{{ CROWDSEC_API_KEY_FILE }}") -lt 32 ]
+    then
+    python3 -c 'import secrets; print(secrets.token_urlsafe(32))' > "{{ CROWDSEC_API_KEY_FILE }}"
     fi
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
@@ -172,8 +193,12 @@ dump:
 dump-bot:
     docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
 
-# Caddy's interesting log lines: rate-limit rejections and anything at warn or
-# above. Caddy writes JSON to stderr and Docker captures it, so there is no log file
+# This recipe shows Caddy's interesting log lines, meaning rate-limit rejections,
+# anything at warn level or above, and any access-log entry with a 429 or 5xx
+# status. That last kind only started appearing once we turned the access log on,
+# as Phase 1 of docs/perf/crowdsec-plan.md describes, though the jq below always
+# handled it.
+# Caddy writes JSON to stderr and Docker captures it, so there is no log file
 # to collect and nothing to ship anywhere -- this recipe just filters and reformats
 # what `docker compose logs caddy` already has. Its `ts` field is epoch seconds,
 # which this turns into UTC.
@@ -220,6 +245,73 @@ caddy-log *options:
               ]
             | join(" ")
         '
+
+# This recipe runs cscli inside the CrowdSec container, so that you can say things like
+# `just cscli metrics`, `just cscli alerts list`, or `just cscli decisions list`. CrowdSec only
+# runs under the prod/beta profiles, so this needs a deployed host, as in
+# `DOCKER_CONTEXT=hetz-bridge-beta just cscli metrics`.
+#
+# Start with `just cscli metrics`. Under "Acquisition Metrics" it shows lines read and lines
+# parsed per source, and a source that reads lines while parsing none means the parser has
+# stopped matching, which is otherwise silent. Some unparsed lines are normal and expected,
+# because Caddy's runtime log shares this stream with its access log and the caddy parser
+# ignores it. See crowdsec/acquis.d/caddy.yaml.
+[doc('Run cscli in the CrowdSec container: `just cscli metrics`')]
+[group('docker')]
+cscli *options:
+    docker compose exec crowdsec cscli {{ options }}
+
+# Register this CrowdSec instance with the central API, once, and restart it so the credentials
+# take effect. Run it against a host the way a deploy does:
+# `DOCKER_CONTEXT=hetz-bridge-beta just crowdsec-register`.
+#
+# This is a one-time step per host rather than something the container does for itself, because of
+# an ordering problem explained in crowdsec/entrypoint.sh: at the point where a wrapper could act,
+# /etc/crowdsec/config.yaml does not exist yet, so cscli cannot run.
+#
+# The recipe refuses to act if credentials are already present, because `cscli capi register` mints
+# a fresh machine identity on every call, and repeating it would leave a trail of abandoned
+# registrations upstream.
+[doc('Register CrowdSec with the central API, once per host')]
+[group('docker')]
+[script('bash')]
+crowdsec-register:
+    set -euo pipefail
+
+    creds=/etc/crowdsec/creds/online_api_credentials.yaml
+
+    if docker compose exec crowdsec test -s "${creds}"
+    then
+        echo "Already registered: ${creds} is non-empty."
+        echo "To re-register deliberately, empty that file first, then run this again."
+        exit 0
+    fi
+
+    # Do NOT redirect this. `cscli capi register` writes the credentials to the configured
+    # credentials_path itself, and prints only log lines on stdout. Capturing stdout into the file
+    # -- which is what the image's own startup script does, since it runs before any path is
+    # configured -- overwrites the real credentials with nothing. That mistake produced a file of
+    # zero bytes and a "missing login field" warning, and cost a wasted registration upstream.
+    docker compose exec crowdsec cscli capi register
+
+    # Fail loudly rather than restarting into a broken state.
+    if ! docker compose exec crowdsec test -s "${creds}"
+    then
+        echo "ERROR: ${creds} is still empty after registering." >&2
+        exit 1
+    fi
+
+    # The running process read the (empty) credentials at startup, so it needs a restart before it
+    # will use them.
+    docker compose restart crowdsec
+
+    echo
+    echo "Registered. Verify with:"
+    echo "  just cscli capi status"
+    echo "  just cscli decisions list --origin CAPI    # entries from the community blocklist"
+    echo
+    echo "Note the origin is CAPI, not 'lists'. 'lists' holds blocklists subscribed through the"
+    echo "console, which we do not use, so it reads 'No active decisions' and looks like failure."
 
 setup-oauth: migrate (manage "setup_oauth")
 
@@ -361,7 +453,7 @@ clean:
 
 [parallel]
 [private]
-docker-prerequisites: version-file orb uv-install-no-dev ensure-django-secret start
+docker-prerequisites: version-file orb uv-install-no-dev ensure-django-secret ensure-crowdsec-api-key start
 
 alias dc := dcu
 
@@ -388,6 +480,9 @@ _deploy hostname profile context settings_module *options:
     export DOCKER_CONTEXT={{ context }}   # roughly equivalent to hostname, except for "default"
     export DJANGO_SECRET_KEY=$(cat "${DJANGO_SECRET_FILE}")
     export DJANGO_SETTINGS_MODULE={{ settings_module }}
+    # Both caddy and crowdsec read this: Caddy presents it to CrowdSec's local API, and CrowdSec
+    # registers a bouncer holding it. They must agree, which is why one file feeds both.
+    export CROWDSEC_API_KEY=$(cat "${CROWDSEC_API_KEY_FILE}")
     export GIT_VERSION="$(cat project/VERSION)"
 
     # Google OAuth credentials (optional - gracefully handles if files don't exist)
@@ -424,11 +519,12 @@ _deploy hostname profile context settings_module *options:
     just dump
     docker compose up --detach --no-deps --force-recreate django bot clock notifier {{ options }}
 
-    # Bring up Caddy when its profile is active (prod/beta). Like the monitoring block below,
-    # `_deploy` only ups named services, so Caddy needs an explicit `up` -- without this a fresh
-    # host never starts it (older hosts only kept it alive via restart:unless-stopped).
+    # Bring up Caddy and CrowdSec when their profile is active (prod/beta). Like the monitoring
+    # block below, `_deploy` only ups named services, so these need an explicit `up` -- without
+    # this a fresh host never starts them (older hosts only kept caddy alive via
+    # restart:unless-stopped).
     if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
-        docker compose up --detach --build --force-recreate caddy
+        docker compose up --detach --build --force-recreate caddy crowdsec
     fi
 
     # Bring up the monitoring stack when its profile is active (prod/beta).  `_deploy` only ups
@@ -456,9 +552,14 @@ dev-monitoring *options: (dev "grafana prometheus postgres-exporter pyroscope " 
 [group('deploy')]
 mini: docker-prerequisites && (_deploy "erics-mac-mini.tail571dc2.ts.net" "beta,monitoring" "mini" "project.prod_settings")
 
+# Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
 # `tailscale serve` persists on the host and is idempotent, so this is a one-time-per-host setup.
 # Override the host for beta: `just tailscale-serve root@hetz-bridge-beta`.
-# Expose Grafana (3000) and Prometheus (9090) to the tailnet on a deployed host via Tailscale SSH.
+#
+# For hetz-bridge and hetz-bridge-beta the ansible-inventory repo now does this for us, in the
+# `publish monitoring ports over tailscale serve` play; run `just tailscale-serve` there instead.
+# This recipe remains for the mac mini, which ansible does not manage because the playbook
+# requires Ubuntu, and as a way to check or repair a host by hand.
 [group('deploy')]
 tailscale-serve ssh_host="root@hetz-bridge":
     ssh {{ ssh_host }} 'tailscale serve --bg --tcp 3000 tcp://127.0.0.1:3000 \

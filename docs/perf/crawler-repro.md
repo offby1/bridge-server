@@ -202,7 +202,12 @@ starves because the flood ate the pool.
 one has since been done, in its tiered form; the rest have not.)
 
 - ~~Rate-limit / block abusive IPs at Caddy (quickest stopgap).~~ **Done** — see
-  "The fix: tiered rate limits" above.
+  "The fix: tiered rate limits" above. A planned follow-on turns repeat
+  offenders into outright bans and pulls in the CrowdSec community blocklist.
+  [`crowdsec-plan.md`](crowdsec-plan.md) is the plan; so far only its first step
+  has landed, turning on the Caddy access log we had never had. The tiered limits
+  stay as they are regardless: CrowdSec cannot replace the aggregate zones, for
+  the reason the 2026-08-04 section gives.
 - `robots.txt` + `nofollow` on sort/filter/pagination links; consider requiring
   login for the list views. (We do serve `robots.txt` and set `X-Robots-Tag: none`
   on every response, which is about *polite* crawlers; neither slows down a

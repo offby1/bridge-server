@@ -28,3 +28,61 @@ scrape_configs:
   static_configs:
     - targets:
       - postgres-exporter:9187
+
+# The two jobs below scrape Caddy and CrowdSec. Both live in the prod/beta compose profiles while
+# Prometheus lives in `monitoring`, so under `just dev-monitoring` -- which
+# enables monitoring but not prod/beta -- these two targets sit permanently DOWN.
+# That is expected rather than a fault, because there is no Caddy in dev to
+# scrape. See docs/perf/crowdsec-plan.md, Phase 4.
+
+- job_name: caddy
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+    - targets:
+      # Note that this is not port 2019. That port carries Caddy's admin API,
+      # which is bound to localhost inside the container and which can rewrite
+      # Caddy's entire configuration. Port 2020 is a listener defined in
+      # caddy/Caddyfile that serves metrics and nothing else.
+      - caddy:2020
+  metric_relabel_configs:
+    # This rule drops the per-key rate-limit series and keeps only the
+    # zone-level aggregate.
+    #
+    # As of 2026-08-30 it matches nothing, because the metrics it guards against
+    # do not exist in the plugin we build. The caddy-ratelimit plugin's only tag
+    # is v0.1.0, which has no metrics at all, and the code described below lives
+    # on its unreleased master branch, while xcaddy builds the latest tag. The
+    # rule stays anyway, because it becomes essential the day anyone pins the
+    # plugin to master, and it would be easy to forget.
+    #
+    # It is a safety measure rather than tidying. The plugin reports each counter
+    # twice, once with key="" as the aggregate for the zone, and once with key
+    # set to the actual bucket key. For the `per_ip` zone that key is the client
+    # IP, so the series count grows with the number of distinct addresses seen,
+    # which in a distributed flood of the shape crawler-repro.md records would be
+    # 24,391 of them. Ingesting a time series per attacking IP would turn an
+    # attack on the web app into an attack on Prometheus.
+    #
+    # We drop whole series rather than the label itself, deliberately, because a
+    # `labeldrop` would collapse many series onto one identity and produce
+    # duplicate samples. The aggregate that survives is exactly what the
+    # dashboard graphs.
+    - source_labels: [key]
+      regex: .+
+      action: drop
+
+- job_name: crowdsec
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+      # CrowdSec's own config.yaml already has Prometheus enabled and listening
+      # on 0.0.0.0:6060, so nothing needed configuring on its side.
+    - targets:
+      - crowdsec:6060

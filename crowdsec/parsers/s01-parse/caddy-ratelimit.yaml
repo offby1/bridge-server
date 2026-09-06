@@ -1,0 +1,65 @@
+# This parser handles the line Caddy's rate limiter writes when it rejects a
+# request.
+#
+# That line is NOT an access-log entry. `crowdsecurity/caddy-logs` deliberately
+# skips it, because that parser's filter requires
+# `evt.Unmarshaled.caddy.request != nil` and this line has no `request` object.
+# Without this file, therefore, the line would simply be counted as unparsed. The
+# two parsers are mutually exclusive, since ours needs the rate_limit logger and
+# theirs needs a request.
+#
+# The line looks like the following. Caddy writes it to stderr at *info* level,
+# alongside the access log, as the comment above `just caddy-log` also explains.
+#
+#   {"level":"info","ts":1787333972.2284505,"logger":"http.handlers.rate_limit",
+#    "msg":"rate limit exceeded","zone":"list_views","wait":0.047427378,
+#    "remote_ip":"200.195.79.237"}
+#
+# Note what this parser does *not* do, namely filter by zone. It accepts a
+# rejection from any of our three zones and records which one it was in
+# `evt.Meta.ratelimit_zone`, which leaves the choice to the scenario. That is
+# deliberate. Only `per_ip` is safe to act on, because `list_views` and
+# `whole_site` are aggregate and so reject innocent people during exactly the
+# floods they exist for. Parsing all three nevertheless means that `cscli
+# metrics` shows us how often the aggregate zones fire, and that is the
+# measurement the open question in docs/perf/crowdsec-plan.md actually needs.
+#
+# Writing a custom parser costs us nothing in signal validity, because CrowdSec's
+# rule about unmodified hub content applies to *scenarios* rather than parsers.
+filter: |
+  evt.Parsed.program startsWith 'caddy' &&
+  UnmarshalJSON(evt.Parsed.message, evt.Unmarshaled, 'caddy') in ['', nil] &&
+  evt.Unmarshaled.caddy.logger == 'http.handlers.rate_limit' &&
+  evt.Unmarshaled.caddy.remote_ip != nil
+onsuccess: next_stage
+name: offby1/caddy-ratelimit
+description: "Parse Caddy rate-limit rejections"
+statics:
+  # This is our own log_type, and we chose it so that these events cannot leak
+  # into the hub's HTTP scenarios, all of which filter on log_type being
+  # http_access-log or http_error-log.
+  - meta: log_type
+    value: caddy_ratelimit
+  - meta: service
+    value: http
+  # On this line `remote_ip` sits at the top level, rather than nested under
+  # `request` the way the access log has it. It holds the TCP peer, because the
+  # rate limiter takes it from r.RemoteAddr and consults no forwarded-for header.
+  # That is correct while Caddy is the first hop, and the caveat in
+  # docs/perf/crowdsec-plan.md explains what putting a CDN in front would do to
+  # it.
+  - meta: source_ip
+    expression: evt.Unmarshaled.caddy.remote_ip
+  # These two record which of the three zones did the rejecting, and they are the
+  # whole reason a scenario can act on per-IP rejections without touching the
+  # aggregate ones.
+  - meta: ratelimit_zone
+    expression: evt.Unmarshaled.caddy.zone
+  - parsed: ratelimit_zone
+    expression: evt.Unmarshaled.caddy.zone
+  # This expression is copied from crowdsecurity/caddy-logs, which faces the same
+  # problem: `ts` is epoch seconds as a float, and the buckets want a real
+  # timestamp rather than the moment we happened to read the line.
+  - target: evt.StrTime
+    expression: |
+      Sprintf("%v", evt.Unmarshaled.caddy.ts) matches '^[0-9e\\.\\+]+$' ? int(evt.Unmarshaled.caddy.ts) : evt.Unmarshaled.caddy.ts

@@ -1,0 +1,91 @@
+volumes:
+  crowdsec_data: {}
+  crowdsec_creds: {}
+
+services:
+  # This service parses Caddy's logs and records what it concludes. The Caddy
+  # bouncer (Phase 5a) enforces its decisions. This is part of the plan
+  # described at Phase 2 of docs/perf/crowdsec-plan.md.
+  crowdsec:
+    build: ./crowdsec
+
+    environment:
+      # The crowdsecurity/caddy collection contains the caddy-logs parser and
+      # crowdsecurity/base-http-scenarios. Running those hub scenarios
+      # *unmodified* is what earns access to the community blocklist later on,
+      # because CrowdSec compares a content hash and ignores signals from edited
+      # or homegrown scenarios. Please do not "improve" them in place.
+      - COLLECTIONS=crowdsecurity/caddy
+
+      # crowdsecurity/caddy does *not* depend on the parser that copies
+      # labels.type into evt.Parsed.program, and caddy-logs matches nothing
+      # without it (see crowdsec/acquis.d/caddy.yaml). That parser normally
+      # arrives anyway as part of the linux collection the image installs by
+      # default, but naming it here means we are not relying on that.
+      - PARSERS=crowdsecurity/syslog-logs
+
+      # Talk to CrowdSec's central API. This is what sends our hub-scenario
+      # signals upstream and brings the community blocklist back, and it is the
+      # only part of this stack that communicates with anyone outside the host.
+      #
+      # Only signals from *unmodified hub* scenarios count. Our own
+      # offby1/caddy-per-ip-ratelimit contributes nothing, by CrowdSec's design:
+      # they compare a content hash and ignore anything homegrown or edited.
+      #
+      # Registration does not happen automatically here, which is unusual and
+      # deliberate; crowdsec/config.yaml.local explains the mechanism and the
+      # one-off manual step it implies.
+      - DISABLE_ONLINE_API=false
+
+      # Optional. Setting this links the instance to an account on
+      # app.crowdsec.net, which gives a web dashboard of what we have blocked.
+      # It is not needed to send signals or receive the blocklist, and an empty
+      # value is skipped by the image's startup script, which guards on
+      # `[ "$ENROLL_KEY" != "" ]`. Get a key from the console if you want this.
+      - ENROLL_KEY=${CROWDSEC_ENROLL_KEY:-}
+      - ENROLL_INSTANCE_NAME=${CADDY_HOSTNAME:-}
+
+      # This registers a bouncer named "caddy" with the key we supply, so that
+      # Caddy can authenticate to the local API. Registering it here rather than
+      # by running `cscli bouncers add` removes a start-order problem: otherwise
+      # Caddy would need a key that does not exist until CrowdSec has run once.
+      #
+      # The registration lands in the database on the crowdsec_data volume, which
+      # is why Phase 5a needs no /etc/crowdsec persistence. Re-supplying the same
+      # key on a later start is harmless.
+      - BOUNCER_KEY_caddy=${CROWDSEC_API_KEY:-}
+
+    volumes:
+      # The socket is mounted read-only, because all this service ever does is
+      # read container logs.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+      # This volume holds the decisions and alerts database. Without it, every
+      # restart would forget every ban and every alert.
+      #
+      # Note that /etc/crowdsec is deliberately *not* a volume, even though
+      # upstream suggests persisting it. A named volume there would shadow the
+      # acquisition config baked into the image, and worse, it would be seeded
+      # once from the image and then never updated again, so that editing
+      # crowdsec/acquis.d/caddy.yaml would appear to do nothing. The cost of
+      # leaving it unpersisted is that the agent regenerates its local API
+      # credentials on each start, which is harmless while the agent and the
+      # local API live in the same container. Phase 5 has to revisit this,
+      # because the central-API credentials it creates *do* need to survive a
+      # restart.
+      - crowdsec_data:/var/lib/crowdsec/data
+
+      # The central-API credentials, kept apart from both the ephemeral
+      # /etc/crowdsec and the decisions database. `/etc/crowdsec/creds` does not
+      # exist in the image, so this volume shadows nothing; and keeping it
+      # separate from crowdsec_data means wiping decisions to reset the buckets
+      # does not also discard our registration. See crowdsec/config.yaml.local.
+      - crowdsec_creds:/etc/crowdsec/creds
+
+    restart: unless-stopped
+
+    # This service uses the same profiles as Caddy, because it reads Caddy's logs
+    # and so is pointless without it, and because dev runs no Caddy at all.
+    profiles:
+      - prod
+      - beta

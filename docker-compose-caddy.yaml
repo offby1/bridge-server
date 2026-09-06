@@ -3,16 +3,40 @@ volumes:
 
 services:
   caddy:
-    # Like lucaslorentz/caddy-docker-proxy:ci-alpine (falling-down-easy to configure as a
-    # lets-encrypt-certificate-fetching reverse proxy), but built locally to add the caddy-ratelimit
-    # plugin. See caddy/Dockerfile and caddy/Caddyfile.
+    # This behaves like lucaslorentz/caddy-docker-proxy:ci-alpine, which is
+    # falling-down-easy to configure as a lets-encrypt-certificate-fetching reverse
+    # proxy, but we build it locally to add the caddy-ratelimit plugin and the
+    # CrowdSec bouncer. See caddy/Dockerfile and caddy/Caddyfile.
     build: ./caddy
     environment:
-      # Tell caddy-docker-proxy to merge our base Caddyfile (global `order` + the
-      # (ratelimit) snippet) with the docker-label config. The file is baked into
-      # the image (see caddy/Dockerfile), NOT bind-mounted -- a repo-path bind
-      # mount fails over remote docker contexts (mini, hetz).
+      # This tells caddy-docker-proxy to merge our base Caddyfile, which holds the
+      # global options and the snippets, with the docker-label config. The file is
+      # baked into the image (see caddy/Dockerfile) rather than bind-mounted,
+      # because a repo-path bind mount fails over remote docker contexts such as
+      # mini and hetz.
       - CADDY_DOCKER_CADDYFILE_PATH=/etc/caddy/Caddyfile
+
+      # Slow down how quickly Docker events trigger a Caddy reconfiguration. The
+      # default is 100ms, and the CrowdSec bouncer warns at startup that a
+      # throttle below 2s "can result in errors" when combined with the
+      # docker_proxy module. The underlying bug is
+      # hslatman/caddy-crowdsec-bouncer#61: a graceful reload with the streaming
+      # bouncer can leave the admin API hung on "shutting down admin server:
+      # context deadline exceeded". Since caddy-docker-proxy reloads on every
+      # container start and stop, not merely on deploys, that is a hazard worth
+      # avoiding. The cost is that a label change takes up to 5s to take effect,
+      # which matters to nobody.
+      - CADDY_DOCKER_EVENT_THROTTLE_INTERVAL=5s
+      # The key Caddy presents to CrowdSec's local API, substituted into the
+      # `crowdsec` block in caddy/Caddyfile as {$CROWDSEC_API_KEY}. The justfile
+      # generates it if absent and exports it; it is never committed.
+      #
+      # If this is empty, Caddy still starts and the bouncer simply fails to
+      # authenticate, which fails open: requests are allowed rather than denied.
+      # That is the safer direction, but it means an empty key looks like
+      # "CrowdSec is not banning anyone" rather than like an error. Check
+      # `just cscli bouncers list` for a bouncer whose "Last API pull" is recent.
+      - CROWDSEC_API_KEY=${CROWDSEC_API_KEY:-}
     ports:
       - 80:80
       - 443:443

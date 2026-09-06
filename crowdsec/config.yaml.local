@@ -1,0 +1,45 @@
+# Overrides merged over the image's /etc/crowdsec/config.yaml. Upstream
+# recommends this file rather than replacing config.yaml wholesale, so that we
+# inherit their defaults and state only what we are changing.
+#
+# We change exactly one thing: where the central-API credentials live.
+#
+# Why this is necessary at all. Enrolment writes a machine identity, and by
+# default it writes it to /etc/crowdsec/online_api_credentials.yaml. That
+# directory is deliberately NOT a persisted volume, because a volume there would
+# shadow the acquisition config, parser and scenario that crowdsec/Dockerfile
+# bakes into the image -- and worse, the image only prestages /etc/crowdsec when
+# it finds the directory empty, and does so with `rsync --ignore-existing`, so a
+# volume would be seeded once at first start and then never refreshed. Editing
+# our parser would silently do nothing. So /etc/crowdsec stays ephemeral and the
+# credentials move somewhere that persists.
+#
+# Why this particular path. `/etc/crowdsec/creds` does not exist in the image, so
+# mounting a volume there shadows nothing at all. It is a separate volume from
+# the decisions database, deliberately: wiping decisions to start the buckets
+# afresh should not also throw away our registration with CrowdSec.
+#
+# How this interacts with the image's startup script, which is the subtle part.
+# /docker_start.sh registers with the central API only when this key is *absent*:
+#
+#     config_exists=$(conf_get '.api.server.online_client | has("credentials_path")')
+#     if isfalse "$config_exists"; then
+#         ... cscli capi register > "$CONFIG_DIR/online_api_credentials.yaml"
+#     fi
+#
+# and `conf_get` reads the *merged* configuration via `cscli config show-yaml`,
+# so it sees this file. Setting the key therefore switches automatic registration
+# off for good. That is what we want -- otherwise, with /etc/crowdsec ephemeral,
+# every deploy would register a brand-new machine upstream and leave a trail of
+# junk registrations -- but it means **the first registration has to be done by
+# hand, once**:
+#
+#     just cscli capi register > /etc/crowdsec/creds/online_api_credentials.yaml
+#
+# See "Phase 5b" in docs/perf/crowdsec-plan.md, which records how that was run and
+# how to tell whether it worked. Until it is run, CrowdSec has the central API
+# enabled but no credentials, so it quietly neither reports nor receives anything.
+api:
+  server:
+    online_client:
+      credentials_path: /etc/crowdsec/creds/online_api_credentials.yaml

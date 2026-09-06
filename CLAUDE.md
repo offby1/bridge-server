@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Always read CLAUDE.md and justfile before starting any task. Use `just` commands (e.g., `just k` for tests) instead of raw shell commands.
 - Never write to personal memory files — all documentation goes in version-controlled project docs.
+- Docs and code comments should describe things as they currently are, not narrate how they used to be, unless the history explains a non-obvious fix (e.g. "we used to do the obvious thing X, but that broke, so now we do Y"). Git history is where to look for the rest. Exception: any doc whose filename contains "plan" may keep full historical narrative, since those docs get deleted wholesale once the work they describe is done.
 
 ## Change Philosophy
 
