@@ -353,6 +353,41 @@ The reason to record it here is that a future reading of the metrics will
 otherwise mislead: our 403 counts undercount how often a banned address came
 back, and our alert counts undercount HTTP-only scanning.
 
+## Known gap: distributed low-volume scraping
+
+Found on prod on 2026-09-06/07 while chasing a different question — why an
+obvious probe wasn't in `cscli decisions list`. That turned out to be the port-80
+gap above; this is a second, separate gap it led to.
+
+If you see a burst of `200`-status requests to real app URLs (`/board/`,
+`/players/`, `/hand/...`, with Django's ORM-lookup query params showing through,
+e.g. `?board__tournament__display_number=14&sort=-board`) arriving from many
+unrelated IPs — especially cloud/hosting ranges (Tencent, Alibaba, assorted
+VPS providers) rather than residential ISPs — it's probably a scraper, not
+organic visitors, even though each individual address only makes one or two
+requests. The tell isn't the volume, it's that most of those IPs share one of
+two canned, byte-for-byte-identical `User-Agent` strings: a Chrome/Mac desktop
+UA (`Chrome/150.0.0.0`) and an iPhone UA frozen at iOS 13.2.3, which shipped in
+October 2019 — no real iPhone has been stuck on that build for six-plus years.
+Real, independent visitors don't converge on identical UA strings; a scraper
+using a small, hardcoded set of them, replayed across a rotating pool of
+addresses, does. In the sample that prompted this entry, 29 of 32 distinct IPs
+matched one of those two strings.
+
+This is the same shape as the 2026-08-04 distributed flood in
+`crawler-repro.md`, just slower and aimed at real content instead of at
+capacity: spreading the work across dozens of addresses, each making only a
+couple of legitimate-looking requests, means no single IP ever approaches a
+per-IP threshold. Neither our own rate-limit scenario nor the hub scenarios can
+see it, by the same design that keeps them from banning innocent users during a
+real flood.
+
+**Decision (Eric, 2026-09-07): accept this as harmless read-only traffic for
+now.** It's slow, it never touches anything beyond `GET`, and it costs little.
+Building detection or blocking for it — a custom scenario keyed on UA or URL
+shape, or blocking by ASN/hosting-range — is not worth doing unless the volume
+grows or it starts reaching write endpoints. Revisit if either happens.
+
 ## Phases
 
 Each phase should be its own commit, and each is independently useful. Note that
