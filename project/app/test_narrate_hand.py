@@ -3,16 +3,17 @@ call and play to stdout as it happens.
 
 This exists to *watch* the bot API actually work end-to-end, the way
 `docs/ai-bot-plan.md`'s eventual AI bot will use it -- not just assert individual
-behaviors the way the rest of `app/test_reference_client.py` does. It reuses the same
-bridge-library heuristic `cheating_bot.py` uses for bidding
-(`make_standard_american_call`), since bidding only needs your own hand plus the
-public auction history, which a real API client legitimately has.
+behaviors the way the rest of `app/test_reference_client.py` does.
 
-Card play can't reuse `slightly_less_dumb_play`, though: that asks a double-dummy
-solver to look at all four hands at once, which a real API client -- seeing only its
-own cards, plus dummy's once exposed -- never can. So this plays the lowest legal
-card instead: a deliberately simple, honest stand-in for the real judgment the AI bot
-will eventually supply.
+If an Anthropic API key is available (`ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` --
+see app/ai_bot.py), calls and plays come from Claude, via `app.ai_bot.choose_call()`/
+`choose_play()`. Without one -- the default, so this stays free and network-independent
+by default -- it falls back to the same dumb heuristics `cheating_bot.py` uses:
+`make_standard_american_call()` for bidding (only needs your own hand plus the public
+auction, which a real API client legitimately has), and the lowest legal card for play
+(not `slightly_less_dumb_play()`, which double-dummy-solves all four hands -- something
+a real API client, seeing only its own cards plus dummy's once exposed, never can). The
+AI path falls back to the same dumb heuristics too, on any API error.
 
 Run with `just narrate-hand` (add `-k pattern` to skip straight to this test; see the
 justfile). Pass `-s` (already on by default there) to see the narration as it prints.
@@ -21,18 +22,62 @@ justfile). Pass `-s` (already on by default there) to see the narration as it pr
 from __future__ import annotations
 
 import logging
+import os
 
+import anthropic
 import pytest
 from pytest_django.live_server_helper import LiveServer
 
+from app import ai_bot
 from app.models import Hand
 from app.reference_client import BridgeClient
 from bridge.card import Card
-from bridge.contract import Contract
+from bridge.contract import Call, Contract
 from bridge.seat import Seat
 from bridge.xscript import HandTranscript
 
 PASSWORD = "sekrit"
+
+
+def _anthropic_client_if_available() -> anthropic.Anthropic | None:
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+        return ai_bot.default_client()
+    return None
+
+
+def _decide_call(
+    ai_client: anthropic.Anthropic | None, xscript: HandTranscript, seat: Seat
+) -> tuple[Call, str]:
+    if ai_client is not None:
+        try:
+            call = ai_bot.choose_call(client=ai_client, xscript=xscript, seat=seat)
+            return call, f"AI: {call.explanation}" if call.explanation else "AI"
+        except (ai_bot.AIBotError, anthropic.APIError) as e:
+            print(f"  ({e}; falling back to the dumb bidder)")
+
+    call = xscript.auction.make_standard_american_call(
+        pbn=xscript.endplay_deal.to_pbn(),
+        vuln=xscript.endplay_vulnerability(),
+    )
+    return call, "dumb bidder"
+
+
+def _decide_play(
+    ai_client: anthropic.Anthropic | None,
+    xscript: HandTranscript,
+    seat: Seat,
+    legal_cards: list[Card],
+) -> tuple[Card, str]:
+    if ai_client is not None:
+        try:
+            card, explanation = ai_bot.choose_play(
+                client=ai_client, xscript=xscript, seat=seat, legal_cards=legal_cards
+            )
+            return card, f"AI: {explanation}" if explanation else "AI"
+        except (ai_bot.AIBotError, anthropic.APIError) as e:
+            print(f"  ({e}; falling back to the lowest legal card)")
+
+    return min(legal_cards, key=lambda c: c.rank), "lowest legal card"
 
 
 def _log_in_every_seat(hand: Hand, live_server: LiveServer) -> dict[Seat, BridgeClient]:
@@ -71,6 +116,11 @@ def test_playing_a_hand_via_the_api(usual_setup: Hand, live_server: LiveServer) 
     client_by_seat = _log_in_every_seat(hand, live_server)
     north_username = hand.North.user.username
     hand_pk = hand.pk
+    ai_client = _anthropic_client_if_available()
+    print(
+        "\nDecisions come from "
+        + ("Claude (an API key is set)." if ai_client is not None else "the dumb heuristics (no API key set).")
+    )
 
     # The live server's own request/access logging would otherwise drown out our
     # narration -- this is a demo people are meant to actually read.
@@ -82,7 +132,7 @@ def test_playing_a_hand_via_the_api(usual_setup: Hand, live_server: LiveServer) 
         # fixture's own tournament deals boards_per_round_per_table of them (3, here).
         for board_number in range(1, 4):
             print(f"\n=== Board {board_number} (hand {hand_pk}) ===")
-            if _play_the_hand(hand_pk, client_by_seat):
+            if _play_the_hand(hand_pk, client_by_seat, ai_client):
                 return
             # Passed out: log back in as anyone at the table to find the next hand --
             # the server moves everyone on to a fresh board automatically.
@@ -93,7 +143,11 @@ def test_playing_a_hand_via_the_api(usual_setup: Hand, live_server: LiveServer) 
         logging.disable(logging.NOTSET)
 
 
-def _play_the_hand(hand_pk: int, client_by_seat: dict[Seat, BridgeClient]) -> bool:
+def _play_the_hand(
+    hand_pk: int,
+    client_by_seat: dict[Seat, BridgeClient],
+    ai_client: anthropic.Anthropic | None,
+) -> bool:
     """Play hand_pk to completion via the API, narrating as it goes.
 
     Returns whether the auction actually reached a contract (as opposed to being
@@ -119,11 +173,8 @@ def _play_the_hand(hand_pk: int, client_by_seat: dict[Seat, BridgeClient]) -> bo
             client = client_by_seat[seat]
             my_xscript = HandTranscript.from_python(client.hand(hand_pk)["xscript"])
 
-            call = my_xscript.auction.make_standard_american_call(
-                pbn=my_xscript.endplay_deal.to_pbn(),
-                vuln=my_xscript.endplay_vulnerability(),
-            )
-            print(f"{seat}: {call}")
+            call, reason = _decide_call(ai_client, my_xscript, seat)
+            print(f"{seat}: {call} ({reason})")
             client.call(call.serialize())
         else:
             contract = xscript.auction.status
@@ -152,8 +203,8 @@ def _play_the_hand(hand_pk: int, client_by_seat: dict[Seat, BridgeClient]) -> bo
             my_xscript = HandTranscript.from_python(client.hand(hand_pk)["xscript"])
             legal = my_xscript.legal_cards(some_cards=_my_remaining_cards(my_xscript, seat))
 
-            card = min(legal, key=lambda c: c.rank)
-            print(f"{seat}: plays {card} (lowest legal card)")
+            card, reason = _decide_play(ai_client, my_xscript, seat, legal)
+            print(f"{seat}: plays {card} ({reason})")
             client.play(str(card))
     else:
         pytest.fail("Hand didn't complete within the expected number of moves")
