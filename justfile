@@ -385,6 +385,15 @@ curl-login:
 exercise-api: start ensure-django-secret
     just pytest-test -v app/test_reference_client.py
 
+# Play one hand start to finish, narrating each call and play as it happens, using the
+# bridge library's dumb heuristics (no Anthropic API involved yet -- see
+# docs/ai-bot-plan.md). Defaults to the most recently created incomplete hand; pass
+# `--hand <pk>` for a specific one, or `--tempo-seconds 0.5` to slow it down. If there's
+# no hand to play, load one with `just fixture usual_setup` first.
+[group('development')]
+narrate-hand *options: migrate
+    just manage narrate_hand {{ options }}
+
 create-cache: (manage "createcachetable")
 
 alias createsuperuser := django-superuser
