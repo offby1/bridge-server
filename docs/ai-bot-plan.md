@@ -93,9 +93,12 @@ also wrote, for no benefit over calling the tool directly.
 Per turn:
 
 - **System prompt** (cached): a fixed "rules primer" — standard American conventions,
-  scoring, how to read the transcript format, general strategic guidance. Static across
-  every decision this process makes, so mark it `cache_control: {"type": "ephemeral"}`
-  and it's read from cache (~10% of normal input cost) on every call after the first.
+  scoring, how to read the transcript format, general strategic guidance — plus both
+  partnerships' agreed conventions (own side and opponents'; see "Partnership
+  conventions" below). All of this is static across every decision this process makes
+  until somebody's partnership changes, so mark it `cache_control: {"type":
+  "ephemeral"}` and it's read from cache (~10% of normal input cost) on every call after
+  the first.
 - **User content** (fresh, small): dealer, vulnerability, the auction or the current
   trick so far, this seat's hand, dummy's hand if exposed, and the *explicit legal-move
   list* computed in step 4 above.
@@ -114,6 +117,32 @@ Per turn:
 If the Claude call fails or times out, fall back to
 `make_standard_american_call()`/`slightly_less_dumb_play()` rather than stalling the
 hand — both already exist and are exactly what a timeout should degrade to.
+
+## Partnership conventions
+
+Knowing *that* partner opened "two clubs" isn't enough; the bot also needs to know
+whether this partnership's agreement makes that strong, weak, or something else — and
+for the same reason, it needs the opponents' agreements too, to interpret *their*
+auction. Real bridge solves this with a convention card attached to a partnership for
+the whole session, not re-declared hand by hand, and the design here should match that.
+
+That argues against adding "N/S conventions" / "E/W conventions" slots to
+`HandTranscript`/`xscript`: that structure is rebuilt and re-serialized on every single
+call and play, so anything static placed inside it gets duplicated on every request and,
+worse, sits inside the part of the prompt that changes every turn — exactly where it
+*can't* benefit from prompt caching the way the rules primer does.
+
+Instead, conventions belong to the partnership relationship, which is where the
+project already models "these two players are playing together": `Player.partner` in
+`app/models/player.py` (a mutual FK set by `partner_with`/`break_partnership`; there's no
+separate `Partnership` model today). A free-text conventions field belongs there — on
+`Player` itself, or promoted to a real `Partnership` model if this grows into something
+versioned or structured. It should be exposed through the API separately from
+`/serialized/hand/<pk>/` — e.g. alongside `/login/`'s response, or a small dedicated
+read — so a bot fetches its own side's and the opponents' agreements once per session (or
+again when a `PARTNERSHIPS` SSE event fires, since `app/sse_events.py` already has that
+channel for partnership changes) and folds them into its cached system prompt, rather
+than re-fetching and re-transmitting them with every hand.
 
 ## Model choice and cost
 
