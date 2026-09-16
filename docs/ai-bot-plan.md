@@ -168,9 +168,9 @@ prompt — verify against `response.usage.cache_read_input_tokens` once built, p
 Recommendation: **default to Sonnet 5**, with the model configurable per bot account so
 it's cheap to try Haiku for high-volume/background seats or Opus for "this partner should
 actually play well" seats. Even at the high end, a whole evening of hands costs low
-single-digit dollars. As a guardrail against a bug (e.g., a retry loop) burning money
-unattended, track total spend or decision count per session and stop the bot past a
-configurable ceiling.
+single-digit dollars -- for one person, playing casually. What actually bounds cost once
+real users are involved (spend caps, per-account quotas, a kill switch, falling back to
+the dumb heuristics) is its own document: [`ai-bot-cost-controls-plan.md`](ai-bot-cost-controls-plan.md).
 
 ## Where this lives
 
