@@ -91,7 +91,7 @@ exclude-newer-package = { django = "1 day" }
 
 [tool.uv.sources]
 # bridge = { path = "../library", editable = true}
-bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "a464614f2ac8055a32ded693b175316b4261650d" }
+bridge = { git = "https://gitlab.com/offby1/bridge.git", rev = "26677dd9b78e1620272718aa11d6dedde953ff21" }
 
 [build-system]
 requires = ["hatchling"]

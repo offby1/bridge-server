@@ -385,14 +385,17 @@ curl-login:
 exercise-api: start ensure-django-secret
     just pytest-test -v app/test_reference_client.py
 
-# Play one hand start to finish, narrating each call and play as it happens, using the
-# bridge library's dumb heuristics (no Anthropic API involved yet -- see
-# docs/ai-bot-plan.md). Defaults to the most recently created incomplete hand; pass
-# `--hand <pk>` for a specific one, or `--tempo-seconds 0.5` to slow it down. If there's
-# no hand to play, load one with `just fixture usual_setup` first.
+# Play one hand start to finish purely through the public bot API (login, hand reads,
+# calls, plays -- see project/app/test_narrate_hand.py), narrating each call and play as
+# it happens. Bidding uses the bridge library's standard-American heuristic; play uses
+# "lowest legal card", since a real API client can't see enough to double-dummy-solve
+# (no Anthropic API involved yet -- see docs/ai-bot-plan.md). Like `exercise-api`, this
+# starts its own throwaway server via pytest's `live_server` fixture, so there's nothing
+# to start by hand. Auctions sometimes pass out on the luck of the deal; re-run if you
+# want to see a contract actually played.
 [group('development')]
-narrate-hand *options: migrate
-    just manage narrate_hand {{ options }}
+narrate-hand: start ensure-django-secret
+    just pytest-test -v -s app/test_narrate_hand.py
 
 create-cache: (manage "createcachetable")
 
