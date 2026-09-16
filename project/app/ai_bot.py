@@ -27,6 +27,7 @@ from typing import Any
 
 import anthropic
 from anthropic.types import TextBlockParam, ToolParam
+
 from bridge.card import Card, Suit
 from bridge.contract import Bid, Call, Contract
 from bridge.seat import Seat

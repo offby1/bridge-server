@@ -77,7 +77,11 @@ def test_playing_a_hand_via_the_api(usual_setup: Hand, live_server: LiveServer) 
     ai_client = ai_bot.client_if_enabled()
     print(
         "\nDecisions come from "
-        + ("Claude (an API key is set)." if ai_client is not None else "the dumb heuristics (no API key set).")
+        + (
+            "Claude (an API key is set)."
+            if ai_client is not None
+            else "the dumb heuristics (no API key set)."
+        )
     )
 
     # The live server's own request/access logging would otherwise drown out our

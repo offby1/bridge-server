@@ -27,12 +27,12 @@ import secrets
 import time
 
 import anthropic
-from django.core.management.base import BaseCommand
-
 import app.ai_bot as ai_bot
 import app.models
 from app.management.commands.cheating_bot import get_next_hand, wait_for_tempo
 from app.reference_client import BridgeClient, BridgeClientError
+from django.core.management.base import BaseCommand
+
 from bridge.seat import Seat
 from bridge.xscript import HandTranscript
 
@@ -72,8 +72,6 @@ class Command(BaseCommand):
         if hand is None:
             return False
 
-        wait_for_tempo(hand)
-
         try:
             self._act(hand, base_url, clients, ai_client)
         except BridgeClientError as e:
@@ -108,6 +106,11 @@ class Command(BaseCommand):
             xscript = HandTranscript.from_python(client.hand(hand.pk)["xscript"])
 
             call, reason = ai_bot.decide_call(ai_client, xscript, call_seat)
+            # Waiting *here* -- after deciding, right before the write -- rather than
+            # before any of the above means an API round-trip (often longer than
+            # tempo_seconds on its own) counts *as* the wait instead of stacking on
+            # top of a full tempo_seconds sleep. Only tops up whatever's left.
+            wait_for_tempo(hand)
             client.call(call.serialize(), explanation=call.explanation)
             logger.info("hand %s: %s: %s (%s)", hand.pk, call_seat, call, reason)
             return
@@ -128,6 +131,7 @@ class Command(BaseCommand):
         legal = xscript.legal_cards(some_cards=[c for c in my_hand if c not in already_played])
 
         card, reason = ai_bot.decide_play(ai_client, xscript, play_seat, legal)
+        wait_for_tempo(hand)
         client.play(str(card))
         logger.info("hand %s: %s: plays %s (%s)", hand.pk, play_seat, card, reason)
 

@@ -13,14 +13,14 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+
+from app import ai_bot
 from bridge.auction import Auction
 from bridge.card import Card, Rank, Suit
 from bridge.contract import Bid, Pass
 from bridge.main import sample_auction, sample_deal
 from bridge.seat import Seat
 from bridge.xscript import HandTranscript
-
-from app import ai_bot
 
 
 def _fake_response(
