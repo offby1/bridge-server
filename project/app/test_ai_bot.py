@@ -202,3 +202,29 @@ def test_choose_play_skips_the_api_with_one_card_left(fresh_xscript: HandTranscr
     assert card is last_card
     assert explanation
     client.messages.create.assert_not_called()
+
+
+def test_decide_call_labels_an_ai_explanation_for_the_ui(fresh_xscript: HandTranscript) -> None:
+    # decide_call()'s whole point is a human watching the game can tell whether Claude
+    # or the fallback made a given call, via the *posted* explanation -- not just a
+    # string this function happens to also return for our own log lines.
+    opening_bid = Bid(level=1, denomination=Suit.CLUBS)
+    client = MagicMock()
+    client.messages.create.return_value = _fake_response(
+        tool_name="make_call",
+        tool_input={"call": opening_bid.serialize(), "explanation": "Longest suit."},
+    )
+
+    call, reason = ai_bot.decide_call(client, fresh_xscript, Seat.NORTH)
+
+    assert call.explanation == "AI: Longest suit."
+    assert reason == call.explanation
+
+
+def test_decide_call_labels_the_dumb_bidder_explanation_for_the_ui(
+    fresh_xscript: HandTranscript,
+) -> None:
+    call, reason = ai_bot.decide_call(None, fresh_xscript, Seat.NORTH)
+
+    assert call.explanation.startswith("dumb bidder")
+    assert reason == call.explanation

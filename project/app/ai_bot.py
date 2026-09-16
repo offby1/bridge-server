@@ -101,7 +101,11 @@ def decide_call(
     if ai_client is not None:
         try:
             call = choose_call(client=ai_client, xscript=xscript, seat=seat)
-            return call, (f"AI: {call.explanation}" if call.explanation else "AI")
+            reason = f"AI: {call.explanation}" if call.explanation else "AI"
+            # with_explanation() is what actually reaches the UI's tooltip (via
+            # /call/'s `explanation` field) -- the label needs to live there, not
+            # just in the string this function returns for our own log lines.
+            return call.with_explanation(reason), reason
         except (AIBotError, anthropic.APIError) as e:
             logger.warning("%s; falling back to the dumb bidder", e)
 
@@ -109,7 +113,8 @@ def decide_call(
         pbn=xscript.endplay_deal.to_pbn(),
         vuln=xscript.endplay_vulnerability(),
     )
-    return call, "dumb bidder"
+    reason = f"dumb bidder: {call.explanation}" if call.explanation else "dumb bidder"
+    return call.with_explanation(reason), reason
 
 
 def decide_play(
