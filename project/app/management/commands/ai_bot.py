@@ -77,10 +77,14 @@ class Command(BaseCommand):
         try:
             self._act(hand, base_url, clients, ai_client)
         except BridgeClientError as e:
-            # Most likely a race: the turn moved on between our read and our
-            # write. The next call will pick up wherever things actually stand;
-            # anything else is a real bug and should crash the process.
+            # Could be a genuine race (the turn moved on between our read and our
+            # write) or something more persistently wrong. Either way, hammering
+            # the same failing request with no delay is worse than a human
+            # noticing a stalled bot a second later -- so this is *not* reported
+            # as "there was work to do": the caller's own backoff applies, same
+            # as when there's nothing to act on at all.
             logger.warning("hand %s: %s", hand.pk, e)
+            return False
 
         return True
 
