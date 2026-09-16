@@ -68,6 +68,46 @@ ensure-crowdsec-api-key: django-secret-directory
     python3 -c 'import secrets; print(secrets.token_urlsafe(32))' > "{{ CROWDSEC_API_KEY_FILE }}"
     fi
 
+# Unlike the "ensure-*" recipes above, this can't manufacture a secret on its own --
+# an Anthropic API key has to come from you. It checks whether app/ai_bot.py (see
+# docs/ai-bot-plan.md) has any way to authenticate -- ANTHROPIC_API_KEY,
+# ANTHROPIC_AUTH_TOKEN, or an `ant auth login` profile -- and if not, prints exactly
+# what to do and exits nonzero, rather than silently falling back to the dumb bidder.
+# Run it directly whenever you want to check, or before `just narrate-hand` if you
+# specifically want to see Claude play rather than the free fallback.
+[script('bash')]
+ensure-anthropic-key:
+    set -euo pipefail
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        echo "ANTHROPIC_API_KEY is set."
+        exit 0
+    fi
+    if [ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]; then
+        echo "ANTHROPIC_AUTH_TOKEN is set."
+        exit 0
+    fi
+    if command -v ant >/dev/null 2>&1 && ant auth status >/dev/null 2>&1; then
+        echo "Found an active 'ant auth login' profile."
+        exit 0
+    fi
+    echo "No Anthropic API credentials found. Without them, app/ai_bot.py can not call"
+    echo "Claude, and anything that uses it (e.g. 'just narrate-hand') silently falls"
+    echo "back to the dumb bridge-library heuristics instead."
+    echo
+    echo "Pick ONE of these, then re-run 'just ensure-anthropic-key' to confirm:"
+    echo
+    echo "  1. (Recommended -- no env var to remember) Install the 'ant' CLI, then run:"
+    echo "       ant auth login"
+    echo "     This opens a browser to sign in and stores a profile under"
+    echo "     ~/.config/anthropic/ that the code picks up automatically, forever."
+    echo
+    echo "  2. Create an API key at https://console.anthropic.com/settings/keys, then"
+    echo "     export it in every shell you run 'just narrate-hand' from:"
+    echo "       export ANTHROPIC_API_KEY=sk-ant-..."
+    echo "     Env vars do not persist across shells or reboots -- option 1 avoids"
+    echo "     having to redo this."
+    exit 1
+
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
 [private]
 [script('bash')]
