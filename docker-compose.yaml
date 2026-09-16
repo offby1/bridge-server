@@ -38,6 +38,12 @@ services:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       GOOGLE_OAUTH_CLIENT_ID_FILE: /run/secrets/google_oauth_client_id
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
+      # Only ai-bot (below) actually calls Claude, but it's harmless for the other
+      # services sharing this block to carry these too -- see docs/ai-bot-plan.md and
+      # docs/ai-bot-cost-controls-plan.md.
+      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
+      AI_BOT_DISABLED: ${AI_BOT_DISABLED:-}
+      BRIDGE_BASE_URL: http://django:9000
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       HOSTNAME: ${HOSTNAME:-} # for Tailscale hostname detection in setup_oauth
@@ -52,6 +58,7 @@ services:
       - django_secret
       - google_oauth_client_id
       - google_oauth_client_secret
+      - anthropic_api_key
     init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
@@ -100,6 +107,18 @@ services:
   bot:
     <<: *django
     command: ["uv", "run", "--no-dev", "python", "manage.py", "cheating_bot"]
+    ports: []
+    labels: {}
+    depends_on:
+      - django
+
+  # Plays synthetic (bot-created) seats via the public bot API using Claude, falling
+  # back to the same dumb heuristics `bot` uses whenever Claude isn't configured or
+  # enabled. See docs/ai-bot-plan.md and docs/ai-bot-cost-controls-plan.md. Unlike
+  # `bot`, it never touches a real human's `allow_bot_to_play_for_me` seat.
+  ai-bot:
+    <<: *django
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "ai_bot"]
     ports: []
     labels: {}
     depends_on:
@@ -277,3 +296,5 @@ secrets:
     environment: "GOOGLE_OAUTH_CLIENT_ID"
   google_oauth_client_secret:
     environment: "GOOGLE_OAUTH_CLIENT_SECRET"
+  anthropic_api_key:
+    environment: "ANTHROPIC_API_KEY"

@@ -22,7 +22,6 @@ justfile). Pass `-s` (already on by default there) to see the narration as it pr
 from __future__ import annotations
 
 import logging
-import os
 
 import anthropic
 import pytest
@@ -32,52 +31,11 @@ from app import ai_bot
 from app.models import Hand
 from app.reference_client import BridgeClient
 from bridge.card import Card
-from bridge.contract import Call, Contract
+from bridge.contract import Contract
 from bridge.seat import Seat
 from bridge.xscript import HandTranscript
 
 PASSWORD = "sekrit"
-
-
-def _anthropic_client_if_available() -> anthropic.Anthropic | None:
-    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-        return ai_bot.default_client()
-    return None
-
-
-def _decide_call(
-    ai_client: anthropic.Anthropic | None, xscript: HandTranscript, seat: Seat
-) -> tuple[Call, str]:
-    if ai_client is not None:
-        try:
-            call = ai_bot.choose_call(client=ai_client, xscript=xscript, seat=seat)
-            return call, f"AI: {call.explanation}" if call.explanation else "AI"
-        except (ai_bot.AIBotError, anthropic.APIError) as e:
-            print(f"  ({e}; falling back to the dumb bidder)")
-
-    call = xscript.auction.make_standard_american_call(
-        pbn=xscript.endplay_deal.to_pbn(),
-        vuln=xscript.endplay_vulnerability(),
-    )
-    return call, "dumb bidder"
-
-
-def _decide_play(
-    ai_client: anthropic.Anthropic | None,
-    xscript: HandTranscript,
-    seat: Seat,
-    legal_cards: list[Card],
-) -> tuple[Card, str]:
-    if ai_client is not None:
-        try:
-            card, explanation = ai_bot.choose_play(
-                client=ai_client, xscript=xscript, seat=seat, legal_cards=legal_cards
-            )
-            return card, f"AI: {explanation}" if explanation else "AI"
-        except (ai_bot.AIBotError, anthropic.APIError) as e:
-            print(f"  ({e}; falling back to the lowest legal card)")
-
-    return min(legal_cards, key=lambda c: c.rank), "lowest legal card"
 
 
 def _log_in_every_seat(hand: Hand, live_server: LiveServer) -> dict[Seat, BridgeClient]:
@@ -116,7 +74,7 @@ def test_playing_a_hand_via_the_api(usual_setup: Hand, live_server: LiveServer) 
     client_by_seat = _log_in_every_seat(hand, live_server)
     north_username = hand.North.user.username
     hand_pk = hand.pk
-    ai_client = _anthropic_client_if_available()
+    ai_client = ai_bot.client_if_enabled()
     print(
         "\nDecisions come from "
         + ("Claude (an API key is set)." if ai_client is not None else "the dumb heuristics (no API key set).")
@@ -173,7 +131,7 @@ def _play_the_hand(
             client = client_by_seat[seat]
             my_xscript = HandTranscript.from_python(client.hand(hand_pk)["xscript"])
 
-            call, reason = _decide_call(ai_client, my_xscript, seat)
+            call, reason = ai_bot.decide_call(ai_client, my_xscript, seat)
             print(f"{seat}: {call} ({reason})")
             client.call(call.serialize())
         else:
@@ -203,7 +161,7 @@ def _play_the_hand(
             my_xscript = HandTranscript.from_python(client.hand(hand_pk)["xscript"])
             legal = my_xscript.legal_cards(some_cards=_my_remaining_cards(my_xscript, seat))
 
-            card, reason = _decide_play(ai_client, my_xscript, seat, legal)
+            card, reason = ai_bot.decide_play(ai_client, my_xscript, seat, legal)
             print(f"{seat}: plays {card} ({reason})")
             client.play(str(card))
     else:

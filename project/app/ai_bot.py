@@ -21,6 +21,8 @@ docs/ai-bot-plan.md's "Resilience" section and docs/ai-bot-cost-controls-plan.md
 from __future__ import annotations
 
 import collections
+import logging
+import os
 from typing import Any
 
 import anthropic
@@ -29,6 +31,8 @@ from bridge.card import Card, Suit
 from bridge.contract import Bid, Call, Contract
 from bridge.seat import Seat
 from bridge.xscript import HandTranscript
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-sonnet-5"
 
@@ -53,6 +57,80 @@ class AIBotError(Exception):
 
 def default_client() -> anthropic.Anthropic:
     return anthropic.Anthropic()
+
+
+def client_if_enabled() -> anthropic.Anthropic | None:
+    """The client to use for AI decisions, or None to fall back to the dumb
+    heuristics -- because AI_BOT_DISABLED is set (the kill switch from
+    docs/ai-bot-cost-controls-plan.md), or no credentials are configured.
+
+    Checks, in order: the kill switch; ANTHROPIC_API_KEY_FILE, a path to a file
+    holding the key (the Docker-secret convention this project uses for
+    DJANGO_SECRET_FILE and the Google OAuth secrets -- see docker-compose.yaml);
+    then plain ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN or an `ant auth login`
+    profile, via the SDK's own default resolution.
+    """
+    if os.environ.get("AI_BOT_DISABLED"):
+        return None
+
+    key_file = os.environ.get("ANTHROPIC_API_KEY_FILE")
+    if key_file:
+        try:
+            with open(key_file) as f:
+                key = f.read().strip()
+        except OSError:
+            # Optional, like the Google OAuth secret files: the env var pointing at
+            # it is exported unconditionally (see justfile), but nobody's put a key
+            # there yet.
+            key = ""
+        if key:
+            return anthropic.Anthropic(api_key=key)
+
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+        return default_client()
+
+    return None
+
+
+def decide_call(
+    ai_client: anthropic.Anthropic | None, xscript: HandTranscript, seat: Seat
+) -> tuple[Call, str]:
+    """choose_call(), falling back to the dumb standard-American bidder if
+    ai_client is None or the call fails for any reason.
+    """
+    if ai_client is not None:
+        try:
+            call = choose_call(client=ai_client, xscript=xscript, seat=seat)
+            return call, (f"AI: {call.explanation}" if call.explanation else "AI")
+        except (AIBotError, anthropic.APIError) as e:
+            logger.warning("%s; falling back to the dumb bidder", e)
+
+    call = xscript.auction.make_standard_american_call(
+        pbn=xscript.endplay_deal.to_pbn(),
+        vuln=xscript.endplay_vulnerability(),
+    )
+    return call, "dumb bidder"
+
+
+def decide_play(
+    ai_client: anthropic.Anthropic | None,
+    xscript: HandTranscript,
+    seat: Seat,
+    legal_cards: list[Card],
+) -> tuple[Card, str]:
+    """choose_play(), falling back to the lowest legal card if ai_client is None
+    or the call fails for any reason.
+    """
+    if ai_client is not None:
+        try:
+            card, explanation = choose_play(
+                client=ai_client, xscript=xscript, seat=seat, legal_cards=legal_cards
+            )
+            return card, (f"AI: {explanation}" if explanation else "AI")
+        except (AIBotError, anthropic.APIError) as e:
+            logger.warning("%s; falling back to the lowest legal card", e)
+
+    return min(legal_cards, key=lambda c: c.rank), "lowest legal card"
 
 
 def choose_call(
@@ -127,8 +205,6 @@ def choose_play(
         raise AIBotError(msg)
 
     return card, str(tool_input.get("explanation", ""))
-
-    return card
 
 
 def _system_prompt() -> list[TextBlockParam]:

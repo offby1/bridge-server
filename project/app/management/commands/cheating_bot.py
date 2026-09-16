@@ -16,7 +16,17 @@ logger = logging.getLogger(__name__)
 
 def get_next_hand(
     logger: logging.Logger | LessAnnoyingLogger | None = None,
+    *,
+    synthetic: bool | None = None,
 ) -> app.models.Hand | None:
+    """The oldest playable hand whose current seat is bot-controlled.
+
+    `synthetic` narrows *which* bot-controlled seats count: None (the default)
+    considers all of them; False considers only a human who's delegated their own
+    seat via `allow_bot_to_play_for_me`; True considers only a synthetic
+    (bot-created) player. `app/management/commands/ai_bot.py` passes True so it and
+    this command never fight over the same seat -- see docs/ai-bot-plan.md.
+    """
     if logger is None:
         logger = logging.getLogger(__name__)
 
@@ -48,10 +58,21 @@ def get_next_hand(
         if s is None:
             continue
         player = h.player_who_controls_seat(s, right_this_second=False)
-        if player.allow_bot_to_play_for_me:
-            return h
+        if not player.allow_bot_to_play_for_me:
+            continue
+        if synthetic is not None and player.synthetic != synthetic:
+            continue
+        return h
 
     return None
+
+
+def wait_for_tempo(hand_to_play: app.models.Hand) -> None:
+    tempo = datetime.timedelta(seconds=hand_to_play.board.tournament.tempo_seconds)
+    wait_until = hand_to_play.last_action_time + tempo
+    now = django.utils.timezone.now()
+    sleepy_time = max(datetime.timedelta(seconds=0), wait_until - now)
+    time.sleep(sleepy_time.total_seconds())
 
 
 # adapted from https://stackoverflow.com/a/26092256
@@ -93,16 +114,11 @@ class Command(BaseCommand):
         self.quiet_logger = LessAnnoyingLogger()
         super().__init__(*args, **kwargs)
 
-    def wait_for_tempo(self, hand_to_play: app.models.Hand) -> None:
-        tempo = datetime.timedelta(seconds=hand_to_play.board.tournament.tempo_seconds)
-        wait_until = hand_to_play.last_action_time + tempo
-        now = django.utils.timezone.now()
-        sleepy_time = max(datetime.timedelta(seconds=0), wait_until - now)
-        time.sleep(sleepy_time.total_seconds())
-
     def handle(self, *_args, **_options) -> None:
         while True:
-            hand_to_play = get_next_hand(logger=self.quiet_logger)
+            # synthetic=False: a real player's own bot-created partner/opponent is
+            # app/management/commands/ai_bot.py's job now, not ours.
+            hand_to_play = get_next_hand(logger=self.quiet_logger, synthetic=False)
             self.quiet_logger.note_current_hand(hand_to_play)
 
             if hand_to_play is None:
@@ -110,7 +126,7 @@ class Command(BaseCommand):
                 time.sleep(1)
                 continue
 
-            self.wait_for_tempo(hand_to_play)
+            wait_for_tempo(hand_to_play)
             xscript: HandTranscript = hand_to_play.get_xscript()
 
             if (p := hand_to_play.player_who_may_call) is not None:

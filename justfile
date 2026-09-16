@@ -9,6 +9,10 @@ export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
 export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
 export CROWDSEC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "crowdsec_api_key"
+# Optional, like the Google OAuth files above: absent means the ai_bot service (see
+# docs/ai-bot-plan.md) just falls back to the dumb heuristics. `just ensure-anthropic-key`
+# explains how to get one; there's no auto-generation, since this has to come from you.
+export ANTHROPIC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "anthropic_api_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -558,6 +562,10 @@ _deploy hostname profile context settings_module *options:
     # Google OAuth credentials (optional - gracefully handles if files don't exist)
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
+
+    # Anthropic API key for the ai_bot service (optional - absent means it falls back
+    # to the dumb heuristics; see docs/ai-bot-plan.md and `just ensure-anthropic-key`)
+    export ANTHROPIC_API_KEY=$(cat "${ANTHROPIC_API_KEY_FILE:-/dev/null}" 2>/dev/null || echo "")
 
     # Reclaim what the previous deploy left behind, before we need the room. Every
     # deploy replaces the `bridge-django` (and caddy/grafana/prometheus) tags, and the
