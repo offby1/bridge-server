@@ -83,7 +83,13 @@ class Command(BaseCommand):
             # noticing a stalled bot a second later -- so this is *not* reported
             # as "there was work to do": the caller's own backoff applies, same
             # as when there's nothing to act on at all.
-            logger.warning("hand %s: %s", hand.pk, e)
+            logger.warning(
+                "hand %s (%s, %s): %s",
+                hand.pk,
+                hand.board,
+                hand.board.tournament,
+                e,
+            )
             return False
 
         return True
@@ -97,6 +103,7 @@ class Command(BaseCommand):
     ) -> None:
         if (player := hand.player_who_may_call) is not None:
             call_seat = Seat(hand.direction_letters_by_player[player])
+            logger.info("hand %s: %s (%s) may call", hand.pk, call_seat, player.name)
             client = self._client_for(player, base_url, clients)
             xscript = HandTranscript.from_python(client.hand(hand.pk)["xscript"])
 
@@ -111,6 +118,7 @@ class Command(BaseCommand):
             return
 
         player = hand.player_who_controls_seat(play_seat, right_this_second=True)
+        logger.info("hand %s: %s (%s) may play", hand.pk, play_seat, player.name)
         client = self._client_for(player, base_url, clients)
         xscript = HandTranscript.from_python(client.hand(hand.pk)["xscript"])
 
