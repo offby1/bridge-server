@@ -96,16 +96,24 @@ ensure-anthropic-key:
     echo
     echo "Pick ONE of these, then re-run 'just ensure-anthropic-key' to confirm:"
     echo
-    echo "  1. (Recommended -- no env var to remember) Install the 'ant' CLI, then run:"
+    echo "  1. (Recommended) Create an API key at:"
+    echo "       https://console.anthropic.com/settings/keys"
+    echo "     then export it in every shell you run 'just narrate-hand' from:"
+    echo "       export ANTHROPIC_API_KEY=sk-ant-..."
+    echo "     Env vars do not persist across shells or reboots, so you will need to"
+    echo "     do this again next time -- unless you add it to your shell profile, or"
+    echo "     (better, eventually) this project grows a secret file for it, the way"
+    echo "     it already does for DJANGO_SECRET_FILE and the Google OAuth secrets."
+    echo "     This is also the only option that works unattended -- production has"
+    echo "     no browser and nobody around to log in."
+    echo
+    echo "  2. (Local, interactive use only -- not for production) Install the 'ant'"
+    echo "     CLI, then run:"
     echo "       ant auth login"
     echo "     This opens a browser to sign in and stores a profile under"
-    echo "     ~/.config/anthropic/ that the code picks up automatically, forever."
-    echo
-    echo "  2. Create an API key at https://console.anthropic.com/settings/keys, then"
-    echo "     export it in every shell you run 'just narrate-hand' from:"
-    echo "       export ANTHROPIC_API_KEY=sk-ant-..."
-    echo "     Env vars do not persist across shells or reboots -- option 1 avoids"
-    echo "     having to redo this."
+    echo "     ~/.config/anthropic/ that the code picks up automatically. It is a"
+    echo "     per-developer, human-in-the-loop credential -- fine for trying this out"
+    echo "     on your own machine, but there is no way to use it on a headless server."
     exit 1
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
