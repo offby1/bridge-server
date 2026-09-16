@@ -375,6 +375,16 @@ curl-login:
     header="Authorization: Basic ${b64_blob}"
     curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:{{ DEV_SERVER_PORT }}/login/
 
+# Exercise the bot API end-to-end: log in, read a hand, make a call, catch an
+# out-of-turn call, and re-read the hand -- see docs/README.api.md and
+# project/app/reference_client.py, the "worked example" client these tests drive.
+# pytest-django's `live_server` fixture starts (and tears down) a real server for the
+# duration of the run, so there's no separate dev server to start or leave running --
+# this just needs Postgres and Redis, which `start` brings up if they aren't already.
+[group('development')]
+exercise-api: start ensure-django-secret
+    just pytest-test -v app/test_reference_client.py
+
 create-cache: (manage "createcachetable")
 
 alias createsuperuser := django-superuser
