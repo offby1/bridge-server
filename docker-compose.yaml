@@ -265,7 +265,10 @@ services:
       - "127.0.0.1:4040:4040"
 
   redis:
-    image: redis:latest
+    # Pinned by digest (Redis 8.10.1), same reasoning as the postgres image above: a
+    # floating tag would let a routine `docker compose pull` swap the image out from
+    # under a running container. Upgrade by bumping this digest on purpose.
+    image: redis:8@sha256:298e5b3bc566bade82f46ad5511777a4a07a294097ce16ada2f6a42be5239df5
     ports:
       - "127.0.0.1:6379:6379"
     restart: unless-stopped

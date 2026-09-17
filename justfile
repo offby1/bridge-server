@@ -173,14 +173,6 @@ makemigrations *options: (manage "makemigrations " + options)
 [group('django')]
 migrate: makemigrations create-cache (manage "migrate")
 
-# Whop docker upside the haid -- in an attempt to prevent "failed to set up container networking: network blahblah not found"
-
-# See `why-whop.md`
-[group('docker')]
-whop:
-    docker compose down
-    docker network prune --force
-
 [group('stress')]
 stress *options:
     docker compose exec django /bridge/.venv/bin/python manage.py big_bot_stress {{ options }}
@@ -553,7 +545,7 @@ prod: prod-deploy-prerequisites && (_deploy "bridge.offby1.info" "prod,monitorin
 beta: docker-prerequisites && (_deploy "beta.bridge.offby1.info" "beta,monitoring" "hetz-bridge-beta" "project.prod_settings")
 
 [group('deploy')]
-dev *options: docker-prerequisites whop && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
+dev *options: docker-prerequisites && (_deploy "localhost" "dev" "default" "project.dev_settings" options)
 
 # Like `just dev`, but also brings up the monitoring stack (grafana/prometheus/&c.) locally.
 [group('deploy')]
