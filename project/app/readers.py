@@ -17,6 +17,7 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
+import app.ai_bot
 import app.models
 import app.models.hand
 import app.visibility
@@ -259,27 +260,37 @@ def get_board_archive_hands(
 
 
 def get_hint_for_player(player: app.models.Player) -> str:
-    """Suggest the call or play `player` (or the seat they control) should make."""
+    """Suggest the call or play `player` (or the seat they control) should make,
+    using the same Claude-backed decision (with the same dumb-heuristic fallback)
+    as app/management/commands/ai_bot.py -- see app.ai_bot.decide_call()/decide_play().
+    """
     hand = player.current_hand
     if hand is None:
         return f"{player} has no current hand"
 
     xscript = hand.get_xscript()
+    ai_client = app.ai_bot.client_if_enabled()
 
     if player == hand.player_who_may_call:
-        call = xscript.auction.make_standard_american_call(
-            pbn=xscript.endplay_deal.to_pbn(),
-            vuln=xscript.endplay_vulnerability(),
-        )
-        return f"If I were you, I'd call {call}"
+        call_seat = Seat(hand.direction_letters_by_player[player])
+        call, reason = app.ai_bot.decide_call(ai_client, xscript, call_seat)
+        return f"If I were you, I'd call {call} ({reason})"
 
     # Only whoever controls the seat on turn may be told what to play. Note that
     # after the opening lead that includes declarer, who plays dummy's cards as
     # well as their own -- hence naming the seat rather than saying "you".
     if (seat := hand.next_seat_to_play) is not None:
         if hand.player_who_controls_seat(seat, right_this_second=True) == player:
-            card = xscript.slightly_less_dumb_play().card
-            return f"If I were {seat}, I'd play {card}"
+            my_hand = xscript.dealt_cards_by_seat[seat]
+            assert my_hand is not None, (
+                f"{seat}'s own cards must be visible to whoever's asking for a hint"
+            )
+            already_played = {p.card for p in xscript.plays() if p.seat == seat}
+            legal = xscript.legal_cards(some_cards=[c for c in my_hand if c not in already_played])
+            card, reason = app.ai_bot.decide_play(ai_client, xscript, seat, legal)
+            # Play has no explanation field of its own yet (unlike Call), so this
+            # reason only ever reaches the hint text, never gets persisted.
+            return f"If I were {seat}, I'd play {card} ({reason})"
 
     return f"It's not {player}'s turn to call or play"
 
