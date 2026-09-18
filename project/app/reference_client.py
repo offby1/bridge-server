@@ -123,7 +123,16 @@ class BridgeClient:
     def _post(self, path: str, payload: dict[str, str]) -> None:
         # Django wants the CSRF token echoed back in a header. The cookie arrives with
         # the login response, and `self.session` has been holding onto it since.
-        headers = {"X-CSRFToken": self.session.cookies.get("csrftoken", "")}
+        #
+        # Django's CSRF check also demands a Referer header on any POST made over a
+        # secure connection (it skips this check entirely over plain HTTP), to rule out
+        # a cross-origin form submission. We're not a browser and have no real
+        # "referring page", but sending our own base_url as the Referer is exactly what
+        # a same-origin request looks like, which is all Django is actually checking for.
+        headers = {
+            "X-CSRFToken": self.session.cookies.get("csrftoken", ""),
+            "Referer": f"{self.base_url}/",
+        }
         response = self.session.post(
             self._url(path), data=payload, headers=headers, timeout=self.timeout
         )
