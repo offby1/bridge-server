@@ -148,7 +148,7 @@ EVENTSTREAM_REDIS = {
 # earlier, 94bce2af had deliberately restored persistence, because "we won't find half
 # of our tables just sitting there, because one of the bots missed an event."
 #
-# That reason expired: no bot reads SSE any more.  cheating_bot polls the database for
+# That reason expired: no bot reads SSE any more.  ai_bot polls the database for
 # every bot player.  So a missed event costs a stale page, not a stalled hand, and we
 # leave storage off on purpose.  app/test_stream_reset.py pins this, and will fail the
 # day somebody turns it on.

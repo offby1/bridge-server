@@ -8,7 +8,7 @@ behaviors the way the rest of `app/test_reference_client.py` does.
 If an Anthropic API key is available (`ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` --
 see app/ai_bot.py), calls and plays come from Claude, via `app.ai_bot.choose_call()`/
 `choose_play()`. Without one -- the default, so this stays free and network-independent
-by default -- it falls back to the same dumb heuristics `cheating_bot.py` uses:
+by default -- it falls back to the same dumb heuristics `app.ai_bot` uses:
 `make_standard_american_call()` for bidding (only needs your own hand plus the public
 auction, which a real API client legitimately has), and the lowest legal card for play
 (not `slightly_less_dumb_play()`, which double-dummy-solves all four hands -- something

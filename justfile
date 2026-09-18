@@ -242,9 +242,6 @@ stress *options:
 dump:
     docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
-dump-bot:
-    docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
-
 dump-ai-bot:
     docker compose logs ai-bot > ai-bot-{{ datetime_utc("%FT%T%z") }}
 
@@ -609,10 +606,10 @@ _deploy hostname profile context settings_module *options:
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
     docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
-    # Swap in the new django container (and bot, clock, ai-bot, and notifier); --no-deps
+    # Swap in the new django container (and clock, ai-bot, and notifier); --no-deps
     # avoids restarting postgres/redis/caddy
     just dump
-    docker compose up --detach --no-deps --force-recreate django bot clock ai-bot notifier {{ options }}
+    docker compose up --detach --no-deps --force-recreate django clock ai-bot notifier {{ options }}
 
     # Bring up Caddy and CrowdSec when their profile is active (prod/beta). Like the monitoring
     # block below, `_deploy` only ups named services, so these need an explicit `up` -- without

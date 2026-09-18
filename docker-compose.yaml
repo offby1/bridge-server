@@ -107,18 +107,10 @@ services:
         - action: sync+restart
           path: ./project
           target: /bridge/project
-  bot:
-    <<: *django
-    command: ["uv", "run", "--no-dev", "python", "manage.py", "cheating_bot"]
-    ports: []
-    labels: {}
-    depends_on:
-      - django
-
-  # Plays synthetic (bot-created) seats via the public bot API using Claude, falling
-  # back to the same dumb heuristics `bot` uses whenever Claude isn't configured or
-  # enabled. See docs/ai-bot-plan.md and docs/ai-bot-cost-controls-plan.md. Unlike
-  # `bot`, it never touches a real human's `allow_bot_to_play_for_me` seat.
+  # Plays every allow_bot_to_play_for_me seat -- both synthetic (bot-created)
+  # placeholders and a real human's own delegated seat -- using Claude, falling back
+  # to the same dumb heuristics whenever Claude isn't configured or enabled. See
+  # docs/ai-bot-plan.md and docs/ai-bot-cost-controls-plan.md.
   ai-bot:
     <<: *django
     command: ["uv", "run", "--no-dev", "python", "manage.py", "ai_bot"]

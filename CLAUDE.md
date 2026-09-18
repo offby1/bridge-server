@@ -40,7 +40,7 @@ All commands use [Just](https://just.systems/) command runner. See `justfile` fo
 ### Development
 ```bash
 just runme              # Start Django dev server on localhost:9000 (native, no Docker)
-just dev                # Start the local Docker Compose stack (Django + Postgres + Redis + bot + clock + notifier)
+just dev                # Start the local Docker Compose stack (Django + Postgres + Redis + ai-bot + clock + notifier)
 just dev-monitoring     # Same as `just dev`, plus Grafana/Prometheus/pyroscope locally
 just notifier           # Run the change-notifier natively instead of in Docker
 just shell              # Django shell with pre-populated queries
@@ -371,7 +371,7 @@ This automatically:
 ```bash
 just dev
 ```
-Brings up Django, PostgreSQL, Redis, the bot, the tournament clock, and the notifier. It
+Brings up Django, PostgreSQL, Redis, the AI bot, the tournament clock, and the notifier. It
 conflicts with `just runme`, since both listen on port 9000.
 
 Monitoring (Grafana, Prometheus, postgres-exporter, pyroscope) is gated behind the
@@ -435,7 +435,7 @@ just stress --tempo-seconds=0            # Maximum speed (no delays)
 
 `just stress` runs `big_bot_stress` inside the `django` container, so it needs the Docker
 stack up (`just dev`). Bots automatically join games and play hands. Capture the logs with
-`just dump` (django) or `just dump-bot` (the bot), each of which writes a timestamped file.
+`just dump` (django) or `just dump-ai-bot` (the bot), each of which writes a timestamped file.
 
 For load-testing rather than gameplay, `project/app/manually_test_rate_limiting.py` floods
 the list views; see `docs/perf/crawler-repro.md`.
@@ -523,10 +523,12 @@ See `app/static/app/bridge-game.js` and `app/templates/base.html` for examples.
 4. Either work through the ORM directly, or use the API endpoints
    (`/login/`, `/serialized/hand/<pk>/`, `/call/`, `/play/`)
 
-`app/management/commands/cheating_bot.py` is the bot that ships with the server. It is
-*not* an example of an API client: it runs inside the Docker stack, reads the database
-directly, and polls in a loop rather than subscribing to SSE. Nothing on the server side
-reads SSE any more.
+`app/management/commands/ai_bot.py` is the bot that ships with the server. It runs inside
+the Docker stack and polls in a loop rather than subscribing to SSE (nothing on the server
+side reads SSE any more). It acts for every `allow_bot_to_play_for_me` seat, but the
+mechanism differs by seat: a synthetic (bot-created) player is driven over the public HTTP
+API, like a third-party client; a real human's own delegated seat is written directly
+through the ORM, since logging in as a real account would mean resetting its password.
 
 For a client written the way a third party would write one, see
 `project/app/reference_client.py` — about a hundred lines of `requests` plus `sseclient`,
@@ -554,7 +556,7 @@ This:
 - Builds the `bridge-django` Docker image once, then reuses it for every service
 - Deploys to the remote host via SSH Docker context
 - Runs `collectstatic`, `migrate` and `setup_oauth` as one-shot services and waits for
-  them, before swapping in the new `django`, `bot`, `clock` and `notifier` containers
+  them, before swapping in the new `django`, `clock`, `ai-bot` and `notifier` containers
 - Enables Caddy, which does TLS with automatic Let's Encrypt certificates, and applies the
   rate limits in `caddy/Caddyfile`
 - Enables the monitoring profile (Grafana, Prometheus, postgres-exporter, pyroscope)
@@ -603,7 +605,7 @@ prints a warning if it can't; `just notifier` runs it natively against the worki
 
 ### Bot not responding
 
-Check bot logs: `docker compose logs bot --tail=50`
+Check bot logs: `docker compose logs ai-bot --tail=50`
 
 Verify authentication: `just curl-login` should return player_pk.
 
