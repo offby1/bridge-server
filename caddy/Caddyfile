@@ -101,6 +101,35 @@
     metrics /metrics
 }
 
+# Internal-only TLS front door onto django:9000, for ai_bot
+# (app/management/commands/ai_bot.py). It plays synthetic seats purely through the
+# public bot API (app/reference_client.py) like any other client would, but unlike a
+# real client it lives right next to django in the same compose network -- and talking
+# to django:9000 directly, over plain HTTP, ran straight into SECURE_SSL_REDIRECT and
+# the Secure session/CSRF cookies (see prod_settings.py): the redirect target
+# (https://django:9000) doesn't exist, since daphne itself never speaks TLS, and even
+# exempting the redirect still left the cookies stranded, since a plain-HTTP connection
+# correctly refuses to send a Secure-flagged cookie back.
+#
+# The fix is to give ai_bot a real HTTPS connection instead of teaching Django to expect
+# less of one. `caddy:8443` is this listener's own address -- not `django:9000` -- which
+# is deliberate: this block's whole job is to *be* the TLS termination django can't do.
+# Nothing publishes 8443 to the host (docker-compose-caddy.yaml's `ports:` lists only 80
+# and 443), so only another container already on the compose network -- already inside
+# the trust boundary -- can ever dial it, the same reasoning the :2020 listener above
+# relies on.
+#
+# `tls internal` has Caddy mint its own self-signed certificate rather than asking Let's
+# Encrypt for one: there's no public hostname to prove control of, and no point, since
+# nothing outside the compose network can reach this address at all. ai_bot's client
+# (reference_client.py's `verify` parameter) skips certificate validation when talking to
+# it, which is fine for the same reason: anyone able to MITM traffic *inside* the compose
+# network already has the run of the place.
+caddy:8443 {
+    tls internal
+    reverse_proxy django:9000
+}
+
 # This snippet asks CrowdSec whether the client is banned, and refuses the
 # request if so. The django service applies it with a `caddy.import_0: crowdsec`
 # label.

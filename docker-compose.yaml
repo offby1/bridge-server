@@ -43,7 +43,10 @@ services:
       # docs/ai-bot-cost-controls-plan.md.
       ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
       AI_BOT_DISABLED: ${AI_BOT_DISABLED:-}
-      BRIDGE_BASE_URL: http://django:9000
+      # justfile's _deploy overrides this to https://caddy:8443 (see caddy/Caddyfile)
+      # whenever Caddy is actually running (the prod/beta profiles); plain http://django:9000
+      # is only correct under dev_settings, which never sets SECURE_SSL_REDIRECT at all.
+      BRIDGE_BASE_URL: ${BRIDGE_BASE_URL:-http://django:9000}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       HOSTNAME: ${HOSTNAME:-} # for Tailscale hostname detection in setup_oauth

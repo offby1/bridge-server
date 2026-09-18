@@ -147,7 +147,11 @@ class Command(BaseCommand):
             player.user.set_password(password)
             player.user.save(update_fields=["password"])
 
-            client = BridgeClient(base_url)
+            # verify=False: base_url is either plain http:// (dev, where this is moot) or
+            # caddy/Caddyfile's internal-only `caddy:8443` listener, whose self-signed cert
+            # nothing outside the compose network could validate anyway -- see BridgeClient's
+            # own docstring for why that's fine here specifically.
+            client = BridgeClient(base_url, verify=False)
             client.log_in(player.user.username, password)
             clients[player.pk] = client
 

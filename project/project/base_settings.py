@@ -78,6 +78,7 @@ ALLOWED_HOSTS = [
     ".orb.local",
     ".tail571dc2.ts.net",  # tailscale!
     "127.0.0.1",
+    "caddy",  # for ai_bot, talking to caddy/Caddyfile's internal `caddy:8443` listener
     "django",  # for prometheus
     "localhost",
 ]

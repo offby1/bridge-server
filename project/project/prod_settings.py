@@ -22,27 +22,14 @@ SECURE_SSL_REDIRECT = True
 # plain-HTTP port can't complete (the scrape then dies with "context deadline exceeded").  Exempt the
 # metrics endpoint from the redirect so the internal scrape works over HTTP.
 #
-# ai_bot (app/management/commands/ai_bot.py) hits the same wall: it plays synthetic seats
-# purely through the public bot API (app/reference_client.py), but -- like Prometheus --
-# talks straight to http://django:9000 (BRIDGE_BASE_URL in docker-compose.yaml), not through
-# Caddy, so it too gets redirected into the same dead end. Exempt the specific bot-API paths
-# it calls: /login/, /serialized/hand/<pk>/, /call/, /play/.
-#
-# This looks like it's weakening protection for exactly the endpoints (login credentials!)
-# that most need it, but it isn't, because of where these requests can come from:
-#   - django:9000 is bound to 127.0.0.1 only (docker-compose.yaml's `ports:` for the django
-#     service), so it is unreachable from outside the host -- not from the internet, not
-#     even from the LAN or Tailscale. Only the host itself or another container on the
-#     compose network can ever reach it directly.
-#   - Every real, internet-facing request already goes through Caddy, which terminates TLS
-#     and auto-redirects any plain-HTTP request to HTTPS *before* Django ever sees it
-#     (docker-compose-caddy.yaml publishes 80 and 443, and caddy/Caddyfile never disables
-#     Caddy's default auto_https). SECURE_SSL_REDIRECT plus HSTS below is Django's own
-#     defense-in-depth on top of that, not the only thing standing between an attacker and
-#     a plaintext login.
-# So this exemption only ever applies to callers already inside that trust boundary -- the
-# same one /metrics above relies on -- never to a real external client.
-SECURE_REDIRECT_EXEMPT = [r"^metrics$", r"^login/$", r"^serialized/hand/", r"^call/$", r"^play/$"]
+# ai_bot (app/management/commands/ai_bot.py) used to hit the same wall for its own API calls
+# (/login/, /call/, /play/, ...), and for a while was exempted here too. That turned out to be
+# the wrong fix: exempting the redirect didn't stop SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE
+# below from marking the cookies Secure, and a real HTTP connection (correctly) never sends a
+# Secure cookie back, so every request after login still looked anonymous. ai_bot now instead
+# talks to caddy/Caddyfile's internal-only `caddy:8443` listener, which gives it a real HTTPS
+# connection -- see the comment there for the full reasoning. No exemption needed.
+SECURE_REDIRECT_EXEMPT = [r"^metrics$"]
 
 if DEPLOYMENT_ENVIRONMENT == "production":
     LOGGING["handlers"]["console"]["level"] = "INFO"

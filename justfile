@@ -595,6 +595,10 @@ _deploy hostname profile context settings_module *options:
     # means the later `up --build` finds a cached image and just swaps containers.
     if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
         docker compose build django caddy crowdsec
+        # Caddy is actually up under these profiles, so ai_bot can reach it -- see the
+        # `caddy:8443` block in caddy/Caddyfile for why it needs to, instead of talking to
+        # django:9000 directly.
+        export BRIDGE_BASE_URL="https://caddy:8443"
     else
         docker compose build django
     fi

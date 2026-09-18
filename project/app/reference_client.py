@@ -34,6 +34,7 @@ from typing import Any
 
 import requests
 import sseclient  # type: ignore [import-untyped]
+import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +52,22 @@ class BridgeClientError(Exception):
 class BridgeClient:
     """One authenticated player's view of the server."""
 
-    def __init__(self, base_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> None:
+    def __init__(
+        self, base_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS, verify: bool = True
+    ) -> None:
+        # `verify=False` is for talking to a server whose certificate you can't validate in
+        # the normal way -- e.g. ai_bot, talking to caddy/Caddyfile's internal-only
+        # `caddy:8443` listener, which deliberately has no publicly-verifiable certificate
+        # since nothing outside its own docker network can ever dial it. Leave this True
+        # for anything reachable from the open internet.
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
+        self.session.verify = verify
+        if not verify:
+            # Asking for this is already the signal that we know the cert can't be
+            # validated; don't also nag about it on every request.
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         self.player_pk: int | None = None
 
     def _url(self, path: str) -> str:
