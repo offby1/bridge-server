@@ -242,6 +242,8 @@ STILL TODO:
 
 * Consider logging directly to S3: https://docs.docker.com/engine/logging/drivers/awslogs/
 
+* Digest https://loggingsucks.com/ (which is probably an elaborate sales pitch; still, it's compelling) and see if we can use some of those concepts.
+
 * Renaming a player (via the admin site, or a postgres client) causes ... all sorts of chaos.  Apparantly I store player names somewhere (maybe the cached hand transcript) and freak out when I cannot find a player of that name?
 
   Maybe change `player_who_may_call` and `player_who_may_play` to return directions instead of players.
