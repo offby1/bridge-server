@@ -6,8 +6,10 @@ scrapes both with a Grafana dashboard over the top, **Caddy refuses addresses
 CrowdSec has banned**, and CrowdSec **exchanges signals with the central API**.
 See "Landed" at the bottom for what each piece actually does.
 
-**Beta is enforcing as of 2026-08-31. Prod has none of this**, because nothing in
-this series has been deployed there.
+**Beta has enforced since 2026-08-31, and prod runs all of it too.** But prod was
+not registered with the central API until 2026-09-25, so until then it banned
+only on its own evidence and pulled no community blocklist. See "How I found prod
+unregistered" under Phase 5b.
 
 **Phase 3's observation was abandoned after 21 hours because it measured
 nothing**, so our own scenario's thresholds are unvalidated and it stays
@@ -447,9 +449,9 @@ earned enforcement. Ours stays alert-only until something validates it.
    exists, but it is outward-facing in a way nothing else here is, so it wants an
    explicit decision rather than arriving as a side effect.
 
-When 5b happens, confirm the blocklist actually arrived: `cscli decisions list`
-should show a large number of entries with origin `CAPI` or `lists`, not just our
-own.
+On each host, confirm the blocklist actually arrived: `cscli decisions list
+--origin CAPI` should show thousands of entries, not just our own. "Registering"
+under Phase 5b below has the exact commands.
 
 ## How to test any of this
 
@@ -945,17 +947,24 @@ Once per host:
 DOCKER_CONTEXT=hetz-bridge-beta just crowdsec-register
 ```
 
-The recipe refuses to act when credentials already exist, because `cscli capi
-register` mints a fresh identity on every call. It writes through a temporary
-file so a failed attempt leaves the credentials empty and retryable, then
-restarts the container, since the running process read the empty file at startup.
+The recipe refuses to act when the credentials file is non-empty, because `cscli
+capi register` mints a fresh identity on every call. It runs `cscli capi register`,
+fails loudly if the file is still empty afterwards, and otherwise restarts the
+container, since the running process read the empty file at startup.
 
 To verify:
 
 ```
 just cscli capi status
-just cscli decisions list --origin CAPI   # entries from the community blocklist
+just cscli decisions list --origin CAPI -o json | jq '[.[].decisions[]] | length'
 ```
+
+The `jq` has to reach inside each alert. The JSON output is a list of *alerts*,
+each carrying its own decisions, and the whole community blocklist arrives as one
+alert, so a plain `jq length` prints `1` however many addresses it holds.
+Prometheus answers the same question without a shell on the host:
+`sum by (origin) (cs_active_decisions)` includes a `CAPI` series once the
+blocklist is in.
 
 Before registering, `cscli capi status` reports the situation accurately rather
 than confusingly: `the Central API (CAPI) must be configured with 'cscli capi
@@ -1013,6 +1022,27 @@ Persistence works: restarting the container leaves the credentials in place, the
 blocklist counts unchanged, and `just crowdsec-register` correctly declines to
 act.
 
+#### How I found prod unregistered
+
+Registration was run and verified on beta only, and this plan went on calling
+Phase 5b done. Prod ran with the central API enabled and an empty credentials
+file, which is the "quietly exchanges nothing" state described at the top, for
+weeks. Prometheus showed it plainly once somebody looked: over the fifteen days
+it retains, every `cs_active_decisions` series had origin `crowdsec`, and none
+had `CAPI`. `cscli capi status` warned `missing login field` (the entrypoint's
+empty placeholder file) and said the central API must be configured with `cscli
+capi register`.
+
+`DOCKER_CONTEXT=hetz-bridge just crowdsec-register` fixed it on 2026-09-25.
+Within a minute `capi status` reported the blocklist pull enabled, and Prometheus
+showed 14,998 `CAPI` decisions: 8,913 `http:bruteforce`, 4,309 `http:scan`, 1,684
+`ssh:bruteforce`, 74 `generic:scan`, 17 `http:exploit` and 1 `http:crawl`. That is
+a quite different mix from beta's a month earlier, as you'd expect from a list that
+turns over.
+
+For any new host, the lesson is that a deploy alone does not finish Phase 5b.
+Run the registration and the checks above on that host.
+
 #### The blocklist blocks on evidence we cannot inspect
 
 Worth stating plainly rather than leaving implicit. A spot check of the incoming
@@ -1023,10 +1053,10 @@ way for us to review the case.
 
 For this site the practical cost is low, because we already set
 `X-Robots-Tag: none` on every response and do not care about search indexing. The
-calculation would be different for a site that did. Before enabling this on prod,
-consider whether any address that must always reach the site — a monitoring
+calculation would be different for a site that did. Now that this is on in prod,
+it is worth asking whether any address that must always reach the site — a monitoring
 probe, a payment webhook, an uptime checker — could plausibly appear on a
-community list, and remember that `cscli allowlist` exists for those.
+community list. If one could, `cscli allowlist` can exempt it.
 
 #### Optional: the console
 
