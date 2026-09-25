@@ -64,7 +64,7 @@ IN PROGRESS:
 
 
 STILL TODO:
-* `just dev` -- and presumably any other justfile recipe that defers to `_deploy` -- deletes the postgres image, and then re-fetches it.  This is dumb.
+* I suspect that there's no way, on mobile, to see the tooltips that explain bids.
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.
@@ -342,6 +342,7 @@ MAYBE TODO:
 * Reconsider sqlite -- [this](https://gcollazo.com/optimal-sqlite-settings-for-django/) strongly suggests it's viable for smallish projects such as this.
 
 DONE:
+* `just dev` -- and presumably any other justfile recipe that defers to `_deploy` -- deletes the postgres image, and then re-fetches it.  This is dumb.
 * I suspect I haven't needed the "skeleton key" stuff in ages -- iirc, that was from when the bot didn't cheat, and instead communicated over the API.  (Why'd I change the bot, anyway?  Probably to allow it to play better without having to actually write code that knows how to play bridge :-))
 * If you accidentally click the wrong bid, or play the wrong card, God help you -- there's no way to take it back.
   So ... maybe there should be a confirmation popup after every call or play? That'd solve the problem, but it'd be annoying, too.
