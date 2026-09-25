@@ -64,6 +64,7 @@ IN PROGRESS:
 
 
 STILL TODO:
+* `just dev` -- and presumably any other justfile recipe that defers to `_deploy` -- deletes the postgres image, and then re-fetches it.  This is dumb.
 * Maybe have some sort of "fake [masterpoints](https://www.acbl.org/masterpoints/)" or something, that accumulates over tournaments.  That way regular players can compare themselves to each other.  Currently, if you're competitive, you can only look at how you did in any one tournament; but if you do well in may tournaments, there's no way to see that short of poking at every tournament you've played in.
   Since this is online bridge, I suppose they'd be "Crystal"-colored.
 * During the auction, if it's my turn to call and I don't make a call in a while, the UI should scroll the bidding box into view, just as it scrolls my cards into view during play.

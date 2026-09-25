@@ -59,7 +59,13 @@
                                         hx-get="{% url 'app:hint' user.player.pk %}"
                                         hx-target="#hint-modal-body"
                                         hx-swap="innerHTML"
+                                        hx-indicator="#hint-spinner"
+                                        hx-disabled-elt="this"
                                         hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getOrCreateInstance(document.getElementById('hint-modal')).show(); }">
+                                    <span id="hint-spinner"
+                                          class="spinner-border spinner-border-sm htmx-indicator"
+                                          role="status"
+                                          aria-hidden="true"></span>
                                     Give me a hint
                                 </button>
                             {% endif %}

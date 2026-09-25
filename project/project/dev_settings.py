@@ -15,6 +15,20 @@ INTERNAL_IPS.append("192.168.97.1")
 TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore
 DEBUG = True
 
+# base_settings marks these Secure, correctly, for prod_settings (served over real HTTPS
+# via Caddy). Here they'd be actively harmful instead of just unnecessary: a browser
+# exempts "localhost" from the Secure-requires-HTTPS rule, but a real HTTP client (like
+# app/reference_client.py's `requests`-based BridgeClient, which is what a real bot
+# uses, and what docker-compose's ai-bot service talks to django with over plain
+# http://django:9000) does not get that exemption, and does not have a "localhost"
+# hostname to exempt in the first place. Without this override, login succeeds (the
+# Set-Cookie header itself always transmits fine), but the client -- correctly -- never
+# sends the Secure cookie back on later requests, so every subsequent call looks
+# anonymous and gets a 403. test_settings.py already makes the identical override, which
+# is why the API's own tests never surfaced this.
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
 if os.environ.get("PYINSTRUMENT", "").lower().startswith("t"):
     INSTALLED_APPS.remove("debug_toolbar")
     MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")

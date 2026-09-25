@@ -38,6 +38,15 @@ services:
       DJANGO_SECRET_FILE: /run/secrets/django_secret
       GOOGLE_OAUTH_CLIENT_ID_FILE: /run/secrets/google_oauth_client_id
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
+      # Only ai-bot (below) actually calls Claude, but it's harmless for the other
+      # services sharing this block to carry these too -- see docs/ai-bot-plan.md and
+      # docs/ai-bot-cost-controls-plan.md.
+      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
+      AI_BOT_DISABLED: ${AI_BOT_DISABLED:-}
+      # justfile's _deploy overrides this to https://caddy:8443 (see caddy/Caddyfile)
+      # whenever Caddy is actually running (the prod/beta profiles); plain http://django:9000
+      # is only correct under dev_settings, which never sets SECURE_SSL_REDIRECT at all.
+      BRIDGE_BASE_URL: ${BRIDGE_BASE_URL:-http://django:9000}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-}
       DOCKER_CONTEXT: ${DOCKER_CONTEXT:-} # so each machine "knows" where it is -- orbstack, hetz, ls, &c
       HOSTNAME: ${HOSTNAME:-} # for Tailscale hostname detection in setup_oauth
@@ -52,6 +61,7 @@ services:
       - django_secret
       - google_oauth_client_id
       - google_oauth_client_secret
+      - anthropic_api_key
     init: true                  # https://docs.docker.com/reference/compose-file/services/#init
     volumes:
       - django_static_root:/bridge/project/static_root
@@ -97,9 +107,13 @@ services:
         - action: sync+restart
           path: ./project
           target: /bridge/project
-  bot:
+  # Plays every allow_bot_to_play_for_me seat -- both synthetic (bot-created)
+  # placeholders and a real human's own delegated seat -- using Claude, falling back
+  # to the same dumb heuristics whenever Claude isn't configured or enabled. See
+  # docs/ai-bot-plan.md and docs/ai-bot-cost-controls-plan.md.
+  ai-bot:
     <<: *django
-    command: ["uv", "run", "--no-dev", "python", "manage.py", "cheating_bot"]
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "ai_bot"]
     ports: []
     labels: {}
     depends_on:
@@ -280,3 +294,5 @@ secrets:
     environment: "GOOGLE_OAUTH_CLIENT_ID"
   google_oauth_client_secret:
     environment: "GOOGLE_OAUTH_CLIENT_SECRET"
+  anthropic_api_key:
+    environment: "ANTHROPIC_API_KEY"

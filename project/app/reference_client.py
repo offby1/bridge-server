@@ -34,6 +34,7 @@ from typing import Any
 
 import requests
 import sseclient  # type: ignore [import-untyped]
+import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +52,22 @@ class BridgeClientError(Exception):
 class BridgeClient:
     """One authenticated player's view of the server."""
 
-    def __init__(self, base_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> None:
+    def __init__(
+        self, base_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS, verify: bool = True
+    ) -> None:
+        # `verify=False` is for talking to a server whose certificate you can't validate in
+        # the normal way -- e.g. ai_bot, talking to caddy/Caddyfile's internal-only
+        # `caddy:8443` listener, which deliberately has no publicly-verifiable certificate
+        # since nothing outside its own docker network can ever dial it. Leave this True
+        # for anything reachable from the open internet.
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
+        self.session.verify = verify
+        if not verify:
+            # Asking for this is already the signal that we know the cert can't be
+            # validated; don't also nag about it on every request.
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         self.player_pk: int | None = None
 
     def _url(self, path: str) -> str:
@@ -110,7 +123,16 @@ class BridgeClient:
     def _post(self, path: str, payload: dict[str, str]) -> None:
         # Django wants the CSRF token echoed back in a header. The cookie arrives with
         # the login response, and `self.session` has been holding onto it since.
-        headers = {"X-CSRFToken": self.session.cookies.get("csrftoken", "")}
+        #
+        # Django's CSRF check also demands a Referer header on any POST made over a
+        # secure connection (it skips this check entirely over plain HTTP), to rule out
+        # a cross-origin form submission. We're not a browser and have no real
+        # "referring page", but sending our own base_url as the Referer is exactly what
+        # a same-origin request looks like, which is all Django is actually checking for.
+        headers = {
+            "X-CSRFToken": self.session.cookies.get("csrftoken", ""),
+            "Referer": f"{self.base_url}/",
+        }
         response = self.session.post(
             self._url(path), data=payload, headers=headers, timeout=self.timeout
         )

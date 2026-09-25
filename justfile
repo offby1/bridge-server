@@ -9,6 +9,10 @@ export DJANGO_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "django_secret_key"
 export GOOGLE_OAUTH_CLIENT_ID_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_id"
 export GOOGLE_OAUTH_CLIENT_SECRET_FILE := DJANGO_SECRET_DIRECTORY / "google_oauth_client_secret"
 export CROWDSEC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "crowdsec_api_key"
+# Optional, like the Google OAuth files above: absent means the ai_bot service (see
+# docs/ai-bot-plan.md) just falls back to the dumb heuristics. `just ensure-anthropic-key`
+# explains how to get one; there's no auto-generation, since this has to come from you.
+export ANTHROPIC_API_KEY_FILE := DJANGO_SECRET_DIRECTORY / "anthropic_api_key"
 export DJANGO_SETTINGS_MODULE := env("DJANGO_SETTINGS_MODULE", "project.dev_settings")
 export DOCKER_CONTEXT := env("DOCKER_CONTEXT", if os() == "macos" { "orbstack" } else { "default" })
 export HOSTNAME := env("HOSTNAME", `hostname`)
@@ -67,6 +71,54 @@ ensure-crowdsec-api-key: django-secret-directory
     then
     python3 -c 'import secrets; print(secrets.token_urlsafe(32))' > "{{ CROWDSEC_API_KEY_FILE }}"
     fi
+
+# Unlike the "ensure-*" recipes above, this can't manufacture a secret on its own --
+# an Anthropic API key has to come from you. It checks whether app/ai_bot.py (see
+# docs/ai-bot-plan.md) has any way to authenticate -- ANTHROPIC_API_KEY,
+# ANTHROPIC_AUTH_TOKEN, or an `ant auth login` profile -- and if not, prints exactly
+# what to do and exits nonzero, rather than silently falling back to the dumb bidder.
+# Run it directly whenever you want to check, or before `just narrate-hand` if you
+# specifically want to see Claude play rather than the free fallback.
+[script('bash')]
+ensure-anthropic-key:
+    set -euo pipefail
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        echo "ANTHROPIC_API_KEY is set."
+        exit 0
+    fi
+    if [ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]; then
+        echo "ANTHROPIC_AUTH_TOKEN is set."
+        exit 0
+    fi
+    if command -v ant >/dev/null 2>&1 && ant auth status >/dev/null 2>&1; then
+        echo "Found an active 'ant auth login' profile."
+        exit 0
+    fi
+    echo "No Anthropic API credentials found. Without them, app/ai_bot.py can not call"
+    echo "Claude, and anything that uses it (e.g. 'just narrate-hand') silently falls"
+    echo "back to the dumb bridge-library heuristics instead."
+    echo
+    echo "Pick ONE of these, then re-run 'just ensure-anthropic-key' to confirm:"
+    echo
+    echo "  1. (Recommended) Create an API key at:"
+    echo "       https://console.anthropic.com/settings/keys"
+    echo "     then export it in every shell you run 'just narrate-hand' from:"
+    echo "       export ANTHROPIC_API_KEY=sk-ant-..."
+    echo "     Env vars do not persist across shells or reboots, so you will need to"
+    echo "     do this again next time -- unless you add it to your shell profile, or"
+    echo "     (better, eventually) this project grows a secret file for it, the way"
+    echo "     it already does for DJANGO_SECRET_FILE and the Google OAuth secrets."
+    echo "     This is also the only option that works unattended -- production has"
+    echo "     no browser and nobody around to log in."
+    echo
+    echo "  2. (Local, interactive use only -- not for production) Install the 'ant'"
+    echo "     CLI, then run:"
+    echo "       ant auth login"
+    echo "     This opens a browser to sign in and stores a profile under"
+    echo "     ~/.config/anthropic/ that the code picks up automatically. It is a"
+    echo "     per-developer, human-in-the-loop credential -- fine for trying this out"
+    echo "     on your own machine, but there is no way to use it on a headless server."
+    exit 1
 
 # Detect "hoseage" caused by me running "orb shell" and building for Ubuntu in this very directory.
 [private]
@@ -182,8 +234,8 @@ stress *options:
 dump:
     docker compose logs django > django-{{ datetime_utc("%FT%T%z") }}
 
-dump-bot:
-    docker compose logs bot > bot-{{ datetime_utc("%FT%T%z") }}
+dump-ai-bot:
+    docker compose logs ai-bot > ai-bot-{{ datetime_utc("%FT%T%z") }}
 
 # This recipe shows Caddy's interesting log lines, meaning rate-limit rejections,
 # anything at warn level or above, and any access-log entry with a 429 or 5xx
@@ -367,6 +419,28 @@ curl-login:
     header="Authorization: Basic ${b64_blob}"
     curl --cookie cook --cookie-jar cook --header "${header}" http://localhost:{{ DEV_SERVER_PORT }}/login/
 
+# Exercise the bot API end-to-end: log in, read a hand, make a call, catch an
+# out-of-turn call, and re-read the hand -- see docs/README.api.md and
+# project/app/reference_client.py, the "worked example" client these tests drive.
+# pytest-django's `live_server` fixture starts (and tears down) a real server for the
+# duration of the run, so there's no separate dev server to start or leave running --
+# this just needs Postgres and Redis, which `start` brings up if they aren't already.
+[group('development')]
+exercise-api: start ensure-django-secret
+    just pytest-test -v app/test_reference_client.py
+
+# Play one hand start to finish purely through the public bot API (login, hand reads,
+# calls, plays -- see project/app/test_narrate_hand.py), narrating each call and play as
+# it happens. Bidding uses the bridge library's standard-American heuristic; play uses
+# "lowest legal card", since a real API client can't see enough to double-dummy-solve
+# (no Anthropic API involved yet -- see docs/ai-bot-plan.md). Like `exercise-api`, this
+# starts its own throwaway server via pytest's `live_server` fixture, so there's nothing
+# to start by hand. Auctions sometimes pass out on the luck of the deal; re-run if you
+# want to see a contract actually played.
+[group('development')]
+narrate-hand: start ensure-django-secret
+    just pytest-test -v -s app/test_narrate_hand.py
+
 create-cache: (manage "createcachetable")
 
 alias createsuperuser := django-superuser
@@ -481,6 +555,10 @@ _deploy hostname profile context settings_module *options:
     export GOOGLE_OAUTH_CLIENT_ID=$(cat "${GOOGLE_OAUTH_CLIENT_ID_FILE:-/dev/null}" 2>/dev/null || echo "")
     export GOOGLE_OAUTH_CLIENT_SECRET=$(cat "${GOOGLE_OAUTH_CLIENT_SECRET_FILE:-/dev/null}" 2>/dev/null || echo "")
 
+    # Anthropic API key for the ai_bot service (optional - absent means it falls back
+    # to the dumb heuristics; see docs/ai-bot-plan.md and `just ensure-anthropic-key`)
+    export ANTHROPIC_API_KEY=$(cat "${ANTHROPIC_API_KEY_FILE:-/dev/null}" 2>/dev/null || echo "")
+
     # Reclaim what the previous deploy left behind, before we need the room. Every
     # deploy replaces the `bridge-django` (and caddy/grafana/prometheus) tags, and the
     # images they used to point at stay on disk as untagged `<none>` layers forever.
@@ -506,6 +584,10 @@ _deploy hostname profile context settings_module *options:
     # means the later `up --build` finds a cached image and just swaps containers.
     if [[ ",${COMPOSE_PROFILES:-}," == *",prod,"* || ",${COMPOSE_PROFILES:-}," == *",beta,"* ]]; then
         docker compose build django caddy crowdsec
+        # Caddy is actually up under these profiles, so ai_bot can reach it -- see the
+        # `caddy:8443` block in caddy/Caddyfile for why it needs to, instead of talking to
+        # django:9000 directly.
+        export BRIDGE_BASE_URL="https://caddy:8443"
     else
         docker compose build django
     fi
@@ -516,10 +598,10 @@ _deploy hostname profile context settings_module *options:
     docker compose up --detach --no-deps django-collected-static django-migrated django-oauth-setup
     docker compose wait                  django-collected-static django-migrated django-oauth-setup
 
-    # Swap in the new django container (and bot, clock, and notifier); --no-deps avoids
-    # restarting postgres/redis/caddy
+    # Swap in the new django container (and clock, ai-bot, and notifier); --no-deps
+    # avoids restarting postgres/redis/caddy
     just dump
-    docker compose up --detach --no-deps --force-recreate django bot clock notifier {{ options }}
+    docker compose up --detach --no-deps --force-recreate django clock ai-bot notifier {{ options }}
 
     # Bring up Caddy and CrowdSec when their profile is active (prod/beta). Like the monitoring
     # block below, `_deploy` only ups named services, so these need an explicit `up` -- without

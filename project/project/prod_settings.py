@@ -21,6 +21,14 @@ SECURE_SSL_REDIRECT = True
 # X-Forwarded-Proto header; SECURE_SSL_REDIRECT would 301 it to https://django:9000, which daphne's
 # plain-HTTP port can't complete (the scrape then dies with "context deadline exceeded").  Exempt the
 # metrics endpoint from the redirect so the internal scrape works over HTTP.
+#
+# ai_bot (app/management/commands/ai_bot.py) used to hit the same wall for its own API calls
+# (/login/, /call/, /play/, ...), and for a while was exempted here too. That turned out to be
+# the wrong fix: exempting the redirect didn't stop SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE
+# below from marking the cookies Secure, and a real HTTP connection (correctly) never sends a
+# Secure cookie back, so every request after login still looked anonymous. ai_bot now instead
+# talks to caddy/Caddyfile's internal-only `caddy:8443` listener, which gives it a real HTTPS
+# connection -- see the comment there for the full reasoning. No exemption needed.
 SECURE_REDIRECT_EXEMPT = [r"^metrics$"]
 
 if DEPLOYMENT_ENVIRONMENT == "production":
