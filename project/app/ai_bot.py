@@ -3,8 +3,9 @@
 This is the decision-making core sketched in docs/ai-bot-plan.md: given a hand
 transcript and a seat, ask Claude to choose a call or a card, constrained to
 exactly the legal options via a forced tool call. It knows nothing about Django,
-the bot API, or HTTP -- see app/reference_client.py and app/test_narrate_hand.py
-for how a real driver wires this up to an actual hand.
+the bot API, or HTTP -- see app/reference_client.py and
+app/management/commands/ai_bot.py for how a real driver wires this up to an
+actual hand.
 
 Bidding uses `xscript.auction.legal_calls()`, which only needs the caller's own
 hand plus the public auction -- information a real API client legitimately has.

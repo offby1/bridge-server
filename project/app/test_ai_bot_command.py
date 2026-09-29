@@ -12,8 +12,8 @@ No Anthropic credentials needed for either: with none configured (the default in
 tests), every decision falls back to the dumb heuristics, which is enough to prove
 the service's own plumbing -- discovery via get_next_hand(), applying decisions the
 right way for each kind of seat -- actually works. See app/test_ai_bot.py for
-Claude-decision unit tests, and app/test_narrate_hand.py for a hand played entirely
-through the API by hand (not via this command).
+Claude-decision unit tests, and app/test_reference_client.py for a client that
+drives the API by hand (not via this command).
 """
 
 from __future__ import annotations

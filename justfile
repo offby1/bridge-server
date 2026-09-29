@@ -77,8 +77,7 @@ ensure-crowdsec-api-key: django-secret-directory
 # docs/ai-bot-plan.md) has any way to authenticate -- ANTHROPIC_API_KEY,
 # ANTHROPIC_AUTH_TOKEN, or an `ant auth login` profile -- and if not, prints exactly
 # what to do and exits nonzero, rather than silently falling back to the dumb bidder.
-# Run it directly whenever you want to check, or before `just narrate-hand` if you
-# specifically want to see Claude play rather than the free fallback.
+# Run it directly whenever you want to check.
 [script('bash')]
 ensure-anthropic-key:
     set -euo pipefail
@@ -95,14 +94,14 @@ ensure-anthropic-key:
         exit 0
     fi
     echo "No Anthropic API credentials found. Without them, app/ai_bot.py can not call"
-    echo "Claude, and anything that uses it (e.g. 'just narrate-hand') silently falls"
+    echo "Claude, and anything that uses it (e.g. the ai-bot service) silently falls"
     echo "back to the dumb bridge-library heuristics instead."
     echo
     echo "Pick ONE of these, then re-run 'just ensure-anthropic-key' to confirm:"
     echo
     echo "  1. (Recommended) Create an API key at:"
     echo "       https://console.anthropic.com/settings/keys"
-    echo "     then export it in every shell you run 'just narrate-hand' from:"
+    echo "     then export it in every shell you run the bot from:"
     echo "       export ANTHROPIC_API_KEY=sk-ant-..."
     echo "     Env vars do not persist across shells or reboots, so you will need to"
     echo "     do this again next time -- unless you add it to your shell profile, or"
@@ -428,18 +427,6 @@ curl-login:
 [group('development')]
 exercise-api: start ensure-django-secret
     just pytest-test -v app/test_reference_client.py
-
-# Play one hand start to finish purely through the public bot API (login, hand reads,
-# calls, plays -- see project/app/test_narrate_hand.py), narrating each call and play as
-# it happens. Bidding uses the bridge library's standard-American heuristic; play uses
-# "lowest legal card", since a real API client can't see enough to double-dummy-solve
-# (no Anthropic API involved yet -- see docs/ai-bot-plan.md). Like `exercise-api`, this
-# starts its own throwaway server via pytest's `live_server` fixture, so there's nothing
-# to start by hand. Auctions sometimes pass out on the luck of the deal; re-run if you
-# want to see a contract actually played.
-[group('development')]
-narrate-hand: start ensure-django-secret
-    just pytest-test -v -s app/test_narrate_hand.py
 
 create-cache: (manage "createcachetable")
 
