@@ -30,7 +30,7 @@ DEV_SERVER_PORT := "9000"
 # Helper to run pytest with test settings
 [private]
 pytest-test *args:
-    cd project && DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }} uv run pytest {{ args }}
+    cd project && AI_BOT_DISABLED=1 DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }} uv run pytest {{ args }}
 
 [private]
 default:
@@ -469,6 +469,7 @@ graph: migrate
 test *options: makemigrations mypy collectstatic setup-oauth
     set -euxo pipefail
     export DJANGO_SETTINGS_MODULE={{ TEST_DJANGO_SETTINGS }}
+    export AI_BOT_DISABLED=1
     cd project
 
     pytest_args="--create-db --log-cli-level=WARNING {{ options }}"

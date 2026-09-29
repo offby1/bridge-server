@@ -17,6 +17,15 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.test_settings")
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
+@pytest.fixture(autouse=True)
+def _no_real_ai_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the test suite from calling the Anthropic API, which is slow and costs money.
+
+    The justfile's test recipes set AI_BOT_DISABLED too; this fixture covers a bare `pytest`.
+    """
+    monkeypatch.setenv("AI_BOT_DISABLED", "1")
+
+
 def pytest_sessionfinish(session, exitstatus):
     """
     Clean up test database and force exit to prevent hanging.
