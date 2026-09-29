@@ -143,7 +143,9 @@ def test_legal_cards(usual_setup: Hand, rf: RequestFactory) -> None:
     client.login(username=leader.name, password=".")
 
     response = client.get(reverse("app:hand-dispatch", kwargs={"pk": h.pk}), follow=True)
-    assert "disabled" not in response.content.decode()
+    # Illegal cards are rendered as `<button ... disabled>`.  Match that form
+    # rather than the bare word, which also appears in htmx's `hx-disabled-elt`.
+    assert '" disabled>' not in response.content.decode()
 
     # TODO -- play a card, ensure various holdings are now indeed disabled
 
