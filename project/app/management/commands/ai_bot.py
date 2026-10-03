@@ -189,7 +189,7 @@ class Command(BaseCommand):
             if client is not None:
                 client.call(call.serialize(), explanation=call.explanation)
             else:
-                hand.add_call(call=call)
+                hand.add_call(call=call, player=player)
             logger.info("hand %s: %s: %s (%s)", hand.pk, call_seat, call, reason)
             return
 

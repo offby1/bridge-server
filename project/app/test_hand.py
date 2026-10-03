@@ -558,3 +558,17 @@ def test_is_abandoned_defection(usual_setup: Hand, everybodys_password: str) -> 
 
     assert north.name in message or south.name in message
     assert "left" in message
+
+
+def test_add_call_refuses_a_call_on_behalf_of_the_wrong_player(usual_setup: Hand) -> None:
+    h = usual_setup
+    on_turn = h.player_who_may_call
+    assert on_turn is not None
+    someone_else = next(p for p in h.players() if p != on_turn)
+
+    with pytest.raises(AuctionError, match="not .*'s turn to call"):
+        h.add_call(call=libPass, player=someone_else)
+    assert h.call_set.count() == 0
+
+    h.add_call(call=libPass, player=on_turn)
+    assert h.call_set.count() == 1
