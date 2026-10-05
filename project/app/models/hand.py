@@ -443,7 +443,9 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
     def serializable_xscript(self) -> Any:
         return self.get_xscript().serializable()
 
-    def add_call(self, *, call: libCall) -> None:
+    def add_call(self, *, call: libCall, player: Player | None = None) -> None:
+        """If `player` is given, the call is refused unless it's their turn to call -- so a
+        caller that decided earlier can't have a stale call applied for someone else."""
         assert_type(call, libCall)
 
         if self.is_abandoned:
@@ -452,9 +454,15 @@ class Hand(ExportModelOperationsMixin("hand"), TimeStampedModel):  # type: ignor
 
         self._check_for_expired_tournament()
 
-        player = self.player_who_may_call
-        if player is None:
+        whose_turn = self.player_who_may_call
+        if whose_turn is None:
             raise AuctionError("Nobody may call now")
+
+        if player is not None and player != whose_turn:
+            raise AuctionError(
+                f"It's not {player.name}'s turn to call, but rather {whose_turn.name}'s"
+            )
+        player = whose_turn
 
         try:
             the_call = self.call_set.create(

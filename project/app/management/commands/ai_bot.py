@@ -35,6 +35,7 @@ import app.ai_bot as ai_bot
 import app.models
 import django.db.models
 import django.utils.timezone
+from app.models.hand import AuctionError, PlayError
 from app.reference_client import BridgeClient, BridgeClientError
 from django.core.management.base import BaseCommand
 
@@ -127,9 +128,12 @@ class Command(BaseCommand):
 
         try:
             self._act(hand, base_url, clients, ai_client)
-        except BridgeClientError as e:
+        except (BridgeClientError, AuctionError, PlayError) as e:
             # Could be a genuine race (the turn moved on between our read and our
-            # write) or something more persistently wrong. Either way, hammering
+            # write -- say, a human played their own card while we were thinking
+            # or waiting for tempo; the ORM path raises AuctionError/PlayError for
+            # that, as the HTTP path raises BridgeClientError) or something more
+            # persistently wrong. Either way, hammering
             # the same failing request with no delay is worse than a human
             # noticing a stalled bot a second later -- so this is *not* reported
             # as "there was work to do": the caller's own backoff applies, same
@@ -185,7 +189,7 @@ class Command(BaseCommand):
             if client is not None:
                 client.call(call.serialize(), explanation=call.explanation)
             else:
-                hand.add_call(call=call)
+                hand.add_call(call=call, player=player)
             logger.info("hand %s: %s: %s (%s)", hand.pk, call_seat, call, reason)
             return
 
