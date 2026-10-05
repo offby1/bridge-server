@@ -55,7 +55,7 @@ def call_post_view(request: AuthedHttpRequest) -> HttpResponse:
         libCall = libCall.with_explanation(explanation)
 
     try:
-        hand.add_call(call=libCall)
+        hand.add_call(call=libCall, player=request.user.player)
     except (
         app.models.hand.AuctionError,
         app.models.hand.HandError,

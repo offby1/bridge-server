@@ -24,7 +24,9 @@ from pytest_django.live_server_helper import LiveServer
 from app.management.commands.ai_bot import Command
 from app.models import Hand
 from app.reference_client import BridgeClient
-from app.testutils import create_a_tournament
+from app.testutils import create_a_tournament, set_auction_to
+from bridge.card import Suit
+from bridge.contract import Bid as libBid
 
 
 @pytest.mark.django_db
@@ -81,3 +83,42 @@ def test_ai_bot_plays_a_human_delegated_hand_to_completion(usual_setup: Hand) ->
         pytest.fail("Hand didn't complete within the expected number of moves")
 
     assert clients == {}
+
+
+@pytest.mark.django_db
+def test_ai_bot_shrugs_off_the_turn_moving_on_while_it_waits(
+    usual_setup: Hand, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A human may act on a delegated seat while the bot is deciding or waiting for
+    tempo; the bot's own (now stale) write then fails, which must not kill it."""
+    import app.management.commands.ai_bot as ai_bot_command
+
+    hand = usual_setup
+    for direction in ("North", "East", "South", "West"):
+        player = getattr(hand, direction)
+        player.allow_bot_to_play_for_me = True
+        player.save()
+    tournament = hand.board.tournament
+    tournament.tempo_seconds = 0
+    tournament.save()
+
+    set_auction_to(libBid(level=1, denomination=Suit.CLUBS), hand)
+    hand.refresh_from_db()
+    assert hand.next_seat_to_play is not None
+
+    command = Command()
+
+    def somebody_else_plays_first(h: Hand) -> None:
+        monkeypatch.undo()
+        seat = h.next_seat_to_play
+        assert seat is not None
+        who = h.player_who_controls_seat(seat, right_this_second=True)
+        xscript = h.get_xscript()
+        mine = xscript.dealt_cards_by_seat[seat]
+        assert mine is not None
+        card = xscript.legal_cards(some_cards=list(mine))[0]
+        h.add_play_from_model_player(player=who, card=card)
+
+    monkeypatch.setattr(ai_bot_command, "wait_for_tempo", somebody_else_plays_first)
+
+    assert command.process_one("http://unused", {}, ai_client=None) is False
