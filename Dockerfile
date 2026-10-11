@@ -6,7 +6,7 @@
 # C/C++ toolchain + make. The full (non-slim) python image bundles those, plus
 # git (needed by uv to fetch the git dependencies). cmake itself is supplied
 # automatically by uv, via endplay's build-system requires.
-FROM python:3.14-bookworm AS builder
+FROM python:3.15-rc-bookworm AS builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=t
@@ -35,7 +35,7 @@ RUN ["uv", "sync", "--no-dev"]
 # Same Debian release (bookworm) and Python version as the builder, so the
 # virtualenv copied from the builder (including the self-contained libdds.so) is
 # ABI-compatible and runs as-is.
-FROM python:3.14-slim-bookworm
+FROM python:3.15-rc-slim
 
 RUN adduser  --disabled-password bridge
 
