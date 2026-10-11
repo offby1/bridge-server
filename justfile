@@ -19,8 +19,7 @@ export HOSTNAME := env("HOSTNAME", `hostname`)
 
 # Put this project's tools ahead of any global ones.  ruff, mypy, pytest, py-spy and
 # ipython are all installed in ~/.local/bin too, at versions that need not match ours.
-export PATH := justfile_directory() / ".venv" / "bin" + ":" + "/opt/homebrew/opt/libpq/bin" + ":" + env("PATH")
-
+export PATH := justfile_directory() / ".venv" / "bin" + ":" + env("PATH")
 export PYTHONUNBUFFERED := "t"
 
 # Settings to use for tests (overrides the default dev_settings)
