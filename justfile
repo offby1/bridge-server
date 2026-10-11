@@ -162,32 +162,6 @@ uv-install: uv-install-no-dev
 uv-install-no-dev:
     uv sync --quiet --no-dev
 
-# Nag about whether this branch can merge into main yet.  It can once every dependency ships a
-# prebuilt wheel for Python 3.15: `uv sync --no-build` succeeds exactly when nothing needs
-# compiling.  (Compiled builds are what went stale after a macOS or Xcode update.)  This is a
-# reminder, not a gate, so it exits 0 either way.
-[group('virtualenv')]
-[script('bash')]
-can-merge-into-main:
-    if output=$(uv sync --no-build 2>&1); then
-        mergeable=yes
-    else
-        mergeable=no
-        echo "$output" | tail -n 5
-    fi
-
-    printf '\n%.0s' {1..8}
-    echo '##############################################################'
-    if [ "$mergeable" = yes ]; then
-        echo '    HEY!  EVERY DEPENDENCY NOW HAS A PREBUILT WHEEL FOR PYTHON 3.15.'
-        echo '    YOU CAN MERGE python-3.15 INTO main NOW.'
-    else
-        echo "    YOU CAN'T YET MERGE python-3.15 INTO main."
-        echo '    (SOME DEPENDENCY STILL HAS TO BE COMPILED FOR PYTHON 3.15.)'
-    fi
-    echo '##############################################################'
-    printf '\n%.0s' {1..8}
-
 mypy: uv-install ty
     uv run dmypy run -- .
 
@@ -501,7 +475,7 @@ test *options: makemigrations mypy collectstatic setup-oauth
 
 # Fast tests (i.e., run in parallel)
 [group('development')]
-ft *options: can-merge-into-main (t "-n 8 " + options)
+ft *options: (t "-n 8 " + options)
 
 # Run UI tests with Playwright (visible browser)
 [group('development')]
