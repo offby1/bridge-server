@@ -1,3 +1,12 @@
+# The exact Python patch release, shared by both stages below.  The virtualenv that the
+# builder creates records this version, and `uv run` deletes and recreates a virtualenv
+# whose Python differs from the interpreter it finds -- which fails in the runtime
+# stage, because that stage has no git to fetch our git dependencies.  With a floating
+# tag like "3.14", Docker can use a stale local copy of one stage's base image and a
+# fresh pull of the other's, and the two disagree.  A full version tag cannot drift.
+# Bump this on purpose when a new patch release comes out.
+ARG PYTHON_VERSION=3.14.9
+
 # ---- Builder stage: full toolchain, used to compile endplay's DDS solver ----
 #
 # endplay publishes no cp314 wheel, and even where it must build from source its
@@ -6,7 +15,7 @@
 # C/C++ toolchain + make. The full (non-slim) python image bundles those, plus
 # git (needed by uv to fetch the git dependencies). cmake itself is supplied
 # automatically by uv, via endplay's build-system requires.
-FROM python:3.14-bookworm AS builder
+FROM python:${PYTHON_VERSION}-bookworm AS builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=t
@@ -35,7 +44,7 @@ RUN ["uv", "sync", "--no-dev"]
 # Same Debian release (bookworm) and Python version as the builder, so the
 # virtualenv copied from the builder (including the self-contained libdds.so) is
 # ABI-compatible and runs as-is.
-FROM python:3.14-slim-bookworm
+FROM python:${PYTHON_VERSION}-slim-bookworm
 
 RUN adduser  --disabled-password bridge
 
