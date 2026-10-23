@@ -5,7 +5,7 @@
 # tag like "3.14", Docker can use a stale local copy of one stage's base image and a
 # fresh pull of the other's, and the two disagree.  A full version tag cannot drift.
 # Bump this on purpose when a new patch release comes out.
-ARG PYTHON_VERSION=3.14.9
+ARG PYTHON_VERSION=3.15.0
 
 # ---- Builder stage: full toolchain, used to compile endplay's DDS solver ----
 #
