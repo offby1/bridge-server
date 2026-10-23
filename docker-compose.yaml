@@ -69,7 +69,7 @@ services:
     labels:
       caddy: ${CADDY_HOSTNAME:-}
       caddy.reverse_proxy: "{{upstreams 9000}}"
-      # These two labels apply the snippets defined in caddy/Caddyfile. The
+      # These labels apply the snippets defined in caddy/Caddyfile. The
       # `_0` and `_1` suffixes are caddy-docker-proxy's way of keeping two
       # directives of the same name apart, which a bare `caddy.import` on each
       # line could not do, since label keys must be unique.
@@ -80,6 +80,7 @@ services:
       # refused before it consumes a rate-limit budget.
       caddy.import_0: crowdsec    # refuse banned IPs; snippet in caddy/Caddyfile
       caddy.import_1: ratelimit   # tiered rate limits; snippet in caddy/Caddyfile
+      caddy.import_2: junkpaths   # 404 scanner paths before Django sees them; snippet in caddy/Caddyfile
 
       # This label turns on the access log. Caddy writes none unless asked, so
       # until this landed the only thing in `docker compose logs caddy` was

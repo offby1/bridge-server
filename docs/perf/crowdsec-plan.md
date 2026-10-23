@@ -164,7 +164,7 @@ It also needs a global app block in `caddy/Caddyfile`, alongside the existing
     crowdsec {
         api_url {$CROWDSEC_API_URL}
         api_key {$CROWDSEC_API_KEY}
-        ticker_interval 60s
+        ticker_interval 60s    # this was the original design; the file now says 5s
     }
 }
 ```
@@ -828,6 +828,21 @@ metrics confirm the mode: `crowdsec_bouncer_lapi_requests_total{mode="stream"}`.
 A CrowdSec decision therefore takes up to a minute to become a real block, which
 is fine for bans lasting hours but means you should not expect an instant
 response when testing.
+
+**Update, 2026-10-23: the interval is now 5s, and scanner paths are answered at
+Caddy.** A week of Sentry noise showed why 60s was too slow. In a CSV of 500
+access-log lines from 162 addresses, 135 addresses made a single request, and
+the other bursts of requests mostly lasted 10 to 50 seconds (median near 14), so
+a hub ban landed after the scanner had finished. `caddy/Caddyfile` now sets
+`ticker_interval 5s`. Because even that cannot stop the first requests of a
+burst, the same change adds a `(junkpaths)` snippet, imported by
+`caddy.import_2: junkpaths` on the django service, which answers PHP files,
+dotfiles such as `.env` and `.git`, WordPress paths, `/@fs/` and common config
+files with an empty 404 before Django sees them. Caddy still writes its access
+log line for each, with status 404, so the hub scenarios keep counting the
+probing and reporting it. We checked the pattern against every path in that CSV:
+it matched none of the 200 or 302 responses except `/admin/.env`, which is
+itself a probe. We have not yet looked at the effect in production.
 
 #### `enable_caddy_metrics` does not count blocked requests
 

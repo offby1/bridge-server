@@ -54,7 +54,14 @@
     crowdsec {
         api_url http://crowdsec:8080
         api_key {$CROWDSEC_API_KEY}
-        ticker_interval 60s
+
+        # How often the plugin pulls the decision list, and therefore the longest
+        # a new ban can wait before Caddy starts refusing the address. Scanners
+        # here arrive in bursts that mostly last 10 to 50 seconds, with a median
+        # near 14, so a 60-second interval meant a ban almost never took effect
+        # before the burst ended. Each pull is one request to CrowdSec's local API
+        # on the same host, which is cheap.
+        ticker_interval 5s
 
         # Export the bouncer's own counters through the /metrics listener below.
         # Measured on beta, this gives exactly two of them,
@@ -146,6 +153,32 @@ caddy:8443 {
 # after.
 (crowdsec) {
     crowdsec
+}
+
+# This snippet answers requests for paths that scanners probe and that this site
+# can never serve, with an empty 404, at Caddy itself. The django service applies
+# it with a `caddy.import_2: junkpaths` label.
+#
+# The point is to keep these requests out of Django's access log, and therefore
+# out of Sentry, where they were most of the noise. Unlike a CrowdSec ban, this
+# works on the very first request, because there is no ban to wait for.
+#
+# Caddy still writes its own access log line for each of them, with status 404,
+# so CrowdSec's hub scenarios still see the probing and still ban and report it.
+# A request matched here skips the `crowdsec` and `rate_limit` handlers, because
+# `handle` is exclusive with them; a banned address probing one of these paths
+# therefore gets a 404 instead of the bouncer's 403.
+#
+# The patterns are deliberately limited to things that cannot be real URLs of
+# ours: PHP files, dotfiles and dot-directories (.env, .git, .aws), WordPress
+# paths, the Vite dev server's /@fs/, and common config and compose files. We do
+# not match /news/, /blog/ and the like, which are only probably scanners, and we
+# do not treat every 404 as a probe, because a person who mistypes a URL gets one.
+(junkpaths) {
+    @junk path_regexp (?i)(\.php$|(^|/)\.(env|git|aws|claude|docker|github|config|cache|s3cfg|boto|amplifyrc)|/wp-json|^/wp(/|-)|^/wordpress/|^/@fs/|/docker-compose[^/]*\.ya?ml$|/(config|appsettings|settings)\.(ya?ml|json|toml|js)$)
+    handle @junk {
+        respond 404
+    }
 }
 
 # Three complementary limits, all shedding at the edge (HTTP 429 + Retry-After)
